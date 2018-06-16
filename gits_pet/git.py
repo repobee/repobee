@@ -29,10 +29,21 @@ def git_clone(repo_url: str, single_branch: bool = True, branch: str = None):
 
     Args:
         repo_url: HTTPS url to repository on the form https://<host>/<owner>/<repo>.
-        single_branch: Whether or not to clone a single branch. Implies `branch = master` unless otherwise specified.
+        single_branch: Whether or not to clone a single branch.
         branch: The branch to clone.
     """
-    pass
+    if not repo_url.startswith('https://'):
+        raise ValueError('invalid repo url {}')
+
+    options = []
+    if single_branch:
+        options.append('--single-branch')
+    if branch is not None:
+        options += ['-b', branch]
+    clone_command = ['git', 'clone', repo_url, *options]
+    proc = captured_run(clone_command)
+    print(proc.stdout)
+    print(proc.stderr)
 
 
 def git_push(repo_path: str, remote: str = 'origin', branch: str = 'master'):
