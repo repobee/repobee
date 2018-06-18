@@ -1,12 +1,17 @@
 import sys
 import os
 import pytest
+from unittest.mock import patch
 from collections import namedtuple
-from gits_pet import git
 
 URL_TEMPLATE = 'https://{}github.com/slarse/clanim'
+TOKEN = 'besttoken1337'
 
 Env = namedtuple('Env', ['expected_url'])
+
+# import with mocked oauth
+with patch('os.getenv', autospec=True, return_value=TOKEN):
+    from gits_pet import git
 
 
 def test_insert_token():
@@ -61,12 +66,11 @@ def test_clone_raises_on_non_zero_exit_from_git_clone(env_setup, mocker):
 
 
 @pytest.fixture(scope='function')
-def env_setup(mocker, monkeypatch):
-    token = 'besttoken1337'
-    monkeypatch.setattr('gits_pet.git.OAUTH_TOKEN', token)
+def env_setup(mocker):
     mocker.patch(
         'gits_pet.git.captured_run', autospec=True, return_value=(0, b'', b''))
-    expected_url = URL_TEMPLATE.format(token + '@')
+    # TOKEN was mocked as the environment token when gits_pet.git was imported
+    expected_url = URL_TEMPLATE.format(TOKEN + '@')
     return Env(expected_url=expected_url)
 
 
@@ -215,3 +219,16 @@ def test_add_push_remotes(env_setup):
 
     for command in expected_commands:
         git.captured_run.assert_any_call(command, cwd=os.path.abspath(repo))
+
+
+def test_add_push_remotes_raises_on_non_zero_exit_from_git(env_setup):
+    stderr = b'bad for push remotes'
+    git.captured_run.return_value = (23, b'', stderr)
+    repo = os.sep.join(['some', 'repo', 'path'])
+    remotes = (('origin', 'https://slarse.se/repo'),
+               ('origin', 'https://github.com/slarse/repo'),
+               ('other', 'https://github.com/slarse/repo'))
+
+    with pytest.raises(git.GitError) as exc:
+        git.add_push_remotes(repo, remotes)
+    assert stderr.decode(encoding=sys.getdefaultencoding()) in str(exc.value)

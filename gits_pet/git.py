@@ -182,7 +182,6 @@ def add_push_remotes(repo_path: str, remotes: Sequence[Sequence[str]]):
     for remote, url in remotes:
         add_remote_command = 'git remote set-url --add --push {} {}'.format(
             remote, url).split()
-        print(add_remote_command)
         rc, _, stderr = captured_run(
             add_remote_command, cwd=os.path.abspath(repo_path))
         if rc != 0:
