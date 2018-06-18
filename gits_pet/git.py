@@ -82,6 +82,9 @@ def clone(repo_url: str, single_branch: bool = True, branch: str = None):
             'branch is of type {.__class__.__name__}, expected NoneType or str'
         )
 
+    if isinstance(branch, str) and not branch:
+        raise ValueError("branch must not be empty")
+
     options = []
     if single_branch:
         options.append('--single-branch')
@@ -116,7 +119,41 @@ def push(repo_path: str, remote: str = 'origin', branch: str = 'master'):
         remote: Name of the remote to push to.
         branch: Name of the branch to push to.
     """
-    pass
+    if not isinstance(repo_path, str):
+        raise TypeError(
+            'repo_path is of type {.__class__.__name__}, expected str'.format(
+                repo_path))
+    if not isinstance(remote, str):
+        raise TypeError(
+            'remote is of type {.__class__.__name__}, expected str'.format(
+                remote))
+    if not isinstance(branch, str):
+        raise TypeError(
+            'branch is of type {.__class__.__name__}, expected str'.format(
+                branch))
+
+    if not repo_path:
+        raise ValueError("repo_path must not be empty")
+    if not remote:
+        raise ValueError("remote must not be empty")
+    if not branch:
+        raise ValueError("branch must not be empty")
+
+    push_command = ['git', 'push', remote, branch]
+    rc, _, stderr = captured_run(push_command, cwd=os.path.abspath(repo_path))
+
+    if rc != 0:
+        msg = ("git exited with a non-zero exit status.{}"
+               "issued command: {}{}"
+               "return code: {}{}"
+               "stderr: {}").format(
+                   os.linesep,
+                   " ".join(push_command),
+                   os.linesep,
+                   rc,
+                   os.linesep,
+                   stderr.decode(encoding=sys.getdefaultencoding()))
+        raise PushFailedError(msg)
 
 
 def add_push_remote(repo_path: str, remotes: Iterable[Tuple[str]]):
