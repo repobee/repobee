@@ -159,3 +159,59 @@ def test_push_raises_on_non_zero_exit_from_git_clone(env_setup, mocker):
     with pytest.raises(git.PushFailedError) as exc:
         git.push('some_repo')
     assert stderr.decode(encoding=sys.getdefaultencoding()) in str(exc.value)
+
+
+def test_add_push_remotes_raises_on_non_str_repo_path(env_setup):
+    with pytest.raises(TypeError) as exc:
+        git.add_push_remotes(2, tuple())
+    assert 'repo_path' in str(exc)
+    assert 'expected str' in str(exc)
+
+
+def test_add_push_remotes_raises_on_empty_repo_path(env_setup):
+    with pytest.raises(ValueError) as exc:
+        git.add_push_remotes('',
+                             [('origin', 'https://github.com/slarse/clanim')])
+    assert 'repo_path must not be empty' in str(exc)
+
+
+def test_add_push_remotes_raises_on_empty_remotes(env_setup):
+    with pytest.raises(ValueError) as exc:
+        git.add_push_remotes('something', [])
+    assert 'remotes' in str(exc)
+
+
+def test_add_push_remotes_raises_on_bad_remotes_formatting(env_setup):
+    repo = 'something'
+    # second tuple has too many values
+    remotes_bad_length = (('origin', 'https://byebye.com'),
+                          ('origin', 'https://hello.com', 'byeby'))
+
+    # third tuple has an int as remote
+    remotes_bad_type = (('origin', 'https://byebye.com'),
+                        ('origin', 'https://hello.com'), (2,
+                                                          'https://slarse.se'))
+    with pytest.raises(ValueError) as exc_bad_length:
+        git.add_push_remotes(repo, remotes_bad_length)
+
+    with pytest.raises(ValueError) as exc_bad_type:
+        git.add_push_remotes(repo, remotes_bad_type)
+
+    assert str(remotes_bad_length[1]) in str(exc_bad_length)
+    assert str(remotes_bad_type[2]) in str(exc_bad_type)
+
+
+def test_add_push_remotes(env_setup):
+    repo = os.sep.join(['some', 'repo', 'path'])
+    remotes = (('origin', 'https://slarse.se/repo'),
+               ('origin', 'https://github.com/slarse/repo'),
+               ('other', 'https://github.com/slarse/repo'))
+
+    expected_commands = [
+        "git remote set-url --add --push {} {}".format(remote, url).split()
+        for remote, url in remotes
+    ]
+    git.add_push_remotes(repo, remotes)
+
+    for command in expected_commands:
+        git.captured_run.assert_any_call(command, cwd=os.path.abspath(repo))
