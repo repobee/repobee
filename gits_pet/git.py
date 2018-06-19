@@ -42,12 +42,13 @@ if not OAUTH_TOKEN:
 
 
 def _insert_token(https_url: str, token: str = OAUTH_TOKEN) -> str:
-    """Insert an oauth token into the https url as described here:
+    """Insert a token into the https url as described here:
         https://blog.github.com/2012-09-21-easier-builds-and-deployments-using-git-over-https-and-oauth/
 
     Args:
         https_url: A url on the form `https://host.topdomain`
-        token: A GitHub OAUTH token.
+        token: A GitHub OAUTH token, with or without username (e.g. on the form
+        `<token>` or `<username>:<token>`)
 
     Returns:
         The provided url with the token inserted
@@ -58,7 +59,23 @@ def _insert_token(https_url: str, token: str = OAUTH_TOKEN) -> str:
                 https_url))
     if not token:
         raise ValueError('invalid token, empty token not allowed')
-    return https_url.replace('https://', 'https://{}{}'.format(token, '@'))
+    return https_url.replace('https://', 'https://{}@'.format(token))
+
+
+def _insert_user_and_token(https_url: str, user: str,
+                           token: str = OAUTH_TOKEN) -> str:
+    """Insert a username and an oauth token into the https url as described here:
+        https://blog.github.com/2012-09-21-easier-builds-and-deployments-using-git-over-https-and-oauth/
+
+    Args:
+        https_url: A url on the form `https://host.topdomain`
+        user: A GitHub username.
+        token: A GitHub OAUTH token.
+
+    Returns:
+        The provided url with the username and token inserted
+    """
+    return _insert_token(https_url, "{}:{}".format(user, token))
 
 
 def quiet_run(*args, **kwargs):
@@ -150,17 +167,24 @@ def push(repo_path: str, remote: str = 'origin', branch: str = 'master'):
         raise PushFailedError(push_command, rc, stderr)
 
 
-def add_push_remotes(repo_path: str, remotes: Sequence[Sequence[str]]):
+def add_push_remotes(repo_path: str, user: str,
+                     remotes: Sequence[Sequence[str]]):
     """Add push remotes to a repository.
 
     Args:
         repo_path: Path to the root of a git repository.
+        user: A user associated with the token. Must be added to the remote url
+        for pushing without CLI interaction.
         remotes: A list of (remote, repo_url) pairs to add as push remotes.
     """
     if not isinstance(repo_path, str):
         raise TypeError(
             "repo_path is of type {.__class__.__name__}, expected str".format(
                 repo_path))
+    if not isinstance(user, str):
+        raise TypeError(
+            "user is of type {.__class__.__name__}, expected str".format(
+                user))
     if not isinstance(remotes, collections.Sequence):
         raise TypeError(
             "remotes is of type {.__class__.__name__}, expected sequence"
@@ -168,6 +192,9 @@ def add_push_remotes(repo_path: str, remotes: Sequence[Sequence[str]]):
 
     if not repo_path:
         raise ValueError("repo_path must not be empty")
+    if not user:
+        raise ValueError("user must not be empty")
+
     bad_pairs = [
         pair for pair in remotes
         if not isinstance(pair, collections.Sequence) or len(pair) != 2
@@ -180,8 +207,9 @@ def add_push_remotes(repo_path: str, remotes: Sequence[Sequence[str]]):
         raise ValueError("remotes must not be empty")
 
     for remote, url in remotes:
+        url_with_token = _insert_user_and_token(url, user)
         add_remote_command = 'git remote set-url --add --push {} {}'.format(
-            remote, url).split()
+            remote, url_with_token).split()
         rc, _, stderr = captured_run(
             add_remote_command, cwd=os.path.abspath(repo_path))
         if rc != 0:
