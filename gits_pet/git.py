@@ -9,7 +9,7 @@ import collections
 from typing import Sequence, Tuple
 
 
-class GitError(RuntimeError):
+class GitError(Exception):
     """A generic error to raise when a git command exits with a non-zero
     exit status.
     """
@@ -183,8 +183,7 @@ def add_push_remotes(repo_path: str, user: str,
                 repo_path))
     if not isinstance(user, str):
         raise TypeError(
-            "user is of type {.__class__.__name__}, expected str".format(
-                user))
+            "user is of type {.__class__.__name__}, expected str".format(user))
     if not isinstance(remotes, collections.Sequence):
         raise TypeError(
             "remotes is of type {.__class__.__name__}, expected sequence"

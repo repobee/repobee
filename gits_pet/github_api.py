@@ -9,7 +9,6 @@ this module are called.
 """
 import contextlib
 import collections
-from itertools import chan
 from typing import List, Iterable, Mapping
 import github
 
@@ -17,6 +16,9 @@ _API = None
 
 Team = collections.namedtuple('Team', ('name', 'members', 'id'))
 User = collections.namedtuple('User', ('username', 'id'))
+
+RepoInfo = collections.namedtuple(
+    'RepoInfo', ('name', 'description', 'private', 'team_id'))
 
 
 class GitHubError(Exception):
@@ -91,9 +93,11 @@ def _ensure_teams_exist(team_names: Iterable[str],
     return teams
 
 
-def add_to_teams(member_lists: Mapping[str, Iterable[str]],
-                 org_name: str) -> List[Team]:
-    """Add members to teams. Duplicates are ignored.
+def ensure_teams_and_members(member_lists: Mapping[str, Iterable[str]],
+                             org_name: str) -> List[Team]:
+    """Ensure that each team exists and has its required members. If a team is
+    does not exist or is missing any of the members in its member list, the team
+    is created and/or missing members are added. Otherwise, nothing happens.
     
     Args:
         member_list: A mapping of (team_name, member_list) mappings.
@@ -129,3 +133,36 @@ def add_to_teams(member_lists: Mapping[str, Iterable[str]],
                 id=team.id) for team in teams
         ]
     return team_wrappers
+
+
+def create_repos(repo_infos: Iterable[RepoInfo], org_name: str):
+    """Create repositories in the given organization according to the RepoInfos.
+    Repos that already exist are skipped.
+
+    Args:
+        repo_infos: An iterable of RepoInfo namedtuples.
+        org_name: Name of an organization.
+
+    Returns:
+        A list of urls to all repos corresponding to the RepoInfos.
+    """
+    with _try_api_request():
+        org = _API.get_organization(org_name)
+
+    repo_urls = []
+    for info in repo_infos:
+        try:
+            # TODO this will crash if the repo already exists!
+            repo = org.create_repo(
+                info.name,
+                description=info.description,
+                private=info.private,
+                team_id=info.team_id)
+            repo_urls.append(repo.html_url)
+            print("created {}/{}".format(org_name, info.name))
+        except github.GithubException as exc:
+            print("{}/{} already exists".format(org_name, info.name))
+            if exc.status != 422:
+                raise
+            repo_urls.append(org.get_repo(info.name).html_url)
+    return repo_urls
