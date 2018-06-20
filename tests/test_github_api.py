@@ -6,13 +6,14 @@ from collections import namedtuple
 
 import github
 from gits_pet import github_api
-from gits_pet.github_api import RepoInfo
+from gits_pet import api_wrapper
+from gits_pet.api_wrapper import RepoInfo
 
 ORG_NAME = "this-is-a-test-org"
 
-NOT_FOUND_EXCEPTION = github_api.NotFoundError(msg=None, status=404)
-VALIDATION_ERROR = github_api.GitHubError(msg=None, status=422)
-SERVER_ERROR = github_api.GitHubError(msg=None, status=500)
+NOT_FOUND_EXCEPTION = api_wrapper.NotFoundError(msg=None, status=404)
+VALIDATION_ERROR = api_wrapper.GitHubError(msg=None, status=422)
+SERVER_ERROR = api_wrapper.GitHubError(msg=None, status=500)
 
 
 @pytest.fixture(scope='function')
@@ -40,7 +41,7 @@ def api(mocker):
 @pytest.fixture(scope='function')
 def create_repo_mock(mocker):
     create_repo_mock = mocker.patch(
-        'gits_pet.github_api._ApiWrapper.create_repo',
+        'gits_pet.api_wrapper.ApiWrapper.create_repo',
         autospec=True,
         side_effect=lambda _, info: info.name)
     return create_repo_mock
@@ -102,10 +103,10 @@ def test_create_repos_returns_all_urls(mocker, repo_infos, api):
         raise VALIDATION_ERROR
 
     mocker.patch(
-        'gits_pet.github_api._ApiWrapper.create_repo',
+        'gits_pet.api_wrapper.ApiWrapper.create_repo',
         side_effect=create_repo_side_effect)
     mocker.patch(
-        'gits_pet.github_api._ApiWrapper.get_repo_url',
+        'gits_pet.api_wrapper.ApiWrapper.get_repo_url',
         side_effect=lambda repo_name: repo_name)
 
     actual_urls = api.create_repos(repo_infos)
@@ -114,12 +115,46 @@ def test_create_repos_returns_all_urls(mocker, repo_infos, api):
 
 def test_ensure_teams_and_members_no_previous_teams(mocker, api):
     """Test that ensure_teams_and_members works as expected with there are no
-    previous teams, and all users exist.
+    previous teams, and all users exist. This is a massive end-to-end test of
+    the function with only the lower level API's mocked out.
     """
-    existing_teams = []
-    mock_create_team = mocker.patch('gits_pet.github_api._ApiWrapper.create_team', side_effect=lambda self, team_name, _: existing_teams.append(team_name))
-    mock_get_user = mocker.patch(
-        'gits_pet.github_api._ApiWrapper.get_user',
-        side_effect=lambda _, username: username)
+    # have create_team and get_teams work on a mocked dictionary
+    existing_teams = {}
+    Team = namedtuple('Team', ['name', 'get_members'])
+
+    def get_teams(self):
+        return [Team(tn, MagicMock()) for tn in existing_teams.keys()]
+
+    mock_create_team = mocker.patch(
+        'gits_pet.api_wrapper.ApiWrapper.create_team',
+        autospec=True,
+        side_effect=lambda self, team_name, permission: existing_teams.update({team_name: set()})
+    )
     mock_get_teams = mocker.patch(
-        'gits_pet.github_api._ApiWrapper.get_teams', return_value=[])
+        'gits_pet.api_wrapper.ApiWrapper.get_teams',
+        autospec=True,
+        side_effect=get_teams)
+    mock_get_teams_in = mocker.patch('gits_pet.api_wrapper.ApiWrapper.get_teams_in',
+            autospec=True,
+            side_effect=lambda self, team_names: list(set(team_names).intersection(existing_teams.keys())))
+    mock_add_to_team = mocker.patch(
+        'gits_pet.api_wrapper.ApiWrapper.add_to_team',
+        autospec=True,
+        side_effect=
+        lambda self, username, team: existing_teams[team.name].add(username))
+
+    # get_user just returns the username
+    mock_get_user = mocker.patch(
+        'gits_pet.api_wrapper.ApiWrapper.get_user',
+        autospec=True,
+        side_effect=lambda self, username: username)
+
+    teams_and_members = {
+        'team_one': set(['first', 'second']),
+        'two': set(['two']),
+        'last_team': set([str(i) for i in range(10)])
+    }
+
+    api.ensure_teams_and_members(teams_and_members)
+
+    assert existing_teams == teams_and_members
