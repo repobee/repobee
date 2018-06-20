@@ -98,12 +98,14 @@ class ApiWrapper:
         Returns:
             An iterable of Team namedtuples of all teams that matched any of the team names.
         """
+        team_names = set(team_names)
         with _try_api_request():
             return [
                 Team(
                     name=team.name,
                     members=[m.name for m in team.get_members()],
                     id=team.id) for team in self.get_teams()
+                if team.name in team_names
             ]
 
     def add_to_team(self, member: _User, team: _Team):
