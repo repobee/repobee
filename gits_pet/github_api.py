@@ -82,8 +82,11 @@ def _ensure_teams_exist(team_names: Iterable[str],
 
     required_team_names = set(team_names)
     for team_name in required_team_names - existing_team_names:
-        with _try_api_request():
+        try:
             org.create_team(team_name, permission='push')
+        except github.GithubException as exc:
+            if exc.status != 422:
+                raise
 
     with _try_api_request():
         teams = [
