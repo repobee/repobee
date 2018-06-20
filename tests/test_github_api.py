@@ -110,3 +110,16 @@ def test_create_repos_returns_all_urls(mocker, repo_infos, api):
 
     actual_urls = api.create_repos(repo_infos)
     assert actual_urls == expected_urls
+
+
+def test_ensure_teams_and_members_no_previous_teams(mocker, api):
+    """Test that ensure_teams_and_members works as expected with there are no
+    previous teams, and all users exist.
+    """
+    existing_teams = []
+    mock_create_team = mocker.patch('gits_pet.github_api._ApiWrapper.create_team', side_effect=lambda self, team_name, _: existing_teams.append(team_name))
+    mock_get_user = mocker.patch(
+        'gits_pet.github_api._ApiWrapper.get_user',
+        side_effect=lambda _, username: username)
+    mock_get_teams = mocker.patch(
+        'gits_pet.github_api._ApiWrapper.get_teams', return_value=[])

@@ -85,10 +85,20 @@ class _ApiWrapper:
         with _try_api_request():
             return self._github.get_user(username)
 
-    def get_teams(self) -> List[_Team]:
-        """Returns: A list of the organization's teams."""
+    def get_teams(self) -> Iterable[_Team]:
+        """Returns: An iterable of the organization's teams."""
         with _try_api_request():
             return self._org.get_teams()
+
+    def add_to_team(self, member: _User, team: _Team):
+        """Add a user to a team.
+
+        Args:
+            member: A user to add to the team.
+            team: A _Team.
+        """
+        with _try_api_request():
+            team.add_membership(member)
 
     def get_repo_url(self, repo_name: str) -> _Repo:
         """Get a repo from the organization.
@@ -171,7 +181,7 @@ class GitHubAPI:
             try:
                 self._api.create_team(team_name, permission='push')
                 LOGGER.info("created team {}".format(team_name))
-            except github.GithubException as exc:
+            except GitHubError as exc:
                 if exc.status != 422:
                     raise UnexpectedException(str(exc))
                 LOGGER.info("team {} already exists".format(team_name))
@@ -187,7 +197,7 @@ class GitHubAPI:
         """Ensure that each team exists and has its required members. If a team is
         does not exist or is missing any of the members in its member list, the team
         is created and/or missing members are added. Otherwise, nothing happens.
-        
+
         Args:
             member_list: A mapping of (team_name, member_list) mappings.
 
@@ -201,30 +211,7 @@ class GitHubAPI:
 
         LOGGER.info("adding members to teams...")
         for team in teams:
-            required_members = set(member_lists[team.name])
-            existing_members = set(team.get_members())
-            missing_members = required_members - existing_members
-
-            if missing_members:
-                LOGGER.info("adding members {} to team {}".format(
-                    ", ".join(missing_members), team.name))
-            else:
-                LOGGER.info("{} already in team {}, skipping team...".format(
-                    ", ".join(required_members), team.name))
-
-            for username in missing_members:
-                try:
-                    member = self._api.get_user(username)
-                except github.GithubException as exc:
-                    if exc.status != 404:
-                        raise GitHubError(
-                            "Got unexpected response code from the GitHub API",
-                            status=exc.status)
-                    LOGGER.warning(
-                        "user {} does not exist, skipping".format(username))
-
-                with _try_api_request():
-                    team.add_membership(member)
+            self._ensure_members_in_team(team, member_lists[team.name])
 
         with _try_api_request():
             team_wrappers = [
@@ -234,6 +221,46 @@ class GitHubAPI:
                     id=team.id) for team in teams
             ]
         return team_wrappers
+
+    def _ensure_members_in_team(self, team: _Team, members: Iterable[str]):
+        """Add all of the users in 'memebrs' to a team. Skips any users that
+        don't exist, or are already in the team.
+
+        Args:
+            team: A _Team object to which members should be added.
+            members: An iterable of usernames.
+        """
+        required_members = set(members)
+        existing_members = set(team.get_members())
+        missing_members = required_members - existing_members
+
+        if missing_members:
+            LOGGER.info("adding members {} to team {}".format(
+                ", ".join(missing_members), team.name))
+        else:
+            LOGGER.info("{} already in team {}, skipping team...".format(
+                ", ".join(required_members), team.name))
+
+        for username in missing_members:
+            self._add_to_team(username, team)
+
+    def _add_to_team(self, username: str, team: _Team):
+        """Add a user with the given username to a team.
+
+        Args:
+            username: A username.
+            team: A _Team.
+        """
+        try:
+            member = self._api.get_user(username)
+        except github.GithubException as exc:
+            if exc.status != 404:
+                raise GitHubError(
+                    "Got unexpected response code from the GitHub API",
+                    status=exc.status)
+            LOGGER.warning("user {} does not exist, skipping".format(username))
+
+        self._api.add_to_team(member, team)
 
     def create_repos(self, repo_infos: Iterable[RepoInfo]):
         """Create repositories in the given organization according to the RepoInfos.
