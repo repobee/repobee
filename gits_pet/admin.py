@@ -13,8 +13,7 @@ import shutil
 from typing import Iterable
 import daiquiri
 from gits_pet import git
-from gits_pet.github_api import (setup_api, ensure_teams_and_members,
-                                 create_repos, RepoInfo)
+from github_api import GitHubAPI, RepoInfo
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -46,7 +45,7 @@ def create_student_repos(master_repo_url: str,
         repo_base_name: The base name for all student repositories. If None,
         the base name of the master repo is used.
     """
-    setup_api(github_api_base_url, git.OAUTH_TOKEN)
+    api = GitHubAPI(github_api_base_url, git.OAUTH_TOKEN, org_name)
 
     master_repo_name = master_repo_url.split("/")[-1]
     if master_repo_name.endswith('.git'):
@@ -57,7 +56,7 @@ def create_student_repos(master_repo_url: str,
 
     # (team_name, member list) mappings, each student gets its own team
     member_lists = {student: [student] for student in students}
-    teams = ensure_teams_and_members(member_lists, org_name)
+    teams = api.ensure_teams_and_members(member_lists)
 
     if not repo_base_name:
         repo_base_name = master_repo_name
@@ -70,7 +69,7 @@ def create_student_repos(master_repo_url: str,
             team_id=team.id) for team in teams
     ]
     LOGGER.info("creating repos with base name {}...".format(repo_base_name))
-    repo_urls = create_repos(repo_infos, org_name)
+    repo_urls = api.create_repos(repo_infos)
 
     LOGGER.info("adding push remotes to master repo...")
     git.add_push_remotes(master_repo_name, user,
