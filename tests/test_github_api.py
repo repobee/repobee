@@ -10,9 +10,9 @@ from gits_pet.github_api import RepoInfo
 
 ORG_NAME = "this-is-a-test-org"
 
-NOT_FOUND_EXCEPTION = github.GithubException(data=None, status=404)
-VALIDATION_ERROR_EXCEPTION = github.GithubException(data=None, status=422)
-SERVER_ERROR_EXCEPTION = github.GithubException(data=None, status=500)
+NOT_FOUND_EXCEPTION = github_api.NotFoundError(msg=None, status=404)
+VALIDATION_ERROR = github_api.GitHubError(msg=None, status=422)
+SERVER_ERROR = github_api.GitHubError(msg=None, status=500)
 
 
 @pytest.fixture(scope='function')
@@ -31,92 +31,83 @@ def repo_infos():
 
 
 @pytest.fixture(scope='function')
-def api_mock(mocker):
-    api_mock = mocker.patch('gits_pet.github_api._API', autospec=True)
-    return api_mock
+def pygithub_mock(mocker):
+    pygithub_mock = mocker.patch('github.Github', autospec=True)
+    github_api.setup_api('bla', 'blue', 'bli')
+    return pygithub_mock
 
 
-def test_create_repos_creates_correct_repos(repo_infos, api_mock):
-    """Assert that create_repos is called with the correct arguments."""
-    create_repo_mock = api_mock.get_organization(ORG_NAME).create_repo
-    expected_calls = [
-        call(
-            info.name,
-            description=info.description,
-            private=info.private,
-            team_id=info.team_id) for info in repo_infos
-    ]
+@pytest.fixture(scope='function')
+def create_repo_mock(mocker):
+    create_repo_mock = mocker.patch(
+        'gits_pet.github_api._ApiWrapper.create_repo',
+        autospec=True,
+        side_effect=lambda _, info: info.name)
+    return create_repo_mock
 
-    github_api.create_repos(repo_infos, ORG_NAME)
+
+def test_create_repos_creates_correct_repos(repo_infos, pygithub_mock,
+                                            create_repo_mock):
+    """Assert that create_repo is called with the correct arguments."""
+    # expect (self, repo_info) call args
+    expected_calls = [call(github_api._API, info) for info in repo_infos]
+
+    github_api.create_repos(repo_infos)
 
     assert repo_infos
     create_repo_mock.assert_has_calls(expected_calls)
 
 
-def test_create_repos_skips_existing_repos(repo_infos, api_mock):
-    """Assert that create_repos is called with all repo_infos even when there are exceptions."""
-    create_repo_mock = api_mock.get_organization(ORG_NAME).create_repo
-    expected_calls = [
-        call(
-            info.name,
-            description=info.description,
-            private=info.private,
-            team_id=info.team_id) for info in repo_infos
-    ]
+def test_create_repos_skips_existing_repos(repo_infos, pygithub_mock, create_repo_mock):
+    """Assert that create_repo is called with all repo_infos even when there are exceptions."""
+    expected_calls = [call(github_api._API, info) for info in repo_infos]
 
     # cause a validation error for the middle repo
     side_effect = [create_repo_mock] * len(expected_calls)
-    side_effect[len(repo_infos) // 2] = VALIDATION_ERROR_EXCEPTION
+    side_effect[len(repo_infos) // 2] = VALIDATION_ERROR
     create_repo_mock.side_effect = side_effect
 
-    github_api.create_repos(repo_infos, ORG_NAME)
+    github_api.create_repos(repo_infos)
 
     assert repo_infos
     create_repo_mock.assert_has_calls(expected_calls)
 
 
-def test_create_repos_raises_on_unexpected_error(repo_infos, api_mock):
-    create_repo_mock = api_mock.get_organization(ORG_NAME).create_repo
-
+def test_create_repos_raises_on_unexpected_error(repo_infos, pygithub_mock,
+                                                 create_repo_mock):
     # a 500 status code is unexpected
     side_effect = [create_repo_mock] * len(repo_infos)
-    side_effect_github_exception = [SERVER_ERROR_EXCEPTION] + side_effect[1:]
+    side_effect_github_exception = [SERVER_ERROR] + side_effect[1:]
+    # a general RuntimeError is also unexpected
     side_effect_runtime_error = [RuntimeError()] + side_effect[1:]
 
     create_repo_mock.side_effect = side_effect_github_exception
     with pytest.raises(github_api.GitHubError):
-        github_api.create_repos(repo_infos, ORG_NAME)
+        github_api.create_repos(repo_infos)
 
     create_repo_mock.side_effect = side_effect_runtime_error
     with pytest.raises(github_api.GitHubError):
-        github_api.create_repos(repo_infos, ORG_NAME)
+        github_api.create_repos(repo_infos)
 
 
-def test_create_repos_raises_githuberror_on_get_org_404(repo_infos, api_mock):
-    api_mock.get_organization.side_effect = [NOT_FOUND_EXCEPTION]
-    with pytest.raises(github_api.GitHubError) as exc:
-        github_api.create_repos(repo_infos, ORG_NAME)
-    assert exc.value.status == 404
-
-
-def test_create_repos_returns_all_urls(mocker, repo_infos, api_mock):
-    """Assert that create_repos returns the urls for all repos, even if there
+def test_create_repos_returns_all_urls(mocker, repo_infos, pygithub_mock):
+    """Assert that create_repo returns the urls for all repos, even if there
     are validation errors.
     """
     # simplify urls to repo names
     expected_urls = [info.name for info in repo_infos]
 
-    def create_repo_side_effect(info, _):
+    def create_repo_side_effect(info):
         if info.name != expected_urls[len(expected_urls) // 2]:
             return info.name
-        raise github_api.GitHubError(status=422)
+        raise VALIDATION_ERROR
 
     mocker.patch(
-        'gits_pet.github_api._create_repo',
+        'gits_pet.github_api._ApiWrapper.create_repo',
         side_effect=create_repo_side_effect)
     mocker.patch(
-        'gits_pet.github_api._get_repo_url',
-        side_effect=lambda repo_name, _: repo_name)
+        'gits_pet.github_api._ApiWrapper.get_repo_url',
+        side_effect=lambda repo_name: repo_name)
 
-    actual_urls = github_api.create_repos(repo_infos, ORG_NAME)
+    actual_urls = github_api.create_repos(repo_infos)
     assert actual_urls == expected_urls
