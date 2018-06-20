@@ -11,9 +11,12 @@ program.
 
 import shutil
 from typing import Iterable
+import daiquiri
 from gits_pet import git
 from gits_pet.github_api import (setup_api, ensure_teams_and_members,
                                  create_repos, RepoInfo)
+
+LOGGER = daiquiri.getLogger(__file__)
 
 
 def repo_name(team_name: str, master_repo_name: str) -> str:
@@ -49,7 +52,7 @@ def create_student_repos(master_repo_url: str,
     if master_repo_name.endswith('.git'):
         master_repo_name = master_repo_name[:-4]
 
-    print("cloning master repo {}...".format(master_repo_name))
+    LOGGER.info("cloning master repo {}...".format(master_repo_name))
     git.clone(master_repo_url)
 
     # (team_name, member list) mappings, each student gets its own team
@@ -66,15 +69,15 @@ def create_student_repos(master_repo_url: str,
             private=True,
             team_id=team.id) for team in teams
     ]
-    print("creating repos with base name {}...".format(repo_base_name))
+    LOGGER.info("creating repos with base name {}...".format(repo_base_name))
     repo_urls = create_repos(repo_infos, org_name)
 
-    print("adding push remotes to master repo...")
+    LOGGER.info("adding push remotes to master repo...")
     git.add_push_remotes(master_repo_name, user,
                          [('origin', url) for url in repo_urls])
-    print("pushing files to student repos...")
+    LOGGER.info("pushing files to student repos...")
     git.push(master_repo_name)
 
-    print("removing master repo ...")
+    LOGGER.info("removing master repo ...")
     shutil.rmtree(master_repo_name)
-    print("done!")
+    LOGGER.info("done!")

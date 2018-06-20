@@ -10,7 +10,10 @@ this module are called.
 import contextlib
 import collections
 from typing import List, Iterable, Mapping
+import daiquiri
 import github
+
+LOGGER = daiquiri.getLogger(__file__)
 
 _API = None
 
@@ -84,11 +87,11 @@ def _ensure_teams_exist(team_names: Iterable[str],
     for team_name in required_team_names - existing_team_names:
         try:
             org.create_team(team_name, permission='push')
-            print("created team {}".format(team_name))
+            LOGGER.info("created team {}".format(team_name))
         except github.GithubException as exc:
             if exc.status != 422:
                 raise UnexpectedException(str(exc))
-            print("team {} already exists".format(team_name))
+            LOGGER.info("team {} already exists".format(team_name))
 
     with _try_api_request():
         teams = [
@@ -112,17 +115,17 @@ def ensure_teams_and_members(member_lists: Mapping[str, Iterable[str]],
         A list of Team namedtuples of the teams corresponding to the keys of
         the member_lists mapping.
     """
-    print("creating teams...")
+    LOGGER.info("creating teams...")
     teams = _ensure_teams_exist(
         [team_name for team_name in member_lists.keys()], org_name)
 
-    print("adding members to teams...")
+    LOGGER.info("adding members to teams...")
     for team in teams:
         required_members = set(member_lists[team.name])
         existing_members = set(team.get_members())
         missing_members = required_members - existing_members
 
-        print("adding members {} to team {}".format(", ".join(missing_members),
+        LOGGER.info("adding members {} to team {}".format(", ".join(missing_members),
                                                     team.name))
         for username in missing_members:
             try:
@@ -134,7 +137,7 @@ def ensure_teams_and_members(member_lists: Mapping[str, Iterable[str]],
                     raise GitHubError(
                         "Got unexpected response code {} from the GitHub API".
                         format(exc.status))
-                print("user {} does not exist, skipping".format(username))
+                LOGGER.info("user {} does not exist, skipping".format(username))
 
     with _try_api_request():
         team_wrappers = [
@@ -170,9 +173,9 @@ def create_repos(repo_infos: Iterable[RepoInfo], org_name: str):
                 private=info.private,
                 team_id=info.team_id)
             repo_urls.append(repo.html_url)
-            print("created {}/{}".format(org_name, info.name))
+            LOGGER.info("created {}/{}".format(org_name, info.name))
         except github.GithubException as exc:
-            print("{}/{} already exists".format(org_name, info.name))
+            LOGGER.info("{}/{} already exists".format(org_name, info.name))
             if exc.status != 422:
                 raise
             repo_urls.append(org.get_repo(info.name).html_url)
