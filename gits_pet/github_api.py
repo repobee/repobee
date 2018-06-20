@@ -15,8 +15,6 @@ import github
 
 LOGGER = daiquiri.getLogger(__file__)
 
-_API = None
-
 # classes used internally in this module
 _Team = github.Team.Team
 _User = github.NamedUser.NamedUser
@@ -138,129 +136,131 @@ class _ApiWrapper:
         return self._org.name
 
 
-def setup_api(base_url: str, token: str, org_name: str):
-    """Set up the GitHub API object. Must be called before any of the functions
-    in this module are called!
+class GitHubAPI:
+    """A highly specialized GitHub API class for gits_pet."""
 
-    Args:
-        base_url: The base url to a GitHub REST api (e.g.
-        https://api.github.com for GitHub or https://<HOST>/api/v3 for
-        Enterprise).
-        token: A GitHub OAUTH token.
-        org_name: Name of an organization.
-    """
-    global _API
-    _API = _ApiWrapper(base_url, token, org_name)
+    def __init__(self, base_url: str, token: str, org_name: str):
+        """Set up the GitHub API object. Must be called before any of the functions
+        in this module are called!
 
+        Args:
+            base_url: The base url to a GitHub REST api (e.g.
+            https://api.github.com for GitHub or https://<HOST>/api/v3 for
+            Enterprise).
+            token: A GitHub OAUTH token.
+            org_name: Name of an organization.
+        """
+        self._api = _ApiWrapper(base_url, token, org_name)
 
-def _ensure_teams_exist(team_names: Iterable[str]) -> List[github.Team.Team]:
-    """Ensure that teams with the given team names exist in the given
-    organization. Create any that do not.
-    
-    Args:
-        team_names: An iterable of team names.
+    def _ensure_teams_exist(
+            self, team_names: Iterable[str]) -> List[github.Team.Team]:
+        """Ensure that teams with the given team names exist in the given
+        organization. Create any that do not.
+        
+        Args:
+            team_names: An iterable of team names.
 
-    Returns:
-        A list of Team namedtuples representing the teams corresponding to the
-        provided team_names.
-    """
-    assert _API
-    existing_team_names = set(team.name for team in _API.get_teams())
+        Returns:
+            A list of Team namedtuples representing the teams corresponding to the
+            provided team_names.
+        """
+        existing_team_names = set(team.name for team in self._api.get_teams())
 
-    required_team_names = set(team_names)
-    for team_name in required_team_names - existing_team_names:
-        try:
-            _API.create_team(team_name, permission='push')
-            LOGGER.info("created team {}".format(team_name))
-        except github.GithubException as exc:
-            if exc.status != 422:
-                raise UnexpectedException(str(exc))
-            LOGGER.info("team {} already exists".format(team_name))
-
-    teams = [
-        team for team in _API.get_teams() if team.name in required_team_names
-    ]
-    return teams
-
-
-def ensure_teams_and_members(
-        member_lists: Mapping[str, Iterable[str]]) -> List[Team]:
-    """Ensure that each team exists and has its required members. If a team is
-    does not exist or is missing any of the members in its member list, the team
-    is created and/or missing members are added. Otherwise, nothing happens.
-    
-    Args:
-        member_list: A mapping of (team_name, member_list) mappings.
-
-    Returns:
-        A list of Team namedtuples of the teams corresponding to the keys of
-        the member_lists mapping.
-    """
-    LOGGER.info("creating teams...")
-    teams = _ensure_teams_exist(
-        [team_name for team_name in member_lists.keys()])
-
-    LOGGER.info("adding members to teams...")
-    for team in teams:
-        required_members = set(member_lists[team.name])
-        existing_members = set(team.get_members())
-        missing_members = required_members - existing_members
-
-        if missing_members:
-            LOGGER.info("adding members {} to team {}".format(
-                ", ".join(missing_members), team.name))
-        else:
-            LOGGER.info("{} already in team {}, skipping team...".format(
-                ", ".join(required_members), team.name))
-
-        for username in missing_members:
+        required_team_names = set(team_names)
+        for team_name in required_team_names - existing_team_names:
             try:
-                member = _API.get_user(username)
+                self._api.create_team(team_name, permission='push')
+                LOGGER.info("created team {}".format(team_name))
             except github.GithubException as exc:
-                if exc.status != 404:
-                    raise GitHubError(
-                        "Got unexpected response code from the GitHub API",
-                        status=exc.status)
-                LOGGER.warning(
-                    "user {} does not exist, skipping".format(username))
+                if exc.status != 422:
+                    raise UnexpectedException(str(exc))
+                LOGGER.info("team {} already exists".format(team_name))
 
-            with _try_api_request():
-                team.add_membership(member)
-
-    with _try_api_request():
-        team_wrappers = [
-            Team(
-                name=team.name,
-                members=[m.name for m in team.get_members()],
-                id=team.id) for team in teams
+        teams = [
+            team for team in self._api.get_teams()
+            if team.name in required_team_names
         ]
-    return team_wrappers
+        return teams
 
+    def ensure_teams_and_members(
+            self, member_lists: Mapping[str, Iterable[str]]) -> List[Team]:
+        """Ensure that each team exists and has its required members. If a team is
+        does not exist or is missing any of the members in its member list, the team
+        is created and/or missing members are added. Otherwise, nothing happens.
+        
+        Args:
+            member_list: A mapping of (team_name, member_list) mappings.
 
-def create_repos(repo_infos: Iterable[RepoInfo]):
-    """Create repositories in the given organization according to the RepoInfos.
-    Repos that already exist are skipped.
+        Returns:
+            A list of Team namedtuples of the teams corresponding to the keys of
+            the member_lists mapping.
+        """
+        LOGGER.info("creating teams...")
+        teams = self._ensure_teams_exist(
+            [team_name for team_name in member_lists.keys()])
 
-    Args:
-        repo_infos: An iterable of RepoInfo namedtuples.
+        LOGGER.info("adding members to teams...")
+        for team in teams:
+            required_members = set(member_lists[team.name])
+            existing_members = set(team.get_members())
+            missing_members = required_members - existing_members
 
-    Returns:
-        A list of urls to all repos corresponding to the RepoInfos.
-    """
-    repo_urls = []
-    for info in repo_infos:
-        try:
-            print(info)
-            repo_urls.append(_API.create_repo(info))
-            LOGGER.info("created {}/{}".format(_API.org_name, info.name))
-        except GitHubError as exc:
-            if exc.status != 422:
+            if missing_members:
+                LOGGER.info("adding members {} to team {}".format(
+                    ", ".join(missing_members), team.name))
+            else:
+                LOGGER.info("{} already in team {}, skipping team...".format(
+                    ", ".join(required_members), team.name))
+
+            for username in missing_members:
+                try:
+                    member = self._api.get_user(username)
+                except github.GithubException as exc:
+                    if exc.status != 404:
+                        raise GitHubError(
+                            "Got unexpected response code from the GitHub API",
+                            status=exc.status)
+                    LOGGER.warning(
+                        "user {} does not exist, skipping".format(username))
+
+                with _try_api_request():
+                    team.add_membership(member)
+
+        with _try_api_request():
+            team_wrappers = [
+                Team(
+                    name=team.name,
+                    members=[m.name for m in team.get_members()],
+                    id=team.id) for team in teams
+            ]
+        return team_wrappers
+
+    def create_repos(self, repo_infos: Iterable[RepoInfo]):
+        """Create repositories in the given organization according to the RepoInfos.
+        Repos that already exist are skipped.
+
+        Args:
+            repo_infos: An iterable of RepoInfo namedtuples.
+
+        Returns:
+            A list of urls to all repos corresponding to the RepoInfos.
+        """
+        repo_urls = []
+        for info in repo_infos:
+            try:
+                print(info)
+                repo_urls.append(self._api.create_repo(info))
+                LOGGER.info("created {}/{}".format(self._api.org_name,
+                                                   info.name))
+            except GitHubError as exc:
+                if exc.status != 422:
+                    raise UnexpectedException(
+                        "Got unexpected response code {} from the GitHub API".
+                        format(exc.status))
+                LOGGER.info("{}/{} already exists".format(
+                    self._api.org_name, info.name))
+                repo_urls.append(self._api.get_repo_url(info.name))
+            except Exception as exc:
                 raise UnexpectedException(
-                    "Got unexpected response code {} from the GitHub API".
-                    format(exc.status))
-            LOGGER.info("{}/{} already exists".format(_API.org_name,
-                                                      info.name))
-            repo_urls.append(_API.get_repo_url(info.name))
-        except Exception as exc:
-            raise UnexpectedException("An unexpected exception was raised.")
-    return repo_urls
+                    "An unexpected exception was raised.")
+        return repo_urls
