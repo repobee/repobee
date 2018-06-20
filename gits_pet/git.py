@@ -6,7 +6,10 @@ import os
 import sys
 import subprocess
 import collections
+import daiquiri
 from typing import Sequence, Tuple
+
+LOGGER = daiquiri.getLogger(__file__)
 
 
 class GitError(Exception):
@@ -92,6 +95,21 @@ def captured_run(*args, **kwargs):
     return proc.returncode, proc.stdout, proc.stderr
 
 
+def run_and_log_stderr_realtime(*args, **kwargs):
+    """Run a subprocess and capture the output, logging it in real time.."""
+    proc = subprocess.Popen(*args, **kwargs, stderr=subprocess.PIPE)
+
+    stderr = []
+    while True:
+        err = proc.stderr.readline().decode(encoding=sys.getdefaultencoding()).rstrip()
+        stderr.append(err)
+        if not err and proc.poll() is not None:
+            break
+
+        LOGGER.info(stderr[-1])
+    return proc.poll(), os.linesep.join(stderr)
+
+
 def clone(repo_url: str, single_branch: bool = True, branch: str = None):
     """Clone a git repository.
 
@@ -161,7 +179,8 @@ def push(repo_path: str, remote: str = 'origin', branch: str = 'master'):
         raise ValueError("branch must not be empty")
 
     push_command = ['git', 'push', remote, branch]
-    rc, _, stderr = captured_run(push_command, cwd=os.path.abspath(repo_path))
+    rc, stderr = run_and_log_stderr_realtime(
+        push_command, cwd=os.path.abspath(repo_path))
 
     if rc != 0:
         raise PushFailedError(push_command, rc, stderr)
