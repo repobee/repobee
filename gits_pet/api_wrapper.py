@@ -157,8 +157,3 @@ class ApiWrapper:
         with _try_api_request():
             team = self._org.create_team(team_name, permission=permission)
         return team
-
-    @property
-    def org_name(self):
-        """Returns: Name of the organization."""
-        return self._org.name
