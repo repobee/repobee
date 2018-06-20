@@ -30,6 +30,13 @@ class GitHubAPI:
             org_name: Name of an organization.
         """
         self._api = ApiWrapper(base_url, token, org_name)
+        self._org_name = org_name
+        self._base_url = base_url
+        self._token = token
+
+    def __repr__(self):
+        return "GitHubAPI(base_url={}, token={}, org_name={})".format(
+            self._base_url, self._token, self._org_name)
 
     def ensure_teams_and_members(
             self, member_lists: Mapping[str, Iterable[str]]) -> List[Team]:
@@ -123,7 +130,6 @@ class GitHubAPI:
                     status=exc.status)
             LOGGER.warning("user {} does not exist, skipping".format(username))
 
-
     def create_repos(self, repo_infos: Iterable[RepoInfo]):
         """Create repositories in the given organization according to the RepoInfos.
         Repos that already exist are skipped.
@@ -138,7 +144,7 @@ class GitHubAPI:
         for info in repo_infos:
             try:
                 repo_urls.append(self._api.create_repo(info))
-                LOGGER.info("created {}/{}".format(self._api.org_name,
+                LOGGER.info("created {}/{}".format(self._org_name,
                                                    info.name))
             except GitHubError as exc:
                 if exc.status != 422:
@@ -146,7 +152,7 @@ class GitHubAPI:
                         "Got unexpected response code {} from the GitHub API".
                         format(exc.status))
                 LOGGER.info("{}/{} already exists".format(
-                    self._api.org_name, info.name))
+                    self._org_name, info.name))
                 repo_urls.append(self._api.get_repo_url(info.name))
             except Exception as exc:
                 raise UnexpectedException(
