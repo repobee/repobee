@@ -125,19 +125,26 @@ def ensure_teams_and_members(member_lists: Mapping[str, Iterable[str]],
         existing_members = set(team.get_members())
         missing_members = required_members - existing_members
 
-        LOGGER.info("adding members {} to team {}".format(", ".join(missing_members),
-                                                    team.name))
+        if missing_members:
+            LOGGER.info("adding members {} to team {}".format(
+                ", ".join(missing_members), team.name))
+        else:
+            LOGGER.info("{} already in team {}, skipping team...".format(
+                ", ".join(required_members), team.name))
+
         for username in missing_members:
             try:
                 member = _API.get_user(username)
-                team.add_membership(member)
             except github.GithubException as exc:
-                # TODO log
                 if exc.status != 404:
                     raise GitHubError(
                         "Got unexpected response code {} from the GitHub API".
                         format(exc.status))
-                LOGGER.info("user {} does not exist, skipping".format(username))
+                LOGGER.warning(
+                    "user {} does not exist, skipping".format(username))
+
+            with _try_api_request():
+                team.add_membership(member)
 
     with _try_api_request():
         team_wrappers = [
@@ -160,6 +167,7 @@ def create_repos(repo_infos: Iterable[RepoInfo], org_name: str):
     Returns:
         A list of urls to all repos corresponding to the RepoInfos.
     """
+    assert _API
     with _try_api_request():
         org = _API.get_organization(org_name)
 
