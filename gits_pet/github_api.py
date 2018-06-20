@@ -53,6 +53,7 @@ class GitHubAPI:
             self._ensure_members_in_team(team, member_lists[team.name])
 
         return self._api.get_teams_in(set(member_lists.keys()))
+
     def _ensure_teams_exist(
             self, team_names: Iterable[str]) -> List[github.Team.Team]:
         """Ensure that teams with the given team names exist in the given
@@ -82,7 +83,6 @@ class GitHubAPI:
             if team.name in required_team_names
         ]
         return teams
-
 
     def _ensure_members_in_team(self, team: _Team, members: Iterable[str]):
         """Add all of the users in 'memebrs' to a team. Skips any users that
@@ -115,14 +115,14 @@ class GitHubAPI:
         """
         try:
             member = self._api.get_user(username)
-        except github.GithubException as exc:
+            self._api.add_to_team(member, team)
+        except GitHubError as exc:
             if exc.status != 404:
                 raise GitHubError(
                     "Got unexpected response code from the GitHub API",
                     status=exc.status)
             LOGGER.warning("user {} does not exist, skipping".format(username))
 
-        self._api.add_to_team(member, team)
 
     def create_repos(self, repo_infos: Iterable[RepoInfo]):
         """Create repositories in the given organization according to the RepoInfos.
