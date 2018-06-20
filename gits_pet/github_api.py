@@ -27,6 +27,10 @@ RepoInfo = collections.namedtuple(
 class GitHubError(Exception):
     """An exception raised when the API responds with an error code."""
 
+    def __init__(self, msg=None, status=None):
+        self.status = status
+        super().__init__(self, msg)
+
 
 class NotFoundError(GitHubError):
     """An exception raised when the API responds with a 404."""
@@ -43,9 +47,9 @@ def _try_api_request():
         yield
     except github.GithubException as e:
         if e.status == 404:
-            raise NotFoundError(str(e))
+            raise NotFoundError(str(e), status=404)
         else:
-            raise GitHubError(str(e))
+            raise GitHubError(str(e), status=e.status)
     except Exception as e:
         raise UnexpectedException("An unexpected exception occured. This is "
                                   "probably a bug, please report it.")
@@ -138,8 +142,8 @@ def ensure_teams_and_members(member_lists: Mapping[str, Iterable[str]],
             except github.GithubException as exc:
                 if exc.status != 404:
                     raise GitHubError(
-                        "Got unexpected response code {} from the GitHub API".
-                        format(exc.status))
+                        "Got unexpected response code from the GitHub API",
+                        status=exc.status)
                 LOGGER.warning(
                     "user {} does not exist, skipping".format(username))
 
@@ -174,17 +178,45 @@ def create_repos(repo_infos: Iterable[RepoInfo], org_name: str):
     repo_urls = []
     for info in repo_infos:
         try:
-            # TODO this will crash if the repo already exists!
-            repo = org.create_repo(
-                info.name,
-                description=info.description,
-                private=info.private,
-                team_id=info.team_id)
-            repo_urls.append(repo.html_url)
+            repo_urls.append(_create_repo(info, org))
             LOGGER.info("created {}/{}".format(org_name, info.name))
-        except github.GithubException as exc:
-            LOGGER.info("{}/{} already exists".format(org_name, info.name))
+        except GitHubError as exc:
             if exc.status != 422:
-                raise
-            repo_urls.append(org.get_repo(info.name).html_url)
+                raise UnexpectedException(
+                    "Got unexpected response code {} from the GitHub API".
+                    format(exc.status))
+            LOGGER.info("{}/{} already exists".format(org_name, info.name))
+            repo_urls.append(_get_repo_url(info.name, org))
+        except Exception as exc:
+            raise UnexpectedException("An unexpected exception was raised.")
     return repo_urls
+
+
+def _create_repo(repo_info: RepoInfo,
+                 org: github.Organization.Organization) -> str:
+    """Create a single repo and return its url.
+
+    Args:
+        repo_info: A RepoInfo namedtuple.
+        org: A github.Organization.Organization.
+    """
+    with _try_api_request():
+        repo = org.create_repo(
+            repo_info.name,
+            description=repo_info.description,
+            private=repo_info.private,
+            team_id=repo_info.team_id)
+    return repo.html_url
+
+
+def _get_repo_url(repo_name: str,
+                  org: github.Organization.Organization) -> str:
+    """
+    Args:
+        repo_name: Name of a repository.
+        org: An Organization object.
+
+    Returns:
+        The html url to the repo.
+    """
+    return org.get_repo(repo_name).html_url
