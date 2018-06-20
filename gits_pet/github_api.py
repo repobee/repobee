@@ -84,9 +84,11 @@ def _ensure_teams_exist(team_names: Iterable[str],
     for team_name in required_team_names - existing_team_names:
         try:
             org.create_team(team_name, permission='push')
+            print("created team {}".format(team_name))
         except github.GithubException as exc:
             if exc.status != 422:
-                raise
+                raise UnexpectedException(str(exc))
+            print("team {} already exists".format(team_name))
 
     with _try_api_request():
         teams = [
@@ -110,14 +112,19 @@ def ensure_teams_and_members(member_lists: Mapping[str, Iterable[str]],
         A list of Team namedtuples of the teams corresponding to the keys of
         the member_lists mapping.
     """
+    print("creating teams...")
     teams = _ensure_teams_exist(
         [team_name for team_name in member_lists.keys()], org_name)
 
+    print("adding members to teams...")
     for team in teams:
         required_members = set(member_lists[team.name])
         existing_members = set(team.get_members())
+        missing_members = required_members - existing_members
 
-        for username in required_members - existing_members:
+        print("adding members {} to team {}".format(", ".join(missing_members),
+                                                    team.name))
+        for username in missing_members:
             try:
                 member = _API.get_user(username)
                 team.add_membership(member)
@@ -127,6 +134,7 @@ def ensure_teams_and_members(member_lists: Mapping[str, Iterable[str]],
                     raise GitHubError(
                         "Got unexpected response code {} from the GitHub API".
                         format(exc.status))
+                print("user {} does not exist, skipping".format(username))
 
     with _try_api_request():
         team_wrappers = [
