@@ -21,13 +21,8 @@ class GitError(Exception):
         msg = ("git exited with a non-zero exit status.{}"
                "issued command: {}{}"
                "return code: {}{}"
-               "stderr: {}").format(
-                   os.linesep,
-                   " ".join(command),
-                   os.linesep,
-                   returncode,
-                   os.linesep,
-                   stderr.decode(encoding=sys.getdefaultencoding()))
+               "stderr: {}").format(os.linesep, " ".join(command), os.linesep,
+                                    returncode, os.linesep, stderr)
         super().__init__(msg)
 
 
@@ -92,7 +87,7 @@ def captured_run(*args, **kwargs):
     """Run a subprocess and capture the output."""
     proc = subprocess.run(
         *args, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    return proc.returncode, proc.stdout, proc.stderr
+    return proc.returncode, proc.stdout.decode(sys.getdefaultencoding()), proc.stderr.decode(sys.getdefaultencoding())
 
 
 def run_and_log_stderr_realtime(*args, **kwargs):
@@ -101,7 +96,8 @@ def run_and_log_stderr_realtime(*args, **kwargs):
 
     stderr = []
     while True:
-        err = proc.stderr.readline().decode(encoding=sys.getdefaultencoding()).rstrip()
+        err = proc.stderr.readline().decode(
+            encoding=sys.getdefaultencoding()).rstrip()
         stderr.append(err)
         if not err and proc.poll() is not None:
             break

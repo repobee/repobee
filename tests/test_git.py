@@ -56,19 +56,23 @@ def test_clone_raises_on_empty_branch(env_setup):
 
 
 def test_clone_raises_on_non_zero_exit_from_git_clone(env_setup, mocker):
-    stderr = b'This is pretty bad!'
+    stderr = 'This is pretty bad!'
     # already patched in env_setup fixture
-    git.captured_run.return_value = (1, b'', stderr)
+    git.captured_run.return_value = (1, '', stderr)
 
     with pytest.raises(git.CloneFailedError) as exc:
         git.clone("{}".format(URL_TEMPLATE.format('')))
-    assert stderr.decode(encoding=sys.getdefaultencoding()) in str(exc.value)
+    assert stderr in str(exc.value)
 
 
 @pytest.fixture(scope='function')
 def env_setup(mocker):
     mocker.patch(
-        'gits_pet.git.captured_run', autospec=True, return_value=(0, b'', b''))
+        'gits_pet.git.captured_run', autospec=True, return_value=(0, '', ''))
+    mocker.patch(
+        'gits_pet.git.run_and_log_stderr_realtime',
+        autospec=True,
+        return_value=(0, ''))
     # TOKEN was mocked as the environment token when gits_pet.git was imported
     expected_url = URL_TEMPLATE.format(TOKEN + '@')
     return Env(expected_url=expected_url)
@@ -139,7 +143,7 @@ def test_push_issues_correct_command_with_defaults(env_setup):
 
     git.push(repo_path)
 
-    git.captured_run.assert_called_once_with(
+    git.run_and_log_stderr_realtime.assert_called_once_with(
         expected_command, cwd=os.path.abspath(repo_path))
 
 
@@ -151,18 +155,18 @@ def test_push_issues_correct_command(env_setup):
 
     git.push(repo_path, remote=remote, branch=branch)
 
-    git.captured_run.assert_called_once_with(
+    git.run_and_log_stderr_realtime.assert_called_once_with(
         expected_command, cwd=os.path.abspath(repo_path))
 
 
 def test_push_raises_on_non_zero_exit_from_git_clone(env_setup, mocker):
-    stderr = b'This is pretty bad indeed!'
+    stderr = 'This is pretty bad indeed!'
     # already patched in env_setup fixture
-    git.captured_run.return_value = (1, b'', stderr)
+    git.run_and_log_stderr_realtime.return_value = (1, stderr)
 
     with pytest.raises(git.PushFailedError) as exc:
         git.push('some_repo')
-    assert stderr.decode(encoding=sys.getdefaultencoding()) in str(exc.value)
+    assert stderr in str(exc.value)
 
 
 def test_add_push_remotes_raises_on_non_str_repo_path(env_setup):
@@ -238,8 +242,8 @@ def test_add_push_remotes(env_setup):
 
 
 def test_add_push_remotes_raises_on_non_zero_exit_from_git(env_setup):
-    stderr = b'bad for push remotes'
-    git.captured_run.return_value = (23, b'', stderr)
+    stderr = 'bad for push remotes'
+    git.captured_run.return_value = (23, '', stderr)
     repo = os.sep.join(['some', 'repo', 'path'])
     remotes = (('origin', 'https://slarse.se/repo'),
                ('origin', 'https://github.com/slarse/repo'),
@@ -247,4 +251,4 @@ def test_add_push_remotes_raises_on_non_zero_exit_from_git(env_setup):
 
     with pytest.raises(git.GitError) as exc:
         git.add_push_remotes(repo, 'slarse', remotes)
-    assert stderr.decode(encoding=sys.getdefaultencoding()) in str(exc.value)
+    assert stderr in str(exc.value)
