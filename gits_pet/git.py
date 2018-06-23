@@ -110,6 +110,27 @@ def run_and_log_stderr_realtime(*args, **kwargs):
     return proc.poll(), os.linesep.join(stderr)
 
 
+def _validate_types(**kwargs):
+    r"""Validate argument types. Raise TypeError if there is a mismatch.
+    
+    Args:
+        **kwargs: Mapping on the form {param_name: (argument, expected_type)},
+        where param_name is the name of the parameter, argument is the passed
+        in value and expected type is either a single type, or a tuple of
+        types.
+    """
+    for param_name, (argument, expected_types) in kwargs.items():
+        if not isinstance(argument, expected_types):
+            if isinstance(expected_types, tuple):
+                exp_type_str = " or ".join(
+                    [t.__name__ for t in expected_types])
+            else:
+                exp_type_str = expected_types.__name__
+            raise TypeError(
+                "{} is of type {.__class__.__name__}, expected {}".format(
+                    param_name, argument, exp_type_str))
+
+
 def clone(repo_url: str, single_branch: bool = True, branch: str = None):
     """Clone a git repository.
 
@@ -118,18 +139,10 @@ def clone(repo_url: str, single_branch: bool = True, branch: str = None):
         single_branch: Whether or not to clone a single branch.
         branch: The branch to clone.
     """
-    if not isinstance(repo_url, str):
-        raise TypeError(
-            'repo_url is of type {.__class__.__name__}, expected str'.format(
-                repo_url))
-    if not isinstance(single_branch, bool):
-        raise TypeError(
-            'single_branch is of type {.__class__.__name__}, expected bool'.
-            format(single_branch))
-    if not isinstance(branch, (type(None), str)):
-        raise TypeError(
-            'branch is of type {.__class__.__name__}, expected NoneType or str'
-        )
+    _validate_types(
+        repo_url=(repo_url, str),
+        single_branch=(single_branch, bool),
+        branch=(branch, (str, type(None))))
 
     if isinstance(branch, str) and not branch:
         raise ValueError("branch must not be empty")
@@ -150,10 +163,10 @@ def clone(repo_url: str, single_branch: bool = True, branch: str = None):
         raise CloneFailedError(clone_command, rc, stderr)
 
 
-async def push_async(local_repo: str,
-                     user: str,
-                     repo_url: str,
-                     branch: str = 'master'):
+async def _push_async(local_repo: str,
+                      user: str,
+                      repo_url: str,
+                      branch: str = 'master'):
     """Asynchronous call to git push, pushing directly to the repo_url and branch.
 
     Args:
@@ -162,21 +175,7 @@ async def push_async(local_repo: str,
         repo_url: HTTPS url to the remote repo (without username/token!).
         branch: The branch to push to.
     """
-    if not isinstance(local_repo, str):
-        raise TypeError(
-            'local_repo is of type {.__class__.__name__}, expected str'.format(
-                local_repo))
-    if not isinstance(user, str):
-        raise TypeError(
-            'user is of type {.__class__.__name__}, expected str'.format(user))
-    if not isinstance(branch, str):
-        raise TypeError(
-            'branch is of type {.__class__.__name__}, expected str'.format(
-                branch))
-    if not isinstance(repo_url, str):
-        raise TypeError(
-            'repo_url is of type {.__class__.__name__}, expected str'.format(
-                repo_url))
+    _validate_types(local_repo=(local_repo, str), user=(user, str), repo_url=(repo_url, str), branch=(branch, str))
 
     if not local_repo:
         raise ValueError("local_repo must not be empty")
@@ -193,15 +192,16 @@ async def push_async(local_repo: str,
         'git', 'push',
         _insert_user_and_token(repo_url, user, OAUTH_TOKEN), branch
     ]
-    proc = await asyncio.create_subprocess_exec(*command, cwd=local_repo)
-    await proc.communicate()
+    proc = await asyncio.create_subprocess_exec(
+        *command,
+        cwd=os.path.abspath(local_repo),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE)
+    _, stderr = await proc.communicate()
     if proc.returncode != 0:
-        LOGGER.error("Failed to push to {} {}".format(repo_url, branch))
+        raise PushFailedError(command, proc.returncode, stderr)
     else:
         LOGGER.info("Pushed files to {} {}".format(repo_url, branch))
-
-
-Push = collections.namedtuple('Push', ('local_path', 'remote_url', 'branch'))
 
 
 def push(local_repo: str, user: str, repo_url: str, branch: str = 'master'):
@@ -214,33 +214,12 @@ def push(local_repo: str, user: str, repo_url: str, branch: str = 'master'):
         repo_url: HTTPS url to the remote repo (without username/token!).
         branch: The branch to push to.
     """
-    if not isinstance(local_repo, str):
-        raise TypeError(
-            'local_repo is of type {.__class__.__name__}, expected str'.format(
-                local_repo))
-    if not isinstance(user, str):
-        raise TypeError(
-            'user is of type {.__class__.__name__}, expected str'.format(user))
-    if not isinstance(branch, str):
-        raise TypeError(
-            'branch is of type {.__class__.__name__}, expected str'.format(
-                branch))
-    if not isinstance(repo_url, str):
-        raise TypeError(
-            'repo_url is of type {.__class__.__name__}, expected str'.format(
-                repo_url))
-
-    if not local_repo:
-        raise ValueError("local_repo must not be empty")
-    if not user:
-        raise ValueError("user must not be empty")
-    if not repo_url:
-        raise ValueError("repo_url must not be empty")
-    if not branch:
-        raise ValueError("branch must not be empty")
-
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(push_async(local_repo, user, repo_url, branch))
+    task = loop.create_task(_push_async(local_repo, user, repo_url, branch))
+    loop.run_until_complete(task)
+    if task.exception():
+        pass
+        #raise task.exception()
 
 
 def push_many(push_tuples: Iterable[Push], user: str):
@@ -253,7 +232,7 @@ def push_many(push_tuples: Iterable[Push], user: str):
     loop = asyncio.get_event_loop()
     tasks = [
         loop.create_task(
-            push_async(pt.local_path, user, pt.remote_url, pt.branch))
+            _push_async(pt.local_path, user, pt.remote_url, pt.branch))
         for pt in push_tuples
     ]
     loop.run_until_complete(asyncio.wait(tasks))
