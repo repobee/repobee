@@ -175,7 +175,11 @@ async def _push_async(local_repo: str,
         repo_url: HTTPS url to the remote repo (without username/token!).
         branch: The branch to push to.
     """
-    _validate_types(local_repo=(local_repo, str), user=(user, str), repo_url=(repo_url, str), branch=(branch, str))
+    _validate_types(
+        local_repo=(local_repo, str),
+        user=(user, str),
+        repo_url=(repo_url, str),
+        branch=(branch, str))
 
     if not local_repo:
         raise ValueError("local_repo must not be empty")
@@ -200,6 +204,8 @@ async def _push_async(local_repo: str,
     _, stderr = await proc.communicate()
     if proc.returncode != 0:
         raise PushFailedError(command, proc.returncode, stderr)
+    elif b"Everything up-to-date" in stderr:
+        LOGGER.info("{} is up-to-date".format(repo_url))
     else:
         LOGGER.info("Pushed files to {} {}".format(repo_url, branch))
 
