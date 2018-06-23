@@ -40,7 +40,7 @@ def env_setup(mocker):
 def aio_subproc(mocker):
     class Process:
         async def communicate(self):
-            return "this is stdout", "this is stderr"
+            return b"this is stdout", b"this is stderr"
 
         returncode = 0
 
@@ -94,13 +94,13 @@ def test_clone_raises_on_empty_branch(env_setup):
 
 
 def test_clone_raises_on_non_zero_exit_from_git_clone(env_setup, mocker):
-    stderr = 'This is pretty bad!'
+    stderr = b'This is pretty bad!'
     # already patched in env_setup fixture
     git.captured_run.return_value = (1, '', stderr)
 
     with pytest.raises(git.CloneFailedError) as exc:
         git.clone("{}".format(URL_TEMPLATE.format('')))
-    assert stderr in str(exc.value)
+    assert "Failed to clone" in str(exc.value)
 
 
 def test_clone_issues_correct_command_with_defaults(env_setup):

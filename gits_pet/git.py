@@ -20,12 +20,17 @@ class GitError(Exception):
     exit status.
     """
 
-    def __init__(self, command: Sequence[str], returncode: int, stderr: bytes):
-        msg = ("git exited with a non-zero exit status.{}"
-               "issued command: {}{}"
-               "return code: {}{}"
-               "stderr: {}").format(os.linesep, " ".join(command), os.linesep,
-                                    returncode, os.linesep, stderr)
+    def __init__(self, msg: str, returncode: int, stderr: bytes):
+        msg_ = ("{}{}"
+                "return code: {}{}"
+                "stderr: {}").format(
+                    msg,
+                    os.linesep,
+                    returncode,
+                    os.linesep,
+                    stderr.decode(encoding=sys.getdefaultencoding()))
+        self.returncode = returncode
+        self.stderr = stderr
         super().__init__(msg)
 
 
@@ -90,8 +95,7 @@ def captured_run(*args, **kwargs):
     """Run a subprocess and capture the output."""
     proc = subprocess.run(
         *args, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    return proc.returncode, proc.stdout.decode(
-        sys.getdefaultencoding()), proc.stderr.decode(sys.getdefaultencoding())
+    return proc.returncode, proc.stdout, proc.stderr
 
 
 def run_and_log_stderr_realtime(*args, **kwargs):
@@ -160,7 +164,8 @@ def clone(repo_url: str, single_branch: bool = True, branch: str = None):
     rc, _, stderr = captured_run(clone_command)
 
     if rc != 0:
-        raise CloneFailedError(clone_command, rc, stderr)
+        raise CloneFailedError("Failed to clone {}".format(repo_url), rc,
+                               stderr)
 
 
 async def _push_async(local_repo: str,
@@ -203,7 +208,8 @@ async def _push_async(local_repo: str,
         stderr=subprocess.PIPE)
     _, stderr = await proc.communicate()
     if proc.returncode != 0:
-        raise PushFailedError(command, proc.returncode, stderr)
+        raise PushFailedError("Failed to push to {}".format(repo_url),
+                              proc.returncode, stderr)
     elif b"Everything up-to-date" in stderr:
         LOGGER.info("{} is up-to-date".format(repo_url))
     else:
@@ -228,6 +234,7 @@ def push(local_repo: str, user: str, repo_url: str, branch: str = 'master'):
         #raise task.exception()
 
 
+# TODO test this function!
 def push_many(push_tuples: Iterable[Push], user: str):
     """Push to all repos defined in push_tuples.
 
@@ -242,4 +249,7 @@ def push_many(push_tuples: Iterable[Push], user: str):
         for pt in push_tuples
     ]
     loop.run_until_complete(asyncio.wait(tasks))
+    for task in tasks:
+        if task.exception():
+            LOGGER.error(str(task.exception()))
     LOGGER.info("All done!")
