@@ -13,7 +13,7 @@ import shutil
 from typing import Iterable
 import daiquiri
 from gits_pet import git
-from github_api import GitHubAPI, RepoInfo
+from gits_pet.github_api import GitHubAPI, RepoInfo
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -71,11 +71,11 @@ def create_student_repos(master_repo_url: str,
     LOGGER.info("creating repos with base name {}...".format(repo_base_name))
     repo_urls = api.create_repos(repo_infos)
 
-    LOGGER.info("adding push remotes to master repo...")
-    git.add_push_remotes(master_repo_name, user,
-                         [('origin', url) for url in repo_urls])
-    LOGGER.info("pushing files to student repos...")
-    git.push(master_repo_name)
+    git.push_async(
+        (git.Push(
+            local_path=master_repo_name, remote_url=repo_url, branch='master')
+         for repo_url in repo_urls),
+        user=user)
 
     LOGGER.info("removing master repo ...")
     shutil.rmtree(master_repo_name)

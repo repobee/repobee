@@ -7,9 +7,12 @@ import sys
 import subprocess
 import collections
 import daiquiri
-from typing import Sequence, Tuple
+import asyncio
+from typing import Sequence, Tuple, Iterable
 
 LOGGER = daiquiri.getLogger(__file__)
+
+Push = collections.namedtuple('Push', ('local_path', 'remote_url', 'branch'))
 
 
 class GitError(Exception):
@@ -87,7 +90,8 @@ def captured_run(*args, **kwargs):
     """Run a subprocess and capture the output."""
     proc = subprocess.run(
         *args, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    return proc.returncode, proc.stdout.decode(sys.getdefaultencoding()), proc.stderr.decode(sys.getdefaultencoding())
+    return proc.returncode, proc.stdout.decode(
+        sys.getdefaultencoding()), proc.stderr.decode(sys.getdefaultencoding())
 
 
 def run_and_log_stderr_realtime(*args, **kwargs):
@@ -180,6 +184,78 @@ def push(repo_path: str, remote: str = 'origin', branch: str = 'master'):
 
     if rc != 0:
         raise PushFailedError(push_command, rc, stderr)
+
+
+async def _push_async(repo_path: str,
+                      user: str,
+                      repo_url: str,
+                      branch: str = 'master'):
+    """Asynchronous call to git push, pushing directly to the repo_url and branch.
+
+
+    Args:
+        repo_path: Path to the repo ot push.
+        user: The username to put on the push.
+        repo_url: HTTPS url to the remote repo (without username/token!).
+        branch: The branch to push to.
+    """
+    if not isinstance(repo_path, str):
+        raise TypeError(
+            'repo_path is of type {.__class__.__name__}, expected str'.format(
+                repo_path))
+    if not isinstance(user, str):
+        raise TypeError(
+            'user is of type {.__class__.__name__}, expected str'.format(user))
+    if not isinstance(branch, str):
+        raise TypeError(
+            'branch is of type {.__class__.__name__}, expected str'.format(
+                branch))
+    if not isinstance(repo_url, str):
+        raise TypeError(
+            'repo_url is of type {.__class__.__name__}, expected str'.format(
+                repo_url))
+
+    if not repo_path:
+        raise ValueError("repo_path must not be empty")
+    if not user:
+        raise ValueError("user must not be empty")
+    if not repo_url:
+        raise ValueError("repo_url must not be empty")
+    if not branch:
+        raise ValueError("branch must not be empty")
+
+    loop = asyncio.get_event_loop()
+
+    command = [
+        'git', 'push',
+        _insert_user_and_token(repo_url, user, OAUTH_TOKEN), branch
+    ]
+    proc = await asyncio.create_subprocess_exec(*command, cwd=repo_path)
+    await proc.communicate()
+    if proc.returncode != 0:
+        LOGGER.error("Failed to push to {} {}".format(repo_url, branch))
+    else:
+        LOGGER.info("Pushed files to {} {}".format(repo_url, branch))
+
+
+Push = collections.namedtuple('Push', ('local_path', 'remote_url', 'branch'))
+
+
+def push_async(push_tuples: Iterable[Push], user: str):
+    """Push to all repos defined in push_tuples.
+
+    Args:
+        push_tuples: Push namedtuples defining local and remote repos.
+        user: The username to put in the push.
+    """
+    loop = asyncio.get_event_loop()
+    tasks = [
+        loop.create_task(
+            _push_async(pt.local_path, user, pt.remote_url, pt.branch))
+        for pt in push_tuples
+    ]
+    loop.run_until_complete(asyncio.wait(tasks))
+    LOGGER.info("All done!")
 
 
 def add_push_remotes(repo_path: str, user: str,
