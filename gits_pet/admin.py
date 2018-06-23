@@ -71,7 +71,7 @@ def create_student_repos(master_repo_url: str,
     LOGGER.info("creating repos with base name {}...".format(repo_base_name))
     repo_urls = api.create_repos(repo_infos)
 
-    git.push_async(
+    git.push_many(
         (git.Push(
             local_path=master_repo_name, remote_url=repo_url, branch='master')
          for repo_url in repo_urls),
