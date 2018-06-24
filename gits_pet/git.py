@@ -114,7 +114,20 @@ def run_and_log_stderr_realtime(*args, **kwargs):
     return proc.poll(), os.linesep.join(stderr)
 
 
-def _validate_types(**kwargs):
+def _validate_non_empty(**kwargs) -> None:
+    r"""Validate that arguments are not empty. Raise ValueError if any argument
+    is empty.
+
+    Args:
+        **kwargs: Mapping on the form {param_name: argument} where param_name
+        is the name of the parameter and argument is the value passed in.
+    """
+    for param_name, argument in kwargs.items():
+        if not argument:
+            raise ValueError("{} must not be empty".format(param_name))
+
+
+def _validate_types(**kwargs) -> None:
     r"""Validate argument types. Raise TypeError if there is a mismatch.
     
     Args:
@@ -186,14 +199,8 @@ async def _push_async(local_repo: str,
         repo_url=(repo_url, str),
         branch=(branch, str))
 
-    if not local_repo:
-        raise ValueError("local_repo must not be empty")
-    if not user:
-        raise ValueError("user must not be empty")
-    if not repo_url:
-        raise ValueError("repo_url must not be empty")
-    if not branch:
-        raise ValueError("branch must not be empty")
+    _validate_non_empty(
+        local_repo=local_repo, user=user, repo_url=repo_url, branch=branch)
 
     loop = asyncio.get_event_loop()
 
@@ -229,9 +236,6 @@ def push(local_repo: str, user: str, repo_url: str, branch: str = 'master'):
     loop = asyncio.get_event_loop()
     task = loop.create_task(_push_async(local_repo, user, repo_url, branch))
     loop.run_until_complete(task)
-    if task.exception():
-        pass
-        #raise task.exception()
 
 
 # TODO test this function!
@@ -242,14 +246,15 @@ def push_many(push_tuples: Iterable[Push], user: str):
         push_tuples: Push namedtuples defining local and remote repos.
         user: The username to put in the push.
     """
+    _validate_types(user=(user, str))
+    _validate_non_empty(push_tuples=push_tuples, user=user)
+
     loop = asyncio.get_event_loop()
     tasks = [
-        loop.create_task(
-            _push_async(pt.local_path, user, pt.remote_url, pt.branch))
-        for pt in push_tuples
+        loop.create_task(_push_async(local_path, user, remote_url, branch))
+        for local_path, remote_url, branch in push_tuples
     ]
     loop.run_until_complete(asyncio.wait(tasks))
     for task in tasks:
         if task.exception():
             LOGGER.error(str(task.exception()))
-    LOGGER.info("All done!")

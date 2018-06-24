@@ -2,6 +2,7 @@ import sys
 import os
 import pytest
 import subprocess
+from asyncio import coroutine
 from unittest.mock import patch, PropertyMock, MagicMock
 from collections import namedtuple
 
@@ -30,7 +31,6 @@ def env_setup(mocker):
     expected_url = URL_TEMPLATE.format(TOKEN + '@')
     expected_url_with_username = URL_TEMPLATE.format("{}:{}@".format(
         USER, TOKEN))
-    print(expected_url_with_username)
     return Env(
         expected_url=expected_url,
         expected_url_with_username=expected_url_with_username)
@@ -50,6 +50,22 @@ def aio_subproc(mocker):
     create_subprocess = mocker.patch(
         'asyncio.create_subprocess_exec', return_value=mock_gen())
     return AioSubproc(create_subprocess, Process)
+
+
+@pytest.fixture(scope='function')
+def push_tuples():
+    paths = (os.path.join(*dirs)
+             for dirs in [('some', 'awesome', 'path'), ('other',
+                                                        'path'), ('final', )])
+    urls = ('https://slarse.se/best-repo.git',
+            'https://completely-imaginary-repo-url.com/repo.git',
+            'https://somerepourl.git')
+    branches = ('master', 'other', 'development-branch')
+    tups = [
+        git.Push(local_path=path, remote_url=url, branch=branch)
+        for path, url, branch in zip(paths, urls, branches)
+    ]
+    return tups
 
 
 def test_insert_token():
@@ -173,6 +189,16 @@ def test_push_raises_on_empty_branch(env_setup):
     assert 'branch must not be empty' in str(exc)
 
 
+def test_push_raises_on_async_push_exception(env_setup, mocker):
+    async def raise_(*args, **kwargs):
+        raise git.PushFailedError("Push failed", 128, b"some error")
+
+    mocker.patch('gits_pet.git._push_async', side_effect=raise_)
+
+    with pytest.raises(git.PushFailedError) as exc_info:
+        git.push('some_repo', USER, 'some_url')
+
+
 def test_push_issues_correct_command_with_defaults(env_setup, aio_subproc):
     branch = 'master'
     user = USER
@@ -215,3 +241,58 @@ def test_push_raises_on_non_zero_exit_from_git_push(env_setup, aio_subproc):
     with pytest.raises(git.PushFailedError) as exc:
         git.push(
             'some_repo', user='some_user', repo_url='https://some_url.org')
+
+
+def test_push_many_raises_on_non_str_user(env_setup, push_tuples):
+    with pytest.raises(TypeError) as exc_info:
+        git.push_many(push_tuples, 32)
+    assert 'user' in str(exc_info)
+
+
+def test_push_many_raises_on_empty_push_tuples(env_setup):
+    with pytest.raises(ValueError) as exc_info:
+        git.push_many([], USER)
+    assert 'push_tuples' in str(exc_info)
+
+
+def test_push_many_raises_on_empty_user(env_setup, push_tuples):
+    with pytest.raises(ValueError) as exc_info:
+        git.push_many(push_tuples, '')
+    assert 'user' in str(exc_info)
+
+
+def test_push_many(env_setup, push_tuples, aio_subproc):
+    """Test that push many works as expected when no exceptions are thrown by
+    tasks.
+    """
+    expected_subproc_commands = [(local_repo, "git push {} {}".format(
+        git._insert_user_and_token(url, USER), branch).split())
+                                 for local_repo, url, branch in push_tuples]
+
+    git.push_many(push_tuples, USER)
+
+    for local_repo, command in expected_subproc_commands:
+        aio_subproc.create_subprocess.assert_any_call(
+            *command,
+            cwd=os.path.abspath(local_repo),
+            # TODO again, the piping here is not obvious
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+
+
+def test_push_many_tries_all_calls_despite_exceptions(env_setup, push_tuples,
+                                                      mocker):
+    """Test that push_many tries to push all push tuple values even if there
+    are exceptions.
+    """
+
+    async def raise_(*args, **kwargs):
+        raise git.PushFailedError("Push failed", 128, b"some error")
+
+    mocker.patch('gits_pet.git._push_async', side_effect=raise_)
+
+    git.push_many(push_tuples, USER)
+
+    for pt in push_tuples:
+        git._push_async.assert_any_call(pt.local_path, USER, pt.remote_url,
+                                        pt.branch)
