@@ -35,7 +35,7 @@ class GitError(Exception):
                     stderr.decode(encoding=sys.getdefaultencoding()))
         self.returncode = returncode
         self.stderr = stderr
-        super().__init__(msg)
+        super().__init__(msg_)
 
 
 class CloneFailedError(GitError):
