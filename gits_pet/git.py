@@ -6,26 +6,36 @@ import os
 import sys
 import subprocess
 import collections
-from typing import Sequence, Tuple
+import daiquiri
+import asyncio
+from typing import Sequence, Tuple, Iterable
+
+LOGGER = daiquiri.getLogger(__file__)
+
+Push = collections.namedtuple('Push', ('local_path', 'remote_url', 'branch'))
+
+OAUTH_TOKEN = os.getenv('GITS_PET_OAUTH')
+if not OAUTH_TOKEN:
+    raise OSError('The oauth token is empty!')
 
 
-class GitError(RuntimeError):
+class GitError(Exception):
     """A generic error to raise when a git command exits with a non-zero
     exit status.
     """
 
-    def __init__(self, command: Sequence[str], returncode: int, stderr: bytes):
-        msg = ("git exited with a non-zero exit status.{}"
-               "issued command: {}{}"
-               "return code: {}{}"
-               "stderr: {}").format(
-                   os.linesep,
-                   " ".join(command),
-                   os.linesep,
-                   returncode,
-                   os.linesep,
-                   stderr.decode(encoding=sys.getdefaultencoding()))
-        super().__init__(msg)
+    def __init__(self, msg: str, returncode: int, stderr: bytes):
+        msg_ = ("{}{}"
+                "return code: {}{}"
+                "stderr: {}").format(
+                    msg,
+                    os.linesep,
+                    returncode,
+                    os.linesep,
+                    stderr.decode(encoding=sys.getdefaultencoding()))
+        self.returncode = returncode
+        self.stderr = stderr
+        super().__init__(msg_)
 
 
 class CloneFailedError(GitError):
@@ -34,11 +44,6 @@ class CloneFailedError(GitError):
 
 class PushFailedError(GitError):
     """An error to raise when pushing to a remote fails."""
-
-
-OAUTH_TOKEN = os.getenv('GITS_PET_OAUTH')
-if not OAUTH_TOKEN:
-    raise OSError('The oauth token is empty!')
 
 
 def _insert_token(https_url: str, token: str = OAUTH_TOKEN) -> str:
@@ -78,18 +83,45 @@ def _insert_user_and_token(https_url: str, user: str,
     return _insert_token(https_url, "{}:{}".format(user, token))
 
 
-def quiet_run(*args, **kwargs):
-    """Run a subprocess and pipe output to /dev/null."""
-    with open(os.devnull, 'w') as devnull:
-        return subprocess.run(
-            *args, **kwargs, stdout=devnull, stderr=subprocess.STDOUT)
-
-
 def captured_run(*args, **kwargs):
     """Run a subprocess and capture the output."""
     proc = subprocess.run(
         *args, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return proc.returncode, proc.stdout, proc.stderr
+
+
+def _validate_non_empty(**kwargs) -> None:
+    r"""Validate that arguments are not empty. Raise ValueError if any argument
+    is empty.
+
+    Args:
+        **kwargs: Mapping on the form {param_name: argument} where param_name
+        is the name of the parameter and argument is the value passed in.
+    """
+    for param_name, argument in kwargs.items():
+        if not argument:
+            raise ValueError("{} must not be empty".format(param_name))
+
+
+def _validate_types(**kwargs) -> None:
+    r"""Validate argument types. Raise TypeError if there is a mismatch.
+    
+    Args:
+        **kwargs: Mapping on the form {param_name: (argument, expected_type)},
+        where param_name is the name of the parameter, argument is the passed
+        in value and expected type is either a single type, or a tuple of
+        types.
+    """
+    for param_name, (argument, expected_types) in kwargs.items():
+        if not isinstance(argument, expected_types):
+            if isinstance(expected_types, tuple):
+                exp_type_str = " or ".join(
+                    [t.__name__ for t in expected_types])
+            else:
+                exp_type_str = expected_types.__name__
+            raise TypeError(
+                "{} is of type {.__class__.__name__}, expected {}".format(
+                    param_name, argument, exp_type_str))
 
 
 def clone(repo_url: str, single_branch: bool = True, branch: str = None):
@@ -100,18 +132,10 @@ def clone(repo_url: str, single_branch: bool = True, branch: str = None):
         single_branch: Whether or not to clone a single branch.
         branch: The branch to clone.
     """
-    if not isinstance(repo_url, str):
-        raise TypeError(
-            'repo_url is of type {.__class__.__name__}, expected str'.format(
-                repo_url))
-    if not isinstance(single_branch, bool):
-        raise TypeError(
-            'single_branch is of type {.__class__.__name__}, expected bool'.
-            format(single_branch))
-    if not isinstance(branch, (type(None), str)):
-        raise TypeError(
-            'branch is of type {.__class__.__name__}, expected NoneType or str'
-        )
+    _validate_types(
+        repo_url=(repo_url, str),
+        single_branch=(single_branch, bool),
+        branch=(branch, (str, type(None))))
 
     if isinstance(branch, str) and not branch:
         raise ValueError("branch must not be empty")
@@ -129,88 +153,84 @@ def clone(repo_url: str, single_branch: bool = True, branch: str = None):
     rc, _, stderr = captured_run(clone_command)
 
     if rc != 0:
-        raise CloneFailedError(clone_command, rc, stderr)
+        raise CloneFailedError("Failed to clone {}".format(repo_url), rc,
+                               stderr)
 
 
-def push(repo_path: str, remote: str = 'origin', branch: str = 'master'):
-    """Push a repository. 
-
-    Args:
-        repo_path: Path to the root of a git repository.
-        remote: Name of the remote to push to.
-        branch: Name of the branch to push to.
-    """
-    if not isinstance(repo_path, str):
-        raise TypeError(
-            'repo_path is of type {.__class__.__name__}, expected str'.format(
-                repo_path))
-    if not isinstance(remote, str):
-        raise TypeError(
-            'remote is of type {.__class__.__name__}, expected str'.format(
-                remote))
-    if not isinstance(branch, str):
-        raise TypeError(
-            'branch is of type {.__class__.__name__}, expected str'.format(
-                branch))
-
-    if not repo_path:
-        raise ValueError("repo_path must not be empty")
-    if not remote:
-        raise ValueError("remote must not be empty")
-    if not branch:
-        raise ValueError("branch must not be empty")
-
-    push_command = ['git', 'push', remote, branch]
-    rc, _, stderr = captured_run(push_command, cwd=os.path.abspath(repo_path))
-
-    if rc != 0:
-        raise PushFailedError(push_command, rc, stderr)
-
-
-def add_push_remotes(repo_path: str, user: str,
-                     remotes: Sequence[Sequence[str]]):
-    """Add push remotes to a repository.
+async def _push_async(local_repo: str,
+                      user: str,
+                      repo_url: str,
+                      branch: str = 'master'):
+    """Asynchronous call to git push, pushing directly to the repo_url and branch.
 
     Args:
-        repo_path: Path to the root of a git repository.
-        user: A user associated with the token. Must be added to the remote url
-        for pushing without CLI interaction.
-        remotes: A list of (remote, repo_url) pairs to add as push remotes.
+        local_repo: Path to the repo to push.
+        user: The username to put on the push.
+        repo_url: HTTPS url to the remote repo (without username/token!).
+        branch: The branch to push to.
     """
-    if not isinstance(repo_path, str):
-        raise TypeError(
-            "repo_path is of type {.__class__.__name__}, expected str".format(
-                repo_path))
-    if not isinstance(user, str):
-        raise TypeError(
-            "user is of type {.__class__.__name__}, expected str".format(
-                user))
-    if not isinstance(remotes, collections.Sequence):
-        raise TypeError(
-            "remotes is of type {.__class__.__name__}, expected sequence"
-            .format(remotes))
+    _validate_types(
+        local_repo=(local_repo, str),
+        user=(user, str),
+        repo_url=(repo_url, str),
+        branch=(branch, str))
 
-    if not repo_path:
-        raise ValueError("repo_path must not be empty")
-    if not user:
-        raise ValueError("user must not be empty")
+    _validate_non_empty(
+        local_repo=local_repo, user=user, repo_url=repo_url, branch=branch)
 
-    bad_pairs = [
-        pair for pair in remotes
-        if not isinstance(pair, collections.Sequence) or len(pair) != 2
-        or not isinstance(pair[0], str) or not isinstance(pair[1], str)
+    loop = asyncio.get_event_loop()
+
+    command = [
+        'git', 'push',
+        _insert_user_and_token(repo_url, user, OAUTH_TOKEN), branch
     ]
-    if bad_pairs:
-        raise ValueError("remotes poorly formed, first bad value: {}".format(
-            str(bad_pairs[0])))
-    if not remotes:
-        raise ValueError("remotes must not be empty")
+    proc = await asyncio.create_subprocess_exec(
+        *command,
+        cwd=os.path.abspath(local_repo),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE)
+    _, stderr = await proc.communicate()
+    if proc.returncode != 0:
+        raise PushFailedError("Failed to push to {}".format(repo_url),
+                              proc.returncode, stderr)
+    elif b"Everything up-to-date" in stderr:
+        LOGGER.info("{} is up-to-date".format(repo_url))
+    else:
+        LOGGER.info("Pushed files to {} {}".format(repo_url, branch))
 
-    for remote, url in remotes:
-        url_with_token = _insert_user_and_token(url, user)
-        add_remote_command = 'git remote set-url --add --push {} {}'.format(
-            remote, url_with_token).split()
-        rc, _, stderr = captured_run(
-            add_remote_command, cwd=os.path.abspath(repo_path))
-        if rc != 0:
-            raise GitError(add_remote_command, rc, stderr)
+
+def push(local_repo: str, user: str, repo_url: str, branch: str = 'master'):
+    """Push from a local repository to a remote repository without first adding
+    push remotes.
+
+    Args:
+        local_repo: Path to the repo to push.
+        user: The username to put on the push.
+        repo_url: HTTPS url to the remote repo (without username/token!).
+        branch: The branch to push to.
+    """
+    loop = asyncio.get_event_loop()
+    task = loop.create_task(_push_async(local_repo, user, repo_url, branch))
+    loop.run_until_complete(task)
+
+
+def push_many(push_tuples: Iterable[Push], user: str):
+    """Push to all repos defined in push_tuples.
+
+    Args:
+        push_tuples: Push namedtuples defining local and remote repos.
+        user: The username to put in the push.
+    """
+    # TODO valdate push_tuples
+    _validate_types(user=(user, str))
+    _validate_non_empty(push_tuples=push_tuples, user=user)
+
+    loop = asyncio.get_event_loop()
+    tasks = [
+        loop.create_task(_push_async(local_path, user, remote_url, branch))
+        for local_path, remote_url, branch in push_tuples
+    ]
+    loop.run_until_complete(asyncio.wait(tasks))
+    for task in tasks:
+        if task.exception():
+            LOGGER.error(str(task.exception()))

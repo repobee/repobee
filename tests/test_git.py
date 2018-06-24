@@ -1,17 +1,67 @@
 import sys
 import os
 import pytest
-from unittest.mock import patch
+import subprocess
+from asyncio import coroutine
+from unittest.mock import patch, PropertyMock, MagicMock
 from collections import namedtuple
 
 URL_TEMPLATE = 'https://{}github.com/slarse/clanim'
 TOKEN = 'besttoken1337'
+USER = 'slarse'
 
-Env = namedtuple('Env', ['expected_url'])
+Env = namedtuple('Env', ('expected_url', 'expected_url_with_username'))
+
+AioSubproc = namedtuple('AioSubproc', ('create_subprocess', 'process'))
 
 # import with mocked oauth
 with patch('os.getenv', autospec=True, return_value=TOKEN):
     from gits_pet import git
+
+
+@pytest.fixture(scope='function')
+def env_setup(mocker):
+    mocker.patch(
+        'gits_pet.git.captured_run', autospec=True, return_value=(0, '', ''))
+    # TOKEN was mocked as the environment token when gits_pet.git was imported
+    expected_url = URL_TEMPLATE.format(TOKEN + '@')
+    expected_url_with_username = URL_TEMPLATE.format("{}:{}@".format(
+        USER, TOKEN))
+    return Env(
+        expected_url=expected_url,
+        expected_url_with_username=expected_url_with_username)
+
+
+@pytest.fixture(scope='function')
+def aio_subproc(mocker):
+    class Process:
+        async def communicate(self):
+            return b"this is stdout", b"this is stderr"
+
+        returncode = 0
+
+    async def mock_gen():
+        return Process()
+
+    create_subprocess = mocker.patch(
+        'asyncio.create_subprocess_exec', return_value=mock_gen())
+    return AioSubproc(create_subprocess, Process)
+
+
+@pytest.fixture(scope='function')
+def push_tuples():
+    paths = (os.path.join(*dirs)
+             for dirs in [('some', 'awesome', 'path'), ('other',
+                                                        'path'), ('final', )])
+    urls = ('https://slarse.se/best-repo.git',
+            'https://completely-imaginary-repo-url.com/repo.git',
+            'https://somerepourl.git')
+    branches = ('master', 'other', 'development-branch')
+    tups = [
+        git.Push(local_path=path, remote_url=url, branch=branch)
+        for path, url, branch in zip(paths, urls, branches)
+    ]
+    return tups
 
 
 def test_insert_token():
@@ -58,20 +108,11 @@ def test_clone_raises_on_empty_branch(env_setup):
 def test_clone_raises_on_non_zero_exit_from_git_clone(env_setup, mocker):
     stderr = b'This is pretty bad!'
     # already patched in env_setup fixture
-    git.captured_run.return_value = (1, b'', stderr)
+    git.captured_run.return_value = (1, '', stderr)
 
     with pytest.raises(git.CloneFailedError) as exc:
         git.clone("{}".format(URL_TEMPLATE.format('')))
-    assert stderr.decode(encoding=sys.getdefaultencoding()) in str(exc.value)
-
-
-@pytest.fixture(scope='function')
-def env_setup(mocker):
-    mocker.patch(
-        'gits_pet.git.captured_run', autospec=True, return_value=(0, b'', b''))
-    # TOKEN was mocked as the environment token when gits_pet.git was imported
-    expected_url = URL_TEMPLATE.format(TOKEN + '@')
-    return Env(expected_url=expected_url)
+    assert "Failed to clone" in str(exc.value)
 
 
 def test_clone_issues_correct_command_with_defaults(env_setup):
@@ -100,151 +141,154 @@ def test_clone_issues_correct_command_with_single_other_branch(env_setup):
 
 def test_push_raises_on_non_string_args(env_setup):
     with pytest.raises(TypeError) as exc:
-        git.push(1)
-    assert 'repo_path' in str(exc)
+        git.push(1, user=USER, repo_url='some_url')
+    assert 'local_repo' in str(exc)
     assert 'expected str' in str(exc)
 
     with pytest.raises(TypeError) as exc:
-        git.push('something', remote=452)
-    assert 'remote' in str(exc)
+        git.push('something', user=2, repo_url='some_url')
+    assert 'user' in str(exc)
     assert 'expected str' in str(exc)
 
     with pytest.raises(TypeError) as exc:
-        git.push('something', remote='origin', branch=123)
+        git.push('something', user=USER, repo_url=1)
+    assert 'repo_url' in str(exc)
+    assert 'expected str' in str(exc)
+
+    with pytest.raises(TypeError) as exc:
+        git.push('something', user=USER, repo_url='some_url', branch=3)
     assert 'branch' in str(exc)
     assert 'expected str' in str(exc)
 
 
-def test_push_raises_on_empty_repo_path(env_setup):
+def test_push_raises_on_empty_local_repo(env_setup):
     with pytest.raises(ValueError) as exc:
-        git.push('')
-    assert 'repo_path must not be empty' in str(exc)
+        git.push('', user=USER, repo_url='some_url')
+    assert 'local_repo must not be empty' in str(exc)
 
 
-def test_push_raises_on_empty_remote(env_setup):
+def test_push_raises_on_empty_user(env_setup):
     with pytest.raises(ValueError) as exc:
-        git.push('something', remote='')
-    assert 'remote must not be empty' in str(exc)
+        git.push('something', user='', repo_url='some_url')
+    assert 'user must not be empty' in str(exc)
+
+
+def test_push_raises_on_empty_repo_url(env_setup):
+    with pytest.raises(ValueError) as exc:
+        git.push('something', user=USER, repo_url='')
+    assert 'repo_url must not be empty' in str(exc)
 
 
 def test_push_raises_on_empty_branch(env_setup):
     with pytest.raises(ValueError) as exc:
-        git.push('something', remote='origin', branch='')
+        git.push('something', user=USER, repo_url='some_url', branch='')
     assert 'branch must not be empty' in str(exc)
 
 
-def test_push_issues_correct_command_with_defaults(env_setup):
-    expected_command = "git push origin master".split()
-    repo_path = os.sep.join(['path', 'to', 'repo'])
+def test_push_raises_on_async_push_exception(env_setup, mocker):
+    async def raise_(*args, **kwargs):
+        raise git.PushFailedError("Push failed", 128, b"some error")
 
-    git.push(repo_path)
+    mocker.patch('gits_pet.git._push_async', side_effect=raise_)
 
-    git.captured_run.assert_called_once_with(
-        expected_command, cwd=os.path.abspath(repo_path))
+    with pytest.raises(git.PushFailedError) as exc_info:
+        git.push('some_repo', USER, 'some_url')
 
 
-def test_push_issues_correct_command(env_setup):
-    remote = 'other'
+def test_push_issues_correct_command_with_defaults(env_setup, aio_subproc):
+    branch = 'master'
+    user = USER
+    local_repo = os.sep.join(['path', 'to', 'repo'])
+    expected_command = "git push {} {}".format(
+        env_setup.expected_url_with_username, branch).split()
+
+    git.push(
+        local_repo, user=user, repo_url=URL_TEMPLATE.format(''), branch=branch)
+
+    aio_subproc.create_subprocess.assert_called_once_with(
+        *expected_command,
+        cwd=os.path.abspath(local_repo),
+        # TODO the piping is not obvious from the test, refactor
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE)
+
+
+def test_push_issues_correct_command(env_setup, aio_subproc):
     branch = 'development-branch'
-    expected_command = "git push {} {}".format(remote, branch).split()
-    repo_path = os.sep.join(['path', 'to', 'repo'])
+    user = USER
+    expected_command = "git push {} {}".format(
+        env_setup.expected_url_with_username, branch).split()
+    local_repo = os.sep.join(['path', 'to', 'repo'])
 
-    git.push(repo_path, remote=remote, branch=branch)
+    git.push(
+        local_repo, user=user, repo_url=URL_TEMPLATE.format(''), branch=branch)
 
-    git.captured_run.assert_called_once_with(
-        expected_command, cwd=os.path.abspath(repo_path))
+    aio_subproc.create_subprocess.assert_called_once_with(
+        *expected_command,
+        cwd=os.path.abspath(local_repo),
+        # TODO the piping is not obvious from the test, refactor
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE)
 
 
-def test_push_raises_on_non_zero_exit_from_git_clone(env_setup, mocker):
-    stderr = b'This is pretty bad indeed!'
-    # already patched in env_setup fixture
-    git.captured_run.return_value = (1, b'', stderr)
+def test_push_raises_on_non_zero_exit_from_git_push(env_setup, aio_subproc):
+    aio_subproc.process.returncode = 128
 
     with pytest.raises(git.PushFailedError) as exc:
-        git.push('some_repo')
-    assert stderr.decode(encoding=sys.getdefaultencoding()) in str(exc.value)
+        git.push(
+            'some_repo', user='some_user', repo_url='https://some_url.org')
 
 
-def test_add_push_remotes_raises_on_non_str_repo_path(env_setup):
-    with pytest.raises(TypeError) as exc:
-        git.add_push_remotes(2, 'slarse', tuple())
-    assert 'repo_path' in str(exc)
-    assert 'expected str' in str(exc)
+def test_push_many_raises_on_non_str_user(env_setup, push_tuples):
+    with pytest.raises(TypeError) as exc_info:
+        git.push_many(push_tuples, 32)
+    assert 'user' in str(exc_info)
 
 
-def test_add_push_remotes_raises_on_empty_repo_path(env_setup):
-    with pytest.raises(ValueError) as exc:
-        git.add_push_remotes('', 'slarse',
-                             [('origin', 'https://github.com/slarse/clanim')])
-    assert 'repo_path must not be empty' in str(exc)
+def test_push_many_raises_on_empty_push_tuples(env_setup):
+    with pytest.raises(ValueError) as exc_info:
+        git.push_many([], USER)
+    assert 'push_tuples' in str(exc_info)
 
 
-def test_add_push_remotes_raises_on_non_str_user(env_setup):
-    with pytest.raises(TypeError) as exc:
-        git.add_push_remotes('some_repo', 32, tuple())
-    assert 'user' in str(exc)
-    assert 'expected str' in str(exc)
+def test_push_many_raises_on_empty_user(env_setup, push_tuples):
+    with pytest.raises(ValueError) as exc_info:
+        git.push_many(push_tuples, '')
+    assert 'user' in str(exc_info)
 
 
-def test_add_push_remotes_raises_on_empty_user(env_setup):
-    with pytest.raises(ValueError) as exc:
-        git.add_push_remotes('some_repo', '',
-                             [('origin', 'https://github.com/slarse/clanim')])
-    assert 'user must not be empty' in str(exc)
+def test_push_many(env_setup, push_tuples, aio_subproc):
+    """Test that push many works as expected when no exceptions are thrown by
+    tasks.
+    """
+    expected_subproc_commands = [(local_repo, "git push {} {}".format(
+        git._insert_user_and_token(url, USER), branch).split())
+                                 for local_repo, url, branch in push_tuples]
+
+    git.push_many(push_tuples, USER)
+
+    for local_repo, command in expected_subproc_commands:
+        aio_subproc.create_subprocess.assert_any_call(
+            *command,
+            cwd=os.path.abspath(local_repo),
+            # TODO again, the piping here is not obvious
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
 
 
-def test_add_push_remotes_raises_on_empty_remotes(env_setup):
-    with pytest.raises(ValueError) as exc:
-        git.add_push_remotes('something', 'slarse', [])
-    assert 'remotes' in str(exc)
+def test_push_many_tries_all_calls_despite_exceptions(env_setup, push_tuples,
+                                                      mocker):
+    """Test that push_many tries to push all push tuple values even if there
+    are exceptions.
+    """
 
+    async def raise_(*args, **kwargs):
+        raise git.PushFailedError("Push failed", 128, b"some error")
 
-def test_add_push_remotes_raises_on_bad_remotes_formatting(env_setup):
-    repo = 'something'
-    # second tuple has too many values
-    remotes_bad_length = (('origin', 'https://byebye.com'),
-                          ('origin', 'https://hello.com', 'byeby'))
+    mocker.patch('gits_pet.git._push_async', side_effect=raise_)
 
-    # third tuple has an int as remote
-    remotes_bad_type = (('origin', 'https://byebye.com'),
-                        ('origin', 'https://hello.com'), (2,
-                                                          'https://slarse.se'))
-    with pytest.raises(ValueError) as exc_bad_length:
-        git.add_push_remotes(repo, 'slarse', remotes_bad_length)
+    git.push_many(push_tuples, USER)
 
-    with pytest.raises(ValueError) as exc_bad_type:
-        git.add_push_remotes(repo, 'slarse', remotes_bad_type)
-
-    assert str(remotes_bad_length[1]) in str(exc_bad_length)
-    assert str(remotes_bad_type[2]) in str(exc_bad_type)
-
-
-def test_add_push_remotes(env_setup):
-    repo = os.sep.join(['some', 'repo', 'path'])
-    user = 'slarse'
-    remotes = (('origin', 'https://slarse.se/repo'),
-               ('origin', 'https://github.com/slarse/repo'),
-               ('other', 'https://github.com/slarse/repo'))
-
-    expected_commands = [
-        "git remote set-url --add --push {} {}".format(
-            remote, git._insert_user_and_token(url, user, TOKEN)).split()
-        for remote, url in remotes
-    ]
-    git.add_push_remotes(repo, user, remotes)
-
-    for command in expected_commands:
-        git.captured_run.assert_any_call(command, cwd=os.path.abspath(repo))
-
-
-def test_add_push_remotes_raises_on_non_zero_exit_from_git(env_setup):
-    stderr = b'bad for push remotes'
-    git.captured_run.return_value = (23, b'', stderr)
-    repo = os.sep.join(['some', 'repo', 'path'])
-    remotes = (('origin', 'https://slarse.se/repo'),
-               ('origin', 'https://github.com/slarse/repo'),
-               ('other', 'https://github.com/slarse/repo'))
-
-    with pytest.raises(git.GitError) as exc:
-        git.add_push_remotes(repo, 'slarse', remotes)
-    assert stderr.decode(encoding=sys.getdefaultencoding()) in str(exc.value)
+    for pt in push_tuples:
+        git._push_async.assert_any_call(pt.local_path, USER, pt.remote_url,
+                                        pt.branch)
