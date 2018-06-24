@@ -19,8 +19,6 @@ if not OAUTH_TOKEN:
     raise OSError('The oauth token is empty!')
 
 
-
-
 class GitError(Exception):
     """A generic error to raise when a git command exits with a non-zero
     exit status.
@@ -216,7 +214,6 @@ def push(local_repo: str, user: str, repo_url: str, branch: str = 'master'):
     loop.run_until_complete(task)
 
 
-# TODO test this function!
 def push_many(push_tuples: Iterable[Push], user: str):
     """Push to all repos defined in push_tuples.
 
@@ -224,6 +221,7 @@ def push_many(push_tuples: Iterable[Push], user: str):
         push_tuples: Push namedtuples defining local and remote repos.
         user: The username to put in the push.
     """
+    # TODO valdate push_tuples
     _validate_types(user=(user, str))
     _validate_non_empty(push_tuples=push_tuples, user=user)
 
