@@ -23,10 +23,6 @@ with patch('os.getenv', autospec=True, return_value=TOKEN):
 def env_setup(mocker):
     mocker.patch(
         'gits_pet.git.captured_run', autospec=True, return_value=(0, '', ''))
-    mocker.patch(
-        'gits_pet.git.run_and_log_stderr_realtime',
-        autospec=True,
-        return_value=(0, ''))
     # TOKEN was mocked as the environment token when gits_pet.git was imported
     expected_url = URL_TEMPLATE.format(TOKEN + '@')
     expected_url_with_username = URL_TEMPLATE.format("{}:{}@".format(

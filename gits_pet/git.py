@@ -14,6 +14,12 @@ LOGGER = daiquiri.getLogger(__file__)
 
 Push = collections.namedtuple('Push', ('local_path', 'remote_url', 'branch'))
 
+OAUTH_TOKEN = os.getenv('GITS_PET_OAUTH')
+if not OAUTH_TOKEN:
+    raise OSError('The oauth token is empty!')
+
+
+
 
 class GitError(Exception):
     """A generic error to raise when a git command exits with a non-zero
@@ -40,11 +46,6 @@ class CloneFailedError(GitError):
 
 class PushFailedError(GitError):
     """An error to raise when pushing to a remote fails."""
-
-
-OAUTH_TOKEN = os.getenv('GITS_PET_OAUTH')
-if not OAUTH_TOKEN:
-    raise OSError('The oauth token is empty!')
 
 
 def _insert_token(https_url: str, token: str = OAUTH_TOKEN) -> str:
@@ -84,34 +85,11 @@ def _insert_user_and_token(https_url: str, user: str,
     return _insert_token(https_url, "{}:{}".format(user, token))
 
 
-def quiet_run(*args, **kwargs):
-    """Run a subprocess and pipe output to /dev/null."""
-    with open(os.devnull, 'w') as devnull:
-        return subprocess.run(
-            *args, **kwargs, stdout=devnull, stderr=subprocess.STDOUT)
-
-
 def captured_run(*args, **kwargs):
     """Run a subprocess and capture the output."""
     proc = subprocess.run(
         *args, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return proc.returncode, proc.stdout, proc.stderr
-
-
-def run_and_log_stderr_realtime(*args, **kwargs):
-    """Run a subprocess and capture the output, logging it in real time.."""
-    proc = subprocess.Popen(*args, **kwargs, stderr=subprocess.PIPE)
-
-    stderr = []
-    while True:
-        err = proc.stderr.readline().decode(
-            encoding=sys.getdefaultencoding()).rstrip()
-        stderr.append(err)
-        if not err and proc.poll() is not None:
-            break
-
-        LOGGER.info(stderr[-1])
-    return proc.poll(), os.linesep.join(stderr)
 
 
 def _validate_non_empty(**kwargs) -> None:
