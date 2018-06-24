@@ -28,6 +28,32 @@ def repo_name(team_name: str, master_repo_name: str) -> str:
     return "{}-{}".format(team_name, master_repo_name)
 
 
+def _repo_name(repo_url):
+    """Extract the name of the repo from its url.
+
+    Args:
+        repo_url: A url to a repo.
+    """
+    repo_name = repo_url.split("/")[-1]
+    if repo_name.endswith('.git'):
+        return repo_name[:-4]
+    return repo_name
+
+
+def create_multiple_student_repos(master_repo_urls: Iterable[str], user: str,
+                                  students: Iterable[str], org_name: str,
+                                  github_api_base_url: str):
+    """Create one student repo for each of the master repos in master_repo_urls."""
+    api = GitHubAPI(github_api_base_url, git.OAUTH_TOKEN, org_name)
+    urls = list(master_repo_urls)  # safe copy
+
+    if len(set(urls)) != len(urls):
+        raise ValueError("master_repo_urls contains duplicates")
+
+    for url in urls:
+        git.clone(url)
+
+
 def create_student_repos(master_repo_url: str,
                          user: str,
                          students: Iterable[str],
@@ -47,9 +73,7 @@ def create_student_repos(master_repo_url: str,
     """
     api = GitHubAPI(github_api_base_url, git.OAUTH_TOKEN, org_name)
 
-    master_repo_name = master_repo_url.split("/")[-1]
-    if master_repo_name.endswith('.git'):
-        master_repo_name = master_repo_name[:-4]
+    master_repo_name = _repo_name(master_repo_url)
 
     LOGGER.info("cloning master repo {}...".format(master_repo_name))
     git.clone(master_repo_url)
