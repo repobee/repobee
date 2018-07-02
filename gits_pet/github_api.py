@@ -144,8 +144,7 @@ class GitHubAPI:
         for info in repo_infos:
             try:
                 repo_urls.append(self._api.create_repo(info))
-                LOGGER.info("created {}/{}".format(self._org_name,
-                                                   info.name))
+                LOGGER.info("created {}/{}".format(self._org_name, info.name))
             except GitHubError as exc:
                 if exc.status != 422:
                     raise UnexpectedException(
@@ -158,3 +157,14 @@ class GitHubAPI:
                 raise UnexpectedException(
                     "An unexpected exception was raised.")
         return repo_urls
+
+    def get_repo_urls(self, repo_names: Iterable[str]) -> List[str]:
+        """Get repo urls for all specified repo names in the current organization.
+
+        Args:
+            repo_names: A list of repository names.
+
+        Returns:
+            a list of urls corresponding to the repo names.
+        """
+        return [self._api.get_repo_url(name) for name in repo_names]

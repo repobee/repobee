@@ -118,7 +118,7 @@ class ApiWrapper:
         with _try_api_request():
             team.add_membership(member)
 
-    def get_repo_url(self, repo_name: str) -> _Repo:
+    def get_repo_url(self, repo_name: str) -> str:
         """Get a repo from the organization.
         
         Args:
