@@ -6,17 +6,16 @@ from asyncio import coroutine
 from unittest.mock import patch, PropertyMock, MagicMock
 from collections import namedtuple
 
+from conftest import TOKEN
+
+from gits_pet import git
+
 URL_TEMPLATE = 'https://{}github.com/slarse/clanim'
-TOKEN = 'besttoken1337'
 USER = 'slarse'
 
 Env = namedtuple('Env', ('expected_url', 'expected_url_with_username'))
 
 AioSubproc = namedtuple('AioSubproc', ('create_subprocess', 'process'))
-
-# import with mocked oauth
-with patch('os.getenv', autospec=True, return_value=TOKEN):
-    from gits_pet import git
 
 
 @pytest.fixture(scope='function')
