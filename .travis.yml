@@ -1,0 +1,8 @@
+language: python
+python:
+    - "3.5"
+    - "3.6"
+install: "pip install -r requirements.test.txt"
+script: pytest --cov=gits_pet
+after_success:
+    - codecov
