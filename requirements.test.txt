@@ -3,4 +3,3 @@ codecov
 pytest
 pytest-cov
 pytest-mock
-pygithub
