@@ -10,35 +10,15 @@ program.
 """
 
 import shutil
-from typing import Iterable
+from typing import Iterable, List
 import daiquiri
 from gits_pet import git
 from gits_pet import util
 from gits_pet.github_api import GitHubAPI, RepoInfo
+from gits_pet.api_wrapper import Team
+from gits_pet.git import Push
 
 LOGGER = daiquiri.getLogger(__file__)
-
-
-def generate_repo_name(team_name: str, master_repo_name: str) -> str:
-    """Construct a repo name for a team.
-    
-    Args:
-        team_name: Name of the associated team.
-        master_repo_name: Name of the template repository.
-    """
-    return "{}-{}".format(team_name, master_repo_name)
-
-
-def _repo_name(repo_url):
-    """Extract the name of the repo from its url.
-
-    Args:
-        repo_url: A url to a repo.
-    """
-    repo_name = repo_url.split("/")[-1]
-    if repo_name.endswith('.git'):
-        return repo_name[:-4]
-    return repo_name
 
 
 def create_multiple_student_repos(master_repo_urls: Iterable[str], user: str,
@@ -78,40 +58,18 @@ def create_multiple_student_repos(master_repo_urls: Iterable[str], user: str,
     member_lists = {student: [student] for student in students}
     teams = api.ensure_teams_and_members(member_lists)
 
-    repo_infos = []
-    push_tuples = []
-    for url in urls:
-        repo_base_name = _repo_name(url)
-        repo_infos += [
-            RepoInfo(
-                name=generate_repo_name(team.name, repo_base_name),
-                description="{} created for {}".format(repo_base_name,
-                                                       team.name),
-                private=True,
-                team_id=team.id) for team in teams
-        ]
+    repo_infos = _create_repo_infos(urls, teams)
 
-    LOGGER.info("creating repos with base name {}...".format(repo_base_name))
+    LOGGER.info("creating student repos ...")
     repo_urls = api.create_repos(repo_infos)
 
-    for url in urls:
-        repo_base_name = _repo_name(url)
-        push_tuples += [
-            git.Push(
-                local_path=repo_base_name,
-                remote_url=repo_url,
-                branch='master') for repo_url in repo_urls
-            if repo_url.endswith(repo_base_name)
-        ]
+    push_tuples = _create_push_tuples(urls, repo_urls)
 
     LOGGER.info("pusing files to student repos ...")
     git.push_many(push_tuples, user=user)
 
     LOGGER.info("removing master repos ...")
-    for url in urls:
-        name = _repo_name(url)
-        shutil.rmtree(name)
-        LOGGER.info("removed {}".format(name))
+    _remove_local_repos(urls)
     LOGGER.info("done!")
 
 
@@ -165,3 +123,84 @@ def create_student_repos(master_repo_url: str,
     LOGGER.info("removing master repo ...")
     shutil.rmtree(master_repo_name)
     LOGGER.info("done!")
+
+def generate_repo_name(team_name: str, master_repo_name: str) -> str:
+    """Construct a repo name for a team.
+    
+    Args:
+        team_name: Name of the associated team.
+        master_repo_name: Name of the template repository.
+    """
+    return "{}-{}".format(team_name, master_repo_name)
+
+
+def _repo_name(repo_url):
+    """Extract the name of the repo from its url.
+
+    Args:
+        repo_url: A url to a repo.
+    """
+    repo_name = repo_url.split("/")[-1]
+    if repo_name.endswith('.git'):
+        return repo_name[:-4]
+    return repo_name
+
+
+def _create_repo_infos(urls: Iterable[str],
+                       teams: Iterable[Team]) -> List[RepoInfo]:
+    """Create RepoInfo namedtuples for all combinations of url and team.
+
+    Args:
+        urls: Master repo urls.
+        teams: Team namedtuples.
+
+    Returns:
+        A list of RepoInfo namedtuples with all (url, team) combinations.
+    """
+    repo_infos = []
+    for url in urls:
+        repo_base_name = _repo_name(url)
+        repo_infos += [
+            RepoInfo(
+                name=generate_repo_name(team.name, repo_base_name),
+                description="{} created for {}".format(repo_base_name,
+                                                       team.name),
+                private=True,
+                team_id=team.id) for team in teams
+        ]
+    return repo_infos
+
+
+def _create_push_tuples(master_urls: Iterable[str],
+                        repo_urls: Iterable[str]) -> List[Push]:
+    """Create Push namedtuples for all repo urls in repo_urls that share
+    repo base name with any of the urls in master_urls.
+
+    Args:
+        master_urls: Urls to master repos.
+        repo_urls: Urls to student repos.
+
+    Returns:
+        A list of Push namedtuples for all student repo urls that relate to
+        any of the master repo urls.
+    """
+    push_tuples = []
+    for url in master_urls:
+        repo_base_name = _repo_name(url)
+        push_tuples += [
+            git.Push(
+                local_path=repo_base_name,
+                remote_url=repo_url,
+                branch='master') for repo_url in repo_urls
+            if repo_url.endswith(repo_base_name)
+        ]
+    return push_tuples
+
+
+def _remove_local_repos(urls: Iterable[str]) -> None:
+    for url in urls:
+        name = _repo_name(url)
+        shutil.rmtree(name)
+        LOGGER.info("removed {}".format(name))
+
+
