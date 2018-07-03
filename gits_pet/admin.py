@@ -176,7 +176,7 @@ def update_student_repos(master_repo_urls: Iterable[str], user: str,
 
 
 def open_issue(master_repo_names: Iterable[str], students: Iterable[str],
-               issue_path: str, user: str, org_name: str,
+               issue_path: str, org_name: str,
                github_api_base_url: str) -> None:
     """Open an issue in student repos.
 
@@ -185,17 +185,14 @@ def open_issue(master_repo_names: Iterable[str], students: Iterable[str],
         students: Student GitHub usernames.
         issue_path: Filepath to a markdown file. The first line is assumed to
         be the title.
-        user: Username of the administrator that is creating the repos.
         org_name: Name of the organization.
         github_api_base_url: The base url to a GitHub api.
     """
     util.validate_types(
-        user=(user, str),
         org_name=(org_name, str),
         github_api_base_url=(github_api_base_url, str))
     util.validate_non_empty(
         master_repo_names=master_repo_names,
-        user=user,
         students=students,
         org_name=org_name,
         github_api_base_url=github_api_base_url)
@@ -217,7 +214,7 @@ def open_issue(master_repo_names: Iterable[str], students: Iterable[str],
 
 
 def close_issue(title_regex: str, master_repo_names: Iterable[str],
-                students: Iterable[str], user: str, org_name: str,
+                students: Iterable[str], org_name: str,
                 github_api_base_url: str) -> None:
     """Close issues whose titles match the title_regex in student repos.
 
@@ -225,17 +222,15 @@ def close_issue(title_regex: str, master_repo_names: Iterable[str],
         title_regex: A regex to match against issue titles.
         master_repo_names: Names of master repositories.
         students: Student GitHub usernames.
-        user: Username of the administrator that is creating the repos.
         org_name: Name of the organization.
         github_api_base_url: The base url to a GitHub api.
     """
     util.validate_types(
-        user=(user, str),
+        title_regex=(title_regex, str),
         org_name=(org_name, str),
         github_api_base_url=(github_api_base_url, str))
     util.validate_non_empty(
         master_repo_names=master_repo_names,
-        user=user,
         students=students,
         org_name=org_name,
         github_api_base_url=github_api_base_url)

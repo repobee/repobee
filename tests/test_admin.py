@@ -17,7 +17,6 @@ from gits_pet import api_wrapper
 USER = 'slarse'
 ORG_NAME = 'test-org'
 GITHUB_BASE_API = 'https://some_enterprise_host/api/v3'
-MASTER_REPO_NAMES = ['week-1', 'week-2', 'epic-tasks', 'some-fun-stuff']
 
 GENERATE_REPO_URL = lambda base_name, student:\
         "https://slarse.se/repos/{}".format(
@@ -53,6 +52,11 @@ def master_urls():
         'https://another-url.git'
     ]
     return master_urls
+
+
+@pytest.fixture(scope='function')
+def master_names(master_urls):
+    return [admin._repo_name(url) for url in master_urls]
 
 
 @pytest.fixture(scope='function')
@@ -242,39 +246,115 @@ class TestUpdateStudentRepos:
 class TestOpenIssue:
     """Tests for open_issue."""
 
-    # TODO expand to also test user, org_name and github_api_base_url
+    # TODO expand to also test org_name and github_api_base_url
     # can probably use the RAISES_ON_EMPTY_ARGS_PARAMETRIZATION for that,
     # somehow
     @pytest.mark.parametrize(
-        'master_repo_names, students, issue_path, user, org_name, github_api_base_url, empty_arg',
-        [([], students(), 'some/nice/path', USER, ORG_NAME, GITHUB_BASE_API,
-          'master_repo_names'), (MASTER_REPO_NAMES, [], 'some/better/path',
-                                 USER, ORG_NAME, GITHUB_BASE_API, 'students'),
-         (MASTER_REPO_NAMES, students(), '', USER, ORG_NAME, GITHUB_BASE_API,
-          'issue_path')])
+        'master_repo_names, students, issue_path, org_name, github_api_base_url, empty_arg',
+        [
+            ([], students(), 'some/nice/path', ORG_NAME, GITHUB_BASE_API,
+             'master_repo_names'),
+            (master_names(master_urls()), [], 'some/better/path', ORG_NAME,
+             GITHUB_BASE_API, 'students'),
+            (master_names(master_urls()), students(), '', ORG_NAME,
+             GITHUB_BASE_API, 'issue_path'),
+        ])
     def test_raises_on_empty_args(self, master_repo_names, students,
-                                  issue_path, user, org_name,
-                                  github_api_base_url, empty_arg):
+                                  issue_path, org_name, github_api_base_url,
+                                  empty_arg):
         with pytest.raises(ValueError) as exc_info:
-            admin.open_issue(master_repo_names, students, issue_path, user,
-                             org_name, github_api_base_url)
+            admin.open_issue(master_repo_names, students, issue_path, org_name,
+                             github_api_base_url)
         assert empty_arg in str(exc_info)
 
-    def test_raises_if_issue_does_not_exist(self, students):
+    def test_raises_if_issue_does_not_exist(self, master_names, students):
         path = 'hopefully/does/not/exist'
         while os.path.exists(path):
             path += '/now'
         assert not os.path.exists(path)  # meta assert
 
         with pytest.raises(ValueError) as exc_info:
-            admin.open_issue(MASTER_REPO_NAMES, students, path, USER, ORG_NAME,
+            admin.open_issue(master_names, students, path, ORG_NAME,
                              GITHUB_BASE_API)
         assert 'not a file' in str(exc_info)
 
-    def test_raises_if_issue_is_not_file(self, students):
+    def test_raises_if_issue_is_not_file(self, master_names, students):
         with tempfile.TemporaryDirectory() as tmpdir:
             with pytest.raises(ValueError) as exc_info:
-                admin.open_issue(MASTER_REPO_NAMES, students, tmpdir, USER,
-                                 ORG_NAME, GITHUB_BASE_API)
+                admin.open_issue(master_names, students, tmpdir, ORG_NAME,
+                                 GITHUB_BASE_API)
         assert 'not a file' in str(exc_info)
 
+    def test_happy_path(self, api_mock):
+        title = "Best title"
+        body = "This is some **cool** markdown\n\n### Heading!"
+        master_names = ['week-1', 'week-2']
+        students = list('abc')
+        expected_repo_names = [
+            'a-week-1', 'b-week-1', 'c-week-1', 'a-week-2', 'b-week-2',
+            'c-week-2'
+        ]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with tempfile.NamedTemporaryFile(
+                    mode='w', dir=tmpdir, delete=False) as file:
+                filename = file.name
+                file.write(title + "\n")
+                file.write(body)
+                file.flush()
+
+            admin.open_issue(master_names, students, filename, ORG_NAME,
+                             GITHUB_BASE_API)
+
+        api_mock.open_issue.assert_called_once_with(title, body,
+                                                    expected_repo_names)
+
+
+class TestCloseIssue:
+    """Tests for close_issue."""
+
+    @pytest.mark.parametrize(
+        'master_repo_names, students, org_name, github_api_base_url, empty_arg',
+        [
+            ([], students(), ORG_NAME, GITHUB_BASE_API, 'master_repo_names'),
+            (master_names(master_urls()), [], ORG_NAME, GITHUB_BASE_API,
+             'students'),
+            (master_names(master_urls()), students(), '', GITHUB_BASE_API,
+             'org_name'),
+            (master_names(master_urls()), students(), ORG_NAME, '',
+             'github_api_base_url'),
+        ])
+    def test_raises_on_empty_args(self, master_repo_names, students, org_name,
+                                  github_api_base_url, empty_arg):
+        """only the regex is allowed ot be empty."""
+        with pytest.raises(ValueError) as exc_info:
+            admin.close_issue('someregex', master_repo_names, students,
+                              org_name, github_api_base_url)
+        assert empty_arg in str(exc_info)
+
+    @pytest.mark.parametrize('org_name, github_api_base_url, type_error_arg', [
+        (2, GITHUB_BASE_API, 'org_name'),
+        (ORG_NAME, 41, 'github_api_base_url'),
+    ])
+    def test_raises_on_invalid_type(self, master_names, org_name,
+                                    github_api_base_url, type_error_arg):
+        """Test that the non-itrable arguments are type checked."""
+        with pytest.raises(TypeError) as exc_info:
+            admin.close_issue('someregex', master_names, students, org_name,
+                              github_api_base_url)
+        assert type_error_arg in str(exc_info.value)
+
+    def test_happy_path(self, api_mock):
+        title_regex = r"some-regex\d\w"
+        master_names = ['week-1', 'week-2']
+        students = list('abc')
+        expected_repo_names = [
+            'a-week-1', 'b-week-1', 'c-week-1', 'a-week-2', 'b-week-2',
+            'c-week-2'
+        ]
+
+        admin.close_issue(title_regex, master_names, students, ORG_NAME,
+                          GITHUB_BASE_API)
+
+        api_mock.close_issue.assert_called_once_with(title_regex,
+                                                     expected_repo_names)
