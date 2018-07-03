@@ -277,3 +277,4 @@ class TestOpenIssue:
                 admin.open_issue(MASTER_REPO_NAMES, students, tmpdir, USER,
                                  ORG_NAME, GITHUB_BASE_API)
         assert 'not a file' in str(exc_info)
+

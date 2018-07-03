@@ -9,7 +9,7 @@ below) are sometimes used externally. But really shouldn't.
 import contextlib
 import collections
 import re
-from typing import Iterable, Mapping, Optional, List
+from typing import Iterable, Mapping, Optional, List, Generator
 import daiquiri
 import github
 
@@ -158,7 +158,7 @@ class ApiWrapper:
         with _try_api_request():
             return self._org.create_team(team_name, permission=permission)
 
-    def get_repos(self, regex: Optional[str] = None) -> List[str]:
+    def get_repos(self, regex: Optional[str] = None) -> Generator[_Repo, None, None]:
         """Get repo objects for all repositories in the organization. If a
         regex is supplied, only return urls to repos whos names match the
 
@@ -174,3 +174,18 @@ class ApiWrapper:
                             if re.match(regex, repo.name))
             else:
                 yield from self._org.get_repos()
+
+    def get_repos_by_name(self, repo_names: Iterable[str]) -> Generator[_Repo, None, None]:
+        """Get all repos that match any of the names in repo_names. Unmatched
+        names are ignored (in both directions).
+
+        Args:
+            repo_names: Names of repos to fetch.
+
+        Returns:
+            a generator of repo objects.
+        """
+        name_set = set(repo_names)
+        with _try_api_request():
+            return (repo for repo in self._org.get_repos()
+                    if repo.name in name_set)
