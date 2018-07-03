@@ -200,7 +200,7 @@ def open_issue(master_repo_names: Iterable[str], students: Iterable[str],
         org_name=org_name,
         github_api_base_url=github_api_base_url)
     if not os.path.isfile(issue_path):
-        raise ValueError(f"'issue_path: {issue_path}' is not a file")
+        raise ValueError("issue_path: '{}' is not a file".format(issue_path))
 
     with open(issue_path, 'r') as f:
         title = f.readline().strip()
