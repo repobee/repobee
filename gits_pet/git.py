@@ -158,6 +158,7 @@ async def _push_async(local_repo: str,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE)
     _, stderr = await proc.communicate()
+
     if proc.returncode != 0:
         raise PushFailedError("Failed to push to {}".format(repo_url),
                               proc.returncode, stderr)

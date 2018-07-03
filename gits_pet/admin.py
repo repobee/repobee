@@ -65,12 +65,10 @@ def create_multiple_student_repos(master_repo_urls: Iterable[str], user: str,
 
     push_tuples = _create_push_tuples(urls, repo_urls)
 
-    LOGGER.info("pusing files to student repos ...")
+    LOGGER.info("pushing files to student repos ...")
     git.push_many(push_tuples, user=user)
 
-    LOGGER.info("removing master repos ...")
     _remove_local_repos(urls)
-    LOGGER.info("done!")
 
 
 def create_student_repos(master_repo_url: str,
@@ -123,6 +121,44 @@ def create_student_repos(master_repo_url: str,
     LOGGER.info("removing master repo ...")
     shutil.rmtree(master_repo_name)
     LOGGER.info("done!")
+
+
+def update_student_repos(master_repo_urls: Iterable[str], user: str,
+                         students: Iterable[str], org_name: str,
+                         github_api_base_url: str) -> None:
+    """Attempt to update all student repos related to the provided master
+    repos.
+    
+    Args:
+        master_repo_url: Url to a template repository for the student repos.
+        user: Username of the administrator that is creating the repos.
+        students: An iterable of student GitHub usernames.
+        org_name: Name of an organization.
+        github_api_base_url: The base url to a GitHub api.
+    """
+    api = GitHubAPI(github_api_base_url, git.OAUTH_TOKEN, org_name)
+
+    urls = list(master_repo_urls)
+    master_repo_names = [_repo_name(url) for url in urls]
+    student_repo_names = [
+        generate_repo_name(student, master_repo_name) for student in students
+        for master_repo_name in master_repo_names
+    ]
+
+    repo_urls = api.get_repo_urls(student_repo_names)
+
+    LOGGER.info("cloning into master repos ...")
+    for url in urls:
+        git.clone(url)
+
+    push_tuples = _create_push_tuples(urls, repo_urls)
+
+    LOGGER.info("pushing files to student repos ...")
+    git.push_many(push_tuples, user=user)
+
+    _remove_local_repos(urls)
+    LOGGER.info("done!")
+
 
 def generate_repo_name(team_name: str, master_repo_name: str) -> str:
     """Construct a repo name for a team.
@@ -198,9 +234,8 @@ def _create_push_tuples(master_urls: Iterable[str],
 
 
 def _remove_local_repos(urls: Iterable[str]) -> None:
+    LOGGER.info("removing local repos ...")
     for url in urls:
         name = _repo_name(url)
         shutil.rmtree(name)
         LOGGER.info("removed {}".format(name))
-
-

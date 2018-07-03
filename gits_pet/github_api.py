@@ -167,4 +167,20 @@ class GitHubAPI:
         Returns:
             a list of urls corresponding to the repo names.
         """
-        return [self._api.get_repo_url(name) for name in repo_names]
+        repo_names_set = set(repo_names)
+        return [
+            repo.html_url for repo in self._api.get_repos()
+            if repo.name in repo_names_set
+        ]
+
+    def get_repo_urls_by_regex(self, regex: str) -> List[str]:
+        """Get repo urls for all repos in the current organization whose names
+        match the regex.
+
+        Args:
+            regex: A regex.
+
+        Returns:
+            a list of repo urls matching the regex.
+        """
+        return [repo.url for repo in self._api.get_repos(regex=regex)]

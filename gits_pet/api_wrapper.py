@@ -8,7 +8,8 @@ below) are sometimes used externally. But really shouldn't.
 """
 import contextlib
 import collections
-from typing import Iterable, Mapping
+import re
+from typing import Iterable, Mapping, Optional, List
 import daiquiri
 import github
 
@@ -155,5 +156,21 @@ class ApiWrapper:
             The created team.
         """
         with _try_api_request():
-            team = self._org.create_team(team_name, permission=permission)
-        return team
+            return self._org.create_team(team_name, permission=permission)
+
+    def get_repos(self, regex: Optional[str] = None) -> List[str]:
+        """Get repo objects for all repositories in the organization. If a
+        regex is supplied, only return urls to repos whos names match the
+
+        Args:
+            regex: An optional regex for filtering repos based on name.
+
+        Returns:
+            a generator of repo objects.
+        """
+        with _try_api_request():
+            if regex:
+                yield from (repo for repo in self._org.get_repos()
+                            if re.match(regex, repo.name))
+            else:
+                yield from self._org.get_repos()

@@ -32,6 +32,7 @@ LOGGER = daiquiri.getLogger(__file__)
 LOGGER.warning("babla")
 SUB = 'subparser'
 CREATE_PARSER = 'create'
+UPDATE_PARSER = 'update'
 
 CONFIG_DIR = appdirs.user_config_dir(
     appname=__package__,
@@ -50,20 +51,30 @@ def read_config(config_file="{}/config.cnf".format(CONFIG_DIR)):
 
 
 def create_parser():
-    parser = argparse.ArgumentParser(
-        prog='gits_pet',
-        description='A CLI tool for administrating student repositories.')
-
-    subparsers = parser.add_subparsers(dest=SUB)
-    subparsers.required = True
-
     configured_defaults = get_configured_defaults()
-
     is_required = lambda arg_name: True if arg_name not in configured_defaults else False
 
-    create = subparsers.add_parser(CREATE_PARSER, help='Create student repos.')
+    base_parser = argparse.ArgumentParser(add_help=False)
+    base_parser.add_argument(
+        '-o',
+        '--org-name',
+        help="Name of the organization to which repos should be added.",
+        type=str,
+        required=is_required('org_name'))
+    base_parser.add_argument(
+        '-g',
+        '--github-base-url',
+        help=
+        "Base url to a GitHub v3 API. For enterprise, this is `https://<HOST>/api/v3",
+        type=str,
+        required=is_required('github_base_url'))
 
-    names_or_urls = create.add_mutually_exclusive_group(required=True)
+    # base parser for when files need to be pushed
+    base_push_parser = argparse.ArgumentParser(
+        add_help=False, parents=[base_parser])
+
+    names_or_urls = base_push_parser.add_mutually_exclusive_group(
+        required=True)
     names_or_urls.add_argument(
         '-mu',
         '--master-repo-urls',
@@ -80,37 +91,42 @@ def create_parser():
               "the 'org-name' argument."),
         type=str,
         nargs='+')
-    create.add_argument(
+    base_push_parser.add_argument(
         '-u',
         '--user',
         help=
         "Your GitHub username. Needed for pushing without CLI interaction.",
         type=str,
         required=is_required('user'))
-    create.add_argument(
-        '-o',
-        '--org-name',
-        help="Name of the organization to which repos should be added.",
-        type=str,
-        required=is_required('org_name'))
-    create.add_argument(
-        '-g',
-        '--github-base-url',
-        help=
-        "Base url to a GitHub v3 API. For enterprise, this is `https://<HOST>/api/v3",
-        type=str,
-        required=is_required('github_base_url'))
-    create.add_argument(
+    base_push_parser.add_argument(
         '-s',
         '--student-list',
         help="Path to a list of student usernames.",
         required=True)
 
-    create.set_defaults(**configured_defaults)
+    # set defaults for the base parser
+    base_push_parser.set_defaults(**configured_defaults)
     LOGGER.info("config file defaults:\n{}".format("\n".join([
         "{}: {}".format(key, value)
         for key, value in configured_defaults.items()
     ])))
+
+    parser = argparse.ArgumentParser(
+        prog='gits_pet',
+        description='A CLI tool for administrating student repositories.')
+
+    subparsers = parser.add_subparsers(dest=SUB)
+    subparsers.required = True
+
+    create = subparsers.add_parser(
+        CREATE_PARSER,
+        help="Create student repos.",
+        parents=[base_push_parser])
+
+    update = subparsers.add_parser(
+        UPDATE_PARSER,
+        help="Update existing student repos.",
+        parents=[base_push_parser])
 
     return parser
 
@@ -142,9 +158,16 @@ def main():
     else:
         master_urls = args.master_repo_urls
 
-    admin.create_multiple_student_repos(master_urls, args.user, students,
-                                        args.org_name,
-                                        args.github_base_url)
+    if getattr(args, SUB) == CREATE_PARSER:
+        admin.create_multiple_student_repos(master_urls, args.user, students,
+                                            args.org_name,
+                                            args.github_base_url)
+    elif getattr(args, SUB) == UPDATE_PARSER:
+        admin.update_student_repos(master_urls, args.user, students,
+                                   args.org_name, args.github_base_url)
+    else:
+        raise ValueError("Illegal value for subparser: {}".format(
+            getattr(args, SUB)))
 
 
 if __name__ == "__main__":
