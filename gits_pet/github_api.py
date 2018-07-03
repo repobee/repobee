@@ -184,3 +184,27 @@ class GitHubAPI:
             a list of repo urls matching the regex.
         """
         return [repo.url for repo in self._api.get_repos(regex=regex)]
+
+    def open_issue(self, title: str, issue: str,
+                   repo_names: Iterable[str]) -> None:
+        """Open the specified issue in all repos with the given names.
+
+        Args:
+            title: Title of the issue.
+            issue: An issue text.
+            repo_names: Names of repos to open the issue in.
+        """
+        repo_names_set = set(repo_names)
+        repos = [
+            repo for repo in self._api.get_repos()
+            if repo.name in repo_names_set
+        ]
+        missing_repos = repo_names_set - set(repo.name for repo in repos)
+        if missing_repos:
+            LOGGER.warning(
+                "Missing repos (for which issue will not be opened): {}".
+                format(missing_repos))
+
+        for repo in repos:
+            repo.create_issue(title, body=issue)
+            LOGGER.info("Opened issue '{}' in repo {}".format(title, repo.name))

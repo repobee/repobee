@@ -1,6 +1,7 @@
 import sys
 import os
 import pytest
+import tempfile
 import subprocess
 import string
 from asyncio import coroutine
@@ -16,6 +17,7 @@ from gits_pet import api_wrapper
 USER = 'slarse'
 ORG_NAME = 'test-org'
 GITHUB_BASE_API = 'https://some_enterprise_host/api/v3'
+MASTER_REPO_NAMES = ['week-1', 'week-2', 'epic-tasks', 'some-fun-stuff']
 
 GENERATE_REPO_URL = lambda base_name, student:\
         "https://slarse.se/repos/{}".format(
@@ -210,6 +212,7 @@ class TestUpdateStudentRepos:
         with pytest.raises(ValueError) as exc_info:
             admin.update_student_repos(master_urls, user, students, org_name,
                                        github_api_base_url)
+        assert empty_arg in str(exc_info)
 
     @pytest.mark.parametrize(
         *RAISES_ON_INVALID_TYPE_PARAMETRIZATION,
@@ -234,3 +237,43 @@ class TestUpdateStudentRepos:
             rmtree_mock.assert_any_call(admin._repo_name(url))
 
         git_mock.push_many.assert_called_once_with(push_tuples, user=USER)
+
+
+class TestOpenIssue:
+    """Tests for open_issue."""
+
+    # TODO expand to also test user, org_name and github_api_base_url
+    # can probably use the RAISES_ON_EMPTY_ARGS_PARAMETRIZATION for that,
+    # somehow
+    @pytest.mark.parametrize(
+        'master_repo_names, students, issue_path, user, org_name, github_api_base_url, empty_arg',
+        [([], students(), 'some/nice/path', USER, ORG_NAME, GITHUB_BASE_API,
+          'master_repo_names'), (MASTER_REPO_NAMES, [], 'some/better/path',
+                                 USER, ORG_NAME, GITHUB_BASE_API, 'students'),
+         (MASTER_REPO_NAMES, students(), '', USER, ORG_NAME, GITHUB_BASE_API,
+          'issue_path')])
+    def test_raises_on_empty_args(self, master_repo_names, students,
+                                  issue_path, user, org_name,
+                                  github_api_base_url, empty_arg):
+        with pytest.raises(ValueError) as exc_info:
+            admin.open_issue(master_repo_names, students, issue_path, user,
+                             org_name, github_api_base_url)
+        assert empty_arg in str(exc_info)
+
+    def test_raises_if_issue_does_not_exist(self, students):
+        path = 'hopefully/does/not/exist'
+        while os.path.exists(path):
+            path += '/now'
+        assert not os.path.exists(path)  # meta assert
+
+        with pytest.raises(ValueError) as exc_info:
+            admin.open_issue(MASTER_REPO_NAMES, students, path, USER, ORG_NAME,
+                             GITHUB_BASE_API)
+        assert 'not a file' in str(exc_info)
+
+    def test_raises_if_issue_is_not_file(self, students):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with pytest.raises(ValueError) as exc_info:
+                admin.open_issue(MASTER_REPO_NAMES, students, tmpdir, USER,
+                                 ORG_NAME, GITHUB_BASE_API)
+        assert 'not a file' in str(exc_info)
