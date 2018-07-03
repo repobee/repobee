@@ -10,6 +10,7 @@ program.
 """
 
 import shutil
+import os
 from typing import Iterable, List
 import daiquiri
 from gits_pet import git
@@ -172,6 +173,76 @@ def update_student_repos(master_repo_urls: Iterable[str], user: str,
 
     _remove_local_repos(urls)
     LOGGER.info("done!")
+
+
+def open_issue(master_repo_names: Iterable[str], students: Iterable[str],
+               issue_path: str, org_name: str,
+               github_api_base_url: str) -> None:
+    """Open an issue in student repos.
+
+    Args:
+        master_repo_names: Names of master repositories.
+        students: Student GitHub usernames.
+        issue_path: Filepath to a markdown file. The first line is assumed to
+        be the title.
+        org_name: Name of the organization.
+        github_api_base_url: The base url to a GitHub api.
+    """
+    util.validate_types(
+        org_name=(org_name, str),
+        github_api_base_url=(github_api_base_url, str))
+    util.validate_non_empty(
+        master_repo_names=master_repo_names,
+        students=students,
+        org_name=org_name,
+        github_api_base_url=github_api_base_url)
+    if not os.path.isfile(issue_path):
+        raise ValueError("issue_path: '{}' is not a file".format(issue_path))
+
+    with open(issue_path, 'r') as f:
+        title = f.readline().strip()
+        body = f.read()
+
+    repo_names = [
+        generate_repo_name(student, master) for master in master_repo_names
+        for student in students
+    ]
+
+    api = GitHubAPI(github_api_base_url, git.OAUTH_TOKEN, org_name)
+
+    api.open_issue(title, body, repo_names)
+
+
+def close_issue(title_regex: str, master_repo_names: Iterable[str],
+                students: Iterable[str], org_name: str,
+                github_api_base_url: str) -> None:
+    """Close issues whose titles match the title_regex in student repos.
+
+    Args:
+        title_regex: A regex to match against issue titles.
+        master_repo_names: Names of master repositories.
+        students: Student GitHub usernames.
+        org_name: Name of the organization.
+        github_api_base_url: The base url to a GitHub api.
+    """
+    util.validate_types(
+        title_regex=(title_regex, str),
+        org_name=(org_name, str),
+        github_api_base_url=(github_api_base_url, str))
+    util.validate_non_empty(
+        master_repo_names=master_repo_names,
+        students=students,
+        org_name=org_name,
+        github_api_base_url=github_api_base_url)
+
+    repo_names = [
+        generate_repo_name(student, master) for master in master_repo_names
+        for student in students
+    ]
+
+    api = GitHubAPI(github_api_base_url, git.OAUTH_TOKEN, org_name)
+
+    api.close_issue(title_regex, repo_names)
 
 
 def generate_repo_name(team_name: str, master_repo_name: str) -> str:
