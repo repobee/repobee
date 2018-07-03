@@ -33,6 +33,8 @@ LOGGER.warning("babla")
 SUB = 'subparser'
 CREATE_PARSER = 'create'
 UPDATE_PARSER = 'update'
+OPEN_ISSUE_PARSER = 'open-issue'
+CLOSE_ISSUE_PARSER = 'close-issue'
 
 CONFIG_DIR = appdirs.user_config_dir(
     appname=__package__,
@@ -48,6 +50,36 @@ def read_config(config_file="{}/config.cnf".format(CONFIG_DIR)):
     if os.path.isfile(config_file):
         config_parser.read(config_file)
     return config_parser["DEFAULT"]
+
+
+def add_issue_parsers(base_parser, subparsers):
+    issue_parser_base = argparse.ArgumentParser(
+        add_help=False, parents=[base_parser])
+
+    open_parser = subparsers.add_parser(
+        OPEN_ISSUE_PARSER,
+        help="Open issues in student repos.",
+        parents=[issue_parser_base])
+    open_parser.add_argument(
+        '-i',
+        '--issue',
+        help=
+        "Path to an issue. NOTE: The first line is assumed to be the title.",
+        type=str,
+        required=True)
+
+    close_parser = subparsers.add_parser(
+        CLOSE_ISSUE_PARSER,
+        help="Close issues in student repos.",
+        parents=[issue_parser_base])
+    close_parser.add_argument(
+        '-r',
+        '--title-regex',
+        help=(
+            "Regex to match titles against. Any issue whose title matches the "
+            "regex will be closed."),
+        type=str,
+        required=True)
 
 
 def create_parser():
@@ -68,13 +100,13 @@ def create_parser():
         "Base url to a GitHub v3 API. For enterprise, this is `https://<HOST>/api/v3",
         type=str,
         required=is_required('github_base_url'))
-
-    # base parser for when files need to be pushed
-    base_push_parser = argparse.ArgumentParser(
-        add_help=False, parents=[base_parser])
-
-    names_or_urls = base_push_parser.add_mutually_exclusive_group(
+    base_parser.add_argument(
+        '-s',
+        '--student-list',
+        help="Path to a list of student usernames.",
         required=True)
+
+    names_or_urls = base_parser.add_mutually_exclusive_group(required=True)
     names_or_urls.add_argument(
         '-mu',
         '--master-repo-urls',
@@ -91,6 +123,11 @@ def create_parser():
               "the 'org-name' argument."),
         type=str,
         nargs='+')
+
+    # base parser for when files need to be pushed
+    base_push_parser = argparse.ArgumentParser(
+        add_help=False, parents=[base_parser])
+
     base_push_parser.add_argument(
         '-u',
         '--user',
@@ -98,14 +135,9 @@ def create_parser():
         "Your GitHub username. Needed for pushing without CLI interaction.",
         type=str,
         required=is_required('user'))
-    base_push_parser.add_argument(
-        '-s',
-        '--student-list',
-        help="Path to a list of student usernames.",
-        required=True)
 
     # set defaults for the base parser
-    base_push_parser.set_defaults(**configured_defaults)
+    base_parser.set_defaults(**configured_defaults)
     LOGGER.info("config file defaults:\n{}".format("\n".join([
         "{}: {}".format(key, value)
         for key, value in configured_defaults.items()
@@ -127,6 +159,8 @@ def create_parser():
         UPDATE_PARSER,
         help="Update existing student repos.",
         parents=[base_push_parser])
+
+    add_issue_parsers(base_parser, subparsers)
 
     return parser
 
@@ -155,8 +189,10 @@ def main():
         api = github_api.GitHubAPI(args.github_base_url, git.OAUTH_TOKEN,
                                    args.org_name)
         master_urls = api.get_repo_urls(args.master_repo_names)
+        master_names = args.master_repo_names
     else:
         master_urls = args.master_repo_urls
+        master_names = [admin._repo_name(url) for url in master_urls]
 
     if getattr(args, SUB) == CREATE_PARSER:
         admin.create_multiple_student_repos(master_urls, args.user, students,
@@ -165,6 +201,12 @@ def main():
     elif getattr(args, SUB) == UPDATE_PARSER:
         admin.update_student_repos(master_urls, args.user, students,
                                    args.org_name, args.github_base_url)
+    elif getattr(args, SUB) == OPEN_ISSUE_PARSER:
+        admin.open_issue(master_names, students, args.issue, args.org_name,
+                         args.github_base_url)
+    elif getattr(args, SUB) == CLOSE_ISSUE_PARSER:
+        admin.close_issue(args.title_regex, master_names, students,
+                          args.org_name, args.github_base_url)
     else:
         raise ValueError("Illegal value for subparser: {}".format(
             getattr(args, SUB)))
