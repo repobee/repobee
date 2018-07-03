@@ -126,16 +126,30 @@ def create_student_repos(master_repo_url: str,
 def update_student_repos(master_repo_urls: Iterable[str], user: str,
                          students: Iterable[str], org_name: str,
                          github_api_base_url: str) -> None:
-    """Attempt to update all student repos related to the provided master
-    repos.
+    """Attempt to update all student repos related to one of the master repos.
     
     Args:
-        master_repo_url: Url to a template repository for the student repos.
+        master_repo_urls: URLs to template repositories for the student repos.
         user: Username of the administrator that is creating the repos.
-        students: An iterable of student GitHub usernames.
-        org_name: Name of an organization.
+        students: Student GitHub usernames.
+        org_name: Name of the organization.
         github_api_base_url: The base url to a GitHub api.
     """
+    util.validate_types(
+        user=(user, str),
+        org_name=(org_name, str),
+        github_api_base_url=(github_api_base_url, str))
+    util.validate_non_empty(
+        master_repo_urls=master_repo_urls,
+        user=user,
+        students=students,
+        org_name=org_name,
+        github_api_base_url=github_api_base_url)
+    urls = list(master_repo_urls)  # safe copy
+
+    if len(set(urls)) != len(urls):
+        raise ValueError("master_repo_urls contains duplicates")
+
     api = GitHubAPI(github_api_base_url, git.OAUTH_TOKEN, org_name)
 
     urls = list(master_repo_urls)

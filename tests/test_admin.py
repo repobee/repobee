@@ -17,7 +17,9 @@ USER = 'slarse'
 ORG_NAME = 'test-org'
 GITHUB_BASE_API = 'https://some_enterprise_host/api/v3'
 
-GENERATE_REPO_URL = lambda base_name, student: "https://slarse.se/repos/{}".format(admin.generate_repo_name(base_name, student))
+GENERATE_REPO_URL = lambda base_name, student:\
+        "https://slarse.se/repos/{}".format(
+            admin.generate_repo_name(base_name, student))
 
 
 @pytest.fixture(autouse=True)
@@ -105,56 +107,75 @@ def rmtree_mock(mocker):
 
 @pytest.fixture(scope='function')
 def students():
-    return list(string.ascii_lowercase)
+    return list(string.ascii_lowercase)[:10]
+
+
+def assert_raises_on_duplicate_master_urls(function, master_urls, students):
+    """Test for functions that take master_urls and students args."""
+
+    master_urls.append(master_urls[0])
+
+    with pytest.raises(ValueError) as exc_info:
+        function(master_urls, USER, students, ORG_NAME, GITHUB_BASE_API)
+    assert str(exc_info.value) == "master_repo_urls contains duplicates"
+
+
+RAISES_ON_EMPTY_ARGS_PARAMETRIZATION = (
+    'master_urls, user, students, org_name, github_api_base_url, empty_arg',
+    [([], USER, students(), ORG_NAME, GITHUB_BASE_API, 'master_repo_urls'),
+     (master_urls(), '', students(), ORG_NAME, GITHUB_BASE_API, 'user'),
+     (master_urls(), USER, [], ORG_NAME, GITHUB_BASE_API,
+      'students'), (master_urls(), USER, students(), '',
+                    GITHUB_BASE_API, 'org_name'), (master_urls(), USER,
+                                                   students(), ORG_NAME, '',
+                                                   'github_api_base_url')])
+RAISES_ON_EMPTY_ARGS_IDS = [
+    "|".join([str(val) for val in line])
+    for line in RAISES_ON_EMPTY_ARGS_PARAMETRIZATION[1]
+]
+
+RAISES_ON_INVALID_TYPE_PARAMETRIZATION = (
+    'user, org_name, github_api_base_url, type_error_arg',
+    [(31, ORG_NAME, GITHUB_BASE_API, 'user'),
+     (USER, 31, GITHUB_BASE_API, 'org_name'), (USER, ORG_NAME, 31,
+                                               'github_api_base_url')])
+
+RAISES_ON_EMPTY_INVALID_TYPE_IDS = [
+    "|".join([str(val) for val in line])
+    for line in RAISES_ON_INVALID_TYPE_PARAMETRIZATION[1]
+]
 
 
 class TestCreateMultipleStudentRepos:
     """Tests for create_multiple_student_repos."""
 
-    def test_raises_on_duplicate_master_urls(
-            self, master_urls, students):
-        master_urls.append(master_urls[0])
-
-        with pytest.raises(ValueError) as exc_info:
-            admin.create_multiple_student_repos(master_urls, USER, students,
-                                                ORG_NAME, GITHUB_BASE_API)
-        assert str(exc_info.value) == "master_repo_urls contains duplicates"
+    def test_raises_on_duplicate_master_urls(self, master_urls, students):
+        assert_raises_on_duplicate_master_urls(
+            admin.create_multiple_student_repos, master_urls, students)
 
     @pytest.mark.parametrize(
-        'master_urls, user, students, org_name, github_api_base_url, empty_arg',
-        [([], USER, students(), ORG_NAME, GITHUB_BASE_API, 'master_repo_urls'),
-         (master_urls(), '', students(), ORG_NAME, GITHUB_BASE_API, 'user'),
-         (master_urls(), USER, [], ORG_NAME, GITHUB_BASE_API, 'students'),
-         (master_urls(), USER, students(), '', GITHUB_BASE_API, 'org_name'),
-         (master_urls(), USER, students(), ORG_NAME, '',
-          'github_api_base_url')])
-    def test_raises_empty_args(
-            self, master_urls, user, students, org_name, github_api_base_url,
-            empty_arg):
+        *RAISES_ON_EMPTY_ARGS_PARAMETRIZATION, ids=RAISES_ON_EMPTY_ARGS_IDS)
+    def test_raises_empty_args(self, master_urls, user, students, org_name,
+                               github_api_base_url, empty_arg):
         """None of the arguments are allowed to be empty."""
         with pytest.raises(ValueError) as exc_info:
             admin.create_multiple_student_repos(master_urls, user, students,
                                                 org_name, github_api_base_url)
 
-        assert empty_arg in str(exc_info.value)
-
     @pytest.mark.parametrize(
-        'user, org_name, github_api_base_url, type_error_arg',
-        [(31, ORG_NAME, GITHUB_BASE_API, 'user'),
-         (USER, 31, GITHUB_BASE_API, 'org_name'),
-         (USER, ORG_NAME, 31, 'github_api_base_url')])
-    def test_raises_on_invalid_type(
-            self, master_urls, user, students, org_name, github_api_base_url,
-            type_error_arg):
+        *RAISES_ON_INVALID_TYPE_PARAMETRIZATION,
+        ids=RAISES_ON_EMPTY_INVALID_TYPE_IDS)
+    def test_raises_on_invalid_type(self, master_urls, user, students,
+                                    org_name, github_api_base_url,
+                                    type_error_arg):
         """Test that the non-itrable arguments are type checked."""
         with pytest.raises(TypeError) as exc_info:
             admin.create_multiple_student_repos(master_urls, user, students,
                                                 org_name, github_api_base_url)
         assert type_error_arg in str(exc_info.value)
 
-    def test(self, master_urls, students,
-                                           api_mock, git_mock, repo_infos,
-                                           push_tuples, rmtree_mock):
+    def test_happy_path(self, master_urls, students, api_mock, git_mock,
+                        repo_infos, push_tuples, rmtree_mock):
         """Test that create_multiple_student_repos makes the correct function calls."""
         admin.create_multiple_student_repos(master_urls, USER, students,
                                             ORG_NAME, GITHUB_BASE_API)
@@ -170,6 +191,46 @@ class TestCreateMultipleStudentRepos:
         git_mock.push_many.assert_called_once_with(push_tuples, user=USER)
 
     @pytest.mark.skip(msg="Check iterable contents is not yet implemented")
-    def test_raises_on_invalid_iterable_contents(
-            self):
+    def test_raises_on_invalid_iterable_contents(self):
         pass
+
+
+class TestUpdateStudentRepos:
+    """Tests for update_student_repos."""
+
+    def test_raises_on_duplicate_master_urls(self, master_urls, students):
+        assert_raises_on_duplicate_master_urls(admin.update_student_repos,
+                                               master_urls, students)
+
+    @pytest.mark.parametrize(
+        *RAISES_ON_EMPTY_ARGS_PARAMETRIZATION, ids=RAISES_ON_EMPTY_ARGS_IDS)
+    def test_raises_empty_args(self, master_urls, user, students, org_name,
+                               github_api_base_url, empty_arg):
+        """None of the arguments are allowed to be empty."""
+        with pytest.raises(ValueError) as exc_info:
+            admin.update_student_repos(master_urls, user, students, org_name,
+                                       github_api_base_url)
+
+    @pytest.mark.parametrize(
+        *RAISES_ON_INVALID_TYPE_PARAMETRIZATION,
+        ids=RAISES_ON_EMPTY_INVALID_TYPE_IDS)
+    def test_raises_on_invalid_type(self, master_urls, user, students,
+                                    org_name, github_api_base_url,
+                                    type_error_arg):
+        """Test that the non-iterable arguments are type checked."""
+        with pytest.raises(TypeError) as exc_info:
+            admin.update_student_repos(master_urls, user, students, org_name,
+                                       github_api_base_url)
+        assert type_error_arg in str(exc_info.value)
+
+    def test_happy_path(self, master_urls, students, api_mock, git_mock,
+                        repo_infos, push_tuples, rmtree_mock):
+        """Test that update_student_repos makes the correct function calls."""
+        admin.update_student_repos(master_urls, USER, students, ORG_NAME,
+                                   GITHUB_BASE_API)
+
+        for url in master_urls:
+            git_mock.clone.assert_any_call(url)
+            rmtree_mock.assert_any_call(admin._repo_name(url))
+
+        git_mock.push_many.assert_called_once_with(push_tuples, user=USER)
