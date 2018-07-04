@@ -6,6 +6,7 @@ This module the CLI for gits_pet.
 import argparse
 import configparser
 import os
+import sys
 import appdirs
 import gits_pet
 import logging
@@ -159,6 +160,14 @@ def create_parser():
         UPDATE_PARSER,
         help="Update existing student repos.",
         parents=[base_push_parser])
+    update.add_argument(
+        '-i',
+        '--issue',
+        help=
+        ("Path to issue to open in repos to which update pushes fail. Assumes "
+         "that the first line is the title."),
+        type=str,
+    )
 
     add_issue_parsers(base_parser, subparsers)
 
@@ -174,6 +183,14 @@ def get_configured_defaults():
     return config
 
 
+def _try_read_issue(issue_path: str) -> str:
+    """Attempt to read an issue from file."""
+    if not os.path.isfile(issue_path):
+        raise ValueError("{} is not a file".format(issue_path))
+    with open(issue_path, 'r', encoding=sys.getdefaultencoding()) as file:
+        return admin.Issue(file.readline().strip(), file.read())
+
+
 def main():
     parser = create_parser()
     args = parser.parse_args()
@@ -182,6 +199,11 @@ def main():
         raise ValueError("'{}' is not a file".format(args.student_list))
     with open(args.student_list, 'r') as f:
         students = [student.strip() for student in f]
+
+    if hasattr(args, 'issue') and args.issue:
+        issue = _try_read_issue(args.issue)
+    else:
+        issue = None
 
     if not args.master_repo_urls:
         assert args.master_repo_names
@@ -200,9 +222,9 @@ def main():
                                             args.github_base_url)
     elif getattr(args, SUB) == UPDATE_PARSER:
         admin.update_student_repos(master_urls, args.user, students,
-                                   args.org_name, args.github_base_url)
+                                   args.org_name, args.github_base_url, issue)
     elif getattr(args, SUB) == OPEN_ISSUE_PARSER:
-        admin.open_issue(master_names, students, args.issue, args.org_name,
+        admin.open_issue(master_names, students, issue, args.org_name,
                          args.github_base_url)
     elif getattr(args, SUB) == CLOSE_ISSUE_PARSER:
         admin.close_issue(args.title_regex, master_names, students,

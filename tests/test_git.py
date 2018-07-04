@@ -185,16 +185,21 @@ def test_push_single_raises_on_empty_branch(env_setup):
 
 
 def test_push_single_raises_on_async_push_exception(env_setup, mocker):
-    async def raise_(*args, **kwargs):
-        raise git.PushFailedError("Push failed", 128, b"some error")
+    url = 'some_url'
+
+    async def raise_(local_repo, user, repo_url, branch):
+        raise git.PushFailedError("Push failed", 128, b"some error", repo_url)
 
     mocker.patch('gits_pet.git._push_async', side_effect=raise_)
 
     with pytest.raises(git.PushFailedError) as exc_info:
-        git.push_single('some_repo', USER, 'some_url')
+        git.push_single('some_repo', USER, url)
+
+    assert exc_info.value.url == url
 
 
-def test_push_single_issues_correct_command_with_defaults(env_setup, aio_subproc):
+def test_push_single_issues_correct_command_with_defaults(
+        env_setup, aio_subproc):
     branch = 'master'
     user = USER
     local_repo = os.sep.join(['path', 'to', 'repo'])
@@ -230,7 +235,8 @@ def test_push_single_issues_correct_command(env_setup, aio_subproc):
         stderr=subprocess.PIPE)
 
 
-def test_push_single_raises_on_non_zero_exit_from_git_push(env_setup, aio_subproc):
+def test_push_single_raises_on_non_zero_exit_from_git_push(
+        env_setup, aio_subproc):
     aio_subproc.process.returncode = 128
 
     with pytest.raises(git.PushFailedError) as exc:
@@ -264,8 +270,9 @@ def test_push(env_setup, push_tuples, aio_subproc):
         git._insert_user_and_token(url, USER), branch).split())
                                  for local_repo, url, branch in push_tuples]
 
-    git.push(push_tuples, USER)
+    failed_urls = git.push(push_tuples, USER)
 
+    assert not failed_urls
     for local_repo, command in expected_subproc_commands:
         aio_subproc.create_subprocess.assert_any_call(
             *command,
@@ -276,18 +283,20 @@ def test_push(env_setup, push_tuples, aio_subproc):
 
 
 def test_push_tries_all_calls_despite_exceptions(env_setup, push_tuples,
-                                                      mocker):
+                                                 mocker):
     """Test that push tries to push all push tuple values even if there
     are exceptions.
     """
 
-    async def raise_(*args, **kwargs):
-        raise git.PushFailedError("Push failed", 128, b"some error")
+    async def raise_(local_repo, user, repo_url, branch):
+        raise git.PushFailedError("Push failed", 128, b"some error", repo_url)
 
     mocker.patch('gits_pet.git._push_async', side_effect=raise_)
+    expected_failed_urls = [pt.remote_url for pt in push_tuples]
 
-    git.push(push_tuples, USER)
+    failed_urls = git.push(push_tuples, USER)
 
+    assert failed_urls == expected_failed_urls
     for pt in push_tuples:
         git._push_async.assert_any_call(pt.local_path, USER, pt.remote_url,
                                         pt.branch)

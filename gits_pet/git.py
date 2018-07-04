@@ -8,7 +8,7 @@ import subprocess
 import collections
 import daiquiri
 import asyncio
-from typing import Sequence, Tuple, Iterable
+from typing import Sequence, Tuple, Iterable, List
 
 from gits_pet import util
 
@@ -48,6 +48,10 @@ class CloneFailedError(GitError):
 
 class PushFailedError(GitError):
     """An error to raise when pushing to a remote fails."""
+
+    def __init__(self, msg: str, returncode: int, stderr: bytes, url: str):
+        self.url = url
+        super().__init__(msg, returncode, stderr)
 
 
 def _insert_token(https_url: str, token: str = OAUTH_TOKEN) -> str:
@@ -163,14 +167,17 @@ async def _push_async(local_repo: str,
 
     if proc.returncode != 0:
         raise PushFailedError("Failed to push to {}".format(repo_url),
-                              proc.returncode, stderr)
+                              proc.returncode, stderr, repo_url)
     elif b"Everything up-to-date" in stderr:
         LOGGER.info("{} is up-to-date".format(repo_url))
     else:
         LOGGER.info("Pushed files to {} {}".format(repo_url, branch))
 
 
-def push_single(local_repo: str, user: str, repo_url: str, branch: str = 'master'):
+def push_single(local_repo: str,
+                user: str,
+                repo_url: str,
+                branch: str = 'master'):
     """Push from a local repository to a remote repository without first adding
     push remotes.
 
@@ -185,12 +192,17 @@ def push_single(local_repo: str, user: str, repo_url: str, branch: str = 'master
     loop.run_until_complete(task)
 
 
-def push(push_tuples: Iterable[Push], user: str):
-    """Push to all repos defined in push_tuples.
+def push(push_tuples: Iterable[Push], user: str) -> List[str]:
+    """Push to all repos defined in push_tuples asynchronously. Amount of
+    concurrent tasks is limited by CONCURRENT_TASKS.
 
     Args:
         push_tuples: Push namedtuples defining local and remote repos.
         user: The username to put in the push.
+
+    Returns:
+        urls to which pushes failed with PushFailedError. Other errors are only
+        logged.
     """
     # TODO valdate push_tuples
     util.validate_types(user=(user, str))
@@ -204,14 +216,19 @@ def push(push_tuples: Iterable[Push], user: str):
         completed_tasks += _push_batch(push_tuples[i:i + CONCURRENT_TASKS],
                                        user)
 
-    for task in completed_tasks:
-        if task.exception():
-            LOGGER.error(str(task.exception()))
+    exceptions = [
+        task.exception() for task in completed_tasks if task.exception()
+    ]
+    for exc in exceptions:
+        LOGGER.error(str(exc))
+
+    # urls can only be extracted from PushFailedErrors
+    return [exc.url for exc in exceptions if isinstance(exc, PushFailedError)]
 
 
 def _push_batch(push_tuples: Iterable[Push], user: str):
     """Push a batch of push_tuples concurrently. For stability, push_tuples
-    may not exceed CONCURRENT_TASKS in size.
+    should not exceed CONCURRENT_TASKS in size.
 
     Args:
         push_tuples: Push namedtuples defining local and remote repos.
