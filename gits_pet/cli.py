@@ -60,6 +60,12 @@ def add_issue_parsers(base_parser, subparsers):
 
     open_parser = subparsers.add_parser(
         OPEN_ISSUE_PARSER,
+        description=(
+            "Open issues in student repositories. For each master repository "
+            "specified, the student list is traversed. For every student repo "
+            "found, the issue specified by the `--issue` option is opened. "
+            "NOTE: The first line of the issue file is assumed to be the "
+            "issue title!"),
         help="Open issues in student repos.",
         parents=[issue_parser_base])
     open_parser.add_argument(
@@ -72,6 +78,11 @@ def add_issue_parsers(base_parser, subparsers):
 
     close_parser = subparsers.add_parser(
         CLOSE_ISSUE_PARSER,
+        description=(
+            "Close issues in student repos based on a regex. For each master "
+            "repository specified, the student list is traversed. For every "
+            "student repo found, any open issues matching the `--title-regex` "
+            "are closed."),
         help="Close issues in student repos.",
         parents=[issue_parser_base])
     close_parser.add_argument(
@@ -159,11 +170,24 @@ def create_parser():
     create = subparsers.add_parser(
         CREATE_PARSER,
         help="Create student repos.",
+        description=
+        ("Create student repositories from master repositories. The specified "
+         "master repositories are first cloned to disk. Then, one team for "
+         "each student is created, and students are added to their teams. For "
+         "each master repo, one student repo is created, and files from the "
+         "master repos are pushed to the corresponding student repos. As a "
+         "final step, all cloned repos are removed. NOTE: It is perfectly "
+         "safe to run this command several times, as any previously performed "
+         "steps are simply skipped."),
         parents=[base_push_parser])
 
     update = subparsers.add_parser(
         UPDATE_PARSER,
         help="Update existing student repos.",
+        description=(
+            "Push changes from master repos to student repos. The master repos "
+            "must be available within the organization. They can be added "
+            "manually, or with the `migrate-repos` command."),
         parents=[base_push_parser])
     update.add_argument(
         '-i',
@@ -177,6 +201,19 @@ def create_parser():
     migrate = subparsers.add_parser(
         MIGRATE_PARSER,
         help="Migrate master repositories into the target organization.",
+        description=
+        ("Migrate master repositories into the target organization. gits_pet "
+         "relies on the master repositories being located in the target "
+         "organization. This command facilitates moving repositories from "
+         "somewhere on the same GitHub instance (e.g. on github.com or your "
+         "own GitHub Enterprise server) into the organization. Each "
+         "master repository specified with `-mu` is cloned to disk, a repo "
+         "with the same name is created in the target organization, and then "
+         "the files are pushed to the new repo. All of the master repos are"
+         "added to the `{}` team. ".format(admin.MASTER_TEAM) + \
+         "NOTE: `migrate-repos` can also be used to update already migrated repos "
+         "that have been changed in their original repos."
+         ),
         parents=[base_parser])
 
     add_issue_parsers(base_student_parser, subparsers)
