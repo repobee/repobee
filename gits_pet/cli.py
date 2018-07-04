@@ -32,8 +32,9 @@ daiquiri.setup(
 LOGGER = daiquiri.getLogger(__file__)
 LOGGER.warning("babla")
 SUB = 'subparser'
-CREATE_PARSER = 'create'
-UPDATE_PARSER = 'update'
+CREATE_PARSER = 'create-repos'
+UPDATE_PARSER = 'update-repos'
+MIGRATE_PARSER = 'migrate-repos'
 OPEN_ISSUE_PARSER = 'open-issue'
 CLOSE_ISSUE_PARSER = 'close-issue'
 
@@ -171,6 +172,11 @@ def create_parser():
 
     add_issue_parsers(base_parser, subparsers)
 
+    migrate = subparsers.add_parser(
+        MIGRATE_PARSER,
+        help="Migrate master repositories into the target organization.",
+        parents=[base_parser])
+
     return parser
 
 
@@ -229,6 +235,9 @@ def main():
     elif getattr(args, SUB) == CLOSE_ISSUE_PARSER:
         admin.close_issue(args.title_regex, master_names, students,
                           args.org_name, args.github_base_url)
+    elif getattr(args, SUB) == MIGRATE_PARSER:
+        admin.migrate_repos(master_urls, args.user, args.org_name,
+                            args.github_base_url)
     else:
         raise ValueError("Illegal value for subparser: {}".format(
             getattr(args, SUB)))

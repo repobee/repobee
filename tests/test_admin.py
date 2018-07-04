@@ -16,7 +16,7 @@ from gits_pet import api_wrapper
 
 USER = 'slarse'
 ORG_NAME = 'test-org'
-GITHUB_BASE_API = 'https://some_enterprise_host/api/v3'
+GITHUB_BASE_URL = 'https://some_enterprise_host/api/v3'
 
 GENERATE_REPO_URL = lambda base_name, student:\
         "https://slarse.se/repos/{}".format(
@@ -24,7 +24,7 @@ GENERATE_REPO_URL = lambda base_name, student:\
 
 
 @pytest.fixture()
-def git_mock(request, mocker):
+def git_mock(request, mocker, autouse=True):
     """Mocks the whole git module so that there are no accidental
     pushes/clones.
     """
@@ -36,7 +36,7 @@ def git_mock(request, mocker):
 @pytest.fixture(autouse=True)
 def api_mock(mocker):
     return mocker.patch(
-        'gits_pet.admin.GitHubAPI', autospec=True)(GITHUB_BASE_API,
+        'gits_pet.admin.GitHubAPI', autospec=True)(GITHUB_BASE_URL,
                                                    git.OAUTH_TOKEN, ORG_NAME)
 
 
@@ -124,17 +124,17 @@ def assert_raises_on_duplicate_master_urls(function, master_urls, students):
     master_urls.append(master_urls[0])
 
     with pytest.raises(ValueError) as exc_info:
-        function(master_urls, USER, students, ORG_NAME, GITHUB_BASE_API)
+        function(master_urls, USER, students, ORG_NAME, GITHUB_BASE_URL)
     assert str(exc_info.value) == "master_repo_urls contains duplicates"
 
 
 RAISES_ON_EMPTY_ARGS_PARAMETRIZATION = (
     'master_urls, user, students, org_name, github_api_base_url, empty_arg',
-    [([], USER, students(), ORG_NAME, GITHUB_BASE_API, 'master_repo_urls'),
-     (master_urls(), '', students(), ORG_NAME, GITHUB_BASE_API, 'user'),
-     (master_urls(), USER, [], ORG_NAME, GITHUB_BASE_API,
+    [([], USER, students(), ORG_NAME, GITHUB_BASE_URL, 'master_repo_urls'),
+     (master_urls(), '', students(), ORG_NAME, GITHUB_BASE_URL, 'user'),
+     (master_urls(), USER, [], ORG_NAME, GITHUB_BASE_URL,
       'students'), (master_urls(), USER, students(), '',
-                    GITHUB_BASE_API, 'org_name'), (master_urls(), USER,
+                    GITHUB_BASE_URL, 'org_name'), (master_urls(), USER,
                                                    students(), ORG_NAME, '',
                                                    'github_api_base_url')])
 RAISES_ON_EMPTY_ARGS_IDS = [
@@ -144,8 +144,8 @@ RAISES_ON_EMPTY_ARGS_IDS = [
 
 RAISES_ON_INVALID_TYPE_PARAMETRIZATION = (
     'user, org_name, github_api_base_url, type_error_arg',
-    [(31, ORG_NAME, GITHUB_BASE_API, 'user'),
-     (USER, 31, GITHUB_BASE_API, 'org_name'), (USER, ORG_NAME, 31,
+    [(31, ORG_NAME, GITHUB_BASE_URL, 'user'),
+     (USER, 31, GITHUB_BASE_URL, 'org_name'), (USER, ORG_NAME, 31,
                                                'github_api_base_url')])
 
 RAISES_ON_EMPTY_INVALID_TYPE_IDS = [
@@ -186,7 +186,7 @@ class TestCreateMultipleStudentRepos:
                         repo_infos, push_tuples, rmtree_mock):
         """Test that create_multiple_student_repos makes the correct function calls."""
         admin.create_multiple_student_repos(master_urls, USER, students,
-                                            ORG_NAME, GITHUB_BASE_API)
+                                            ORG_NAME, GITHUB_BASE_URL)
 
         for url in master_urls:
             git_mock.clone.assert_any_call(url)
@@ -236,7 +236,7 @@ class TestUpdateStudentRepos:
                         repo_infos, push_tuples, rmtree_mock):
         """Test that update_student_repos makes the correct function calls."""
         admin.update_student_repos(master_urls, USER, students, ORG_NAME,
-                                   GITHUB_BASE_API)
+                                   GITHUB_BASE_URL)
 
         for url in master_urls:
             git_mock.clone.assert_any_call(url)
@@ -262,7 +262,7 @@ class TestUpdateStudentRepos:
             for name in [master_name, 'week-3']
         ]
 
-        generate_url = lambda repo_name: "{}/{}/{}".format(GITHUB_BASE_API, ORG_NAME, repo_name)
+        generate_url = lambda repo_name: "{}/{}/{}".format(GITHUB_BASE_URL, ORG_NAME, repo_name)
         fail_repo_names = [
             admin.generate_repo_name(stud, master_name) for stud in ['a', 'c']
         ]
@@ -280,7 +280,7 @@ class TestUpdateStudentRepos:
         git_clone_mock = mocker.patch('gits_pet.git.clone')
 
         admin.update_student_repos(master_urls, USER, students, ORG_NAME,
-                                   GITHUB_BASE_API, issue)
+                                   GITHUB_BASE_URL, issue)
 
         if issue:  # expect issue to be opened
             api_mock.open_issue.assert_called_once_with(
@@ -303,7 +303,7 @@ class TestUpdateStudentRepos:
             for name in [master_name, 'week-3']
         ]
 
-        generate_url = lambda repo_name: "{}/{}/{}".format(GITHUB_BASE_API, ORG_NAME, repo_name)
+        generate_url = lambda repo_name: "{}/{}/{}".format(GITHUB_BASE_URL, ORG_NAME, repo_name)
         fail_repo_names = [
             admin.generate_repo_name(stud, master_name) for stud in ['a', 'c']
         ]
@@ -322,7 +322,7 @@ class TestUpdateStudentRepos:
         git_clone_mock = mocker.patch('gits_pet.git.clone')
 
         admin.update_student_repos(master_urls, USER, students, ORG_NAME,
-                                   GITHUB_BASE_API, issue)
+                                   GITHUB_BASE_URL, issue)
 
         api_mock.open_issue.assert_called_once_with(issue.title, issue.body,
                                                     fail_repo_names)
@@ -337,12 +337,12 @@ class TestOpenIssue:
     @pytest.mark.parametrize(
         'master_repo_names, students, issue, org_name, github_api_base_url, empty_arg',
         [
-            ([], students(), admin.Issue('', ''), ORG_NAME, GITHUB_BASE_API,
+            ([], students(), admin.Issue('', ''), ORG_NAME, GITHUB_BASE_URL,
              'master_repo_names'),
             (master_names(master_urls()), [], admin.Issue('', ''), ORG_NAME,
-             GITHUB_BASE_API, 'students'),
+             GITHUB_BASE_URL, 'students'),
             (master_names(master_urls()), students(), None, ORG_NAME,
-             GITHUB_BASE_API, 'issue'),
+             GITHUB_BASE_URL, 'issue'),
         ])
     def test_raises_on_empty_args(self, master_repo_names, students, issue,
                                   org_name, github_api_base_url, empty_arg):
@@ -364,7 +364,7 @@ class TestOpenIssue:
         issue = admin.Issue(
             "A title", "And a nice **formatted** body\n### With headings!")
         admin.open_issue(master_names, students, issue, ORG_NAME,
-                         GITHUB_BASE_API)
+                         GITHUB_BASE_URL)
 
         api_mock.open_issue.assert_called_once_with(issue.title, issue.body,
                                                     expected_repo_names)
@@ -376,10 +376,10 @@ class TestCloseIssue:
     @pytest.mark.parametrize(
         'master_repo_names, students, org_name, github_api_base_url, empty_arg',
         [
-            ([], students(), ORG_NAME, GITHUB_BASE_API, 'master_repo_names'),
-            (master_names(master_urls()), [], ORG_NAME, GITHUB_BASE_API,
+            ([], students(), ORG_NAME, GITHUB_BASE_URL, 'master_repo_names'),
+            (master_names(master_urls()), [], ORG_NAME, GITHUB_BASE_URL,
              'students'),
-            (master_names(master_urls()), students(), '', GITHUB_BASE_API,
+            (master_names(master_urls()), students(), '', GITHUB_BASE_URL,
              'org_name'),
             (master_names(master_urls()), students(), ORG_NAME, '',
              'github_api_base_url'),
@@ -393,7 +393,7 @@ class TestCloseIssue:
         assert empty_arg in str(exc_info)
 
     @pytest.mark.parametrize('org_name, github_api_base_url, type_error_arg', [
-        (2, GITHUB_BASE_API, 'org_name'),
+        (2, GITHUB_BASE_URL, 'org_name'),
         (ORG_NAME, 41, 'github_api_base_url'),
     ])
     def test_raises_on_invalid_type(self, master_names, org_name,
@@ -414,7 +414,58 @@ class TestCloseIssue:
         ]
 
         admin.close_issue(title_regex, master_names, students, ORG_NAME,
-                          GITHUB_BASE_API)
+                          GITHUB_BASE_URL)
 
         api_mock.close_issue.assert_called_once_with(title_regex,
                                                      expected_repo_names)
+
+
+class TestMigrateRepo:
+    """Tests for migrate_repo."""
+
+    @pytest.mark.parametrize(
+        'master_urls, user, org_name, github_api_base_url, empty_arg',
+        [([], USER, ORG_NAME, GITHUB_BASE_URL, 'master_url'),
+         (['https://some_url'], '', ORG_NAME, GITHUB_BASE_URL, 'user'),
+         (['https://some_url'], USER, '', GITHUB_BASE_URL, 'org_name'),
+         (['https://some_url'], USER, ORG_NAME, '', 'github_api_base_url')])
+    def test_raises_on_empty_args(self, master_urls, user, org_name,
+                                  github_api_base_url, empty_arg):
+        """only the regex is allowed ot be empty."""
+        with pytest.raises(ValueError) as exc_info:
+            admin.migrate_repos(master_urls, user, org_name,
+                                github_api_base_url)
+        assert empty_arg in str(exc_info)
+
+    @pytest.mark.nogitmock
+    def test_happy_path(self, mocker, api_mock, rmtree_mock):
+        """Test that the correct calls are made to the api and git.
+        
+        IMPORTANT: Note that this test ignores the git mock. Be careful.
+        """
+        master_urls = [
+            "https://some-url-to-/master/repos/week-1",
+            "https://some-url-to-/master/repos/week-5"
+        ]
+        master_names = [admin._repo_name(url) for url in master_urls]
+        expected_push_urls = [
+            GENERATE_REPO_URL(name, '') for name in master_names
+        ]
+        expected_pts = [
+            git.Push(local_path=name, remote_url=url, branch='master')
+            for name, url in zip(master_names, expected_push_urls)
+        ]
+
+        api_mock.create_repos.side_effect = lambda infos: [GENERATE_REPO_URL(info.name, '') for info in infos]
+        git_clone_mock = mocker.patch('gits_pet.git.clone', autospec=True)
+        git_push_mock = mocker.patch('gits_pet.git.push', autospec=True)
+
+        admin.migrate_repos(master_urls, USER, ORG_NAME, GITHUB_BASE_URL)
+
+        for url in master_urls:
+            git_clone_mock.assert_any_call(url)
+        api_mock.create_repos.assert_called_once()
+        api_mock.ensure_teams_and_members.assert_called_once_with({admin.MASTER_TEAM:[]})
+        git_push_mock.assert_called_once_with(expected_pts, user=USER)
+        for name in master_names:
+            rmtree_mock.assert_any_call(name)

@@ -24,6 +24,8 @@ LOGGER = daiquiri.getLogger(__file__)
 
 Issue = namedtuple('Issue', ('title', 'body'))
 
+MASTER_TEAM = 'master_repos'
+
 
 def create_multiple_student_repos(master_repo_urls: Iterable[str], user: str,
                                   students: Iterable[str], org_name: str,
@@ -259,6 +261,57 @@ def close_issue(title_regex: str, master_repo_names: Iterable[str],
     api = GitHubAPI(github_api_base_url, git.OAUTH_TOKEN, org_name)
 
     api.close_issue(title_regex, repo_names)
+
+
+def migrate_repos(master_urls: str, user: str, org_name: str,
+                  github_api_base_url: str) -> None:
+    """Migrate a repository from an arbitrary URL to the target organization.
+    The new repository is added to the master_repos team.
+
+    Args:
+        master_urls: HTTPS URLs to the master repos to migrate.
+        user: username of the administrator performing the migration. This is
+        the username that is used in the push.
+        org_name: Name of the organization.
+        github_api_base_url: The base url to a GitHub api.
+    """
+    util.validate_non_empty(
+        master_urls=master_urls,
+        user=user,
+        org_name=org_name,
+        github_api_base_url=github_api_base_url)
+
+    api = GitHubAPI(github_api_base_url, git.OAUTH_TOKEN, org_name)
+
+    master_team, *_ = api.ensure_teams_and_members({MASTER_TEAM: []})
+
+    for url in master_urls:
+        LOGGER.info("cloning into master repo {}...".format(url))
+        git.clone(url)
+
+    master_names = [_repo_name(url) for url in master_urls]
+
+    infos = [
+        RepoInfo(
+            name=master_name,
+            description="Master repository {}".format(master_name),
+            private=True,
+            team_id=master_team.id) for master_name in master_names
+    ]
+    repo_urls = api.create_repos(infos)
+
+    git.push(
+        [
+            git.Push(
+                local_path=info.name, remote_url=repo_url, branch='master')
+            for repo_url, info in zip(repo_urls, infos)
+        ],
+        user=user)
+
+    LOGGER.info("removing master repo ...")
+    for info in infos:
+        shutil.rmtree(info.name)
+    LOGGER.info("done!")
 
 
 def generate_repo_name(team_name: str, master_repo_name: str) -> str:
