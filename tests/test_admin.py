@@ -245,13 +245,57 @@ class TestUpdateStudentRepos:
         git_mock.push.assert_called_once_with(push_tuples, user=USER)
 
     @pytest.mark.nogitmock
-    def test_issues_are_opened_on_exceptions(
-            self, mocker, api_mock, repo_infos, push_tuples, rmtree_mock):
-        """Test that issues are opened in repos where pushing fails.
+    @pytest.mark.parametrize(
+        'issue',
+        [admin.Issue("Oops", "Sorry, we failed to push to your repo!"), None])
+    def test_issues_on_exceptions(self, issue, mocker, api_mock, repo_infos,
+                                  push_tuples, rmtree_mock):
+        """Test that issues are opened in repos where pushing fails, if and only if
+        the issue is not None.
         
         IMPORTANT NOTE: the git_mock fixture is ignored in this test. Be careful.
         """
-        counter = 0
+        students = list('abc')
+        master_name = 'week-1'
+        master_urls = [
+            'https://some-host/repos/{}'.format(name)
+            for name in [master_name, 'week-3']
+        ]
+
+        generate_url = lambda repo_name: "{}/{}/{}".format(GITHUB_BASE_API, ORG_NAME, repo_name)
+        fail_repo_names = [
+            admin.generate_repo_name(stud, master_name) for stud in ['a', 'c']
+        ]
+        fail_repo_urls = [generate_url(name) for name in fail_repo_names]
+
+        api_mock.get_repo_urls.side_effect = lambda repo_names: [generate_url(name) for name in repo_names]
+
+        async def raise_specific(local_repo, user, repo_url, branch):
+            if repo_url in fail_repo_urls:
+                raise git.PushFailedError("Push failed", 128, b"some error",
+                                          repo_url)
+
+        git_push_async_mock = mocker.patch(
+            'gits_pet.git._push_async', side_effect=raise_specific)
+        git_clone_mock = mocker.patch('gits_pet.git.clone')
+
+        admin.update_student_repos(master_urls, USER, students, ORG_NAME,
+                                   GITHUB_BASE_API, issue)
+
+        if issue:  # expect issue to be opened
+            api_mock.open_issue.assert_called_once_with(
+                issue.title, issue.body, fail_repo_names)
+        else:  # expect issue not to be opened
+            assert not api_mock.open_issue.called
+
+    @pytest.mark.nogitmock
+    def test_issues_arent_opened_on_exceptions_if_unspeficied(
+            self, mocker, api_mock, repo_infos, push_tuples, rmtree_mock):
+        """Test that issues are not opened in repos where pushing fails, no
+        issue has been given.
+        
+        IMPORTANT NOTE: the git_mock fixture is ignored in this test. Be careful.
+        """
         students = list('abc')
         master_name = 'week-1'
         master_urls = [
