@@ -464,7 +464,7 @@ class TestMigrateRepo:
 
         for url in master_urls:
             git_clone_mock.assert_any_call(url)
-        api_mock.create_repos.assert_called_once()
+        api_mock.create_repos.assert_called()
         api_mock.ensure_teams_and_members.assert_called_once_with({admin.MASTER_TEAM:[]})
         git_push_mock.assert_called_once_with(expected_pts, user=USER)
         for name in master_names:
