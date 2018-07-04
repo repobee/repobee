@@ -15,6 +15,7 @@ import daiquiri
 from gits_pet import admin
 from gits_pet import github_api
 from gits_pet import git
+from gits_pet import util
 
 daiquiri.setup(
     level=logging.INFO,
@@ -50,6 +51,7 @@ CONFIGURABLE_ARGS = set(('user', 'org_name', 'github_base_url'))
 def read_config(config_file="{}/config.cnf".format(CONFIG_DIR)):
     config_parser = configparser.ConfigParser()
     if os.path.isfile(config_file):
+        LOGGER.info("found configuration file at {}".format(config_file))
         config_parser.read(config_file)
     return config_parser["DEFAULT"]
 
@@ -97,6 +99,12 @@ def add_issue_parsers(base_parser, subparsers):
 
 def create_parser():
     configured_defaults = get_configured_defaults()
+    LOGGER.info("config file defaults:\n{}".format("\n".join([
+        "{}: {}".format(key, value)
+        for key, value in configured_defaults.items()
+    ])))
+    default = lambda arg_name: configured_defaults[arg_name] if arg_name in configured_defaults else None
+
     is_required = lambda arg_name: True if arg_name not in configured_defaults else False
 
     base_parser = argparse.ArgumentParser(add_help=False)
@@ -105,14 +113,16 @@ def create_parser():
         '--org-name',
         help="Name of the organization to which repos should be added.",
         type=str,
-        required=is_required('org_name'))
+        required=is_required('org_name'),
+        default=default('org_name'))
     base_parser.add_argument(
         '-g',
         '--github-base-url',
         help=
         "Base url to a GitHub v3 API. For enterprise, this is `https://<HOST>/api/v3",
         type=str,
-        required=is_required('github_base_url'))
+        required=is_required('github_base_url'),
+        default=default('github_base_url'))
 
     names_or_urls = base_parser.add_mutually_exclusive_group(required=True)
     names_or_urls.add_argument(
@@ -151,14 +161,8 @@ def create_parser():
         help=
         "Your GitHub username. Needed for pushing without CLI interaction.",
         type=str,
-        required=is_required('user'))
-
-    # set defaults for the base parser
-    base_parser.set_defaults(**configured_defaults)
-    LOGGER.info("config file defaults:\n{}".format("\n".join([
-        "{}: {}".format(key, value)
-        for key, value in configured_defaults.items()
-    ])))
+        required=is_required('user'),
+        default=default('user'))
 
     parser = argparse.ArgumentParser(
         prog='gits_pet',
@@ -240,7 +244,7 @@ def main():
         students = [student.strip() for student in f]
 
     if hasattr(args, 'issue') and args.issue:
-        issue = _try_read_issue(args.issue)
+        issue = util.read_issue(args.issue)
     else:
         issue = None
 
