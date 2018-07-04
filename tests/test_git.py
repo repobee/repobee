@@ -138,70 +138,70 @@ def test_clone_issues_correct_command_with_single_other_branch(env_setup):
     git.captured_run.assert_called_once_with(expected_command)
 
 
-def test_push_raises_on_non_string_args(env_setup):
+def test_push_single_raises_on_non_string_args(env_setup):
     with pytest.raises(TypeError) as exc:
-        git.push(1, user=USER, repo_url='some_url')
+        git.push_single(1, user=USER, repo_url='some_url')
     assert 'local_repo' in str(exc)
     assert 'expected str' in str(exc)
 
     with pytest.raises(TypeError) as exc:
-        git.push('something', user=2, repo_url='some_url')
+        git.push_single('something', user=2, repo_url='some_url')
     assert 'user' in str(exc)
     assert 'expected str' in str(exc)
 
     with pytest.raises(TypeError) as exc:
-        git.push('something', user=USER, repo_url=1)
+        git.push_single('something', user=USER, repo_url=1)
     assert 'repo_url' in str(exc)
     assert 'expected str' in str(exc)
 
     with pytest.raises(TypeError) as exc:
-        git.push('something', user=USER, repo_url='some_url', branch=3)
+        git.push_single('something', user=USER, repo_url='some_url', branch=3)
     assert 'branch' in str(exc)
     assert 'expected str' in str(exc)
 
 
-def test_push_raises_on_empty_local_repo(env_setup):
+def test_push_single_raises_on_empty_local_repo(env_setup):
     with pytest.raises(ValueError) as exc:
-        git.push('', user=USER, repo_url='some_url')
+        git.push_single('', user=USER, repo_url='some_url')
     assert 'local_repo must not be empty' in str(exc)
 
 
-def test_push_raises_on_empty_user(env_setup):
+def test_push_single_raises_on_empty_user(env_setup):
     with pytest.raises(ValueError) as exc:
-        git.push('something', user='', repo_url='some_url')
+        git.push_single('something', user='', repo_url='some_url')
     assert 'user must not be empty' in str(exc)
 
 
-def test_push_raises_on_empty_repo_url(env_setup):
+def test_push_single_raises_on_empty_repo_url(env_setup):
     with pytest.raises(ValueError) as exc:
-        git.push('something', user=USER, repo_url='')
+        git.push_single('something', user=USER, repo_url='')
     assert 'repo_url must not be empty' in str(exc)
 
 
-def test_push_raises_on_empty_branch(env_setup):
+def test_push_single_raises_on_empty_branch(env_setup):
     with pytest.raises(ValueError) as exc:
-        git.push('something', user=USER, repo_url='some_url', branch='')
+        git.push_single('something', user=USER, repo_url='some_url', branch='')
     assert 'branch must not be empty' in str(exc)
 
 
-def test_push_raises_on_async_push_exception(env_setup, mocker):
+def test_push_single_raises_on_async_push_exception(env_setup, mocker):
     async def raise_(*args, **kwargs):
         raise git.PushFailedError("Push failed", 128, b"some error")
 
     mocker.patch('gits_pet.git._push_async', side_effect=raise_)
 
     with pytest.raises(git.PushFailedError) as exc_info:
-        git.push('some_repo', USER, 'some_url')
+        git.push_single('some_repo', USER, 'some_url')
 
 
-def test_push_issues_correct_command_with_defaults(env_setup, aio_subproc):
+def test_push_single_issues_correct_command_with_defaults(env_setup, aio_subproc):
     branch = 'master'
     user = USER
     local_repo = os.sep.join(['path', 'to', 'repo'])
     expected_command = "git push {} {}".format(
         env_setup.expected_url_with_username, branch).split()
 
-    git.push(
+    git.push_single(
         local_repo, user=user, repo_url=URL_TEMPLATE.format(''), branch=branch)
 
     aio_subproc.create_subprocess.assert_called_once_with(
@@ -212,14 +212,14 @@ def test_push_issues_correct_command_with_defaults(env_setup, aio_subproc):
         stderr=subprocess.PIPE)
 
 
-def test_push_issues_correct_command(env_setup, aio_subproc):
+def test_push_single_issues_correct_command(env_setup, aio_subproc):
     branch = 'development-branch'
     user = USER
     expected_command = "git push {} {}".format(
         env_setup.expected_url_with_username, branch).split()
     local_repo = os.sep.join(['path', 'to', 'repo'])
 
-    git.push(
+    git.push_single(
         local_repo, user=user, repo_url=URL_TEMPLATE.format(''), branch=branch)
 
     aio_subproc.create_subprocess.assert_called_once_with(
@@ -230,33 +230,33 @@ def test_push_issues_correct_command(env_setup, aio_subproc):
         stderr=subprocess.PIPE)
 
 
-def test_push_raises_on_non_zero_exit_from_git_push(env_setup, aio_subproc):
+def test_push_single_raises_on_non_zero_exit_from_git_push(env_setup, aio_subproc):
     aio_subproc.process.returncode = 128
 
     with pytest.raises(git.PushFailedError) as exc:
-        git.push(
+        git.push_single(
             'some_repo', user='some_user', repo_url='https://some_url.org')
 
 
-def test_push_many_raises_on_non_str_user(env_setup, push_tuples):
+def test_push_raises_on_non_str_user(env_setup, push_tuples):
     with pytest.raises(TypeError) as exc_info:
-        git.push_many(push_tuples, 32)
+        git.push(push_tuples, 32)
     assert 'user' in str(exc_info)
 
 
-def test_push_many_raises_on_empty_push_tuples(env_setup):
+def test_push_raises_on_empty_push_tuples(env_setup):
     with pytest.raises(ValueError) as exc_info:
-        git.push_many([], USER)
+        git.push([], USER)
     assert 'push_tuples' in str(exc_info)
 
 
-def test_push_many_raises_on_empty_user(env_setup, push_tuples):
+def test_push_raises_on_empty_user(env_setup, push_tuples):
     with pytest.raises(ValueError) as exc_info:
-        git.push_many(push_tuples, '')
+        git.push(push_tuples, '')
     assert 'user' in str(exc_info)
 
 
-def test_push_many(env_setup, push_tuples, aio_subproc):
+def test_push(env_setup, push_tuples, aio_subproc):
     """Test that push many works as expected when no exceptions are thrown by
     tasks.
     """
@@ -264,7 +264,7 @@ def test_push_many(env_setup, push_tuples, aio_subproc):
         git._insert_user_and_token(url, USER), branch).split())
                                  for local_repo, url, branch in push_tuples]
 
-    git.push_many(push_tuples, USER)
+    git.push(push_tuples, USER)
 
     for local_repo, command in expected_subproc_commands:
         aio_subproc.create_subprocess.assert_any_call(
@@ -275,9 +275,9 @@ def test_push_many(env_setup, push_tuples, aio_subproc):
             stderr=subprocess.PIPE)
 
 
-def test_push_many_tries_all_calls_despite_exceptions(env_setup, push_tuples,
+def test_push_tries_all_calls_despite_exceptions(env_setup, push_tuples,
                                                       mocker):
-    """Test that push_many tries to push all push tuple values even if there
+    """Test that push tries to push all push tuple values even if there
     are exceptions.
     """
 
@@ -286,7 +286,7 @@ def test_push_many_tries_all_calls_despite_exceptions(env_setup, push_tuples,
 
     mocker.patch('gits_pet.git._push_async', side_effect=raise_)
 
-    git.push_many(push_tuples, USER)
+    git.push(push_tuples, USER)
 
     for pt in push_tuples:
         git._push_async.assert_any_call(pt.local_path, USER, pt.remote_url,

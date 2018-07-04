@@ -194,7 +194,7 @@ class TestCreateMultipleStudentRepos:
             rmtree_mock.assert_any_call(admin._repo_name(url))
 
         api_mock.create_repos.assert_called_once_with(repo_infos)
-        git_mock.push_many.assert_called_once_with(push_tuples, user=USER)
+        git_mock.push.assert_called_once_with(push_tuples, user=USER)
 
     @pytest.mark.skip(msg="Check iterable contents is not yet implemented")
     def test_raises_on_invalid_iterable_contents(self):
@@ -240,7 +240,7 @@ class TestUpdateStudentRepos:
             git_mock.clone.assert_any_call(url)
             rmtree_mock.assert_any_call(admin._repo_name(url))
 
-        git_mock.push_many.assert_called_once_with(push_tuples, user=USER)
+        git_mock.push.assert_called_once_with(push_tuples, user=USER)
 
 
 class TestOpenIssue:

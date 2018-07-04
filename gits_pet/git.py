@@ -170,7 +170,7 @@ async def _push_async(local_repo: str,
         LOGGER.info("Pushed files to {} {}".format(repo_url, branch))
 
 
-def push(local_repo: str, user: str, repo_url: str, branch: str = 'master'):
+def push_single(local_repo: str, user: str, repo_url: str, branch: str = 'master'):
     """Push from a local repository to a remote repository without first adding
     push remotes.
 
@@ -185,7 +185,7 @@ def push(local_repo: str, user: str, repo_url: str, branch: str = 'master'):
     loop.run_until_complete(task)
 
 
-def push_many(push_tuples: Iterable[Push], user: str):
+def push(push_tuples: Iterable[Push], user: str):
     """Push to all repos defined in push_tuples.
 
     Args:

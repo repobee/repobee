@@ -67,7 +67,7 @@ def create_multiple_student_repos(master_repo_urls: Iterable[str], user: str,
     push_tuples = _create_push_tuples(urls, repo_urls)
 
     LOGGER.info("pushing files to student repos ...")
-    git.push_many(push_tuples, user=user)
+    git.push(push_tuples, user=user)
 
     _remove_local_repos(urls)
 
@@ -113,7 +113,7 @@ def create_student_repos(master_repo_url: str,
     LOGGER.info("creating repos with base name {}...".format(repo_base_name))
     repo_urls = api.create_repos(repo_infos)
 
-    git.push_many(
+    git.push(
         (git.Push(
             local_path=master_repo_name, remote_url=repo_url, branch='master')
          for repo_url in repo_urls),
@@ -169,7 +169,7 @@ def update_student_repos(master_repo_urls: Iterable[str], user: str,
     push_tuples = _create_push_tuples(urls, repo_urls)
 
     LOGGER.info("pushing files to student repos ...")
-    git.push_many(push_tuples, user=user)
+    git.push(push_tuples, user=user)
 
     _remove_local_repos(urls)
     LOGGER.info("done!")
