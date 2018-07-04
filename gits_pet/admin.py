@@ -11,7 +11,8 @@ program.
 
 import shutil
 import os
-from typing import Iterable, List
+from typing import Iterable, List, Optional
+from collections import namedtuple
 import daiquiri
 from gits_pet import git
 from gits_pet import util
@@ -20,6 +21,8 @@ from gits_pet.api_wrapper import Team
 from gits_pet.git import Push
 
 LOGGER = daiquiri.getLogger(__file__)
+
+Issue = namedtuple('Issue', ('title', 'body'))
 
 
 def create_multiple_student_repos(master_repo_urls: Iterable[str], user: str,
@@ -124,17 +127,21 @@ def create_student_repos(master_repo_url: str,
     LOGGER.info("done!")
 
 
-def update_student_repos(master_repo_urls: Iterable[str], user: str,
-                         students: Iterable[str], org_name: str,
-                         github_api_base_url: str) -> None:
+def update_student_repos(master_repo_urls: Iterable[str],
+                         user: str,
+                         students: Iterable[str],
+                         org_name: str,
+                         github_api_base_url: str,
+                         issue: Optional[Issue] = None) -> None:
     """Attempt to update all student repos related to one of the master repos.
-    
+
     Args:
         master_repo_urls: URLs to template repositories for the student repos.
         user: Username of the administrator that is creating the repos.
         students: Student GitHub usernames.
         org_name: Name of the organization.
         github_api_base_url: The base url to a GitHub api.
+        issue: An optional issue to open in repos to which pushing fails.
     """
     util.validate_types(
         user=(user, str),
@@ -153,7 +160,6 @@ def update_student_repos(master_repo_urls: Iterable[str], user: str,
 
     api = GitHubAPI(github_api_base_url, git.OAUTH_TOKEN, org_name)
 
-    urls = list(master_repo_urls)
     master_repo_names = [_repo_name(url) for url in urls]
     student_repo_names = [
         generate_repo_name(student, master_repo_name) for student in students
@@ -169,10 +175,27 @@ def update_student_repos(master_repo_urls: Iterable[str], user: str,
     push_tuples = _create_push_tuples(urls, repo_urls)
 
     LOGGER.info("pushing files to student repos ...")
-    git.push(push_tuples, user=user)
+    failed_urls = git.push(push_tuples, user=user)
+    print(git)
+
+    if failed_urls and issue:
+        LOGGER.info("Opening issue in repos to which push failed")
+        _open_issue_by_urls(failed_urls, issue, api)
 
     _remove_local_repos(urls)
     LOGGER.info("done!")
+
+
+def _open_issue_by_urls(repo_urls: Iterable[str], issue: Issue,
+                        api: GitHubAPI) -> None:
+    """Open issues in the repos designated by the repo_urls.
+
+    repo_urls: URLs to repos in which to open an issue.
+    issue: An issue to open.
+    api: A GitHubAPI to use.
+    """
+    repo_names = [_repo_name(url) for url in repo_urls]
+    api.open_issue(issue.title, issue.body, repo_names)
 
 
 def open_issue(master_repo_names: Iterable[str], students: Iterable[str],

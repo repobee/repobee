@@ -23,11 +23,13 @@ GENERATE_REPO_URL = lambda base_name, student:\
             admin.generate_repo_name(base_name, student))
 
 
-@pytest.fixture(autouse=True)
-def git_mock(mocker):
+@pytest.fixture()
+def git_mock(request, mocker):
     """Mocks the whole git module so that there are no accidental
     pushes/clones.
     """
+    if 'nogitmock' in request.keywords:
+        return
     return mocker.patch('gits_pet.admin.git', autospec=True)
 
 
@@ -241,6 +243,42 @@ class TestUpdateStudentRepos:
             rmtree_mock.assert_any_call(admin._repo_name(url))
 
         git_mock.push.assert_called_once_with(push_tuples, user=USER)
+
+    @pytest.mark.nogitmock
+    def test_issues_are_opened_on_exceptions(
+            self, mocker, api_mock, repo_infos, push_tuples, rmtree_mock):
+        """Test that issues are opened in repos where pushing fails.
+        
+        IMPORTANT NOTE: the git_mock fixture is ignored in this test. Be careful.
+        """
+        counter = 0
+        students = list('abc')
+        master_name = 'week-1'
+        master_urls = ['https://some-host/repos/{}'.format(name) for name in [master_name, 'week-3']]
+
+        generate_url = lambda repo_name: "{}/{}/{}".format(GITHUB_BASE_API, ORG_NAME, repo_name)
+        fail_repo_names = [
+            admin.generate_repo_name(stud, master_name) for stud in ['a', 'c']
+        ]
+        fail_repo_urls = [generate_url(name) for name in fail_repo_names]
+
+        api_mock.get_repo_urls.side_effect = lambda repo_names: [generate_url(name) for name in repo_names]
+        issue = admin.Issue("Oops", "Sorry, we failed to push to your repo!")
+
+        async def raise_specific(local_repo, user, repo_url, branch):
+            if repo_url in fail_repo_urls:
+                raise git.PushFailedError("Push failed", 128, b"some error",
+                                          repo_url)
+
+        git_push_async_mock = mocker.patch(
+            'gits_pet.git._push_async', side_effect=raise_specific)
+        git_clone_mock = mocker.patch('gits_pet.git.clone')
+
+        admin.update_student_repos(master_urls, USER, students, ORG_NAME,
+                                   GITHUB_BASE_API, issue)
+
+        api_mock.open_issue.assert_called_once_with(issue.title, issue.body,
+                                                    fail_repo_names)
 
 
 class TestOpenIssue:
