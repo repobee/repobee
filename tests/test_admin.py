@@ -254,7 +254,10 @@ class TestUpdateStudentRepos:
         counter = 0
         students = list('abc')
         master_name = 'week-1'
-        master_urls = ['https://some-host/repos/{}'.format(name) for name in [master_name, 'week-3']]
+        master_urls = [
+            'https://some-host/repos/{}'.format(name)
+            for name in [master_name, 'week-3']
+        ]
 
         generate_url = lambda repo_name: "{}/{}/{}".format(GITHUB_BASE_API, ORG_NAME, repo_name)
         fail_repo_names = [
@@ -288,40 +291,21 @@ class TestOpenIssue:
     # can probably use the RAISES_ON_EMPTY_ARGS_PARAMETRIZATION for that,
     # somehow
     @pytest.mark.parametrize(
-        'master_repo_names, students, issue_path, org_name, github_api_base_url, empty_arg',
+        'master_repo_names, students, issue, org_name, github_api_base_url, empty_arg',
         [
-            ([], students(), 'some/nice/path', ORG_NAME, GITHUB_BASE_API,
+            ([], students(), admin.Issue('', ''), ORG_NAME, GITHUB_BASE_API,
              'master_repo_names'),
-            (master_names(master_urls()), [], 'some/better/path', ORG_NAME,
+            (master_names(master_urls()), [], admin.Issue('', ''), ORG_NAME,
              GITHUB_BASE_API, 'students'),
-            (master_names(master_urls()), students(), '', ORG_NAME,
-             GITHUB_BASE_API, 'issue_path'),
+            (master_names(master_urls()), students(), None, ORG_NAME,
+             GITHUB_BASE_API, 'issue'),
         ])
-    def test_raises_on_empty_args(self, master_repo_names, students,
-                                  issue_path, org_name, github_api_base_url,
-                                  empty_arg):
+    def test_raises_on_empty_args(self, master_repo_names, students, issue,
+                                  org_name, github_api_base_url, empty_arg):
         with pytest.raises(ValueError) as exc_info:
-            admin.open_issue(master_repo_names, students, issue_path, org_name,
+            admin.open_issue(master_repo_names, students, issue, org_name,
                              github_api_base_url)
         assert empty_arg in str(exc_info)
-
-    def test_raises_if_issue_does_not_exist(self, master_names, students):
-        path = 'hopefully/does/not/exist'
-        while os.path.exists(path):
-            path += '/now'
-        assert not os.path.exists(path)  # meta assert
-
-        with pytest.raises(ValueError) as exc_info:
-            admin.open_issue(master_names, students, path, ORG_NAME,
-                             GITHUB_BASE_API)
-        assert 'not a file' in str(exc_info)
-
-    def test_raises_if_issue_is_not_file(self, master_names, students):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with pytest.raises(ValueError) as exc_info:
-                admin.open_issue(master_names, students, tmpdir, ORG_NAME,
-                                 GITHUB_BASE_API)
-        assert 'not a file' in str(exc_info)
 
     def test_happy_path(self, api_mock):
         title = "Best title"
@@ -333,18 +317,12 @@ class TestOpenIssue:
             'c-week-2'
         ]
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with tempfile.NamedTemporaryFile(
-                    mode='w', dir=tmpdir, delete=False) as file:
-                filename = file.name
-                file.write(title + "\n")
-                file.write(body)
-                file.flush()
+        issue = admin.Issue(
+            "A title", "And a nice **formatted** body\n### With headings!")
+        admin.open_issue(master_names, students, issue, ORG_NAME,
+                         GITHUB_BASE_API)
 
-            admin.open_issue(master_names, students, filename, ORG_NAME,
-                             GITHUB_BASE_API)
-
-        api_mock.open_issue.assert_called_once_with(title, body,
+        api_mock.open_issue.assert_called_once_with(issue.title, issue.body,
                                                     expected_repo_names)
 
 

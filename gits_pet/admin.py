@@ -176,7 +176,6 @@ def update_student_repos(master_repo_urls: Iterable[str],
 
     LOGGER.info("pushing files to student repos ...")
     failed_urls = git.push(push_tuples, user=user)
-    print(git)
 
     if failed_urls and issue:
         LOGGER.info("Opening issue in repos to which push failed")
@@ -199,8 +198,7 @@ def _open_issue_by_urls(repo_urls: Iterable[str], issue: Issue,
 
 
 def open_issue(master_repo_names: Iterable[str], students: Iterable[str],
-               issue_path: str, org_name: str,
-               github_api_base_url: str) -> None:
+               issue: Issue, org_name: str, github_api_base_url: str) -> None:
     """Open an issue in student repos.
 
     Args:
@@ -218,13 +216,8 @@ def open_issue(master_repo_names: Iterable[str], students: Iterable[str],
         master_repo_names=master_repo_names,
         students=students,
         org_name=org_name,
+        issue=issue,
         github_api_base_url=github_api_base_url)
-    if not os.path.isfile(issue_path):
-        raise ValueError("issue_path: '{}' is not a file".format(issue_path))
-
-    with open(issue_path, 'r') as f:
-        title = f.readline().strip()
-        body = f.read()
 
     repo_names = [
         generate_repo_name(student, master) for master in master_repo_names
@@ -233,7 +226,7 @@ def open_issue(master_repo_names: Iterable[str], students: Iterable[str],
 
     api = GitHubAPI(github_api_base_url, git.OAUTH_TOKEN, org_name)
 
-    api.open_issue(title, body, repo_names)
+    api.open_issue(issue.title, issue.body, repo_names)
 
 
 def close_issue(title_regex: str, master_repo_names: Iterable[str],
