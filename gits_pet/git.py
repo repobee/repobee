@@ -12,6 +12,8 @@ from typing import Sequence, Tuple, Iterable
 
 from gits_pet import util
 
+CONCURRENT_TASKS = 20
+
 LOGGER = daiquiri.getLogger(__file__)
 
 Push = collections.namedtuple('Push', ('local_path', 'remote_url', 'branch'))
@@ -194,12 +196,35 @@ def push_many(push_tuples: Iterable[Push], user: str):
     util.validate_types(user=(user, str))
     util.validate_non_empty(push_tuples=push_tuples, user=user)
 
+    completed_tasks = []
+
+    for i in range(0, len(push_tuples), CONCURRENT_TASKS):
+        LOGGER.info("pushing batch {}-{}".format(
+            i, min(i + CONCURRENT_TASKS, len(push_tuples))))
+        completed_tasks += _push_batch(push_tuples[i:i + CONCURRENT_TASKS],
+                                       user)
+
+    for task in completed_tasks:
+        if task.exception():
+            LOGGER.error(str(task.exception()))
+
+
+def _push_batch(push_tuples: Iterable[Push], user: str):
+    """Push a batch of push_tuples concurrently. For stability, push_tuples
+    may not exceed CONCURRENT_TASKS in size.
+
+    Args:
+        push_tuples: Push namedtuples defining local and remote repos.
+        user: The username to put in the push.
+
+    Return:
+        the completed tasks
+    """
+    assert len(push_tuples) <= CONCURRENT_TASKS
     loop = asyncio.get_event_loop()
     tasks = [
         loop.create_task(_push_async(local_path, user, remote_url, branch))
         for local_path, remote_url, branch in push_tuples
     ]
     loop.run_until_complete(asyncio.wait(tasks))
-    for task in tasks:
-        if task.exception():
-            LOGGER.error(str(task.exception()))
+    return tasks
