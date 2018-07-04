@@ -16,13 +16,12 @@ from collections import namedtuple
 import daiquiri
 from gits_pet import git
 from gits_pet import util
+from gits_pet import tuples
 from gits_pet.github_api import GitHubAPI, RepoInfo
 from gits_pet.api_wrapper import Team
 from gits_pet.git import Push
 
 LOGGER = daiquiri.getLogger(__file__)
-
-Issue = namedtuple('Issue', ('title', 'body'))
 
 MASTER_TEAM = 'master_repos'
 
@@ -134,7 +133,7 @@ def update_student_repos(master_repo_urls: Iterable[str],
                          students: Iterable[str],
                          org_name: str,
                          github_api_base_url: str,
-                         issue: Optional[Issue] = None) -> None:
+                         issue: Optional[tuples.Issue] = None) -> None:
     """Attempt to update all student repos related to one of the master repos.
 
     Args:
@@ -187,7 +186,7 @@ def update_student_repos(master_repo_urls: Iterable[str],
     LOGGER.info("done!")
 
 
-def _open_issue_by_urls(repo_urls: Iterable[str], issue: Issue,
+def _open_issue_by_urls(repo_urls: Iterable[str], issue: tuples.Issue,
                         api: GitHubAPI) -> None:
     """Open issues in the repos designated by the repo_urls.
 
@@ -200,7 +199,8 @@ def _open_issue_by_urls(repo_urls: Iterable[str], issue: Issue,
 
 
 def open_issue(master_repo_names: Iterable[str], students: Iterable[str],
-               issue: Issue, org_name: str, github_api_base_url: str) -> None:
+               issue: tuples.Issue, org_name: str,
+               github_api_base_url: str) -> None:
     """Open an issue in student repos.
 
     Args:

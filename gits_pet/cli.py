@@ -102,11 +102,6 @@ def create_parser():
         "Base url to a GitHub v3 API. For enterprise, this is `https://<HOST>/api/v3",
         type=str,
         required=is_required('github_base_url'))
-    base_parser.add_argument(
-        '-s',
-        '--student-list',
-        help="Path to a list of student usernames.",
-        required=True)
 
     names_or_urls = base_parser.add_mutually_exclusive_group(required=True)
     names_or_urls.add_argument(
@@ -126,9 +121,18 @@ def create_parser():
         type=str,
         nargs='+')
 
+    # base parser for when student lists are involved
+    base_student_parser = argparse.ArgumentParser(
+        add_help=False, parents=[base_parser])
+    base_student_parser.add_argument(
+        '-s',
+        '--student-list',
+        help="Path to a list of student usernames.",
+        required=True)
+
     # base parser for when files need to be pushed
     base_push_parser = argparse.ArgumentParser(
-        add_help=False, parents=[base_parser])
+        add_help=False, parents=[base_student_parser])
 
     base_push_parser.add_argument(
         '-u',
@@ -170,12 +174,12 @@ def create_parser():
         type=str,
     )
 
-    add_issue_parsers(base_parser, subparsers)
-
     migrate = subparsers.add_parser(
         MIGRATE_PARSER,
         help="Migrate master repositories into the target organization.",
         parents=[base_parser])
+
+    add_issue_parsers(base_student_parser, subparsers)
 
     return parser
 
@@ -187,14 +191,6 @@ def get_configured_defaults():
         raise ValueError("Config contains invalid keys: {}".format(
             ", ".join(configured - CONFIGURABLE_ARGS)))
     return config
-
-
-def _try_read_issue(issue_path: str) -> str:
-    """Attempt to read an issue from file."""
-    if not os.path.isfile(issue_path):
-        raise ValueError("{} is not a file".format(issue_path))
-    with open(issue_path, 'r', encoding=sys.getdefaultencoding()) as file:
-        return admin.Issue(file.readline().strip(), file.read())
 
 
 def main():
