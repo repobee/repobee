@@ -81,15 +81,16 @@ def update_student_repos(master_repo_urls: Iterable[str],
     """Attempt to update all student repos related to one of the master repos.
 
     Args:
-        master_repo_urls: URLs to template repositories for the student repos.
-        user: Username of the administrator that is creating the repos.
-        students: Student GitHub usernames.
-        org_name: Name of the organization.
-        github_api_base_url: The base url to a GitHub api.
+        master_repo_urls: URLs to master repos. Must be in the organization that the api is set up for.
+        students: An iterable of student GitHub usernames.
+        user: Username of the administrator that setting up the repos.
+        api: A GitHubAPI instance used to interface with the GitHub instance.
         issue: An optional issue to open in repos to which pushing fails.
     """
     util.validate_types(
-        user=(user, str), api=(api, GitHubAPI), issue=(issue, (str, type(None))))
+        user=(user, str),
+        api=(api, GitHubAPI),
+        issue=(issue, (tuples.Issue, type(None))))
     util.validate_non_empty(
         master_repo_urls=master_repo_urls, user=user, students=students)
     urls = list(master_repo_urls)  # safe copy
@@ -135,34 +136,23 @@ def _open_issue_by_urls(repo_urls: Iterable[str], issue: tuples.Issue,
 
 
 def open_issue(master_repo_names: Iterable[str], students: Iterable[str],
-               issue: tuples.Issue, org_name: str,
-               github_api_base_url: str) -> None:
+               issue: tuples.Issue, api: GitHubAPI) -> None:
     """Open an issue in student repos.
 
     Args:
         master_repo_names: Names of master repositories.
-        students: Student GitHub usernames.
-        issue_path: Filepath to a markdown file. The first line is assumed to
-        be the title.
-        org_name: Name of the organization.
-        github_api_base_url: The base url to a GitHub api.
+        students: An iterable of student GitHub usernames.
+        issue: An issue to open.
+        api: A GitHubAPI instance used to interface with the GitHub instance.
     """
-    util.validate_types(
-        org_name=(org_name, str),
-        github_api_base_url=(github_api_base_url, str))
+    util.validate_types(issue=(issue, tuples.Issue), api=(api, GitHubAPI))
     util.validate_non_empty(
-        master_repo_names=master_repo_names,
-        students=students,
-        org_name=org_name,
-        issue=issue,
-        github_api_base_url=github_api_base_url)
+        master_repo_names=master_repo_names, students=students, issue=issue)
 
     repo_names = [
         generate_repo_name(student, master) for master in master_repo_names
         for student in students
     ]
-
-    api = GitHubAPI(github_api_base_url, git.OAUTH_TOKEN, org_name)
 
     api.open_issue(issue.title, issue.body, repo_names)
 
