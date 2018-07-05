@@ -35,9 +35,10 @@ daiquiri.setup(
 LOGGER = daiquiri.getLogger(__file__)
 LOGGER.warning("babla")
 SUB = 'subparser'
-SETUP_PARSER = 'setup-repos'
-UPDATE_PARSER = 'update-repos'
-MIGRATE_PARSER = 'migrate-repos'
+SETUP_PARSER = 'setup'
+UPDATE_PARSER = 'update'
+MIGRATE_PARSER = 'migrate'
+ADD_TO_TEAMS_PARSER = 'add-to-teams'
 OPEN_ISSUE_PARSER = 'open-issue'
 CLOSE_ISSUE_PARSER = 'close-issue'
 
@@ -126,7 +127,8 @@ def create_parser():
         required=is_required('github_base_url'),
         default=default('github_base_url'))
 
-    names_or_urls = base_parser.add_mutually_exclusive_group(required=True)
+    url_parser = argparse.ArgumentParser(add_help=False, parents=[base_parser])
+    names_or_urls = url_parser.add_mutually_exclusive_group(required=True)
     names_or_urls.add_argument(
         '-mu',
         '--master-repo-urls',
@@ -184,7 +186,7 @@ def create_parser():
          "any previously performed step will simply be skipped. The master "
          "repo is assumed to be located in the target organization, and will "
          "be temporarily cloned to disk for the duration of the command. "),
-        parents=[base_push_parser, base_student_parser, base_parser])
+        parents=[base_push_parser, base_student_parser, url_parser])
 
     update = subparsers.add_parser(
         UPDATE_PARSER,
@@ -193,7 +195,7 @@ def create_parser():
             "Push changes from master repos to student repos. The master repos "
             "must be available within the organization. They can be added "
             "manually, or with the `migrate-repos` command."),
-        parents=[base_push_parser, base_student_parser, base_parser])
+        parents=[base_push_parser, base_student_parser, url_parser])
     update.add_argument(
         '-i',
         '--issue',
@@ -219,7 +221,21 @@ def create_parser():
          "NOTE: `migrate-repos` can also be used to update already migrated repos "
          "that have been changed in their original repos."
          ),
-        parents=[base_push_parser, base_parser])
+        parents=[base_push_parser, url_parser])
+
+    add_to_teams = subparsers.add_parser(
+        ADD_TO_TEAMS_PARSER,
+        help=("Create student teams and add students to them. This command is "
+              "automatically executed by the `setup` command."),
+        description=
+        ("Create student teams and add students to them. This command is "
+         "automatically executed by the `setup` command. It exists mostly to "
+         "be able to quickly add students to their teams if their accounts "
+         "had not been activated at the time of creating the repositories. If "
+         "you are unsure if all the other steps have been performed (repo "
+         "creation, pushing files etc) for the students in question, run the "
+         "`setup` command instead."),
+        parents=[base_student_parser, base_parser])
 
     add_issue_parsers(base_student_parser, subparsers)
 
@@ -245,7 +261,9 @@ def _sys_exit_on_git_error():
             format(exc.url))
         sys.exit(1)
     except git.CloneFailedError as exc:
-        LOGGER.error("There was an error cloning from {}. Does the repo really exist?".format(exc.url))
+        LOGGER.error(
+            "There was an error cloning from {}. Does the repo really exist?".
+            format(exc.url))
         sys.exit(1)
     except git.GitError as exc:
         LOGGER.error("Something went wrong with git. See the logs for info.")
@@ -259,12 +277,18 @@ def main():
     # TODO add try/catch here with graceful exit
     api = github_api.GitHubAPI(args.github_base_url, git.OAUTH_TOKEN,
                                args.org_name)
-
     if 'student_list' in args:
         if not os.path.isfile(args.student_list):
             raise ValueError("'{}' is not a file".format(args.student_list))
         with open(args.student_list, 'r') as f:
             students = [student.strip() for student in f]
+
+    # early exit for this parser as it lacks urls/names
+    if getattr(args, SUB) == ADD_TO_TEAMS_PARSER:
+        with _sys_exit_on_git_error():
+            admin.add_students_to_teams(students, api)
+        return
+
 
     if hasattr(args, 'issue') and args.issue:
         issue = util.read_issue(args.issue)

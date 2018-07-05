@@ -50,14 +50,9 @@ def setup_student_repos(master_repo_urls: Iterable[str],
 
     urls = list(master_repo_urls)  # safe copy
 
-    if len(set(urls)) != len(urls):
-        raise ValueError("master_repo_urls contains duplicates")
-
     _clone_all(urls)
 
-    # (team_name, member list) mappings, each student gets its own team
-    member_lists = {student: [student] for student in students}
-    teams = api.ensure_teams_and_members(member_lists)
+    teams = add_students_to_teams(students, api)
     repo_urls = _create_student_repos(urls, teams, api)
 
     push_tuples = _create_push_tuples(urls, repo_urls)
@@ -65,6 +60,26 @@ def setup_student_repos(master_repo_urls: Iterable[str],
     git.push(push_tuples, user=user)
 
     _remove_local_repos(urls)
+
+
+def add_students_to_teams(students: Iterable[str],
+                          api: GitHubAPI) -> List[Team]:
+    """Create one team for each student (with the same name as the student),
+    and add the student to the team. If a team already exists, it is not created.
+    If a student is already in his/her team, nothing happens.
+
+    Args:
+        students: Student GitHub usernames.
+        api: A GitHubAPI instance.
+
+    Returns:
+        all teams associated with the students in the students list.
+    """
+    util.validate_types(api=(api, GitHubAPI))
+    util.validate_non_empty(students=students)
+    # (team_name, member list) mappings, each student gets its own team
+    member_lists = {student: [student] for student in students}
+    return api.ensure_teams_and_members(member_lists)
 
 
 def _create_student_repos(master_repo_urls: Iterable[str],
@@ -95,6 +110,8 @@ def _clone_all(urls: Iterable[str]):
     Args:
         urls: HTTPS urls to git repositories.
     """
+    if len(set(urls)) != len(urls):
+        raise ValueError("master_repo_urls contains duplicates")
     cloned = []
     try:
         for url in urls:
@@ -129,19 +146,17 @@ def update_student_repos(master_repo_urls: Iterable[str],
         master_repo_urls=master_repo_urls, user=user, students=students)
     urls = list(master_repo_urls)  # safe copy
 
-    if len(set(urls)) != len(urls):
-        raise ValueError("master_repo_urls contains duplicates")
+    LOGGER.info("cloning into master repos ...")
+    _clone_all(urls)
+
 
     master_repo_names = [util.repo_name(url) for url in urls]
     student_repo_names = [
-        util.generate_repo_name(student, master_repo_name) for student in students
-        for master_repo_name in master_repo_names
+        util.generate_repo_name(student, master_repo_name)
+        for student in students for master_repo_name in master_repo_names
     ]
 
     repo_urls = api.get_repo_urls(student_repo_names)
-
-    LOGGER.info("cloning into master repos ...")
-    _clone_all(urls)
 
     push_tuples = _create_push_tuples(urls, repo_urls)
 
@@ -183,8 +198,8 @@ def open_issue(issue: tuples.Issue, master_repo_names: Iterable[str],
         master_repo_names=master_repo_names, students=students, issue=issue)
 
     repo_names = [
-        util.generate_repo_name(student, master) for master in master_repo_names
-        for student in students
+        util.generate_repo_name(student, master)
+        for master in master_repo_names for student in students
     ]
 
     api.open_issue(issue.title, issue.body, repo_names)
@@ -207,8 +222,8 @@ def close_issue(title_regex: str, master_repo_names: Iterable[str],
         students=students)
 
     repo_names = [
-        util.generate_repo_name(student, master) for master in master_repo_names
-        for student in students
+        util.generate_repo_name(student, master)
+        for master in master_repo_names for student in students
     ]
 
     api.close_issue(title_regex, repo_names)
@@ -216,7 +231,8 @@ def close_issue(title_regex: str, master_repo_names: Iterable[str],
 
 def migrate_repos(master_repo_urls: str, user: str, api: GitHubAPI) -> None:
     """Migrate a repository from an arbitrary URL to the target organization.
-    The new repository is added to the master_repos team.
+    The new repository is added to the master_repos team, which is created if
+    it does not already exist.
 
     Args:
         master_repo_urls: HTTPS URLs to the master repos to migrate.
