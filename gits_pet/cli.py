@@ -33,7 +33,6 @@ daiquiri.setup(
     ))
 
 LOGGER = daiquiri.getLogger(__file__)
-LOGGER.warning("babla")
 SUB = 'subparser'
 SETUP_PARSER = 'setup'
 UPDATE_PARSER = 'update'
@@ -48,7 +47,8 @@ CONFIG_DIR = appdirs.user_config_dir(
     version=gits_pet.__version__)
 
 # arguments that can be configured via config file
-CONFIGURABLE_ARGS = set(('user', 'org_name', 'github_base_url'))
+CONFIGURABLE_ARGS = set(('user', 'org_name', 'github_base_url',
+                         'students_file'))
 
 
 def read_config(config_file="{}/config.cnf".format(CONFIG_DIR)):
@@ -102,10 +102,11 @@ def add_issue_parsers(base_parser, subparsers):
 
 def create_parser():
     configured_defaults = get_configured_defaults()
-    LOGGER.info("config file defaults:\n{}".format("\n".join([
+    LOGGER.info("config file defaults:\n{}".format("\n   ".join([""] + [
         "{}: {}".format(key, value)
         for key, value in configured_defaults.items()
-    ])))
+        if key in CONFIGURABLE_ARGS
+    ] + [""])))
     default = lambda arg_name: configured_defaults[arg_name] if arg_name in configured_defaults else None
 
     is_required = lambda arg_name: True if arg_name not in configured_defaults else False
@@ -148,11 +149,20 @@ def create_parser():
 
     # base parser for when student lists are involved
     base_student_parser = argparse.ArgumentParser(add_help=False)
-    base_student_parser.add_argument(
-        '-s',
-        '--student-list',
+    students = base_student_parser.add_mutually_exclusive_group(
+        required=is_required('students_file'))
+    students.add_argument(
+        '-sf',
+        '--students-file',
         help="Path to a list of student usernames.",
-        required=True)
+        type=str,
+        default=default('students_file'))
+    students.add_argument(
+        '-s',
+        '--students',
+        help='One or more whitespace separated student usernames.',
+        type=str,
+        nargs='+')
 
     # base parser for when files need to be pushed
     base_push_parser = argparse.ArgumentParser(add_help=False)
@@ -277,10 +287,12 @@ def main():
     # TODO add try/catch here with graceful exit
     api = github_api.GitHubAPI(args.github_base_url, git.OAUTH_TOKEN,
                                args.org_name)
-    if 'student_list' in args:
-        if not os.path.isfile(args.student_list):
-            raise ValueError("'{}' is not a file".format(args.student_list))
-        with open(args.student_list, 'r') as f:
+    if 'students' in args and args.students:
+        students = args.students
+    elif 'students_file' in args and args.students_file:
+        if not os.path.isfile(args.students_file):
+            raise ValueError("'{}' is not a file".format(args.students_file))
+        with open(args.students_file, 'r') as f:
             students = [student.strip() for student in f]
 
     # early exit for this parser as it lacks urls/names
@@ -288,7 +300,6 @@ def main():
         with _sys_exit_on_git_error():
             admin.add_students_to_teams(students, api)
         return
-
 
     if hasattr(args, 'issue') and args.issue:
         issue = util.read_issue(args.issue)
