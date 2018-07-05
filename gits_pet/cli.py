@@ -33,7 +33,7 @@ daiquiri.setup(
 LOGGER = daiquiri.getLogger(__file__)
 LOGGER.warning("babla")
 SUB = 'subparser'
-CREATE_PARSER = 'create-repos'
+SETUP_PARSER = 'setup-repos'
 UPDATE_PARSER = 'update-repos'
 MIGRATE_PARSER = 'migrate-repos'
 OPEN_ISSUE_PARSER = 'open-issue'
@@ -172,17 +172,18 @@ def create_parser():
     subparsers.required = True
 
     create = subparsers.add_parser(
-        CREATE_PARSER,
-        help="Create student repos.",
+        SETUP_PARSER,
+        help="Setup student repos.",
         description=
-        ("Create student repositories from master repositories. The specified "
-         "master repositories are first cloned to disk. Then, one team for "
-         "each student is created, and students are added to their teams. For "
-         "each master repo, one student repo is created, and files from the "
-         "master repos are pushed to the corresponding student repos. As a "
-         "final step, all cloned repos are removed. NOTE: It is perfectly "
-         "safe to run this command several times, as any previously performed "
-         "steps are simply skipped."),
+        ("Setup student repositories based on master repo templates. This "
+            "command performs three primary actions: sets up the student teams, "
+           "creates one student repository for each master repository and "
+           "finally pushes the master repo files to the corresponding student "
+           "repos. It is perfectly safe to run this command several times, as "
+           "any previously performed step will simply be skipped. The master "
+           "repo is assumed to be located in the target organization, and will "
+           "be temporarily cloned to disk for the duration of the command. "
+         ),
         parents=[base_push_parser])
 
     update = subparsers.add_parser(
@@ -259,7 +260,7 @@ def main():
         master_urls = args.master_repo_urls
         master_names = [admin._repo_name(url) for url in master_urls]
 
-    if getattr(args, SUB) == CREATE_PARSER:
+    if getattr(args, SUB) == SETUP_PARSER:
         admin.create_multiple_student_repos(master_urls, args.user, students,
                                             args.org_name,
                                             args.github_base_url)
