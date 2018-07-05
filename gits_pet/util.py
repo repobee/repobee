@@ -58,6 +58,7 @@ def generate_repo_name(team_name: str, master_repo_name: str) -> str:
         team_name: Name of the associated team.
         master_repo_name: Name of the template repository.
     """
+    validate_non_empty(team_name=team_name, master_repo_name=master_repo_name)
     return "{}-{}".format(team_name, master_repo_name)
 
 

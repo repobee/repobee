@@ -456,20 +456,21 @@ class TestMigrateRepo:
         
         IMPORTANT: Note that this test ignores the git mock. Be careful.
         """
+        generate_master_url = lambda name: GENERATE_REPO_URL('master', name)
         master_urls = [
             "https://some-url-to-/master/repos/week-1",
             "https://some-url-to-/master/repos/week-5"
         ]
         master_names = [util.repo_name(url) for url in master_urls]
         expected_push_urls = [
-            GENERATE_REPO_URL(name, '') for name in master_names
+            generate_master_url(name) for name in master_names
         ]
         expected_pts = [
             git.Push(local_path=name, remote_url=url, branch='master')
             for name, url in zip(master_names, expected_push_urls)
         ]
 
-        api_mock.create_repos.side_effect = lambda infos: [GENERATE_REPO_URL(info.name, '') for info in infos]
+        api_mock.create_repos.side_effect = lambda infos: [generate_master_url(info.name) for info in infos]
         git_clone_mock = mocker.patch('gits_pet.git.clone', autospec=True)
         git_push_mock = mocker.patch('gits_pet.git.push', autospec=True)
 
