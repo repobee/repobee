@@ -155,12 +155,12 @@ RAISES_ON_EMPTY_INVALID_TYPE_IDS = [
 ]
 
 
-class TestCreateMultipleStudentRepos:
-    """Tests for create_multiple_student_repos."""
+class TestCreateStudentRepos:
+    """Tests for create_student_repos."""
 
     def test_raises_on_duplicate_master_urls(self, master_urls, students):
-        assert_raises_on_duplicate_master_urls(
-            admin.create_multiple_student_repos, master_urls, students)
+        assert_raises_on_duplicate_master_urls(admin.create_student_repos,
+                                               master_urls, students)
 
     @pytest.mark.parametrize(
         *RAISES_ON_EMPTY_ARGS_PARAMETRIZATION, ids=RAISES_ON_EMPTY_ARGS_IDS)
@@ -168,8 +168,8 @@ class TestCreateMultipleStudentRepos:
                                github_api_base_url, empty_arg):
         """None of the arguments are allowed to be empty."""
         with pytest.raises(ValueError) as exc_info:
-            admin.create_multiple_student_repos(master_urls, user, students,
-                                                org_name, github_api_base_url)
+            admin.create_student_repos(master_urls, user, students, org_name,
+                                       github_api_base_url)
 
     @pytest.mark.parametrize(
         *RAISES_ON_INVALID_TYPE_PARAMETRIZATION,
@@ -179,15 +179,15 @@ class TestCreateMultipleStudentRepos:
                                     type_error_arg):
         """Test that the non-itrable arguments are type checked."""
         with pytest.raises(TypeError) as exc_info:
-            admin.create_multiple_student_repos(master_urls, user, students,
-                                                org_name, github_api_base_url)
+            admin.create_student_repos(master_urls, user, students, org_name,
+                                       github_api_base_url)
         assert type_error_arg in str(exc_info.value)
 
     def test_happy_path(self, master_urls, students, api_mock, git_mock,
                         repo_infos, push_tuples, rmtree_mock):
-        """Test that create_multiple_student_repos makes the correct function calls."""
-        admin.create_multiple_student_repos(master_urls, USER, students,
-                                            ORG_NAME, GITHUB_BASE_URL)
+        """Test that create_student_repos makes the correct function calls."""
+        admin.create_student_repos(master_urls, USER, students, ORG_NAME,
+                                   GITHUB_BASE_URL)
 
         for url in master_urls:
             git_mock.clone.assert_any_call(url)

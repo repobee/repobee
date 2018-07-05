@@ -26,7 +26,7 @@ LOGGER = daiquiri.getLogger(__file__)
 MASTER_TEAM = 'master_repos'
 
 
-def create_multiple_student_repos(master_repo_urls: Iterable[str], user: str,
+def create_student_repos(master_repo_urls: Iterable[str], user: str,
                                   students: Iterable[str], org_name: str,
                                   github_api_base_url: str):
     """Create one student repo for each of the master repos in master_repo_urls.
@@ -74,58 +74,6 @@ def create_multiple_student_repos(master_repo_urls: Iterable[str], user: str,
     git.push(push_tuples, user=user)
 
     _remove_local_repos(urls)
-
-
-def create_student_repos(master_repo_url: str,
-                         user: str,
-                         students: Iterable[str],
-                         org_name: str,
-                         github_api_base_url: str,
-                         repo_base_name: str = None):
-    """Create student repos from a master repo template.
-
-    Args:
-        master_repo_url: Url to a template repository for the student repos.
-        user: Username of the administrator that is creating the repos.
-        students: An iterable of student GitHub usernames.
-        org_name: Name of an organization.
-        github_api_base_url: The base url to a GitHub api.
-        repo_base_name: The base name for all student repositories. If None,
-        the base name of the master repo is used.
-    """
-    api = GitHubAPI(github_api_base_url, git.OAUTH_TOKEN, org_name)
-
-    master_repo_name = _repo_name(master_repo_url)
-
-    LOGGER.info("cloning master repo {}...".format(master_repo_name))
-    git.clone(master_repo_url)
-
-    # (team_name, member list) mappings, each student gets its own team
-    member_lists = {student: [student] for student in students}
-    teams = api.ensure_teams_and_members(member_lists)
-
-    if not repo_base_name:
-        repo_base_name = master_repo_name
-
-    repo_infos = [
-        RepoInfo(
-            name=generate_repo_name(team.name, repo_base_name),
-            description="{} created for {}".format(repo_base_name, team.name),
-            private=True,
-            team_id=team.id) for team in teams
-    ]
-    LOGGER.info("creating repos with base name {}...".format(repo_base_name))
-    repo_urls = api.create_repos(repo_infos)
-
-    git.push(
-        (git.Push(
-            local_path=master_repo_name, remote_url=repo_url, branch='master')
-         for repo_url in repo_urls),
-        user=user)
-
-    LOGGER.info("removing master repo ...")
-    shutil.rmtree(master_repo_name)
-    LOGGER.info("done!")
 
 
 def update_student_repos(master_repo_urls: Iterable[str],

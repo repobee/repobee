@@ -176,14 +176,13 @@ def create_parser():
         help="Setup student repos.",
         description=
         ("Setup student repositories based on master repo templates. This "
-            "command performs three primary actions: sets up the student teams, "
-           "creates one student repository for each master repository and "
-           "finally pushes the master repo files to the corresponding student "
-           "repos. It is perfectly safe to run this command several times, as "
-           "any previously performed step will simply be skipped. The master "
-           "repo is assumed to be located in the target organization, and will "
-           "be temporarily cloned to disk for the duration of the command. "
-         ),
+         "command performs three primary actions: sets up the student teams, "
+         "creates one student repository for each master repository and "
+         "finally pushes the master repo files to the corresponding student "
+         "repos. It is perfectly safe to run this command several times, as "
+         "any previously performed step will simply be skipped. The master "
+         "repo is assumed to be located in the target organization, and will "
+         "be temporarily cloned to disk for the duration of the command. "),
         parents=[base_push_parser])
 
     update = subparsers.add_parser(
@@ -261,7 +260,7 @@ def main():
         master_names = [admin._repo_name(url) for url in master_urls]
 
     if getattr(args, SUB) == SETUP_PARSER:
-        admin.create_multiple_student_repos(master_urls, args.user, students,
+        admin.create_student_repos(master_urls, args.user, students,
                                             args.org_name,
                                             args.github_base_url)
     elif getattr(args, SUB) == UPDATE_PARSER:
