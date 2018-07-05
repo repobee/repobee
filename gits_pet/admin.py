@@ -25,25 +25,6 @@ LOGGER = daiquiri.getLogger(__file__)
 
 MASTER_TEAM = 'master_repos'
 
-def _create_student_repos(master_repo_urls: Iterable[str],
-                          teams: Iterable[Team], api: GitHubAPI) -> List[str]:
-    """Create student repos. Each team (usually representing one student) is assigned a single repo
-    per master repo. Repos that already exist are not created, but their urls are returned all
-    the same.
-
-    Args:
-        master_repo_urls: URLs to master repos. Must be in the organization that the api is set up for.
-        teams: An iterable of namedtuples designating different teams.
-        api: A GitHubAPI instance used to interface with the GitHub instance.
-
-    Returns:
-        a list of urls to the repos
-    """
-    LOGGER.info("creating student repos ...")
-    repo_infos = _create_repo_infos(master_repo_urls, teams)
-    repo_urls = api.create_repos(repo_infos)
-    return repo_urls
-
 
 def setup_student_repos(master_repo_urls: Iterable[str],
                         students: Iterable[str], user: str,
@@ -72,8 +53,7 @@ def setup_student_repos(master_repo_urls: Iterable[str],
     if len(set(urls)) != len(urls):
         raise ValueError("master_repo_urls contains duplicates")
 
-    for url in urls:
-        git.clone(url)
+    _clone_all(urls)
 
     # (team_name, member list) mappings, each student gets its own team
     member_lists = {student: [student] for student in students}
@@ -85,6 +65,46 @@ def setup_student_repos(master_repo_urls: Iterable[str],
     git.push(push_tuples, user=user)
 
     _remove_local_repos(urls)
+
+
+def _create_student_repos(master_repo_urls: Iterable[str],
+                          teams: Iterable[Team], api: GitHubAPI) -> List[str]:
+    """Create student repos. Each team (usually representing one student) is assigned a single repo
+    per master repo. Repos that already exist are not created, but their urls are returned all
+    the same.
+
+    Args:
+        master_repo_urls: URLs to master repos. Must be in the organization that the api is set up for.
+        teams: An iterable of namedtuples designating different teams.
+        api: A GitHubAPI instance used to interface with the GitHub instance.
+
+    Returns:
+        a list of urls to the repos
+    """
+    LOGGER.info("creating student repos ...")
+    repo_infos = _create_repo_infos(master_repo_urls, teams)
+    repo_urls = api.create_repos(repo_infos)
+    return repo_urls
+
+
+def _clone_all(urls: Iterable[str]):
+    """Attempts to clone all urls. If any one fails, all successfully cloned
+    repos are removed and the error is propagated. Either all repos are cloned,
+    or none are.
+
+    Args:
+        urls: HTTPS urls to git repositories.
+    """
+    cloned = []
+    try:
+        for url in urls:
+            LOGGER.info("cloning into {}".format(url))
+            git.clone(url)
+            cloned.append(url)
+    except git.CloneFailedError:
+        LOGGER.error("error cloning into {}, aborting ...".format(url))
+        _remove_local_repos(cloned)
+        raise
 
 
 def update_student_repos(master_repo_urls: Iterable[str],
@@ -121,8 +141,7 @@ def update_student_repos(master_repo_urls: Iterable[str],
     repo_urls = api.get_repo_urls(student_repo_names)
 
     LOGGER.info("cloning into master repos ...")
-    for url in urls:
-        git.clone(url)
+    _clone_all(urls)
 
     push_tuples = _create_push_tuples(urls, repo_urls)
 
@@ -210,9 +229,7 @@ def migrate_repos(master_repo_urls: str, user: str, api: GitHubAPI) -> None:
 
     master_team, *_ = api.ensure_teams_and_members({MASTER_TEAM: []})
 
-    for url in master_repo_urls:
-        LOGGER.info("cloning into master repo {}...".format(url))
-        git.clone(url)
+    _clone_all(master_repo_urls)
 
     master_names = [_repo_name(url) for url in master_repo_urls]
 
