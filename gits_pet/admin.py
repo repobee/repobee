@@ -135,8 +135,8 @@ def _open_issue_by_urls(repo_urls: Iterable[str], issue: tuples.Issue,
     api.open_issue(issue.title, issue.body, repo_names)
 
 
-def open_issue(master_repo_names: Iterable[str], students: Iterable[str],
-               issue: tuples.Issue, api: GitHubAPI) -> None:
+def open_issue(issue: tuples.Issue, master_repo_names: Iterable[str],
+               students: Iterable[str], api: GitHubAPI) -> None:
     """Open an issue in student repos.
 
     Args:
