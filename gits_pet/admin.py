@@ -132,9 +132,9 @@ def update_student_repos(master_repo_urls: Iterable[str],
     if len(set(urls)) != len(urls):
         raise ValueError("master_repo_urls contains duplicates")
 
-    master_repo_names = [_repo_name(url) for url in urls]
+    master_repo_names = [util.repo_name(url) for url in urls]
     student_repo_names = [
-        generate_repo_name(student, master_repo_name) for student in students
+        util.generate_repo_name(student, master_repo_name) for student in students
         for master_repo_name in master_repo_names
     ]
 
@@ -164,7 +164,7 @@ def _open_issue_by_urls(repo_urls: Iterable[str], issue: tuples.Issue,
     issue: An issue to open.
     api: A GitHubAPI to use.
     """
-    repo_names = [_repo_name(url) for url in repo_urls]
+    repo_names = [util.repo_name(url) for url in repo_urls]
     api.open_issue(issue.title, issue.body, repo_names)
 
 
@@ -183,7 +183,7 @@ def open_issue(issue: tuples.Issue, master_repo_names: Iterable[str],
         master_repo_names=master_repo_names, students=students, issue=issue)
 
     repo_names = [
-        generate_repo_name(student, master) for master in master_repo_names
+        util.generate_repo_name(student, master) for master in master_repo_names
         for student in students
     ]
 
@@ -207,7 +207,7 @@ def close_issue(title_regex: str, master_repo_names: Iterable[str],
         students=students)
 
     repo_names = [
-        generate_repo_name(student, master) for master in master_repo_names
+        util.generate_repo_name(student, master) for master in master_repo_names
         for student in students
     ]
 
@@ -231,7 +231,7 @@ def migrate_repos(master_repo_urls: str, user: str, api: GitHubAPI) -> None:
 
     _clone_all(master_repo_urls)
 
-    master_names = [_repo_name(url) for url in master_repo_urls]
+    master_names = [util.repo_name(url) for url in master_repo_urls]
 
     infos = [
         RepoInfo(
@@ -256,28 +256,6 @@ def migrate_repos(master_repo_urls: str, user: str, api: GitHubAPI) -> None:
     LOGGER.info("done!")
 
 
-def generate_repo_name(team_name: str, master_repo_name: str) -> str:
-    """Construct a repo name for a team.
-    
-    Args:
-        team_name: Name of the associated team.
-        master_repo_name: Name of the template repository.
-    """
-    return "{}-{}".format(team_name, master_repo_name)
-
-
-def _repo_name(repo_url):
-    """Extract the name of the repo from its url.
-
-    Args:
-        repo_url: A url to a repo.
-    """
-    repo_name = repo_url.split("/")[-1]
-    if repo_name.endswith('.git'):
-        return repo_name[:-4]
-    return repo_name
-
-
 def _create_repo_infos(urls: Iterable[str],
                        teams: Iterable[Team]) -> List[RepoInfo]:
     """Create RepoInfo namedtuples for all combinations of url and team.
@@ -291,10 +269,10 @@ def _create_repo_infos(urls: Iterable[str],
     """
     repo_infos = []
     for url in urls:
-        repo_base_name = _repo_name(url)
+        repo_base_name = util.repo_name(url)
         repo_infos += [
             RepoInfo(
-                name=generate_repo_name(team.name, repo_base_name),
+                name=util.generate_repo_name(team.name, repo_base_name),
                 description="{} created for {}".format(repo_base_name,
                                                        team.name),
                 private=True,
@@ -318,7 +296,7 @@ def _create_push_tuples(master_urls: Iterable[str],
     """
     push_tuples = []
     for url in master_urls:
-        repo_base_name = _repo_name(url)
+        repo_base_name = util.repo_name(url)
         push_tuples += [
             git.Push(
                 local_path=repo_base_name,
@@ -332,6 +310,6 @@ def _create_push_tuples(master_urls: Iterable[str],
 def _remove_local_repos(urls: Iterable[str]) -> None:
     LOGGER.info("removing local repos ...")
     for url in urls:
-        name = _repo_name(url)
+        name = util.repo_name(url)
         shutil.rmtree(name)
         LOGGER.info("removed {}".format(name))

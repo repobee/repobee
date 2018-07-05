@@ -25,7 +25,7 @@ ISSUE = tuples.Issue("Oops, something went wrong!",
 
 GENERATE_REPO_URL = lambda base_name, student:\
         "https://slarse.se/repos/{}".format(
-            admin.generate_repo_name(base_name, student))
+            util.generate_repo_name(base_name, student))
 
 
 @pytest.fixture(autouse=True)
@@ -89,7 +89,7 @@ def master_urls():
 
 @pytest.fixture(scope='function')
 def master_names(master_urls):
-    return [admin._repo_name(url) for url in master_urls]
+    return [util.repo_name(url) for url in master_urls]
 
 
 @pytest.fixture(scope='function')
@@ -99,10 +99,10 @@ def repo_infos(master_urls, students):
     """
     repo_infos = []
     for url in master_urls:
-        repo_base_name = admin._repo_name(url)
+        repo_base_name = util.repo_name(url)
         repo_infos += [
             github_api.RepoInfo(
-                name=admin.generate_repo_name(student, repo_base_name),
+                name=util.generate_repo_name(student, repo_base_name),
                 description="{} created for {}".format(repo_base_name,
                                                        student),
                 private=True,
@@ -114,13 +114,13 @@ def repo_infos(master_urls, students):
 @pytest.fixture(scope='function')
 def push_tuples(master_urls, students):
     push_tuples = []
-    base_names = list(map(admin._repo_name, master_urls))
+    base_names = list(map(util.repo_name, master_urls))
     repo_urls = [
         GENERATE_REPO_URL(base_name, student) for student in students
         for base_name in base_names
     ]
     for url in master_urls:
-        repo_base_name = admin._repo_name(url)
+        repo_base_name = util.repo_name(url)
         push_tuples += [
             git.Push(
                 local_path=repo_base_name,
@@ -136,7 +136,7 @@ def push_tuple_lists(master_urls, students):
     """Create an expected push tuple list for each master url."""
     pts = []
     for url in master_urls:
-        repo_base_name = admin._repo_name(url)
+        repo_base_name = util.repo_name(url)
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -223,7 +223,7 @@ class TestSetupStudentRepos:
             api_mock.ensure_teams_and_members.assert_called_once_with(
                 {student: [student]
                  for student in students})
-            rmtree_mock.assert_any_call(admin._repo_name(url))
+            rmtree_mock.assert_any_call(util.repo_name(url))
 
         api_mock.create_repos.assert_called_once_with(repo_infos)
         git_mock.push.assert_called_once_with(push_tuples, user=USER)
@@ -275,7 +275,7 @@ class TestUpdateStudentRepos:
 
         for url in master_urls:
             git_mock.clone.assert_any_call(url)
-            rmtree_mock.assert_any_call(admin._repo_name(url))
+            rmtree_mock.assert_any_call(util.repo_name(url))
 
         git_mock.push.assert_called_once_with(push_tuples, user=USER)
 
@@ -299,7 +299,7 @@ class TestUpdateStudentRepos:
 
         generate_url = lambda repo_name: "{}/{}/{}".format(GITHUB_BASE_URL, ORG_NAME, repo_name)
         fail_repo_names = [
-            admin.generate_repo_name(stud, master_name) for stud in ['a', 'c']
+            util.generate_repo_name(stud, master_name) for stud in ['a', 'c']
         ]
         fail_repo_urls = [generate_url(name) for name in fail_repo_names]
 
@@ -340,7 +340,7 @@ class TestUpdateStudentRepos:
 
         generate_url = lambda repo_name: "{}/{}/{}".format(GITHUB_BASE_URL, ORG_NAME, repo_name)
         fail_repo_names = [
-            admin.generate_repo_name(stud, master_name) for stud in ['a', 'c']
+            util.generate_repo_name(stud, master_name) for stud in ['a', 'c']
         ]
         fail_repo_urls = [generate_url(name) for name in fail_repo_names]
 
@@ -460,7 +460,7 @@ class TestMigrateRepo:
             "https://some-url-to-/master/repos/week-1",
             "https://some-url-to-/master/repos/week-5"
         ]
-        master_names = [admin._repo_name(url) for url in master_urls]
+        master_names = [util.repo_name(url) for url in master_urls]
         expected_push_urls = [
             GENERATE_REPO_URL(name, '') for name in master_names
         ]

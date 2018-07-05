@@ -49,3 +49,25 @@ def read_issue(issue_path: str) -> tuples.Issue:
         raise ValueError("{} is not a file".format(issue_path))
     with open(issue_path, 'r', encoding=sys.getdefaultencoding()) as file:
         return tuples.Issue(file.readline().strip(), file.read())
+
+
+def generate_repo_name(team_name: str, master_repo_name: str) -> str:
+    """Construct a repo name for a team.
+    
+    Args:
+        team_name: Name of the associated team.
+        master_repo_name: Name of the template repository.
+    """
+    return "{}-{}".format(team_name, master_repo_name)
+
+
+def repo_name(repo_url):
+    """Extract the name of the repo from its url.
+
+    Args:
+        repo_url: A url to a repo.
+    """
+    repo_name = repo_url.split("/")[-1]
+    if repo_name.endswith('.git'):
+        return repo_name[:-4]
+    return repo_name

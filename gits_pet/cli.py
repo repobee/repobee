@@ -278,7 +278,7 @@ def main():
         master_names = args.master_repo_names
     else:
         master_urls = args.master_repo_urls
-        master_names = [admin._repo_name(url) for url in master_urls]
+        master_names = [util.repo_name(url) for url in master_urls]
 
     if getattr(args, SUB) == SETUP_PARSER:
         with _sys_exit_on_git_error():
