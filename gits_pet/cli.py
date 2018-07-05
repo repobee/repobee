@@ -143,8 +143,7 @@ def create_parser():
         nargs='+')
 
     # base parser for when student lists are involved
-    base_student_parser = argparse.ArgumentParser(
-        add_help=False, parents=[base_parser])
+    base_student_parser = argparse.ArgumentParser(add_help=False)
     base_student_parser.add_argument(
         '-s',
         '--student-list',
@@ -152,9 +151,9 @@ def create_parser():
         required=True)
 
     # base parser for when files need to be pushed
-    base_push_parser = argparse.ArgumentParser(
-        add_help=False, parents=[base_student_parser])
+    base_push_parser = argparse.ArgumentParser(add_help=False)
 
+    # the username is required for any pushing
     base_push_parser.add_argument(
         '-u',
         '--user',
@@ -183,7 +182,7 @@ def create_parser():
          "any previously performed step will simply be skipped. The master "
          "repo is assumed to be located in the target organization, and will "
          "be temporarily cloned to disk for the duration of the command. "),
-        parents=[base_push_parser])
+        parents=[base_push_parser, base_student_parser, base_parser])
 
     update = subparsers.add_parser(
         UPDATE_PARSER,
@@ -192,7 +191,7 @@ def create_parser():
             "Push changes from master repos to student repos. The master repos "
             "must be available within the organization. They can be added "
             "manually, or with the `migrate-repos` command."),
-        parents=[base_push_parser])
+        parents=[base_push_parser, base_student_parser, base_parser])
     update.add_argument(
         '-i',
         '--issue',
@@ -218,7 +217,7 @@ def create_parser():
          "NOTE: `migrate-repos` can also be used to update already migrated repos "
          "that have been changed in their original repos."
          ),
-        parents=[base_parser])
+        parents=[base_push_parser, base_parser])
 
     add_issue_parsers(base_student_parser, subparsers)
 
@@ -242,10 +241,11 @@ def main():
     api = github_api.GitHubAPI(args.github_base_url, git.OAUTH_TOKEN,
                                args.org_name)
 
-    if not os.path.isfile(args.student_list):
-        raise ValueError("'{}' is not a file".format(args.student_list))
-    with open(args.student_list, 'r') as f:
-        students = [student.strip() for student in f]
+    if 'student_list' in args:
+        if not os.path.isfile(args.student_list):
+            raise ValueError("'{}' is not a file".format(args.student_list))
+        with open(args.student_list, 'r') as f:
+            students = [student.strip() for student in f]
 
     if hasattr(args, 'issue') and args.issue:
         issue = util.read_issue(args.issue)
