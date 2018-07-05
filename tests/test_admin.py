@@ -374,7 +374,7 @@ class TestOpenIssue:
     def test_raises_on_empty_args(self, api_mock, master_repo_names, students,
                                   empty_arg):
         with pytest.raises(ValueError) as exc_info:
-            admin.open_issue(master_repo_names, students, ISSUE, api_mock)
+            admin.open_issue(ISSUE, master_repo_names, students, api_mock)
         assert empty_arg in str(exc_info)
 
     def test_happy_path(self, mocker, api_mock):
@@ -389,7 +389,7 @@ class TestOpenIssue:
 
         issue = tuples.Issue(
             "A title", "And a nice **formatted** body\n### With headings!")
-        admin.open_issue(master_names, students, issue, api_mock)
+        admin.open_issue(issue, master_names, students, api_mock)
 
         api_mock.open_issue.assert_called_once_with(issue.title, issue.body,
                                                     expected_repo_names)
@@ -398,35 +398,28 @@ class TestOpenIssue:
 class TestCloseIssue:
     """Tests for close_issue."""
 
-    @pytest.mark.parametrize(
-        'master_repo_names, students, org_name, github_api_base_url, empty_arg',
-        [
-            ([], students(), ORG_NAME, GITHUB_BASE_URL, 'master_repo_names'),
-            (master_names(master_urls()), [], ORG_NAME, GITHUB_BASE_URL,
-             'students'),
-            (master_names(master_urls()), students(), '', GITHUB_BASE_URL,
-             'org_name'),
-            (master_names(master_urls()), students(), ORG_NAME, '',
-             'github_api_base_url'),
-        ])
-    def test_raises_on_empty_args(self, master_repo_names, students, org_name,
-                                  github_api_base_url, empty_arg):
+    @pytest.mark.parametrize('master_repo_names, students, empty_arg', [
+        ([], students(), 'master_repo_names'),
+        (master_names(master_urls()), [], 'students'),
+    ])
+    def test_raises_on_empty_args(self, api_mock, master_repo_names, students,
+                                  empty_arg):
         """only the regex is allowed ot be empty."""
         with pytest.raises(ValueError) as exc_info:
             admin.close_issue('someregex', master_repo_names, students,
-                              org_name, github_api_base_url)
+                              api_mock)
         assert empty_arg in str(exc_info)
 
-    @pytest.mark.parametrize('org_name, github_api_base_url, type_error_arg', [
-        (2, GITHUB_BASE_URL, 'org_name'),
-        (ORG_NAME, 41, 'github_api_base_url'),
+    @pytest.mark.noapimock
+    @pytest.mark.parametrize('title_regex, api, type_error_arg', [
+        (2, API, 'title_regex'),
+        ("someregex", 41, 'api'),
     ])
-    def test_raises_on_invalid_type(self, master_names, org_name,
-                                    github_api_base_url, type_error_arg):
+    def test_raises_on_invalid_type(self, master_names, students, title_regex,
+                                    api, type_error_arg):
         """Test that the non-itrable arguments are type checked."""
         with pytest.raises(TypeError) as exc_info:
-            admin.close_issue('someregex', master_names, students, org_name,
-                              github_api_base_url)
+            admin.close_issue(title_regex, master_names, students, api)
         assert type_error_arg in str(exc_info.value)
 
     def test_happy_path(self, api_mock):
@@ -438,8 +431,7 @@ class TestCloseIssue:
             'c-week-2'
         ]
 
-        admin.close_issue(title_regex, master_names, students, ORG_NAME,
-                          GITHUB_BASE_URL)
+        admin.close_issue(title_regex, master_names, students, api_mock)
 
         api_mock.close_issue.assert_called_once_with(title_regex,
                                                      expected_repo_names)

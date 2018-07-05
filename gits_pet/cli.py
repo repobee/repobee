@@ -272,8 +272,7 @@ def main():
     elif getattr(args, SUB) == OPEN_ISSUE_PARSER:
         admin.open_issue(master_names, students, issue, api)
     elif getattr(args, SUB) == CLOSE_ISSUE_PARSER:
-        admin.close_issue(args.title_regex, master_names, students,
-                          args.org_name, args.github_base_url)
+        admin.close_issue(args.title_regex, master_names, students, api)
     elif getattr(args, SUB) == MIGRATE_PARSER:
         admin.migrate_repos(master_urls, args.user, args.org_name,
                             args.github_base_url)

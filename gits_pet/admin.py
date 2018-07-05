@@ -158,33 +158,26 @@ def open_issue(issue: tuples.Issue, master_repo_names: Iterable[str],
 
 
 def close_issue(title_regex: str, master_repo_names: Iterable[str],
-                students: Iterable[str], org_name: str,
-                github_api_base_url: str) -> None:
+                students: Iterable[str], api: GitHubAPI) -> None:
     """Close issues whose titles match the title_regex in student repos.
 
     Args:
         title_regex: A regex to match against issue titles.
         master_repo_names: Names of master repositories.
-        students: Student GitHub usernames.
-        org_name: Name of the organization.
-        github_api_base_url: The base url to a GitHub api.
+        students: An iterable of student GitHub usernames.
+        api: A GitHubAPI instance used to interface with the GitHub instance.
     """
-    util.validate_types(
-        title_regex=(title_regex, str),
-        org_name=(org_name, str),
-        github_api_base_url=(github_api_base_url, str))
+    util.validate_types(title_regex=(title_regex, str), api=(api, GitHubAPI))
+    print(api)
     util.validate_non_empty(
+        title_regex=title_regex,
         master_repo_names=master_repo_names,
-        students=students,
-        org_name=org_name,
-        github_api_base_url=github_api_base_url)
+        students=students)
 
     repo_names = [
         generate_repo_name(student, master) for master in master_repo_names
         for student in students
     ]
-
-    api = GitHubAPI(github_api_base_url, git.OAUTH_TOKEN, org_name)
 
     api.close_issue(title_regex, repo_names)
 
