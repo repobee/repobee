@@ -12,6 +12,8 @@ import gits_pet
 import logging
 import daiquiri
 
+from contextlib import contextmanager
+
 from gits_pet import admin
 from gits_pet import github_api
 from gits_pet import git
@@ -233,6 +235,23 @@ def get_configured_defaults():
     return config
 
 
+@contextmanager
+def _sys_exit_on_git_error():
+    try:
+        yield
+    except git.PushFailedError as exc:
+        LOGGER.error(
+            "There was an error pushing to {}. Verify that your token has adequate access.".
+            format(exc.url))
+        sys.exit(1)
+    except git.CloneFailedError as exc:
+        LOGGER.error("There was an error cloning from {}. Does the repo really exist?".format(exc.url))
+        sys.exit(1)
+    except git.GitError as exc:
+        LOGGER.error("Something went wrong with git. See the logs for info.")
+        sys.exit(1)
+
+
 def main():
     parser = create_parser()
     args = parser.parse_args()
@@ -262,19 +281,24 @@ def main():
         master_names = [admin._repo_name(url) for url in master_urls]
 
     if getattr(args, SUB) == SETUP_PARSER:
-        admin.setup_student_repos(
-            master_repo_urls=master_urls,
-            students=students,
-            user=args.user,
-            api=api)
+        with _sys_exit_on_git_error():
+            admin.setup_student_repos(
+                master_repo_urls=master_urls,
+                students=students,
+                user=args.user,
+                api=api)
     elif getattr(args, SUB) == UPDATE_PARSER:
-        admin.update_student_repos(master_urls, students, args.user, api)
+        with _sys_exit_on_git_error():
+            admin.update_student_repos(master_urls, students, args.user, api)
     elif getattr(args, SUB) == OPEN_ISSUE_PARSER:
-        admin.open_issue(master_names, students, issue, api)
+        with _sys_exit_on_git_error():
+            admin.open_issue(master_names, students, issue, api)
     elif getattr(args, SUB) == CLOSE_ISSUE_PARSER:
-        admin.close_issue(args.title_regex, master_names, students, api)
+        with _sys_exit_on_git_error():
+            admin.close_issue(args.title_regex, master_names, students, api)
     elif getattr(args, SUB) == MIGRATE_PARSER:
-        admin.migrate_repos(master_urls, args.user, api)
+        with _sys_exit_on_git_error():
+            admin.migrate_repos(master_urls, args.user, api)
     else:
         raise ValueError("Illegal value for subparser: {}".format(
             getattr(args, SUB)))

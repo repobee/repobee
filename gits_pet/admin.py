@@ -25,6 +25,25 @@ LOGGER = daiquiri.getLogger(__file__)
 
 MASTER_TEAM = 'master_repos'
 
+def _create_student_repos(master_repo_urls: Iterable[str],
+                          teams: Iterable[Team], api: GitHubAPI) -> List[str]:
+    """Create student repos. Each team (usually representing one student) is assigned a single repo
+    per master repo. Repos that already exist are not created, but their urls are returned all
+    the same.
+
+    Args:
+        master_repo_urls: URLs to master repos. Must be in the organization that the api is set up for.
+        teams: An iterable of namedtuples designating different teams.
+        api: A GitHubAPI instance used to interface with the GitHub instance.
+
+    Returns:
+        a list of urls to the repos
+    """
+    LOGGER.info("creating student repos ...")
+    repo_infos = _create_repo_infos(master_repo_urls, teams)
+    repo_urls = api.create_repos(repo_infos)
+    return repo_urls
+
 
 def setup_student_repos(master_repo_urls: Iterable[str],
                         students: Iterable[str], user: str,
@@ -59,14 +78,9 @@ def setup_student_repos(master_repo_urls: Iterable[str],
     # (team_name, member list) mappings, each student gets its own team
     member_lists = {student: [student] for student in students}
     teams = api.ensure_teams_and_members(member_lists)
-
-    repo_infos = _create_repo_infos(urls, teams)
-
-    LOGGER.info("creating student repos ...")
-    repo_urls = api.create_repos(repo_infos)
+    repo_urls = _create_student_repos(urls, teams, api)
 
     push_tuples = _create_push_tuples(urls, repo_urls)
-
     LOGGER.info("pushing files to student repos ...")
     git.push(push_tuples, user=user)
 

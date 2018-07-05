@@ -45,6 +45,10 @@ class GitError(Exception):
 class CloneFailedError(GitError):
     """An error to raise when cloning a repository fails."""
 
+    def __init__(self, msg: str, returncode: int, stderr: bytes, url: str):
+        self.url = url
+        super().__init__(msg, returncode, stderr)
+
 
 class PushFailedError(GitError):
     """An error to raise when pushing to a remote fails."""
@@ -127,8 +131,7 @@ def clone(repo_url: str, single_branch: bool = True, branch: str = None):
     rc, _, stderr = captured_run(clone_command)
 
     if rc != 0:
-        raise CloneFailedError("Failed to clone {}".format(repo_url), rc,
-                               stderr)
+        raise CloneFailedError("Failed to clone", rc, stderr,repo_url)
 
 
 async def _push_async(local_repo: str,
