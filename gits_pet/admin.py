@@ -26,35 +26,32 @@ LOGGER = daiquiri.getLogger(__file__)
 MASTER_TEAM = 'master_repos'
 
 
-def create_student_repos(master_repo_urls: Iterable[str], user: str,
-                                  students: Iterable[str], org_name: str,
-                                  github_api_base_url: str):
-    """Create one student repo for each of the master repos in master_repo_urls.
+def setup_student_repos(master_repo_urls: Iterable[str],
+                        students: Iterable[str], user: str,
+                        api: GitHubAPI) -> None:
+    """Setup student repositories based on master repo templates. Perform three primary tasks:
+
+        1. Create one team per student and add the corresponding students to the team. If a team already exists,
+        it is left as-is. If a student is already in its team, nothing happens. If no account exists with the
+        specified username, the team is created regardless but no one is added to it.
+        2. For each master repository, one private student repo is created and added to the corresponding student
+        team. If a repository already exists, it is skipped.
+        3. Files from the master repos are pushed to the corresponding student repos.
 
     Args:
-        master_repo_url: Url to a template repository for the student repos.
-        user: Username of the administrator that is creating the repos.
+        master_repo_urls: URLs to master repos. Must be in the organization that the api is set up for.
         students: An iterable of student GitHub usernames.
-        org_name: Name of an organization.
-        github_api_base_url: The base url to a GitHub api.
+        user: Username of the administrator that setting up the repos.
+        api: A GitHubAPI instance used to interface with the GitHub instance.
     """
-    util.validate_types(
-        user=(user, str),
-        org_name=(org_name, str),
-        github_api_base_url=(github_api_base_url, str))
+    util.validate_types(user=(user, str), api=(api, GitHubAPI))
     util.validate_non_empty(
-        master_repo_urls=master_repo_urls,
-        user=user,
-        students=students,
-        org_name=org_name,
-        github_api_base_url=github_api_base_url)
+        master_repo_urls=master_repo_urls, students=students, user=user)
 
     urls = list(master_repo_urls)  # safe copy
 
     if len(set(urls)) != len(urls):
         raise ValueError("master_repo_urls contains duplicates")
-
-    api = GitHubAPI(github_api_base_url, git.OAUTH_TOKEN, org_name)
 
     for url in urls:
         git.clone(url)

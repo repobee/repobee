@@ -238,6 +238,10 @@ def main():
     parser = create_parser()
     args = parser.parse_args()
 
+    # TODO add try/catch here with graceful exit
+    api = github_api.GitHubAPI(args.github_base_url, git.OAUTH_TOKEN,
+                               args.org_name)
+
     if not os.path.isfile(args.student_list):
         raise ValueError("'{}' is not a file".format(args.student_list))
     with open(args.student_list, 'r') as f:
@@ -251,8 +255,6 @@ def main():
     if not args.master_repo_urls:
         assert args.master_repo_names
         # convert names urls
-        api = github_api.GitHubAPI(args.github_base_url, git.OAUTH_TOKEN,
-                                   args.org_name)
         master_urls = api.get_repo_urls(args.master_repo_names)
         master_names = args.master_repo_names
     else:
@@ -260,9 +262,7 @@ def main():
         master_names = [admin._repo_name(url) for url in master_urls]
 
     if getattr(args, SUB) == SETUP_PARSER:
-        admin.create_student_repos(master_urls, args.user, students,
-                                            args.org_name,
-                                            args.github_base_url)
+        admin.setup_student_repos(master_repo_urls=master_urls, students=students, user=args.user, api=api)
     elif getattr(args, SUB) == UPDATE_PARSER:
         admin.update_student_repos(master_urls, args.user, students,
                                    args.org_name, args.github_base_url, issue)
