@@ -134,24 +134,22 @@ def assert_raises_on_duplicate_master_urls(function, master_urls, students):
 
 
 RAISES_ON_EMPTY_ARGS_PARAMETRIZATION = (
-    'master_urls, user, students, org_name, github_api_base_url, empty_arg',
-    [([], USER, students(), ORG_NAME, GITHUB_BASE_URL, 'master_repo_urls'),
-     (master_urls(), '', students(), ORG_NAME, GITHUB_BASE_URL, 'user'),
-     (master_urls(), USER, [], ORG_NAME, GITHUB_BASE_URL,
-      'students'), (master_urls(), USER, students(), '',
-                    GITHUB_BASE_URL, 'org_name'), (master_urls(), USER,
-                                                   students(), ORG_NAME, '',
-                                                   'github_api_base_url')])
+    'master_urls, students, user, empty_arg',
+    [([], students(), USER, 'master_repo_urls'), (master_urls(), [], USER,
+                                                  'students'), (master_urls(),
+                                                                students(), '',
+                                                                'user')])
+
 RAISES_ON_EMPTY_ARGS_IDS = [
     "|".join([str(val) for val in line])
     for line in RAISES_ON_EMPTY_ARGS_PARAMETRIZATION[1]
 ]
 
 RAISES_ON_INVALID_TYPE_PARAMETRIZATION = (
-    'user, org_name, github_api_base_url, type_error_arg',
-    [(31, ORG_NAME, GITHUB_BASE_URL, 'user'),
-     (USER, 31, GITHUB_BASE_URL, 'org_name'), (USER, ORG_NAME, 31,
-                                               'github_api_base_url')])
+    'user, api, type_error_arg',
+    [(3, github_api.GitHubAPI("bla", "bla", "bla"), 'user'), ("slarse", 4,
+                                                              'api')],
+)
 
 RAISES_ON_EMPTY_INVALID_TYPE_IDS = [
     "|".join([str(val) for val in line])
@@ -173,10 +171,8 @@ class TestSetupStudentRepos:
             admin.setup_student_repos(master_urls, students, USER, api_mock)
         assert str(exc_info.value) == "master_repo_urls contains duplicates"
 
-    @pytest.mark.parametrize('master_urls, students, user, empty_arg',
-                             [([], students(), USER, 'master_urls'),
-                              (master_urls(), [], USER, 'students'),
-                              (master_urls(), students(), '', 'user')])
+    @pytest.mark.parametrize(
+        *RAISES_ON_EMPTY_ARGS_PARAMETRIZATION, ids=RAISES_ON_EMPTY_ARGS_IDS)
     def test_raises_empty_args(self, mocker, api_mock, master_urls, user,
                                students, empty_arg):
         """None of the arguments are allowed to be empty."""
@@ -187,9 +183,8 @@ class TestSetupStudentRepos:
 
     @pytest.mark.noapimock
     @pytest.mark.parametrize(
-        'user, api, type_error_arg',
-        [(3, github_api.GitHubAPI("bla", "bla", "bla"), 'user'),
-         ("slarse", 4, 'api')])
+        *RAISES_ON_INVALID_TYPE_PARAMETRIZATION,
+        ids=RAISES_ON_EMPTY_INVALID_TYPE_IDS)
     def test_raises_on_invalid_type(self, master_urls, students, user, api,
                                     type_error_arg):
         """Test that the non-itrable arguments are type checked."""
@@ -198,7 +193,8 @@ class TestSetupStudentRepos:
         assert type_error_arg in str(exc_info.value)
 
     def test_happy_path(self, mocker, master_urls, students, api_mock,
-                        git_mock, repo_infos, push_tuples, rmtree_mock, ensure_teams_and_members_mock):
+                        git_mock, repo_infos, push_tuples, rmtree_mock,
+                        ensure_teams_and_members_mock):
         """Test that setup_student_repos makes the correct function calls."""
         # must be patched to avoid GitHubAPI type error
         mocker.patch('gits_pet.util.validate_types')
@@ -223,37 +219,51 @@ class TestSetupStudentRepos:
 class TestUpdateStudentRepos:
     """Tests for update_student_repos."""
 
-    def test_raises_on_duplicate_master_urls(self, master_urls, students):
-        assert_raises_on_duplicate_master_urls(admin.update_student_repos,
-                                               master_urls, students)
+    def test_raises_on_duplicate_master_urls(self, mocker, master_urls,
+                                             students, api_mock):
+        # must be patched to avoid GitHubAPI type error
+        mocker.patch('gits_pet.util.validate_types')
+
+        master_urls.append(master_urls[0])
+
+        with pytest.raises(ValueError) as exc_info:
+            admin.update_student_repos(master_urls, students, USER, api_mock)
+        assert str(exc_info.value) == "master_repo_urls contains duplicates"
 
     @pytest.mark.parametrize(
         *RAISES_ON_EMPTY_ARGS_PARAMETRIZATION, ids=RAISES_ON_EMPTY_ARGS_IDS)
-    def test_raises_empty_args(self, master_urls, user, students, org_name,
-                               github_api_base_url, empty_arg):
+    def test_raises_empty_args(self, mocker, api_mock, master_urls, user,
+                               students, empty_arg):
         """None of the arguments are allowed to be empty."""
+        # must be patched to avoid GitHubAPI type error
+        mocker.patch('gits_pet.util.validate_types')
+
         with pytest.raises(ValueError) as exc_info:
-            admin.update_student_repos(master_urls, user, students, org_name,
-                                       github_api_base_url)
+            admin.update_student_repos(
+                master_repo_urls=master_urls,
+                students=students,
+                user=user,
+                api=api_mock)
         assert empty_arg in str(exc_info)
 
+    @pytest.mark.noapimock
     @pytest.mark.parametrize(
         *RAISES_ON_INVALID_TYPE_PARAMETRIZATION,
         ids=RAISES_ON_EMPTY_INVALID_TYPE_IDS)
-    def test_raises_on_invalid_type(self, master_urls, user, students,
-                                    org_name, github_api_base_url,
+    def test_raises_on_invalid_type(self, master_urls, students, user, api,
                                     type_error_arg):
-        """Test that the non-iterable arguments are type checked."""
+        """Test that the non-itrable arguments are type checked."""
         with pytest.raises(TypeError) as exc_info:
-            admin.update_student_repos(master_urls, user, students, org_name,
-                                       github_api_base_url)
+            admin.update_student_repos(master_urls, students, user, api)
         assert type_error_arg in str(exc_info.value)
 
-    def test_happy_path(self, master_urls, students, api_mock, git_mock,
-                        repo_infos, push_tuples, rmtree_mock):
+    def test_happy_path(self, mocker, master_urls, students, api_mock,
+                        git_mock, push_tuples, rmtree_mock):
         """Test that update_student_repos makes the correct function calls."""
-        admin.update_student_repos(master_urls, USER, students, ORG_NAME,
-                                   GITHUB_BASE_URL)
+        # must be patched to avoid GitHubAPI type error
+        mocker.patch('gits_pet.util.validate_types')
+
+        admin.update_student_repos(master_urls, students, USER, api_mock)
 
         for url in master_urls:
             git_mock.clone.assert_any_call(url)
@@ -272,6 +282,9 @@ class TestUpdateStudentRepos:
         
         IMPORTANT NOTE: the git_mock fixture is ignored in this test. Be careful.
         """
+        # must be patched to avoid GitHubAPI type error
+        mocker.patch('gits_pet.util.validate_types')
+
         students = list('abc')
         master_name = 'week-1'
         master_urls = [
@@ -296,8 +309,8 @@ class TestUpdateStudentRepos:
             'gits_pet.git._push_async', side_effect=raise_specific)
         git_clone_mock = mocker.patch('gits_pet.git.clone')
 
-        admin.update_student_repos(master_urls, USER, students, ORG_NAME,
-                                   GITHUB_BASE_URL, issue)
+        admin.update_student_repos(master_urls, students, USER, api_mock,
+                                   issue)
 
         if issue:  # expect issue to be opened
             api_mock.open_issue.assert_called_once_with(
@@ -313,6 +326,9 @@ class TestUpdateStudentRepos:
         
         IMPORTANT NOTE: the git_mock fixture is ignored in this test. Be careful.
         """
+        # must be patched to avoid GitHubAPI type error
+        mocker.patch('gits_pet.util.validate_types')
+
         students = list('abc')
         master_name = 'week-1'
         master_urls = [
@@ -338,8 +354,7 @@ class TestUpdateStudentRepos:
             'gits_pet.git._push_async', side_effect=raise_specific)
         git_clone_mock = mocker.patch('gits_pet.git.clone')
 
-        admin.update_student_repos(master_urls, USER, students, ORG_NAME,
-                                   GITHUB_BASE_URL, issue)
+        admin.update_student_repos(master_urls, students, USER, api_mock)
 
         api_mock.open_issue.assert_called_once_with(issue.title, issue.body,
                                                     fail_repo_names)

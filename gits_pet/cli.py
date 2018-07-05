@@ -262,10 +262,13 @@ def main():
         master_names = [admin._repo_name(url) for url in master_urls]
 
     if getattr(args, SUB) == SETUP_PARSER:
-        admin.setup_student_repos(master_repo_urls=master_urls, students=students, user=args.user, api=api)
+        admin.setup_student_repos(
+            master_repo_urls=master_urls,
+            students=students,
+            user=args.user,
+            api=api)
     elif getattr(args, SUB) == UPDATE_PARSER:
-        admin.update_student_repos(master_urls, args.user, students,
-                                   args.org_name, args.github_base_url, issue)
+        admin.update_student_repos(master_urls, students, args.user, api)
     elif getattr(args, SUB) == OPEN_ISSUE_PARSER:
         admin.open_issue(master_names, students, issue, args.org_name,
                          args.github_base_url)

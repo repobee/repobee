@@ -74,10 +74,9 @@ def setup_student_repos(master_repo_urls: Iterable[str],
 
 
 def update_student_repos(master_repo_urls: Iterable[str],
-                         user: str,
                          students: Iterable[str],
-                         org_name: str,
-                         github_api_base_url: str,
+                         user: str,
+                         api: GitHubAPI,
                          issue: Optional[tuples.Issue] = None) -> None:
     """Attempt to update all student repos related to one of the master repos.
 
@@ -90,21 +89,13 @@ def update_student_repos(master_repo_urls: Iterable[str],
         issue: An optional issue to open in repos to which pushing fails.
     """
     util.validate_types(
-        user=(user, str),
-        org_name=(org_name, str),
-        github_api_base_url=(github_api_base_url, str))
+        user=(user, str), api=(api, GitHubAPI), issue=(issue, (str, type(None))))
     util.validate_non_empty(
-        master_repo_urls=master_repo_urls,
-        user=user,
-        students=students,
-        org_name=org_name,
-        github_api_base_url=github_api_base_url)
+        master_repo_urls=master_repo_urls, user=user, students=students)
     urls = list(master_repo_urls)  # safe copy
 
     if len(set(urls)) != len(urls):
         raise ValueError("master_repo_urls contains duplicates")
-
-    api = GitHubAPI(github_api_base_url, git.OAUTH_TOKEN, org_name)
 
     master_repo_names = [_repo_name(url) for url in urls]
     student_repo_names = [
