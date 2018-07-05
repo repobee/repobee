@@ -168,7 +168,6 @@ def close_issue(title_regex: str, master_repo_names: Iterable[str],
         api: A GitHubAPI instance used to interface with the GitHub instance.
     """
     util.validate_types(title_regex=(title_regex, str), api=(api, GitHubAPI))
-    print(api)
     util.validate_non_empty(
         title_regex=title_regex,
         master_repo_names=master_repo_names,
@@ -182,33 +181,26 @@ def close_issue(title_regex: str, master_repo_names: Iterable[str],
     api.close_issue(title_regex, repo_names)
 
 
-def migrate_repos(master_urls: str, user: str, org_name: str,
-                  github_api_base_url: str) -> None:
+def migrate_repos(master_repo_urls: str, user: str, api: GitHubAPI) -> None:
     """Migrate a repository from an arbitrary URL to the target organization.
     The new repository is added to the master_repos team.
 
     Args:
-        master_urls: HTTPS URLs to the master repos to migrate.
+        master_repo_urls: HTTPS URLs to the master repos to migrate.
         user: username of the administrator performing the migration. This is
         the username that is used in the push.
-        org_name: Name of the organization.
-        github_api_base_url: The base url to a GitHub api.
+        api: A GitHubAPI instance used to interface with the GitHub instance.
     """
-    util.validate_non_empty(
-        master_urls=master_urls,
-        user=user,
-        org_name=org_name,
-        github_api_base_url=github_api_base_url)
-
-    api = GitHubAPI(github_api_base_url, git.OAUTH_TOKEN, org_name)
+    util.validate_types(user=(user, str), api=(api, GitHubAPI))
+    util.validate_non_empty(master_repo_urls=master_repo_urls, user=user)
 
     master_team, *_ = api.ensure_teams_and_members({MASTER_TEAM: []})
 
-    for url in master_urls:
+    for url in master_repo_urls:
         LOGGER.info("cloning into master repo {}...".format(url))
         git.clone(url)
 
-    master_names = [_repo_name(url) for url in master_urls]
+    master_names = [_repo_name(url) for url in master_repo_urls]
 
     infos = [
         RepoInfo(

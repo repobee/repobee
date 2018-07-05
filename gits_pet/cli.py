@@ -274,8 +274,7 @@ def main():
     elif getattr(args, SUB) == CLOSE_ISSUE_PARSER:
         admin.close_issue(args.title_regex, master_names, students, api)
     elif getattr(args, SUB) == MIGRATE_PARSER:
-        admin.migrate_repos(master_urls, args.user, args.org_name,
-                            args.github_base_url)
+        admin.migrate_repos(master_urls, args.user, api)
     else:
         raise ValueError("Illegal value for subparser: {}".format(
             getattr(args, SUB)))

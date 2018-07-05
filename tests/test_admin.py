@@ -440,18 +440,13 @@ class TestCloseIssue:
 class TestMigrateRepo:
     """Tests for migrate_repo."""
 
-    @pytest.mark.parametrize(
-        'master_urls, user, org_name, github_api_base_url, empty_arg',
-        [([], USER, ORG_NAME, GITHUB_BASE_URL, 'master_url'),
-         (['https://some_url'], '', ORG_NAME, GITHUB_BASE_URL, 'user'),
-         (['https://some_url'], USER, '', GITHUB_BASE_URL, 'org_name'),
-         (['https://some_url'], USER, ORG_NAME, '', 'github_api_base_url')])
-    def test_raises_on_empty_args(self, master_urls, user, org_name,
-                                  github_api_base_url, empty_arg):
-        """only the regex is allowed ot be empty."""
+    @pytest.mark.parametrize('master_repo_urls, user, , empty_arg',
+                             [([], USER, 'master_repo_urls'),
+                              (['https://some_url'], '', 'user')])
+    def test_raises_on_empty_args(self, api_mock, master_repo_urls, user,
+                                  empty_arg):
         with pytest.raises(ValueError) as exc_info:
-            admin.migrate_repos(master_urls, user, org_name,
-                                github_api_base_url)
+            admin.migrate_repos(master_repo_urls, user, api_mock)
         assert empty_arg in str(exc_info)
 
     @pytest.mark.nogitmock
@@ -478,7 +473,7 @@ class TestMigrateRepo:
         git_clone_mock = mocker.patch('gits_pet.git.clone', autospec=True)
         git_push_mock = mocker.patch('gits_pet.git.push', autospec=True)
 
-        admin.migrate_repos(master_urls, USER, ORG_NAME, GITHUB_BASE_URL)
+        admin.migrate_repos(master_urls, USER, api_mock)
 
         for url in master_urls:
             git_clone_mock.assert_any_call(url)
