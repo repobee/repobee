@@ -15,6 +15,7 @@ import daiquiri
 from gits_pet import admin
 from gits_pet import github_api
 from gits_pet import git
+from gits_pet import util
 
 daiquiri.setup(
     level=logging.INFO,
@@ -32,7 +33,7 @@ daiquiri.setup(
 LOGGER = daiquiri.getLogger(__file__)
 LOGGER.warning("babla")
 SUB = 'subparser'
-CREATE_PARSER = 'create-repos'
+SETUP_PARSER = 'setup-repos'
 UPDATE_PARSER = 'update-repos'
 MIGRATE_PARSER = 'migrate-repos'
 OPEN_ISSUE_PARSER = 'open-issue'
@@ -50,6 +51,7 @@ CONFIGURABLE_ARGS = set(('user', 'org_name', 'github_base_url'))
 def read_config(config_file="{}/config.cnf".format(CONFIG_DIR)):
     config_parser = configparser.ConfigParser()
     if os.path.isfile(config_file):
+        LOGGER.info("found configuration file at {}".format(config_file))
         config_parser.read(config_file)
     return config_parser["DEFAULT"]
 
@@ -60,6 +62,12 @@ def add_issue_parsers(base_parser, subparsers):
 
     open_parser = subparsers.add_parser(
         OPEN_ISSUE_PARSER,
+        description=(
+            "Open issues in student repositories. For each master repository "
+            "specified, the student list is traversed. For every student repo "
+            "found, the issue specified by the `--issue` option is opened. "
+            "NOTE: The first line of the issue file is assumed to be the "
+            "issue title!"),
         help="Open issues in student repos.",
         parents=[issue_parser_base])
     open_parser.add_argument(
@@ -72,6 +80,11 @@ def add_issue_parsers(base_parser, subparsers):
 
     close_parser = subparsers.add_parser(
         CLOSE_ISSUE_PARSER,
+        description=(
+            "Close issues in student repos based on a regex. For each master "
+            "repository specified, the student list is traversed. For every "
+            "student repo found, any open issues matching the `--title-regex` "
+            "are closed."),
         help="Close issues in student repos.",
         parents=[issue_parser_base])
     close_parser.add_argument(
@@ -86,6 +99,12 @@ def add_issue_parsers(base_parser, subparsers):
 
 def create_parser():
     configured_defaults = get_configured_defaults()
+    LOGGER.info("config file defaults:\n{}".format("\n".join([
+        "{}: {}".format(key, value)
+        for key, value in configured_defaults.items()
+    ])))
+    default = lambda arg_name: configured_defaults[arg_name] if arg_name in configured_defaults else None
+
     is_required = lambda arg_name: True if arg_name not in configured_defaults else False
 
     base_parser = argparse.ArgumentParser(add_help=False)
@@ -94,19 +113,16 @@ def create_parser():
         '--org-name',
         help="Name of the organization to which repos should be added.",
         type=str,
-        required=is_required('org_name'))
+        required=is_required('org_name'),
+        default=default('org_name'))
     base_parser.add_argument(
         '-g',
         '--github-base-url',
         help=
         "Base url to a GitHub v3 API. For enterprise, this is `https://<HOST>/api/v3",
         type=str,
-        required=is_required('github_base_url'))
-    base_parser.add_argument(
-        '-s',
-        '--student-list',
-        help="Path to a list of student usernames.",
-        required=True)
+        required=is_required('github_base_url'),
+        default=default('github_base_url'))
 
     names_or_urls = base_parser.add_mutually_exclusive_group(required=True)
     names_or_urls.add_argument(
@@ -126,9 +142,18 @@ def create_parser():
         type=str,
         nargs='+')
 
+    # base parser for when student lists are involved
+    base_student_parser = argparse.ArgumentParser(
+        add_help=False, parents=[base_parser])
+    base_student_parser.add_argument(
+        '-s',
+        '--student-list',
+        help="Path to a list of student usernames.",
+        required=True)
+
     # base parser for when files need to be pushed
     base_push_parser = argparse.ArgumentParser(
-        add_help=False, parents=[base_parser])
+        add_help=False, parents=[base_student_parser])
 
     base_push_parser.add_argument(
         '-u',
@@ -136,14 +161,8 @@ def create_parser():
         help=
         "Your GitHub username. Needed for pushing without CLI interaction.",
         type=str,
-        required=is_required('user'))
-
-    # set defaults for the base parser
-    base_parser.set_defaults(**configured_defaults)
-    LOGGER.info("config file defaults:\n{}".format("\n".join([
-        "{}: {}".format(key, value)
-        for key, value in configured_defaults.items()
-    ])))
+        required=is_required('user'),
+        default=default('user'))
 
     parser = argparse.ArgumentParser(
         prog='gits_pet',
@@ -153,13 +172,27 @@ def create_parser():
     subparsers.required = True
 
     create = subparsers.add_parser(
-        CREATE_PARSER,
-        help="Create student repos.",
+        SETUP_PARSER,
+        help="Setup student repos.",
+        description=
+        ("Setup student repositories based on master repo templates. This "
+            "command performs three primary actions: sets up the student teams, "
+           "creates one student repository for each master repository and "
+           "finally pushes the master repo files to the corresponding student "
+           "repos. It is perfectly safe to run this command several times, as "
+           "any previously performed step will simply be skipped. The master "
+           "repo is assumed to be located in the target organization, and will "
+           "be temporarily cloned to disk for the duration of the command. "
+         ),
         parents=[base_push_parser])
 
     update = subparsers.add_parser(
         UPDATE_PARSER,
         help="Update existing student repos.",
+        description=(
+            "Push changes from master repos to student repos. The master repos "
+            "must be available within the organization. They can be added "
+            "manually, or with the `migrate-repos` command."),
         parents=[base_push_parser])
     update.add_argument(
         '-i',
@@ -170,12 +203,25 @@ def create_parser():
         type=str,
     )
 
-    add_issue_parsers(base_parser, subparsers)
-
     migrate = subparsers.add_parser(
         MIGRATE_PARSER,
         help="Migrate master repositories into the target organization.",
+        description=
+        ("Migrate master repositories into the target organization. gits_pet "
+         "relies on the master repositories being located in the target "
+         "organization. This command facilitates moving repositories from "
+         "somewhere on the same GitHub instance (e.g. on github.com or your "
+         "own GitHub Enterprise server) into the organization. Each "
+         "master repository specified with `-mu` is cloned to disk, a repo "
+         "with the same name is created in the target organization, and then "
+         "the files are pushed to the new repo. All of the master repos are"
+         "added to the `{}` team. ".format(admin.MASTER_TEAM) + \
+         "NOTE: `migrate-repos` can also be used to update already migrated repos "
+         "that have been changed in their original repos."
+         ),
         parents=[base_parser])
+
+    add_issue_parsers(base_student_parser, subparsers)
 
     return parser
 
@@ -189,14 +235,6 @@ def get_configured_defaults():
     return config
 
 
-def _try_read_issue(issue_path: str) -> str:
-    """Attempt to read an issue from file."""
-    if not os.path.isfile(issue_path):
-        raise ValueError("{} is not a file".format(issue_path))
-    with open(issue_path, 'r', encoding=sys.getdefaultencoding()) as file:
-        return admin.Issue(file.readline().strip(), file.read())
-
-
 def main():
     parser = create_parser()
     args = parser.parse_args()
@@ -207,7 +245,7 @@ def main():
         students = [student.strip() for student in f]
 
     if hasattr(args, 'issue') and args.issue:
-        issue = _try_read_issue(args.issue)
+        issue = util.read_issue(args.issue)
     else:
         issue = None
 
@@ -222,7 +260,7 @@ def main():
         master_urls = args.master_repo_urls
         master_names = [admin._repo_name(url) for url in master_urls]
 
-    if getattr(args, SUB) == CREATE_PARSER:
+    if getattr(args, SUB) == SETUP_PARSER:
         admin.create_multiple_student_repos(master_urls, args.user, students,
                                             args.org_name,
                                             args.github_base_url)

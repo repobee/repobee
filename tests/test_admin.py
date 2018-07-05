@@ -13,6 +13,7 @@ from gits_pet import admin
 from gits_pet import github_api
 from gits_pet import git
 from gits_pet import api_wrapper
+from gits_pet import tuples
 
 USER = 'slarse'
 ORG_NAME = 'test-org'
@@ -247,7 +248,7 @@ class TestUpdateStudentRepos:
     @pytest.mark.nogitmock
     @pytest.mark.parametrize(
         'issue',
-        [admin.Issue("Oops", "Sorry, we failed to push to your repo!"), None])
+        [tuples.Issue("Oops", "Sorry, we failed to push to your repo!"), None])
     def test_issues_on_exceptions(self, issue, mocker, api_mock, repo_infos,
                                   push_tuples, rmtree_mock):
         """Test that issues are opened in repos where pushing fails, if and only if
@@ -310,7 +311,7 @@ class TestUpdateStudentRepos:
         fail_repo_urls = [generate_url(name) for name in fail_repo_names]
 
         api_mock.get_repo_urls.side_effect = lambda repo_names: [generate_url(name) for name in repo_names]
-        issue = admin.Issue("Oops", "Sorry, we failed to push to your repo!")
+        issue = tuples.Issue("Oops", "Sorry, we failed to push to your repo!")
 
         async def raise_specific(local_repo, user, repo_url, branch):
             if repo_url in fail_repo_urls:
@@ -337,9 +338,9 @@ class TestOpenIssue:
     @pytest.mark.parametrize(
         'master_repo_names, students, issue, org_name, github_api_base_url, empty_arg',
         [
-            ([], students(), admin.Issue('', ''), ORG_NAME, GITHUB_BASE_URL,
+            ([], students(), tuples.Issue('', ''), ORG_NAME, GITHUB_BASE_URL,
              'master_repo_names'),
-            (master_names(master_urls()), [], admin.Issue('', ''), ORG_NAME,
+            (master_names(master_urls()), [], tuples.Issue('', ''), ORG_NAME,
              GITHUB_BASE_URL, 'students'),
             (master_names(master_urls()), students(), None, ORG_NAME,
              GITHUB_BASE_URL, 'issue'),
@@ -361,7 +362,7 @@ class TestOpenIssue:
             'c-week-2'
         ]
 
-        issue = admin.Issue(
+        issue = tuples.Issue(
             "A title", "And a nice **formatted** body\n### With headings!")
         admin.open_issue(master_names, students, issue, ORG_NAME,
                          GITHUB_BASE_URL)
