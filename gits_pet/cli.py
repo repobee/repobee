@@ -12,6 +12,8 @@ import gits_pet
 import logging
 import daiquiri
 
+from contextlib import contextmanager
+
 from gits_pet import admin
 from gits_pet import github_api
 from gits_pet import git
@@ -143,8 +145,7 @@ def create_parser():
         nargs='+')
 
     # base parser for when student lists are involved
-    base_student_parser = argparse.ArgumentParser(
-        add_help=False, parents=[base_parser])
+    base_student_parser = argparse.ArgumentParser(add_help=False)
     base_student_parser.add_argument(
         '-s',
         '--student-list',
@@ -152,9 +153,9 @@ def create_parser():
         required=True)
 
     # base parser for when files need to be pushed
-    base_push_parser = argparse.ArgumentParser(
-        add_help=False, parents=[base_student_parser])
+    base_push_parser = argparse.ArgumentParser(add_help=False)
 
+    # the username is required for any pushing
     base_push_parser.add_argument(
         '-u',
         '--user',
@@ -176,15 +177,14 @@ def create_parser():
         help="Setup student repos.",
         description=
         ("Setup student repositories based on master repo templates. This "
-            "command performs three primary actions: sets up the student teams, "
-           "creates one student repository for each master repository and "
-           "finally pushes the master repo files to the corresponding student "
-           "repos. It is perfectly safe to run this command several times, as "
-           "any previously performed step will simply be skipped. The master "
-           "repo is assumed to be located in the target organization, and will "
-           "be temporarily cloned to disk for the duration of the command. "
-         ),
-        parents=[base_push_parser])
+         "command performs three primary actions: sets up the student teams, "
+         "creates one student repository for each master repository and "
+         "finally pushes the master repo files to the corresponding student "
+         "repos. It is perfectly safe to run this command several times, as "
+         "any previously performed step will simply be skipped. The master "
+         "repo is assumed to be located in the target organization, and will "
+         "be temporarily cloned to disk for the duration of the command. "),
+        parents=[base_push_parser, base_student_parser, base_parser])
 
     update = subparsers.add_parser(
         UPDATE_PARSER,
@@ -193,7 +193,7 @@ def create_parser():
             "Push changes from master repos to student repos. The master repos "
             "must be available within the organization. They can be added "
             "manually, or with the `migrate-repos` command."),
-        parents=[base_push_parser])
+        parents=[base_push_parser, base_student_parser, base_parser])
     update.add_argument(
         '-i',
         '--issue',
@@ -219,7 +219,7 @@ def create_parser():
          "NOTE: `migrate-repos` can also be used to update already migrated repos "
          "that have been changed in their original repos."
          ),
-        parents=[base_parser])
+        parents=[base_push_parser, base_parser])
 
     add_issue_parsers(base_student_parser, subparsers)
 
@@ -235,14 +235,36 @@ def get_configured_defaults():
     return config
 
 
+@contextmanager
+def _sys_exit_on_git_error():
+    try:
+        yield
+    except git.PushFailedError as exc:
+        LOGGER.error(
+            "There was an error pushing to {}. Verify that your token has adequate access.".
+            format(exc.url))
+        sys.exit(1)
+    except git.CloneFailedError as exc:
+        LOGGER.error("There was an error cloning from {}. Does the repo really exist?".format(exc.url))
+        sys.exit(1)
+    except git.GitError as exc:
+        LOGGER.error("Something went wrong with git. See the logs for info.")
+        sys.exit(1)
+
+
 def main():
     parser = create_parser()
     args = parser.parse_args()
 
-    if not os.path.isfile(args.student_list):
-        raise ValueError("'{}' is not a file".format(args.student_list))
-    with open(args.student_list, 'r') as f:
-        students = [student.strip() for student in f]
+    # TODO add try/catch here with graceful exit
+    api = github_api.GitHubAPI(args.github_base_url, git.OAUTH_TOKEN,
+                               args.org_name)
+
+    if 'student_list' in args:
+        if not os.path.isfile(args.student_list):
+            raise ValueError("'{}' is not a file".format(args.student_list))
+        with open(args.student_list, 'r') as f:
+            students = [student.strip() for student in f]
 
     if hasattr(args, 'issue') and args.issue:
         issue = util.read_issue(args.issue)
@@ -252,30 +274,31 @@ def main():
     if not args.master_repo_urls:
         assert args.master_repo_names
         # convert names urls
-        api = github_api.GitHubAPI(args.github_base_url, git.OAUTH_TOKEN,
-                                   args.org_name)
         master_urls = api.get_repo_urls(args.master_repo_names)
         master_names = args.master_repo_names
     else:
         master_urls = args.master_repo_urls
-        master_names = [admin._repo_name(url) for url in master_urls]
+        master_names = [util.repo_name(url) for url in master_urls]
 
     if getattr(args, SUB) == SETUP_PARSER:
-        admin.create_multiple_student_repos(master_urls, args.user, students,
-                                            args.org_name,
-                                            args.github_base_url)
+        with _sys_exit_on_git_error():
+            admin.setup_student_repos(
+                master_repo_urls=master_urls,
+                students=students,
+                user=args.user,
+                api=api)
     elif getattr(args, SUB) == UPDATE_PARSER:
-        admin.update_student_repos(master_urls, args.user, students,
-                                   args.org_name, args.github_base_url, issue)
+        with _sys_exit_on_git_error():
+            admin.update_student_repos(master_urls, students, args.user, api)
     elif getattr(args, SUB) == OPEN_ISSUE_PARSER:
-        admin.open_issue(master_names, students, issue, args.org_name,
-                         args.github_base_url)
+        with _sys_exit_on_git_error():
+            admin.open_issue(master_names, students, issue, api)
     elif getattr(args, SUB) == CLOSE_ISSUE_PARSER:
-        admin.close_issue(args.title_regex, master_names, students,
-                          args.org_name, args.github_base_url)
+        with _sys_exit_on_git_error():
+            admin.close_issue(args.title_regex, master_names, students, api)
     elif getattr(args, SUB) == MIGRATE_PARSER:
-        admin.migrate_repos(master_urls, args.user, args.org_name,
-                            args.github_base_url)
+        with _sys_exit_on_git_error():
+            admin.migrate_repos(master_urls, args.user, api)
     else:
         raise ValueError("Illegal value for subparser: {}".format(
             getattr(args, SUB)))

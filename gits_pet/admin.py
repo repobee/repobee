@@ -26,152 +26,122 @@ LOGGER = daiquiri.getLogger(__file__)
 MASTER_TEAM = 'master_repos'
 
 
-def create_multiple_student_repos(master_repo_urls: Iterable[str], user: str,
-                                  students: Iterable[str], org_name: str,
-                                  github_api_base_url: str):
-    """Create one student repo for each of the master repos in master_repo_urls.
+def setup_student_repos(master_repo_urls: Iterable[str],
+                        students: Iterable[str], user: str,
+                        api: GitHubAPI) -> None:
+    """Setup student repositories based on master repo templates. Perform three primary tasks:
+
+        1. Create one team per student and add the corresponding students to the team. If a team already exists,
+        it is left as-is. If a student is already in its team, nothing happens. If no account exists with the
+        specified username, the team is created regardless but no one is added to it.
+        2. For each master repository, one private student repo is created and added to the corresponding student
+        team. If a repository already exists, it is skipped.
+        3. Files from the master repos are pushed to the corresponding student repos.
 
     Args:
-        master_repo_url: Url to a template repository for the student repos.
-        user: Username of the administrator that is creating the repos.
+        master_repo_urls: URLs to master repos. Must be in the organization that the api is set up for.
         students: An iterable of student GitHub usernames.
-        org_name: Name of an organization.
-        github_api_base_url: The base url to a GitHub api.
+        user: Username of the administrator that setting up the repos.
+        api: A GitHubAPI instance used to interface with the GitHub instance.
     """
-    util.validate_types(
-        user=(user, str),
-        org_name=(org_name, str),
-        github_api_base_url=(github_api_base_url, str))
+    util.validate_types(user=(user, str), api=(api, GitHubAPI))
     util.validate_non_empty(
-        master_repo_urls=master_repo_urls,
-        user=user,
-        students=students,
-        org_name=org_name,
-        github_api_base_url=github_api_base_url)
+        master_repo_urls=master_repo_urls, students=students, user=user)
 
     urls = list(master_repo_urls)  # safe copy
 
     if len(set(urls)) != len(urls):
         raise ValueError("master_repo_urls contains duplicates")
 
-    api = GitHubAPI(github_api_base_url, git.OAUTH_TOKEN, org_name)
-
-    for url in urls:
-        git.clone(url)
+    _clone_all(urls)
 
     # (team_name, member list) mappings, each student gets its own team
     member_lists = {student: [student] for student in students}
     teams = api.ensure_teams_and_members(member_lists)
-
-    repo_infos = _create_repo_infos(urls, teams)
-
-    LOGGER.info("creating student repos ...")
-    repo_urls = api.create_repos(repo_infos)
+    repo_urls = _create_student_repos(urls, teams, api)
 
     push_tuples = _create_push_tuples(urls, repo_urls)
-
     LOGGER.info("pushing files to student repos ...")
     git.push(push_tuples, user=user)
 
     _remove_local_repos(urls)
 
 
-def create_student_repos(master_repo_url: str,
-                         user: str,
-                         students: Iterable[str],
-                         org_name: str,
-                         github_api_base_url: str,
-                         repo_base_name: str = None):
-    """Create student repos from a master repo template.
+def _create_student_repos(master_repo_urls: Iterable[str],
+                          teams: Iterable[Team], api: GitHubAPI) -> List[str]:
+    """Create student repos. Each team (usually representing one student) is assigned a single repo
+    per master repo. Repos that already exist are not created, but their urls are returned all
+    the same.
 
     Args:
-        master_repo_url: Url to a template repository for the student repos.
-        user: Username of the administrator that is creating the repos.
-        students: An iterable of student GitHub usernames.
-        org_name: Name of an organization.
-        github_api_base_url: The base url to a GitHub api.
-        repo_base_name: The base name for all student repositories. If None,
-        the base name of the master repo is used.
+        master_repo_urls: URLs to master repos. Must be in the organization that the api is set up for.
+        teams: An iterable of namedtuples designating different teams.
+        api: A GitHubAPI instance used to interface with the GitHub instance.
+
+    Returns:
+        a list of urls to the repos
     """
-    api = GitHubAPI(github_api_base_url, git.OAUTH_TOKEN, org_name)
-
-    master_repo_name = _repo_name(master_repo_url)
-
-    LOGGER.info("cloning master repo {}...".format(master_repo_name))
-    git.clone(master_repo_url)
-
-    # (team_name, member list) mappings, each student gets its own team
-    member_lists = {student: [student] for student in students}
-    teams = api.ensure_teams_and_members(member_lists)
-
-    if not repo_base_name:
-        repo_base_name = master_repo_name
-
-    repo_infos = [
-        RepoInfo(
-            name=generate_repo_name(team.name, repo_base_name),
-            description="{} created for {}".format(repo_base_name, team.name),
-            private=True,
-            team_id=team.id) for team in teams
-    ]
-    LOGGER.info("creating repos with base name {}...".format(repo_base_name))
+    LOGGER.info("creating student repos ...")
+    repo_infos = _create_repo_infos(master_repo_urls, teams)
     repo_urls = api.create_repos(repo_infos)
+    return repo_urls
 
-    git.push(
-        (git.Push(
-            local_path=master_repo_name, remote_url=repo_url, branch='master')
-         for repo_url in repo_urls),
-        user=user)
 
-    LOGGER.info("removing master repo ...")
-    shutil.rmtree(master_repo_name)
-    LOGGER.info("done!")
+def _clone_all(urls: Iterable[str]):
+    """Attempts to clone all urls. If any one fails, all successfully cloned
+    repos are removed and the error is propagated. Either all repos are cloned,
+    or none are.
+
+    Args:
+        urls: HTTPS urls to git repositories.
+    """
+    cloned = []
+    try:
+        for url in urls:
+            LOGGER.info("cloning into {}".format(url))
+            git.clone(url)
+            cloned.append(url)
+    except git.CloneFailedError:
+        LOGGER.error("error cloning into {}, aborting ...".format(url))
+        _remove_local_repos(cloned)
+        raise
 
 
 def update_student_repos(master_repo_urls: Iterable[str],
-                         user: str,
                          students: Iterable[str],
-                         org_name: str,
-                         github_api_base_url: str,
+                         user: str,
+                         api: GitHubAPI,
                          issue: Optional[tuples.Issue] = None) -> None:
     """Attempt to update all student repos related to one of the master repos.
 
     Args:
-        master_repo_urls: URLs to template repositories for the student repos.
-        user: Username of the administrator that is creating the repos.
-        students: Student GitHub usernames.
-        org_name: Name of the organization.
-        github_api_base_url: The base url to a GitHub api.
+        master_repo_urls: URLs to master repos. Must be in the organization that the api is set up for.
+        students: An iterable of student GitHub usernames.
+        user: Username of the administrator that setting up the repos.
+        api: A GitHubAPI instance used to interface with the GitHub instance.
         issue: An optional issue to open in repos to which pushing fails.
     """
     util.validate_types(
         user=(user, str),
-        org_name=(org_name, str),
-        github_api_base_url=(github_api_base_url, str))
+        api=(api, GitHubAPI),
+        issue=(issue, (tuples.Issue, type(None))))
     util.validate_non_empty(
-        master_repo_urls=master_repo_urls,
-        user=user,
-        students=students,
-        org_name=org_name,
-        github_api_base_url=github_api_base_url)
+        master_repo_urls=master_repo_urls, user=user, students=students)
     urls = list(master_repo_urls)  # safe copy
 
     if len(set(urls)) != len(urls):
         raise ValueError("master_repo_urls contains duplicates")
 
-    api = GitHubAPI(github_api_base_url, git.OAUTH_TOKEN, org_name)
-
-    master_repo_names = [_repo_name(url) for url in urls]
+    master_repo_names = [util.repo_name(url) for url in urls]
     student_repo_names = [
-        generate_repo_name(student, master_repo_name) for student in students
+        util.generate_repo_name(student, master_repo_name) for student in students
         for master_repo_name in master_repo_names
     ]
 
     repo_urls = api.get_repo_urls(student_repo_names)
 
     LOGGER.info("cloning into master repos ...")
-    for url in urls:
-        git.clone(url)
+    _clone_all(urls)
 
     push_tuples = _create_push_tuples(urls, repo_urls)
 
@@ -194,102 +164,74 @@ def _open_issue_by_urls(repo_urls: Iterable[str], issue: tuples.Issue,
     issue: An issue to open.
     api: A GitHubAPI to use.
     """
-    repo_names = [_repo_name(url) for url in repo_urls]
+    repo_names = [util.repo_name(url) for url in repo_urls]
     api.open_issue(issue.title, issue.body, repo_names)
 
 
-def open_issue(master_repo_names: Iterable[str], students: Iterable[str],
-               issue: tuples.Issue, org_name: str,
-               github_api_base_url: str) -> None:
+def open_issue(issue: tuples.Issue, master_repo_names: Iterable[str],
+               students: Iterable[str], api: GitHubAPI) -> None:
     """Open an issue in student repos.
 
     Args:
         master_repo_names: Names of master repositories.
-        students: Student GitHub usernames.
-        issue_path: Filepath to a markdown file. The first line is assumed to
-        be the title.
-        org_name: Name of the organization.
-        github_api_base_url: The base url to a GitHub api.
+        students: An iterable of student GitHub usernames.
+        issue: An issue to open.
+        api: A GitHubAPI instance used to interface with the GitHub instance.
     """
-    util.validate_types(
-        org_name=(org_name, str),
-        github_api_base_url=(github_api_base_url, str))
+    util.validate_types(issue=(issue, tuples.Issue), api=(api, GitHubAPI))
     util.validate_non_empty(
-        master_repo_names=master_repo_names,
-        students=students,
-        org_name=org_name,
-        issue=issue,
-        github_api_base_url=github_api_base_url)
+        master_repo_names=master_repo_names, students=students, issue=issue)
 
     repo_names = [
-        generate_repo_name(student, master) for master in master_repo_names
+        util.generate_repo_name(student, master) for master in master_repo_names
         for student in students
     ]
-
-    api = GitHubAPI(github_api_base_url, git.OAUTH_TOKEN, org_name)
 
     api.open_issue(issue.title, issue.body, repo_names)
 
 
 def close_issue(title_regex: str, master_repo_names: Iterable[str],
-                students: Iterable[str], org_name: str,
-                github_api_base_url: str) -> None:
+                students: Iterable[str], api: GitHubAPI) -> None:
     """Close issues whose titles match the title_regex in student repos.
 
     Args:
         title_regex: A regex to match against issue titles.
         master_repo_names: Names of master repositories.
-        students: Student GitHub usernames.
-        org_name: Name of the organization.
-        github_api_base_url: The base url to a GitHub api.
+        students: An iterable of student GitHub usernames.
+        api: A GitHubAPI instance used to interface with the GitHub instance.
     """
-    util.validate_types(
-        title_regex=(title_regex, str),
-        org_name=(org_name, str),
-        github_api_base_url=(github_api_base_url, str))
+    util.validate_types(title_regex=(title_regex, str), api=(api, GitHubAPI))
     util.validate_non_empty(
+        title_regex=title_regex,
         master_repo_names=master_repo_names,
-        students=students,
-        org_name=org_name,
-        github_api_base_url=github_api_base_url)
+        students=students)
 
     repo_names = [
-        generate_repo_name(student, master) for master in master_repo_names
+        util.generate_repo_name(student, master) for master in master_repo_names
         for student in students
     ]
-
-    api = GitHubAPI(github_api_base_url, git.OAUTH_TOKEN, org_name)
 
     api.close_issue(title_regex, repo_names)
 
 
-def migrate_repos(master_urls: str, user: str, org_name: str,
-                  github_api_base_url: str) -> None:
+def migrate_repos(master_repo_urls: str, user: str, api: GitHubAPI) -> None:
     """Migrate a repository from an arbitrary URL to the target organization.
     The new repository is added to the master_repos team.
 
     Args:
-        master_urls: HTTPS URLs to the master repos to migrate.
+        master_repo_urls: HTTPS URLs to the master repos to migrate.
         user: username of the administrator performing the migration. This is
         the username that is used in the push.
-        org_name: Name of the organization.
-        github_api_base_url: The base url to a GitHub api.
+        api: A GitHubAPI instance used to interface with the GitHub instance.
     """
-    util.validate_non_empty(
-        master_urls=master_urls,
-        user=user,
-        org_name=org_name,
-        github_api_base_url=github_api_base_url)
-
-    api = GitHubAPI(github_api_base_url, git.OAUTH_TOKEN, org_name)
+    util.validate_types(user=(user, str), api=(api, GitHubAPI))
+    util.validate_non_empty(master_repo_urls=master_repo_urls, user=user)
 
     master_team, *_ = api.ensure_teams_and_members({MASTER_TEAM: []})
 
-    for url in master_urls:
-        LOGGER.info("cloning into master repo {}...".format(url))
-        git.clone(url)
+    _clone_all(master_repo_urls)
 
-    master_names = [_repo_name(url) for url in master_urls]
+    master_names = [util.repo_name(url) for url in master_repo_urls]
 
     infos = [
         RepoInfo(
@@ -314,28 +256,6 @@ def migrate_repos(master_urls: str, user: str, org_name: str,
     LOGGER.info("done!")
 
 
-def generate_repo_name(team_name: str, master_repo_name: str) -> str:
-    """Construct a repo name for a team.
-    
-    Args:
-        team_name: Name of the associated team.
-        master_repo_name: Name of the template repository.
-    """
-    return "{}-{}".format(team_name, master_repo_name)
-
-
-def _repo_name(repo_url):
-    """Extract the name of the repo from its url.
-
-    Args:
-        repo_url: A url to a repo.
-    """
-    repo_name = repo_url.split("/")[-1]
-    if repo_name.endswith('.git'):
-        return repo_name[:-4]
-    return repo_name
-
-
 def _create_repo_infos(urls: Iterable[str],
                        teams: Iterable[Team]) -> List[RepoInfo]:
     """Create RepoInfo namedtuples for all combinations of url and team.
@@ -349,10 +269,10 @@ def _create_repo_infos(urls: Iterable[str],
     """
     repo_infos = []
     for url in urls:
-        repo_base_name = _repo_name(url)
+        repo_base_name = util.repo_name(url)
         repo_infos += [
             RepoInfo(
-                name=generate_repo_name(team.name, repo_base_name),
+                name=util.generate_repo_name(team.name, repo_base_name),
                 description="{} created for {}".format(repo_base_name,
                                                        team.name),
                 private=True,
@@ -376,7 +296,7 @@ def _create_push_tuples(master_urls: Iterable[str],
     """
     push_tuples = []
     for url in master_urls:
-        repo_base_name = _repo_name(url)
+        repo_base_name = util.repo_name(url)
         push_tuples += [
             git.Push(
                 local_path=repo_base_name,
@@ -390,6 +310,6 @@ def _create_push_tuples(master_urls: Iterable[str],
 def _remove_local_repos(urls: Iterable[str]) -> None:
     LOGGER.info("removing local repos ...")
     for url in urls:
-        name = _repo_name(url)
+        name = util.repo_name(url)
         shutil.rmtree(name)
         LOGGER.info("removed {}".format(name))

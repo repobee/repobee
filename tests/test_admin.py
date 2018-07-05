@@ -5,7 +5,7 @@ import tempfile
 import subprocess
 import string
 from asyncio import coroutine
-from unittest.mock import patch, PropertyMock, MagicMock
+from unittest.mock import patch, PropertyMock, MagicMock, Mock
 from collections import namedtuple
 
 import gits_pet
@@ -14,18 +14,45 @@ from gits_pet import github_api
 from gits_pet import git
 from gits_pet import api_wrapper
 from gits_pet import tuples
+from gits_pet import util
 
 USER = 'slarse'
 ORG_NAME = 'test-org'
 GITHUB_BASE_URL = 'https://some_enterprise_host/api/v3'
+API = github_api.GitHubAPI("bla", "bla", "bla")
+ISSUE = tuples.Issue("Oops, something went wrong!",
+                     "This is the body **with some formatting**.")
 
 GENERATE_REPO_URL = lambda base_name, student:\
         "https://slarse.se/repos/{}".format(
-            admin.generate_repo_name(base_name, student))
+            util.generate_repo_name(base_name, student))
 
 
-@pytest.fixture()
-def git_mock(request, mocker, autouse=True):
+@pytest.fixture(autouse=True)
+def validate_types_mock(request, mocker):
+    """Mock util.validate_types to only work on non-mock items."""
+    if 'novalidatemock' in request.keywords:
+        return
+    util_validate = util.validate_types
+
+    def validate(**kwargs):
+        """Mocked validate that skips Mock objects as types."""
+        remove = set()
+        for param_name, (argument, expected_types) in kwargs.items():
+            if isinstance(expected_types, (Mock, MagicMock))\
+                    or isinstance( expected_types, tuple)\
+                    and any(isinstance(obj, (Mock, MagicMock))
+                                   for obj in expected_types):
+                remove.add(param_name)
+        util_validate(
+            **{key: val
+               for key, val in kwargs.items() if key not in remove})
+
+    return mocker.patch('gits_pet.util.validate_types', side_effect=validate)
+
+
+@pytest.fixture(autouse=True)
+def git_mock(request, mocker):
     """Mocks the whole git module so that there are no accidental
     pushes/clones.
     """
@@ -35,13 +62,16 @@ def git_mock(request, mocker, autouse=True):
 
 
 @pytest.fixture(autouse=True)
-def api_mock(mocker):
-    return mocker.patch(
-        'gits_pet.admin.GitHubAPI', autospec=True)(GITHUB_BASE_URL,
-                                                   git.OAUTH_TOKEN, ORG_NAME)
+def api_mock(request, mocker):
+    if 'noapimock' in request.keywords:
+        return
+    mock = MagicMock(spec=gits_pet.admin.GitHubAPI)
+    api_class = mocker.patch('gits_pet.admin.GitHubAPI', autospec=True)
+    api_class.return_value = mock
+    return mock
 
 
-@pytest.fixture(scope='function', autouse=True)
+@pytest.fixture(scope='function')
 def ensure_teams_and_members_mock(api_mock, students):
     api_mock.ensure_teams_and_members.side_effect = lambda member_lists: [api_wrapper.Team(student, [student], id)
                     for id, student
@@ -59,7 +89,7 @@ def master_urls():
 
 @pytest.fixture(scope='function')
 def master_names(master_urls):
-    return [admin._repo_name(url) for url in master_urls]
+    return [util.repo_name(url) for url in master_urls]
 
 
 @pytest.fixture(scope='function')
@@ -69,10 +99,10 @@ def repo_infos(master_urls, students):
     """
     repo_infos = []
     for url in master_urls:
-        repo_base_name = admin._repo_name(url)
+        repo_base_name = util.repo_name(url)
         repo_infos += [
             github_api.RepoInfo(
-                name=admin.generate_repo_name(student, repo_base_name),
+                name=util.generate_repo_name(student, repo_base_name),
                 description="{} created for {}".format(repo_base_name,
                                                        student),
                 private=True,
@@ -84,13 +114,13 @@ def repo_infos(master_urls, students):
 @pytest.fixture(scope='function')
 def push_tuples(master_urls, students):
     push_tuples = []
-    base_names = list(map(admin._repo_name, master_urls))
+    base_names = list(map(util.repo_name, master_urls))
     repo_urls = [
         GENERATE_REPO_URL(base_name, student) for student in students
         for base_name in base_names
     ]
     for url in master_urls:
-        repo_base_name = admin._repo_name(url)
+        repo_base_name = util.repo_name(url)
         push_tuples += [
             git.Push(
                 local_path=repo_base_name,
@@ -106,7 +136,7 @@ def push_tuple_lists(master_urls, students):
     """Create an expected push tuple list for each master url."""
     pts = []
     for url in master_urls:
-        repo_base_name = admin._repo_name(url)
+        repo_base_name = util.repo_name(url)
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -130,24 +160,21 @@ def assert_raises_on_duplicate_master_urls(function, master_urls, students):
 
 
 RAISES_ON_EMPTY_ARGS_PARAMETRIZATION = (
-    'master_urls, user, students, org_name, github_api_base_url, empty_arg',
-    [([], USER, students(), ORG_NAME, GITHUB_BASE_URL, 'master_repo_urls'),
-     (master_urls(), '', students(), ORG_NAME, GITHUB_BASE_URL, 'user'),
-     (master_urls(), USER, [], ORG_NAME, GITHUB_BASE_URL,
-      'students'), (master_urls(), USER, students(), '',
-                    GITHUB_BASE_URL, 'org_name'), (master_urls(), USER,
-                                                   students(), ORG_NAME, '',
-                                                   'github_api_base_url')])
+    'master_urls, students, user, empty_arg',
+    [([], students(), USER, 'master_repo_urls'), (master_urls(), [], USER,
+                                                  'students'), (master_urls(),
+                                                                students(), '',
+                                                                'user')])
+
 RAISES_ON_EMPTY_ARGS_IDS = [
     "|".join([str(val) for val in line])
     for line in RAISES_ON_EMPTY_ARGS_PARAMETRIZATION[1]
 ]
 
 RAISES_ON_INVALID_TYPE_PARAMETRIZATION = (
-    'user, org_name, github_api_base_url, type_error_arg',
-    [(31, ORG_NAME, GITHUB_BASE_URL, 'user'),
-     (USER, 31, GITHUB_BASE_URL, 'org_name'), (USER, ORG_NAME, 31,
-                                               'github_api_base_url')])
+    'user, api, type_error_arg',
+    [(3, API, 'user'), ("slarse", 4, 'api')],
+)
 
 RAISES_ON_EMPTY_INVALID_TYPE_IDS = [
     "|".join([str(val) for val in line])
@@ -155,46 +182,48 @@ RAISES_ON_EMPTY_INVALID_TYPE_IDS = [
 ]
 
 
-class TestCreateMultipleStudentRepos:
-    """Tests for create_multiple_student_repos."""
+class TestSetupStudentRepos:
+    """Tests for setup_student_repos."""
 
-    def test_raises_on_duplicate_master_urls(self, master_urls, students):
-        assert_raises_on_duplicate_master_urls(
-            admin.create_multiple_student_repos, master_urls, students)
+    def test_raises_on_duplicate_master_urls(self, mocker, master_urls,
+                                             students, api_mock):
+        master_urls.append(master_urls[0])
+
+        with pytest.raises(ValueError) as exc_info:
+            admin.setup_student_repos(master_urls, students, USER, api_mock)
+        assert str(exc_info.value) == "master_repo_urls contains duplicates"
 
     @pytest.mark.parametrize(
         *RAISES_ON_EMPTY_ARGS_PARAMETRIZATION, ids=RAISES_ON_EMPTY_ARGS_IDS)
-    def test_raises_empty_args(self, master_urls, user, students, org_name,
-                               github_api_base_url, empty_arg):
+    def test_raises_empty_args(self, mocker, api_mock, master_urls, user,
+                               students, empty_arg):
         """None of the arguments are allowed to be empty."""
         with pytest.raises(ValueError) as exc_info:
-            admin.create_multiple_student_repos(master_urls, user, students,
-                                                org_name, github_api_base_url)
+            admin.setup_student_repos(master_urls, students, user, api_mock)
 
+    @pytest.mark.noapimock
     @pytest.mark.parametrize(
         *RAISES_ON_INVALID_TYPE_PARAMETRIZATION,
         ids=RAISES_ON_EMPTY_INVALID_TYPE_IDS)
-    def test_raises_on_invalid_type(self, master_urls, user, students,
-                                    org_name, github_api_base_url,
+    def test_raises_on_invalid_type(self, master_urls, students, user, api,
                                     type_error_arg):
         """Test that the non-itrable arguments are type checked."""
         with pytest.raises(TypeError) as exc_info:
-            admin.create_multiple_student_repos(master_urls, user, students,
-                                                org_name, github_api_base_url)
+            admin.setup_student_repos(master_urls, students, user, api)
         assert type_error_arg in str(exc_info.value)
 
-    def test_happy_path(self, master_urls, students, api_mock, git_mock,
-                        repo_infos, push_tuples, rmtree_mock):
-        """Test that create_multiple_student_repos makes the correct function calls."""
-        admin.create_multiple_student_repos(master_urls, USER, students,
-                                            ORG_NAME, GITHUB_BASE_URL)
+    def test_happy_path(self, mocker, master_urls, students, api_mock,
+                        git_mock, repo_infos, push_tuples, rmtree_mock,
+                        ensure_teams_and_members_mock):
+        """Test that setup_student_repos makes the correct function calls."""
+        admin.setup_student_repos(master_urls, students, USER, api_mock)
 
         for url in master_urls:
             git_mock.clone.assert_any_call(url)
             api_mock.ensure_teams_and_members.assert_called_once_with(
                 {student: [student]
                  for student in students})
-            rmtree_mock.assert_any_call(admin._repo_name(url))
+            rmtree_mock.assert_any_call(util.repo_name(url))
 
         api_mock.create_repos.assert_called_once_with(repo_infos)
         git_mock.push.assert_called_once_with(push_tuples, user=USER)
@@ -207,41 +236,46 @@ class TestCreateMultipleStudentRepos:
 class TestUpdateStudentRepos:
     """Tests for update_student_repos."""
 
-    def test_raises_on_duplicate_master_urls(self, master_urls, students):
-        assert_raises_on_duplicate_master_urls(admin.update_student_repos,
-                                               master_urls, students)
+    def test_raises_on_duplicate_master_urls(self, mocker, master_urls,
+                                             students, api_mock):
+        master_urls.append(master_urls[0])
+
+        with pytest.raises(ValueError) as exc_info:
+            admin.update_student_repos(master_urls, students, USER, api_mock)
+        assert str(exc_info.value) == "master_repo_urls contains duplicates"
 
     @pytest.mark.parametrize(
         *RAISES_ON_EMPTY_ARGS_PARAMETRIZATION, ids=RAISES_ON_EMPTY_ARGS_IDS)
-    def test_raises_empty_args(self, master_urls, user, students, org_name,
-                               github_api_base_url, empty_arg):
+    def test_raises_empty_args(self, mocker, api_mock, master_urls, user,
+                               students, empty_arg):
         """None of the arguments are allowed to be empty."""
         with pytest.raises(ValueError) as exc_info:
-            admin.update_student_repos(master_urls, user, students, org_name,
-                                       github_api_base_url)
+            admin.update_student_repos(
+                master_repo_urls=master_urls,
+                students=students,
+                user=user,
+                api=api_mock)
         assert empty_arg in str(exc_info)
 
+    @pytest.mark.noapimock
     @pytest.mark.parametrize(
         *RAISES_ON_INVALID_TYPE_PARAMETRIZATION,
         ids=RAISES_ON_EMPTY_INVALID_TYPE_IDS)
-    def test_raises_on_invalid_type(self, master_urls, user, students,
-                                    org_name, github_api_base_url,
+    def test_raises_on_invalid_type(self, master_urls, students, user, api,
                                     type_error_arg):
-        """Test that the non-iterable arguments are type checked."""
+        """Test that the non-itrable arguments are type checked."""
         with pytest.raises(TypeError) as exc_info:
-            admin.update_student_repos(master_urls, user, students, org_name,
-                                       github_api_base_url)
+            admin.update_student_repos(master_urls, students, user, api)
         assert type_error_arg in str(exc_info.value)
 
-    def test_happy_path(self, master_urls, students, api_mock, git_mock,
-                        repo_infos, push_tuples, rmtree_mock):
+    def test_happy_path(self, mocker, master_urls, students, api_mock,
+                        git_mock, push_tuples, rmtree_mock):
         """Test that update_student_repos makes the correct function calls."""
-        admin.update_student_repos(master_urls, USER, students, ORG_NAME,
-                                   GITHUB_BASE_URL)
+        admin.update_student_repos(master_urls, students, USER, api_mock)
 
         for url in master_urls:
             git_mock.clone.assert_any_call(url)
-            rmtree_mock.assert_any_call(admin._repo_name(url))
+            rmtree_mock.assert_any_call(util.repo_name(url))
 
         git_mock.push.assert_called_once_with(push_tuples, user=USER)
 
@@ -265,7 +299,7 @@ class TestUpdateStudentRepos:
 
         generate_url = lambda repo_name: "{}/{}/{}".format(GITHUB_BASE_URL, ORG_NAME, repo_name)
         fail_repo_names = [
-            admin.generate_repo_name(stud, master_name) for stud in ['a', 'c']
+            util.generate_repo_name(stud, master_name) for stud in ['a', 'c']
         ]
         fail_repo_urls = [generate_url(name) for name in fail_repo_names]
 
@@ -280,8 +314,8 @@ class TestUpdateStudentRepos:
             'gits_pet.git._push_async', side_effect=raise_specific)
         git_clone_mock = mocker.patch('gits_pet.git.clone')
 
-        admin.update_student_repos(master_urls, USER, students, ORG_NAME,
-                                   GITHUB_BASE_URL, issue)
+        admin.update_student_repos(master_urls, students, USER, api_mock,
+                                   issue)
 
         if issue:  # expect issue to be opened
             api_mock.open_issue.assert_called_once_with(
@@ -306,7 +340,7 @@ class TestUpdateStudentRepos:
 
         generate_url = lambda repo_name: "{}/{}/{}".format(GITHUB_BASE_URL, ORG_NAME, repo_name)
         fail_repo_names = [
-            admin.generate_repo_name(stud, master_name) for stud in ['a', 'c']
+            util.generate_repo_name(stud, master_name) for stud in ['a', 'c']
         ]
         fail_repo_urls = [generate_url(name) for name in fail_repo_names]
 
@@ -322,11 +356,9 @@ class TestUpdateStudentRepos:
             'gits_pet.git._push_async', side_effect=raise_specific)
         git_clone_mock = mocker.patch('gits_pet.git.clone')
 
-        admin.update_student_repos(master_urls, USER, students, ORG_NAME,
-                                   GITHUB_BASE_URL, issue)
+        admin.update_student_repos(master_urls, students, USER, api_mock)
 
-        api_mock.open_issue.assert_called_once_with(issue.title, issue.body,
-                                                    fail_repo_names)
+        assert not api_mock.open_issue.called
 
 
 class TestOpenIssue:
@@ -335,24 +367,17 @@ class TestOpenIssue:
     # TODO expand to also test org_name and github_api_base_url
     # can probably use the RAISES_ON_EMPTY_ARGS_PARAMETRIZATION for that,
     # somehow
-    @pytest.mark.parametrize(
-        'master_repo_names, students, issue, org_name, github_api_base_url, empty_arg',
-        [
-            ([], students(), tuples.Issue('', ''), ORG_NAME, GITHUB_BASE_URL,
-             'master_repo_names'),
-            (master_names(master_urls()), [], tuples.Issue('', ''), ORG_NAME,
-             GITHUB_BASE_URL, 'students'),
-            (master_names(master_urls()), students(), None, ORG_NAME,
-             GITHUB_BASE_URL, 'issue'),
-        ])
-    def test_raises_on_empty_args(self, master_repo_names, students, issue,
-                                  org_name, github_api_base_url, empty_arg):
+    @pytest.mark.parametrize('master_repo_names, students, empty_arg', [
+        ([], students(), 'master_repo_names'),
+        (master_names(master_urls()), [], 'students'),
+    ])
+    def test_raises_on_empty_args(self, api_mock, master_repo_names, students,
+                                  empty_arg):
         with pytest.raises(ValueError) as exc_info:
-            admin.open_issue(master_repo_names, students, issue, org_name,
-                             github_api_base_url)
+            admin.open_issue(ISSUE, master_repo_names, students, api_mock)
         assert empty_arg in str(exc_info)
 
-    def test_happy_path(self, api_mock):
+    def test_happy_path(self, mocker, api_mock):
         title = "Best title"
         body = "This is some **cool** markdown\n\n### Heading!"
         master_names = ['week-1', 'week-2']
@@ -364,8 +389,7 @@ class TestOpenIssue:
 
         issue = tuples.Issue(
             "A title", "And a nice **formatted** body\n### With headings!")
-        admin.open_issue(master_names, students, issue, ORG_NAME,
-                         GITHUB_BASE_URL)
+        admin.open_issue(issue, master_names, students, api_mock)
 
         api_mock.open_issue.assert_called_once_with(issue.title, issue.body,
                                                     expected_repo_names)
@@ -374,35 +398,28 @@ class TestOpenIssue:
 class TestCloseIssue:
     """Tests for close_issue."""
 
-    @pytest.mark.parametrize(
-        'master_repo_names, students, org_name, github_api_base_url, empty_arg',
-        [
-            ([], students(), ORG_NAME, GITHUB_BASE_URL, 'master_repo_names'),
-            (master_names(master_urls()), [], ORG_NAME, GITHUB_BASE_URL,
-             'students'),
-            (master_names(master_urls()), students(), '', GITHUB_BASE_URL,
-             'org_name'),
-            (master_names(master_urls()), students(), ORG_NAME, '',
-             'github_api_base_url'),
-        ])
-    def test_raises_on_empty_args(self, master_repo_names, students, org_name,
-                                  github_api_base_url, empty_arg):
+    @pytest.mark.parametrize('master_repo_names, students, empty_arg', [
+        ([], students(), 'master_repo_names'),
+        (master_names(master_urls()), [], 'students'),
+    ])
+    def test_raises_on_empty_args(self, api_mock, master_repo_names, students,
+                                  empty_arg):
         """only the regex is allowed ot be empty."""
         with pytest.raises(ValueError) as exc_info:
             admin.close_issue('someregex', master_repo_names, students,
-                              org_name, github_api_base_url)
+                              api_mock)
         assert empty_arg in str(exc_info)
 
-    @pytest.mark.parametrize('org_name, github_api_base_url, type_error_arg', [
-        (2, GITHUB_BASE_URL, 'org_name'),
-        (ORG_NAME, 41, 'github_api_base_url'),
+    @pytest.mark.noapimock
+    @pytest.mark.parametrize('title_regex, api, type_error_arg', [
+        (2, API, 'title_regex'),
+        ("someregex", 41, 'api'),
     ])
-    def test_raises_on_invalid_type(self, master_names, org_name,
-                                    github_api_base_url, type_error_arg):
+    def test_raises_on_invalid_type(self, master_names, students, title_regex,
+                                    api, type_error_arg):
         """Test that the non-itrable arguments are type checked."""
         with pytest.raises(TypeError) as exc_info:
-            admin.close_issue('someregex', master_names, students, org_name,
-                              github_api_base_url)
+            admin.close_issue(title_regex, master_names, students, api)
         assert type_error_arg in str(exc_info.value)
 
     def test_happy_path(self, api_mock):
@@ -414,8 +431,7 @@ class TestCloseIssue:
             'c-week-2'
         ]
 
-        admin.close_issue(title_regex, master_names, students, ORG_NAME,
-                          GITHUB_BASE_URL)
+        admin.close_issue(title_regex, master_names, students, api_mock)
 
         api_mock.close_issue.assert_called_once_with(title_regex,
                                                      expected_repo_names)
@@ -424,22 +440,18 @@ class TestCloseIssue:
 class TestMigrateRepo:
     """Tests for migrate_repo."""
 
-    @pytest.mark.parametrize(
-        'master_urls, user, org_name, github_api_base_url, empty_arg',
-        [([], USER, ORG_NAME, GITHUB_BASE_URL, 'master_url'),
-         (['https://some_url'], '', ORG_NAME, GITHUB_BASE_URL, 'user'),
-         (['https://some_url'], USER, '', GITHUB_BASE_URL, 'org_name'),
-         (['https://some_url'], USER, ORG_NAME, '', 'github_api_base_url')])
-    def test_raises_on_empty_args(self, master_urls, user, org_name,
-                                  github_api_base_url, empty_arg):
-        """only the regex is allowed ot be empty."""
+    @pytest.mark.parametrize('master_repo_urls, user, , empty_arg',
+                             [([], USER, 'master_repo_urls'),
+                              (['https://some_url'], '', 'user')])
+    def test_raises_on_empty_args(self, api_mock, master_repo_urls, user,
+                                  empty_arg):
         with pytest.raises(ValueError) as exc_info:
-            admin.migrate_repos(master_urls, user, org_name,
-                                github_api_base_url)
+            admin.migrate_repos(master_repo_urls, user, api_mock)
         assert empty_arg in str(exc_info)
 
     @pytest.mark.nogitmock
-    def test_happy_path(self, mocker, api_mock, rmtree_mock):
+    def test_happy_path(self, mocker, api_mock, rmtree_mock,
+                        ensure_teams_and_members_mock):
         """Test that the correct calls are made to the api and git.
         
         IMPORTANT: Note that this test ignores the git mock. Be careful.
@@ -448,7 +460,7 @@ class TestMigrateRepo:
             "https://some-url-to-/master/repos/week-1",
             "https://some-url-to-/master/repos/week-5"
         ]
-        master_names = [admin._repo_name(url) for url in master_urls]
+        master_names = [util.repo_name(url) for url in master_urls]
         expected_push_urls = [
             GENERATE_REPO_URL(name, '') for name in master_names
         ]
@@ -461,7 +473,7 @@ class TestMigrateRepo:
         git_clone_mock = mocker.patch('gits_pet.git.clone', autospec=True)
         git_push_mock = mocker.patch('gits_pet.git.push', autospec=True)
 
-        admin.migrate_repos(master_urls, USER, ORG_NAME, GITHUB_BASE_URL)
+        admin.migrate_repos(master_urls, USER, api_mock)
 
         for url in master_urls:
             git_clone_mock.assert_any_call(url)
