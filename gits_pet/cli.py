@@ -186,7 +186,6 @@ def _add_issue_parsers(base_parsers, subparsers):
 def _create_parser():
     configured_defaults = _get_configured_defaults()
     if configured_defaults:
-        LOGGER.info("found configuration file at {}".format(config_file))
         LOGGER.info("config file defaults:\n{}".format("\n   ".join([""] + [
             "{}: {}".format(key, value)
             for key, value in configured_defaults.items()
