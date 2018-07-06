@@ -62,9 +62,48 @@ to PyPi. Unless you are planning to work on this yourself, I suggest going with 
     - For development, use ``pip install -e .`` in a ``virtualenv``.
 5. Further steps to be added ...
 
+
+Configuration
+=============
+There is one mandatory environment variable, and an optional configuration file
+that can be added.
+
+GITS_PET_OAUTH
+--------------
+For the tool to work at all, an environment variable called `GITS_PET_OAUTH`
+must contain an OAUTH2 token to whichever GitHub instance you intend to use.
+See [the GitHub docs](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/)
+for how to create a token. Once you have it, configure the environment
+variable with ``export GITS_PET_OAUTH=<YOUR TOKEN>``. If it is not
+configured, you will get an error message when trying to run ``gits_pet``
+
+Config file
+-----------
+An optional configuration file can be added, which specifies default values
+for the ``--github_base_url``, ``--org_name``, ``--user`` and
+``--students-list`` command line options. The file should look
+something like this:
+
+.. code-block:: bash
+
+    [DEFAULT]
+    github_base_url = https://some-api-v3-url
+    user = YOUR_USERNAME
+    org_name = ORGANIZATION_NAME
+    students_file = STUDENTS_FILE_ABSOLUTE_PATH
+
+To find out where to place the file (and what to name it) run ``gits_pet -h``.
+At the very top, there should be a line looking something like this:
+
+``[INFO] no config file found. Expected config file location: /home/USERNAME/.config/gits_pet/config.cnf``
+
+The filepath at the end is where you should put your config file.
+
 Running gits_pet
 ================
-To be added ...
+Run ``gits_pet -h`` for usage. All the commands have help sections of their own,
+so e.g. ``gits-pet setup -h`` will provide the help section for the ``setup``
+command.
    
 License
 =======
