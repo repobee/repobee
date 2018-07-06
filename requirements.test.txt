@@ -1,5 +1,6 @@
-daiquiri
+appdirs
 codecov
+daiquiri
 pytest
 pytest-cov
 pytest-mock
