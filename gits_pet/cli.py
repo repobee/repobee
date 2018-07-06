@@ -44,9 +44,7 @@ OPEN_ISSUE_PARSER = 'open-issue'
 CLOSE_ISSUE_PARSER = 'close-issue'
 
 CONFIG_DIR = appdirs.user_config_dir(
-    appname=__package__,
-    appauthor=gits_pet.__author__,
-    version=gits_pet.__version__)
+    appname=__package__, appauthor=gits_pet.__author__)
 
 DEFAULT_CONFIG_FILE = "{}/config.cnf".format(CONFIG_DIR)
 
@@ -143,7 +141,6 @@ def handle_parsed_args(args: tuples.Args, api: github_api.GitHubAPI):
 def _read_config(config_file=DEFAULT_CONFIG_FILE):
     config_parser = configparser.ConfigParser()
     if os.path.isfile(config_file):
-        LOGGER.info("found configuration file at {}".format(config_file))
         config_parser.read(config_file)
     return config_parser["DEFAULT"]
 
@@ -188,11 +185,16 @@ def _add_issue_parsers(base_parsers, subparsers):
 
 def _create_parser():
     configured_defaults = _get_configured_defaults()
-    LOGGER.info("config file defaults:\n{}".format("\n   ".join([""] + [
-        "{}: {}".format(key, value)
-        for key, value in configured_defaults.items()
-        if key in CONFIGURABLE_ARGS
-    ] + [""])))
+    if configured_defaults:
+        LOGGER.info("found configuration file at {}".format(config_file))
+        LOGGER.info("config file defaults:\n{}".format("\n   ".join([""] + [
+            "{}: {}".format(key, value)
+            for key, value in configured_defaults.items()
+            if key in CONFIGURABLE_ARGS
+        ] + [""])))
+    else:
+        LOGGER.info("no config file found. Expected config file location: {}".format(
+            DEFAULT_CONFIG_FILE))
     default = lambda arg_name: configured_defaults[arg_name] if arg_name in configured_defaults else None
 
     is_required = lambda arg_name: True if arg_name not in configured_defaults else False
@@ -258,7 +260,7 @@ def _create_parser():
 
     parser = argparse.ArgumentParser(
         prog='gits_pet',
-        description='A CLI tool for administrating student repositories.')
+        description='A CLI tool for administrating student repositories')
 
     subparsers = parser.add_subparsers(dest=SUB)
     subparsers.required = True
@@ -335,8 +337,7 @@ def _create_parser():
          "`setup` command instead."),
         parents=[base_student_parser, base_parser])
 
-    _add_issue_parsers([base_student_parser, repo_name_parser],
-                       subparsers)
+    _add_issue_parsers([base_student_parser, repo_name_parser], subparsers)
 
     return parser
 
