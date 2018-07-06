@@ -1,6 +1,6 @@
 #! /usr/bin/env python3.6
 
-from gits_pet import cli
+from gits_pet import main
 
 if __name__ == "__main__":
-    cli.main()
+    main.main()

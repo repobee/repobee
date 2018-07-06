@@ -7,17 +7,19 @@ import argparse
 import configparser
 import os
 import sys
+from contextlib import contextmanager
+from typing import List, Iterable
+
 import appdirs
 import gits_pet
 import logging
 import daiquiri
 
-from contextlib import contextmanager
-
 from gits_pet import admin
 from gits_pet import github_api
 from gits_pet import git
 from gits_pet import util
+from gits_pet import tuples
 
 daiquiri.setup(
     level=logging.INFO,
@@ -46,12 +48,99 @@ CONFIG_DIR = appdirs.user_config_dir(
     appauthor=gits_pet.__author__,
     version=gits_pet.__version__)
 
+DEFAULT_CONFIG_FILE = "{}/config.cnf".format(CONFIG_DIR)
+
 # arguments that can be configured via config file
 CONFIGURABLE_ARGS = set(('user', 'org_name', 'github_base_url',
                          'students_file'))
 
 
-def read_config(config_file="{}/config.cnf".format(CONFIG_DIR)):
+class FileError(IOError):
+    """Raise when reading or writing to a file errors out."""
+
+
+def parse_args(sys_args: Iterable[str]) -> (tuples.Args, github_api.GitHubAPI):
+    """Parse the command line arguments and initialize the GitHubAPI.
+    
+    Args:
+        sys_args: A list of command line arguments.
+
+    Returns:
+        a tuples.Args namedtuple with the arguments, and an initialized
+        GitHubAPI instance.
+    """
+    parser = _create_parser()
+    args = parser.parse_args(sys_args)
+
+    # TODO add try/catch here with graceful exit
+    api = github_api.GitHubAPI(args.github_base_url, git.OAUTH_TOKEN,
+                               args.org_name)
+
+    if 'master_repo_urls' in args:
+        master_urls = args.master_repo_urls
+        master_names = [util.repo_name(url) for url in master_urls]
+    elif 'master_repo_names' in args:
+        master_urls = api.get_repo_urls(args.master_repo_names)
+        master_names = args.master_repo_names
+    else:
+        master_urls = None
+        master_names = None
+
+    parsed_args = tuples.Args(
+        subparser=getattr(args, SUB),
+        org_name=args.org_name,
+        github_base_url=args.github_base_url,
+        user=args.user if 'user' in args else None,
+        master_repo_urls=master_urls,
+        master_repo_names=master_names,
+        students=_extract_students(args),
+        issue=util.read_issue(args.issue)
+        if 'issue' in args and args.issue else None,
+        title_regex=args.title_regex if 'title_regex' in args else None,
+    )
+
+    return parsed_args, api
+
+
+def handle_parsed_args(args: tuples.Args, api: github_api.GitHubAPI):
+    """Handles parsed CLI arguments and dispatches commands to the appropriate
+    functions.
+
+    Args:
+        args: A namedtuple containing parsed command line arguments.
+        api: An initialized GitHubAPI instance.
+    """
+    if args.subparser == ADD_TO_TEAMS_PARSER:
+        with _sys_exit_on_git_error():
+            admin.add_students_to_teams(args.students, api)
+    elif args.subparser == SETUP_PARSER:
+        with _sys_exit_on_git_error():
+            admin.setup_student_repos(
+                master_repo_urls=args.master_repo_urls,
+                students=args.students,
+                user=args.user,
+                api=api)
+    elif args.subparser == UPDATE_PARSER:
+        with _sys_exit_on_git_error():
+            admin.update_student_repos(args.master_repo_urls, args.students,
+                                       args.user, api)
+    elif args.subparser == OPEN_ISSUE_PARSER:
+        with _sys_exit_on_git_error():
+            admin.open_issue(args.master_repo_names, args.students, args.issue,
+                             api)
+    elif args.subparser == CLOSE_ISSUE_PARSER:
+        with _sys_exit_on_git_error():
+            admin.close_issue(args.title_regex, args.master_repo_names,
+                              args.students, api)
+    elif args.subparser == MIGRATE_PARSER:
+        with _sys_exit_on_git_error():
+            admin.migrate_repos(args.master_repo_urls, args.user, api)
+    else:
+        raise ValueError("Illegal value for subparser: {}".format(
+            args.subparser))
+
+
+def _read_config(config_file=DEFAULT_CONFIG_FILE):
     config_parser = configparser.ConfigParser()
     if os.path.isfile(config_file):
         LOGGER.info("found configuration file at {}".format(config_file))
@@ -59,10 +148,7 @@ def read_config(config_file="{}/config.cnf".format(CONFIG_DIR)):
     return config_parser["DEFAULT"]
 
 
-def add_issue_parsers(base_parser, subparsers):
-    issue_parser_base = argparse.ArgumentParser(
-        add_help=False, parents=[base_parser])
-
+def _add_issue_parsers(base_parsers, subparsers):
     open_parser = subparsers.add_parser(
         OPEN_ISSUE_PARSER,
         description=(
@@ -72,7 +158,7 @@ def add_issue_parsers(base_parser, subparsers):
             "NOTE: The first line of the issue file is assumed to be the "
             "issue title!"),
         help="Open issues in student repos.",
-        parents=[issue_parser_base])
+        parents=base_parsers)
     open_parser.add_argument(
         '-i',
         '--issue',
@@ -89,7 +175,7 @@ def add_issue_parsers(base_parser, subparsers):
             "student repo found, any open issues matching the `--title-regex` "
             "are closed."),
         help="Close issues in student repos.",
-        parents=[issue_parser_base])
+        parents=base_parsers)
     close_parser.add_argument(
         '-r',
         '--title-regex',
@@ -100,8 +186,8 @@ def add_issue_parsers(base_parser, subparsers):
         required=True)
 
 
-def create_parser():
-    configured_defaults = get_configured_defaults()
+def _create_parser():
+    configured_defaults = _get_configured_defaults()
     LOGGER.info("config file defaults:\n{}".format("\n   ".join([""] + [
         "{}: {}".format(key, value)
         for key, value in configured_defaults.items()
@@ -128,23 +214,16 @@ def create_parser():
         required=is_required('github_base_url'),
         default=default('github_base_url'))
 
-    url_parser = argparse.ArgumentParser(add_help=False, parents=[base_parser])
-    names_or_urls = url_parser.add_mutually_exclusive_group(required=True)
-    names_or_urls.add_argument(
-        '-mu',
-        '--master-repo-urls',
-        help=(
-            "One or more URLs to the master repositories. One student repo is "
-            "created for each master repo."),
-        type=str,
-        nargs='+')
-    names_or_urls.add_argument(
+    repo_name_parser = argparse.ArgumentParser(
+        add_help=False, parents=[base_parser])
+    repo_name_parser.add_argument(
         '-mn',
         '--master-repo-names',
         help=("One or more names of master repositories. Assumes that the "
               "master repos are in the same organization as specified by "
               "the 'org-name' argument."),
         type=str,
+        required=True,
         nargs='+')
 
     # base parser for when student lists are involved
@@ -196,7 +275,7 @@ def create_parser():
          "any previously performed step will simply be skipped. The master "
          "repo is assumed to be located in the target organization, and will "
          "be temporarily cloned to disk for the duration of the command. "),
-        parents=[base_push_parser, base_student_parser, url_parser])
+        parents=[base_push_parser, base_student_parser, repo_name_parser])
 
     update = subparsers.add_parser(
         UPDATE_PARSER,
@@ -205,7 +284,7 @@ def create_parser():
             "Push changes from master repos to student repos. The master repos "
             "must be available within the organization. They can be added "
             "manually, or with the `migrate-repos` command."),
-        parents=[base_push_parser, base_student_parser, url_parser])
+        parents=[base_push_parser, base_student_parser, repo_name_parser])
     update.add_argument(
         '-i',
         '--issue',
@@ -231,7 +310,16 @@ def create_parser():
          "NOTE: `migrate-repos` can also be used to update already migrated repos "
          "that have been changed in their original repos."
          ),
-        parents=[base_push_parser, url_parser])
+        parents=[base_parser, base_push_parser])
+    migrate.add_argument(
+        '-mu',
+        '--master-repo-urls',
+        help=(
+            "One or more URLs to the master repositories. One student repo is "
+            "created for each master repo."),
+        type=str,
+        required=True,
+        nargs='+')
 
     add_to_teams = subparsers.add_parser(
         ADD_TO_TEAMS_PARSER,
@@ -247,13 +335,14 @@ def create_parser():
          "`setup` command instead."),
         parents=[base_student_parser, base_parser])
 
-    add_issue_parsers(base_student_parser, subparsers)
+    _add_issue_parsers([base_student_parser, repo_name_parser],
+                       subparsers)
 
     return parser
 
 
-def get_configured_defaults():
-    config = read_config()
+def _get_configured_defaults(config_file=DEFAULT_CONFIG_FILE):
+    config = _read_config(config_file)
     configured = config.keys()
     if configured - CONFIGURABLE_ARGS:  # there are surpluss arguments
         raise ValueError("Config contains invalid keys: {}".format(
@@ -280,64 +369,28 @@ def _sys_exit_on_git_error():
         sys.exit(1)
 
 
-def main():
-    parser = create_parser()
-    args = parser.parse_args()
+def _extract_students(args: argparse.Namespace) -> List[str]:
+    """Extract students from args namespace.`
 
-    # TODO add try/catch here with graceful exit
-    api = github_api.GitHubAPI(args.github_base_url, git.OAUTH_TOKEN,
-                               args.org_name)
+    Args:
+        args: A namespace object.
+
+    Returns:
+        a list of student usernames, or None of neither `students` or
+        `students_file` is in the namespace.
+    """
     if 'students' in args and args.students:
         students = args.students
     elif 'students_file' in args and args.students_file:
         if not os.path.isfile(args.students_file):
-            raise ValueError("'{}' is not a file".format(args.students_file))
-        with open(args.students_file, 'r') as f:
-            students = [student.strip() for student in f]
-
-    # early exit for this parser as it lacks urls/names
-    if getattr(args, SUB) == ADD_TO_TEAMS_PARSER:
-        with _sys_exit_on_git_error():
-            admin.add_students_to_teams(students, api)
-        return
-
-    if hasattr(args, 'issue') and args.issue:
-        issue = util.read_issue(args.issue)
+            raise FileError("'{}' is not a file".format(args.students_file))
+        if not os.stat(args.students_file).st_size:
+            raise FileError("'{}' is empty".format(args.students_file))
+        with open(
+                args.students_file, 'r',
+                encoding=sys.getdefaultencoding()) as file:
+            students = [student.strip() for student in file]
     else:
-        issue = None
+        students = None
 
-    if not args.master_repo_urls:
-        assert args.master_repo_names
-        # convert names urls
-        master_urls = api.get_repo_urls(args.master_repo_names)
-        master_names = args.master_repo_names
-    else:
-        master_urls = args.master_repo_urls
-        master_names = [util.repo_name(url) for url in master_urls]
-
-    if getattr(args, SUB) == SETUP_PARSER:
-        with _sys_exit_on_git_error():
-            admin.setup_student_repos(
-                master_repo_urls=master_urls,
-                students=students,
-                user=args.user,
-                api=api)
-    elif getattr(args, SUB) == UPDATE_PARSER:
-        with _sys_exit_on_git_error():
-            admin.update_student_repos(master_urls, students, args.user, api)
-    elif getattr(args, SUB) == OPEN_ISSUE_PARSER:
-        with _sys_exit_on_git_error():
-            admin.open_issue(master_names, students, issue, api)
-    elif getattr(args, SUB) == CLOSE_ISSUE_PARSER:
-        with _sys_exit_on_git_error():
-            admin.close_issue(args.title_regex, master_names, students, api)
-    elif getattr(args, SUB) == MIGRATE_PARSER:
-        with _sys_exit_on_git_error():
-            admin.migrate_repos(master_urls, args.user, api)
-    else:
-        raise ValueError("Illegal value for subparser: {}".format(
-            getattr(args, SUB)))
-
-
-if __name__ == "__main__":
-    main()
+    return students
