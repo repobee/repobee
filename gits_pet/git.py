@@ -8,7 +8,7 @@ import subprocess
 import collections
 import daiquiri
 import asyncio
-from typing import Sequence, Tuple, Iterable, List
+from typing import Sequence, Tuple, Iterable, List, Any, Callable
 
 from gits_pet import util
 
@@ -16,7 +16,7 @@ CONCURRENT_TASKS = 20
 
 LOGGER = daiquiri.getLogger(__file__)
 
-Push = collections.namedtuple('Push', ('local_path', 'remote_url', 'branch'))
+Push = collections.namedtuple('Push', ('local_path', 'repo_url', 'branch'))
 
 OAUTH_TOKEN = os.getenv('GITS_PET_OAUTH')
 if not OAUTH_TOKEN:
@@ -131,50 +131,38 @@ def clone(repo_url: str, single_branch: bool = True, branch: str = None):
     rc, _, stderr = captured_run(clone_command)
 
     if rc != 0:
-        raise CloneFailedError("Failed to clone", rc, stderr,repo_url)
+        raise CloneFailedError("Failed to clone", rc, stderr, repo_url)
 
 
-async def _push_async(local_repo: str,
-                      user: str,
-                      repo_url: str,
-                      branch: str = 'master'):
+async def _push_async(pt: Push, user: str):
     """Asynchronous call to git push, pushing directly to the repo_url and branch.
 
     Args:
-        local_repo: Path to the repo to push.
-        user: The username to put on the push.
-        repo_url: HTTPS url to the remote repo (without username/token!).
-        branch: The branch to push to.
+        pt: A Push namedtuple.
+        user: The username to use in the push.
     """
-    util.validate_types(
-        local_repo=(local_repo, str),
-        user=(user, str),
-        repo_url=(repo_url, str),
-        branch=(branch, str))
+    util.validate_types(push_tuple=(pt, Push), user=(user, str))
 
-    util.validate_non_empty(
-        local_repo=local_repo, user=user, repo_url=repo_url, branch=branch)
-
-    loop = asyncio.get_event_loop()
+    util.validate_non_empty(user=user)
 
     command = [
         'git', 'push',
-        _insert_user_and_token(repo_url, user, OAUTH_TOKEN), branch
+        _insert_user_and_token(pt.repo_url, user, OAUTH_TOKEN), pt.branch
     ]
     proc = await asyncio.create_subprocess_exec(
         *command,
-        cwd=os.path.abspath(local_repo),
+        cwd=os.path.abspath(pt.local_path),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE)
     _, stderr = await proc.communicate()
 
     if proc.returncode != 0:
-        raise PushFailedError("Failed to push to {}".format(repo_url),
-                              proc.returncode, stderr, repo_url)
+        raise PushFailedError("Failed to push to {}".format(pt.repo_url),
+                              proc.returncode, stderr, pt.repo_url)
     elif b"Everything up-to-date" in stderr:
-        LOGGER.info("{} is up-to-date".format(repo_url))
+        LOGGER.info("{} is up-to-date".format(pt.repo_url))
     else:
-        LOGGER.info("Pushed files to {} {}".format(repo_url, branch))
+        LOGGER.info("Pushed files to {} {}".format(pt.repo_url, pt.branch))
 
 
 def push_single(local_repo: str,
@@ -190,8 +178,17 @@ def push_single(local_repo: str,
         repo_url: HTTPS url to the remote repo (without username/token!).
         branch: The branch to push to.
     """
+    util.validate_types(
+        local_repo=(local_repo, str),
+        user=(user, str),
+        repo_url=(repo_url, str),
+        branch=(branch, str))
+    util.validate_non_empty(
+        local_repo=local_repo, user=user, repo_url=repo_url, branch=branch)
+
     loop = asyncio.get_event_loop()
-    task = loop.create_task(_push_async(local_repo, user, repo_url, branch))
+    pt = Push(local_path=local_repo, repo_url=repo_url, branch=branch)
+    task = loop.create_task(_push_async(pt, user))
     loop.run_until_complete(task)
 
 
@@ -211,13 +208,42 @@ def push(push_tuples: Iterable[Push], user: str) -> List[str]:
     util.validate_types(user=(user, str))
     util.validate_non_empty(push_tuples=push_tuples, user=user)
 
+    # urls can only be extracted from PushFailedErrors
+    return [
+        exc.url for exc in _batch_execution(_push_async, push_tuples, user)
+        if isinstance(exc, PushFailedError)
+    ]
+
+
+def _batch_execution(
+        batch_func: Callable[[Iterable[Any], Any], List[asyncio.Task]],
+        arg_list: List[Any], *batch_func_args,
+        **batch_func_kwargs) -> List[Exception]:
+    """Take a batch function (any function whos first argument is an iterable)
+    and send in send in CONCURRENT_TASKS amount of arguments from the arg_list
+    until it is exhausted. The batch_func_kwargs are provided on each call.
+
+    Args:
+        batch_func: A function that takes an iterable as a first argument and returns
+        a list of asyncio.Task objects.
+        arg_list: A list of objects that are of the same type as the
+        batch_func's first argument.
+        batch_func_kwargs: Additional keyword arguments to the batch_func.
+
+    Returns:
+        a list of exceptions raised in the tasks returned by the batch function.
+    """
     completed_tasks = []
 
-    for i in range(0, len(push_tuples), CONCURRENT_TASKS):
-        LOGGER.info("pushing batch {}-{}".format(
-            i, min(i + CONCURRENT_TASKS, len(push_tuples))))
-        completed_tasks += _push_batch(push_tuples[i:i + CONCURRENT_TASKS],
-                                       user)
+    loop = asyncio.get_event_loop()
+    for i in range(0, len(arg_list), CONCURRENT_TASKS):
+        tasks = [
+            loop.create_task(
+                batch_func(list_arg, *batch_func_args, **batch_func_kwargs))
+            for list_arg in arg_list[i:i + CONCURRENT_TASKS]
+        ]
+        loop.run_until_complete(asyncio.wait(tasks))
+        completed_tasks += tasks
 
     exceptions = [
         task.exception() for task in completed_tasks if task.exception()
@@ -225,26 +251,16 @@ def push(push_tuples: Iterable[Push], user: str) -> List[str]:
     for exc in exceptions:
         LOGGER.error(str(exc))
 
-    # urls can only be extracted from PushFailedErrors
-    return [exc.url for exc in exceptions if isinstance(exc, PushFailedError)]
+    return exceptions
 
 
-def _push_batch(push_tuples: Iterable[Push], user: str):
-    """Push a batch of push_tuples concurrently. For stability, push_tuples
-    should not exceed CONCURRENT_TASKS in size.
-
-    Args:
-        push_tuples: Push namedtuples defining local and remote repos.
-        user: The username to put in the push.
-
-    Return:
-        the completed tasks
-    """
-    assert len(push_tuples) <= CONCURRENT_TASKS
-    loop = asyncio.get_event_loop()
+def _execute_batch(
+        create_task_func: Callable[[Iterable[Any], Any], asyncio.Task],
+        list_args: Iterable[Any], *args, **kwargs) -> List[asyncio.Task]:
+    """something"""
+    assert len(list_args) <= CONCURRENT_TASKS
     tasks = [
-        loop.create_task(_push_async(local_path, user, remote_url, branch))
-        for local_path, remote_url, branch in push_tuples
+        create_task_func(list_arg, *args, **kwargs) for list_arg in list_args
     ]
-    loop.run_until_complete(asyncio.wait(tasks))
+    asyncio.get_event_loop().run_until_complete(asyncio.wait(tasks))
     return tasks

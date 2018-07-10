@@ -261,7 +261,7 @@ def migrate_repos(master_repo_urls: str, user: str, api: GitHubAPI) -> None:
     git.push(
         [
             git.Push(
-                local_path=info.name, remote_url=repo_url, branch='master')
+                local_path=info.name, repo_url=repo_url, branch='master')
             for repo_url, info in zip(repo_urls, infos)
         ],
         user=user)
@@ -316,7 +316,7 @@ def _create_push_tuples(master_urls: Iterable[str],
         push_tuples += [
             git.Push(
                 local_path=repo_base_name,
-                remote_url=repo_url,
+                repo_url=repo_url,
                 branch='master') for repo_url in repo_urls
             if repo_url.endswith(repo_base_name)
         ]

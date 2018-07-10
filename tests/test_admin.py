@@ -123,10 +123,8 @@ def push_tuples(master_urls, students):
         repo_base_name = util.repo_name(url)
         push_tuples += [
             git.Push(
-                local_path=repo_base_name,
-                remote_url=repo_url,
-                branch='master') for repo_url in repo_urls
-            if repo_url.endswith(repo_base_name)
+                local_path=repo_base_name, repo_url=repo_url, branch='master')
+            for repo_url in repo_urls if repo_url.endswith(repo_base_name)
         ]
     return push_tuples
 
@@ -305,10 +303,10 @@ class TestUpdateStudentRepos:
 
         api_mock.get_repo_urls.side_effect = lambda repo_names: [generate_url(name) for name in repo_names]
 
-        async def raise_specific(local_repo, user, repo_url, branch):
-            if repo_url in fail_repo_urls:
+        async def raise_specific(pt, user):
+            if pt.repo_url in fail_repo_urls:
                 raise git.PushFailedError("Push failed", 128, b"some error",
-                                          repo_url)
+                                          pt.repo_url)
 
         git_push_async_mock = mocker.patch(
             'gits_pet.git._push_async', side_effect=raise_specific)
@@ -347,8 +345,8 @@ class TestUpdateStudentRepos:
         api_mock.get_repo_urls.side_effect = lambda repo_names: [generate_url(name) for name in repo_names]
         issue = tuples.Issue("Oops", "Sorry, we failed to push to your repo!")
 
-        async def raise_specific(local_repo, user, repo_url, branch):
-            if repo_url in fail_repo_urls:
+        async def raise_specific(pt, branch):
+            if pt.repo_url in fail_repo_urls:
                 raise git.PushFailedError("Push failed", 128, b"some error",
                                           repo_url)
 
@@ -466,7 +464,7 @@ class TestMigrateRepo:
             generate_master_url(name) for name in master_names
         ]
         expected_pts = [
-            git.Push(local_path=name, remote_url=url, branch='master')
+            git.Push(local_path=name, repo_url=url, branch='master')
             for name, url in zip(master_names, expected_push_urls)
         ]
 

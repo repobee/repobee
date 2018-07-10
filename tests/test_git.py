@@ -57,7 +57,7 @@ def push_tuples():
             'https://somerepourl.git')
     branches = ('master', 'other', 'development-branch')
     tups = [
-        git.Push(local_path=path, remote_url=url, branch=branch)
+        git.Push(local_path=path, repo_url=url, branch=branch)
         for path, url, branch in zip(paths, urls, branches)
     ]
     return tups
@@ -187,8 +187,8 @@ def test_push_single_raises_on_empty_branch(env_setup):
 def test_push_single_raises_on_async_push_exception(env_setup, mocker):
     url = 'some_url'
 
-    async def raise_(local_repo, user, repo_url, branch):
-        raise git.PushFailedError("Push failed", 128, b"some error", repo_url)
+    async def raise_(pt, branch):
+        raise git.PushFailedError("Push failed", 128, b"some error", pt.repo_url)
 
     mocker.patch('gits_pet.git._push_async', side_effect=raise_)
 
@@ -288,15 +288,15 @@ def test_push_tries_all_calls_despite_exceptions(env_setup, push_tuples,
     are exceptions.
     """
 
-    async def raise_(local_repo, user, repo_url, branch):
-        raise git.PushFailedError("Push failed", 128, b"some error", repo_url)
+    async def raise_(pt, user):
+        raise git.PushFailedError("Push failed", 128, b"some error",
+                                  pt.repo_url)
 
     mocker.patch('gits_pet.git._push_async', side_effect=raise_)
-    expected_failed_urls = [pt.remote_url for pt in push_tuples]
+    expected_failed_urls = [pt.repo_url for pt in push_tuples]
 
     failed_urls = git.push(push_tuples, USER)
 
     assert failed_urls == expected_failed_urls
     for pt in push_tuples:
-        git._push_async.assert_any_call(pt.local_path, USER, pt.remote_url,
-                                        pt.branch)
+        git._push_async.assert_any_call(pt, USER)
