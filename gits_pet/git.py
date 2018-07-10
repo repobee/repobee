@@ -102,7 +102,8 @@ def captured_run(*args, **kwargs):
     return proc.returncode, proc.stdout, proc.stderr
 
 
-def clone(repo_url: str, single_branch: bool = True, branch: str = None):
+def clone_single(repo_url: str, single_branch: bool = True,
+                 branch: str = None):
     """Clone a git repository.
 
     Args:
@@ -132,6 +133,55 @@ def clone(repo_url: str, single_branch: bool = True, branch: str = None):
 
     if rc != 0:
         raise CloneFailedError("Failed to clone", rc, stderr, repo_url)
+
+
+async def _clone_async(repo_url: str,
+                       single_branch: bool = True,
+                       branch: str = None):
+    """Clone git repositories asynchronously.
+
+    Args:
+        repo_url: A url to clone.
+        single_branch: Whether to clone a single branch or not.
+        branch: Which branch to clone.
+    """
+    command = ['git', 'clone', _insert_token(repo_url)]
+    if single_branch:
+        command.append('--single-branch')
+    proc = await asyncio.create_subprocess_exec(
+        *command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    _, stderr = await proc.communicate()
+
+    if proc.returncode != 0:
+        raise CloneFailedError(
+            "Failed to clone {}".format(repo_url),
+            returncode=proc.returncode,
+            stderr=stderr,
+            url=repo_url)
+    else:
+        LOGGER.info("Cloned into {}".format(repo_url))
+
+
+def clone(repo_urls: Iterable[str],
+          single_branch: bool = True) -> List[Exception]:
+    """Clone all repos asynchronously.
+
+    Args:
+        repo_urls: URLs to repos to clone.
+        single_branch: Whether or not to clone only the default branch.
+
+    Returns:
+        URLs from which cloning failed.
+    """
+    # TODO valdate repo_urls
+    util.validate_types(single_branch=(single_branch, bool))
+    util.validate_non_empty(repo_urls=repo_urls, single_branch=single_branch)
+
+    return [
+        exc.url
+        for exc in _batch_execution(_clone_async, repo_urls, single_branch)
+        if isinstance(exc, CloneFailedError)
+    ]
 
 
 async def _push_async(pt: Push, user: str):

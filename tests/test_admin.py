@@ -217,7 +217,7 @@ class TestSetupStudentRepos:
         admin.setup_student_repos(master_urls, students, USER, api_mock)
 
         for url in master_urls:
-            git_mock.clone.assert_any_call(url)
+            git_mock.clone_single.assert_any_call(url)
             api_mock.ensure_teams_and_members.assert_called_once_with(
                 {student: [student]
                  for student in students})
@@ -272,7 +272,7 @@ class TestUpdateStudentRepos:
         admin.update_student_repos(master_urls, students, USER, api_mock)
 
         for url in master_urls:
-            git_mock.clone.assert_any_call(url)
+            git_mock.clone_single.assert_any_call(url)
             rmtree_mock.assert_any_call(util.repo_name(url))
 
         git_mock.push.assert_called_once_with(push_tuples, user=USER)
@@ -310,7 +310,7 @@ class TestUpdateStudentRepos:
 
         git_push_async_mock = mocker.patch(
             'gits_pet.git._push_async', side_effect=raise_specific)
-        git_clone_mock = mocker.patch('gits_pet.git.clone')
+        git_clone_mock = mocker.patch('gits_pet.git.clone_single')
 
         admin.update_student_repos(master_urls, students, USER, api_mock,
                                    issue)
@@ -352,7 +352,7 @@ class TestUpdateStudentRepos:
 
         git_push_async_mock = mocker.patch(
             'gits_pet.git._push_async', side_effect=raise_specific)
-        git_clone_mock = mocker.patch('gits_pet.git.clone')
+        git_clone_mock = mocker.patch('gits_pet.git.clone_single')
 
         admin.update_student_repos(master_urls, students, USER, api_mock)
 
@@ -469,7 +469,8 @@ class TestMigrateRepo:
         ]
 
         api_mock.create_repos.side_effect = lambda infos: [generate_master_url(info.name) for info in infos]
-        git_clone_mock = mocker.patch('gits_pet.git.clone', autospec=True)
+        git_clone_mock = mocker.patch(
+            'gits_pet.git.clone_single', autospec=True)
         git_push_mock = mocker.patch('gits_pet.git.push', autospec=True)
 
         admin.migrate_repos(master_urls, USER, api_mock)

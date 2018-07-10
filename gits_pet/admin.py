@@ -116,7 +116,7 @@ def _clone_all(urls: Iterable[str]):
     try:
         for url in urls:
             LOGGER.info("cloning into {}".format(url))
-            git.clone(url)
+            git.clone_single(url)
             cloned.append(url)
     except git.CloneFailedError:
         LOGGER.error("error cloning into {}, aborting ...".format(url))
