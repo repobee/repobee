@@ -84,7 +84,11 @@ def parse_args(sys_args: Iterable[str]) -> (tuples.Args, github_api.GitHubAPI):
         master_names = [util.repo_name(url) for url in master_urls]
     elif 'master_repo_names' in args:
         master_urls, not_found = api.get_repo_urls(args.master_repo_names)
-        # TODO possibly raise ParseError if not_found is not empty
+        if not_found:
+            raise ParseError(
+                ("Could not find one or more master repos: {}. "
+                    "Migrate repos into the organization with the `migrate` command").format(
+                    not_found))
         master_names = args.master_repo_names
     else:
         master_urls = None

@@ -23,7 +23,7 @@ BASE_ARGS = ['-g', GITHUB_BASE_URL, '-o', ORG_NAME]
 GENERATE_REPO_URL = lambda repo_name:\
         "https://some_enterprise_host/{}/{}".format(ORG_NAME, repo_name)
 
-REPO_NAMES = ('week-1', 'week-2')
+REPO_NAMES = ('week-1', 'week-2', 'week-3')
 BASE_PUSH_ARGS = ['-u', USER, '-mn', *REPO_NAMES]
 COMPLETE_PUSH_ARGS = [*BASE_ARGS, *BASE_PUSH_ARGS]
 
@@ -259,3 +259,20 @@ class TestSetupAndUpdateParsers:
         parsed_args, _ = cli.parse_args(sys_args)
 
         assert_base_push_args(parsed_args, api_class_mock)
+
+    @pytest.mark.parametrize('parser', [cli.SETUP_PARSER, cli.UPDATE_PARSER])
+    def test_raises_when_master_repo_is_not_found(self, api_instance_mock,
+                                                  parser):
+        """Tests that a ParseError is raised if any master repo (specified by
+        name) is not found.
+        """
+        not_found = REPO_NAMES[-1]
+
+        api_instance_mock.get_repo_urls.side_effect = lambda repo_names:\
+                ([name for name in repo_names if name != not_found], [not_found])
+
+        sys_args = [parser, *COMPLETE_PUSH_ARGS, '-s', *STUDENTS]
+
+        with pytest.raises(cli.ParseError) as exc_info:
+            cli.parse_args(sys_args)
+        assert not_found in str(exc_info)
