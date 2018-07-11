@@ -12,9 +12,12 @@ import github
 from gits_pet.api_wrapper import (ApiWrapper, RepoInfo, GitHubError,
                                   UnexpectedException, Team, _Team, _User,
                                   _Repo)
+from gits_pet import util
 
 LOGGER = daiquiri.getLogger(__file__)
 
+class APIError(Exception):
+    """Raise when something unexpected happens when interacting with the API."""
 
 class GitHubAPI:
     """A highly specialized GitHub API class for gits_pet."""
@@ -159,20 +162,30 @@ class GitHubAPI:
                     "An unexpected exception was raised.")
         return repo_urls
 
-    def get_repo_urls(self, repo_names: Iterable[str]) -> List[str]:
+    def get_repo_urls(self,
+                      repo_names: Iterable[str]) -> (List[str], List[str]):
         """Get repo urls for all specified repo names in the current organization.
 
         Args:
             repo_names: A list of repository names.
 
         Returns:
-            a list of urls corresponding to the repo names.
+            a list of urls corresponding to the repo names, and a list of repo names
+            that were not found.
         """
         repo_names_set = set(repo_names)
-        return [
+        urls = [
             repo.html_url for repo in self._api.get_repos()
             if repo.name in repo_names_set
         ]
+
+        not_found = list(repo_names_set -
+                         {util.repo_name(url)
+                          for url in urls})
+        if not_found:
+            for repo_name in not_found:
+                LOGGER.warning("repo {} could not be found".format(repo_name))
+        return urls, not_found
 
     def get_repo_urls_by_regex(self, regex: str) -> List[str]:
         """Get repo urls for all repos in the current organization whose names

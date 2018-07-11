@@ -54,6 +54,10 @@ CONFIGURABLE_ARGS = set(('user', 'org_name', 'github_base_url',
                          'students_file'))
 
 
+class ParseError(Exception):
+    """Raise when something goes wrong in parsing."""
+
+
 class FileError(IOError):
     """Raise when reading or writing to a file errors out."""
 
@@ -79,7 +83,8 @@ def parse_args(sys_args: Iterable[str]) -> (tuples.Args, github_api.GitHubAPI):
         master_urls = args.master_repo_urls
         master_names = [util.repo_name(url) for url in master_urls]
     elif 'master_repo_names' in args:
-        master_urls = api.get_repo_urls(args.master_repo_names)
+        master_urls, not_found = api.get_repo_urls(args.master_repo_names)
+        # TODO possibly raise ParseError if not_found is not empty
         master_names = args.master_repo_names
     else:
         master_urls = None
@@ -110,32 +115,32 @@ def handle_parsed_args(args: tuples.Args, api: github_api.GitHubAPI):
         api: An initialized GitHubAPI instance.
     """
     if args.subparser == ADD_TO_TEAMS_PARSER:
-        with _sys_exit_on_git_error():
+        with _sys_exit_on_expected_error():
             admin.add_students_to_teams(args.students, api)
     elif args.subparser == SETUP_PARSER:
-        with _sys_exit_on_git_error():
+        with _sys_exit_on_expected_error():
             admin.setup_student_repos(
                 master_repo_urls=args.master_repo_urls,
                 students=args.students,
                 user=args.user,
                 api=api)
     elif args.subparser == UPDATE_PARSER:
-        with _sys_exit_on_git_error():
+        with _sys_exit_on_expected_error():
             admin.update_student_repos(args.master_repo_urls, args.students,
                                        args.user, api)
     elif args.subparser == OPEN_ISSUE_PARSER:
-        with _sys_exit_on_git_error():
+        with _sys_exit_on_expected_error():
             admin.open_issue(args.master_repo_names, args.students, args.issue,
                              api)
     elif args.subparser == CLOSE_ISSUE_PARSER:
-        with _sys_exit_on_git_error():
+        with _sys_exit_on_expected_error():
             admin.close_issue(args.title_regex, args.master_repo_names,
                               args.students, api)
     elif args.subparser == MIGRATE_PARSER:
-        with _sys_exit_on_git_error():
+        with _sys_exit_on_expected_error():
             admin.migrate_repos(args.master_repo_urls, args.user, api)
     elif args.subparser == CLONE_PARSER:
-        with _sys_exit_on_git_error():
+        with _sys_exit_on_expected_error():
             admin.clone_repos(args.master_repo_names, args.students, api)
     else:
         raise ValueError("Illegal value for subparser: {}".format(
@@ -362,7 +367,8 @@ def _get_configured_defaults(config_file=DEFAULT_CONFIG_FILE):
 
 
 @contextmanager
-def _sys_exit_on_git_error():
+def _sys_exit_on_expected_error():
+    """Expect either git.GitError or github_api.APIError."""
     try:
         yield
     except git.PushFailedError as exc:
@@ -377,6 +383,9 @@ def _sys_exit_on_git_error():
         sys.exit(1)
     except git.GitError as exc:
         LOGGER.error("Something went wrong with git. See the logs for info.")
+        sys.exit(1)
+    except github_api.APIError as exc:
+        LOGGER.error("Exiting beacuse of {.__class__.__name__}".format(exc))
         sys.exit(1)
 
 

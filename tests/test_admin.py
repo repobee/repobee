@@ -23,9 +23,9 @@ API = github_api.GitHubAPI("bla", "bla", "bla")
 ISSUE = tuples.Issue("Oops, something went wrong!",
                      "This is the body **with some formatting**.")
 
-GENERATE_TEAM_REPO_URL = lambda base_name, student:\
+GENERATE_TEAM_REPO_URL = lambda student, base_name:\
         "https://slarse.se/repos/{}".format(
-            util.generate_repo_name(base_name, student))
+            util.generate_repo_name(student, base_name))
 
 GENERATE_REPO_URL = lambda name: GENERATE_TEAM_REPO_URL(name, 'd')[:-2]
 
@@ -60,7 +60,10 @@ def git_mock(request, mocker):
     """
     if 'nogitmock' in request.keywords:
         return
-    return mocker.patch('gits_pet.admin.git', autospec=True)
+    pt = gits_pet.git.Push
+    git_mock = mocker.patch('gits_pet.admin.git', autospec=True)
+    git_mock.Push = pt
+    return git_mock
 
 
 @pytest.fixture(autouse=True)
@@ -70,6 +73,10 @@ def api_mock(request, mocker):
     mock = MagicMock(spec=gits_pet.admin.GitHubAPI)
     api_class = mocker.patch('gits_pet.admin.GitHubAPI', autospec=True)
     api_class.return_value = mock
+
+    url_from_repo_info = lambda repo_info: GENERATE_REPO_URL(repo_info.name)
+    mock.create_repos.side_effect =\
+        lambda repo_infos: list(map(url_from_repo_info, repo_infos))
     return mock
 
 
@@ -115,19 +122,15 @@ def repo_infos(master_urls, students):
 
 @pytest.fixture(scope='function')
 def push_tuples(master_urls, students):
-    push_tuples = []
-    base_names = list(map(util.repo_name, master_urls))
-    repo_urls = [
-        GENERATE_TEAM_REPO_URL(base_name, student) for student in students
-        for base_name in base_names
+
+    push_tuples = [
+        git.Push(
+            local_path=util.repo_name(url),
+            repo_url=GENERATE_TEAM_REPO_URL(student, util.repo_name(url)),
+            branch='master')
+        # note that the order here is significant, must correspond with util.generate_repo_names
+        for url in master_urls for student in students
     ]
-    for url in master_urls:
-        repo_base_name = util.repo_name(url)
-        push_tuples += [
-            git.Push(
-                local_path=repo_base_name, repo_url=repo_url, branch='master')
-            for repo_url in repo_urls if repo_url.endswith(repo_base_name)
-        ]
     return push_tuples
 
 
@@ -216,15 +219,21 @@ class TestSetupStudentRepos:
                         git_mock, repo_infos, push_tuples, rmtree_mock,
                         ensure_teams_and_members_mock):
         """Test that setup_student_repos makes the correct function calls."""
+        expected_clone_calls = [call(url) for url in master_urls]
+        expected_rmtree_calls = [
+            call(util.repo_name(url)) for url in master_urls
+        ]
+        expected_ensure_teams_arg = {
+            student: [student]
+            for student in students
+        }
+
         admin.setup_student_repos(master_urls, students, USER, api_mock)
 
-        for url in master_urls:
-            git_mock.clone_single.assert_any_call(url)
-            api_mock.ensure_teams_and_members.assert_called_once_with(
-                {student: [student]
-                 for student in students})
-            rmtree_mock.assert_any_call(util.repo_name(url))
-
+        git_mock.clone_single.assert_has_calls(expected_clone_calls)
+        rmtree_mock.assert_has_calls(expected_rmtree_calls)
+        api_mock.ensure_teams_and_members.assert_called_once_with(
+            expected_ensure_teams_arg)
         api_mock.create_repos.assert_called_once_with(repo_infos)
         git_mock.push.assert_called_once_with(push_tuples, user=USER)
 
@@ -268,15 +277,24 @@ class TestUpdateStudentRepos:
             admin.update_student_repos(master_urls, students, user, api)
         assert type_error_arg in str(exc_info.value)
 
-    def test_happy_path(self, mocker, master_urls, students, api_mock,
-                        git_mock, push_tuples, rmtree_mock):
-        """Test that update_student_repos makes the correct function calls."""
+    def test_happy_path(self, git_mock, master_urls, students, api_mock,
+                        push_tuples, rmtree_mock):
+        """Test that update_student_repos makes the correct function calls.
+        
+        NOTE: Ignores the git mock.
+        """
+        expected_clone_calls = [call(url) for url in master_urls]
+        expected_rmtree_calls = [
+            call(util.repo_name(url)) for url in master_urls
+        ]
+
+        api_mock.get_repo_urls.side_effect = lambda repo_names: \
+            (list(map(GENERATE_REPO_URL, repo_names)), [])
+
         admin.update_student_repos(master_urls, students, USER, api_mock)
 
-        for url in master_urls:
-            git_mock.clone_single.assert_any_call(url)
-            rmtree_mock.assert_any_call(util.repo_name(url))
-
+        git_mock.clone_single.assert_has_calls(expected_clone_calls)
+        rmtree_mock.assert_has_calls(expected_rmtree_calls)
         git_mock.push.assert_called_once_with(push_tuples, user=USER)
 
     @pytest.mark.nogitmock
@@ -303,7 +321,7 @@ class TestUpdateStudentRepos:
         ]
         fail_repo_urls = [generate_url(name) for name in fail_repo_names]
 
-        api_mock.get_repo_urls.side_effect = lambda repo_names: [generate_url(name) for name in repo_names]
+        api_mock.get_repo_urls.side_effect = lambda repo_names: ([generate_url(name) for name in repo_names], [])
 
         async def raise_specific(pt, user):
             if pt.repo_url in fail_repo_urls:
@@ -344,7 +362,7 @@ class TestUpdateStudentRepos:
         ]
         fail_repo_urls = [generate_url(name) for name in fail_repo_names]
 
-        api_mock.get_repo_urls.side_effect = lambda repo_names: [generate_url(name) for name in repo_names]
+        api_mock.get_repo_urls.side_effect = lambda repo_names: ([generate_url(name) for name in repo_names], [])
         issue = tuples.Issue("Oops", "Sorry, we failed to push to your repo!")
 
         async def raise_specific(pt, branch):
@@ -452,10 +470,10 @@ class TestCloneRepos:
     def test_happy_path(self, api_mock, git_mock, master_names, students):
         """Tests that the correct calls are made when there are no errors."""
         expected_urls = [
-            GENERATE_TEAM_REPO_URL(student, name) for student in students
-            for name in master_names
+            GENERATE_REPO_URL(name)
+            for name in util.generate_repo_names(students, master_names)
         ]
-        api_mock.get_repo_urls.side_effect = lambda repo_names: list(map(GENERATE_REPO_URL, repo_names))
+        api_mock.get_repo_urls.side_effect = lambda repo_names: (list(map(GENERATE_REPO_URL, repo_names)), [])
 
         admin.clone_repos(master_names, students, api_mock)
 

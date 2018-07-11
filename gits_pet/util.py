@@ -1,6 +1,7 @@
 """Some general utility functions."""
 import os
 import sys
+from typing import Iterable
 from gits_pet import tuples
 
 
@@ -62,7 +63,29 @@ def generate_repo_name(team_name: str, master_repo_name: str) -> str:
     return "{}-{}".format(team_name, master_repo_name)
 
 
-def repo_name(repo_url):
+def generate_repo_names(team_names: Iterable[str],
+                        master_repo_names: Iterable[str]) -> Iterable[str]:
+    """Construct all combinations of generate_repo_name(team_name, master_repo_name) for the provided
+    team names and master repo names.
+
+    Args:
+        team_names: One or more names of teams.
+        master_repo_names: One or more names of master repositories.
+
+    Returns:
+        a list of repo names for all combinations of team and master repo.
+    """
+    validate_non_empty(
+        team_names=team_names, master_repo_names=master_repo_names)
+    master_repo_names = list(
+        master_repo_names)  # needs to be traversed multiple times
+    return [
+        generate_repo_name(team_name, master_name)
+        for master_name in master_repo_names for team_name in team_names
+    ]
+
+
+def repo_name(repo_url: str) -> str:
     """Extract the name of the repo from its url.
 
     Args:

@@ -15,6 +15,7 @@ from typing import Iterable, List, Optional
 from collections import namedtuple
 import daiquiri
 from gits_pet import git
+from gits_pet import github_api
 from gits_pet import util
 from gits_pet import tuples
 from gits_pet.github_api import GitHubAPI, RepoInfo
@@ -150,18 +151,25 @@ def update_student_repos(master_repo_urls: Iterable[str],
         master_repo_urls=master_repo_urls, user=user, students=students)
     urls = list(master_repo_urls)  # safe copy
 
-    LOGGER.info("cloning into master repos ...")
-    _clone_all(urls)
+    if len(set(urls)) != len(urls):
+        raise ValueError("master_repo_urls contains duplicates")
 
     master_repo_names = [util.repo_name(url) for url in urls]
-    student_repo_names = [
-        util.generate_repo_name(student, master_repo_name)
-        for student in students for master_repo_name in master_repo_names
-    ]
+    student_repo_names = util.generate_repo_names(students, master_repo_names)
 
-    repo_urls = api.get_repo_urls(student_repo_names)
+    repo_urls, not_found = api.get_repo_urls(student_repo_names)
+
+    if not repo_urls:
+        msg = "No student repos corresponding to the master repos were found"
+        LOGGER.error(msg)
+        raise github_api.APIError(msg)
+    elif not_found:
+        LOGGER.warning("Ignoring repos that were not found")
 
     push_tuples = _create_push_tuples(urls, repo_urls)
+
+    LOGGER.info("cloning into master repos ...")
+    _clone_all(urls)
 
     LOGGER.info("pushing files to student repos ...")
     failed_urls = git.push(push_tuples, user=user)
@@ -200,10 +208,7 @@ def open_issue(issue: tuples.Issue, master_repo_names: Iterable[str],
     util.validate_non_empty(
         master_repo_names=master_repo_names, students=students, issue=issue)
 
-    repo_names = [
-        util.generate_repo_name(student, master)
-        for master in master_repo_names for student in students
-    ]
+    repo_names = util.generate_repo_names(students, master_repo_names)
 
     api.open_issue(issue.title, issue.body, repo_names)
 
@@ -224,10 +229,7 @@ def close_issue(title_regex: str, master_repo_names: Iterable[str],
         master_repo_names=master_repo_names,
         students=students)
 
-    repo_names = [
-        util.generate_repo_name(student, master)
-        for master in master_repo_names for student in students
-    ]
+    repo_names = util.generate_repo_names(students, master_repo_names)
 
     api.close_issue(title_regex, repo_names)
 
@@ -245,11 +247,8 @@ def clone_repos(master_repo_names: Iterable[str], students: Iterable[str],
     util.validate_non_empty(
         master_repo_names=master_repo_names, students=students)
 
-    repo_names = [
-        util.generate_repo_name(student, master_name) for student in students
-        for master_name in master_repo_names
-    ]
-    repo_urls = api.get_repo_urls(repo_names)
+    repo_names = util.generate_repo_names(students, master_repo_names)
+    repo_urls, _ = api.get_repo_urls(repo_names)
 
     LOGGER.info("cloning into student repos ...")
     git.clone(repo_urls)
