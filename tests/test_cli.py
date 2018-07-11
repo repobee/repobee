@@ -31,7 +31,7 @@ COMPLETE_PUSH_ARGS = [*BASE_ARGS, *BASE_PUSH_ARGS]
 @pytest.fixture(autouse=True)
 def api_instance_mock(mocker):
     instance_mock = MagicMock(spec=gits_pet.github_api.GitHubAPI)
-    instance_mock.get_repo_urls.side_effect = lambda repo_names: list(map(GENERATE_REPO_URL, repo_names))
+    instance_mock.get_repo_urls.side_effect = lambda repo_names: (list(map(GENERATE_REPO_URL, repo_names)), [])
     return instance_mock
 
 

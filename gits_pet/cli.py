@@ -83,7 +83,9 @@ def parse_args(sys_args: Iterable[str]) -> (tuples.Args, github_api.GitHubAPI):
         master_urls = args.master_repo_urls
         master_names = [util.repo_name(url) for url in master_urls]
     elif 'master_repo_names' in args:
+        print(args.master_repo_names)
         master_urls, not_found = api.get_repo_urls(args.master_repo_names)
+        print(master_urls)
         # TODO possibly raise ParseError if not_found is not empty
         master_names = args.master_repo_names
     else:
