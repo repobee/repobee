@@ -29,17 +29,21 @@ MASTER_TEAM = 'master_repos'
 def setup_student_repos(master_repo_urls: Iterable[str],
                         students: Iterable[str], user: str,
                         api: GitHubAPI) -> None:
-    """Setup student repositories based on master repo templates. Perform three primary tasks:
+    """Setup student repositories based on master repo templates. Perform three
+    primary tasks:
 
-        1. Create one team per student and add the corresponding students to the team. If a team already exists,
-        it is left as-is. If a student is already in its team, nothing happens. If no account exists with the
-        specified username, the team is created regardless but no one is added to it.
-        2. For each master repository, one private student repo is created and added to the corresponding student
-        team. If a repository already exists, it is skipped.
-        3. Files from the master repos are pushed to the corresponding student repos.
+        1. Create one team per student and add the corresponding students to
+        the team. If a team already exists, it is left as-is. If a student is
+        already in its team, nothing happens. If no account exists with the
+        specified username, the team is created regardless but no one is added
+        to it.  2. For each master repository, one private student repo is
+        created and added to the corresponding student team. If a repository
+        already exists, it is skipped.  3. Files from the master repos are
+        pushed to the corresponding student repos.
 
     Args:
-        master_repo_urls: URLs to master repos. Must be in the organization that the api is set up for.
+        master_repo_urls: URLs to master repos. Must be in the organization
+        that the api is set up for.
         students: An iterable of student GitHub usernames.
         user: Username of the administrator that setting up the repos.
         api: A GitHubAPI instance used to interface with the GitHub instance.
@@ -149,7 +153,6 @@ def update_student_repos(master_repo_urls: Iterable[str],
     LOGGER.info("cloning into master repos ...")
     _clone_all(urls)
 
-
     master_repo_names = [util.repo_name(url) for url in urls]
     student_repo_names = [
         util.generate_repo_name(student, master_repo_name)
@@ -229,7 +232,31 @@ def close_issue(title_regex: str, master_repo_names: Iterable[str],
     api.close_issue(title_regex, repo_names)
 
 
-def migrate_repos(master_repo_urls: str, user: str, api: GitHubAPI) -> None:
+def clone_repos(master_repo_names: Iterable[str], students: Iterable[str],
+                api: GitHubAPI) -> None:
+    """Clone all student repos related to the provided master repos and students.
+
+    Args:
+        master_repo_names: Names of master repos.
+        students: Student usernames.
+        api: A GitHubAPI instance.
+    """
+    util.validate_types(api=(api, GitHubAPI))
+    util.validate_non_empty(
+        master_repo_names=master_repo_names, students=students)
+
+    repo_names = [
+        util.generate_repo_name(student, master_name) for student in students
+        for master_name in master_repo_names
+    ]
+    repo_urls = api.get_repo_urls(repo_names)
+
+    LOGGER.info("cloning into student repos ...")
+    git.clone(repo_urls)
+
+
+def migrate_repos(master_repo_urls: Iterable[str], user: str,
+                  api: GitHubAPI) -> None:
     """Migrate a repository from an arbitrary URL to the target organization.
     The new repository is added to the master_repos team, which is created if
     it does not already exist.
@@ -260,8 +287,7 @@ def migrate_repos(master_repo_urls: str, user: str, api: GitHubAPI) -> None:
 
     git.push(
         [
-            git.Push(
-                local_path=info.name, repo_url=repo_url, branch='master')
+            git.Push(local_path=info.name, repo_url=repo_url, branch='master')
             for repo_url, info in zip(repo_urls, infos)
         ],
         user=user)
@@ -315,10 +341,8 @@ def _create_push_tuples(master_urls: Iterable[str],
         repo_base_name = util.repo_name(url)
         push_tuples += [
             git.Push(
-                local_path=repo_base_name,
-                repo_url=repo_url,
-                branch='master') for repo_url in repo_urls
-            if repo_url.endswith(repo_base_name)
+                local_path=repo_base_name, repo_url=repo_url, branch='master')
+            for repo_url in repo_urls if repo_url.endswith(repo_base_name)
         ]
     return push_tuples
 

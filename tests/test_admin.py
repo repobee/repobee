@@ -5,7 +5,7 @@ import tempfile
 import subprocess
 import string
 from asyncio import coroutine
-from unittest.mock import patch, PropertyMock, MagicMock, Mock
+from unittest.mock import patch, PropertyMock, MagicMock, Mock, call
 from collections import namedtuple
 
 import gits_pet
@@ -23,9 +23,11 @@ API = github_api.GitHubAPI("bla", "bla", "bla")
 ISSUE = tuples.Issue("Oops, something went wrong!",
                      "This is the body **with some formatting**.")
 
-GENERATE_REPO_URL = lambda base_name, student:\
+GENERATE_TEAM_REPO_URL = lambda base_name, student:\
         "https://slarse.se/repos/{}".format(
             util.generate_repo_name(base_name, student))
+
+GENERATE_REPO_URL = lambda name: GENERATE_TEAM_REPO_URL(name, 'd')[:-2]
 
 
 @pytest.fixture(autouse=True)
@@ -116,7 +118,7 @@ def push_tuples(master_urls, students):
     push_tuples = []
     base_names = list(map(util.repo_name, master_urls))
     repo_urls = [
-        GENERATE_REPO_URL(base_name, student) for student in students
+        GENERATE_TEAM_REPO_URL(base_name, student) for student in students
         for base_name in base_names
     ]
     for url in master_urls:
@@ -435,6 +437,31 @@ class TestCloseIssue:
                                                      expected_repo_names)
 
 
+class TestCloneRepos:
+    """Tests for clone_repos."""
+
+    @pytest.mark.parametrize('master_repo_names, students, empty_arg',
+                             [([], students(), 'master_repo_names'),
+                              (master_names(master_urls()), [], 'students')])
+    def test_raises_on_empty_args(self, api_mock, master_repo_names, students,
+                                  empty_arg):
+        with pytest.raises(ValueError) as exc_info:
+            admin.clone_repos(master_repo_names, students, api_mock)
+        assert empty_arg in str(exc_info)
+
+    def test_happy_path(self, api_mock, git_mock, master_names, students):
+        """Tests that the correct calls are made when there are no errors."""
+        expected_urls = [
+            GENERATE_TEAM_REPO_URL(student, name) for student in students
+            for name in master_names
+        ]
+        api_mock.get_repo_urls.side_effect = lambda repo_names: list(map(GENERATE_REPO_URL, repo_names))
+
+        admin.clone_repos(master_names, students, api_mock)
+
+        git_mock.clone.assert_called_once_with(expected_urls)
+
+
 class TestMigrateRepo:
     """Tests for migrate_repo."""
 
@@ -454,21 +481,19 @@ class TestMigrateRepo:
         
         IMPORTANT: Note that this test ignores the git mock. Be careful.
         """
-        generate_master_url = lambda name: GENERATE_REPO_URL('master', name)
         master_urls = [
             "https://some-url-to-/master/repos/week-1",
             "https://some-url-to-/master/repos/week-5"
         ]
         master_names = [util.repo_name(url) for url in master_urls]
-        expected_push_urls = [
-            generate_master_url(name) for name in master_names
-        ]
+        expected_push_urls = [GENERATE_REPO_URL(name) for name in master_names]
         expected_pts = [
             git.Push(local_path=name, repo_url=url, branch='master')
             for name, url in zip(master_names, expected_push_urls)
         ]
+        expected_rmtree_calls = [call(name) for name in master_names]
 
-        api_mock.create_repos.side_effect = lambda infos: [generate_master_url(info.name) for info in infos]
+        api_mock.create_repos.side_effect = lambda infos: [GENERATE_REPO_URL(info.name) for info in infos]
         git_clone_mock = mocker.patch(
             'gits_pet.git.clone_single', autospec=True)
         git_push_mock = mocker.patch('gits_pet.git.push', autospec=True)
@@ -482,5 +507,4 @@ class TestMigrateRepo:
             admin.MASTER_TEAM: []
         })
         git_push_mock.assert_called_once_with(expected_pts, user=USER)
-        for name in master_names:
-            rmtree_mock.assert_any_call(name)
+        rmtree_mock.assert_has_calls(expected_rmtree_calls)

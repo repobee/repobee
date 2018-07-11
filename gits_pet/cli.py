@@ -38,6 +38,7 @@ LOGGER = daiquiri.getLogger(__file__)
 SUB = 'subparser'
 SETUP_PARSER = 'setup'
 UPDATE_PARSER = 'update'
+CLONE_PARSER = 'clone'
 MIGRATE_PARSER = 'migrate'
 ADD_TO_TEAMS_PARSER = 'add-to-teams'
 OPEN_ISSUE_PARSER = 'open-issue'
@@ -133,6 +134,9 @@ def handle_parsed_args(args: tuples.Args, api: github_api.GitHubAPI):
     elif args.subparser == MIGRATE_PARSER:
         with _sys_exit_on_git_error():
             admin.migrate_repos(args.master_repo_urls, args.user, api)
+    elif args.subparser == CLONE_PARSER:
+        with _sys_exit_on_git_error():
+            admin.clone_repos(args.master_repo_names, args.students, api)
     else:
         raise ValueError("Illegal value for subparser: {}".format(
             args.subparser))
@@ -192,8 +196,9 @@ def _create_parser():
             if key in CONFIGURABLE_ARGS
         ] + [""])))
     else:
-        LOGGER.info("no config file found. Expected config file location: {}".format(
-            DEFAULT_CONFIG_FILE))
+        LOGGER.info(
+            "no config file found. Expected config file location: {}".format(
+                DEFAULT_CONFIG_FILE))
     default = lambda arg_name: configured_defaults[arg_name] if arg_name in configured_defaults else None
 
     is_required = lambda arg_name: True if arg_name not in configured_defaults else False
@@ -321,6 +326,12 @@ def _create_parser():
         type=str,
         required=True,
         nargs='+')
+
+    clone = subparsers.add_parser(
+        CLONE_PARSER,
+        help="Clone student repos.",
+        description="Clone student repos asynchronously in bulk.",
+        parents=[base_student_parser, repo_name_parser])
 
     add_to_teams = subparsers.add_parser(
         ADD_TO_TEAMS_PARSER,
