@@ -75,6 +75,7 @@ def api_mock(request, mocker):
     api_class.return_value = mock
 
     url_from_repo_info = lambda repo_info: GENERATE_REPO_URL(repo_info.name)
+    mock.get_repo_urls.side_effect = lambda repo_names: (list(map(GENERATE_REPO_URL, repo_names)), [])
     mock.create_repos.side_effect =\
         lambda repo_infos: list(map(url_from_repo_info, repo_infos))
     return mock
@@ -277,6 +278,45 @@ class TestUpdateStudentRepos:
             admin.update_student_repos(master_urls, students, user, api)
         assert type_error_arg in str(exc_info.value)
 
+    def test_raises_when_no_student_repos_are_found(
+            self, master_urls, master_names, students, api_mock):
+        """Test that an APIError is raised if no student repos corresponding to
+        the master repos are found.
+        """
+        # only master urls are found
+        api_mock.get_repo_urls.side_effect = lambda repo_names:\
+                ([GENERATE_REPO_URL(name)
+                    for name in repo_names
+                    if name in master_names], [])
+
+        with pytest.raises(github_api.APIError) as exc_info:
+            admin.update_student_repos(master_urls, students, USER, api_mock)
+
+    def test_does_not_raise_when_some_student_repos_are_not_found(
+            self, api_mock, git_mock, master_urls, master_names, students):
+        """Test that update_student_repos does not raise if at least
+        one student repo is found.
+        """
+        # only one of the student repos is found, but all master repos are found
+        found_repo_name = util.generate_repo_name(students[2], master_names[1])
+        api_mock.get_repo_urls.side_effect = lambda repo_names: \
+                ([GENERATE_REPO_URL(name)
+                    for name in repo_names
+                    if name in (*master_names, found_repo_name)], [])
+
+        push_tuples = [
+            git.Push(
+                local_path=master_names[1],
+                repo_url=GENERATE_TEAM_REPO_URL(students[2], master_names[1]),
+                branch='master')
+        ]
+
+        admin.update_student_repos(master_urls, students, USER, api_mock)
+
+        git_mock.push.assert_called_once_with(push_tuples, user=USER)
+
+        
+
     def test_happy_path(self, git_mock, master_urls, students, api_mock,
                         push_tuples, rmtree_mock):
         """Test that update_student_repos makes the correct function calls.
@@ -473,8 +513,6 @@ class TestCloneRepos:
             GENERATE_REPO_URL(name)
             for name in util.generate_repo_names(students, master_names)
         ]
-        api_mock.get_repo_urls.side_effect = lambda repo_names: (list(map(GENERATE_REPO_URL, repo_names)), [])
-
         admin.clone_repos(master_names, students, api_mock)
 
         git_mock.clone.assert_called_once_with(expected_urls)

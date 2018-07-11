@@ -166,6 +166,7 @@ def update_student_repos(master_repo_urls: Iterable[str],
     elif not_found:
         LOGGER.warning("Ignoring repos that were not found")
 
+    print(repo_urls)
     push_tuples = _create_push_tuples(urls, repo_urls)
 
     LOGGER.info("cloning into master repos ...")
