@@ -19,12 +19,12 @@ STUDENTS = tuple(string.ascii_lowercase)
 ISSUE_PATH = 'some/issue/path'
 ISSUE = tuples.Issue(title="Best title", body="This is the body of the issue.")
 
-BASE_ARGS = ['-g', GITHUB_BASE_URL, '-o', ORG_NAME]
 
 GENERATE_REPO_URL = lambda repo_name:\
         "https://some_enterprise_host/{}/{}".format(ORG_NAME, repo_name)
-
 REPO_NAMES = ('week-1', 'week-2', 'week-3')
+
+BASE_ARGS = ['-g', GITHUB_BASE_URL, '-o', ORG_NAME]
 BASE_PUSH_ARGS = ['-u', USER, '-mn', *REPO_NAMES]
 COMPLETE_PUSH_ARGS = [*BASE_ARGS, *BASE_PUSH_ARGS]
 
@@ -293,5 +293,57 @@ class TestSetupAndUpdateParsers:
 
         parsed_args, _ = cli.parse_args(sys_args)
 
-        assert pathlib.Path(
-            os.path.abspath(local_repo)).as_uri() in parsed_args.master_repo_urls
+        assert pathlib.Path(os.path.abspath(
+            local_repo)).as_uri() in parsed_args.master_repo_urls
+
+
+class TestMigrateParser:
+    """Tests for MIGRATE_PARSER."""
+    NAMES = ['some-repo', 'other-repo']
+    URLS = [
+        'https://someurl.org/{}'.format(NAMES[0]),
+        'https://otherurl.com/{}'.format(NAMES[1])
+    ]
+    LOCAL_URIS = [
+        pathlib.Path(os.path.abspath(name)).as_uri() for name in NAMES
+    ]
+
+    @pytest.fixture(autouse=True)
+    def is_git_repo_mock(self, mocker):
+        return mocker.patch(
+            'gits_pet.util.is_git_repo', autospec=True, return_value=True)
+
+    @pytest.fixture(autouse=True)
+    def find_no_repos_in_org(self, api_instance_mock):
+        """get_repo_urls never finds anything."""
+        api_instance_mock.get_repo_urls.side_effect = lambda repo_names: ([], repo_names)
+
+    def assert_migrate_args(self, parsed_args, *, uses_urls: bool) -> bool:
+        assert parsed_args.user == USER
+        assert parsed_args.org_name == ORG_NAME
+        assert parsed_args.github_base_url == GITHUB_BASE_URL
+        assert parsed_args.master_repo_names == self.NAMES
+        if uses_urls:
+            assert parsed_args.master_repo_urls == self.URLS
+        else:
+            assert parsed_args.master_repo_urls == self.LOCAL_URIS
+
+    def test_handles_urls_only(self):
+        """Test that the migrate parser handles master repo urls only correctly."""
+        sys_args = [
+            cli.MIGRATE_PARSER, *BASE_ARGS, '-u', USER, '-mu', *self.URLS
+        ]
+
+        parsed_args, _ = cli.parse_args(sys_args)
+
+        self.assert_migrate_args(parsed_args, uses_urls=True)
+
+    def test_handles_names_only(self):
+        """Test that the migrate parser handles master repo names only correctly."""
+        sys_args = [
+            cli.MIGRATE_PARSER, *BASE_ARGS, '-u', USER, '-mn', *self.NAMES
+        ]
+
+        parsed_args, _ = cli.parse_args(sys_args)
+
+        self.assert_migrate_args(parsed_args, uses_urls=False)

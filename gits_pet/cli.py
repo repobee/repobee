@@ -80,12 +80,13 @@ def parse_args(sys_args: Iterable[str]) -> (tuples.Args, github_api.GitHubAPI):
     api = github_api.GitHubAPI(args.github_base_url, git.OAUTH_TOKEN,
                                args.org_name)
 
-    if 'master_repo_urls' in args:
+    if 'master_repo_urls' in args and args.master_repo_urls:
         master_urls = args.master_repo_urls
         master_names = [util.repo_name(url) for url in master_urls]
-    elif 'master_repo_names' in args:
+    elif 'master_repo_names' in args and args.master_repo_names:
         master_urls, not_found = api.get_repo_urls(args.master_repo_names)
-        LOGGER.info("found {} remote repos: {}".format(len(master_urls), master_urls))
+        LOGGER.info("found {} remote repos: {}".format(
+            len(master_urls), master_urls))
 
         for name in not_found:
             local_path = os.path.abspath(name)
@@ -241,9 +242,9 @@ def _create_parser():
     repo_name_parser.add_argument(
         '-mn',
         '--master-repo-names',
-        help=("One or more names of master repositories. Assumes that the "
-              "master repos are in the same organization as specified by "
-              "the 'org-name' argument."),
+        help=("One or more names of master repositories. Names must either "
+              "refer to local directories, or to master repositories in the "
+              "target organization."),
         type=str,
         required=True,
         nargs='+')
@@ -289,7 +290,7 @@ def _create_parser():
         SETUP_PARSER,
         help="Setup student repos.",
         description=
-        ("Setup student repositories based on master repo templates. This "
+        ("Setup student repositories based on master repositories. This "
          "command performs three primary actions: sets up the student teams, "
          "creates one student repository for each master repository and "
          "finally pushes the master repo files to the corresponding student "
@@ -333,14 +334,22 @@ def _create_parser():
          "that have been changed in their original repos."
          ),
         parents=[base_parser, base_push_parser])
-    migrate.add_argument(
+    names_or_urls = migrate.add_mutually_exclusive_group(required=True)
+    names_or_urls.add_argument(
         '-mu',
         '--master-repo-urls',
         help=(
             "One or more URLs to the master repositories. One student repo is "
             "created for each master repo."),
         type=str,
-        required=True,
+        nargs='+')
+    names_or_urls.add_argument(
+        '-mn',
+        '--master-repo-names',
+        help=("One or more names of master repositories. Assumes that the "
+              "master repos are in the same organization as specified by "
+              "the 'org-name' argument."),
+        type=str,
         nargs='+')
 
     clone = subparsers.add_parser(
