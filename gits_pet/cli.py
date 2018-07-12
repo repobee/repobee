@@ -5,6 +5,7 @@ This module the CLI for gits_pet.
 
 import argparse
 import configparser
+import pathlib
 import os
 import sys
 from contextlib import contextmanager
@@ -84,11 +85,17 @@ def parse_args(sys_args: Iterable[str]) -> (tuples.Args, github_api.GitHubAPI):
         master_names = [util.repo_name(url) for url in master_urls]
     elif 'master_repo_names' in args:
         master_urls, not_found = api.get_repo_urls(args.master_repo_names)
-        if not_found:
-            raise ParseError(
-                ("Could not find one or more master repos: {}. "
-                    "Migrate repos into the organization with the `migrate` command").format(
-                    not_found))
+        LOGGER.info("found {} remote repos: {}".format(len(master_urls), master_urls))
+
+        for name in not_found:
+            local_path = os.path.abspath(name)
+            if util.is_git_repo(local_path):
+                LOGGER.info("found local repo {}".format(local_path))
+                master_urls.append(pathlib.Path(local_path).as_uri())
+
+        if len(master_urls) != len(args.master_repo_names):
+            # TODO improve error message
+            raise ParseError("Could not find one or more master repos")
         master_names = args.master_repo_names
     else:
         master_urls = None

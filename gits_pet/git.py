@@ -58,25 +58,21 @@ class PushFailedError(GitError):
         super().__init__(msg, returncode, stderr)
 
 
-def _insert_token(https_url: str, token: str = OAUTH_TOKEN) -> str:
-    """Insert a token into the https url as described here:
+def _insert_token(url: str, token: str = OAUTH_TOKEN) -> str:
+    """Insert a token into the url as described here:
         https://blog.github.com/2012-09-21-easier-builds-and-deployments-using-git-over-https-and-oauth/
 
     Args:
-        https_url: A url on the form `https://host.topdomain`
+        url: A url to a git repo.
         token: A GitHub OAUTH token, with or without username (e.g. on the form
         `<token>` or `<username>:<token>`)
 
     Returns:
         The provided url with the token inserted
     """
-    if not https_url.startswith('https://'):
-        raise ValueError(
-            'invalid url `{}`, does not start with `https://`'.format(
-                https_url))
     if not token:
         raise ValueError('invalid token, empty token not allowed')
-    return https_url.replace('https://', 'https://{}@'.format(token))
+    return url.replace('https://', 'https://{}@'.format(token))
 
 
 def _insert_user_and_token(https_url: str, user: str,

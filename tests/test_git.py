@@ -75,12 +75,6 @@ def test_insert_empty_token_raises():
     assert 'empty token' in str(exc)
 
 
-def test_insert_token_raises_for_non_https():
-    with pytest.raises(ValueError) as exc:
-        git._insert_token('www.google.com', '124124vfgh23')
-    assert 'https://' in str(exc)
-
-
 @pytest.mark.parametrize(
     'repo_url, single_branch, branch, cwd, type_error_arg',
     [(32, True, 'master', '.', 'repo_url'),

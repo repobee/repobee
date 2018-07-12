@@ -2,6 +2,7 @@ import os
 import sys
 import string
 import tempfile
+import pathlib
 from unittest.mock import MagicMock, PropertyMock
 from contextlib import contextmanager
 import pytest
@@ -248,10 +249,10 @@ class TestConfig:
     # in the config makes them required!
 
 
+@pytest.mark.parametrize('parser', [cli.SETUP_PARSER, cli.UPDATE_PARSER])
 class TestSetupAndUpdateParsers:
     """Tests SETUP_PARSER and UPDATE_PARSER."""
 
-    @pytest.mark.parametrize('parser', [cli.SETUP_PARSER, cli.UPDATE_PARSER])
     def test_happy_path(self, api_class_mock, parser):
         """Tests standard operation of the parsers."""
         sys_args = [parser, *COMPLETE_PUSH_ARGS, '-s', *STUDENTS]
@@ -260,7 +261,6 @@ class TestSetupAndUpdateParsers:
 
         assert_base_push_args(parsed_args, api_class_mock)
 
-    @pytest.mark.parametrize('parser', [cli.SETUP_PARSER, cli.UPDATE_PARSER])
     def test_raises_when_master_repo_is_not_found(self, api_instance_mock,
                                                   parser):
         """Tests that a ParseError is raised if any master repo (specified by
@@ -275,4 +275,23 @@ class TestSetupAndUpdateParsers:
 
         with pytest.raises(cli.ParseError) as exc_info:
             cli.parse_args(sys_args)
-        assert not_found in str(exc_info)
+        assert "Could not find one or more master repos" in str(exc_info)
+
+    def test_finds_local_repo(self, mocker, api_instance_mock, parser):
+        """Tests that the parsers pick up local repos when they are not
+        found in the organization.
+        """
+        is_git_repo_mock = mocker.patch(
+            'gits_pet.util.is_git_repo', return_value=True)
+        local_repo = REPO_NAMES[-1]
+        side_effect = lambda repo_names: (
+                [GENERATE_REPO_URL(name) for name in repo_names if name != local_repo],
+                [local_repo])
+        api_instance_mock.get_repo_urls.side_effect = side_effect
+
+        sys_args = [parser, *COMPLETE_PUSH_ARGS, '-s', *STUDENTS]
+
+        parsed_args, _ = cli.parse_args(sys_args)
+
+        assert pathlib.Path(
+            os.path.abspath(local_repo)).as_uri() in parsed_args.master_repo_urls
