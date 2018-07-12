@@ -102,19 +102,23 @@ def captured_run(*args, **kwargs):
     return proc.returncode, proc.stdout, proc.stderr
 
 
-def clone_single(repo_url: str, single_branch: bool = True,
-                 branch: str = None):
+def clone_single(repo_url: str,
+                 single_branch: bool = True,
+                 branch: str = None,
+                 cwd: str = '.'):
     """Clone a git repository.
 
     Args:
         repo_url: HTTPS url to repository on the form https://<host>/<owner>/<repo>.
         single_branch: Whether or not to clone a single branch.
         branch: The branch to clone.
+        cwd: Working directory. Defaults to the current directory.
     """
     util.validate_types(
         repo_url=(repo_url, str),
         single_branch=(single_branch, bool),
-        branch=(branch, (str, type(None))))
+        branch=(branch, (str, type(None))),
+        cwd=(cwd, (str)))
 
     if isinstance(branch, str) and not branch:
         raise ValueError("branch must not be empty")
@@ -129,7 +133,7 @@ def clone_single(repo_url: str, single_branch: bool = True,
         'git', 'clone',
         _insert_token(repo_url, OAUTH_TOKEN), *options
     ]
-    rc, _, stderr = captured_run(clone_command)
+    rc, _, stderr = captured_run(clone_command, cwd=cwd)
 
     if rc != 0:
         raise CloneFailedError("Failed to clone", rc, stderr, repo_url)
@@ -137,19 +141,21 @@ def clone_single(repo_url: str, single_branch: bool = True,
 
 async def _clone_async(repo_url: str,
                        single_branch: bool = True,
-                       branch: str = None):
+                       branch: str = None,
+                       cwd='.'):
     """Clone git repositories asynchronously.
 
     Args:
         repo_url: A url to clone.
         single_branch: Whether to clone a single branch or not.
         branch: Which branch to clone.
+        cwd: Working directory.
     """
     command = ['git', 'clone', _insert_token(repo_url)]
     if single_branch:
         command.append('--single-branch')
     proc = await asyncio.create_subprocess_exec(
-        *command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        *command, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     _, stderr = await proc.communicate()
 
     if proc.returncode != 0:
@@ -162,24 +168,25 @@ async def _clone_async(repo_url: str,
         LOGGER.info("Cloned into {}".format(repo_url))
 
 
-def clone(repo_urls: Iterable[str],
-          single_branch: bool = True) -> List[Exception]:
+def clone(repo_urls: Iterable[str], single_branch: bool = True,
+          cwd: str = '.') -> List[Exception]:
     """Clone all repos asynchronously.
 
     Args:
         repo_urls: URLs to repos to clone.
         single_branch: Whether or not to clone only the default branch.
+        cwd: Working directory. Defaults to the current directory.
 
     Returns:
         URLs from which cloning failed.
     """
     # TODO valdate repo_urls
-    util.validate_types(single_branch=(single_branch, bool))
+    util.validate_types(single_branch=(single_branch, bool), cwd=(cwd, str))
     util.validate_non_empty(repo_urls=repo_urls, single_branch=single_branch)
 
     return [
-        exc.url
-        for exc in _batch_execution(_clone_async, repo_urls, single_branch)
+        exc.url for exc in _batch_execution(
+            _clone_async, repo_urls, single_branch, cwd=cwd)
         if isinstance(exc, CloneFailedError)
     ]
 

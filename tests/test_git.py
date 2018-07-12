@@ -81,21 +81,17 @@ def test_insert_token_raises_for_non_https():
     assert 'https://' in str(exc)
 
 
-def test_clone_single_raises_on_type_errors(env_setup):
-    with pytest.raises(TypeError) as exc:
-        git.clone_single(32)
-    assert 'repo_url is of type' in str(exc)
-    assert 'expected str' in str(exc)
-
-    with pytest.raises(TypeError) as exc:
-        git.clone_single('blabla', 8)
-    assert 'single_branch is of type' in str(exc)
-    assert 'expected bool'
-
-    with pytest.raises(TypeError) as exc:
-        git.clone_single('blabla', True, 32)
-    assert 'branch is of type' in str(exc)
-    assert 'expected NoneType or str'
+@pytest.mark.parametrize(
+    'repo_url, single_branch, branch, cwd, type_error_arg',
+    [(32, True, 'master', '.', 'repo_url'),
+     ('some_url', 42, 'master', '.', 'single_branch'),
+     ('some_url', False, 42, '.', 'branch'),
+     ('some_url', True, 'master', 42, 'cwd')])
+def test_clone_single_raises_on_type_errors(env_setup, repo_url, single_branch,
+                                            branch, cwd, type_error_arg):
+    with pytest.raises(TypeError) as exc_info:
+        git.clone_single(repo_url, single_branch, branch, cwd)
+    assert type_error_arg in str(exc_info)
 
 
 def test_clone_single_raises_on_empty_branch(env_setup):
@@ -120,14 +116,14 @@ def test_clone_single_issues_correct_command_with_defaults(env_setup):
         env_setup.expected_url).split()
 
     git.clone_single(URL_TEMPLATE.format(''))
-    git.captured_run.assert_called_once_with(expected_command)
+    git.captured_run.assert_called_once_with(expected_command, cwd='.')
 
 
 def test_clone_single_issues_correct_command_without_single_branch(env_setup):
     expected_command = "git clone {}".format(env_setup.expected_url).split()
 
     git.clone_single(URL_TEMPLATE.format(''), single_branch=False)
-    git.captured_run.assert_called_once_with(expected_command)
+    git.captured_run.assert_called_once_with(expected_command, cwd='.')
 
 
 def test_clone_single_issues_correct_command_with_single_other_branch(
@@ -138,7 +134,21 @@ def test_clone_single_issues_correct_command_with_single_other_branch(
 
     git.clone_single(
         URL_TEMPLATE.format(''), single_branch=True, branch=branch)
-    git.captured_run.assert_called_once_with(expected_command)
+    git.captured_run.assert_called_once_with(expected_command, cwd='.')
+
+
+def test_clone_single_issues_correct_command_with_cwd(env_setup):
+    working_dir = 'some/working/dir'
+    branch = 'other-branch'
+    expected_command = "git clone {} --single-branch -b {}".format(
+        env_setup.expected_url, branch).split()
+
+    git.clone_single(
+        URL_TEMPLATE.format(''),
+        single_branch=True,
+        branch=branch,
+        cwd=working_dir)
+    git.captured_run.assert_called_once_with(expected_command, cwd=working_dir)
 
 
 def test_push_single_raises_on_non_string_args(env_setup):
@@ -307,15 +317,17 @@ def test_push_tries_all_calls_despite_exceptions(env_setup, push_tuples,
 
 def test_clone(env_setup, push_tuples, aio_subproc):
     urls = [pt.repo_url for pt in push_tuples]
+    working_dir = 'some/working/dir'
     expected_subproc_calls = [
         call(
             *"git clone {} --single-branch".format(
                 git._insert_token(url)).split(),
+            cwd=working_dir,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE) for url in urls
     ]
 
-    failed_urls = git.clone(urls)
+    failed_urls = git.clone(urls, cwd=working_dir)
 
     assert not failed_urls
     aio_subproc.create_subprocess.assert_has_calls(expected_subproc_calls)
@@ -326,7 +338,7 @@ def test_clone_tries_all_calls_despite_exceptions(env_setup, push_tuples,
     urls = [pt.repo_url for pt in push_tuples]
     fail_urls = [urls[0], urls[-1]]
 
-    expected_calls = [call(url, True) for url in urls]
+    expected_calls = [call(url, True, cwd='.') for url in urls]
 
     async def raise_(repo_url, *args, **kwargs):
         if repo_url in fail_urls:
