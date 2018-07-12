@@ -29,7 +29,7 @@ daiquiri.setup(
             formatter=daiquiri.formatter.ColorFormatter(
                 fmt="[%(levelname)s] %(message)s")),
         daiquiri.output.File(
-            filename="{}.log".format(__file__),
+            filename="{}.log".format(__package__),
             formatter=daiquiri.formatter.ColorFormatter(
                 fmt="%(asctime)s [PID %(process)d] [%(levelname)s] "
                 "%(name)s -> %(message)s")),

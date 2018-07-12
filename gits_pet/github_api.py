@@ -16,8 +16,10 @@ from gits_pet import util
 
 LOGGER = daiquiri.getLogger(__file__)
 
+
 class APIError(Exception):
     """Raise when something unexpected happens when interacting with the API."""
+
 
 class GitHubAPI:
     """A highly specialized GitHub API class for gits_pet."""
@@ -55,12 +57,12 @@ class GitHubAPI:
             A list of Team namedtuples of the teams corresponding to the keys of
             the member_lists mapping.
         """
-        LOGGER.info("creating teams...")
         teams = self._ensure_teams_exist(
             [team_name for team_name in member_lists.keys()])
 
-        LOGGER.info("adding members to teams...")
-        for team in teams:
+        for team in [
+                team for team in teams if member_lists[team.name]
+        ]:
             self._ensure_members_in_team(team, member_lists[team.name])
 
         return self._api.get_teams_in(set(member_lists.keys()))
