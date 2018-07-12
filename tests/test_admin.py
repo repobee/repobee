@@ -81,14 +81,14 @@ def api_mock(request, mocker):
     return mock
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 def ensure_teams_and_members_mock(api_mock, students):
     api_mock.ensure_teams_and_members.side_effect = lambda member_lists: [api_wrapper.Team(student, [student], id)
                     for id, student
                     in enumerate(students)]
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 def master_urls():
     master_urls = [
         'https://someurl.git', 'https://better_url.git',
@@ -97,12 +97,12 @@ def master_urls():
     return master_urls
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 def master_names(master_urls):
     return [util.repo_name(url) for url in master_urls]
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 def repo_infos(master_urls, students):
     """Students are here used as teams, remember that they have same names as
     students.
@@ -121,12 +121,12 @@ def repo_infos(master_urls, students):
     return repo_infos
 
 
-@pytest.fixture(scope='function')
-def push_tuples(master_urls, students):
+@pytest.fixture
+def push_tuples(master_urls, students, tmpdir):
 
     push_tuples = [
         git.Push(
-            local_path=util.repo_name(url),
+            local_path=os.path.join(tmpdir, util.repo_name(url)),
             repo_url=GENERATE_TEAM_REPO_URL(student, util.repo_name(url)),
             branch='master')
         # note that the order here is significant, must correspond with util.generate_repo_names
@@ -135,7 +135,7 @@ def push_tuples(master_urls, students):
     return push_tuples
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 def push_tuple_lists(master_urls, students):
     """Create an expected push tuple list for each master url."""
     pts = []
@@ -148,9 +148,22 @@ def rmtree_mock(mocker):
     return mocker.patch('shutil.rmtree', autospec=True)
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 def students():
     return list(string.ascii_lowercase)[:10]
+
+
+@pytest.fixture(autouse=True)
+def is_git_repo_mock(mocker):
+    return mocker.patch(
+        'gits_pet.util.is_git_repo', return_value=True, autospec=True)
+
+
+@pytest.fixture(autouse=True)
+def tmpdir_mock(mocker, tmpdir):
+    mock = mocker.patch('tempfile.TemporaryDirectory', autospec=True)
+    mock.return_value.__enter__.return_value = tmpdir
+    return mock
 
 
 def assert_raises_on_duplicate_master_urls(function, master_urls, students):
@@ -189,6 +202,10 @@ RAISES_ON_EMPTY_INVALID_TYPE_IDS = [
 class TestSetupStudentRepos:
     """Tests for setup_student_repos."""
 
+    @pytest.fixture(autouse=True)
+    def is_git_repo_mock(self, mocker):
+        return mocker.patch('gits_pet.util.is_git_repo', return_value=True)
+
     def test_raises_on_duplicate_master_urls(self, mocker, master_urls,
                                              students, api_mock):
         master_urls.append(master_urls[0])
@@ -217,13 +234,10 @@ class TestSetupStudentRepos:
         assert type_error_arg in str(exc_info.value)
 
     def test_happy_path(self, mocker, master_urls, students, api_mock,
-                        git_mock, repo_infos, push_tuples, rmtree_mock,
-                        ensure_teams_and_members_mock):
+                        git_mock, repo_infos, push_tuples,
+                        ensure_teams_and_members_mock, tmpdir):
         """Test that setup_student_repos makes the correct function calls."""
-        expected_clone_calls = [call(url) for url in master_urls]
-        expected_rmtree_calls = [
-            call(util.repo_name(url)) for url in master_urls
-        ]
+        expected_clone_calls = [call(url, cwd=tmpdir) for url in master_urls]
         expected_ensure_teams_arg = {
             student: [student]
             for student in students
@@ -232,7 +246,6 @@ class TestSetupStudentRepos:
         admin.setup_student_repos(master_urls, students, USER, api_mock)
 
         git_mock.clone_single.assert_has_calls(expected_clone_calls)
-        rmtree_mock.assert_has_calls(expected_rmtree_calls)
         api_mock.ensure_teams_and_members.assert_called_once_with(
             expected_ensure_teams_arg)
         api_mock.create_repos.assert_called_once_with(repo_infos)
@@ -293,7 +306,8 @@ class TestUpdateStudentRepos:
             admin.update_student_repos(master_urls, students, USER, api_mock)
 
     def test_does_not_raise_when_some_student_repos_are_not_found(
-            self, api_mock, git_mock, master_urls, master_names, students):
+            self, api_mock, git_mock, master_urls, master_names, students,
+            tmpdir):
         """Test that update_student_repos does not raise if at least
         one student repo is found.
         """
@@ -306,7 +320,7 @@ class TestUpdateStudentRepos:
 
         push_tuples = [
             git.Push(
-                local_path=master_names[1],
+                local_path=os.path.join(tmpdir, master_names[1]),
                 repo_url=GENERATE_TEAM_REPO_URL(students[2], master_names[1]),
                 branch='master')
         ]
@@ -315,18 +329,13 @@ class TestUpdateStudentRepos:
 
         git_mock.push.assert_called_once_with(push_tuples, user=USER)
 
-        
-
     def test_happy_path(self, git_mock, master_urls, students, api_mock,
-                        push_tuples, rmtree_mock):
+                        push_tuples, rmtree_mock, tmpdir):
         """Test that update_student_repos makes the correct function calls.
         
         NOTE: Ignores the git mock.
         """
-        expected_clone_calls = [call(url) for url in master_urls]
-        expected_rmtree_calls = [
-            call(util.repo_name(url)) for url in master_urls
-        ]
+        expected_clone_calls = [call(url, cwd=tmpdir) for url in master_urls]
 
         api_mock.get_repo_urls.side_effect = lambda repo_names: \
             (list(map(GENERATE_REPO_URL, repo_names)), [])
@@ -334,7 +343,6 @@ class TestUpdateStudentRepos:
         admin.update_student_repos(master_urls, students, USER, api_mock)
 
         git_mock.clone_single.assert_has_calls(expected_clone_calls)
-        rmtree_mock.assert_has_calls(expected_rmtree_calls)
         git_mock.push.assert_called_once_with(push_tuples, user=USER)
 
     @pytest.mark.nogitmock
@@ -531,8 +539,8 @@ class TestMigrateRepo:
         assert empty_arg in str(exc_info)
 
     @pytest.mark.nogitmock
-    def test_happy_path(self, mocker, api_mock, rmtree_mock,
-                        ensure_teams_and_members_mock):
+    def test_happy_path(self, mocker, api_mock, ensure_teams_and_members_mock,
+                        tmpdir):
         """Test that the correct calls are made to the api and git.
         
         IMPORTANT: Note that this test ignores the git mock. Be careful.
@@ -544,10 +552,13 @@ class TestMigrateRepo:
         master_names = [util.repo_name(url) for url in master_urls]
         expected_push_urls = [GENERATE_REPO_URL(name) for name in master_names]
         expected_pts = [
-            git.Push(local_path=name, repo_url=url, branch='master')
+            git.Push(
+                local_path=os.path.join(tmpdir, name),
+                repo_url=url,
+                branch='master')
             for name, url in zip(master_names, expected_push_urls)
         ]
-        expected_rmtree_calls = [call(name) for name in master_names]
+        expected_clone_calls = [call(url, cwd=tmpdir) for url in master_urls]
 
         api_mock.create_repos.side_effect = lambda infos: [GENERATE_REPO_URL(info.name) for info in infos]
         git_clone_mock = mocker.patch(
@@ -556,11 +567,9 @@ class TestMigrateRepo:
 
         admin.migrate_repos(master_urls, USER, api_mock)
 
-        for url in master_urls:
-            git_clone_mock.assert_any_call(url)
+        git_clone_mock.assert_has_calls(expected_clone_calls)
         assert api_mock.create_repos.called
         api_mock.ensure_teams_and_members.assert_called_once_with({
             admin.MASTER_TEAM: []
         })
         git_push_mock.assert_called_once_with(expected_pts, user=USER)
-        rmtree_mock.assert_has_calls(expected_rmtree_calls)

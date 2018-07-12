@@ -11,6 +11,7 @@ program.
 
 import shutil
 import os
+import tempfile
 from typing import Iterable, List, Optional
 from collections import namedtuple
 import daiquiri
@@ -37,10 +38,14 @@ def setup_student_repos(master_repo_urls: Iterable[str],
         the team. If a team already exists, it is left as-is. If a student is
         already in its team, nothing happens. If no account exists with the
         specified username, the team is created regardless but no one is added
-        to it.  2. For each master repository, one private student repo is
-        created and added to the corresponding student team. If a repository
-        already exists, it is skipped.  3. Files from the master repos are
-        pushed to the corresponding student repos.
+        to it.
+
+        2. For each master repository, one private student repo is created and
+        added to the corresponding student team. If a repository already
+        exists, it is skipped.
+        
+        3. Files from the master repos are pushed to the corresponding student
+        repos.
 
     Args:
         master_repo_urls: URLs to master repos. Must be in the organization
@@ -55,16 +60,16 @@ def setup_student_repos(master_repo_urls: Iterable[str],
 
     urls = list(master_repo_urls)  # safe copy
 
-    _clone_all(urls)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        LOGGER.info("cloning into master repos ...")
+        master_repo_paths = _clone_all(urls, cwd=tmpdir)
 
-    teams = add_students_to_teams(students, api)
-    repo_urls = _create_student_repos(urls, teams, api)
+        teams = add_students_to_teams(students, api)
+        repo_urls = _create_student_repos(urls, teams, api)
 
-    push_tuples = _create_push_tuples(urls, repo_urls)
-    LOGGER.info("pushing files to student repos ...")
-    git.push(push_tuples, user=user)
-
-    _remove_local_repos(urls)
+        push_tuples = _create_push_tuples(master_repo_paths, repo_urls)
+        LOGGER.info("pushing files to student repos ...")
+        git.push(push_tuples, user=user)
 
 
 def add_students_to_teams(students: Iterable[str],
@@ -107,26 +112,29 @@ def _create_student_repos(master_repo_urls: Iterable[str],
     return repo_urls
 
 
-def _clone_all(urls: Iterable[str]):
-    """Attempts to clone all urls. If any one fails, all successfully cloned
-    repos are removed and the error is propagated. Either all repos are cloned,
-    or none are.
+def _clone_all(urls: Iterable[str], cwd: str):
+    """Attempts to clone all urls. If a repo is already present, it is skipped.
+    If any one clone fails (except for fails because the repo is local),
+    all cloned repos are removed
 
     Args:
         urls: HTTPS urls to git repositories.
+        cwd: Working directory. Use temporary directory for automatic cleanup.
+    Returns:
+        local paths to the cloned repos.
     """
     if len(set(urls)) != len(urls):
         raise ValueError("master_repo_urls contains duplicates")
-    cloned = []
     try:
         for url in urls:
             LOGGER.info("cloning into {}".format(url))
-            git.clone_single(url)
-            cloned.append(url)
+            git.clone_single(url, cwd=cwd)
     except git.CloneFailedError:
         LOGGER.error("error cloning into {}, aborting ...".format(url))
-        _remove_local_repos(cloned)
         raise
+    paths = [os.path.join(cwd, util.repo_name(url)) for url in urls]
+    assert all(map(util.is_git_repo, paths))  # sanity check
+    return paths
 
 
 def update_student_repos(master_repo_urls: Iterable[str],
@@ -166,20 +174,19 @@ def update_student_repos(master_repo_urls: Iterable[str],
     elif not_found:
         LOGGER.warning("Ignoring repos that were not found")
 
-    print(repo_urls)
-    push_tuples = _create_push_tuples(urls, repo_urls)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        LOGGER.info("cloning into master repos ...")
+        master_repo_paths = _clone_all(urls, tmpdir)
 
-    LOGGER.info("cloning into master repos ...")
-    _clone_all(urls)
+        push_tuples = _create_push_tuples(master_repo_paths, repo_urls)
 
-    LOGGER.info("pushing files to student repos ...")
-    failed_urls = git.push(push_tuples, user=user)
+        LOGGER.info("pushing files to student repos ...")
+        failed_urls = git.push(push_tuples, user=user)
 
     if failed_urls and issue:
         LOGGER.info("Opening issue in repos to which push failed")
         _open_issue_by_urls(failed_urls, issue, api)
 
-    _remove_local_repos(urls)
     LOGGER.info("done!")
 
 
@@ -272,7 +279,6 @@ def migrate_repos(master_repo_urls: Iterable[str], user: str,
 
     master_team, *_ = api.ensure_teams_and_members({MASTER_TEAM: []})
 
-    _clone_all(master_repo_urls)
 
     master_names = [util.repo_name(url) for url in master_repo_urls]
 
@@ -283,18 +289,18 @@ def migrate_repos(master_repo_urls: Iterable[str], user: str,
             private=True,
             team_id=master_team.id) for master_name in master_names
     ]
-    repo_urls = api.create_repos(infos)
 
-    git.push(
-        [
-            git.Push(local_path=info.name, repo_url=repo_url, branch='master')
-            for repo_url, info in zip(repo_urls, infos)
-        ],
-        user=user)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        _clone_all(master_repo_urls, cwd=tmpdir)
+        repo_urls = api.create_repos(infos)
 
-    LOGGER.info("removing master repo ...")
-    for info in infos:
-        shutil.rmtree(info.name)
+        git.push(
+            [
+                git.Push(local_path=os.path.join(tmpdir, info.name), repo_url=repo_url, branch='master')
+                for repo_url, info in zip(repo_urls, infos)
+            ],
+            user=user)
+
     LOGGER.info("done!")
 
 
@@ -323,13 +329,13 @@ def _create_repo_infos(urls: Iterable[str],
     return repo_infos
 
 
-def _create_push_tuples(master_urls: Iterable[str],
+def _create_push_tuples(master_repo_paths: Iterable[str],
                         repo_urls: Iterable[str]) -> List[Push]:
     """Create Push namedtuples for all repo urls in repo_urls that share
     repo base name with any of the urls in master_urls.
 
     Args:
-        master_urls: Urls to master repos.
+        master_repo_paths: Local paths to master repos.
         repo_urls: Urls to student repos.
 
     Returns:
@@ -337,17 +343,16 @@ def _create_push_tuples(master_urls: Iterable[str],
         any of the master repo urls.
     """
     push_tuples = []
-    for url in master_urls:
-        repo_base_name = util.repo_name(url)
+    for path in master_repo_paths:
+        repo_base_name = os.path.basename(path)
         push_tuples += [
-            git.Push(
-                local_path=repo_base_name, repo_url=repo_url, branch='master')
+            git.Push(local_path=path, repo_url=repo_url, branch='master')
             for repo_url in repo_urls if repo_url.endswith(repo_base_name)
         ]
     return push_tuples
 
 
-def _remove_local_repos(urls: Iterable[str]) -> None:
+def _remove_cloned_repos(urls: Iterable[str]) -> None:
     LOGGER.info("removing local repos ...")
     for url in urls:
         name = util.repo_name(url)
