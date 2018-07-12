@@ -126,7 +126,7 @@ def push_tuples(master_urls, students, tmpdir):
 
     push_tuples = [
         git.Push(
-            local_path=os.path.join(tmpdir, util.repo_name(url)),
+            local_path=os.path.join(str(tmpdir), util.repo_name(url)),
             repo_url=GENERATE_TEAM_REPO_URL(student, util.repo_name(url)),
             branch='master')
         # note that the order here is significant, must correspond with util.generate_repo_names
@@ -162,7 +162,7 @@ def is_git_repo_mock(mocker):
 @pytest.fixture(autouse=True)
 def tmpdir_mock(mocker, tmpdir):
     mock = mocker.patch('tempfile.TemporaryDirectory', autospec=True)
-    mock.return_value.__enter__.return_value = tmpdir
+    mock.return_value.__enter__.return_value = str(tmpdir)
     return mock
 
 
@@ -237,7 +237,7 @@ class TestSetupStudentRepos:
                         git_mock, repo_infos, push_tuples,
                         ensure_teams_and_members_mock, tmpdir):
         """Test that setup_student_repos makes the correct function calls."""
-        expected_clone_calls = [call(url, cwd=tmpdir) for url in master_urls]
+        expected_clone_calls = [call(url, cwd=str(tmpdir)) for url in master_urls]
         expected_ensure_teams_arg = {
             student: [student]
             for student in students
@@ -320,7 +320,7 @@ class TestUpdateStudentRepos:
 
         push_tuples = [
             git.Push(
-                local_path=os.path.join(tmpdir, master_names[1]),
+                local_path=os.path.join(str(tmpdir), master_names[1]),
                 repo_url=GENERATE_TEAM_REPO_URL(students[2], master_names[1]),
                 branch='master')
         ]
@@ -335,7 +335,7 @@ class TestUpdateStudentRepos:
         
         NOTE: Ignores the git mock.
         """
-        expected_clone_calls = [call(url, cwd=tmpdir) for url in master_urls]
+        expected_clone_calls = [call(url, cwd=str(tmpdir)) for url in master_urls]
 
         api_mock.get_repo_urls.side_effect = lambda repo_names: \
             (list(map(GENERATE_REPO_URL, repo_names)), [])
@@ -553,12 +553,12 @@ class TestMigrateRepo:
         expected_push_urls = [GENERATE_REPO_URL(name) for name in master_names]
         expected_pts = [
             git.Push(
-                local_path=os.path.join(tmpdir, name),
+                local_path=os.path.join(str(tmpdir), name),
                 repo_url=url,
                 branch='master')
             for name, url in zip(master_names, expected_push_urls)
         ]
-        expected_clone_calls = [call(url, cwd=tmpdir) for url in master_urls]
+        expected_clone_calls = [call(url, cwd=str(tmpdir)) for url in master_urls]
 
         api_mock.create_repos.side_effect = lambda infos: [GENERATE_REPO_URL(info.name) for info in infos]
         git_clone_mock = mocker.patch(
