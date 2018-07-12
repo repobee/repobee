@@ -95,3 +95,14 @@ def repo_name(repo_url: str) -> str:
     if repo_name.endswith('.git'):
         return repo_name[:-4]
     return repo_name
+
+def is_git_repo(path: str) -> bool:
+    """Check if a directory has a .git subdirectory.
+    
+    Args:
+        path: Path to a local directory.
+    Returns:
+        True if there is a .git subdirectory in the given directory.
+    """
+    return os.path.isdir(path) and '.git' in os.listdir(path)
+
