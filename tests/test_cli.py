@@ -104,6 +104,58 @@ def empty_students_file():
         yield file
 
 
+class TestBaseParsing:
+    """Test the basic functionality of parsing."""
+
+    def test_raises_on_invalid_org(self, api_class_mock, students_file):
+        """Test that an appropriate error is raised when the organization is
+        not found.
+        """
+
+        def raise_(*args, **kwargs):
+            raise exception.NotFoundError("Couldn't find the organization.")
+
+        api_class_mock.side_effect = raise_
+
+        with pytest.raises(exception.NotFoundError) as exc_info:
+            cli.parse_args([
+                cli.SETUP_PARSER, *COMPLETE_PUSH_ARGS, '-sf',
+                students_file.name
+            ])
+
+        assert "organization {} could not be found".format(ORG_NAME) in str(
+            exc_info)
+
+    def test_raises_on_bad_credentials(self, api_class_mock, students_file):
+        def raise_(*args, **kwargs):
+            raise exception.BadCredentials("bad credentials")
+
+        api_class_mock.side_effect = raise_
+
+        with pytest.raises(exception.BadCredentials) as exc_info:
+            cli.parse_args([
+                cli.SETUP_PARSER, *COMPLETE_PUSH_ARGS, '-sf',
+                students_file.name
+            ])
+
+        assert "bad credentials" in str(exc_info)
+
+    def test_raises_on_invalid_base_url(self, api_class_mock, students_file):
+        def raise_(*args, **kwargs):
+            raise exception.ServiceNotFoundError(
+                "GitHub service could not be found, check the url")
+        api_class_mock.side_effect = raise_
+
+        with pytest.raises(exception.ServiceNotFoundError) as exc_info:
+            cli.parse_args([
+                cli.SETUP_PARSER, *COMPLETE_PUSH_ARGS, '-sf',
+                students_file.name
+            ])
+
+        assert "GitHub service could not be found, check the url" in str(
+            exc_info)
+
+
 class TestStudentParsing:
     """Tests for the parsers that use the `--students` and `--students-file` arguments.
 

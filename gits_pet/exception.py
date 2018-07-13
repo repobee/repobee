@@ -3,35 +3,57 @@ import os
 import sys
 
 
-class ParseError(Exception):
+class GitsPetException(Exception):
+    """Base exception for all gits_pet exceptions."""
+
+    def __init__(self, msg="", *args, **kwargs):
+        super().__init__(self, msg)
+        self.msg = msg
+
+    def __str__(self):
+        return self.msg
+
+    def __repr__(self):
+        return "<{}(msg='{}')>".format(type(self).__name__,str(self.msg))
+
+
+class ParseError(GitsPetException):
     """Raise when something goes wrong in parsing."""
 
 
-class FileError(IOError):
+class FileError(GitsPetException):
     """Raise when reading or writing to a file errors out."""
 
 
-class GitHubError(Exception):
+class GitHubError(GitsPetException):
     """An exception raised when the API responds with an error code."""
 
-    def __init__(self, msg=None, status=None):
+    def __init__(self, msg="", status=None):
+        super().__init__(msg)
         self.status = status
-        super().__init__(self, msg)
 
 
 class NotFoundError(GitHubError):
     """An exception raised when the API responds with a 404."""
 
 
+class ServiceNotFoundError(GitHubError):
+    """Raise if the base url can't be located."""
+
+
+class BadCredentials(GitHubError):
+    """Raise when credentials are rejected."""
+
+
 class UnexpectedException(GitHubError):
     """An exception raised when an API request raises an unexpected exception."""
 
 
-class APIError(Exception):
+class APIError(GitsPetException):
     """Raise when something unexpected happens when interacting with the API."""
 
 
-class GitError(Exception):
+class GitError(GitsPetException):
     """A generic error to raise when a git command exits with a non-zero
     exit status.
     """
@@ -45,9 +67,9 @@ class GitError(Exception):
                     returncode,
                     os.linesep,
                     stderr.decode(encoding=sys.getdefaultencoding()))
+        super().__init__(msg_)
         self.returncode = returncode
         self.stderr = stderr
-        super().__init__(msg_)
 
 
 class CloneFailedError(GitError):

@@ -10,6 +10,7 @@ import contextlib
 import collections
 import re
 from typing import Iterable, Mapping, Optional, List, Generator
+from socket import gaierror
 import daiquiri
 import github
 
@@ -34,14 +35,21 @@ def _try_api_request():
     try:
         yield
     except github.GithubException as e:
+        #LOGGER.error("{}: {}".format(type(e).__name__, str(e)))
         if e.status == 404:
             raise exception.NotFoundError(str(e), status=404)
+        elif e.status == 401:
+            raise exception.BadCredentials(
+                "credentials were rejected, verify that token has correct access.",
+                status=401)
         else:
             raise exception.GitHubError(str(e), status=e.status)
+    except gaierror as e:
+        raise exception.ServiceNotFoundError(
+            "GitHub service could not be found, check the url")
     except Exception as e:
         raise exception.UnexpectedException(
-            "An unexpected exception occured. This is "
-            "probably a bug, please report it.")
+            "a {} occured unexpectedly: {}".format(type(e).__name__, str(e)))
 
 
 class ApiWrapper:

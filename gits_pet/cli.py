@@ -70,8 +70,13 @@ def parse_args(sys_args: Iterable[str]) -> (tuples.Args, github_api.GitHubAPI):
     args = parser.parse_args(sys_args)
 
     # TODO add try/catch here with graceful exit
-    api = github_api.GitHubAPI(args.github_base_url, git.OAUTH_TOKEN,
-                               args.org_name)
+    try:
+        api = github_api.GitHubAPI(args.github_base_url, git.OAUTH_TOKEN,
+                                   args.org_name)
+    except exception.NotFoundError:
+        # more informative message
+        raise exception.NotFoundError(
+            "organization {} could not be found".format(args.org_name))
 
     if 'master_repo_urls' in args and args.master_repo_urls:
         master_urls = args.master_repo_urls
@@ -89,7 +94,8 @@ def parse_args(sys_args: Iterable[str]) -> (tuples.Args, github_api.GitHubAPI):
 
         if len(master_urls) != len(args.master_repo_names):
             # TODO improve error message
-            raise exception.ParseError("Could not find one or more master repos")
+            raise exception.ParseError(
+                "Could not find one or more master repos")
         master_names = args.master_repo_names
     else:
         master_urls = None
@@ -416,9 +422,11 @@ def _extract_students(args: argparse.Namespace) -> List[str]:
         students = args.students
     elif 'students_file' in args and args.students_file:
         if not os.path.isfile(args.students_file):
-            raise exception.FileError("'{}' is not a file".format(args.students_file))
+            raise exception.FileError("'{}' is not a file".format(
+                args.students_file))
         if not os.stat(args.students_file).st_size:
-            raise exception.FileError("'{}' is empty".format(args.students_file))
+            raise exception.FileError("'{}' is empty".format(
+                args.students_file))
         with open(
                 args.students_file, 'r',
                 encoding=sys.getdefaultencoding()) as file:
