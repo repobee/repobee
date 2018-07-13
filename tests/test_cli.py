@@ -11,6 +11,7 @@ import gits_pet
 from gits_pet import cli
 from gits_pet import git
 from gits_pet import tuples
+from gits_pet import exception
 
 USER = 'slarse'
 ORG_NAME = 'test-org'
@@ -157,7 +158,7 @@ class TestStudentParsing:
             parser, *BASE_ARGS, '-sf', empty_students_file.name, *extra_args
         ]
 
-        with pytest.raises(cli.FileError) as exc_info:
+        with pytest.raises(exception.FileError) as exc_info:
             cli.parse_args(sys_args)
 
         assert "is empty" in str(exc_info)
@@ -273,7 +274,7 @@ class TestSetupAndUpdateParsers:
 
         sys_args = [parser, *COMPLETE_PUSH_ARGS, '-s', *STUDENTS]
 
-        with pytest.raises(cli.ParseError) as exc_info:
+        with pytest.raises(exception.ParseError) as exc_info:
             cli.parse_args(sys_args)
         assert "Could not find one or more master repos" in str(exc_info)
 

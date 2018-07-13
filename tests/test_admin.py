@@ -15,6 +15,7 @@ from gits_pet import git
 from gits_pet import api_wrapper
 from gits_pet import tuples
 from gits_pet import util
+from gits_pet import exception
 
 USER = 'slarse'
 ORG_NAME = 'test-org'
@@ -237,7 +238,9 @@ class TestSetupStudentRepos:
                         git_mock, repo_infos, push_tuples,
                         ensure_teams_and_members_mock, tmpdir):
         """Test that setup_student_repos makes the correct function calls."""
-        expected_clone_calls = [call(url, cwd=str(tmpdir)) for url in master_urls]
+        expected_clone_calls = [
+            call(url, cwd=str(tmpdir)) for url in master_urls
+        ]
         expected_ensure_teams_arg = {
             student: [student]
             for student in students
@@ -302,7 +305,7 @@ class TestUpdateStudentRepos:
                     for name in repo_names
                     if name in master_names], [])
 
-        with pytest.raises(github_api.APIError) as exc_info:
+        with pytest.raises(exception.APIError) as exc_info:
             admin.update_student_repos(master_urls, students, USER, api_mock)
 
     def test_does_not_raise_when_some_student_repos_are_not_found(
@@ -335,7 +338,9 @@ class TestUpdateStudentRepos:
         
         NOTE: Ignores the git mock.
         """
-        expected_clone_calls = [call(url, cwd=str(tmpdir)) for url in master_urls]
+        expected_clone_calls = [
+            call(url, cwd=str(tmpdir)) for url in master_urls
+        ]
 
         api_mock.get_repo_urls.side_effect = lambda repo_names: \
             (list(map(GENERATE_REPO_URL, repo_names)), [])
@@ -373,7 +378,7 @@ class TestUpdateStudentRepos:
 
         async def raise_specific(pt, user):
             if pt.repo_url in fail_repo_urls:
-                raise git.PushFailedError("Push failed", 128, b"some error",
+                raise exception.PushFailedError("Push failed", 128, b"some error",
                                           pt.repo_url)
 
         git_push_async_mock = mocker.patch(
@@ -415,7 +420,7 @@ class TestUpdateStudentRepos:
 
         async def raise_specific(pt, branch):
             if pt.repo_url in fail_repo_urls:
-                raise git.PushFailedError("Push failed", 128, b"some error",
+                raise exception.PushFailedError("Push failed", 128, b"some error",
                                           repo_url)
 
         git_push_async_mock = mocker.patch(
@@ -558,7 +563,9 @@ class TestMigrateRepo:
                 branch='master')
             for name, url in zip(master_names, expected_push_urls)
         ]
-        expected_clone_calls = [call(url, cwd=str(tmpdir)) for url in master_urls]
+        expected_clone_calls = [
+            call(url, cwd=str(tmpdir)) for url in master_urls
+        ]
 
         api_mock.create_repos.side_effect = lambda infos: [GENERATE_REPO_URL(info.name) for info in infos]
         git_clone_mock = mocker.patch(

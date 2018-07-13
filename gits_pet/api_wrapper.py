@@ -13,6 +13,8 @@ from typing import Iterable, Mapping, Optional, List, Generator
 import daiquiri
 import github
 
+from gits_pet import exception
+
 LOGGER = daiquiri.getLogger(__file__)
 
 # classes used internally in this module
@@ -26,22 +28,6 @@ RepoInfo = collections.namedtuple(
     'RepoInfo', ('name', 'description', 'private', 'team_id'))
 
 
-class GitHubError(Exception):
-    """An exception raised when the API responds with an error code."""
-
-    def __init__(self, msg=None, status=None):
-        self.status = status
-        super().__init__(self, msg)
-
-
-class NotFoundError(GitHubError):
-    """An exception raised when the API responds with a 404."""
-
-
-class UnexpectedException(GitHubError):
-    """An exception raised when an API request raises an unexpected exception."""
-
-
 @contextlib.contextmanager
 def _try_api_request():
     """Context manager for trying API requests."""
@@ -49,12 +35,13 @@ def _try_api_request():
         yield
     except github.GithubException as e:
         if e.status == 404:
-            raise NotFoundError(str(e), status=404)
+            raise exception.NotFoundError(str(e), status=404)
         else:
-            raise GitHubError(str(e), status=e.status)
+            raise exception.GitHubError(str(e), status=e.status)
     except Exception as e:
-        raise UnexpectedException("An unexpected exception occured. This is "
-                                  "probably a bug, please report it.")
+        raise exception.UnexpectedException(
+            "An unexpected exception occured. This is "
+            "probably a bug, please report it.")
 
 
 class ApiWrapper:
@@ -158,7 +145,8 @@ class ApiWrapper:
         with _try_api_request():
             return self._org.create_team(team_name, permission=permission)
 
-    def get_repos(self, regex: Optional[str] = None) -> Generator[_Repo, None, None]:
+    def get_repos(self,
+                  regex: Optional[str] = None) -> Generator[_Repo, None, None]:
         """Get repo objects for all repositories in the organization. If a
         regex is supplied, only return urls to repos whos names match the
 
@@ -175,7 +163,8 @@ class ApiWrapper:
             else:
                 yield from self._org.get_repos()
 
-    def get_repos_by_name(self, repo_names: Iterable[str]) -> Generator[_Repo, None, None]:
+    def get_repos_by_name(
+            self, repo_names: Iterable[str]) -> Generator[_Repo, None, None]:
         """Get all repos that match any of the names in repo_names. Unmatched
         names are ignored (in both directions).
 

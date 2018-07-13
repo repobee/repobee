@@ -11,6 +11,7 @@ import asyncio
 from typing import Sequence, Tuple, Iterable, List, Any, Callable
 
 from gits_pet import util
+from gits_pet import exception
 
 CONCURRENT_TASKS = 20
 
@@ -21,41 +22,6 @@ Push = collections.namedtuple('Push', ('local_path', 'repo_url', 'branch'))
 OAUTH_TOKEN = os.getenv('GITS_PET_OAUTH')
 if not OAUTH_TOKEN:
     raise OSError('The oauth token is empty!')
-
-
-class GitError(Exception):
-    """A generic error to raise when a git command exits with a non-zero
-    exit status.
-    """
-
-    def __init__(self, msg: str, returncode: int, stderr: bytes):
-        msg_ = ("{}{}"
-                "return code: {}{}"
-                "stderr: {}").format(
-                    msg,
-                    os.linesep,
-                    returncode,
-                    os.linesep,
-                    stderr.decode(encoding=sys.getdefaultencoding()))
-        self.returncode = returncode
-        self.stderr = stderr
-        super().__init__(msg_)
-
-
-class CloneFailedError(GitError):
-    """An error to raise when cloning a repository fails."""
-
-    def __init__(self, msg: str, returncode: int, stderr: bytes, url: str):
-        self.url = url
-        super().__init__(msg, returncode, stderr)
-
-
-class PushFailedError(GitError):
-    """An error to raise when pushing to a remote fails."""
-
-    def __init__(self, msg: str, returncode: int, stderr: bytes, url: str):
-        self.url = url
-        super().__init__(msg, returncode, stderr)
 
 
 def _insert_token(url: str, token: str = OAUTH_TOKEN) -> str:
@@ -132,7 +98,8 @@ def clone_single(repo_url: str,
     rc, _, stderr = captured_run(clone_command, cwd=cwd)
 
     if rc != 0:
-        raise CloneFailedError("Failed to clone", rc, stderr, repo_url)
+        raise exception.CloneFailedError("Failed to clone", rc, stderr,
+                                         repo_url)
 
 
 async def _clone_async(repo_url: str,
@@ -155,7 +122,7 @@ async def _clone_async(repo_url: str,
     _, stderr = await proc.communicate()
 
     if proc.returncode != 0:
-        raise CloneFailedError(
+        raise exception.CloneFailedError(
             "Failed to clone {}".format(repo_url),
             returncode=proc.returncode,
             stderr=stderr,
@@ -183,7 +150,7 @@ def clone(repo_urls: Iterable[str], single_branch: bool = True,
     return [
         exc.url for exc in _batch_execution(
             _clone_async, repo_urls, single_branch, cwd=cwd)
-        if isinstance(exc, CloneFailedError)
+        if isinstance(exc, exception.CloneFailedError)
     ]
 
 
@@ -210,8 +177,9 @@ async def _push_async(pt: Push, user: str):
     _, stderr = await proc.communicate()
 
     if proc.returncode != 0:
-        raise PushFailedError("Failed to push to {}".format(pt.repo_url),
-                              proc.returncode, stderr, pt.repo_url)
+        raise exception.PushFailedError(
+            "Failed to push to {}".format(pt.repo_url), proc.returncode,
+            stderr, pt.repo_url)
     elif b"Everything up-to-date" in stderr:
         LOGGER.info("{} is up-to-date".format(pt.repo_url))
     else:
@@ -254,17 +222,16 @@ def push(push_tuples: Iterable[Push], user: str) -> List[str]:
         user: The username to put in the push.
 
     Returns:
-        urls to which pushes failed with PushFailedError. Other errors are only
+        urls to which pushes failed with exception.PushFailedError. Other errors are only
         logged.
     """
     # TODO valdate push_tuples
     util.validate_types(user=(user, str))
     util.validate_non_empty(push_tuples=push_tuples, user=user)
 
-    # urls can only be extracted from PushFailedErrors
     return [
         exc.url for exc in _batch_execution(_push_async, push_tuples, user)
-        if isinstance(exc, PushFailedError)
+        if isinstance(exc, exception.PushFailedError)
     ]
 
 

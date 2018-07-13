@@ -7,13 +7,14 @@ from collections import namedtuple
 import github
 from gits_pet import github_api
 from gits_pet import api_wrapper
+from gits_pet import exception
 from gits_pet.api_wrapper import RepoInfo
 
 ORG_NAME = "this-is-a-test-org"
 
-NOT_FOUND_EXCEPTION = api_wrapper.NotFoundError(msg=None, status=404)
-VALIDATION_ERROR = api_wrapper.GitHubError(msg=None, status=422)
-SERVER_ERROR = api_wrapper.GitHubError(msg=None, status=500)
+NOT_FOUND_EXCEPTION = exception.NotFoundError(msg=None, status=404)
+VALIDATION_ERROR = exception.GitHubError(msg=None, status=422)
+SERVER_ERROR = exception.GitHubError(msg=None, status=500)
 
 
 @pytest.fixture(scope='function')
@@ -82,11 +83,11 @@ def test_create_repos_raises_on_unexpected_error(repo_infos, api,
     side_effect_runtime_error = [RuntimeError()] + side_effect[1:]
 
     create_repo_mock.side_effect = side_effect_github_exception
-    with pytest.raises(github_api.GitHubError):
+    with pytest.raises(exception.GitHubError):
         api.create_repos(repo_infos)
 
     create_repo_mock.side_effect = side_effect_runtime_error
-    with pytest.raises(github_api.GitHubError):
+    with pytest.raises(exception.GitHubError):
         api.create_repos(repo_infos)
 
 

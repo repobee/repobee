@@ -9,16 +9,12 @@ import re
 from typing import List, Iterable, Mapping
 import daiquiri
 import github
-from gits_pet.api_wrapper import (ApiWrapper, RepoInfo, GitHubError,
-                                  UnexpectedException, Team, _Team, _User,
+from gits_pet.api_wrapper import (ApiWrapper, RepoInfo, Team, _Team, _User,
                                   _Repo)
 from gits_pet import util
+from gits_pet import exception
 
 LOGGER = daiquiri.getLogger(__file__)
-
-
-class APIError(Exception):
-    """Raise when something unexpected happens when interacting with the API."""
 
 
 class GitHubAPI:
@@ -60,9 +56,7 @@ class GitHubAPI:
         teams = self._ensure_teams_exist(
             [team_name for team_name in member_lists.keys()])
 
-        for team in [
-                team for team in teams if member_lists[team.name]
-        ]:
+        for team in [team for team in teams if member_lists[team.name]]:
             self._ensure_members_in_team(team, member_lists[team.name])
 
         return self._api.get_teams_in(set(member_lists.keys()))
@@ -86,9 +80,9 @@ class GitHubAPI:
             try:
                 self._api.create_team(team_name, permission='push')
                 LOGGER.info("created team {}".format(team_name))
-            except GitHubError as exc:
+            except exception.GitHubError as exc:
                 if exc.status != 422:
-                    raise UnexpectedException(str(exc))
+                    raise exception.UnexpectedException(str(exc))
                 LOGGER.info("team {} already exists".format(team_name))
 
         teams = [
@@ -129,9 +123,9 @@ class GitHubAPI:
         try:
             member = self._api.get_user(username)
             self._api.add_to_team(member, team)
-        except GitHubError as exc:
+        except exception.GitHubError as exc:
             if exc.status != 404:
-                raise GitHubError(
+                raise exception.GitHubError(
                     "Got unexpected response code from the GitHub API",
                     status=exc.status)
             LOGGER.warning("user {} does not exist, skipping".format(username))
@@ -151,16 +145,16 @@ class GitHubAPI:
             try:
                 repo_urls.append(self._api.create_repo(info))
                 LOGGER.info("created {}/{}".format(self._org_name, info.name))
-            except GitHubError as exc:
+            except exception.GitHubError as exc:
                 if exc.status != 422:
-                    raise UnexpectedException(
+                    raise exception.UnexpectedException(
                         "Got unexpected response code {} from the GitHub API".
                         format(exc.status))
                 LOGGER.info("{}/{} already exists".format(
                     self._org_name, info.name))
                 repo_urls.append(self._api.get_repo_url(info.name))
             except Exception as exc:
-                raise UnexpectedException(
+                raise exception.UnexpectedException(
                     "An unexpected exception was raised.")
         return repo_urls
 

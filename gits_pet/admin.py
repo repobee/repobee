@@ -19,6 +19,7 @@ from gits_pet import git
 from gits_pet import github_api
 from gits_pet import util
 from gits_pet import tuples
+from gits_pet import exception
 from gits_pet.github_api import GitHubAPI, RepoInfo
 from gits_pet.api_wrapper import Team
 from gits_pet.git import Push
@@ -170,7 +171,7 @@ def update_student_repos(master_repo_urls: Iterable[str],
     if not repo_urls:
         msg = "No student repos corresponding to the master repos were found"
         LOGGER.error(msg)
-        raise github_api.APIError(msg)
+        raise exception.APIError(msg)
     elif not_found:
         LOGGER.warning("Ignoring repos that were not found")
 
@@ -279,7 +280,6 @@ def migrate_repos(master_repo_urls: Iterable[str], user: str,
 
     master_team, *_ = api.ensure_teams_and_members({MASTER_TEAM: []})
 
-
     master_names = [util.repo_name(url) for url in master_repo_urls]
 
     infos = [
@@ -296,7 +296,10 @@ def migrate_repos(master_repo_urls: Iterable[str], user: str,
 
         git.push(
             [
-                git.Push(local_path=os.path.join(tmpdir, info.name), repo_url=repo_url, branch='master')
+                git.Push(
+                    local_path=os.path.join(tmpdir, info.name),
+                    repo_url=repo_url,
+                    branch='master')
                 for repo_url, info in zip(repo_urls, infos)
             ],
             user=user)

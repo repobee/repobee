@@ -9,6 +9,7 @@ from collections import namedtuple
 from conftest import TOKEN
 
 from gits_pet import git
+from gits_pet import exception
 
 URL_TEMPLATE = 'https://{}github.com/slarse/clanim'
 USER = 'slarse'
@@ -100,7 +101,7 @@ def test_clone_single_raises_on_non_zero_exit_from_git_clone(
     # already patched in env_setup fixture
     git.captured_run.return_value = (1, '', stderr)
 
-    with pytest.raises(git.CloneFailedError) as exc:
+    with pytest.raises(exception.CloneFailedError) as exc:
         git.clone_single("{}".format(URL_TEMPLATE.format('')))
     assert "Failed to clone" in str(exc.value)
 
@@ -195,12 +196,12 @@ def test_push_single_raises_on_async_push_exception(env_setup, mocker):
     url = 'some_url'
 
     async def raise_(pt, branch):
-        raise git.PushFailedError("Push failed", 128, b"some error",
-                                  pt.repo_url)
+        raise exception.PushFailedError("Push failed", 128, b"some error",
+                                        pt.repo_url)
 
     mocker.patch('gits_pet.git._push_async', side_effect=raise_)
 
-    with pytest.raises(git.PushFailedError) as exc_info:
+    with pytest.raises(exception.PushFailedError) as exc_info:
         git.push_single('some_repo', USER, url)
 
     assert exc_info.value.url == url
@@ -247,7 +248,7 @@ def test_push_single_raises_on_non_zero_exit_from_git_push(
         env_setup, aio_subproc):
     aio_subproc.process.returncode = 128
 
-    with pytest.raises(git.PushFailedError) as exc:
+    with pytest.raises(exception.PushFailedError) as exc:
         git.push_single(
             'some_repo', user='some_user', repo_url='https://some_url.org')
 
@@ -297,8 +298,8 @@ def test_push_tries_all_calls_despite_exceptions(env_setup, push_tuples,
     expected_calls = [call(pt, USER) for pt in push_tuples]
 
     async def raise_(pt, user):
-        raise git.PushFailedError("Push failed", 128, b"some error",
-                                  pt.repo_url)
+        raise exception.PushFailedError("Push failed", 128, b"some error",
+                                        pt.repo_url)
 
     mocker.patch('gits_pet.git._push_async', side_effect=raise_)
     expected_failed_urls = [pt.repo_url for pt in push_tuples]
@@ -336,7 +337,7 @@ def test_clone_tries_all_calls_despite_exceptions(env_setup, push_tuples,
 
     async def raise_(repo_url, *args, **kwargs):
         if repo_url in fail_urls:
-            raise git.CloneFailedError(
+            raise exception.CloneFailedError(
                 "Some error",
                 returncode=128,
                 stderr=b"Something",

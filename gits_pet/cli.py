@@ -21,6 +21,7 @@ from gits_pet import github_api
 from gits_pet import git
 from gits_pet import util
 from gits_pet import tuples
+from gits_pet import exception
 
 daiquiri.setup(
     level=logging.INFO,
@@ -53,14 +54,6 @@ DEFAULT_CONFIG_FILE = "{}/config.cnf".format(CONFIG_DIR)
 # arguments that can be configured via config file
 CONFIGURABLE_ARGS = set(('user', 'org_name', 'github_base_url',
                          'students_file'))
-
-
-class ParseError(Exception):
-    """Raise when something goes wrong in parsing."""
-
-
-class FileError(IOError):
-    """Raise when reading or writing to a file errors out."""
 
 
 def parse_args(sys_args: Iterable[str]) -> (tuples.Args, github_api.GitHubAPI):
@@ -96,7 +89,7 @@ def parse_args(sys_args: Iterable[str]) -> (tuples.Args, github_api.GitHubAPI):
 
         if len(master_urls) != len(args.master_repo_names):
             # TODO improve error message
-            raise ParseError("Could not find one or more master repos")
+            raise exception.ParseError("Could not find one or more master repos")
         master_names = args.master_repo_names
     else:
         master_urls = None
@@ -423,9 +416,9 @@ def _extract_students(args: argparse.Namespace) -> List[str]:
         students = args.students
     elif 'students_file' in args and args.students_file:
         if not os.path.isfile(args.students_file):
-            raise FileError("'{}' is not a file".format(args.students_file))
+            raise exception.FileError("'{}' is not a file".format(args.students_file))
         if not os.stat(args.students_file).st_size:
-            raise FileError("'{}' is empty".format(args.students_file))
+            raise exception.FileError("'{}' is empty".format(args.students_file))
         with open(
                 args.students_file, 'r',
                 encoding=sys.getdefaultencoding()) as file:
