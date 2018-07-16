@@ -224,37 +224,22 @@ def _add_issue_parsers(base_parsers, subparsers):
 
 
 def _create_parser():
-    configured_defaults = _get_configured_defaults()
-    if configured_defaults:
-        LOGGER.info("config file defaults:\n{}".format("\n   ".join([""] + [
-            "{}: {}".format(key, value)
-            for key, value in configured_defaults.items()
-            if key in CONFIGURABLE_ARGS
-        ] + [""])))
-    else:
-        LOGGER.info(
-            "no config file found. Expected config file location: {}".format(
-                DEFAULT_CONFIG_FILE))
-    default = lambda arg_name: configured_defaults[arg_name] if arg_name in configured_defaults else None
+    """Create the parser. 
+    """
 
-    is_required = lambda arg_name: True if arg_name not in configured_defaults else False
+    parser = argparse.ArgumentParser(
+        prog='gits_pet',
+        description='A CLI tool for administrating student repositories.')
+    _add_subparsers(parser)
+    return parser
 
-    base_parser = argparse.ArgumentParser(add_help=False)
-    base_parser.add_argument(
-        '-o',
-        '--org-name',
-        help="Name of the organization to which repos should be added.",
-        type=str,
-        required=is_required('org_name'),
-        default=default('org_name'))
-    base_parser.add_argument(
-        '-g',
-        '--github-base-url',
-        help=
-        "Base url to a GitHub v3 API. For enterprise, this is `https://<HOST>/api/v3",
-        type=str,
-        required=is_required('github_base_url'),
-        default=default('github_base_url'))
+
+def _add_subparsers(parser):
+    """Add all of the subparsers to the parser. Note that the parsers prefixed
+    with `base_` do not have any parent parsers, so any parser inheriting from
+    them must also inherit from the required `base_parser` (unless it is a
+    `base_` prefixed parser, of course)."""
+    base_parser, base_student_parser, base_push_parser = _create_base_parsers()
 
     repo_name_parser = argparse.ArgumentParser(
         add_help=False, parents=[base_parser])
@@ -267,40 +252,6 @@ def _create_parser():
         type=str,
         required=True,
         nargs='+')
-
-    # base parser for when student lists are involved
-    base_student_parser = argparse.ArgumentParser(add_help=False)
-    students = base_student_parser.add_mutually_exclusive_group(
-        required=is_required('students_file'))
-    students.add_argument(
-        '-sf',
-        '--students-file',
-        help="Path to a list of student usernames.",
-        type=str,
-        default=default('students_file'))
-    students.add_argument(
-        '-s',
-        '--students',
-        help='One or more whitespace separated student usernames.',
-        type=str,
-        nargs='+')
-
-    # base parser for when files need to be pushed
-    base_push_parser = argparse.ArgumentParser(add_help=False)
-
-    # the username is required for any pushing
-    base_push_parser.add_argument(
-        '-u',
-        '--user',
-        help=
-        "Your GitHub username. Needed for pushing without CLI interaction.",
-        type=str,
-        required=is_required('user'),
-        default=default('user'))
-
-    parser = argparse.ArgumentParser(
-        prog='gits_pet',
-        description='A CLI tool for administrating student repositories')
 
     subparsers = parser.add_subparsers(dest=SUB)
     subparsers.required = True
@@ -393,7 +344,61 @@ def _create_parser():
 
     _add_issue_parsers([base_student_parser, repo_name_parser], subparsers)
 
-    return parser
+
+def _create_base_parsers():
+    """Create the base parsers."""
+    configured_defaults = _get_configured_defaults()
+    default = lambda arg_name: configured_defaults[arg_name] if arg_name in configured_defaults else None
+    is_required = lambda arg_name: True if arg_name not in configured_defaults else False
+
+    base_parser = argparse.ArgumentParser(add_help=False)
+    base_parser.add_argument(
+        '-o',
+        '--org-name',
+        help="Name of the organization to which repos should be added.",
+        type=str,
+        required=is_required('org_name'),
+        default=default('org_name'))
+    base_parser.add_argument(
+        '-g',
+        '--github-base-url',
+        help=
+        "Base url to a GitHub v3 API. For enterprise, this is `https://<HOST>/api/v3",
+        type=str,
+        required=is_required('github_base_url'),
+        default=default('github_base_url'))
+
+    # base parser for when student lists are involved
+    base_student_parser = argparse.ArgumentParser(add_help=False)
+    students = base_student_parser.add_mutually_exclusive_group(
+        required=is_required('students_file'))
+    students.add_argument(
+        '-sf',
+        '--students-file',
+        help="Path to a list of student usernames.",
+        type=str,
+        default=default('students_file'))
+    students.add_argument(
+        '-s',
+        '--students',
+        help='One or more whitespace separated student usernames.',
+        type=str,
+        nargs='+')
+
+    # base parser for when files need to be pushed
+    base_push_parser = argparse.ArgumentParser(add_help=False)
+
+    # the username is required for any pushing
+    base_push_parser.add_argument(
+        '-u',
+        '--user',
+        help=
+        "Your GitHub username. Needed for pushing without CLI interaction.",
+        type=str,
+        required=is_required('user'),
+        default=default('user'))
+
+    return base_parser, base_student_parser, base_push_parser
 
 
 def _get_configured_defaults(config_file=DEFAULT_CONFIG_FILE):
@@ -402,6 +407,18 @@ def _get_configured_defaults(config_file=DEFAULT_CONFIG_FILE):
     if configured - CONFIGURABLE_ARGS:  # there are surpluss arguments
         raise ValueError("Config contains invalid keys: {}".format(
             ", ".join(configured - CONFIGURABLE_ARGS)))
+
+    # following is logging only
+    if config:
+        LOGGER.info("config file defaults:\n{}".format("\n   ".join([""] + [
+            "{}: {}".format(key, value) for key, value in config.items()
+            if key in CONFIGURABLE_ARGS
+        ] + [""])))
+    else:
+        LOGGER.info(
+            "no config file found. Expected config file location: {}".format(
+                DEFAULT_CONFIG_FILE))
+
     return config
 
 
