@@ -12,6 +12,7 @@ from gits_pet import cli
 from gits_pet import git
 from gits_pet import tuples
 from gits_pet import exception
+from gits_pet.api_wrapper import Team
 
 USER = 'slarse'
 ORG_NAME = 'test-org'
@@ -24,6 +25,7 @@ ISSUE = tuples.Issue(title="Best title", body="This is the body of the issue.")
 GENERATE_REPO_URL = lambda repo_name:\
         "https://some_enterprise_host/{}/{}".format(ORG_NAME, repo_name)
 REPO_NAMES = ('week-1', 'week-2', 'week-3')
+REPO_URLS = tuple(map(GENERATE_REPO_URL, REPO_NAMES))
 
 BASE_ARGS = ['-g', GITHUB_BASE_URL, '-o', ORG_NAME]
 BASE_PUSH_ARGS = ['-u', USER, '-mn', *REPO_NAMES]
@@ -34,6 +36,8 @@ COMPLETE_PUSH_ARGS = [*BASE_ARGS, *BASE_PUSH_ARGS]
 def api_instance_mock(mocker):
     instance_mock = MagicMock(spec=gits_pet.github_api.GitHubAPI)
     instance_mock.get_repo_urls.side_effect = lambda repo_names: (list(map(GENERATE_REPO_URL, repo_names)), [])
+    instance_mock.ensure_teams_and_members.side_effect = lambda team_dict:\
+            [Team(name, members, id=0) for name, members in team_dict.items()]
     return instance_mock
 
 
@@ -44,9 +48,9 @@ def api_class_mock(mocker, api_instance_mock):
     return class_mock
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def admin_mock(mocker):
-    return mocker.patch('gits_pet.admin', autospec=True)
+    return mocker.patch('gits_pet.cli.admin', autospec=True)
 
 
 @pytest.fixture(autouse=True)
@@ -57,7 +61,7 @@ def isfile_mock(request, mocker):
     return mocker.patch('os.path.isfile', autospec=True, side_effect=isfile)
 
 
-@pytest.fixture()
+@pytest.fixture
 def read_issue_mock(mocker):
     """Mock util.read_issue that only accepts ISSUE_PATH as a valid file."""
 
@@ -68,6 +72,11 @@ def read_issue_mock(mocker):
 
     return mocker.patch(
         'gits_pet.util.read_issue', autospec=True, side_effect=read_issue)
+
+
+@pytest.fixture
+def git_mock(mocker):
+    return mocker.patch('gits_pet.git', autospec=True)
 
 
 @contextmanager
@@ -92,16 +101,88 @@ def _students_file(populate: bool = True):
         yield file
 
 
-@pytest.fixture()
+@pytest.fixture
 def students_file():
     with _students_file() as file:
         yield file
 
 
-@pytest.fixture()
+@pytest.fixture
 def empty_students_file():
     with _students_file(populate=False) as file:
         yield file
+
+
+@pytest.fixture(
+    scope='function',
+    params=[
+        cli.SETUP_PARSER, cli.UPDATE_PARSER, cli.CLONE_PARSER,
+        cli.MIGRATE_PARSER, cli.ADD_TO_TEAMS_PARSER, cli.OPEN_ISSUE_PARSER,
+        cli.CLOSE_ISSUE_PARSER
+    ])
+def parsed_args_all_subparsers(request):
+    """Parametrized fixture which returns a tuples.Args for each of the
+    subparsers. These arguments are valid for all subparsers, even though
+    many will only use some of the arguments.
+    """
+    return tuples.Args(
+        subparser=request.param,
+        org_name=ORG_NAME,
+        github_base_url=GITHUB_BASE_URL,
+        user=USER,
+        master_repo_urls=REPO_URLS,
+        master_repo_names=REPO_NAMES,
+        students=STUDENTS,
+        issue=ISSUE,
+        title_regex="some regex")
+
+
+@pytest.fixture(
+    scope='function',
+    params=[
+        exception.PushFailedError('some message', 128, b'error', 'someurl'),
+        exception.CloneFailedError('some message', 128, b'error', 'someurl'),
+        exception.GitError('some message', 128, b'error'),
+        exception.APIError('some message')
+    ])
+def admin_all_raise_mock(admin_mock, request):
+    """Mock of gits_pet.admin where all functions raise expected exceptions
+    (i.e. those caught in _sys_exit_on_expected_error)
+    """
+
+    def raise_(*args, **kwargs):
+        raise request.param
+
+    admin_mock.add_students_to_teams.side_effect = raise_
+    admin_mock.setup_student_repos.side_effect = raise_
+    admin_mock.update_student_repos.side_effect = raise_
+    admin_mock.open_issue.side_effect = raise_
+    admin_mock.close_issue.side_effect = raise_
+    admin_mock.migrate_repos.side_effect = raise_
+    admin_mock.clone_repos.side_effect = raise_
+    return admin_mock
+
+
+class TestHandleParsedArgs:
+    """Test the handling of parsed arguments."""
+
+    def test_no_crash_on_valid_args(self, parsed_args_all_subparsers,
+                                    api_instance_mock, admin_mock):
+        """Test that valid arguments does not result in crash. Only validates
+        that there are no crashes, does not validate any other behavior!"""
+        cli.handle_parsed_args(parsed_args_all_subparsers, api_instance_mock)
+
+    @pytest.mark.parametrize('expected_exception', [
+        exception.PushFailedError, exception.CloneFailedError,
+        exception.GitError, exception.APIError
+    ])
+    def test_expected_exception_results_in_system_exit(
+            self, parsed_args_all_subparsers, api_instance_mock,
+            admin_all_raise_mock, expected_exception):
+        """Test that any of the expected exceptions results in SystemExit."""
+        with pytest.raises(SystemExit) as exc_info:
+            cli.handle_parsed_args(parsed_args_all_subparsers,
+                                   api_instance_mock)
 
 
 class TestBaseParsing:
@@ -144,6 +225,7 @@ class TestBaseParsing:
         def raise_(*args, **kwargs):
             raise exception.ServiceNotFoundError(
                 "GitHub service could not be found, check the url")
+
         api_class_mock.side_effect = raise_
 
         with pytest.raises(exception.ServiceNotFoundError) as exc_info:
