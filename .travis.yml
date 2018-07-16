@@ -1,7 +1,12 @@
 language: python
-python:
-- '3.5'
-- '3.6'
+
+matrix:
+    include:
+        - python: 3.5
+        - python: 3.6
+        - python: 3.7
+          dist: xenial
+          sudo: true
 install: pip install -r requirements.test.txt && pip install -e .
 script: pytest --cov=gits_pet
 after_success:
