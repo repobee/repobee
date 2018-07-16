@@ -15,16 +15,15 @@ from gits_pet import exception
 from gits_pet import config
 from gits_pet.api_wrapper import Team
 
-USER = 'slarse'
-ORG_NAME = 'test-org'
-GITHUB_BASE_URL = 'https://some_enterprise_host/api/v3'
-STUDENTS = tuple(string.ascii_lowercase)
-ISSUE_PATH = 'some/issue/path'
-ISSUE = tuples.Issue(title="Best title", body="This is the body of the issue.")
+USER = pytest.constants.USER
+ORG_NAME = pytest.constants.ORG_NAME
+GITHUB_BASE_URL = pytest.constants.GITHUB_BASE_URL
+STUDENTS = pytest.constants.STUDENTS
+ISSUE_PATH = pytest.constants.ISSUE_PATH
+ISSUE = pytest.constants.ISSUE
 
 
-GENERATE_REPO_URL = lambda repo_name:\
-        "https://some_enterprise_host/{}/{}".format(ORG_NAME, repo_name)
+GENERATE_REPO_URL = pytest.functions.GENERATE_REPO_URL
 REPO_NAMES = ('week-1', 'week-2', 'week-3')
 REPO_URLS = tuple(map(GENERATE_REPO_URL, REPO_NAMES))
 
@@ -327,32 +326,6 @@ def assert_base_push_args(parsed_args, api):
     assert parsed_args.master_repo_urls == list(
         map(GENERATE_REPO_URL, REPO_NAMES))
     api.assert_called_once_with(GITHUB_BASE_URL, git.OAUTH_TOKEN, ORG_NAME)
-
-
-@pytest.fixture
-def config_mock(mocker, isfile_mock, students_file):
-    with tempfile.TemporaryDirectory() as tmpdir:
-        with tempfile.NamedTemporaryFile(
-                mode="w",
-                encoding=sys.getdefaultencoding(),
-                dir=tmpdir,
-                delete=False) as file:
-            isfile = isfile_mock.side_effect
-            isfile_mock.side_effect = lambda path: isfile(path) or str(path) == file.name
-            file.write(
-                os.linesep.join([
-                    "[DEFAULTS]",
-                    "github_base_url = {}".format(GITHUB_BASE_URL),
-                    "user = {}".format(USER), "org_name = {}".format(ORG_NAME),
-                    "students_file = {}".format(students_file.name)
-                ]))
-            file.flush()
-
-        read_config = gits_pet.config._read_config
-        mocker.patch(
-            'gits_pet.config._read_config',
-            side_effect=lambda _: read_config(pathlib.Path(file.name)))
-        yield file
 
 
 def assert_config_args(parser, parsed_args):
