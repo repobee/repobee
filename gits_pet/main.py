@@ -1,9 +1,17 @@
 import sys
 import daiquiri
-from gits_pet import cli
-from gits_pet import exception
 
 LOGGER = daiquiri.getLogger(__file__)
+
+# if the OAUTH token is not set, OSError is raised
+try:
+    from gits_pet import cli
+except OSError as exc:
+    LOGGER.error(str(exc))
+    raise SystemExit("Exited because of empty OAUTH token. Set the environment "
+            "variable GITS_PET_OAUTH with the value of the token.")
+
+from gits_pet import exception
 
 
 def main():
