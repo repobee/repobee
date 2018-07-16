@@ -22,6 +22,7 @@ from gits_pet import git
 from gits_pet import util
 from gits_pet import tuples
 from gits_pet import exception
+from gits_pet import config
 
 daiquiri.setup(
     level=logging.INFO,
@@ -45,15 +46,6 @@ MIGRATE_PARSER = 'migrate'
 ADD_TO_TEAMS_PARSER = 'add-to-teams'
 OPEN_ISSUE_PARSER = 'open-issue'
 CLOSE_ISSUE_PARSER = 'close-issue'
-
-CONFIG_DIR = appdirs.user_config_dir(
-    appname=__package__, appauthor=gits_pet.__author__)
-
-DEFAULT_CONFIG_FILE = "{}/config.cnf".format(CONFIG_DIR)
-
-# arguments that can be configured via config file
-CONFIGURABLE_ARGS = set(('user', 'org_name', 'github_base_url',
-                         'students_file'))
 
 
 def _connect_to_api(github_base_url: str, token: str,
@@ -138,8 +130,9 @@ def parse_args(sys_args: Iterable[str]) -> (tuples.Args, github_api.GitHubAPI):
 
 
 def handle_parsed_args(args: tuples.Args, api: github_api.GitHubAPI):
-    """Handles parsed CLI arguments and dispatches commands to the appropriate
-    functions.
+    """Handle parsed CLI arguments and dispatch commands to the appropriate
+    functions. Expected exceptions are caught and turned into SystemExit
+    exceptions, while unexpected exceptions are allowed to propagate.
 
     Args:
         args: A namedtuple containing parsed command line arguments.
@@ -176,13 +169,6 @@ def handle_parsed_args(args: tuples.Args, api: github_api.GitHubAPI):
     else:
         raise ValueError("Illegal value for subparser: {}".format(
             args.subparser))
-
-
-def _read_config(config_file=DEFAULT_CONFIG_FILE):
-    config_parser = configparser.ConfigParser()
-    if os.path.isfile(config_file):
-        config_parser.read(config_file)
-    return config_parser["DEFAULT"]
 
 
 def _add_issue_parsers(base_parsers, subparsers):
@@ -347,7 +333,7 @@ def _add_subparsers(parser):
 
 def _create_base_parsers():
     """Create the base parsers."""
-    configured_defaults = _get_configured_defaults()
+    configured_defaults = config.get_configured_defaults()
     default = lambda arg_name: configured_defaults[arg_name] if arg_name in configured_defaults else None
     is_required = lambda arg_name: True if arg_name not in configured_defaults else False
 
@@ -401,27 +387,6 @@ def _create_base_parsers():
     return base_parser, base_student_parser, base_push_parser
 
 
-def _get_configured_defaults(config_file=DEFAULT_CONFIG_FILE):
-    config = _read_config(config_file)
-    configured = config.keys()
-    if configured - CONFIGURABLE_ARGS:  # there are surpluss arguments
-        raise ValueError("Config contains invalid keys: {}".format(
-            ", ".join(configured - CONFIGURABLE_ARGS)))
-
-    # following is logging only
-    if config:
-        LOGGER.info("config file defaults:\n{}".format("\n   ".join([""] + [
-            "{}: {}".format(key, value) for key, value in config.items()
-            if key in CONFIGURABLE_ARGS
-        ] + [""])))
-    else:
-        LOGGER.info(
-            "no config file found. Expected config file location: {}".format(
-                DEFAULT_CONFIG_FILE))
-
-    return config
-
-
 @contextmanager
 def _sys_exit_on_expected_error():
     """Expect either git.GitError or github_api.APIError."""
@@ -458,16 +423,18 @@ def _extract_students(args: argparse.Namespace) -> List[str]:
     if 'students' in args and args.students:
         students = args.students
     elif 'students_file' in args and args.students_file:
-        if not os.path.isfile(args.students_file):
-            raise exception.FileError("'{}' is not a file".format(
-                args.students_file))
-        if not os.stat(args.students_file).st_size:
-            raise exception.FileError("'{}' is empty".format(
-                args.students_file))
-        with open(
-                args.students_file, 'r',
-                encoding=sys.getdefaultencoding()) as file:
-            students = [student.strip() for student in file]
+        students_file = pathlib.Path(args.students_file)
+        students_file.resolve()
+        if not students_file.is_file():
+            raise exception.FileError(
+                "'{!s}' is not a file".format(students_file))
+        if not students_file.stat().st_size:
+            raise exception.FileError("'{!s}' is empty".format(students_file))
+        students = [
+            student.strip() for student in students_file.read_text(
+                encoding=sys.getdefaultencoding()).split(os.linesep)
+            if student  # skip blank lines
+        ]
     else:
         students = None
 

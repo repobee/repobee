@@ -12,6 +12,7 @@ from gits_pet import cli
 from gits_pet import git
 from gits_pet import tuples
 from gits_pet import exception
+from gits_pet import config
 from gits_pet.api_wrapper import Team
 
 USER = 'slarse'
@@ -57,8 +58,9 @@ def admin_mock(mocker):
 def isfile_mock(request, mocker):
     if 'noisfilemock' in request.keywords:
         return
-    isfile = lambda path: path != cli.DEFAULT_CONFIG_FILE
-    return mocker.patch('os.path.isfile', autospec=True, side_effect=isfile)
+    isfile = lambda path: path != config.DEFAULT_CONFIG_FILE
+    return mocker.patch(
+        'pathlib.Path.is_file', autospec=True, side_effect=isfile)
 
 
 @pytest.fixture
@@ -66,6 +68,8 @@ def read_issue_mock(mocker):
     """Mock util.read_issue that only accepts ISSUE_PATH as a valid file."""
 
     def read_issue(path):
+        # note that this assumes that strings are passed, and not pathlib.Path
+        # works just as well for mock testing
         if path != ISSUE_PATH:
             raise ValueError("not a file")
         return ISSUE
@@ -334,20 +338,20 @@ def config_mock(mocker, isfile_mock, students_file):
                 dir=tmpdir,
                 delete=False) as file:
             isfile = isfile_mock.side_effect
-            isfile_mock.side_effect = lambda path: isfile(path) or path == file.name
+            isfile_mock.side_effect = lambda path: isfile(path) or str(path) == file.name
             file.write(
                 os.linesep.join([
-                    "[DEFAULT]",
+                    "[DEFAULTS]",
                     "github_base_url = {}".format(GITHUB_BASE_URL),
                     "user = {}".format(USER), "org_name = {}".format(ORG_NAME),
                     "students_file = {}".format(students_file.name)
                 ]))
             file.flush()
 
-        read_config = gits_pet.cli._read_config
+        read_config = gits_pet.config._read_config
         mocker.patch(
-            'gits_pet.cli._read_config',
-            side_effect=lambda _: read_config(file.name))
+            'gits_pet.config._read_config',
+            side_effect=lambda _: read_config(pathlib.Path(file.name)))
         yield file
 
 
