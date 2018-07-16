@@ -86,7 +86,7 @@ something like this:
 
 .. code-block:: bash
 
-    [DEFAULT]
+    [DEFAULTS]
     github_base_url = https://some-api-v3-url
     user = YOUR_USERNAME
     org_name = ORGANIZATION_NAME
