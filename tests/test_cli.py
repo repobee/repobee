@@ -22,7 +22,6 @@ STUDENTS = pytest.constants.STUDENTS
 ISSUE_PATH = pytest.constants.ISSUE_PATH
 ISSUE = pytest.constants.ISSUE
 
-
 GENERATE_REPO_URL = pytest.functions.GENERATE_REPO_URL
 REPO_NAMES = ('week-1', 'week-2', 'week-3')
 REPO_URLS = tuple(map(GENERATE_REPO_URL, REPO_NAMES))
@@ -53,15 +52,6 @@ def admin_mock(mocker):
     return mocker.patch('gits_pet.cli.admin', autospec=True)
 
 
-@pytest.fixture(autouse=True)
-def isfile_mock(request, mocker):
-    if 'noisfilemock' in request.keywords:
-        return
-    isfile = lambda path: path != config.DEFAULT_CONFIG_FILE
-    return mocker.patch(
-        'pathlib.Path.is_file', autospec=True, side_effect=isfile)
-
-
 @pytest.fixture
 def read_issue_mock(mocker):
     """Mock util.read_issue that only accepts ISSUE_PATH as a valid file."""
@@ -82,38 +72,6 @@ def git_mock(mocker):
     return mocker.patch('gits_pet.git', autospec=True)
 
 
-@contextmanager
-def _students_file(populate: bool = True):
-    """A contextmanager that yields a student file. The file is populated
-    with the STUDENTS tuple by default, with one element on each line.
-
-    Args:
-        populate: If true, the file is populated with the students in the
-        STUDENTS tuple.
-    """
-    with tempfile.TemporaryDirectory() as tmpdir:
-        with tempfile.NamedTemporaryFile(
-                mode="w",
-                encoding=sys.getdefaultencoding(),
-                dir=tmpdir,
-                delete=False) as file:
-            if populate:
-                file.writelines(
-                    "{}{}".format(student, os.linesep) for student in STUDENTS)
-                file.flush()
-        yield file
-
-
-@pytest.fixture
-def students_file():
-    with _students_file() as file:
-        yield file
-
-
-@pytest.fixture
-def empty_students_file():
-    with _students_file(populate=False) as file:
-        yield file
 
 
 @pytest.fixture(
