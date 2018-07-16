@@ -130,7 +130,7 @@ def _clone_all(urls: Iterable[str], cwd: str):
         for url in urls:
             LOGGER.info("cloning into {}".format(url))
             git.clone_single(url, cwd=cwd)
-    except git.CloneFailedError:
+    except exception.CloneFailedError:
         LOGGER.error("error cloning into {}, aborting ...".format(url))
         raise
     paths = [os.path.join(cwd, util.repo_name(url)) for url in urls]

@@ -410,20 +410,20 @@ def _sys_exit_on_expected_error():
     """Expect either git.GitError or github_api.APIError."""
     try:
         yield
-    except git.PushFailedError as exc:
+    except exception.PushFailedError as exc:
         LOGGER.error(
             "There was an error pushing to {}. Verify that your token has adequate access.".
             format(exc.url))
         sys.exit(1)
-    except git.CloneFailedError as exc:
+    except exception.CloneFailedError as exc:
         LOGGER.error(
             "There was an error cloning from {}. Does the repo really exist?".
             format(exc.url))
         sys.exit(1)
-    except git.GitError as exc:
+    except exception.GitError as exc:
         LOGGER.error("Something went wrong with git. See the logs for info.")
         sys.exit(1)
-    except github_api.APIError as exc:
+    except exception.APIError as exc:
         LOGGER.error("Exiting beacuse of {.__class__.__name__}".format(exc))
         sys.exit(1)
 
