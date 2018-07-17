@@ -162,7 +162,7 @@ class TestBaseParsing:
         with pytest.raises(exception.NotFoundError) as exc_info:
             cli.parse_args([
                 cli.SETUP_PARSER, *COMPLETE_PUSH_ARGS, '-sf',
-                students_file.name
+                str(students_file)
             ])
 
         assert "organization {} could not be found".format(ORG_NAME) in str(
@@ -177,7 +177,7 @@ class TestBaseParsing:
         with pytest.raises(exception.BadCredentials) as exc_info:
             cli.parse_args([
                 cli.SETUP_PARSER, *COMPLETE_PUSH_ARGS, '-sf',
-                students_file.name
+                str(students_file)
             ])
 
         assert "bad credentials" in str(exc_info)
@@ -192,7 +192,7 @@ class TestBaseParsing:
         with pytest.raises(exception.ServiceNotFoundError) as exc_info:
             cli.parse_args([
                 cli.SETUP_PARSER, *COMPLETE_PUSH_ARGS, '-sf',
-                students_file.name
+                str(students_file)
             ])
 
         assert "GitHub service could not be found, check the url" in str(
@@ -239,7 +239,8 @@ class TestStudentParsing:
         """Test that the different subparsers read students correctly from
         file.
         """
-        sys_args = [parser, *BASE_ARGS, '-sf', students_file.name, *extra_args]
+        print(students_file)
+        sys_args = [parser, *BASE_ARGS, '-sf', str(students_file), *extra_args]
 
         parsed_args, _ = cli.parse_args(sys_args)
 
@@ -250,7 +251,7 @@ class TestStudentParsing:
             self, read_issue_mock, empty_students_file, parser, extra_args):
         """Test that an error is raised if the student file is empty."""
         sys_args = [
-            parser, *BASE_ARGS, '-sf', empty_students_file.name, *extra_args
+            parser, *BASE_ARGS, '-sf', str(empty_students_file), *extra_args
         ]
 
         with pytest.raises(exception.FileError) as exc_info:
@@ -265,7 +266,7 @@ class TestStudentParsing:
         on the CLI, and a file is specified.
         """
         sys_args = [
-            parser, *BASE_ARGS, '-sf', students_file.name, '-s', *STUDENTS,
+            parser, *BASE_ARGS, '-sf', str(students_file), '-s', *STUDENTS,
             *extra_args
         ]
 

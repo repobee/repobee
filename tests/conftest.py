@@ -69,19 +69,20 @@ def _students_file(populate: bool = True):
 
 
 @pytest.fixture
-def students_file():
-    """A fixture with a temporary file containt the students in
-    pytest.constants.STUDENTS.
-    """
-    with _students_file() as file:
-        yield file
+def empty_students_file(mocker, tmpdir):
+    """Fixture with an empty temporary file."""
+    file = tmpdir.join("students")
+    file.ensure()
+    yield file
 
 
 @pytest.fixture
-def empty_students_file():
-    """Fixture with an empty temporary file."""
-    with _students_file(populate=False) as file:
-        yield file
+def students_file(empty_students_file):
+    """A fixture with a temporary file containt the students in
+    pytest.constants.STUDENTS.
+    """
+    empty_students_file.write(os.linesep.join(STUDENTS))
+    yield empty_students_file
 
 
 @pytest.fixture
@@ -96,45 +97,28 @@ def isfile_mock(request, mocker):
         'pathlib.Path.is_file', autospec=True, side_effect=isfile)
 
 
-@contextmanager
-def _config_mock(mocker, isfile_mock, students_file, populate=True):
-    with tempfile.TemporaryDirectory() as tmpdir:
-        with tempfile.NamedTemporaryFile(
-                mode="w",
-                encoding=sys.getdefaultencoding(),
-                dir=tmpdir,
-                delete=False) as file:
-            isfile = isfile_mock.side_effect
-            isfile_mock.side_effect = lambda path: isfile(path) or str(path) == file.name
-
-            if populate:
-                file.write(
-                    os.linesep.join([
-                        "[DEFAULTS]",
-                        "github_base_url = {}".format(GITHUB_BASE_URL),
-                        "user = {}".format(USER),
-                        "org_name = {}".format(ORG_NAME),
-                        "students_file = {}".format(students_file.name)
-                    ]))
-                file.flush()
-
-        read_config = gits_pet.config._read_config
-        mocker.patch(
-            'gits_pet.config._read_config',
-            side_effect=lambda _: read_config(pathlib.Path(file.name)))
-        yield file
-
-
-@pytest.fixture
-def config_mock(mocker, isfile_mock, students_file):
-    """Fixture with a pre-filled config file."""
-    with _config_mock(
-            mocker, isfile_mock, students_file, populate=True) as cnf:
-        yield cnf
-
-
 @pytest.fixture
 def empty_config_mock(mocker, isfile_mock, tmpdir):
-    with _config_mock(
-            mocker, isfile_mock, students_file, populate=False) as cnf:
-        yield cnf
+    """Sets up an empty config file which is read by the config._read_config
+    function."""
+    file = tmpdir.join('config.cnf')
+    file.ensure()
+    read_config = gits_pet.config._read_config
+    mocker.patch(
+        'gits_pet.config._read_config',
+        side_effect=lambda _: read_config(pathlib.Path(str(file))))
+    isfile = isfile_mock.side_effect
+    isfile_mock.side_effect = lambda path: isfile(path) or str(path) == file.name
+    yield file
+
+
+@pytest.fixture
+def config_mock(empty_config_mock, students_file):
+    """Fixture with a pre-filled config file."""
+    config_contents = os.linesep.join([
+        "[DEFAULTS]", "github_base_url = {}".format(GITHUB_BASE_URL),
+        "user = {}".format(USER), "org_name = {}".format(ORG_NAME),
+        "students_file = {!s}".format(students_file)
+    ])
+    empty_config_mock.write(config_contents)
+    yield empty_config_mock

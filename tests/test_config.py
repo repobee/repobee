@@ -26,4 +26,4 @@ class TestGetConfiguredDefaults:
         assert defaults['user'] == USER
         assert defaults['github_base_url'] == GITHUB_BASE_URL
         assert defaults['org_name'] == ORG_NAME
-        assert defaults['students_file'] == students_file.name
+        assert defaults['students_file'] == str(students_file)
