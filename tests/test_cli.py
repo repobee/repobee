@@ -72,8 +72,6 @@ def git_mock(mocker):
     return mocker.patch('gits_pet.git', autospec=True)
 
 
-
-
 @pytest.fixture(
     scope='function',
     params=[
@@ -251,7 +249,8 @@ class TestStudentParsing:
             self, read_issue_mock, empty_students_file, parser, extra_args):
         """Test that an error is raised if the student file is empty."""
         sys_args = [
-            parser, *BASE_ARGS, '-sf', str(empty_students_file), *extra_args
+            parser, *BASE_ARGS, '-sf',
+            str(empty_students_file), *extra_args
         ]
 
         with pytest.raises(exception.FileError) as exc_info:
@@ -266,8 +265,8 @@ class TestStudentParsing:
         on the CLI, and a file is specified.
         """
         sys_args = [
-            parser, *BASE_ARGS, '-sf', str(students_file), '-s', *STUDENTS,
-            *extra_args
+            parser, *BASE_ARGS, '-sf',
+            str(students_file), '-s', *STUDENTS, *extra_args
         ]
 
         with pytest.raises(SystemExit) as exc_info:
@@ -318,6 +317,32 @@ class TestConfig:
 
     # TODO test that not having github_base_url, org_name, user or students_file
     # in the config makes them required!
+
+    def test_missing_option_is_required(self, config_missing_option):
+        """Test that a config that is missing one option (that is not 
+        specified on the command line) causes a SystemExit on parsing.
+        """
+        sys_args = [cli.SETUP_PARSER, '-mn', *REPO_NAMES]
+
+        with pytest.raises(SystemExit):
+            parsed_args, _ = cli.parse_args(sys_args)
+        # TODO actually verify that the SystemExit came from the parsing!
+
+    def test_missing_option_can_be_specified(self, config_missing_option,
+                                             mocker, students_file):
+        """Test that a missing config option can be specified on the command
+        line.
+        """
+        missing_arg = 'something' if config_missing_option != '-sf' else str(
+            students_file)
+
+        sys_args = [
+            cli.SETUP_PARSER, '-mn', *REPO_NAMES, config_missing_option,
+            missing_arg
+        ]
+
+        # only asserts that there is no crash
+        cli.parse_args(sys_args)
 
 
 @pytest.mark.parametrize('parser', [cli.SETUP_PARSER, cli.UPDATE_PARSER])

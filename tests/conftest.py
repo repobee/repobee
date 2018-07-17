@@ -112,13 +112,39 @@ def empty_config_mock(mocker, isfile_mock, tmpdir):
     yield file
 
 
+_config_user = "user = {}".format(USER)
+_config_base = "github_base_url = {}".format(GITHUB_BASE_URL)
+_config_org = "org_name = {}".format(ORG_NAME)
+
+
+@pytest.fixture(params=['-g', '-u', '-sf', '-o'])
+def config_missing_option(request, empty_config_mock, students_file):
+    missing_option = request.param
+
+    config_contents = ["[DEFAULTS]"]
+    if not missing_option == '-g':
+        config_contents.append(_config_base)
+    if not missing_option == '-o':
+        config_contents.append(_config_org)
+    if not missing_option == '-sf':
+        config_contents.append("students_file = {!s}".format(students_file))
+    if not missing_option == '-u':
+        config_contents.append(_config_user)
+
+    empty_config_mock.write(os.linesep.join(config_contents))
+
+    yield missing_option
+
+
 @pytest.fixture
 def config_mock(empty_config_mock, students_file):
     """Fixture with a pre-filled config file."""
     config_contents = os.linesep.join([
-        "[DEFAULTS]", "github_base_url = {}".format(GITHUB_BASE_URL),
-        "user = {}".format(USER), "org_name = {}".format(ORG_NAME),
-        "students_file = {!s}".format(students_file)
+        "[DEFAULTS]",
+        "github_base_url = {}".format(GITHUB_BASE_URL),
+        "user = {}".format(USER),
+        "org_name = {}".format(ORG_NAME),
+        "students_file = {!s}".format(students_file),
     ])
     empty_config_mock.write(config_contents)
     yield empty_config_mock
