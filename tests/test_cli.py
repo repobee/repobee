@@ -179,7 +179,7 @@ class TestHandleParsedArgs:
         cli.handle_parsed_args(args, api_instance_mock)
 
         admin_mock.open_issue.assert_called_once_with(
-            args.master_repo_names, args.students, args.issue,
+            args.issue, args.master_repo_names, args.students,
             api_instance_mock)
 
     def test_close_issue_called_with_correct_args(self, admin_mock,
@@ -192,19 +192,24 @@ class TestHandleParsedArgs:
             args.title_regex, args.master_repo_names, args.students,
             api_instance_mock)
 
-    def test_migrate_repos_called_with_correct_args(self, admin_mock, api_instance_mock):
+    def test_migrate_repos_called_with_correct_args(self, admin_mock,
+                                                    api_instance_mock):
         args = tuples.Args(cli.MIGRATE_PARSER, **VALID_PARSED_ARGS)
 
         cli.handle_parsed_args(args, api_instance_mock)
 
-        admin_mock.migrate_repos.assert_called_once_with(args.master_repo_urls, args.user, api_instance_mock)
+        admin_mock.migrate_repos.assert_called_once_with(
+            args.master_repo_urls, args.user, api_instance_mock)
 
-    def test_clone_repos_called_with_correct_args(self, admin_mock, api_instance_mock):
+    def test_clone_repos_called_with_correct_args(self, admin_mock,
+                                                  api_instance_mock):
         args = tuples.Args(cli.CLONE_PARSER, **VALID_PARSED_ARGS)
 
         cli.handle_parsed_args(args, api_instance_mock)
 
-        admin_mock.clone_repos.assert_called_once_with(args.master_repo_names, args.students, api_instance_mock)
+        admin_mock.clone_repos.assert_called_once_with(
+            args.master_repo_names, args.students, api_instance_mock)
+
 
 class TestBaseParsing:
     """Test the basic functionality of parsing."""
@@ -299,7 +304,6 @@ class TestStudentParsing:
         """Test that the different subparsers read students correctly from
         file.
         """
-        print(students_file)
         sys_args = [parser, *BASE_ARGS, '-sf', str(students_file), *extra_args]
 
         parsed_args, _ = cli.parse_args(sys_args)

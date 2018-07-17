@@ -107,11 +107,15 @@ def handle_parsed_args(args: tuples.Args, api: github_api.GitHubAPI):
                                       args.user, api)
     elif args.subparser == UPDATE_PARSER:
         with _sys_exit_on_expected_error():
-            admin.update_student_repos(args.master_repo_urls, args.students,
-                                       args.user, api, issue=args.issue)
+            admin.update_student_repos(
+                args.master_repo_urls,
+                args.students,
+                args.user,
+                api,
+                issue=args.issue)
     elif args.subparser == OPEN_ISSUE_PARSER:
         with _sys_exit_on_expected_error():
-            admin.open_issue(args.master_repo_names, args.students, args.issue,
+            admin.open_issue(args.issue, args.master_repo_names, args.students, 
                              api)
     elif args.subparser == CLOSE_ISSUE_PARSER:
         with _sys_exit_on_expected_error():
