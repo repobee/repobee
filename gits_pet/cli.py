@@ -22,6 +22,7 @@ from gits_pet import git
 from gits_pet import util
 from gits_pet import tuples
 from gits_pet import exception
+from gits_pet import config
 
 daiquiri.setup(
     level=logging.INFO,
@@ -46,15 +47,6 @@ ADD_TO_TEAMS_PARSER = 'add-to-teams'
 OPEN_ISSUE_PARSER = 'open-issue'
 CLOSE_ISSUE_PARSER = 'close-issue'
 
-CONFIG_DIR = appdirs.user_config_dir(
-    appname=__package__, appauthor=gits_pet.__author__)
-
-DEFAULT_CONFIG_FILE = "{}/config.cnf".format(CONFIG_DIR)
-
-# arguments that can be configured via config file
-CONFIGURABLE_ARGS = set(('user', 'org_name', 'github_base_url',
-                         'students_file'))
-
 
 def parse_args(sys_args: Iterable[str]) -> (tuples.Args, github_api.GitHubAPI):
     """Parse the command line arguments and initialize the GitHubAPI.
@@ -69,34 +61,14 @@ def parse_args(sys_args: Iterable[str]) -> (tuples.Args, github_api.GitHubAPI):
     parser = _create_parser()
     args = parser.parse_args(sys_args)
 
-    # TODO add try/catch here with graceful exit
-    try:
-        api = github_api.GitHubAPI(args.github_base_url, git.OAUTH_TOKEN,
-                                   args.org_name)
-    except exception.NotFoundError:
-        # more informative message
-        raise exception.NotFoundError(
-            "organization {} could not be found".format(args.org_name))
+    api = _connect_to_api(args.github_base_url, git.OAUTH_TOKEN, args.org_name)
 
     if 'master_repo_urls' in args and args.master_repo_urls:
         master_urls = args.master_repo_urls
         master_names = [util.repo_name(url) for url in master_urls]
     elif 'master_repo_names' in args and args.master_repo_names:
-        master_urls, not_found = api.get_repo_urls(args.master_repo_names)
-        LOGGER.info("found {} remote repos: {}".format(
-            len(master_urls), master_urls))
-
-        for name in not_found:
-            local_path = os.path.abspath(name)
-            if util.is_git_repo(local_path):
-                LOGGER.info("found local repo {}".format(local_path))
-                master_urls.append(pathlib.Path(local_path).as_uri())
-
-        if len(master_urls) != len(args.master_repo_names):
-            # TODO improve error message
-            raise exception.ParseError(
-                "Could not find one or more master repos")
         master_names = args.master_repo_names
+        master_urls = _repo_names_to_urls(master_names, api)
     else:
         master_urls = None
         master_names = None
@@ -118,8 +90,9 @@ def parse_args(sys_args: Iterable[str]) -> (tuples.Args, github_api.GitHubAPI):
 
 
 def handle_parsed_args(args: tuples.Args, api: github_api.GitHubAPI):
-    """Handles parsed CLI arguments and dispatches commands to the appropriate
-    functions.
+    """Handle parsed CLI arguments and dispatch commands to the appropriate
+    functions. Expected exceptions are caught and turned into SystemExit
+    exceptions, while unexpected exceptions are allowed to propagate.
 
     Args:
         args: A namedtuple containing parsed command line arguments.
@@ -156,13 +129,6 @@ def handle_parsed_args(args: tuples.Args, api: github_api.GitHubAPI):
     else:
         raise ValueError("Illegal value for subparser: {}".format(
             args.subparser))
-
-
-def _read_config(config_file=DEFAULT_CONFIG_FILE):
-    config_parser = configparser.ConfigParser()
-    if os.path.isfile(config_file):
-        config_parser.read(config_file)
-    return config_parser["DEFAULT"]
 
 
 def _add_issue_parsers(base_parsers, subparsers):
@@ -204,37 +170,22 @@ def _add_issue_parsers(base_parsers, subparsers):
 
 
 def _create_parser():
-    configured_defaults = _get_configured_defaults()
-    if configured_defaults:
-        LOGGER.info("config file defaults:\n{}".format("\n   ".join([""] + [
-            "{}: {}".format(key, value)
-            for key, value in configured_defaults.items()
-            if key in CONFIGURABLE_ARGS
-        ] + [""])))
-    else:
-        LOGGER.info(
-            "no config file found. Expected config file location: {}".format(
-                DEFAULT_CONFIG_FILE))
-    default = lambda arg_name: configured_defaults[arg_name] if arg_name in configured_defaults else None
+    """Create the parser. 
+    """
 
-    is_required = lambda arg_name: True if arg_name not in configured_defaults else False
+    parser = argparse.ArgumentParser(
+        prog='gits_pet',
+        description='A CLI tool for administrating student repositories.')
+    _add_subparsers(parser)
+    return parser
 
-    base_parser = argparse.ArgumentParser(add_help=False)
-    base_parser.add_argument(
-        '-o',
-        '--org-name',
-        help="Name of the organization to which repos should be added.",
-        type=str,
-        required=is_required('org_name'),
-        default=default('org_name'))
-    base_parser.add_argument(
-        '-g',
-        '--github-base-url',
-        help=
-        "Base url to a GitHub v3 API. For enterprise, this is `https://<HOST>/api/v3",
-        type=str,
-        required=is_required('github_base_url'),
-        default=default('github_base_url'))
+
+def _add_subparsers(parser):
+    """Add all of the subparsers to the parser. Note that the parsers prefixed
+    with `base_` do not have any parent parsers, so any parser inheriting from
+    them must also inherit from the required `base_parser` (unless it is a
+    `base_` prefixed parser, of course)."""
+    base_parser, base_student_parser, base_push_parser = _create_base_parsers()
 
     repo_name_parser = argparse.ArgumentParser(
         add_help=False, parents=[base_parser])
@@ -247,40 +198,6 @@ def _create_parser():
         type=str,
         required=True,
         nargs='+')
-
-    # base parser for when student lists are involved
-    base_student_parser = argparse.ArgumentParser(add_help=False)
-    students = base_student_parser.add_mutually_exclusive_group(
-        required=is_required('students_file'))
-    students.add_argument(
-        '-sf',
-        '--students-file',
-        help="Path to a list of student usernames.",
-        type=str,
-        default=default('students_file'))
-    students.add_argument(
-        '-s',
-        '--students',
-        help='One or more whitespace separated student usernames.',
-        type=str,
-        nargs='+')
-
-    # base parser for when files need to be pushed
-    base_push_parser = argparse.ArgumentParser(add_help=False)
-
-    # the username is required for any pushing
-    base_push_parser.add_argument(
-        '-u',
-        '--user',
-        help=
-        "Your GitHub username. Needed for pushing without CLI interaction.",
-        type=str,
-        required=is_required('user'),
-        default=default('user'))
-
-    parser = argparse.ArgumentParser(
-        prog='gits_pet',
-        description='A CLI tool for administrating student repositories')
 
     subparsers = parser.add_subparsers(dest=SUB)
     subparsers.required = True
@@ -373,16 +290,61 @@ def _create_parser():
 
     _add_issue_parsers([base_student_parser, repo_name_parser], subparsers)
 
-    return parser
 
+def _create_base_parsers():
+    """Create the base parsers."""
+    configured_defaults = config.get_configured_defaults()
+    default = lambda arg_name: configured_defaults[arg_name] if arg_name in configured_defaults else None
+    is_required = lambda arg_name: True if arg_name not in configured_defaults else False
 
-def _get_configured_defaults(config_file=DEFAULT_CONFIG_FILE):
-    config = _read_config(config_file)
-    configured = config.keys()
-    if configured - CONFIGURABLE_ARGS:  # there are surpluss arguments
-        raise ValueError("Config contains invalid keys: {}".format(
-            ", ".join(configured - CONFIGURABLE_ARGS)))
-    return config
+    base_parser = argparse.ArgumentParser(add_help=False)
+    base_parser.add_argument(
+        '-o',
+        '--org-name',
+        help="Name of the organization to which repos should be added.",
+        type=str,
+        required=is_required('org_name'),
+        default=default('org_name'))
+    base_parser.add_argument(
+        '-g',
+        '--github-base-url',
+        help=
+        "Base url to a GitHub v3 API. For enterprise, this is usually `https://<HOST>/api/v3`",
+        type=str,
+        required=is_required('github_base_url'),
+        default=default('github_base_url'))
+
+    # base parser for when student lists are involved
+    base_student_parser = argparse.ArgumentParser(add_help=False)
+    students = base_student_parser.add_mutually_exclusive_group(
+        required=is_required('students_file'))
+    students.add_argument(
+        '-sf',
+        '--students-file',
+        help="Path to a list of student usernames.",
+        type=str,
+        default=default('students_file'))
+    students.add_argument(
+        '-s',
+        '--students',
+        help='One or more whitespace separated student usernames.',
+        type=str,
+        nargs='+')
+
+    # base parser for when files need to be pushed
+    base_push_parser = argparse.ArgumentParser(add_help=False)
+
+    # the username is required for any pushing
+    base_push_parser.add_argument(
+        '-u',
+        '--user',
+        help=
+        "Your GitHub username. Needed for pushing without CLI interaction.",
+        type=str,
+        required=is_required('user'),
+        default=default('user'))
+
+    return base_parser, base_student_parser, base_push_parser
 
 
 @contextmanager
@@ -390,20 +352,20 @@ def _sys_exit_on_expected_error():
     """Expect either git.GitError or github_api.APIError."""
     try:
         yield
-    except git.PushFailedError as exc:
+    except exception.PushFailedError as exc:
         LOGGER.error(
             "There was an error pushing to {}. Verify that your token has adequate access.".
             format(exc.url))
         sys.exit(1)
-    except git.CloneFailedError as exc:
+    except exception.CloneFailedError as exc:
         LOGGER.error(
             "There was an error cloning from {}. Does the repo really exist?".
             format(exc.url))
         sys.exit(1)
-    except git.GitError as exc:
+    except exception.GitError as exc:
         LOGGER.error("Something went wrong with git. See the logs for info.")
         sys.exit(1)
-    except github_api.APIError as exc:
+    except exception.APIError as exc:
         LOGGER.error("Exiting beacuse of {.__class__.__name__}".format(exc))
         sys.exit(1)
 
@@ -421,17 +383,59 @@ def _extract_students(args: argparse.Namespace) -> List[str]:
     if 'students' in args and args.students:
         students = args.students
     elif 'students_file' in args and args.students_file:
-        if not os.path.isfile(args.students_file):
-            raise exception.FileError("'{}' is not a file".format(
-                args.students_file))
-        if not os.stat(args.students_file).st_size:
-            raise exception.FileError("'{}' is empty".format(
-                args.students_file))
-        with open(
-                args.students_file, 'r',
-                encoding=sys.getdefaultencoding()) as file:
-            students = [student.strip() for student in file]
+        students_file = pathlib.Path(args.students_file)
+        students_file.resolve()
+        if not students_file.is_file():
+            raise exception.FileError(
+                "'{!s}' is not a file".format(students_file))
+        if not students_file.stat().st_size:
+            raise exception.FileError("'{!s}' is empty".format(students_file))
+        students = [
+            student.strip() for student in students_file.read_text(
+                encoding=sys.getdefaultencoding()).split(os.linesep)
+            if student  # skip blank lines
+        ]
     else:
         students = None
 
     return students
+
+
+def _connect_to_api(github_base_url: str, token: str,
+                    org_name: str) -> github_api.GitHubAPI:
+    """Return a GitHubAPI instance connected to the specified API endpoint."""
+    try:
+        api = github_api.GitHubAPI(github_base_url, token, org_name)
+    except exception.NotFoundError:
+        # more informative message
+        raise exception.NotFoundError(
+            "organization {} could not be found".format(org_name))
+    return api
+
+
+def _repo_names_to_urls(repo_names: Iterable[str],
+                        api: github_api.GitHubAPI) -> List[str]:
+    """Use the repo_names to extract urls to the repos. Look for repos with
+    corresponding names in the current working directory, as well as in the
+    target organization.
+
+    Args:
+        repo_names: names of repositories.
+        api: A GitHubAPI instance.
+
+    Returns:
+        a list of urls corresponding to the repo_names.
+    """
+    urls, not_found = api.get_repo_urls(repo_names)
+    LOGGER.info("found {} remote repos: {}".format(len(urls), urls))
+
+    for name in not_found:
+        local_path = os.path.abspath(name)
+        if util.is_git_repo(local_path):
+            LOGGER.info("found local repo {}".format(local_path))
+            urls.append(pathlib.Path(local_path).as_uri())
+
+    if len(urls) != len(repo_names):
+        # TODO improve error message
+        raise exception.ParseError("Could not find one or more master repos")
+    return urls

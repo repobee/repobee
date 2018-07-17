@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from setuptools import setup, find_packages
 
-with open('README.rst') as f:
+with open('README.md') as f:
     readme = f.read()
 
 with open('LICENSE') as f:
@@ -15,6 +15,7 @@ setup(
     version='0.0.1',
     description=('A CLI tool for GitHub'),
     long_description=readme,
+    long_description_content_type='text/markdown',
     author='Simon Larsén',
     author_email='slarse@kth.se',
     url='https://github.com/slarse/gits_pet',
