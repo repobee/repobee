@@ -48,46 +48,6 @@ OPEN_ISSUE_PARSER = 'open-issue'
 CLOSE_ISSUE_PARSER = 'close-issue'
 
 
-def _connect_to_api(github_base_url: str, token: str,
-                    org_name: str) -> github_api.GitHubAPI:
-    """Return a GitHubAPI instance connected to the specified API endpoint."""
-    try:
-        api = github_api.GitHubAPI(github_base_url, token, org_name)
-    except exception.NotFoundError:
-        # more informative message
-        raise exception.NotFoundError(
-            "organization {} could not be found".format(org_name))
-    return api
-
-
-def _repo_names_to_urls(repo_names: Iterable[str],
-                        api: github_api.GitHubAPI) -> List[str]:
-    """Use the repo_names to extract urls to the repos. Look for repos with
-    corresponding names in the current working directory, as well as in the
-    target organization.
-
-    Args:
-        repo_names: names of repositories.
-        api: A GitHubAPI instance.
-
-    Returns:
-        a list of urls corresponding to the repo_names.
-    """
-    urls, not_found = api.get_repo_urls(repo_names)
-    LOGGER.info("found {} remote repos: {}".format(len(urls), urls))
-
-    for name in not_found:
-        local_path = os.path.abspath(name)
-        if util.is_git_repo(local_path):
-            LOGGER.info("found local repo {}".format(local_path))
-            urls.append(pathlib.Path(local_path).as_uri())
-
-    if len(urls) != len(repo_names):
-        # TODO improve error message
-        raise exception.ParseError("Could not find one or more master repos")
-    return urls
-
-
 def parse_args(sys_args: Iterable[str]) -> (tuples.Args, github_api.GitHubAPI):
     """Parse the command line arguments and initialize the GitHubAPI.
     
@@ -349,7 +309,7 @@ def _create_base_parsers():
         '-g',
         '--github-base-url',
         help=
-        "Base url to a GitHub v3 API. For enterprise, this is `https://<HOST>/api/v3",
+        "Base url to a GitHub v3 API. For enterprise, this is usually `https://<HOST>/api/v3`",
         type=str,
         required=is_required('github_base_url'),
         default=default('github_base_url'))
@@ -439,3 +399,43 @@ def _extract_students(args: argparse.Namespace) -> List[str]:
         students = None
 
     return students
+
+
+def _connect_to_api(github_base_url: str, token: str,
+                    org_name: str) -> github_api.GitHubAPI:
+    """Return a GitHubAPI instance connected to the specified API endpoint."""
+    try:
+        api = github_api.GitHubAPI(github_base_url, token, org_name)
+    except exception.NotFoundError:
+        # more informative message
+        raise exception.NotFoundError(
+            "organization {} could not be found".format(org_name))
+    return api
+
+
+def _repo_names_to_urls(repo_names: Iterable[str],
+                        api: github_api.GitHubAPI) -> List[str]:
+    """Use the repo_names to extract urls to the repos. Look for repos with
+    corresponding names in the current working directory, as well as in the
+    target organization.
+
+    Args:
+        repo_names: names of repositories.
+        api: A GitHubAPI instance.
+
+    Returns:
+        a list of urls corresponding to the repo_names.
+    """
+    urls, not_found = api.get_repo_urls(repo_names)
+    LOGGER.info("found {} remote repos: {}".format(len(urls), urls))
+
+    for name in not_found:
+        local_path = os.path.abspath(name)
+        if util.is_git_repo(local_path):
+            LOGGER.info("found local repo {}".format(local_path))
+            urls.append(pathlib.Path(local_path).as_uri())
+
+    if len(urls) != len(repo_names):
+        # TODO improve error message
+        raise exception.ParseError("Could not find one or more master repos")
+    return urls
