@@ -21,14 +21,25 @@ GITHUB_BASE_URL = pytest.constants.GITHUB_BASE_URL
 STUDENTS = pytest.constants.STUDENTS
 ISSUE_PATH = pytest.constants.ISSUE_PATH
 ISSUE = pytest.constants.ISSUE
-
 GENERATE_REPO_URL = pytest.functions.GENERATE_REPO_URL
+
 REPO_NAMES = ('week-1', 'week-2', 'week-3')
 REPO_URLS = tuple(map(GENERATE_REPO_URL, REPO_NAMES))
 
 BASE_ARGS = ['-g', GITHUB_BASE_URL, '-o', ORG_NAME]
 BASE_PUSH_ARGS = ['-u', USER, '-mn', *REPO_NAMES]
 COMPLETE_PUSH_ARGS = [*BASE_ARGS, *BASE_PUSH_ARGS]
+
+# parsed args without subparser
+VALID_PARSED_ARGS = dict(
+    org_name=ORG_NAME,
+    github_base_url=GITHUB_BASE_URL,
+    user=USER,
+    master_repo_urls=REPO_URLS,
+    master_repo_names=REPO_NAMES,
+    students=STUDENTS,
+    issue=ISSUE,
+    title_regex="some regex")
 
 
 @pytest.fixture(autouse=True)
@@ -84,16 +95,7 @@ def parsed_args_all_subparsers(request):
     subparsers. These arguments are valid for all subparsers, even though
     many will only use some of the arguments.
     """
-    return tuples.Args(
-        subparser=request.param,
-        org_name=ORG_NAME,
-        github_base_url=GITHUB_BASE_URL,
-        user=USER,
-        master_repo_urls=REPO_URLS,
-        master_repo_names=REPO_NAMES,
-        students=STUDENTS,
-        issue=ISSUE,
-        title_regex="some regex")
+    return tuples.Args(subparser=request.param, **VALID_PARSED_ARGS)
 
 
 @pytest.fixture(
@@ -131,18 +133,78 @@ class TestHandleParsedArgs:
         that there are no crashes, does not validate any other behavior!"""
         cli.handle_parsed_args(parsed_args_all_subparsers, api_instance_mock)
 
-    @pytest.mark.parametrize('expected_exception', [
-        exception.PushFailedError, exception.CloneFailedError,
-        exception.GitError, exception.APIError
-    ])
     def test_expected_exception_results_in_system_exit(
             self, parsed_args_all_subparsers, api_instance_mock,
-            admin_all_raise_mock, expected_exception):
+            admin_all_raise_mock):
         """Test that any of the expected exceptions results in SystemExit."""
         with pytest.raises(SystemExit) as exc_info:
             cli.handle_parsed_args(parsed_args_all_subparsers,
                                    api_instance_mock)
 
+    def test_add_students_to_teams_called_with_correct_args(
+            self, admin_mock, api_instance_mock):
+        args = tuples.Args(cli.ADD_TO_TEAMS_PARSER, **VALID_PARSED_ARGS)
+
+        cli.handle_parsed_args(args, api_instance_mock)
+
+        admin_mock.add_students_to_teams.assert_called_once_with(
+            args.students, api_instance_mock)
+
+    def test_setup_student_repos_called_with_correct_args(
+            self, admin_mock, api_instance_mock):
+        args = tuples.Args(cli.SETUP_PARSER, **VALID_PARSED_ARGS)
+
+        cli.handle_parsed_args(args, api_instance_mock)
+
+        admin_mock.setup_student_repos.assert_called_once_with(
+            args.master_repo_urls, args.students, args.user, api_instance_mock)
+
+    def test_update_student_repos_called_with_correct_args(
+            self, admin_mock, api_instance_mock):
+        args = tuples.Args(cli.UPDATE_PARSER, **VALID_PARSED_ARGS)
+
+        cli.handle_parsed_args(args, api_instance_mock)
+
+        admin_mock.update_student_repos.assert_called_once_with(
+            args.master_repo_urls,
+            args.students,
+            args.user,
+            api_instance_mock,
+            issue=args.issue)
+
+    def test_open_issue_called_with_correct_args(self, admin_mock,
+                                                 api_instance_mock):
+        args = tuples.Args(cli.OPEN_ISSUE_PARSER, **VALID_PARSED_ARGS)
+
+        cli.handle_parsed_args(args, api_instance_mock)
+
+        admin_mock.open_issue.assert_called_once_with(
+            args.master_repo_names, args.students, args.issue,
+            api_instance_mock)
+
+    def test_close_issue_called_with_correct_args(self, admin_mock,
+                                                  api_instance_mock):
+        args = tuples.Args(cli.CLOSE_ISSUE_PARSER, **VALID_PARSED_ARGS)
+
+        cli.handle_parsed_args(args, api_instance_mock)
+
+        admin_mock.close_issue.assert_called_once_with(
+            args.title_regex, args.master_repo_names, args.students,
+            api_instance_mock)
+
+    def test_migrate_repos_called_with_correct_args(self, admin_mock, api_instance_mock):
+        args = tuples.Args(cli.MIGRATE_PARSER, **VALID_PARSED_ARGS)
+
+        cli.handle_parsed_args(args, api_instance_mock)
+
+        admin_mock.migrate_repos.assert_called_once_with(args.master_repo_urls, args.user, api_instance_mock)
+
+    def test_clone_repos_called_with_correct_args(self, admin_mock, api_instance_mock):
+        args = tuples.Args(cli.CLONE_PARSER, **VALID_PARSED_ARGS)
+
+        cli.handle_parsed_args(args, api_instance_mock)
+
+        admin_mock.clone_repos.assert_called_once_with(args.master_repo_names, args.students, api_instance_mock)
 
 class TestBaseParsing:
     """Test the basic functionality of parsing."""
@@ -331,7 +393,8 @@ class TestConfig:
     def test_missing_option_can_be_specified(self, config_missing_option,
                                              mocker, students_file):
         """Test that a missing config option can be specified on the command
-        line.
+        line. Does not assert that the options are parsed correctly, only that
+        there's no crash.
         """
         missing_arg = 'something' if config_missing_option != '-sf' else str(
             students_file)
@@ -347,7 +410,7 @@ class TestConfig:
 
 @pytest.mark.parametrize('parser', [cli.SETUP_PARSER, cli.UPDATE_PARSER])
 class TestSetupAndUpdateParsers:
-    """Tests SETUP_PARSER and UPDATE_PARSER."""
+    """Tests that are in common for SETUP_PARSER and UPDATE_PARSER."""
 
     def test_happy_path(self, api_class_mock, parser):
         """Tests standard operation of the parsers."""

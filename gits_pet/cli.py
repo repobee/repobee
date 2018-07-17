@@ -103,15 +103,12 @@ def handle_parsed_args(args: tuples.Args, api: github_api.GitHubAPI):
             admin.add_students_to_teams(args.students, api)
     elif args.subparser == SETUP_PARSER:
         with _sys_exit_on_expected_error():
-            admin.setup_student_repos(
-                master_repo_urls=args.master_repo_urls,
-                students=args.students,
-                user=args.user,
-                api=api)
+            admin.setup_student_repos(args.master_repo_urls, args.students,
+                                      args.user, api)
     elif args.subparser == UPDATE_PARSER:
         with _sys_exit_on_expected_error():
             admin.update_student_repos(args.master_repo_urls, args.students,
-                                       args.user, api)
+                                       args.user, api, issue=args.issue)
     elif args.subparser == OPEN_ISSUE_PARSER:
         with _sys_exit_on_expected_error():
             admin.open_issue(args.master_repo_names, args.students, args.issue,
