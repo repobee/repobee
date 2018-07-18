@@ -10,3 +10,4 @@ Args = namedtuple(
     'Args',
     ('subparser', 'org_name', 'github_base_url', 'user', 'master_repo_urls',
      'master_repo_names', 'students', 'issue', 'title_regex'))
+Args.__new__.__defaults__ = (None, )*len(Args._fields)
