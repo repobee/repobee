@@ -221,14 +221,14 @@ def verify_connection(user: str, org_name: str, base_url: str, token: str):
         base_url=base_url, token=token, user=user, org_name=org_name)
     LOGGER.info("verifying connection ...")
     g = github.Github(login_or_token=token, base_url=base_url)
-    LOGGER.info("trying to fetch user information to verify base url ...")
+    LOGGER.info("trying to fetch user information ...")
 
     user_not_found_msg = (
         "user {} could not be found. Possible reasons: "
         "bad base url, bad username or bad oauth permissions").format(user)
     with _convert_404_to_not_found_error(user_not_found_msg):
         g.get_user(user)
-    LOGGER.info("SUCCESS: found user {}, base url looks okay".format(user))
+    LOGGER.info("SUCCESS: found user {}, user exists and base url looks okay".format(user))
 
     LOGGER.info("verifying oauth scopes ...")
     scopes = g.oauth_scopes
