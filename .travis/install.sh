@@ -6,7 +6,7 @@ if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
     eval "$(pyenv init -)"
     pyenv install "$PYTHON"
     pyenv global "$PYTHON"
-    python -m pip install -r requirements.test.txt && pip install -e .
+    python -m pip install -e ".[TEST]"
 else
-    pip install -r requirements.test.txt && pip install -e .
+    pip install -e ".[TEST]"
 fi
