@@ -213,9 +213,11 @@ def push_single(local_repo: str,
     loop.run_until_complete(task)
 
 
-def push(push_tuples: Iterable[Push], user: str) -> List[str]:
+def _push_no_retry(push_tuples: Iterable[Push], user: str) -> List[str]:
     """Push to all repos defined in push_tuples asynchronously. Amount of
     concurrent tasks is limited by CONCURRENT_TASKS.
+
+    Pushes once and only once to each repo.
 
     Args:
         push_tuples: Push namedtuples defining local and remote repos.
@@ -233,6 +235,37 @@ def push(push_tuples: Iterable[Push], user: str) -> List[str]:
         exc.url for exc in _batch_execution(_push_async, push_tuples, user)
         if isinstance(exc, exception.PushFailedError)
     ]
+
+
+def push(push_tuples: Iterable[Push], user: str, tries: int = 3) -> List[str]:
+    """Push to all repos defined in push_tuples asynchronously. Amount of
+    concurrent tasks is limited by CONCURRENT_TASKS. Pushing to repos is tried
+    a maximum of ``tries`` times (i.e. pushing is _retried_ ``tries - 1``
+    times.)
+
+    Args:
+        push_tuples: Push namedtuples defining local and remote repos.
+        user: The username to put in the push.
+        tries: Amount of times to try to push (including initial push).
+
+    Returns:
+        urls to which pushes failed with exception.PushFailedError. Other
+        errors are only logged.
+    """
+    util.validate_types(tries=(tries, int))
+    if tries < 1:
+        raise ValueError("tries must be larger than 0")
+    failed_pts = list(
+        push_tuples)  # confusing, but failed_pts needs an initial value
+    for i in range(tries):
+        LOGGER.info("pushing, attempt {}/{}".format(i + 1, tries))
+        failed_urls = set(_push_no_retry(failed_pts, user))
+        failed_pts = [pt for pt in push_tuples if pt.repo_url in failed_urls]
+        if not failed_pts:
+            break
+        LOGGER.warning("{} pushes failed ...".format(len(failed_pts)))
+
+    return [pt.repo_url for pt in failed_pts]
 
 
 def _batch_execution(

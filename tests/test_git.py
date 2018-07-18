@@ -12,7 +12,7 @@ from gits_pet import git
 from gits_pet import exception
 
 URL_TEMPLATE = 'https://{}github.com/slarse/clanim'
-USER = 'slarse'
+USER = pytest.constants.USER
 
 Env = namedtuple('Env', ('expected_url', 'expected_url_with_username'))
 
@@ -295,7 +295,11 @@ def test_push_tries_all_calls_despite_exceptions(env_setup, push_tuples,
     """Test that push tries to push all push tuple values even if there
     are exceptions.
     """
-    expected_calls = [call(pt, USER) for pt in push_tuples]
+    tries = 3
+    expected_calls = [
+        call(pt, USER)
+        for pt in sorted(push_tuples, key=lambda pt: pt.repo_url)
+    ] * tries
 
     async def raise_(pt, user):
         raise exception.PushFailedError("Push failed", 128, b"some error",
@@ -304,10 +308,37 @@ def test_push_tries_all_calls_despite_exceptions(env_setup, push_tuples,
     mocker.patch('gits_pet.git._push_async', side_effect=raise_)
     expected_failed_urls = [pt.repo_url for pt in push_tuples]
 
-    failed_urls = git.push(push_tuples, USER)
+    failed_urls = git.push(push_tuples, USER, tries=tries)
 
-    assert failed_urls == expected_failed_urls
-    git._push_async.assert_has_calls(expected_calls)
+    assert sorted(failed_urls) == sorted(expected_failed_urls)
+    git._push_async.assert_has_calls(expected_calls, any_order=True)
+
+
+def test_push_stops_retrying_when_failed_pushes_succeed(
+        env_setup, push_tuples, mocker):
+    tried = False
+    fail_pt = push_tuples[1]
+
+    async def raise_once(pt, user):
+        nonlocal tried
+        if not tried and pt == fail_pt:
+            tried = True
+            raise exception.PushFailedError("Push failed", 128, b"some error",
+                                            pt.repo_url)
+
+    expected_num_calls = len(push_tuples) + 1 # one retry
+
+    async def raise_(pt, user):
+        raise exception.PushFailedError("Push failed", 128, b"some error",
+                                        pt.repo_url)
+
+    async_push_mock = mocker.patch(
+        'gits_pet.git._push_async', side_effect=raise_once)
+
+    git.push(push_tuples, USER, tries=10)
+
+    print(async_push_mock.call_args_list)
+    assert len(async_push_mock.call_args_list) == expected_num_calls
 
 
 def test_clone(env_setup, push_tuples, aio_subproc):

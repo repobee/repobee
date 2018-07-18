@@ -368,6 +368,7 @@ class TestUpdateStudentRepos:
             for name in [master_name, 'week-3']
         ]
 
+
         generate_url = lambda repo_name: "{}/{}/{}".format(GITHUB_BASE_URL, ORG_NAME, repo_name)
         fail_repo_names = [
             util.generate_repo_name(stud, master_name) for stud in ['a', 'c']
@@ -378,8 +379,8 @@ class TestUpdateStudentRepos:
 
         async def raise_specific(pt, user):
             if pt.repo_url in fail_repo_urls:
-                raise exception.PushFailedError("Push failed", 128, b"some error",
-                                          pt.repo_url)
+                raise exception.PushFailedError("Push failed", 128,
+                                                b"some error", pt.repo_url)
 
         git_push_async_mock = mocker.patch(
             'gits_pet.git._push_async', side_effect=raise_specific)
@@ -389,8 +390,13 @@ class TestUpdateStudentRepos:
                                    issue)
 
         if issue:  # expect issue to be opened
-            api_mock.open_issue.assert_called_once_with(
-                issue.title, issue.body, fail_repo_names)
+            call_list = api_mock.open_issue.call_args_list
+            call = call_list[0]
+            args = call[0]
+            assert len(call_list) == 1
+            assert args[0] == issue.title
+            assert args[1] == issue.body
+            assert sorted(args[2]) == sorted(fail_repo_names)
         else:  # expect issue not to be opened
             assert not api_mock.open_issue.called
 
@@ -420,8 +426,8 @@ class TestUpdateStudentRepos:
 
         async def raise_specific(pt, branch):
             if pt.repo_url in fail_repo_urls:
-                raise exception.PushFailedError("Push failed", 128, b"some error",
-                                          repo_url)
+                raise exception.PushFailedError("Push failed", 128,
+                                                b"some error", repo_url)
 
         git_push_async_mock = mocker.patch(
             'gits_pet.git._push_async', side_effect=raise_specific)
