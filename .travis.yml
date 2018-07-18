@@ -1,25 +1,30 @@
 language: python
 
+branches:
+  only:
+  - master
+
 matrix:
-    include:
-        - python: 3.5
-          os: linux
-        - python: 3.6
-          os: linux
-        - python: 3.7
-          dist: xenial
-          sudo: true
-        - python: 3.5
-          os: osx
-        - python: 3.6
-          os: osx
-install: pip install -r requirements.test.txt && pip install -e .
-script: pytest --cov=gits_pet
+  include:
+    - os: linux
+      python: 3.5
+    - os: linux
+      python: 3.6
+    - os: linux
+      python: 3.7
+      dist: xenial
+      sudo: true
+    - os: osx
+      env: PYTHON=3.5.4
+      language: generic
+      sudo: true
+install: .travis/install.sh
+script: .travis/run.sh
 after_success:
 - codecov
 notifications:
   email: false
   slack:
-      on_success: change
-      on_failure: always
+    on_success: change
+    on_failure: always
     secure: Cq4Y2dwkNNE7hIZSEtmvNHI/2TZYzKpAJqbb6QPKG0hilx3PGetbs7fWy+ru6gRVW7A494Yk/4+ZO/9A92Pn0QHbbWtJZuU61pC2zxtkH2VKAzMVFly4gkL7L5Q9B8drAoer1usI4OtlN7eyqegTGAT8NEbhaynsJweEDZbWCWoXdQkl4tX6pYyDX/6HAWkfsQLaLPczLACyKYl812qAt7u6fFD+hcjdVrs/LfM9Cdt1gW3t9cVNm/Lqmla+I5OYjRRgbHm4XgsTrhNR0IoAxbktcxSwemnjTzwTsn7VQ9y4t8NlBRB5LUfw/0ihehKl7O4QS2c1G1uLhKHZZSfU8Di/qGGSvj/QBFvyZPDA8a/fmMBrNIHwy4k46l1ZfdDnX65oDbncHuXcFOVlTx85C5Zpy86tQDVktXf3kDlzsUtLgKtAY5dvLMDAwTvkX5M05DMwC51A+b2wsM1zs14CkeTFjHfsBIhDek91YfUEx6dRmnhg1KXVA+q02DKNoI0D5sNkOcgBnVATQOo29zcRKnyit93LBG3EiQYiIhubtwMkveXlEE3Qd5bUSdVuTMObN2nhm1bmYGrJ68dR+zKbsBZ51fcar6YeecmLCF6epBcZI++3AEH5/gu4qXb7A2pbxtiARJtxliI83d6CwEycPWhpjQ4p5UnByMhvKnKv14w=
