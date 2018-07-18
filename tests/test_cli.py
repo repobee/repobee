@@ -210,6 +210,16 @@ class TestHandleParsedArgs:
         admin_mock.clone_repos.assert_called_once_with(
             args.master_repo_names, args.students, api_instance_mock)
 
+    def test_verify_connection_called_with_correct_args(self, mocker):
+        api_wrapper_mock = mocker.patch(
+            'gits_pet.cli.api_wrapper', autospec=True)
+        args = tuples.Args(cli.VERIFY_PARSER, **VALID_PARSED_ARGS)
+
+        cli.handle_parsed_args(args, None)
+
+        api_wrapper_mock.verify_connection.assert_called_once_with(
+            args.user, args.org_name, args.github_base_url, git.OAUTH_TOKEN)
+
 
 class TestBaseParsing:
     """Test the basic functionality of parsing."""
@@ -510,3 +520,17 @@ class TestMigrateParser:
         parsed_args, _ = cli.parse_args(sys_args)
 
         self.assert_migrate_args(parsed_args, uses_urls=False)
+
+
+class TestVerifyParser:
+    """Tests for the VERIFY_PARSER."""
+
+    def test_happy_path(self):
+        sys_args = [cli.VERIFY_PARSER, *BASE_ARGS, '-u', USER]
+
+        args, _ = cli.parse_args(sys_args)
+
+        assert args.subparser == cli.VERIFY_PARSER
+        assert args.org_name == ORG_NAME
+        assert args.github_base_url == GITHUB_BASE_URL
+        assert args.user == USER

@@ -9,7 +9,7 @@ import pathlib
 import os
 import sys
 from contextlib import contextmanager
-from typing import List, Iterable
+from typing import List, Iterable, Optional
 
 import appdirs
 import gits_pet
@@ -23,6 +23,7 @@ from gits_pet import util
 from gits_pet import tuples
 from gits_pet import exception
 from gits_pet import config
+from gits_pet import api_wrapper
 
 daiquiri.setup(
     level=logging.INFO,
@@ -46,9 +47,11 @@ MIGRATE_PARSER = 'migrate'
 ADD_TO_TEAMS_PARSER = 'add-to-teams'
 OPEN_ISSUE_PARSER = 'open-issue'
 CLOSE_ISSUE_PARSER = 'close-issue'
+VERIFY_PARSER = 'verify-connection'
 
 
-def parse_args(sys_args: Iterable[str]) -> (tuples.Args, github_api.GitHubAPI):
+def parse_args(sys_args: Iterable[str]
+               ) -> (tuples.Args, Optional[github_api.GitHubAPI]):
     """Parse the command line arguments and initialize the GitHubAPI.
     
     Args:
@@ -56,10 +59,19 @@ def parse_args(sys_args: Iterable[str]) -> (tuples.Args, github_api.GitHubAPI):
 
     Returns:
         a tuples.Args namedtuple with the arguments, and an initialized
-        GitHubAPI instance.
+        GitHubAPI instance (or None of testing connection).
     """
     parser = _create_parser()
     args = parser.parse_args(sys_args)
+
+    if getattr(args, SUB) == VERIFY_PARSER:
+        # quick parse for verify connection
+        return tuples.Args(
+            subparser=VERIFY_PARSER,
+            org_name=args.org_name,
+            github_base_url=args.github_base_url,
+            user=args.user,
+        ), None  # only here is return None for api allowed
 
     api = _connect_to_api(args.github_base_url, git.OAUTH_TOKEN, args.org_name)
 
@@ -127,6 +139,9 @@ def handle_parsed_args(args: tuples.Args, api: github_api.GitHubAPI):
     elif args.subparser == CLONE_PARSER:
         with _sys_exit_on_expected_error():
             admin.clone_repos(args.master_repo_names, args.students, api)
+    elif args.subparser == VERIFY_PARSER:
+        api_wrapper.verify_connection(args.user, args.org_name,
+                                      args.github_base_url, git.OAUTH_TOKEN)
     else:
         raise ValueError("Illegal value for subparser: {}".format(
             args.subparser))
@@ -186,7 +201,7 @@ def _add_subparsers(parser):
     with `base_` do not have any parent parsers, so any parser inheriting from
     them must also inherit from the required `base_parser` (unless it is a
     `base_` prefixed parser, of course)."""
-    base_parser, base_student_parser, base_push_parser = _create_base_parsers()
+    base_parser, base_student_parser, base_user_parser = _create_base_parsers()
 
     repo_name_parser = argparse.ArgumentParser(
         add_help=False, parents=[base_parser])
@@ -215,7 +230,7 @@ def _add_subparsers(parser):
          "any previously performed step will simply be skipped. The master "
          "repo is assumed to be located in the target organization, and will "
          "be temporarily cloned to disk for the duration of the command. "),
-        parents=[base_push_parser, base_student_parser, repo_name_parser])
+        parents=[base_user_parser, base_student_parser, repo_name_parser])
 
     update = subparsers.add_parser(
         UPDATE_PARSER,
@@ -224,7 +239,7 @@ def _add_subparsers(parser):
             "Push changes from master repos to student repos. The master repos "
             "must be available within the organization. They can be added "
             "manually, or with the `migrate-repos` command."),
-        parents=[base_push_parser, base_student_parser, repo_name_parser])
+        parents=[base_user_parser, base_student_parser, repo_name_parser])
     update.add_argument(
         '-i',
         '--issue',
@@ -250,7 +265,7 @@ def _add_subparsers(parser):
          "NOTE: `migrate-repos` can also be used to update already migrated repos "
          "that have been changed in their original repos."
          ),
-        parents=[base_parser, base_push_parser])
+        parents=[base_parser, base_user_parser])
     names_or_urls = migrate.add_mutually_exclusive_group(required=True)
     names_or_urls.add_argument(
         '-mu',
@@ -290,6 +305,17 @@ def _add_subparsers(parser):
         parents=[base_student_parser, base_parser])
 
     _add_issue_parsers([base_student_parser, repo_name_parser], subparsers)
+
+    verify = subparsers.add_parser(
+        VERIFY_PARSER,
+        help="Verify your settings, such as the base url and the OAUTH token.",
+        description=
+        ("Verify all settings. Performs the following checks, in order: user "
+         "exists (implicitly verifies base url), oauth scopes (premissions of "
+         "the OAUTH token), organization exists, user is an owner of the "
+         "organization. If any one of the checks fails, the verification is "
+         "aborted and an error message is displayed."),
+        parents=[base_parser, base_user_parser])
 
 
 def _create_base_parsers():
@@ -333,10 +359,10 @@ def _create_base_parsers():
         nargs='+')
 
     # base parser for when files need to be pushed
-    base_push_parser = argparse.ArgumentParser(add_help=False)
+    base_user_parser = argparse.ArgumentParser(add_help=False)
 
     # the username is required for any pushing
-    base_push_parser.add_argument(
+    base_user_parser.add_argument(
         '-u',
         '--user',
         help=
@@ -345,7 +371,7 @@ def _create_base_parsers():
         required=is_required('user'),
         default=default('user'))
 
-    return base_parser, base_student_parser, base_push_parser
+    return base_parser, base_student_parser, base_user_parser
 
 
 @contextmanager

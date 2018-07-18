@@ -248,10 +248,7 @@ def verify_connection(user: str, org_name: str, base_url: str, token: str):
 
     LOGGER.info("verifying that user {} is an owner of organization {}".format(
         user, org_name))
-    owner_usernames = [owner.login for owner in org.get_members(role='owner')]
-    print(owner_usernames)
-    print(user)
-    print(user in owner_usernames)
+    owner_usernames = (owner.login for owner in org.get_members(role='admin'))
     if user not in owner_usernames:
         raise exception.BadCredentials(
             "user {} is not an owner of organization {}".format(
@@ -259,7 +256,7 @@ def verify_connection(user: str, org_name: str, base_url: str, token: str):
     LOGGER.info("SUCCESS: user {} is an owner of organization {}".format(
         user, org_name))
 
-    LOGGER.info("SUCCESS: All settings check out!")
+    LOGGER.info("GREAT SUCCESS: All settings check out!")
 
 
 @contextlib.contextmanager
