@@ -7,8 +7,8 @@ with open('README.md') as f:
 with open('LICENSE') as f:
     license = f.read()
 
-test_requirements = ['pytest>=3.1.1', 'pytest-cov>=2.5.1', 'codecov']
-required = []
+test_requirements = ['appdirs', 'daiquiri', 'pytest>=3.1.1', 'pytest-cov>=2.5.1', 'pytest-mock', 'codecov']
+required = ['appdirs', 'daiquiri', 'pygithub']
 
 setup(
     name='gits_pet',
