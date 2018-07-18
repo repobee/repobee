@@ -115,7 +115,7 @@ def handle_parsed_args(args: tuples.Args, api: github_api.GitHubAPI):
                 issue=args.issue)
     elif args.subparser == OPEN_ISSUE_PARSER:
         with _sys_exit_on_expected_error():
-            admin.open_issue(args.issue, args.master_repo_names, args.students, 
+            admin.open_issue(args.issue, args.master_repo_names, args.students,
                              api)
     elif args.subparser == CLOSE_ISSUE_PARSER:
         with _sys_exit_on_expected_error():
@@ -410,7 +410,8 @@ def _connect_to_api(github_base_url: str, token: str,
     except exception.NotFoundError:
         # more informative message
         raise exception.NotFoundError(
-            "organization {} could not be found".format(org_name))
+            "either organization {} could not be found, or the base url '{}' is incorrect".
+            format(org_name, github_base_url))
     return api
 
 

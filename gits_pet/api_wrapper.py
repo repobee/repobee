@@ -15,6 +15,7 @@ import daiquiri
 import github
 
 from gits_pet import exception
+from gits_pet import util
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -22,6 +23,8 @@ LOGGER = daiquiri.getLogger(__file__)
 _Team = github.Team.Team
 _User = github.NamedUser.NamedUser
 _Repo = github.Repository.Repository
+
+REQUIRED_OAUTH_SCOPES = {'admin:org', 'repo'}
 
 # classes also used externally
 Team = collections.namedtuple('Team', ('name', 'members', 'id'))
@@ -186,3 +189,90 @@ class ApiWrapper:
         with _try_api_request():
             return (repo for repo in self._org.get_repos()
                     if repo.name in name_set)
+
+
+def verify_connection(user: str, org_name: str, base_url: str, token: str):
+    """Verify the following:
+
+    .. code-block: markdown
+
+        1. Base url is correct (verify by fetching user).
+        2. The token has correct access privileges (verify by getting oauth scopes)
+        3. Organization exists (verify by getting the org)
+        4. User is owner in organization (verify by getting
+        organization member list and checking roles)
+
+        Raises exceptions if something goes wrong.
+
+    Args:
+        user: The username to try to fetch.
+        org_name: Name of an organization.
+        base_url: A base url to a github API.
+        token: A secure OAUTH2 token.
+    Returns:
+        True if the connection is well formed.
+    """
+    util.validate_types(
+        base_url=(base_url, str),
+        token=(token, str),
+        user=(user, str),
+        org_name=(org_name, str))
+    util.validate_non_empty(
+        base_url=base_url, token=token, user=user, org_name=org_name)
+    LOGGER.info("verifying connection ...")
+    g = github.Github(login_or_token=token, base_url=base_url)
+    LOGGER.info("trying to fetch user information to verify base url ...")
+
+    user_not_found_msg = (
+        "user {} could not be found. Possible reasons: "
+        "bad base url, bad username or bad oauth permissions").format(user)
+    with _convert_404_to_not_found_error(user_not_found_msg):
+        g.get_user(user)
+    LOGGER.info("SUCCESS: found user {}, base url looks okay".format(user))
+
+    LOGGER.info("verifying oauth scopes ...")
+    scopes = g.oauth_scopes
+    if not REQUIRED_OAUTH_SCOPES.issubset(scopes):
+        raise exception.BadCredentials(
+            "missing one or more oauth scopes. Actual: {}. Required {}".format(
+                scopes, REQUIRED_OAUTH_SCOPES))
+    LOGGER.info("SUCCESS: oauth scopes look okay")
+
+    LOGGER.info("trying to fetch organization ...")
+    org_not_found_msg = ("organization {} could not be found. Possible "
+                         "reasons: org does not exist, user does not have "
+                         "sufficient access to organization.").format(org_name)
+    with _convert_404_to_not_found_error(org_not_found_msg):
+        org = g.get_organization(org_name)
+    LOGGER.info("SUCCESS: found organization {}".format(org_name))
+
+    LOGGER.info("verifying that user {} is an owner of organization {}".format(
+        user, org_name))
+    owner_usernames = [owner.login for owner in org.get_members(role='owner')]
+    print(owner_usernames)
+    print(user)
+    print(user in owner_usernames)
+    if user not in owner_usernames:
+        raise exception.BadCredentials(
+            "user {} is not an owner of organization {}".format(
+                user, org_name))
+    LOGGER.info("SUCCESS: user {} is an owner of organization {}".format(
+        user, org_name))
+
+    LOGGER.info("SUCCESS: All settings check out!")
+
+
+@contextlib.contextmanager
+def _convert_404_to_not_found_error(msg):
+    """Catch a github.GithubException with status 404 and convert to
+    exception.NotFoundError with the provided message. If the GithubException
+    does not have status 404, instead raise exception.UnexpectedException.
+    """
+    try:
+        yield
+    except github.GithubException as exc:
+        if exc.status == 404:
+            raise exception.NotFoundError(msg)
+        raise exception.UnexpectedException(
+            "An unexpected exception occured. {.__name__}: {}".format(
+                type(exc), str(exc)))
