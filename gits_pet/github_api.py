@@ -71,10 +71,12 @@ class GitHubAPI:
         
         Args:
             team_names: An iterable of team names.
-
         Returns:
             A list of Team namedtuples representing the teams corresponding to the
             provided team_names.
+        Raises:
+            exception.UnexpectedException if anything but a 422 (team already
+            exists) is raised when trying to create a team.
         """
         existing_team_names = set(team.name for team in self._api.get_teams())
 
@@ -85,7 +87,9 @@ class GitHubAPI:
                 LOGGER.info("created team {}".format(team_name))
             except exception.GitHubError as exc:
                 if exc.status != 422:
-                    raise exception.UnexpectedException(str(exc))
+                    raise exception.UnexpectedException(
+                        "Unexpected GitHubError {} on team creation: {}".
+                        format(exc.status, str(exc)))
                 LOGGER.info("team {} already exists".format(team_name))
 
         teams = [
@@ -103,27 +107,18 @@ class GitHubAPI:
             team: A _Team object to which members should be added.
             members: An iterable of usernames.
         """
-        required_members = set(members)
         existing_members = set(team.members)
-        missing_members = required_members - existing_members
+        missing_members = [
+            member for member in members if member not in existing_members
+        ]
 
         if missing_members:
             LOGGER.info("adding members {} to team {}".format(
                 ", ".join(missing_members), team.name))
-        else:
-            LOGGER.info("{} already in team {}, skipping team...".format(
-                ", ".join(required_members), team.name))
-
-        self.add_to_team(missing_members, team)
-
-    def add_to_team(self, members: Iterable[str], team: tuples.Team):
-        """Add a user with the given username to a team.
-
-        Args:
-            username: A username.
-            team: A _Team.
-        """
-        self._api.add_to_team(members, team)
+        if existing_members:
+            LOGGER.info("{} already in team {}, skipping...".format(
+                ", ".join(members), team.name))
+        self._api.add_to_team(missing_members, team)
 
     def create_repos(self, repo_infos: Iterable[tuples.Repo]):
         """Create repositories in the given organization according to the Repos.
