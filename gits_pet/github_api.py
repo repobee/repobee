@@ -9,29 +9,33 @@ import re
 from typing import List, Iterable, Mapping
 import daiquiri
 import github
-from gits_pet.api_wrapper import (ApiWrapper, RepoInfo, Team, _Team, _User,
-                                  _Repo)
+
+from gits_pet import APIWrapper
 from gits_pet import util
 from gits_pet import exception
+from gits_pet import tuples
 
 LOGGER = daiquiri.getLogger(__file__)
 
 
 class GitHubAPI:
-    """A highly specialized GitHub API class for gits_pet."""
+    """A highly specialized GitHub API class for gits_pet. The API is
+    affiliated both with an organization, and with the whole GitHub
+    instance. Almost all operations take place on the target
+    organization.
+    """
 
     def __init__(self, base_url: str, token: str, org_name: str):
-        """Set up the GitHub API object. Must be called before any of the functions
-        in this module are called!
+        """Set up the GitHub API object.
 
         Args:
             base_url: The base url to a GitHub REST api (e.g.
             https://api.github.com for GitHub or https://<HOST>/api/v3 for
             Enterprise).
             token: A GitHub OAUTH token.
-            org_name: Name of an organization.
+            org_name: Name of the target organization.
         """
-        self._api = ApiWrapper(base_url, token, org_name)
+        self._api = APIWrapper(base_url, token, org_name)
         self._org_name = org_name
         self._base_url = base_url
         self._token = token
@@ -41,13 +45,13 @@ class GitHubAPI:
             self._base_url, self._token, self._org_name)
 
     def ensure_teams_and_members(
-            self, member_lists: Mapping[str, Iterable[str]]) -> List[Team]:
-        """Ensure that each team exists and has its required members. If a team is
-        does not exist or is missing any of the members in its member list, the team
-        is created and/or missing members are added. Otherwise, nothing happens.
+            self,
+            member_lists: Mapping[str, Iterable[str]]) -> List[tuples.Team]:
+        """Create teams that do not exist and add members not in their
+        specified teams (if they exist as users).
 
         Args:
-            member_list: A mapping of (team_name, member_list) mappings.
+            member_list: A mapping of (team_name, member_list).
 
         Returns:
             A list of Team namedtuples of the teams corresponding to the keys of
@@ -61,17 +65,18 @@ class GitHubAPI:
 
         return self._api.get_teams_in(set(member_lists.keys()))
 
-    def _ensure_teams_exist(
-            self, team_names: Iterable[str]) -> List[github.Team.Team]:
-        """Ensure that teams with the given team names exist in the given
-        organization. Create any that do not.
+    def _ensure_teams_exist(self,
+                            team_names: Iterable[str]) -> List[tuples.Team]:
+        """Create any teams that do not yet exist.
         
         Args:
             team_names: An iterable of team names.
-
         Returns:
             A list of Team namedtuples representing the teams corresponding to the
             provided team_names.
+        Raises:
+            exception.UnexpectedException if anything but a 422 (team already
+            exists) is raised when trying to create a team.
         """
         existing_team_names = set(team.name for team in self._api.get_teams())
 
@@ -82,7 +87,9 @@ class GitHubAPI:
                 LOGGER.info("created team {}".format(team_name))
             except exception.GitHubError as exc:
                 if exc.status != 422:
-                    raise exception.UnexpectedException(str(exc))
+                    raise exception.UnexpectedException(
+                        "Unexpected GitHubError {} on team creation: {}".
+                        format(exc.status, str(exc)))
                 LOGGER.info("team {} already exists".format(team_name))
 
         teams = [
@@ -91,54 +98,37 @@ class GitHubAPI:
         ]
         return teams
 
-    def _ensure_members_in_team(self, team: _Team, members: Iterable[str]):
-        """Add all of the users in 'memebrs' to a team. Skips any users that
+    def _ensure_members_in_team(self, team: tuples.Team,
+                                members: Iterable[str]):
+        """Add all of the users in ``members`` to a team. Skips any users that
         don't exist, or are already in the team.
 
         Args:
             team: A _Team object to which members should be added.
             members: An iterable of usernames.
         """
-        required_members = set(members)
-        existing_members = set(team.get_members())
-        missing_members = required_members - existing_members
+        existing_members = set(team.members)
+        missing_members = [
+            member for member in members if member not in existing_members
+        ]
 
         if missing_members:
             LOGGER.info("adding members {} to team {}".format(
                 ", ".join(missing_members), team.name))
-        else:
-            LOGGER.info("{} already in team {}, skipping team...".format(
-                ", ".join(required_members), team.name))
+        if existing_members:
+            LOGGER.info("{} already in team {}, skipping...".format(
+                ", ".join(members), team.name))
+        self._api.add_to_team(missing_members, team)
 
-        for username in missing_members:
-            self._add_to_team(username, team)
-
-    def _add_to_team(self, username: str, team: _Team):
-        """Add a user with the given username to a team.
-
-        Args:
-            username: A username.
-            team: A _Team.
-        """
-        try:
-            member = self._api.get_user(username)
-            self._api.add_to_team(member, team)
-        except exception.GitHubError as exc:
-            if exc.status != 404:
-                raise exception.GitHubError(
-                    "Got unexpected response code from the GitHub API",
-                    status=exc.status)
-            LOGGER.warning("user {} does not exist, skipping".format(username))
-
-    def create_repos(self, repo_infos: Iterable[RepoInfo]):
-        """Create repositories in the given organization according to the RepoInfos.
+    def create_repos(self, repo_infos: Iterable[tuples.Repo]):
+        """Create repositories in the given organization according to the Repos.
         Repos that already exist are skipped.
 
         Args:
-            repo_infos: An iterable of RepoInfo namedtuples.
+            repo_infos: An iterable of Repo namedtuples.
 
         Returns:
-            A list of urls to all repos corresponding to the RepoInfos.
+            A list of urls to all repos corresponding to the Repos.
         """
         repo_urls = []
         for info in repo_infos:
@@ -170,53 +160,22 @@ class GitHubAPI:
             that were not found.
         """
         repo_names_set = set(repo_names)
-        urls = [
-            repo.html_url for repo in self._api.get_repos()
-            if repo.name in repo_names_set
-        ]
+        urls = [repo.url for repo in self._api.get_repos(repo_names_set)]
 
         not_found = list(repo_names_set -
                          {util.repo_name(url)
                           for url in urls})
-        if not_found:
-            for repo_name in not_found:
-                LOGGER.warning("repo {} could not be found".format(repo_name))
         return urls, not_found
 
-    def get_repo_urls_by_regex(self, regex: str) -> List[str]:
-        """Get repo urls for all repos in the current organization whose names
-        match the regex.
-
-        Args:
-            regex: A regex.
-
-        Returns:
-            a list of repo urls matching the regex.
-        """
-        return [repo.url for repo in self._api.get_repos(regex=regex)]
-
-    def open_issue(self, title: str, body: str,
+    def open_issue(self, issue: tuples.Issue,
                    repo_names: Iterable[str]) -> None:
         """Open the specified issue in all repos with the given names.
 
         Args:
-            title: Title of the issue.
-            body: An issue text.
+            issue: The issue to open.
             repo_names: Names of repos to open the issue in.
         """
-        repo_names_set = set(repo_names)
-        repos = list(self._api.get_repos_by_name(repo_names_set))
-
-        missing_repos = repo_names_set - set(repo.name for repo in repos)
-        if missing_repos:
-            LOGGER.warning(
-                "Missing repos (for which issue will not be opened): {}".
-                format(missing_repos))
-
-        for repo in repos:
-            issue = repo.create_issue(title, body=body)
-            LOGGER.info("Opened issue {}/#{}-'{}'".format(
-                repo.name, issue.number, issue.title))
+        self._api.open_issue_in(issue, repo_names)
 
     def close_issue(self, title_regex: str, repo_names: Iterable[str]) -> None:
         """Close any issues in the given repos whose titles match the title_regex.
@@ -225,24 +184,4 @@ class GitHubAPI:
             title_regex: A regex to match against issue titles.
             repo_names: Names of repositories to close issues in.
         """
-        repo_names_set = set(repo_names)
-        repos = list(self._api.get_repos_by_name(repo_names_set))
-
-        missing_repos = repo_names_set - set(repo.name for repo in repos)
-        if missing_repos:
-            LOGGER.warning(
-                "Missing repos (for which no issue will be closed): {}".format(
-                    missing_repos))
-
-        issue_repo_gen = ((issue, repo) for repo in repos
-                          for issue in repo.get_issues(state='open')
-                          if re.match(title_regex, issue.title))
-        closed = 0
-        for issue, repo in issue_repo_gen:
-            issue.edit(state='closed')
-            LOGGER.info("closed issue {}/#{}-'{}'".format(
-                repo.name, issue.number, issue.title))
-            closed += 1
-
-        if not closed:
-            LOGGER.warning("Found no matching issues.")
+        self._api.close_issue_in(title_regex, repo_names)

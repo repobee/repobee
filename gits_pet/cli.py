@@ -23,7 +23,7 @@ from gits_pet import util
 from gits_pet import tuples
 from gits_pet import exception
 from gits_pet import config
-from gits_pet import api_wrapper
+from gits_pet import APIWrapper
 
 daiquiri.setup(
     level=logging.INFO,
@@ -140,8 +140,8 @@ def handle_parsed_args(args: tuples.Args, api: github_api.GitHubAPI):
         with _sys_exit_on_expected_error():
             admin.clone_repos(args.master_repo_names, args.students, api)
     elif args.subparser == VERIFY_PARSER:
-        api_wrapper.verify_connection(args.user, args.org_name,
-                                      args.github_base_url, git.OAUTH_TOKEN)
+        APIWrapper.verify_connection(
+            args.user, args.org_name, args.github_base_url, git.OAUTH_TOKEN)
     else:
         raise ValueError("Illegal value for subparser: {}".format(
             args.subparser))

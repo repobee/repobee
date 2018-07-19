@@ -20,8 +20,8 @@ from gits_pet import github_api
 from gits_pet import util
 from gits_pet import tuples
 from gits_pet import exception
-from gits_pet.github_api import GitHubAPI, RepoInfo
-from gits_pet.api_wrapper import Team
+from gits_pet.github_api import GitHubAPI
+from gits_pet.tuples import Team
 from gits_pet.git import Push
 
 LOGGER = daiquiri.getLogger(__file__)
@@ -134,7 +134,7 @@ def _clone_all(urls: Iterable[str], cwd: str):
         LOGGER.error("error cloning into {}, aborting ...".format(url))
         raise
     paths = [os.path.join(cwd, util.repo_name(url)) for url in urls]
-    assert all(map(util.is_git_repo, paths))  # sanity check
+    assert all(map(util.is_git_repo, paths)), "all repos must be git repos"
     return paths
 
 
@@ -200,7 +200,7 @@ def _open_issue_by_urls(repo_urls: Iterable[str], issue: tuples.Issue,
     api: A GitHubAPI to use.
     """
     repo_names = [util.repo_name(url) for url in repo_urls]
-    api.open_issue(issue.title, issue.body, repo_names)
+    api.open_issue(issue, repo_names)
 
 
 def open_issue(issue: tuples.Issue, master_repo_names: Iterable[str],
@@ -219,7 +219,7 @@ def open_issue(issue: tuples.Issue, master_repo_names: Iterable[str],
 
     repo_names = util.generate_repo_names(students, master_repo_names)
 
-    api.open_issue(issue.title, issue.body, repo_names)
+    api.open_issue(issue, repo_names)
 
 
 def close_issue(title_regex: str, master_repo_names: Iterable[str],
@@ -283,7 +283,7 @@ def migrate_repos(master_repo_urls: Iterable[str], user: str,
     master_names = [util.repo_name(url) for url in master_repo_urls]
 
     infos = [
-        RepoInfo(
+        tuples.Repo(
             name=master_name,
             description="Master repository {}".format(master_name),
             private=True,
@@ -308,21 +308,21 @@ def migrate_repos(master_repo_urls: Iterable[str], user: str,
 
 
 def _create_repo_infos(urls: Iterable[str],
-                       teams: Iterable[Team]) -> List[RepoInfo]:
-    """Create RepoInfo namedtuples for all combinations of url and team.
+                       teams: Iterable[Team]) -> List[tuples.Repo]:
+    """Create Repo namedtuples for all combinations of url and team.
 
     Args:
         urls: Master repo urls.
         teams: Team namedtuples.
 
     Returns:
-        A list of RepoInfo namedtuples with all (url, team) combinations.
+        A list of Repo namedtuples with all (url, team) combinations.
     """
     repo_infos = []
     for url in urls:
         repo_base_name = util.repo_name(url)
         repo_infos += [
-            RepoInfo(
+            tuples.Repo(
                 name=util.generate_repo_name(team.name, repo_base_name),
                 description="{} created for {}".format(repo_base_name,
                                                        team.name),

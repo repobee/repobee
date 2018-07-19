@@ -13,7 +13,7 @@ from gits_pet import git
 from gits_pet import tuples
 from gits_pet import exception
 from gits_pet import config
-from gits_pet.api_wrapper import Team
+from gits_pet.tuples import Team
 
 USER = pytest.constants.USER
 ORG_NAME = pytest.constants.ORG_NAME
@@ -210,14 +210,17 @@ class TestHandleParsedArgs:
         admin_mock.clone_repos.assert_called_once_with(
             args.master_repo_names, args.students, api_instance_mock)
 
-    def test_verify_connection_called_with_correct_args(self, mocker):
-        api_wrapper_mock = mocker.patch(
-            'gits_pet.cli.api_wrapper', autospec=True)
+    def test_verify_connection_called_with_correct_args(self, monkeypatch):
+        # regular mockaing is broken for static methods, it seems, produces non-callable
+        # so using monkeypatch instead
+        verify_mock = MagicMock()
+        monkeypatch.setattr('gits_pet.cli.APIWrapper.verify_connection',
+                            verify_mock)
         args = tuples.Args(cli.VERIFY_PARSER, **VALID_PARSED_ARGS)
 
         cli.handle_parsed_args(args, None)
 
-        api_wrapper_mock.verify_connection.assert_called_once_with(
+        verify_mock.assert_called_once_with(
             args.user, args.org_name, args.github_base_url, git.OAUTH_TOKEN)
 
 

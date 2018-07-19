@@ -12,7 +12,6 @@ import gits_pet
 from gits_pet import admin
 from gits_pet import github_api
 from gits_pet import git
-from gits_pet import api_wrapper
 from gits_pet import tuples
 from gits_pet import util
 from gits_pet import exception
@@ -84,7 +83,7 @@ def api_mock(request, mocker):
 
 @pytest.fixture
 def ensure_teams_and_members_mock(api_mock, students):
-    api_mock.ensure_teams_and_members.side_effect = lambda member_lists: [api_wrapper.Team(student, [student], id)
+    api_mock.ensure_teams_and_members.side_effect = lambda member_lists: [tuples.Team(student, [student], id)
                     for id, student
                     in enumerate(students)]
 
@@ -112,7 +111,7 @@ def repo_infos(master_urls, students):
     for url in master_urls:
         repo_base_name = util.repo_name(url)
         repo_infos += [
-            github_api.RepoInfo(
+            tuples.Repo(
                 name=util.generate_repo_name(student, repo_base_name),
                 description="{} created for {}".format(repo_base_name,
                                                        student),
@@ -394,9 +393,8 @@ class TestUpdateStudentRepos:
             call = call_list[0]
             args = call[0]
             assert len(call_list) == 1
-            assert args[0] == issue.title
-            assert args[1] == issue.body
-            assert sorted(args[2]) == sorted(fail_repo_names)
+            assert args[0] == issue
+            assert sorted(args[1]) == sorted(fail_repo_names)
         else:  # expect issue not to be opened
             assert not api_mock.open_issue.called
 
@@ -468,8 +466,7 @@ class TestOpenIssue:
             "A title", "And a nice **formatted** body\n### With headings!")
         admin.open_issue(issue, master_names, students, api_mock)
 
-        api_mock.open_issue.assert_called_once_with(issue.title, issue.body,
-                                                    expected_repo_names)
+        api_mock.open_issue.assert_called_once_with(issue, expected_repo_names)
 
 
 class TestCloseIssue:
