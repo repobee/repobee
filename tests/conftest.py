@@ -8,6 +8,9 @@ import string
 import os
 from unittest.mock import patch, MagicMock
 
+# mock the PyGithub github module
+sys.modules['github'] = MagicMock()
+
 # the git module must be imported with a mocked env variable
 TOKEN = 'besttoken1337'
 with patch('os.getenv', autospec=True, return_value=TOKEN):
@@ -17,8 +20,6 @@ with patch('os.getenv', autospec=True, return_value=TOKEN):
 from gits_pet import tuples
 from gits_pet import config
 
-# mock the PyGithub github module
-sys.modules['github'] = MagicMock()
 
 assert TOKEN == gits_pet.git.OAUTH_TOKEN
 

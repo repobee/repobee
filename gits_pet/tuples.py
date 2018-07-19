@@ -14,5 +14,9 @@ Args.__new__.__defaults__ = (None, ) * len(Args._fields)
 
 Team = namedtuple('Team', ('name', 'members', 'id'))
 
-RepoInfo = namedtuple(
-    'RepoInfo', ('name', 'description', 'private', 'team_id'))
+
+class Repo(
+        namedtuple('Repo',
+                   ('name', 'description', 'private', 'team_id', 'url'))):
+    def __new__(cls, name, description, private, team_id=None, url=None):
+        return super().__new__(cls, name, description, private, team_id, url)

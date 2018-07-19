@@ -9,7 +9,8 @@ import re
 from typing import List, Iterable, Mapping
 import daiquiri
 import github
-from gits_pet.api_wrapper import ApiWrapper
+
+from gits_pet import APIWrapper
 from gits_pet import util
 from gits_pet import exception
 from gits_pet import tuples
@@ -18,7 +19,11 @@ LOGGER = daiquiri.getLogger(__file__)
 
 
 class GitHubAPI:
-    """A highly specialized GitHub API class for gits_pet."""
+    """A highly specialized GitHub API class for gits_pet. The API is
+    affiliated both with an organization, and with the whole GitHub
+    instance. Almost all operations take place on the target
+    organization.
+    """
 
     def __init__(self, base_url: str, token: str, org_name: str):
         """Set up the GitHub API object.
@@ -28,9 +33,9 @@ class GitHubAPI:
             https://api.github.com for GitHub or https://<HOST>/api/v3 for
             Enterprise).
             token: A GitHub OAUTH token.
-            org_name: Name of an organization.
+            org_name: Name of the target organization.
         """
-        self._api = ApiWrapper(base_url, token, org_name)
+        self._api = APIWrapper(base_url, token, org_name)
         self._org_name = org_name
         self._base_url = base_url
         self._token = token
@@ -91,7 +96,7 @@ class GitHubAPI:
 
     def _ensure_members_in_team(self, team: tuples.Team,
                                 members: Iterable[str]):
-        """Add all of the users in 'memebrs' to a team. Skips any users that
+        """Add all of the users in ``members`` to a team. Skips any users that
         don't exist, or are already in the team.
 
         Args:
@@ -120,15 +125,15 @@ class GitHubAPI:
         """
         self._api.add_to_team(members, team)
 
-    def create_repos(self, repo_infos: Iterable[tuples.RepoInfo]):
-        """Create repositories in the given organization according to the RepoInfos.
+    def create_repos(self, repo_infos: Iterable[tuples.Repo]):
+        """Create repositories in the given organization according to the Repos.
         Repos that already exist are skipped.
 
         Args:
-            repo_infos: An iterable of RepoInfo namedtuples.
+            repo_infos: An iterable of Repo namedtuples.
 
         Returns:
-            A list of urls to all repos corresponding to the RepoInfos.
+            A list of urls to all repos corresponding to the Repos.
         """
         repo_urls = []
         for info in repo_infos:
@@ -160,30 +165,12 @@ class GitHubAPI:
             that were not found.
         """
         repo_names_set = set(repo_names)
-        urls = [
-            repo.html_url for repo in self._api.get_repos()
-            if repo.name in repo_names_set
-        ]
+        urls = [repo.url for repo in self._api.get_repos(repo_names_set)]
 
         not_found = list(repo_names_set -
                          {util.repo_name(url)
                           for url in urls})
-        if not_found:
-            for repo_name in not_found:
-                LOGGER.warning("repo {} could not be found".format(repo_name))
         return urls, not_found
-
-    def get_repo_urls_by_regex(self, regex: str) -> List[str]:
-        """Get repo urls for all repos in the current organization whose names
-        match the regex.
-
-        Args:
-            regex: A regex.
-
-        Returns:
-            a list of repo urls matching the regex.
-        """
-        return [repo.url for repo in self._api.get_repos(regex=regex)]
 
     def open_issue(self, issue: tuples.Issue,
                    repo_names: Iterable[str]) -> None:

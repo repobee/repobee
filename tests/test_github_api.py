@@ -6,7 +6,6 @@ from collections import namedtuple
 
 import github
 from gits_pet import github_api
-from gits_pet import api_wrapper
 from gits_pet import exception
 from gits_pet import tuples
 
@@ -27,7 +26,7 @@ def repo_infos():
     privacy = (True, True, False, True)
     team_id = (1, 2, 3, 55)
     repo_infos = [
-        tuples.RepoInfo(name, description, private,
+        tuples.Repo(name, description, private,
                  team_id) for name, description, private, team_id in zip(
                      repo_names, descriptions, privacy, team_id)
     ]
@@ -68,7 +67,7 @@ def api_wrapper_mock(mocker, existing_teams):
         lambda repo_name: GENERATE_REPO_URL(repo_name)
 
     api_wrapper_mock = mocker.patch(
-        'gits_pet.github_api.ApiWrapper', return_value=api_wrapper_instance)
+        'gits_pet.github_api.APIWrapper', return_value=api_wrapper_instance)
 
     return api_wrapper_instance
 
@@ -151,10 +150,10 @@ class TestCreateRepos:
             raise VALIDATION_ERROR
 
         mocker.patch(
-            'gits_pet.github_api.ApiWrapper.create_repo',
+            'gits_pet.github_api.APIWrapper.create_repo',
             side_effect=create_repo_side_effect)
         mocker.patch(
-            'gits_pet.api_wrapper.ApiWrapper.get_repo_url',
+            'gits_pet.github_api.APIWrapper.get_repo_url',
             side_effect=lambda repo_name: repo_name)
 
         actual_urls = api.create_repos(repo_infos)

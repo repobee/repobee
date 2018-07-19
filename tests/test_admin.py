@@ -12,7 +12,6 @@ import gits_pet
 from gits_pet import admin
 from gits_pet import github_api
 from gits_pet import git
-from gits_pet import api_wrapper
 from gits_pet import tuples
 from gits_pet import util
 from gits_pet import exception
@@ -112,7 +111,7 @@ def repo_infos(master_urls, students):
     for url in master_urls:
         repo_base_name = util.repo_name(url)
         repo_infos += [
-            tuples.RepoInfo(
+            tuples.Repo(
                 name=util.generate_repo_name(student, repo_base_name),
                 description="{} created for {}".format(repo_base_name,
                                                        student),
@@ -467,8 +466,7 @@ class TestOpenIssue:
             "A title", "And a nice **formatted** body\n### With headings!")
         admin.open_issue(issue, master_names, students, api_mock)
 
-        api_mock.open_issue.assert_called_once_with(issue,
-                                                    expected_repo_names)
+        api_mock.open_issue.assert_called_once_with(issue, expected_repo_names)
 
 
 class TestCloseIssue:

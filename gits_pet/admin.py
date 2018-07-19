@@ -283,7 +283,7 @@ def migrate_repos(master_repo_urls: Iterable[str], user: str,
     master_names = [util.repo_name(url) for url in master_repo_urls]
 
     infos = [
-        tuples.RepoInfo(
+        tuples.Repo(
             name=master_name,
             description="Master repository {}".format(master_name),
             private=True,
@@ -308,21 +308,21 @@ def migrate_repos(master_repo_urls: Iterable[str], user: str,
 
 
 def _create_repo_infos(urls: Iterable[str],
-                       teams: Iterable[Team]) -> List[tuples.RepoInfo]:
-    """Create RepoInfo namedtuples for all combinations of url and team.
+                       teams: Iterable[Team]) -> List[tuples.Repo]:
+    """Create Repo namedtuples for all combinations of url and team.
 
     Args:
         urls: Master repo urls.
         teams: Team namedtuples.
 
     Returns:
-        A list of RepoInfo namedtuples with all (url, team) combinations.
+        A list of Repo namedtuples with all (url, team) combinations.
     """
     repo_infos = []
     for url in urls:
         repo_base_name = util.repo_name(url)
         repo_infos += [
-            tuples.RepoInfo(
+            tuples.Repo(
                 name=util.generate_repo_name(team.name, repo_base_name),
                 description="{} created for {}".format(repo_base_name,
                                                        team.name),
