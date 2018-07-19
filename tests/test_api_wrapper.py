@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, PropertyMock
+from unittest.mock import MagicMock, PropertyMock, patch
 from collections import namedtuple
 import pytest
 import github
@@ -26,13 +26,10 @@ def raise_404(*args, **kwargs):
 
 
 @pytest.fixture
-def happy_github(mocker):
+def happy_github(mocker, monkeypatch):
     """mock of github.Github which raises no exceptions and returns the
     correct values.
     """
-    # github module is mocked in conftest
-    github.GithubException = GithubException
-
     organization = MagicMock()
     organization.get_members = lambda role: \
         [User(login='blablabla'), User(login='hello'), User(login=USER)]
@@ -44,7 +41,11 @@ def happy_github(mocker):
     type(github_instance).oauth_scopes = PropertyMock(
         return_value=api_wrapper.REQUIRED_OAUTH_SCOPES)
 
-    github.Github.side_effect = lambda login_or_token, base_url: github_instance
+    monkeypatch.setattr(github, 'GithubException', GithubException)
+    mocker.patch(
+        'github.Github',
+        side_effect=lambda login_or_token, base_url: github_instance)
+
     return github_instance
 
 

@@ -21,7 +21,7 @@ from gits_pet import util
 from gits_pet import tuples
 from gits_pet import exception
 from gits_pet.github_api import GitHubAPI, RepoInfo
-from gits_pet.api_wrapper import Team
+from gits_pet.tuples import Team
 from gits_pet.git import Push
 
 LOGGER = daiquiri.getLogger(__file__)
@@ -134,7 +134,7 @@ def _clone_all(urls: Iterable[str], cwd: str):
         LOGGER.error("error cloning into {}, aborting ...".format(url))
         raise
     paths = [os.path.join(cwd, util.repo_name(url)) for url in urls]
-    assert all(map(util.is_git_repo, paths))  # sanity check
+    assert all(map(util.is_git_repo, paths)), "all repos must be git repos"
     return paths
 
 

@@ -16,6 +16,7 @@ import github
 
 from gits_pet import exception
 from gits_pet import util
+from gits_pet import tuples
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -27,18 +28,40 @@ _Repo = github.Repository.Repository
 REQUIRED_OAUTH_SCOPES = {'admin:org', 'repo'}
 
 # classes also used externally
-Team = collections.namedtuple('Team', ('name', 'members', 'id'))
 RepoInfo = collections.namedtuple(
     'RepoInfo', ('name', 'description', 'private', 'team_id'))
 
 
 @contextlib.contextmanager
+def _convert_404_to_not_found_error(msg):
+    """Catch a github.GithubException with status 404 and convert to
+    exception.NotFoundError with the provided message. If the GithubException
+    does not have status 404, instead raise exception.UnexpectedException.
+    """
+    try:
+        yield
+    except github.GithubException as exc:
+        if exc.status == 404:
+            raise exception.NotFoundError(msg)
+        raise exception.UnexpectedException(
+            "An unexpected exception occured. {.__name__}: {}".format(
+                type(exc), str(exc)))
+
+
+@contextlib.contextmanager
 def _try_api_request():
-    """Context manager for trying API requests."""
+    """Context manager for trying API requests.
+    
+    Raises:
+        exception.NotFoundError
+        exception.BadCredentials
+        exception.GitHubError
+        exception.ServiceNotFoundError
+        exception.UnexpectedException
+    """
     try:
         yield
     except github.GithubException as e:
-        #LOGGER.error("{}: {}".format(type(e).__name__, str(e)))
         if e.status == 404:
             raise exception.NotFoundError(str(e), status=404)
         elif e.status == 401:
@@ -71,7 +94,7 @@ class ApiWrapper:
         with _try_api_request():
             self._org = self._github.get_organization(org_name)
 
-    def get_user(self, username) -> _User:
+    def _get_user(self, username) -> _User:
         """Get a user from the organization.
         
         Args:
@@ -83,39 +106,60 @@ class ApiWrapper:
         with _try_api_request():
             return self._github.get_user(username)
 
-    def get_teams(self) -> Iterable[_Team]:
+    def get_teams(self) -> Iterable[tuples.Team]:
         """Returns: An iterable of the organization's teams."""
         with _try_api_request():
-            return self._org.get_teams()
+            return (tuples.Team(
+                name=team.name, members=team.get_members(), id=team.id)
+                    for team in self._org.get_teams())
 
-    def get_teams_in(self, team_names: Iterable[str]) -> Iterable[Team]:
+    def get_teams_in(self, team_names: Iterable[str]) -> Iterable[tuples.Team]:
         """Get all teams that match any team name in the team_names iterable.
 
         Args:
             team_names: An iterable of team names.
-
         Returns:
             An iterable of Team namedtuples of all teams that matched any of the team names.
         """
         team_names = set(team_names)
         with _try_api_request():
             return [
-                Team(
-                    name=team.name,
-                    members=[m.name for m in team.get_members()],
-                    id=team.id) for team in self.get_teams()
-                if team.name in team_names
+                team for team in self.get_teams() if team.name in team_names
             ]
 
-    def add_to_team(self, member: _User, team: _Team):
-        """Add a user to a team.
+    def _get_users(self, usernames: Iterable[str]) -> List[_User]:
+        """Get all existing users corresponding to the usernames.
+        Skip users that do not exist.
+        
+        Args:
+            usernames: GitHub usernames.
+        Returns:
+            A list of _User objects.
+        """
+        existing_users = []
+        for name in usernames:
+            try:
+                existing_users.append(self._github.get_user(name))
+            except github.GithubException as exc:
+                if exc.status != 404:
+                    raise exception.GitHubError(
+                        "Got unexpected response code from the GitHub API",
+                        status=exc.status)
+                LOGGER.warning("user {} does not exist".format(name))
+        return existing_users
+
+    def add_to_team(self, members: Iterable[str], team: tuples.Team):
+        """Add members to a team.
 
         Args:
-            member: A user to add to the team.
-            team: A _Team.
+            member: Users to add to the team.
+            team: A Team.
         """
         with _try_api_request():
-            team.add_membership(member)
+            team = self._org.get_team(team.id)
+            users = self._get_users(members)
+            for user in users:
+                team.add_membership(user)
 
     def get_repo_url(self, repo_name: str) -> str:
         """Get a repo from the organization.
@@ -219,8 +263,10 @@ def verify_connection(user: str, org_name: str, base_url: str, token: str):
         org_name=(org_name, str))
     util.validate_non_empty(
         base_url=base_url, token=token, user=user, org_name=org_name)
+
     LOGGER.info("verifying connection ...")
     g = github.Github(login_or_token=token, base_url=base_url)
+
     LOGGER.info("trying to fetch user information ...")
 
     user_not_found_msg = (
@@ -228,7 +274,9 @@ def verify_connection(user: str, org_name: str, base_url: str, token: str):
         "bad base url, bad username or bad oauth permissions").format(user)
     with _convert_404_to_not_found_error(user_not_found_msg):
         g.get_user(user)
-    LOGGER.info("SUCCESS: found user {}, user exists and base url looks okay".format(user))
+    LOGGER.info(
+        "SUCCESS: found user {}, user exists and base url looks okay".format(
+            user))
 
     LOGGER.info("verifying oauth scopes ...")
     scopes = g.oauth_scopes
@@ -257,19 +305,3 @@ def verify_connection(user: str, org_name: str, base_url: str, token: str):
         user, org_name))
 
     LOGGER.info("GREAT SUCCESS: All settings check out!")
-
-
-@contextlib.contextmanager
-def _convert_404_to_not_found_error(msg):
-    """Catch a github.GithubException with status 404 and convert to
-    exception.NotFoundError with the provided message. If the GithubException
-    does not have status 404, instead raise exception.UnexpectedException.
-    """
-    try:
-        yield
-    except github.GithubException as exc:
-        if exc.status == 404:
-            raise exception.NotFoundError(msg)
-        raise exception.UnexpectedException(
-            "An unexpected exception occured. {.__name__}: {}".format(
-                type(exc), str(exc)))

@@ -8,6 +8,7 @@ import github
 from gits_pet import github_api
 from gits_pet import api_wrapper
 from gits_pet import exception
+from gits_pet import tuples
 from gits_pet.api_wrapper import RepoInfo
 
 ORG_NAME = "this-is-a-test-org"
@@ -15,6 +16,8 @@ ORG_NAME = "this-is-a-test-org"
 NOT_FOUND_EXCEPTION = exception.NotFoundError(msg=None, status=404)
 VALIDATION_ERROR = exception.GitHubError(msg=None, status=422)
 SERVER_ERROR = exception.GitHubError(msg=None, status=500)
+
+GENERATE_REPO_URL = pytest.functions.GENERATE_REPO_URL
 
 
 @pytest.fixture(scope='function')
@@ -32,130 +35,128 @@ def repo_infos():
     return repo_infos
 
 
+@pytest.fixture
+def existing_teams():
+    existing_teams = {}
+    yield existing_teams
+
+
+@pytest.fixture
+def api_wrapper_mock(mocker, existing_teams):
+    api_wrapper_instance = MagicMock()
+
+    # have create_team and get_teams work on a mocked dictionary
+    api_wrapper_instance.create_repo.side_effect = \
+        lambda repo_info: GENERATE_REPO_URL(repo_info.name)
+    api_wrapper_instance.create_team.side_effect = \
+        lambda team_name, permission: existing_teams.update({team_name: set()})
+
+    api_wrapper_instance.get_teams.side_effect = \
+        lambda: [tuples.Team(name=name, members=members, id=hash(name)) for name, members in existing_teams.items()]
+
+    api_wrapper_instance.get_teams_in.side_effect = \
+        lambda team_names: list(set(team_names).intersection(existing_teams.keys()))
+
+    def add_to_team(members, team):
+        for user in members:
+            existing_teams[team.name].add(user)
+
+    api_wrapper_instance.add_to_team.side_effect = add_to_team
+
+    api_wrapper_instance.get_user.side_effect = lambda username: username
+
+    api_wrapper_instance.get_repo_url.side_effect = \
+        lambda repo_name: GENERATE_REPO_URL(repo_name)
+
+    api_wrapper_mock = mocker.patch(
+        'gits_pet.github_api.ApiWrapper', return_value=api_wrapper_instance)
+
+    return api_wrapper_instance
+
+
 @pytest.fixture(scope='function')
-def api(mocker):
-    # mock out the PyGithub API
-    mocker.patch('github.Github', autospec=True)
+def api(api_wrapper_mock, mocker):
     return github_api.GitHubAPI('bla', 'blue', 'bli')
 
 
-@pytest.fixture(scope='function')
-def create_repo_mock(mocker):
-    create_repo_mock = mocker.patch(
-        'gits_pet.api_wrapper.ApiWrapper.create_repo',
-        autospec=True,
-        side_effect=lambda _, info: info.name)
-    return create_repo_mock
+class TestEnsureTeamsAndMembers:
+    def test_no_previous_teams(self, api_wrapper_mock, existing_teams, api):
+        """Test that ensure_teams_and_members works as expected when there are no
+        previous teams, and all users exist. This is a massive end-to-end test of
+        the function with only the lower level API's mocked out.
+        """
+        teams_and_members = {
+            'team_one': set(['first', 'second']),
+            'two': set(['two']),
+            'last_team': set([str(i) for i in range(10)])
+        }
+
+        api.ensure_teams_and_members(teams_and_members)
+
+        assert existing_teams == teams_and_members
 
 
-def test_create_repos_creates_correct_repos(repo_infos, api, create_repo_mock):
-    """Assert that create_repo is called with the correct arguments."""
-    # expect (self, repo_info) call args
-    expected_calls = [call(api._api, info) for info in repo_infos]
+class TestCreateRepos:
+    def test_creates_correct_repos(self, repo_infos, api, api_wrapper_mock):
+        """Assert that create_repo is called with the correct arguments."""
+        # expect (self, repo_info) call args
+        expected_calls = [call(info) for info in repo_infos]
 
-    api.create_repos(repo_infos)
-
-    assert repo_infos
-    create_repo_mock.assert_has_calls(expected_calls)
-
-
-def test_create_repos_skips_existing_repos(repo_infos, api, create_repo_mock):
-    """Assert that create_repo is called with all repo_infos even when there are exceptions."""
-    expected_calls = [call(api._api, info) for info in repo_infos]
-
-    # cause a validation error for the middle repo
-    side_effect = [create_repo_mock] * len(expected_calls)
-    side_effect[len(repo_infos) // 2] = VALIDATION_ERROR
-    create_repo_mock.side_effect = side_effect
-
-    api.create_repos(repo_infos)
-
-    assert repo_infos
-    create_repo_mock.assert_has_calls(expected_calls)
-
-
-def test_create_repos_raises_on_unexpected_error(repo_infos, api,
-                                                 create_repo_mock):
-    # a 500 status code is unexpected
-    side_effect = [create_repo_mock] * len(repo_infos)
-    side_effect_github_exception = [SERVER_ERROR] + side_effect[1:]
-    # a general RuntimeError is also unexpected
-    side_effect_runtime_error = [RuntimeError()] + side_effect[1:]
-
-    create_repo_mock.side_effect = side_effect_github_exception
-    with pytest.raises(exception.GitHubError):
         api.create_repos(repo_infos)
 
-    create_repo_mock.side_effect = side_effect_runtime_error
-    with pytest.raises(exception.GitHubError):
+        assert repo_infos
+        assert api_wrapper_mock.create_repo.called
+        api_wrapper_mock.create_repo.assert_has_calls(expected_calls)
+
+    def test_skips_existing_repos(self, repo_infos, api, api_wrapper_mock):
+        """Assert that create_repo is called with all repo_infos even when there are exceptions."""
+        create_repo_mock = api_wrapper_mock.create_repo
+        expected_calls = [call(info) for info in repo_infos]
+
+        # cause a validation error for the middle repo
+        side_effect = [create_repo_mock] * len(expected_calls)
+        side_effect[len(repo_infos) // 2] = VALIDATION_ERROR
+        create_repo_mock.side_effect = side_effect
+
         api.create_repos(repo_infos)
 
+        assert repo_infos
+        create_repo_mock.assert_has_calls(expected_calls)
 
-def test_create_repos_returns_all_urls(mocker, repo_infos, api):
-    """Assert that create_repo returns the urls for all repos, even if there
-    are validation errors.
-    """
-    # simplify urls to repo names
-    expected_urls = [info.name for info in repo_infos]
+    def test_raises_on_unexpected_error(self, repo_infos, api,
+                                        api_wrapper_mock):
+        # a 500 status code is unexpected
+        create_repo_mock = api_wrapper_mock.create_repo
+        side_effect = [create_repo_mock] * len(repo_infos)
+        side_effect_github_exception = [SERVER_ERROR] + side_effect[1:]
+        # a general RuntimeError is also unexpected
+        side_effect_runtime_error = [RuntimeError()] + side_effect[1:]
 
-    def create_repo_side_effect(info):
-        if info.name != expected_urls[len(expected_urls) // 2]:
-            return info.name
-        raise VALIDATION_ERROR
+        create_repo_mock.side_effect = side_effect_github_exception
+        with pytest.raises(exception.GitHubError):
+            api.create_repos(repo_infos)
 
-    mocker.patch(
-        'gits_pet.api_wrapper.ApiWrapper.create_repo',
-        side_effect=create_repo_side_effect)
-    mocker.patch(
-        'gits_pet.api_wrapper.ApiWrapper.get_repo_url',
-        side_effect=lambda repo_name: repo_name)
+        create_repo_mock.side_effect = side_effect_runtime_error
+        with pytest.raises(exception.GitHubError):
+            api.create_repos(repo_infos)
 
-    actual_urls = api.create_repos(repo_infos)
-    assert actual_urls == expected_urls
+    def test_returns_all_urls(self, mocker, repo_infos, api):
+        """Assert that create_repo returns the urls for all repos, even if there
+        are validation errors.
+        """
+        expected_urls = [GENERATE_REPO_URL(info.name) for info in repo_infos]
 
+        def create_repo_side_effect(info):
+            if info.name != expected_urls[len(expected_urls) // 2]:
+                return info.name
+            raise VALIDATION_ERROR
 
-def test_ensure_teams_and_members_no_previous_teams(mocker, api):
-    """Test that ensure_teams_and_members works as expected with there are no
-    previous teams, and all users exist. This is a massive end-to-end test of
-    the function with only the lower level API's mocked out.
-    """
-    # have create_team and get_teams work on a mocked dictionary
-    existing_teams = {}
-    Team = namedtuple('Team', ['name', 'get_members'])
+        mocker.patch(
+            'gits_pet.github_api.ApiWrapper.create_repo',
+            side_effect=create_repo_side_effect)
+        mocker.patch(
+            'gits_pet.api_wrapper.ApiWrapper.get_repo_url',
+            side_effect=lambda repo_name: repo_name)
 
-    def get_teams(self):
-        return [Team(tn, MagicMock()) for tn in existing_teams.keys()]
-
-    mock_create_team = mocker.patch(
-        'gits_pet.api_wrapper.ApiWrapper.create_team',
-        autospec=True,
-        side_effect=lambda self, team_name, permission: existing_teams.update({team_name: set()})
-    )
-    mock_get_teams = mocker.patch(
-        'gits_pet.api_wrapper.ApiWrapper.get_teams',
-        autospec=True,
-        side_effect=get_teams)
-    mock_get_teams_in = mocker.patch('gits_pet.api_wrapper.ApiWrapper.get_teams_in',
-            autospec=True,
-            side_effect=lambda self, team_names: list(set(team_names).intersection(existing_teams.keys())))
-    mock_add_to_team = mocker.patch(
-        'gits_pet.api_wrapper.ApiWrapper.add_to_team',
-        autospec=True,
-        side_effect=
-        lambda self, username, team: existing_teams[team.name].add(username))
-
-    # get_user just returns the username
-    mock_get_user = mocker.patch(
-        'gits_pet.api_wrapper.ApiWrapper.get_user',
-        autospec=True,
-        side_effect=lambda self, username: username)
-
-    teams_and_members = {
-        'team_one': set(['first', 'second']),
-        'two': set(['two']),
-        'last_team': set([str(i) for i in range(10)])
-    }
-
-    api.ensure_teams_and_members(teams_and_members)
-
-    assert existing_teams == teams_and_members
+        actual_urls = api.create_repos(repo_infos)
+        assert actual_urls == expected_urls

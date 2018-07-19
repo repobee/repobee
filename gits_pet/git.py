@@ -311,7 +311,7 @@ def _execute_batch(
         create_task_func: Callable[[Iterable[Any], Any], asyncio.Task],
         list_args: Iterable[Any], *args, **kwargs) -> List[asyncio.Task]:
     """something"""
-    assert len(list_args) <= CONCURRENT_TASKS
+    assert len(list_args) <= CONCURRENT_TASKS, "Too many concurrent tasks"
     tasks = [
         create_task_func(list_arg, *args, **kwargs) for list_arg in list_args
     ]

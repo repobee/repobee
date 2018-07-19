@@ -84,7 +84,7 @@ def api_mock(request, mocker):
 
 @pytest.fixture
 def ensure_teams_and_members_mock(api_mock, students):
-    api_mock.ensure_teams_and_members.side_effect = lambda member_lists: [api_wrapper.Team(student, [student], id)
+    api_mock.ensure_teams_and_members.side_effect = lambda member_lists: [tuples.Team(student, [student], id)
                     for id, student
                     in enumerate(students)]
 

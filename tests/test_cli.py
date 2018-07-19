@@ -13,7 +13,7 @@ from gits_pet import git
 from gits_pet import tuples
 from gits_pet import exception
 from gits_pet import config
-from gits_pet.api_wrapper import Team
+from gits_pet.tuples import Team
 
 USER = pytest.constants.USER
 ORG_NAME = pytest.constants.ORG_NAME
