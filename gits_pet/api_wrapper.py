@@ -27,10 +27,6 @@ _Repo = github.Repository.Repository
 
 REQUIRED_OAUTH_SCOPES = {'admin:org', 'repo'}
 
-# classes also used externally
-RepoInfo = collections.namedtuple(
-    'RepoInfo', ('name', 'description', 'private', 'team_id'))
-
 
 @contextlib.contextmanager
 def _convert_404_to_not_found_error(msg):
@@ -127,6 +123,47 @@ class ApiWrapper:
                 team for team in self.get_teams() if team.name in team_names
             ]
 
+    def open_issue_in(self, issue: tuples.Issue,
+                      repo_names: Iterable[str]) -> None:
+        """Open issues in all repos defined by repo_names, if they exist.
+        Skip any repos that do not exist.
+
+        Args:
+            issue: The issue to open.
+            repo_names: Names of repos in the target organization.
+        """
+        repo_names_set = set(repo_names)
+        repos = self._get_repos_by_name(repo_names_set)
+        for repo in repos:
+            issue = repo.create_issue(issue.title, body=issue.body)
+            LOGGER.info("Opened issue {}/#{}-'{}'".format(
+                repo.name, issue.number, issue.title))
+
+    def close_issue_in(self, title_regex: str, repo_names: Iterable[str]) -> None:
+        """Close issues whose titles match the title_regex, in all repos
+        defined by repo_names. Repos that do not exist are skipped.
+
+        Args:
+            title_regex: A regex to match against issue titles.
+            repo_names: Names of repositories to close issues in.
+        """
+        repo_names_set = set(repo_names)
+        repos = list(self._get_repos_by_name(repo_names_set))
+
+        issue_repo_gen = ((issue, repo) for repo in repos
+                          for issue in repo.get_issues(state='open')
+                          if re.match(title_regex, issue.title))
+        closed = 0
+        for issue, repo in issue_repo_gen:
+            issue.edit(state='closed')
+            LOGGER.info("closed issue {}/#{}-'{}'".format(
+                repo.name, issue.number, issue.title))
+            closed += 1
+
+        if not closed:
+            LOGGER.warning("Found no matching issues.")
+
+
     def _get_users(self, usernames: Iterable[str]) -> List[_User]:
         """Get all existing users corresponding to the usernames.
         Skip users that do not exist.
@@ -170,7 +207,7 @@ class ApiWrapper:
         with _try_api_request():
             return self._org.get_repo(repo_name).html_url
 
-    def create_repo(self, repo_info: RepoInfo):
+    def create_repo(self, repo_info: tuples.RepoInfo):
         """Create a repo in the organization.
 
         Args:
@@ -218,7 +255,7 @@ class ApiWrapper:
             else:
                 yield from self._org.get_repos()
 
-    def get_repos_by_name(
+    def _get_repos_by_name(
             self, repo_names: Iterable[str]) -> Generator[_Repo, None, None]:
         """Get all repos that match any of the names in repo_names. Unmatched
         names are ignored (in both directions).
@@ -231,8 +268,15 @@ class ApiWrapper:
         """
         name_set = set(repo_names)
         with _try_api_request():
-            return (repo for repo in self._org.get_repos()
-                    if repo.name in name_set)
+            repos = (repo for repo in self._org.get_repos()
+                     if repo.name in name_set)
+
+        missing_repos = name_set - {repo.name for repo in repos}
+        if missing_repos:
+            LOGGER.warning("can't find repos: {}".format(
+                ", ".join(missing_repos)))
+
+        return repos
 
 
 def verify_connection(user: str, org_name: str, base_url: str, token: str):

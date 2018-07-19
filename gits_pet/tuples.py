@@ -13,3 +13,6 @@ Args = namedtuple(
 Args.__new__.__defaults__ = (None, ) * len(Args._fields)
 
 Team = namedtuple('Team', ('name', 'members', 'id'))
+
+RepoInfo = namedtuple(
+    'RepoInfo', ('name', 'description', 'private', 'team_id'))

@@ -9,7 +9,7 @@ import re
 from typing import List, Iterable, Mapping
 import daiquiri
 import github
-from gits_pet.api_wrapper import (ApiWrapper, RepoInfo, _Team, _User, _Repo)
+from gits_pet.api_wrapper import ApiWrapper
 from gits_pet import util
 from gits_pet import exception
 from gits_pet import tuples
@@ -120,7 +120,7 @@ class GitHubAPI:
         """
         self._api.add_to_team(members, team)
 
-    def create_repos(self, repo_infos: Iterable[RepoInfo]):
+    def create_repos(self, repo_infos: Iterable[tuples.RepoInfo]):
         """Create repositories in the given organization according to the RepoInfos.
         Repos that already exist are skipped.
 
@@ -185,28 +185,15 @@ class GitHubAPI:
         """
         return [repo.url for repo in self._api.get_repos(regex=regex)]
 
-    def open_issue(self, title: str, body: str,
+    def open_issue(self, issue: tuples.Issue,
                    repo_names: Iterable[str]) -> None:
         """Open the specified issue in all repos with the given names.
 
         Args:
-            title: Title of the issue.
-            body: An issue text.
+            issue: The issue to open.
             repo_names: Names of repos to open the issue in.
         """
-        repo_names_set = set(repo_names)
-        repos = list(self._api.get_repos_by_name(repo_names_set))
-
-        missing_repos = repo_names_set - set(repo.name for repo in repos)
-        if missing_repos:
-            LOGGER.warning(
-                "Missing repos (for which issue will not be opened): {}".
-                format(missing_repos))
-
-        for repo in repos:
-            issue = repo.create_issue(title, body=body)
-            LOGGER.info("Opened issue {}/#{}-'{}'".format(
-                repo.name, issue.number, issue.title))
+        self._api.open_issue_in(issue, repo_names)
 
     def close_issue(self, title_regex: str, repo_names: Iterable[str]) -> None:
         """Close any issues in the given repos whose titles match the title_regex.
@@ -215,24 +202,4 @@ class GitHubAPI:
             title_regex: A regex to match against issue titles.
             repo_names: Names of repositories to close issues in.
         """
-        repo_names_set = set(repo_names)
-        repos = list(self._api.get_repos_by_name(repo_names_set))
-
-        missing_repos = repo_names_set - set(repo.name for repo in repos)
-        if missing_repos:
-            LOGGER.warning(
-                "Missing repos (for which no issue will be closed): {}".format(
-                    missing_repos))
-
-        issue_repo_gen = ((issue, repo) for repo in repos
-                          for issue in repo.get_issues(state='open')
-                          if re.match(title_regex, issue.title))
-        closed = 0
-        for issue, repo in issue_repo_gen:
-            issue.edit(state='closed')
-            LOGGER.info("closed issue {}/#{}-'{}'".format(
-                repo.name, issue.number, issue.title))
-            closed += 1
-
-        if not closed:
-            LOGGER.warning("Found no matching issues.")
+        self._api.close_issue_in(title_regex, repo_names)

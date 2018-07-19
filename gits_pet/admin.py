@@ -20,7 +20,7 @@ from gits_pet import github_api
 from gits_pet import util
 from gits_pet import tuples
 from gits_pet import exception
-from gits_pet.github_api import GitHubAPI, RepoInfo
+from gits_pet.github_api import GitHubAPI
 from gits_pet.tuples import Team
 from gits_pet.git import Push
 
@@ -200,7 +200,7 @@ def _open_issue_by_urls(repo_urls: Iterable[str], issue: tuples.Issue,
     api: A GitHubAPI to use.
     """
     repo_names = [util.repo_name(url) for url in repo_urls]
-    api.open_issue(issue.title, issue.body, repo_names)
+    api.open_issue(issue, repo_names)
 
 
 def open_issue(issue: tuples.Issue, master_repo_names: Iterable[str],
@@ -219,7 +219,7 @@ def open_issue(issue: tuples.Issue, master_repo_names: Iterable[str],
 
     repo_names = util.generate_repo_names(students, master_repo_names)
 
-    api.open_issue(issue.title, issue.body, repo_names)
+    api.open_issue(issue, repo_names)
 
 
 def close_issue(title_regex: str, master_repo_names: Iterable[str],
@@ -283,7 +283,7 @@ def migrate_repos(master_repo_urls: Iterable[str], user: str,
     master_names = [util.repo_name(url) for url in master_repo_urls]
 
     infos = [
-        RepoInfo(
+        tuples.RepoInfo(
             name=master_name,
             description="Master repository {}".format(master_name),
             private=True,
@@ -308,7 +308,7 @@ def migrate_repos(master_repo_urls: Iterable[str], user: str,
 
 
 def _create_repo_infos(urls: Iterable[str],
-                       teams: Iterable[Team]) -> List[RepoInfo]:
+                       teams: Iterable[Team]) -> List[tuples.RepoInfo]:
     """Create RepoInfo namedtuples for all combinations of url and team.
 
     Args:
@@ -322,7 +322,7 @@ def _create_repo_infos(urls: Iterable[str],
     for url in urls:
         repo_base_name = util.repo_name(url)
         repo_infos += [
-            RepoInfo(
+            tuples.RepoInfo(
                 name=util.generate_repo_name(team.name, repo_base_name),
                 description="{} created for {}".format(repo_base_name,
                                                        team.name),

@@ -9,7 +9,6 @@ from gits_pet import github_api
 from gits_pet import api_wrapper
 from gits_pet import exception
 from gits_pet import tuples
-from gits_pet.api_wrapper import RepoInfo
 
 ORG_NAME = "this-is-a-test-org"
 
@@ -28,7 +27,7 @@ def repo_infos():
     privacy = (True, True, False, True)
     team_id = (1, 2, 3, 55)
     repo_infos = [
-        RepoInfo(name, description, private,
+        tuples.RepoInfo(name, description, private,
                  team_id) for name, description, private, team_id in zip(
                      repo_names, descriptions, privacy, team_id)
     ]
