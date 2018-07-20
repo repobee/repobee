@@ -93,14 +93,14 @@ class PyGithubWrapper(AbstractAPIWrapper):
         with _try_api_request():
             return self._github.get_user(username)
 
-    def get_teams(self) -> Iterable[tuples.Team]:
-        """Returns: An iterable of the organization's teams."""
+    def get_teams(self) -> Generator[tuples.Team, None, None]:
+        """Returns: A generator of the organization's teams."""
         with _try_api_request():
             return (tuples.Team(
                 name=team.name, members=team.get_members(), id=team.id)
                     for team in self._org.get_teams())
 
-    def get_teams_in(self, team_names: Iterable[str]) -> Iterable[tuples.Team]:
+    def get_teams_in(self, team_names: Iterable[str]) -> List[tuples.Team]:
         """Get all teams that match any team name in the team_names iterable.
 
         Args:
@@ -110,9 +110,10 @@ class PyGithubWrapper(AbstractAPIWrapper):
         """
         team_names = set(team_names)
         with _try_api_request():
-            return [
+            teams = [
                 team for team in self.get_teams() if team.name in team_names
             ]
+            return teams
 
     def _get_users(self, usernames: Iterable[str]) -> List[_User]:
         """Get all existing users corresponding to the usernames.
@@ -139,7 +140,7 @@ class PyGithubWrapper(AbstractAPIWrapper):
         """Add members to a team.
 
         Args:
-            member: Users to add to the team.
+            members: Users to add to the team.
             team: A Team.
         """
         with _try_api_request():
@@ -160,9 +161,10 @@ class PyGithubWrapper(AbstractAPIWrapper):
         repo_names_set = set(repo_names)
         repos = list(self._get_repos_by_name(repo_names_set))
         for repo in repos:
-            issue = repo.create_issue(issue.title, body=issue.body)
+            with _try_api_request():
+                created_issue = repo.create_issue(issue.title, body=issue.body)
             LOGGER.info("Opened issue {}/#{}-'{}'".format(
-                repo.name, issue.number, issue.title))
+                repo.name, created_issue.number, created_issue.title))
 
     def close_issue_in(self, title_regex: str,
                        repo_names: Iterable[str]) -> None:
@@ -228,7 +230,7 @@ class PyGithubWrapper(AbstractAPIWrapper):
         with _try_api_request():
             self._org.create_team(team_name, permission=permission)
 
-    def get_repos(self, repo_names: Optional[Iterable[str]]
+    def get_repos(self, repo_names: Optional[Iterable[str]] = None
                   ) -> Generator[tuples.Repo, None, None]:
         """Get repo objects for all repositories in the organization. If
         repo_names are supplied, fetches only repos that correspond with
