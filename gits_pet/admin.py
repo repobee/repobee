@@ -167,6 +167,7 @@ def update_student_repos(master_repo_urls: Iterable[str],
     student_repo_names = util.generate_repo_names(students, master_repo_names)
 
     repo_urls, not_found = api.get_repo_urls(student_repo_names)
+    print(not_found)
 
     if not repo_urls:
         msg = "No student repos corresponding to the master repos were found"
@@ -353,11 +354,3 @@ def _create_push_tuples(master_repo_paths: Iterable[str],
             for repo_url in repo_urls if repo_url.endswith(repo_base_name)
         ]
     return push_tuples
-
-
-def _remove_cloned_repos(urls: Iterable[str]) -> None:
-    LOGGER.info("removing local repos ...")
-    for url in urls:
-        name = util.repo_name(url)
-        shutil.rmtree(name)
-        LOGGER.info("removed {}".format(name))

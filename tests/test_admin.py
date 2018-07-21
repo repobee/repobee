@@ -29,6 +29,8 @@ GENERATE_TEAM_REPO_URL = lambda student, base_name:\
 
 GENERATE_REPO_URL = lambda name: GENERATE_TEAM_REPO_URL(name, 'd')[:-2]
 
+raise_ = pytest.functions.raise_
+
 
 @pytest.fixture(autouse=True)
 def validate_types_mock(request, mocker):
@@ -206,6 +208,16 @@ class TestSetupStudentRepos:
     def is_git_repo_mock(self, mocker):
         return mocker.patch('gits_pet.util.is_git_repo', return_value=True)
 
+    def test_raises_on_clone_failure(self, master_urls, students, git_mock,
+                                     api_mock):
+        git_mock.clone_single.side_effect = lambda url, cwd: \
+            raise_(exception.CloneFailedError("clone failed", 128, b"some error", url))()
+
+        with pytest.raises(exception.CloneFailedError) as exc_info:
+            admin.setup_student_repos(master_urls, students, USER, api_mock)
+
+        assert exc_info.value.url == master_urls[0]
+
     def test_raises_on_duplicate_master_urls(self, mocker, master_urls,
                                              students, api_mock):
         master_urls.append(master_urls[0])
@@ -315,10 +327,15 @@ class TestUpdateStudentRepos:
         """
         # only one of the student repos is found, but all master repos are found
         found_repo_name = util.generate_repo_name(students[2], master_names[1])
+        not_found_repo_names = [
+            util.generate_repo_name(students[i], master_names[j])
+            for i in range(len(students)) for j in range(len(master_names))
+            if not (i == 2 and j == 1)
+        ]
         api_mock.get_repo_urls.side_effect = lambda repo_names: \
                 ([GENERATE_REPO_URL(name)
                     for name in repo_names
-                    if name in (*master_names, found_repo_name)], [])
+                    if name in (*master_names, found_repo_name)], not_found_repo_names)
 
         push_tuples = [
             git.Push(
