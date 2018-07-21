@@ -7,7 +7,7 @@ class GitsPetException(Exception):
     """Base exception for all gits_pet exceptions."""
 
     def __init__(self, msg="", *args, **kwargs):
-        super().__init__(self, msg)
+        super().__init__(self, msg, *args, **kwargs)
         self.msg = msg
 
     def __str__(self):
