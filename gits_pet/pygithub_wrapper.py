@@ -81,18 +81,6 @@ class PyGithubWrapper(AbstractAPIWrapper):
         with _try_api_request():
             self._org = self._github.get_organization(org_name)
 
-    def _get_user(self, username) -> _User:
-        """Get a user from the organization.
-        
-        Args:
-            username: A username.
-            
-        Returns:
-            A _User object.
-        """
-        with _try_api_request():
-            return self._github.get_user(username)
-
     def get_teams(self) -> Generator[tuples.Team, None, None]:
         """Returns: A generator of the organization's teams."""
         with _try_api_request():
@@ -200,21 +188,22 @@ class PyGithubWrapper(AbstractAPIWrapper):
         with _try_api_request():
             return self._org.get_repo(repo_name).html_url
 
-    def create_repo(self, repo_info: tuples.Repo):
+    def create_repo(self, repo: tuples.Repo):
         """Create a repo in the organization.
 
         Args:
-            repo_info: Repo attributes.
+            repo: A Repo namedtuple with repo attributes.
 
         Returns:
             The html url to the repo.
         """
         with _try_api_request():
+            print(self._org)
             repo = self._org.create_repo(
-                repo_info.name,
-                description=repo_info.description,
-                private=repo_info.private,
-                team_id=repo_info.team_id)
+                repo.name,
+                description=repo.description,
+                private=repo.private,
+                team_id=repo.team_id)
         return repo.html_url
 
     def create_team(self, team_name: str, permission: str = 'push') -> None:

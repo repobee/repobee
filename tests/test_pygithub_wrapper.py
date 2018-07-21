@@ -1,3 +1,4 @@
+import socket
 from unittest.mock import MagicMock, PropertyMock, patch, call
 from collections import namedtuple
 import pytest
@@ -36,6 +37,17 @@ def raise_404(*args, **kwargs):
 
 def raise_422(*args, **kwargs):
     raise GithubException("Already exists", 422)
+
+
+def raise_401(*args, **kwargs):
+    raise GithubException("Access denied", 401)
+
+
+def raise_(exception):
+    def raise_exception(*args, **kwargs):
+        raise exception
+
+    return raise_exception
 
 
 @pytest.fixture
@@ -147,6 +159,14 @@ def repos(organization, teams):
     return repos
 
 
+def repo_mock_to_tuple(repo_mock):
+    return tuples.Repo(
+        name=repo_mock.name,
+        description=repo_mock.description,
+        private=repo_mock.private,
+        team_id=repo_mock.team_id)
+
+
 @pytest.fixture
 def wrapper(happy_github):
     return pygithub_wrapper.PyGithubWrapper(GITHUB_BASE_URL, git.OAUTH_TOKEN,
@@ -208,6 +228,14 @@ class TestVerifyConnection:
 
         assert "user {} is not an owner".format(NOT_OWNER) in str(exc_info)
 
+    def test_raises_unexpected_exception_on_unexpected_status(
+            self, happy_github, wrapper):
+        happy_github.get_user.side_effect = raise_(
+            GithubException("internal server error", 500))
+        with pytest.raises(exception.UnexpectedException) as exc_info:
+            wrapper.verify_connection(USER, ORG_NAME, git.OAUTH_TOKEN,
+                                      GITHUB_BASE_URL)
+
 
 def team_mock_to_tuple(team_mock):
     """Note that the members will go out-of-date if the team_mock is updated
@@ -217,6 +245,48 @@ def team_mock_to_tuple(team_mock):
         name=team_mock.name,
         members=list(team_mock.get_members()),
         id=team_mock.id)
+
+
+class TestInit:
+    """Test initializing PyGithubWrapper objects."""
+
+    def test_init_with_bad_token_raises(self, happy_github):
+        happy_github.get_organization.side_effect = raise_(
+            GithubException("bad credentials", 401))
+
+        with pytest.raises(exception.BadCredentials):
+            wrapper = pygithub_wrapper.PyGithubWrapper(GITHUB_BASE_URL,
+                                                       "some-token", ORG_NAME)
+
+    def test_init_with_bad_url_raises(self, happy_github):
+        happy_github.get_organization.side_effect = raise_(socket.gaierror())
+
+        with pytest.raises(exception.ServiceNotFoundError):
+            wrapper = pygithub_wrapper.PyGithubWrapper(
+                GITHUB_BASE_URL, git.OAUTH_TOKEN, ORG_NAME)
+
+    def test_init_raises_on_unexpected_exception(self, happy_github):
+        happy_github.get_organization.side_effect = raise_(ValueError())
+
+        with pytest.raises(exception.UnexpectedException):
+            wrapper = pygithub_wrapper.PyGithubWrapper(
+                GITHUB_BASE_URL, git.OAUTH_TOKEN, ORG_NAME)
+
+
+class TestCreateRepo:
+    """Tests for create_repo."""
+
+    def test_happy_path(self, organization, wrapper, repos):
+        repo = repo_mock_to_tuple(repos[0])
+        assert wrapper._org == organization
+
+        wrapper.create_repo(repo)
+
+        organization.create_repo.assert_called_once_with(
+            repo.name,
+            description=repo.description,
+            private=repo.private,
+            team_id=repo.team_id)
 
 
 class TestGetTeams:
@@ -241,6 +311,14 @@ class TestGetTeams:
 
 class TestAddToTeam:
     """Tests for add_to_team."""
+
+    def test_raises_on_unexpeced_exception_from_get_users(
+            self, happy_github, users, teams, wrapper):
+        happy_github.get_user.side_effect = raise_(
+            GithubException("Bad credentials", 401))
+
+        with pytest.raises(exception.UnexpectedException):
+            wrapper.add_to_team(users, team_mock_to_tuple(teams[0]))
 
     def test_add_with_no_previous_members(
             self, happy_github, try_api_request_mock, users, teams, wrapper):
@@ -481,3 +559,18 @@ class TestGetRepos:
         actual_repos = list(wrapper.get_repos(repo_names))
 
         assert not actual_repos
+
+    def test_get_repos_works_when_repo_has_no_team(self, repos, repo_tuples,
+                                                   wrapper):
+        repo = repos[3]
+        repo.get_teams.side_effect = lambda: []
+        repo_tuples[3] = tuples.Repo(
+            name=repo.name,
+            description=repo.description,
+            private=repo.private,
+            team_id=None,
+            url=repo.html_url)
+
+        actual_repos = list(wrapper.get_repos())
+
+        assert actual_repos == repo_tuples
