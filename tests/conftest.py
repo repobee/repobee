@@ -20,7 +20,6 @@ with patch('os.getenv', autospec=True, return_value=TOKEN):
 from gits_pet import tuples
 from gits_pet import config
 
-
 assert TOKEN == gits_pet.git.OAUTH_TOKEN
 
 USER = 'slarse'
@@ -43,7 +42,7 @@ def pytest_namespace():
         STUDENTS=STUDENTS,
         ISSUE_PATH=ISSUE_PATH,
         ISSUE=ISSUE)
-    functions = dict(GENERATE_REPO_URL=GENERATE_REPO_URL)
+    functions = dict(GENERATE_REPO_URL=GENERATE_REPO_URL, raise_=raise_)
     return dict(constants=constants, functions=functions)
 
 
@@ -111,6 +110,24 @@ def empty_config_mock(mocker, isfile_mock, tmpdir):
     isfile = isfile_mock.side_effect
     isfile_mock.side_effect = lambda path: isfile(path) or str(path) == file.name
     yield file
+
+
+def raise_(exception):
+    """Function meant for raising exceptions in lambda.
+
+    Args:
+        exception: An exception to raise (initialized object, not class)
+    Returns:
+        A function that raises the provided exception when called with any
+        arguments.
+    Usage:
+        something = lambda: raise_(ValueError('bad value'))
+    """
+
+    def raise_exception(*args, **kwargs):
+        raise exception
+
+    return raise_exception
 
 
 _config_user = "user = {}".format(USER)
