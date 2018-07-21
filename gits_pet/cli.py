@@ -410,7 +410,10 @@ def _extract_students(args: argparse.Namespace) -> List[str]:
         students = args.students
     elif 'students_file' in args and args.students_file:
         students_file = pathlib.Path(args.students_file)
-        students_file.resolve()
+        try: # raises FileNotFoundError in 3.5 if no such file exists
+            students_file.resolve()
+        except FileNotFounderror:
+            pass # handled by next check
         if not students_file.is_file():
             raise exception.FileError(
                 "'{!s}' is not a file".format(students_file))
