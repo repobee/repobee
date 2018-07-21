@@ -198,7 +198,6 @@ class PyGithubWrapper(AbstractAPIWrapper):
             The html url to the repo.
         """
         with _try_api_request():
-            print(self._org)
             repo = self._org.create_repo(
                 repo.name,
                 description=repo.description,
