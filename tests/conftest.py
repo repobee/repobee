@@ -11,6 +11,11 @@ from unittest.mock import patch, MagicMock
 # mock the PyGithub github module
 sys.modules['github'] = MagicMock()
 
+# assert that importing git without oauth env raises OSError
+with patch('os.getenv', autospec=True, return_value=""):
+    with pytest.raises(OSError):
+        from gits_pet import git
+
 # the git module must be imported with a mocked env variable
 TOKEN = 'besttoken1337'
 with patch('os.getenv', autospec=True, return_value=TOKEN):
