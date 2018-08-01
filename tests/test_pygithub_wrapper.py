@@ -21,6 +21,7 @@ CLOSE_ISSUE = tuples.Issue('close this issue', 'This is a body')
 DONT_CLOSE_ISSUE = tuples.Issue("Don't close this issue", 'Another body')
 
 GENERATE_REPO_URL = pytest.functions.GENERATE_REPO_URL
+raise_ = pytest.functions.raise_
 
 User = namedtuple('User', ('login', ))
 
@@ -43,11 +44,6 @@ def raise_401(*args, **kwargs):
     raise GithubException("Access denied", 401)
 
 
-def raise_(exception):
-    def raise_exception(*args, **kwargs):
-        raise exception
-
-    return raise_exception
 
 
 @pytest.fixture

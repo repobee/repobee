@@ -127,6 +127,15 @@ def admin_all_raise_mock(admin_mock, request):
 class TestHandleParsedArgs:
     """Test the handling of parsed arguments."""
 
+    def test_raises_on_invalid_subparser_value(self, api_instance_mock):
+        parser = "DOES_NOT_EXIST"
+        args = tuples.Args(parser, **VALID_PARSED_ARGS)
+
+        with pytest.raises(exception.ParseError) as exc_info:
+            cli.handle_parsed_args(args, api_instance_mock)
+        assert "Illegal value for subparser: {}".format(parser) in str(
+            exc_info)
+
     def test_no_crash_on_valid_args(self, parsed_args_all_subparsers,
                                     api_instance_mock, admin_mock):
         """Test that valid arguments does not result in crash. Only validates
@@ -216,7 +225,11 @@ class TestHandleParsedArgs:
         verify_mock = MagicMock()
         monkeypatch.setattr('gits_pet.cli.APIWrapper.verify_connection',
                             verify_mock)
-        args = tuples.Args(cli.VERIFY_PARSER, **VALID_PARSED_ARGS)
+        args = tuples.Args(
+            cli.VERIFY_PARSER,
+            user=USER,
+            github_base_url=GITHUB_BASE_URL,
+            org_name=ORG_NAME)
 
         cli.handle_parsed_args(args, None)
 
@@ -298,6 +311,16 @@ class TestStudentParsing:
         "|".join([str(val) for val in line])
         for line in STUDENT_PARSING_PARAMS[1]
     ]
+
+    @pytest.mark.parametrize(*STUDENT_PARSING_PARAMS, ids=STUDENT_PARSING_IDS)
+    def test_raises_if_students_file_is_not_a_file(self, parser, extra_args):
+        not_a_file = "this-is-not-a-file"
+        sys_args = [parser, *BASE_ARGS, '-sf', not_a_file, *extra_args]
+
+        with pytest.raises(exception.FileError) as exc_info:
+            cli.parse_args(sys_args)
+
+        assert not_a_file in str(exc_info)
 
     @pytest.mark.parametrize(*STUDENT_PARSING_PARAMS, ids=STUDENT_PARSING_IDS)
     def test_parser_listing_students(self, read_issue_mock, parser,

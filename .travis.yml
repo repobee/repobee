@@ -18,6 +18,14 @@ matrix:
       env: PYTHON=3.5.4
       language: generic
       sudo: true
+    - os: osx
+      env: PYTHON=3.6.5
+      language: generic
+      sudo: true
+    - os: osx
+      env: PYTHON=3.7.0
+      language: generic
+      sudo: true
 install: .travis/install.sh
 script: .travis/run.sh
 after_success:

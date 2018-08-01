@@ -78,12 +78,10 @@ def parse_args(sys_args: Iterable[str]
     if 'master_repo_urls' in args and args.master_repo_urls:
         master_urls = args.master_repo_urls
         master_names = [util.repo_name(url) for url in master_urls]
-    elif 'master_repo_names' in args and args.master_repo_names:
+    else:
         master_names = args.master_repo_names
         master_urls = _repo_names_to_urls(master_names, api)
-    else:
-        master_urls = None
-        master_names = None
+    assert master_urls and master_names
 
     parsed_args = tuples.Args(
         subparser=getattr(args, SUB),
@@ -140,11 +138,12 @@ def handle_parsed_args(args: tuples.Args, api: github_api.GitHubAPI):
         with _sys_exit_on_expected_error():
             admin.clone_repos(args.master_repo_names, args.students, api)
     elif args.subparser == VERIFY_PARSER:
-        APIWrapper.verify_connection(
-            args.user, args.org_name, args.github_base_url, git.OAUTH_TOKEN)
+        APIWrapper.verify_connection(args.user, args.org_name,
+                                     args.github_base_url, git.OAUTH_TOKEN)
     else:
-        raise ValueError("Illegal value for subparser: {}".format(
-            args.subparser))
+        raise exception.ParseError(
+            "Illegal value for subparser: {}. This is a bug, please open an issue.".
+            format(args.subparser))
 
 
 def _add_issue_parsers(base_parsers, subparsers):
@@ -411,7 +410,10 @@ def _extract_students(args: argparse.Namespace) -> List[str]:
         students = args.students
     elif 'students_file' in args and args.students_file:
         students_file = pathlib.Path(args.students_file)
-        students_file.resolve()
+        try:  # raises FileNotFoundError in 3.5 if no such file exists
+            students_file.resolve()
+        except FileNotFoundError:
+            pass  # handled by next check
         if not students_file.is_file():
             raise exception.FileError(
                 "'{!s}' is not a file".format(students_file))

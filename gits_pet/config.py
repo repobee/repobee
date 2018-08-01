@@ -42,7 +42,7 @@ def get_configured_defaults(
     config = _read_config(config_file)
     configured = config.keys()
     if configured - CONFIGURABLE_ARGS:  # there are surpluss arguments
-        raise ValueError("Config contains invalid keys: {}".format(
+        raise exception.FileError("config contains invalid keys: {}".format(
             ", ".join(configured - CONFIGURABLE_ARGS)))
 
     # following is logging only

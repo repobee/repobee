@@ -122,6 +122,7 @@ async def _clone_async(repo_url: str,
     _, stderr = await proc.communicate()
 
     if proc.returncode != 0:
+        print("failed to clone " + repo_url)
         raise exception.CloneFailedError(
             "Failed to clone {}".format(repo_url),
             returncode=proc.returncode,
@@ -255,8 +256,8 @@ def push(push_tuples: Iterable[Push], user: str, tries: int = 3) -> List[str]:
     util.validate_types(tries=(tries, int))
     if tries < 1:
         raise ValueError("tries must be larger than 0")
-    failed_pts = list(
-        push_tuples)  # confusing, but failed_pts needs an initial value
+    # confusing, but failed_pts needs an initial value
+    failed_pts = list(push_tuples)
     for i in range(tries):
         LOGGER.info("pushing, attempt {}/{}".format(i + 1, tries))
         failed_urls = set(_push_no_retry(failed_pts, user))
@@ -305,15 +306,3 @@ def _batch_execution(
         LOGGER.error(str(exc))
 
     return exceptions
-
-
-def _execute_batch(
-        create_task_func: Callable[[Iterable[Any], Any], asyncio.Task],
-        list_args: Iterable[Any], *args, **kwargs) -> List[asyncio.Task]:
-    """something"""
-    assert len(list_args) <= CONCURRENT_TASKS, "Too many concurrent tasks"
-    tasks = [
-        create_task_func(list_arg, *args, **kwargs) for list_arg in list_args
-    ]
-    asyncio.get_event_loop().run_until_complete(asyncio.wait(tasks))
-    return tasks
