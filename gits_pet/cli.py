@@ -1,18 +1,20 @@
 """CLI module.
 
-This module the CLI for gits_pet.
+This module contains the CLI for gits_pet.
+
+.. module:: cli
+    :synopsis: The CLI for gits_pet.
+
+.. moduleauthor:: Simon Larsén
 """
 
 import argparse
-import configparser
 import pathlib
 import os
 import sys
 from contextlib import contextmanager
 from typing import List, Iterable, Optional
 
-import appdirs
-import gits_pet
 import logging
 import daiquiri
 

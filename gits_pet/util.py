@@ -1,4 +1,10 @@
-"""Some general utility functions."""
+"""Some general utility functions.
+
+.. module:: util
+    :synopsis: Miscellaneous utility functions that don't really belong anywhere else.
+
+.. moduleauthor:: Simon Larsén
+"""
 import os
 import sys
 from typing import Iterable

@@ -1,7 +1,23 @@
-"""Provides an abstract class that defines all of the functions required by the
+"""Contains an abstract class defining an interface to a GitHub API.
+
+Provides an abstract class that defines all of the functions required by the
 :py:class:`gits_pet.github_api.GitHubAPI` class' internal API. The idea is to
-separate :py:class:`gits_pet.github_api.GitHubAPI` from the API calls to the
-_actual_ GitHub API, so that the latter can be swapped out more easily.
+completely separate :py:class:`gits_pet.github_api.GitHubAPI` from the API calls to the *actual*
+GitHub API, so that the latter can be swapped out more easily. In theory,
+any implementation of :py:class:`AbstractAPIWrapper` should be usable as the
+API layer toward GitHub. The interface is however heavily influenced by the
+fact that that it was created with regards to the REST v3 API, so utilizing
+e.g. the GraphQL API efficiently may require some modification.
+
+The currently used implementation of :py:class:`AbstractAPIWrapper` is defined
+by the package level constant :py:const:`APIWrapper`.
+
+Current implementations:
+
+.. module:: abstract_api_wrapper
+   :synopsis: Abstract class defining the interface required for the internal API of gits_pet.github_api.GitHubAPI.
+
+.. moduleauthor:: Simon Larsén
 """
 
 import abc

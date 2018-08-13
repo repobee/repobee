@@ -7,6 +7,11 @@ name as the student's username. The team is then granted access to repos.
 
 Each public function in this module is to be treated as a self-contained
 program.
+
+.. module:: admin
+    :synopsis: The primary API of gits_pet containing high level functions for administrating GitHub repos in an opinionated fashion.
+
+.. moduleauthor:: Simon Larsén
 """
 
 import shutil

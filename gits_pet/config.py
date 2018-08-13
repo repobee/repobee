@@ -1,10 +1,14 @@
 """config module.
 
 Contains the code required for pre-configuring user interfaces.
+
+.. module:: config
+    :synopsis: Configuration functions and constants for pre-configuring CLI parameters.
+
+.. moduleauthor:: Simon Larsén
 """
 import pathlib
 import configparser
-import os
 from typing import Union
 import daiquiri
 import appdirs
