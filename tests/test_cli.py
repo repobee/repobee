@@ -45,7 +45,7 @@ VALID_PARSED_ARGS = dict(
 @pytest.fixture(autouse=True)
 def api_instance_mock(mocker):
     instance_mock = MagicMock(spec=gits_pet.github_api.GitHubAPI)
-    instance_mock.get_repo_urls.side_effect = lambda repo_names: (list(map(GENERATE_REPO_URL, repo_names)), [])
+    instance_mock.get_repo_urls.side_effect = lambda repo_names: list(map(GENERATE_REPO_URL, repo_names))
     instance_mock.ensure_teams_and_members.side_effect = lambda team_dict:\
             [Team(name, members, id=0) for name, members in team_dict.items()]
     return instance_mock
