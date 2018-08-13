@@ -4,3 +4,5 @@ daiquiri
 pytest
 pytest-cov
 pytest-mock
+sphinx
+sphinx-autodoc-typehints
