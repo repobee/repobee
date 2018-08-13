@@ -77,7 +77,7 @@ def api_mock(request, mocker):
     api_class.return_value = mock
 
     url_from_repo_info = lambda repo_info: GENERATE_REPO_URL(repo_info.name)
-    mock.get_repo_urls.side_effect = lambda repo_names: (list(map(GENERATE_REPO_URL, repo_names)), [])
+    mock.get_repo_urls.side_effect = lambda repo_names: list(map(GENERATE_REPO_URL, repo_names))
     mock.create_repos.side_effect =\
         lambda repo_infos: list(map(url_from_repo_info, repo_infos))
     return mock
@@ -152,7 +152,7 @@ def rmtree_mock(mocker):
 
 @pytest.fixture
 def students():
-    return list(string.ascii_lowercase)[:10]
+    return list(pytest.constants.STUDENTS)
 
 
 @pytest.fixture(autouse=True)
@@ -305,12 +305,18 @@ class TestUpdateStudentRepos:
             admin.update_student_repos(master_urls, students, user, api)
         assert type_error_arg in str(exc_info.value)
 
+    @pytest.mark.skip(
+        msg="as get_repo_urls generates urls instead of fetching, "
+        "a separate checking of each individual url is required for this feature"
+    )
     def test_raises_when_no_student_repos_are_found(
             self, master_urls, master_names, students, api_mock):
         """Test that an APIError is raised if no student repos corresponding to
         the master repos are found.
         """
         # only master urls are found
+        # TODO this is incorrect for how get_repo_urls currently works, it returns
+        # a single list now
         api_mock.get_repo_urls.side_effect = lambda repo_names:\
                 ([GENERATE_REPO_URL(name)
                     for name in repo_names
@@ -319,6 +325,7 @@ class TestUpdateStudentRepos:
         with pytest.raises(exception.APIError) as exc_info:
             admin.update_student_repos(master_urls, students, USER, api_mock)
 
+    @pytest.mark.skip(msg="Checking if repos exist is not implemented anymore")
     def test_does_not_raise_when_some_student_repos_are_not_found(
             self, api_mock, git_mock, master_urls, master_names, students,
             tmpdir):
@@ -359,7 +366,7 @@ class TestUpdateStudentRepos:
         ]
 
         api_mock.get_repo_urls.side_effect = lambda repo_names: \
-            (list(map(GENERATE_REPO_URL, repo_names)), [])
+            list(map(GENERATE_REPO_URL, repo_names))
 
         admin.update_student_repos(master_urls, students, USER, api_mock)
 
@@ -391,7 +398,7 @@ class TestUpdateStudentRepos:
         ]
         fail_repo_urls = [generate_url(name) for name in fail_repo_names]
 
-        api_mock.get_repo_urls.side_effect = lambda repo_names: ([generate_url(name) for name in repo_names], [])
+        api_mock.get_repo_urls.side_effect = lambda repo_names: [generate_url(name) for name in repo_names]
 
         async def raise_specific(pt, user):
             if pt.repo_url in fail_repo_urls:
@@ -436,7 +443,7 @@ class TestUpdateStudentRepos:
         ]
         fail_repo_urls = [generate_url(name) for name in fail_repo_names]
 
-        api_mock.get_repo_urls.side_effect = lambda repo_names: ([generate_url(name) for name in repo_names], [])
+        api_mock.get_repo_urls.side_effect = lambda repo_names: [generate_url(name) for name in repo_names]
         issue = tuples.Issue("Oops", "Sorry, we failed to push to your repo!")
 
         async def raise_specific(pt, branch):

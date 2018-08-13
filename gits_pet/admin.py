@@ -168,11 +168,6 @@ def update_student_repos(master_repo_urls: Iterable[str],
 
     repo_urls = api.get_repo_urls(student_repo_names)
 
-    if not repo_urls:
-        msg = "No student repos corresponding to the master repos were found"
-        LOGGER.error(msg)
-        raise exception.APIError(msg)
-
     with tempfile.TemporaryDirectory() as tmpdir:
         LOGGER.info("cloning into master repos ...")
         master_repo_paths = _clone_all(urls, tmpdir)
