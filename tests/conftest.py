@@ -29,19 +29,21 @@ assert TOKEN == gits_pet.git.OAUTH_TOKEN
 
 USER = 'slarse'
 ORG_NAME = 'test-org'
-GITHUB_BASE_URL = 'https://some_enterprise_host/api/v3'
-STUDENTS = tuple(string.ascii_lowercase)
+HOST_URL = 'https://some_enterprise_host'
+GITHUB_BASE_URL = '{}/api/v3'.format(HOST_URL)
+STUDENTS = tuple(string.ascii_lowercase[:4])
 ISSUE_PATH = 'some/issue/path'
 ISSUE = tuples.Issue(title="Best title", body="This is the body of the issue.")
 
 
 GENERATE_REPO_URL = lambda repo_name:\
-        "https://some_enterprise_host/{}/{}".format(ORG_NAME, repo_name)
+        "{}/{}/{}".format(HOST_URL, ORG_NAME, repo_name)
 
 
 def pytest_namespace():
     constants = dict(
         USER=USER,
+        HOST_URL=HOST_URL,
         GITHUB_BASE_URL=GITHUB_BASE_URL,
         ORG_NAME=ORG_NAME,
         STUDENTS=STUDENTS,

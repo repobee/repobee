@@ -44,8 +44,6 @@ def raise_401(*args, **kwargs):
     raise GithubException("Access denied", 401)
 
 
-
-
 @pytest.fixture
 def happy_github(mocker, monkeypatch):
     """mock of github.Github which raises no exceptions and returns the
@@ -73,6 +71,8 @@ def organization(happy_github):
     organization = MagicMock()
     organization.get_members = lambda role: \
         [User(login='blablabla'), User(login='hello'), User(login=USER)]
+    type(organization).html_url = PropertyMock(
+        return_value=GENERATE_REPO_URL('').rstrip('/'))
     happy_github.get_organization.side_effect = \
         lambda org_name: organization if org_name == ORG_NAME else raise_404()
     return organization
@@ -570,3 +570,10 @@ class TestGetRepos:
         actual_repos = list(wrapper.get_repos())
 
         assert actual_repos == repo_tuples
+
+
+def test_org_url(organization, wrapper):
+    org_url = wrapper.org_url
+
+    assert org_url == "{}/{}".format(pytest.constants.HOST_URL,
+                                     pytest.constants.ORG_NAME)
