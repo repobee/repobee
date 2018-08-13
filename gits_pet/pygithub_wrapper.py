@@ -184,9 +184,21 @@ class PyGithubWrapper(AbstractAPIWrapper):
         
         Args:
             repo_name: Name of a repo.
+
+        Returns:
+            url to the repo, if it exists in the target organization.
         """
         with _try_api_request():
             return self._org.get_repo(repo_name).html_url
+
+    @property
+    def org_url(self) -> str:
+        """Get the url to the target organization.
+
+        Returns:
+            url to the target organization.
+        """
+        return self._org.html_url
 
     def create_repo(self, repo: tuples.Repo):
         """Create a repo in the organization.

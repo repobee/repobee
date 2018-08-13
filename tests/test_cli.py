@@ -45,7 +45,7 @@ VALID_PARSED_ARGS = dict(
 @pytest.fixture(autouse=True)
 def api_instance_mock(mocker):
     instance_mock = MagicMock(spec=gits_pet.github_api.GitHubAPI)
-    instance_mock.get_repo_urls.side_effect = lambda repo_names: (list(map(GENERATE_REPO_URL, repo_names)), [])
+    instance_mock.get_repo_urls.side_effect = lambda repo_names: list(map(GENERATE_REPO_URL, repo_names))
     instance_mock.ensure_teams_and_members.side_effect = lambda team_dict:\
             [Team(name, members, id=0) for name, members in team_dict.items()]
     return instance_mock
@@ -460,6 +460,8 @@ class TestSetupAndUpdateParsers:
 
         assert_base_push_args(parsed_args, api_class_mock)
 
+    @pytest.mark.skip(msg="get_repo_urls no longer checks if repos exist, "
+                      "have to implement external check if needed")
     def test_raises_when_master_repo_is_not_found(self, api_instance_mock,
                                                   parser):
         """Tests that a ParseError is raised if any master repo (specified by
@@ -467,6 +469,8 @@ class TestSetupAndUpdateParsers:
         """
         not_found = REPO_NAMES[-1]
 
+        # TODO this is incorrect, get_repo_urls generates urls for all repo names
+        # and does not check if they exist
         api_instance_mock.get_repo_urls.side_effect = lambda repo_names:\
                 ([name for name in repo_names if name != not_found], [not_found])
 
@@ -480,20 +484,24 @@ class TestSetupAndUpdateParsers:
         """Tests that the parsers pick up local repos when they are not
         found in the organization.
         """
-        is_git_repo_mock = mocker.patch(
-            'gits_pet.util.is_git_repo', return_value=True)
         local_repo = REPO_NAMES[-1]
-        side_effect = lambda repo_names: (
-                [GENERATE_REPO_URL(name) for name in repo_names if name != local_repo],
-                [local_repo])
-        api_instance_mock.get_repo_urls.side_effect = side_effect
+        is_git_repo_mock = mocker.patch(
+            'gits_pet.util.is_git_repo',
+            side_effect=lambda path: path.endswith(local_repo))
+        expected_urls = [
+            GENERATE_REPO_URL(name) for name in REPO_NAMES
+            if name != local_repo
+        ]
+        expected_uris = [pathlib.Path(os.path.abspath(local_repo)).as_uri()]
+        expected = expected_urls + expected_uris
+        api_instance_mock.get_repo_urls.side_effect = lambda repo_names: \
+            [GENERATE_REPO_URL(name) for name in repo_names]
 
         sys_args = [parser, *COMPLETE_PUSH_ARGS, '-s', *STUDENTS]
 
         parsed_args, _ = cli.parse_args(sys_args)
 
-        assert pathlib.Path(os.path.abspath(
-            local_repo)).as_uri() in parsed_args.master_repo_urls
+        assert sorted(parsed_args.master_repo_urls) == sorted(expected)
 
 
 class TestMigrateParser:
@@ -511,11 +519,6 @@ class TestMigrateParser:
     def is_git_repo_mock(self, mocker):
         return mocker.patch(
             'gits_pet.util.is_git_repo', autospec=True, return_value=True)
-
-    @pytest.fixture(autouse=True)
-    def find_no_repos_in_org(self, api_instance_mock):
-        """get_repo_urls never finds anything."""
-        api_instance_mock.get_repo_urls.side_effect = lambda repo_names: ([], repo_names)
 
     def assert_migrate_args(self, parsed_args, *, uses_urls: bool) -> bool:
         assert parsed_args.user == USER

@@ -166,15 +166,7 @@ def update_student_repos(master_repo_urls: Iterable[str],
     master_repo_names = [util.repo_name(url) for url in urls]
     student_repo_names = util.generate_repo_names(students, master_repo_names)
 
-    repo_urls, not_found = api.get_repo_urls(student_repo_names)
-    print(not_found)
-
-    if not repo_urls:
-        msg = "No student repos corresponding to the master repos were found"
-        LOGGER.error(msg)
-        raise exception.APIError(msg)
-    elif not_found:
-        LOGGER.warning("Ignoring repos that were not found")
+    repo_urls = api.get_repo_urls(student_repo_names)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         LOGGER.info("cloning into master repos ...")
@@ -258,7 +250,7 @@ def clone_repos(master_repo_names: Iterable[str], students: Iterable[str],
         master_repo_names=master_repo_names, students=students)
 
     repo_names = util.generate_repo_names(students, master_repo_names)
-    repo_urls, _ = api.get_repo_urls(repo_names)
+    repo_urls = api.get_repo_urls(repo_names)
 
     LOGGER.info("cloning into student repos ...")
     git.clone(repo_urls)

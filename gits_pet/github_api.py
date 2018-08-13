@@ -148,24 +148,21 @@ class GitHubAPI:
                     "An unexpected exception was raised.")
         return repo_urls
 
-    def get_repo_urls(self,
-                      repo_names: Iterable[str]) -> (List[str], List[str]):
+    def get_repo_urls(self, repo_names: Iterable[str]) -> List[str]:
         """Get repo urls for all specified repo names in the current organization.
+        Assumes that the repos exist, there is no guarantee that they actually do
+        as checking this with the REST API takes too much time.
 
         Args:
             repo_names: A list of repository names.
 
         Returns:
-            a list of urls corresponding to the repo names, and a list of repo names
-            that were not found.
+            a list of urls corresponding to the repo names.
         """
-        repo_names_set = set(repo_names)
-        urls = [repo.url for repo in self._api.get_repos(repo_names_set)]
-
-        not_found = list(repo_names_set -
-                         {util.repo_name(url)
-                          for url in urls})
-        return urls, not_found
+        return [
+            "{}/{}".format(self._api.org_url, repo_name)
+            for repo_name in list(repo_names)
+        ]
 
     def open_issue(self, issue: tuples.Issue,
                    repo_names: Iterable[str]) -> None:
