@@ -420,9 +420,9 @@ def _extract_students(args: argparse.Namespace) -> List[str]:
         if not students_file.stat().st_size:
             raise exception.FileError("'{!s}' is empty".format(students_file))
         students = [
-            student.strip() for student in students_file.read_text(
-                encoding=sys.getdefaultencoding()).split(os.linesep)
-            if student  # skip blank lines
+            student.strip() for student in
+            students_file.read_text(encoding=sys.getdefaultencoding()).split(
+                os.linesep) if student  # skip blank lines
         ]
     else:
         students = None
@@ -445,9 +445,13 @@ def _connect_to_api(github_base_url: str, token: str,
 
 def _repo_names_to_urls(repo_names: Iterable[str],
                         api: github_api.GitHubAPI) -> List[str]:
-    """Use the repo_names to extract urls to the repos. Look for repos with
-    corresponding names in the current working directory, as well as in the
-    target organization.
+    """Use the repo_names to extract urls to the repos. Look for git repos
+    with the correct names in the local directory and create local uris for them.
+    For the rest, create urls to the repos assuming they are in the target
+    organization. Do note that there is _no_ guarantee that the remote repos
+    exist as checking this takes too much time with the REST API.
+
+    A possible improvement would be to use the GraphQL API for this function.
 
     Args:
         repo_names: names of repositories.
@@ -456,16 +460,15 @@ def _repo_names_to_urls(repo_names: Iterable[str],
     Returns:
         a list of urls corresponding to the repo_names.
     """
-    urls, not_found = api.get_repo_urls(repo_names)
-    LOGGER.info("found {} remote repos: {}".format(len(urls), urls))
+    local = [
+        name for name in repo_names if util.is_git_repo(os.path.abspath(name))
+    ]
+    non_local = [name for name in repo_names if name not in local]
 
-    for name in not_found:
-        local_path = os.path.abspath(name)
-        if util.is_git_repo(local_path):
-            LOGGER.info("found local repo {}".format(local_path))
-            urls.append(pathlib.Path(local_path).as_uri())
+    non_local_urls = api.get_repo_urls(non_local)
+    local_uris = [
+        pathlib.Path(os.path.abspath(repo_name)).as_uri()
+        for repo_name in local
+    ]
 
-    if len(urls) != len(repo_names):
-        # TODO improve error message
-        raise exception.ParseError("Could not find one or more master repos")
-    return urls
+    return non_local_urls + local_uris
