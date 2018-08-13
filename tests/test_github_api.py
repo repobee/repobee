@@ -29,8 +29,8 @@ def repos():
     return [
         tuples.Repo(
             name, description, private, team_id, url=GENERATE_REPO_URL(name))
-        for name, description, private, team_id in zip(
-            repo_names, descriptions, privacy, team_id)
+        for name, description, private, team_id in
+        zip(repo_names, descriptions, privacy, team_id)
     ]
 
 
@@ -55,6 +55,10 @@ def api_wrapper_mock(mocker, existing_teams, repos):
 
     api_wrapper_instance.get_teams_in.side_effect = \
         lambda team_names: list(set(team_names).intersection(existing_teams.keys()))
+
+    # empty repo name and remove trailing slash
+    type(api_wrapper_instance).org_url = PropertyMock(
+        return_value=GENERATE_REPO_URL("").rstrip("/"))
 
     def add_to_team(members, team):
         for user in members:
@@ -274,25 +278,15 @@ class TestCreateRepos:
 class TestGetRepoUrls:
     """Tests for get_repo_urls."""
 
-    def test_no_repos_found(self, api_wrapper_mock, repos, api):
-        repo_names = [repo.name for repo in repos]
-
-        api_wrapper_mock.get_repos.side_effect = lambda repo_names: []
-
-        urls, not_found = api.get_repo_urls(repo_names)
-
-        assert not urls
-        assert sorted(not_found) == sorted(repo_names)
-
     def test_all_repos_found(self, api_wrapper_mock, repos, api):
         repo_names = [repo.name for repo in repos]
         expected_urls = [repo.url for repo in repos]
 
-        urls, not_found = api.get_repo_urls(repo_names)
+        urls = api.get_repo_urls(repo_names)
 
-        assert not not_found
         assert sorted(urls) == sorted(expected_urls)
 
+    @pytest.mark.skip(msg="not currently relevant as repo urls are generated, rather than fetched")
     def test_some_repos_found(self, api_wrapper_mock, repos, api):
         found_repo_names = [repo.name for repo in repos[:2]]
         not_found_repo_names = [repo.name for repo in repos[2:]]
@@ -302,7 +296,6 @@ class TestGetRepoUrls:
 
         urls, not_found = api.get_repo_urls(found_repo_names +
                                             not_found_repo_names)
-        print(urls)
 
         assert urls == expected_urls
         assert sorted(not_found) == sorted(not_found_repo_names)
