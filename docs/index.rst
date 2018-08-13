@@ -5,11 +5,17 @@
 
 Welcome to gits_pet's documentation!
 ==================================================
+I'm happy you found your way into the documentation! If you are unfamiliar
+with the fundamentals of ``gits_pet``, I highly recommend reading through
+the :ref:`fundamentals` section.
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
-    code
+
+   fundamentals
+   configuration
+   code
 
 
 
