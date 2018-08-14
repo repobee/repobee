@@ -45,6 +45,8 @@ re-visiting them when needed is probably the best course of action.
 * *GitHub instance*: A hosted GitHub service. This can be for example
   ``https://github.com`` or any Enterprise host.
 
+.. _conventions:
+
 Conventions
 ===========
 The following conventions are fundamental to working with ``gits_pet``.

@@ -101,7 +101,7 @@ def parse_args(sys_args: Iterable[str]
     return parsed_args, api
 
 
-def handle_parsed_args(args: tuples.Args, api: github_api.GitHubAPI):
+def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
     """Handle parsed CLI arguments and dispatch commands to the appropriate
     functions. Expected exceptions are caught and turned into SystemExit
     exceptions, while unexpected exceptions are allowed to propagate.
@@ -116,7 +116,7 @@ def handle_parsed_args(args: tuples.Args, api: github_api.GitHubAPI):
     elif args.subparser == SETUP_PARSER:
         with _sys_exit_on_expected_error():
             command.setup_student_repos(args.master_repo_urls, args.students,
-                                      args.user, api)
+                                        args.user, api)
     elif args.subparser == UPDATE_PARSER:
         with _sys_exit_on_expected_error():
             command.update_student_repos(
@@ -127,12 +127,12 @@ def handle_parsed_args(args: tuples.Args, api: github_api.GitHubAPI):
                 issue=args.issue)
     elif args.subparser == OPEN_ISSUE_PARSER:
         with _sys_exit_on_expected_error():
-            command.open_issue(args.issue, args.master_repo_names, args.students,
-                             api)
+            command.open_issue(args.issue, args.master_repo_names,
+                               args.students, api)
     elif args.subparser == CLOSE_ISSUE_PARSER:
         with _sys_exit_on_expected_error():
             command.close_issue(args.title_regex, args.master_repo_names,
-                              args.students, api)
+                                args.students, api)
     elif args.subparser == MIGRATE_PARSER:
         with _sys_exit_on_expected_error():
             command.migrate_repos(args.master_repo_urls, args.user, api)
@@ -187,8 +187,7 @@ def _add_issue_parsers(base_parsers, subparsers):
 
 
 def _create_parser():
-    """Create the parser. 
-    """
+    """Create the parser."""
 
     parser = argparse.ArgumentParser(
         prog='gits_pet',
@@ -201,7 +200,8 @@ def _add_subparsers(parser):
     """Add all of the subparsers to the parser. Note that the parsers prefixed
     with `base_` do not have any parent parsers, so any parser inheriting from
     them must also inherit from the required `base_parser` (unless it is a
-    `base_` prefixed parser, of course)."""
+    `base_` prefixed parser, of course).
+    """
     base_parser, base_student_parser, base_user_parser = _create_base_parsers()
 
     repo_name_parser = argparse.ArgumentParser(
@@ -254,18 +254,12 @@ def _add_subparsers(parser):
         MIGRATE_PARSER,
         help="Migrate master repositories into the target organization.",
         description=
-        ("Migrate master repositories into the target organization. gits_pet "
-         "relies on the master repositories being located in the target "
-         "organization. This command facilitates moving repositories from "
-         "somewhere on the same GitHub instance (e.g. on github.com or your "
-         "own GitHub Enterprise server) into the organization. Each "
-         "master repository specified with `-mu` is cloned to disk, a repo "
-         "with the same name is created in the target organization, and then "
-         "the files are pushed to the new repo. All of the master repos are"
-         "added to the `{}` team. ".format(command.MASTER_TEAM) + \
-         "NOTE: `migrate-repos` can also be used to update already migrated repos "
-         "that have been changed in their original repos."
-         ),
+        ("Migrate master repositories into the target organization. The repos "
+         "must either be local on disk (and specified with `-mn`), or "
+         "somewhere in the target GitHub instance (and specified with `-mu`). "
+         "Migrate repos are added to the `{}` team.".format(command.MASTER_TEAM) + \
+         "NOTE: `migrate-repos` can also be used to update already migrated "
+         "repos, by simply running the command again."),
         parents=[base_parser, base_user_parser])
     names_or_urls = migrate.add_mutually_exclusive_group(required=True)
     names_or_urls.add_argument(
