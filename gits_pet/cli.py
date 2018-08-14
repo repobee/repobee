@@ -49,7 +49,7 @@ MIGRATE_PARSER = 'migrate'
 ADD_TO_TEAMS_PARSER = 'add-to-teams'
 OPEN_ISSUE_PARSER = 'open-issue'
 CLOSE_ISSUE_PARSER = 'close-issue'
-VERIFY_PARSER = 'verify-connection'
+VERIFY_PARSER = 'verify-settings'
 
 
 def parse_args(sys_args: Iterable[str]

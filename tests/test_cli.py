@@ -132,7 +132,7 @@ class TestHandleParsedArgs:
         args = tuples.Args(parser, **VALID_PARSED_ARGS)
 
         with pytest.raises(exception.ParseError) as exc_info:
-            cli.handle_parsed_args(args, api_instance_mock)
+            cli.dispatch_command(args, api_instance_mock)
         assert "Illegal value for subparser: {}".format(parser) in str(
             exc_info)
 
@@ -140,21 +140,21 @@ class TestHandleParsedArgs:
                                     api_instance_mock, admin_mock):
         """Test that valid arguments does not result in crash. Only validates
         that there are no crashes, does not validate any other behavior!"""
-        cli.handle_parsed_args(parsed_args_all_subparsers, api_instance_mock)
+        cli.dispatch_command(parsed_args_all_subparsers, api_instance_mock)
 
     def test_expected_exception_results_in_system_exit(
             self, parsed_args_all_subparsers, api_instance_mock,
             admin_all_raise_mock):
         """Test that any of the expected exceptions results in SystemExit."""
         with pytest.raises(SystemExit) as exc_info:
-            cli.handle_parsed_args(parsed_args_all_subparsers,
+            cli.dispatch_command(parsed_args_all_subparsers,
                                    api_instance_mock)
 
     def test_add_students_to_teams_called_with_correct_args(
             self, admin_mock, api_instance_mock):
         args = tuples.Args(cli.ADD_TO_TEAMS_PARSER, **VALID_PARSED_ARGS)
 
-        cli.handle_parsed_args(args, api_instance_mock)
+        cli.dispatch_command(args, api_instance_mock)
 
         admin_mock.add_students_to_teams.assert_called_once_with(
             args.students, api_instance_mock)
@@ -163,7 +163,7 @@ class TestHandleParsedArgs:
             self, admin_mock, api_instance_mock):
         args = tuples.Args(cli.SETUP_PARSER, **VALID_PARSED_ARGS)
 
-        cli.handle_parsed_args(args, api_instance_mock)
+        cli.dispatch_command(args, api_instance_mock)
 
         admin_mock.setup_student_repos.assert_called_once_with(
             args.master_repo_urls, args.students, args.user, api_instance_mock)
@@ -172,7 +172,7 @@ class TestHandleParsedArgs:
             self, admin_mock, api_instance_mock):
         args = tuples.Args(cli.UPDATE_PARSER, **VALID_PARSED_ARGS)
 
-        cli.handle_parsed_args(args, api_instance_mock)
+        cli.dispatch_command(args, api_instance_mock)
 
         admin_mock.update_student_repos.assert_called_once_with(
             args.master_repo_urls,
@@ -185,7 +185,7 @@ class TestHandleParsedArgs:
                                                  api_instance_mock):
         args = tuples.Args(cli.OPEN_ISSUE_PARSER, **VALID_PARSED_ARGS)
 
-        cli.handle_parsed_args(args, api_instance_mock)
+        cli.dispatch_command(args, api_instance_mock)
 
         admin_mock.open_issue.assert_called_once_with(
             args.issue, args.master_repo_names, args.students,
@@ -195,7 +195,7 @@ class TestHandleParsedArgs:
                                                   api_instance_mock):
         args = tuples.Args(cli.CLOSE_ISSUE_PARSER, **VALID_PARSED_ARGS)
 
-        cli.handle_parsed_args(args, api_instance_mock)
+        cli.dispatch_command(args, api_instance_mock)
 
         admin_mock.close_issue.assert_called_once_with(
             args.title_regex, args.master_repo_names, args.students,
@@ -205,7 +205,7 @@ class TestHandleParsedArgs:
                                                     api_instance_mock):
         args = tuples.Args(cli.MIGRATE_PARSER, **VALID_PARSED_ARGS)
 
-        cli.handle_parsed_args(args, api_instance_mock)
+        cli.dispatch_command(args, api_instance_mock)
 
         admin_mock.migrate_repos.assert_called_once_with(
             args.master_repo_urls, args.user, api_instance_mock)
@@ -214,7 +214,7 @@ class TestHandleParsedArgs:
                                                   api_instance_mock):
         args = tuples.Args(cli.CLONE_PARSER, **VALID_PARSED_ARGS)
 
-        cli.handle_parsed_args(args, api_instance_mock)
+        cli.dispatch_command(args, api_instance_mock)
 
         admin_mock.clone_repos.assert_called_once_with(
             args.master_repo_names, args.students, api_instance_mock)
@@ -231,7 +231,7 @@ class TestHandleParsedArgs:
             github_base_url=GITHUB_BASE_URL,
             org_name=ORG_NAME)
 
-        cli.handle_parsed_args(args, None)
+        cli.dispatch_command(args, None)
 
         verify_mock.assert_called_once_with(
             args.user, args.org_name, args.github_base_url, git.OAUTH_TOKEN)
