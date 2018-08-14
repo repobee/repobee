@@ -17,6 +17,7 @@ the :ref:`fundamentals` section.
    getting_started
    configuration
    code
+   cli_reference
 
 
 
