@@ -125,12 +125,6 @@ def teams(organization):
 
 
 @pytest.fixture
-def try_api_request_mock(mocker):
-    return mocker.patch(
-        'gits_pet.pygithub_wrapper._try_api_request', autospec=True)
-
-
-@pytest.fixture
 def repos(organization, teams):
     repos = []
     for team in teams:
@@ -288,21 +282,19 @@ class TestCreateRepo:
 class TestGetTeams:
     """Tests for get_teams and get_teams_in."""
 
-    def test_get_teams(self, teams, try_api_request_mock, wrapper):
+    def test_get_teams(self, teams, wrapper):
         expected_teams = [team_mock_to_tuple(team) for team in teams]
         actual_teams = wrapper.get_teams()
 
         assert sorted(actual_teams) == sorted(expected_teams)
-        assert try_api_request_mock.called
 
-    def test_get_teams_in(self, teams, try_api_request_mock, wrapper):
+    def test_get_teams_in(self, teams, wrapper):
         expected_teams = [team_mock_to_tuple(team) for team in teams[2:-4]]
         team_names = [team.name for team in expected_teams]
 
         actual_teams = wrapper.get_teams_in(team_names)
 
         assert sorted(actual_teams) == sorted(expected_teams)
-        assert try_api_request_mock.called
 
 
 class TestAddToTeam:
@@ -317,7 +309,7 @@ class TestAddToTeam:
             wrapper.add_to_team(users, team_mock_to_tuple(teams[0]))
 
     def test_add_with_no_previous_members(
-            self, happy_github, try_api_request_mock, users, teams, wrapper):
+            self, happy_github, users, teams, wrapper):
         """Test adding members to a team which has no members."""
         new_members = users[:3]
         team = teams[4]
@@ -326,9 +318,8 @@ class TestAddToTeam:
         wrapper.add_to_team(new_members, team_mock_to_tuple(team))
 
         team.add_membership.assert_has_calls(expected_calls)
-        assert try_api_request_mock.called
 
-    def test_add_with_some_preexisting_members(self, try_api_request_mock,
+    def test_add_with_some_preexisting_members(self, 
                                                users, teams, wrapper):
         """Test adding members when some of the members have already been
         added. All calls should still be placed, as adding membership when it
@@ -347,9 +338,8 @@ class TestAddToTeam:
         wrapper.add_to_team(all_members, team_mock_to_tuple(team))
 
         team.add_membership.assert_has_calls(expected_calls)
-        assert try_api_request_mock.called
 
-    def test_add_with_some_non_existing_users(self, try_api_request_mock,
+    def test_add_with_some_non_existing_users(self, 
                                               users, teams, wrapper):
         existing_users = users[4:8]
         non_existing_users = ['do-not-exist-{}'.format(i) for i in range(3)]
@@ -361,22 +351,20 @@ class TestAddToTeam:
         wrapper.add_to_team(new_members, team_mock_to_tuple(team))
 
         team.add_membership.assert_has_calls(expected_calls)
-        assert try_api_request_mock.called
 
 
 def test_create_team_default_permission(happy_github, organization,
-                                        try_api_request_mock, wrapper):
+                                        wrapper):
     team_name = 'slarse'
 
     wrapper.create_team(team_name)
 
     organization.create_team.assert_called_once_with(
         team_name, permission='push')
-    assert try_api_request_mock.called
 
 
 def test_create_team_pull_permission(happy_github, organization,
-                                     try_api_request_mock, wrapper):
+                                     wrapper):
     team_name = 'herro'
     permission = 'pull'
 
@@ -384,14 +372,12 @@ def test_create_team_pull_permission(happy_github, organization,
 
     organization.create_team.assert_called_once_with(
         team_name, permission=permission)
-    assert try_api_request_mock.called
 
 
 class TestOpenIssueIn:
     """Tests for open_issue_in."""
 
-    def test_open_issue_in_existing_repos(self, repos, try_api_request_mock,
-                                          wrapper):
+    def test_on_existing_repos(self, repos, wrapper):
         repo_names = [repo.name for repo in repos]
 
         wrapper.open_issue_in(ISSUE, repo_names)
@@ -399,10 +385,8 @@ class TestOpenIssueIn:
         for repo in repos:
             repo.create_issue.assert_called_once_with(
                 ISSUE.title, body=ISSUE.body)
-        assert try_api_request_mock.called
 
-    def test_open_issue_in_some_non_existing_repos(
-            self, repos, try_api_request_mock, wrapper):
+    def test_on_some_non_existing_repos(self, repos, wrapper):
         """Assert that repos that do not exist are simply skipped."""
 
         repo_names = [
@@ -414,7 +398,6 @@ class TestOpenIssueIn:
         for repo in repos:
             repo.create_issue.assert_called_once_with(
                 ISSUE.title, body=ISSUE.body)
-        assert try_api_request_mock.called
 
     def test_no_crash_when_no_repos_are_found(self, repos, happy_github,
                                               wrapper):

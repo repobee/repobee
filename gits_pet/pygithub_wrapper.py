@@ -1,7 +1,7 @@
 import contextlib
 import collections
 import re
-from typing import Iterable, Mapping, Optional, List, Generator
+from typing import Iterable, Mapping, Optional, List, Generator, Union
 from socket import gaierror
 import daiquiri
 import github
@@ -36,9 +36,13 @@ def _convert_404_to_not_found_error(msg):
 
 
 @contextlib.contextmanager
-def _try_api_request():
+def _try_api_request(ignore_statuses: Union[None, Iterable[int]] = None):
     """Context manager for trying API requests.
     
+    Args:
+        ignore_statuses: One or more status codes to ignore (only
+        applicable if the exception is a github.GithubException).
+
     Raises:
         exception.NotFoundError
         exception.BadCredentials
@@ -49,6 +53,9 @@ def _try_api_request():
     try:
         yield
     except github.GithubException as e:
+        if ignore_statuses and e.status in ignore_statuses:
+            return
+
         if e.status == 404:
             raise exception.NotFoundError(str(e), status=404)
         elif e.status == 401:
@@ -280,13 +287,12 @@ class PyGithubWrapper(AbstractAPIWrapper):
         Returns:
             a generator of repo objects.
         """
-        name_set = set(repo_names)
-        with _try_api_request():
-            repos = [
-                repo for repo in self._org.get_repos() if repo.name in name_set
-            ]
+        repos = []
+        for name in repo_names:
+            with _try_api_request(ignore_statuses=[404]):
+                repos.append(self._org.get_repo(name))
 
-        missing_repos = name_set - {repo.name for repo in repos}
+        missing_repos = set(repo_names) - {repo.name for repo in repos}
         if missing_repos:
             LOGGER.warning("can't find repos: {}".format(
                 ", ".join(missing_repos)))
