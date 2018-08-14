@@ -1,3 +1,5 @@
+.. _getting_started:
+
 Getting Started
 ***************
 .. important::
@@ -24,8 +26,10 @@ Create an Organization
 ======================
 This is an absolutely necessary pre-requisite for using ``gits_pet``.
 Create an organization with an appropriate name on the GitHub instance you
-intend to use. I will call my *target organization* ``gits_pet_demo``, so
-whenever you see that, substitute in the name of your target organization.
+intend to use. You can find the ``New organization`` button by going to
+``Settings -> Organization``. I will call my *target organization*
+``gits_pet_demo``, so whenever you see that, substitute in the name of your
+target organization.
 
 .. important::
 
