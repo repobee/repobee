@@ -11,7 +11,6 @@ organization's name (see `config`_).
 
 GITS_PET_OAUTH Environment Variable
 ===================================
-
 For the tool to work at all, an environment variable called ``GITS_PET_OAUTH``
 must contain an OAUTH2 token to whichever GitHub instance you intend to use.
 See the `GitHub OAUTH docs`_ for how to create a token. Once you have the
@@ -24,19 +23,18 @@ properly set, an error message will be shown when trying to run ``gits_pet``.
 
 Configuration File
 ==================
-
 An optional configuration file can be added, which specifies default values for
 the `--github_base_url`, `--org_name`, `--user` and `--students-list` command
 line options. This is especially useful for teachers who are managing repos for
 a single course (and, as a consequence, a single organization).
 
-```bash
-[DEFAULTS]
-github_base_url = https://some-api-v3-url
-user = YOUR_USERNAME
-org_name = ORGANIZATION_NAME
-students_file = STUDENTS_FILE_ABSOLUTE_PATH
-```
+.. code-block:: bash
+
+    [DEFAULTS]
+    github_base_url = https://some-api-v3-url
+    user = YOUR_USERNAME
+    org_name = ORGANIZATION_NAME
+    students_file = STUDENTS_FILE_ABSOLUTE_PATH
 
 **To find out where to place the configuration file (and what to name it)**,
 run `gits_pet -h`. At the very top, there should be a line looking something

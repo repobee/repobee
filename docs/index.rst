@@ -14,6 +14,7 @@ the :ref:`fundamentals` section.
    :caption: Contents:
 
    fundamentals
+   getting_started
    configuration
    code
 
