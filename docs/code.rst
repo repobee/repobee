@@ -7,10 +7,10 @@ abstract_api_wrapper
 .. automodule:: gits_pet.abstract_api_wrapper
     :members:
 
-admin
+command
 ====================
 
-.. automodule:: gits_pet.admin
+.. automodule:: gits_pet.command
     :members:
 
 cli

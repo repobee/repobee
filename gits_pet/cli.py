@@ -18,7 +18,7 @@ from typing import List, Iterable, Optional
 import logging
 import daiquiri
 
-from gits_pet import admin
+from gits_pet import command
 from gits_pet import github_api
 from gits_pet import git
 from gits_pet import util
@@ -112,14 +112,14 @@ def handle_parsed_args(args: tuples.Args, api: github_api.GitHubAPI):
     """
     if args.subparser == ADD_TO_TEAMS_PARSER:
         with _sys_exit_on_expected_error():
-            admin.add_students_to_teams(args.students, api)
+            command.add_students_to_teams(args.students, api)
     elif args.subparser == SETUP_PARSER:
         with _sys_exit_on_expected_error():
-            admin.setup_student_repos(args.master_repo_urls, args.students,
+            command.setup_student_repos(args.master_repo_urls, args.students,
                                       args.user, api)
     elif args.subparser == UPDATE_PARSER:
         with _sys_exit_on_expected_error():
-            admin.update_student_repos(
+            command.update_student_repos(
                 args.master_repo_urls,
                 args.students,
                 args.user,
@@ -127,18 +127,18 @@ def handle_parsed_args(args: tuples.Args, api: github_api.GitHubAPI):
                 issue=args.issue)
     elif args.subparser == OPEN_ISSUE_PARSER:
         with _sys_exit_on_expected_error():
-            admin.open_issue(args.issue, args.master_repo_names, args.students,
+            command.open_issue(args.issue, args.master_repo_names, args.students,
                              api)
     elif args.subparser == CLOSE_ISSUE_PARSER:
         with _sys_exit_on_expected_error():
-            admin.close_issue(args.title_regex, args.master_repo_names,
+            command.close_issue(args.title_regex, args.master_repo_names,
                               args.students, api)
     elif args.subparser == MIGRATE_PARSER:
         with _sys_exit_on_expected_error():
-            admin.migrate_repos(args.master_repo_urls, args.user, api)
+            command.migrate_repos(args.master_repo_urls, args.user, api)
     elif args.subparser == CLONE_PARSER:
         with _sys_exit_on_expected_error():
-            admin.clone_repos(args.master_repo_names, args.students, api)
+            command.clone_repos(args.master_repo_names, args.students, api)
     elif args.subparser == VERIFY_PARSER:
         APIWrapper.verify_connection(args.user, args.org_name,
                                      args.github_base_url, git.OAUTH_TOKEN)
@@ -262,7 +262,7 @@ def _add_subparsers(parser):
          "master repository specified with `-mu` is cloned to disk, a repo "
          "with the same name is created in the target organization, and then "
          "the files are pushed to the new repo. All of the master repos are"
-         "added to the `{}` team. ".format(admin.MASTER_TEAM) + \
+         "added to the `{}` team. ".format(command.MASTER_TEAM) + \
          "NOTE: `migrate-repos` can also be used to update already migrated repos "
          "that have been changed in their original repos."
          ),

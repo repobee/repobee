@@ -60,7 +60,7 @@ def api_class_mock(mocker, api_instance_mock):
 
 @pytest.fixture
 def admin_mock(mocker):
-    return mocker.patch('gits_pet.cli.admin', autospec=True)
+    return mocker.patch('gits_pet.cli.command', autospec=True)
 
 
 @pytest.fixture
@@ -107,7 +107,7 @@ def parsed_args_all_subparsers(request):
         exception.APIError('some message')
     ])
 def admin_all_raise_mock(admin_mock, request):
-    """Mock of gits_pet.admin where all functions raise expected exceptions
+    """Mock of gits_pet.command where all functions raise expected exceptions
     (i.e. those caught in _sys_exit_on_expected_error)
     """
 
