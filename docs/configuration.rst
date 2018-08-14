@@ -13,11 +13,12 @@ GITS_PET_OAUTH Environment Variable
 ===================================
 For the tool to work at all, an environment variable called ``GITS_PET_OAUTH``
 must contain an OAUTH2 token to whichever GitHub instance you intend to use.
-See the `GitHub OAUTH docs`_ for how to create a token. Once you have the
-token, you should set the environment variable. In a ``bash`` terminal,
-this can be done with the command ``export GITS_PET_OAUTH=<YOUR TOKEN>``,
-where ``<YOUR TOKEN>`` is replaced with the token. If the token is not
-properly set, an error message will be shown when trying to run ``gits_pet``.
+See the `GitHub OAUTH docs`_ for how to create a token. The token should
+have the ``repo`` and ``admin:org`` scopes. Once you have the token, you should
+set the environment variable. In a ``bash`` terminal, this can be done with the
+command ``export GITS_PET_OAUTH=<YOUR TOKEN>``, where ``<YOUR TOKEN>`` is
+replaced with the token. If the token is not properly set, an error message
+will be shown when trying to run ``gits_pet``.
 
 .. _config:
 

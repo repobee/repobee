@@ -52,12 +52,15 @@ Conventions
 The following conventions are fundamental to working with ``gits_pet``.
 
 * For each course and course round, use one Organization_.
+* Any user of ``gits_pet`` has unrestricted access to the target organization
+  (i.e. is an owner).
 * Master repositories should be available as private repositories in the
-  Organization_ (using local repos on the current machine is also *ok* and
-  generally works well).
+  target organization (using local repos on the current machine is also *ok*
+  and generally works well).
 * Master repositories are added to the ``master_repos`` team.
 * Student repositories are copies of the default branches of the master
-  repositories (i.e. ``--single-branch`` cloning is used by default).
+  repositories (i.e. ``--single-branch`` cloning is used by default). That is,
+  until students make modifications.
 * Student repositories are named ``<username>-<master_repo_name>`` to guarantee
   unique repo names.
 * Each student is assigned to a team with the same name as the student's

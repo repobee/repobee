@@ -15,8 +15,9 @@ workflow can be summarized in the following steps:
 
 1. Create an organization (the target organization).
 2. Configure ``gits_pet`` for the target organization.
-3. Migrate master repositories into the target organization.
-4. Create one copy of each master repo for each student.
+3. Verify settings.
+4. Migrate master repositories into the target organization.
+5. Create one copy of each master repo for each student.
 
 There is more to ``gits_pet``, such as opening/closing issues, updating student
 repos and cloning repos in batches, but here we will just look at the bare
@@ -45,9 +46,10 @@ Configure ``gits_pet`` For the Target Organization
 ==================================================
 For the tool to work at all, an environment variable called ``GITS_PET_OAUTH``
 must contain an OAUTH2 token to whichever GitHub instance you intend to use.
-See the `GitHub OAUTH docs`_ for how to create a token. Setting the token is
-easy in ``bash``. Just add the following line to your ``bash`` config file
-(``~/.bashrc`` on most Linux distros, and ``~/.bash_profile`` on OSX).
+See the `GitHub OAUTH docs`_ for how to create a token. The token should have
+the ``repo`` and ``admin:org`` scopes. Setting the token is easy in ``bash``.
+Just add the following line to your ``bash`` config file (``~/.bashrc`` on most
+Linux distros, and ``~/.bash_profile`` on OSX).
 
 .. code-block:: bash
     
@@ -119,6 +121,36 @@ up on every ``gits_pet`` command, but I will omit it from here on out. I should
 note that the configuration file isn't strictly necessary, but it will save us
 the hassle of typing in the url, username and organization name on every single
 command to ``gits_pet``.
+
+Verify Settings
+===============
+Now that everything is set up, it's time to verify all of the settings. Given
+that you have a configuration file that looks something like the one above,
+you can simply run the ``verify-settings`` command without any options.
+
+.. code-block:: bash
+
+    $ gits_pet verify-settings
+    [INFO] config file defaults:
+
+       github_base_url: https://some-enterprise-host/api/v3
+       user: slarse
+       org_name: gits-pet-demo
+       
+    [INFO] verifying connection ...
+    [INFO] trying to fetch user information ...
+    [INFO] SUCCESS: found user slarse, user exists and base url looks okay
+    [INFO] verifying oauth scopes ...
+    [INFO] SUCCESS: oauth scopes look okay
+    [INFO] trying to fetch organization ...
+    [INFO] SUCCESS: found organization test-tools
+    [INFO] verifying that user slarse is an owner of organization gits-pet-demo
+    [INFO] SUCCESS: user slarse is an owner of organization gits-pet-demo
+    [INFO] GREAT SUCCESS: All settings check out!
+
+If any of the checks fail, you should be provided with a semi-helpful error
+message. When all checks pass and you get ``GREAT SUCCESS``, move on to the
+next section!
 
 Migrate Master Repositories Into the Target Organization
 ========================================================
