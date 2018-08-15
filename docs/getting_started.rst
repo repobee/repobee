@@ -117,10 +117,9 @@ and parsed by running ``gits_pet -h`` again.
     <HELP MESSAGE OMITTED>
 
 The ``[INFO] config file defaults:`` message (along with the defaults) will pop
-up on every ``gits_pet`` command, but I will omit it from here on out. I should
-note that the configuration file isn't strictly necessary, but it will save us
-the hassle of typing in the url, username and organization name on every single
-command to ``gits_pet``.
+up on every ``gits_pet`` command. I should note that the configuration file
+isn't strictly necessary, but it will save us the hassle of typing in the url,
+username and organization name on every single command to ``gits_pet``.
 
 Verify Settings
 ===============
@@ -170,6 +169,12 @@ current working directory (i.e. local repos), all we have to do is this:
 .. code-block:: bash
 
     $ gits_pet migrate -mn master-repo-1 master-repo-2
+    [INFO] config file defaults:
+
+       github_base_url: https://some-enterprise-host/api/v3
+       user: slarse
+       org_name: gits-pet-demo
+       
     [INFO] created team master_repos
     [INFO] cloning into file:///some/directory/path/master-repo-1
     [INFO] cloning into file:///some/directory/path/master-repo-2
@@ -195,6 +200,12 @@ Running the same thing again yields the following output:
 .. code-block:: bash
 
     $ gits_pet migrate -mn master-repo-1 master-repo-2
+    [INFO] config file defaults:
+
+       github_base_url: https://some-enterprise-host/api/v3
+       user: slarse
+       org_name: gits-pet-demo
+       
     [INFO] cloning into file:///some/directory/path/master-repo-1
     [INFO] cloning into file:///some/directory/path/master-repo-2
     [INFO] gits-pet-demo/master-repo-1 already exists
