@@ -22,7 +22,6 @@ information.
    userguide
    configuration
    code
-   cli_reference
 
 
 
