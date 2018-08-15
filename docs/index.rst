@@ -21,6 +21,7 @@ information.
    getting_started
    update
    issues
+   clone
    configuration
    code
    cli_reference
