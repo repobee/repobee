@@ -17,8 +17,7 @@ See the `GitHub OAUTH docs`_ for how to create a token. The token should
 have the ``repo`` and ``admin:org`` scopes. Once you have the token, you should
 set the environment variable. In a ``bash`` terminal, this can be done with the
 command ``export GITS_PET_OAUTH=<YOUR TOKEN>``, where ``<YOUR TOKEN>`` is
-replaced with the token. If the token is not properly set, an error message
-will be shown when trying to run ``gits_pet``.
+replaced with the token.
 
 .. _config:
 
@@ -54,3 +53,8 @@ The filepath at the end is where you should put your config file.
     file's values.
 
 .. _`GitHub OAUTH docs`: https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/
+
+.. note::
+
+    You can run ``gits_pet verify-settings`` to verify the basic configuration.
+    This will check all settings but the students file.

@@ -219,11 +219,11 @@ class TestHandleParsedArgs:
         admin_mock.clone_repos.assert_called_once_with(
             args.master_repo_names, args.students, api_instance_mock)
 
-    def test_verify_connection_called_with_correct_args(self, monkeypatch):
+    def test_verify_settings_called_with_correct_args(self, monkeypatch):
         # regular mockaing is broken for static methods, it seems, produces non-callable
         # so using monkeypatch instead
         verify_mock = MagicMock()
-        monkeypatch.setattr('gits_pet.cli.APIWrapper.verify_connection',
+        monkeypatch.setattr('gits_pet.cli.APIWrapper.verify_settings',
                             verify_mock)
         args = tuples.Args(
             cli.VERIFY_PARSER,

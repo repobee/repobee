@@ -50,16 +50,6 @@ def dispatch_command_mock(mocker):
     return mocker.patch('gits_pet.cli.dispatch_command', autospec=True)
 
 
-def test_system_exit_on_import_error(mocker):
-
-    with pytest.raises(SystemExit) as exc_info:
-        with patch('builtins.__import__',
-                   raise_(OSError("oauth token is empty"))):
-            main.main()
-
-    assert "empty OAUTH token" in str(exc_info)
-
-
 def test_happy_path(monkeypatch_sys_args, api_instance_mock, parse_args_mock,
                     dispatch_command_mock):
     main.main()

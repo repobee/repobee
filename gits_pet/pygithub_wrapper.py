@@ -316,7 +316,7 @@ class PyGithubWrapper(AbstractAPIWrapper):
         return repos
 
     @staticmethod
-    def verify_connection(user: str, org_name: str, base_url: str, token: str):
+    def verify_settings(user: str, org_name: str, base_url: str, token: str):
         """Verify the following:
 
         .. code-block: markdown
@@ -337,6 +337,12 @@ class PyGithubWrapper(AbstractAPIWrapper):
         Returns:
             True if the connection is well formed.
         """
+        LOGGER.info("verifying settings ...")
+        if not token:
+            raise exception.BadCredentials(
+                msg="token is empty. Check that GITS_PET_OAUTH environment "
+                "variable is properly set.")
+
         util.validate_types(
             base_url=(base_url, str),
             token=(token, str),
@@ -345,7 +351,6 @@ class PyGithubWrapper(AbstractAPIWrapper):
         util.validate_non_empty(
             base_url=base_url, token=token, user=user, org_name=org_name)
 
-        LOGGER.info("verifying connection ...")
         g = github.Github(login_or_token=token, base_url=base_url)
 
         LOGGER.info("trying to fetch user information ...")

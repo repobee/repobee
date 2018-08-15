@@ -140,7 +140,7 @@ def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
         with _sys_exit_on_expected_error():
             command.clone_repos(args.master_repo_names, args.students, api)
     elif args.subparser == VERIFY_PARSER:
-        APIWrapper.verify_connection(args.user, args.org_name,
+        APIWrapper.verify_settings(args.user, args.org_name,
                                      args.github_base_url, git.OAUTH_TOKEN)
     else:
         raise exception.ParseError(

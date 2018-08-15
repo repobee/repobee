@@ -21,9 +21,7 @@ LOGGER = daiquiri.getLogger(__file__)
 
 Push = collections.namedtuple('Push', ('local_path', 'repo_url', 'branch'))
 
-OAUTH_TOKEN = os.getenv('GITS_PET_OAUTH')
-if not OAUTH_TOKEN:
-    raise OSError('The oauth token is empty!')
+OAUTH_TOKEN = os.getenv('GITS_PET_OAUTH') or ""
 
 
 def _insert_token(url: str, token: str = OAUTH_TOKEN) -> str:

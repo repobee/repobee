@@ -138,7 +138,7 @@ class AbstractAPIWrapper(abc.ABC):
 
     @staticmethod
     @abc.abstractmethod
-    def verify_connection(user: str, org_name: str, base_url: str, token: str):
+    def verify_settings(user: str, org_name: str, base_url: str, token: str):
         """Verify the following:
 
         .. code-block: markdown

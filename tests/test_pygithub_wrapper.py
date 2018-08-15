@@ -190,31 +190,39 @@ def issues(repos):
     return issues
 
 
-class TestVerifyConnection:
-    """Tests for the verify_connection function."""
+class TestVerifySettings:
+    """Tests for the verify_settings function."""
 
     def test_happy_path(self, happy_github, organization):
         """Tests that no exceptions are raised when all info is correct."""
-        pygithub_wrapper.PyGithubWrapper.verify_connection(
-            USER, ORG_NAME, git.OAUTH_TOKEN, GITHUB_BASE_URL)
+        pygithub_wrapper.PyGithubWrapper.verify_settings(
+            USER, ORG_NAME, GITHUB_BASE_URL, git.OAUTH_TOKEN)
+
+    def test_empty_token_raises_bad_credentials(self, happy_github,
+                                                monkeypatch):
+        with pytest.raises(exception.BadCredentials) as exc_info:
+            pygithub_wrapper.PyGithubWrapper.verify_settings(
+                USER, ORG_NAME, GITHUB_BASE_URL, '')
+
+        assert "token is empty" in str(exc_info)
 
     def test_incorrect_info_raises_not_found_error(self, github_bad_info):
         with pytest.raises(exception.NotFoundError) as exc_info:
-            pygithub_wrapper.PyGithubWrapper.verify_connection(
-                USER, ORG_NAME, git.OAUTH_TOKEN, GITHUB_BASE_URL)
+            pygithub_wrapper.PyGithubWrapper.verify_settings(
+                USER, ORG_NAME, GITHUB_BASE_URL, git.OAUTH_TOKEN)
 
     def test_bad_token_scope_raises(self, happy_github):
         type(happy_github).oauth_scopes = PropertyMock(return_value=['repo'])
 
         with pytest.raises(exception.BadCredentials) as exc_info:
-            pygithub_wrapper.PyGithubWrapper.verify_connection(
-                USER, ORG_NAME, git.OAUTH_TOKEN, GITHUB_BASE_URL)
+            pygithub_wrapper.PyGithubWrapper.verify_settings(
+                USER, ORG_NAME, GITHUB_BASE_URL, git.OAUTH_TOKEN)
         assert "missing one or more oauth scopes" in str(exc_info)
 
     def test_not_owner_raises(self, happy_github, organization):
         with pytest.raises(exception.BadCredentials) as exc_info:
-            pygithub_wrapper.PyGithubWrapper.verify_connection(
-                NOT_OWNER, ORG_NAME, git.OAUTH_TOKEN, GITHUB_BASE_URL)
+            pygithub_wrapper.PyGithubWrapper.verify_settings(
+                NOT_OWNER, ORG_NAME, GITHUB_BASE_URL, git.OAUTH_TOKEN)
 
         assert "user {} is not an owner".format(NOT_OWNER) in str(exc_info)
 
@@ -223,8 +231,8 @@ class TestVerifyConnection:
         happy_github.get_user.side_effect = raise_(
             GithubException("internal server error", 500))
         with pytest.raises(exception.UnexpectedException) as exc_info:
-            wrapper.verify_connection(USER, ORG_NAME, git.OAUTH_TOKEN,
-                                      GITHUB_BASE_URL)
+            wrapper.verify_settings(USER, ORG_NAME, GITHUB_BASE_URL,
+                                      git.OAUTH_TOKEN)
 
 
 def team_mock_to_tuple(team_mock):
@@ -308,8 +316,8 @@ class TestAddToTeam:
         with pytest.raises(exception.UnexpectedException):
             wrapper.add_to_team(users, team_mock_to_tuple(teams[0]))
 
-    def test_add_with_no_previous_members(
-            self, happy_github, users, teams, wrapper):
+    def test_add_with_no_previous_members(self, happy_github, users, teams,
+                                          wrapper):
         """Test adding members to a team which has no members."""
         new_members = users[:3]
         team = teams[4]
@@ -319,8 +327,7 @@ class TestAddToTeam:
 
         team.add_membership.assert_has_calls(expected_calls)
 
-    def test_add_with_some_preexisting_members(self, 
-                                               users, teams, wrapper):
+    def test_add_with_some_preexisting_members(self, users, teams, wrapper):
         """Test adding members when some of the members have already been
         added. All calls should still be placed, as adding membership when it
         is already in place does nothing.
@@ -339,8 +346,7 @@ class TestAddToTeam:
 
         team.add_membership.assert_has_calls(expected_calls)
 
-    def test_add_with_some_non_existing_users(self, 
-                                              users, teams, wrapper):
+    def test_add_with_some_non_existing_users(self, users, teams, wrapper):
         existing_users = users[4:8]
         non_existing_users = ['do-not-exist-{}'.format(i) for i in range(3)]
         new_members = non_existing_users + existing_users
@@ -353,8 +359,7 @@ class TestAddToTeam:
         team.add_membership.assert_has_calls(expected_calls)
 
 
-def test_create_team_default_permission(happy_github, organization,
-                                        wrapper):
+def test_create_team_default_permission(happy_github, organization, wrapper):
     team_name = 'slarse'
 
     wrapper.create_team(team_name)
@@ -363,8 +368,7 @@ def test_create_team_default_permission(happy_github, organization,
         team_name, permission='push')
 
 
-def test_create_team_pull_permission(happy_github, organization,
-                                     wrapper):
+def test_create_team_pull_permission(happy_github, organization, wrapper):
     team_name = 'herro'
     permission = 'pull'
 
