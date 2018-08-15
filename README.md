@@ -5,17 +5,23 @@
 [![Documentation Status](https://readthedocs.org/projects/gits_pet/badge/?version=latest)](http://gits_pet.readthedocs.io/en/latest/?badge=latest)
 [![PyPi Version](https://badge.fury.io/py/gits_pet.svg)](https://badge.fury.io/py/gits_pet)
 ![Supported Python Versions](https://img.shields.io/badge/python-3.5%2C%203.6%2C%203.7-blue.svg)
+![Supported Platforms](https://img.shields.io/badge/platforms-OSX%2C%20Linux-blue.svg)
 
 
 ### Overview
 
 A CLI tool for administrating large amounts of GitHub repositories, geared towards teachers.
 
-### Requirements
-
-To be added ...
-
 ### Install
+
+#### Requirements
+`gits_pet` requires Python 3.5+ and a somewhat up-to-date version of `git`.
+Officially supported platforms are `Ubuntu 17.04+` and `OSX`, but `gits_pet`
+should run fine on any Linux distribution and also on
+[WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10) on Windows 10.
+Please report any issues with operating systems and/or `git` versions on the
+issue tracker.
+
 
 #### Option 1: Install from PyPi with `pip`
 
