@@ -1,5 +1,5 @@
-Open and Close issues (the ``open-issue`` and ``close-issue`` commands)
-***********************************************************************
+Opening and Closing issues (the ``open-issue`` and ``close-issue`` commands)
+****************************************************************************
 Sometimes, the best way to handle an error in a repo is to simply notify
 affected students about it. This is especially true if the due date for the
 assignment is rapidly approaching, and most students have already started

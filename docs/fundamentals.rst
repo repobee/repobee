@@ -27,7 +27,8 @@ automation system from scratch.
     Is there a difference between ``git`` and ``GitHub``? Yes! ``git`` is the
     version control system, and ``GitHub`` is a company that hosts ``git``
     servers on ``github.com``, and provides enterprise software for hosting
-    your ``GitHub`` instances.
+    your own ``GitHub`` instances. The terms are often intermixed, but the
+    distinction is important.
 
 Terminology
 ===========
