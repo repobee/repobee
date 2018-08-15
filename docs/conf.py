@@ -22,7 +22,6 @@ import sys
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
 
-
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -42,7 +41,10 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
-    'sphinx.ext.napoleon']
+    'sphinx.ext.napoleon',
+    'sphinx_autodoc_typehints',
+    'sphinx_rtd_theme',
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -88,13 +90,12 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
-
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -107,12 +108,10 @@ html_theme = 'alabaster'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'gits_pet_namedoc'
-
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -138,20 +137,17 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'gits_pet_name.tex', '\\{cookiecutter.app\\_name\\} Documentation',
+    (master_doc, 'gits_pet_name.tex',
+     '\\{cookiecutter.app\\_name\\} Documentation',
      '\\{cookiecutter.author\\_name\\}', 'manual'),
 ]
-
 
 # -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, 'gits_pet_name', 'gits_pet Documentation',
-     [author], 1)
-]
-
+man_pages = [(master_doc, 'gits_pet_name', 'gits_pet Documentation', [author],
+              1)]
 
 # -- Options for Texinfo output -------------------------------------------
 
@@ -159,13 +155,9 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'gits_pet_name', 'gits_pet Documentation',
-     author, 'gits_pet_name', 'One line description of project.',
-     'Miscellaneous'),
+    (master_doc, 'gits_pet_name', 'gits_pet Documentation', author,
+     'gits_pet_name', 'One line description of project.', 'Miscellaneous'),
 ]
-
-
-
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'https://docs.python.org/': None}

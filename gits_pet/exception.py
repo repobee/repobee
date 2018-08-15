@@ -1,4 +1,14 @@
-"""Modules for all custom gits_pet exceptions."""
+"""Modules for all custom gits_pet exceptions.
+
+All exceptions extend the :py:class:`GitsPetException` base class, which itself
+extends :py:class:`Exception`. In other words, exceptions raised within
+``gits_pet`` can all be caught by catching :py:class:`GitsPetException`.
+
+.. module:: exception
+    :synopsis: Custom exceptions for gits_pet.
+
+.. moduleauthor:: Simon Larsén
+"""
 import os
 import sys
 
@@ -14,7 +24,7 @@ class GitsPetException(Exception):
         return self.msg
 
     def __repr__(self):
-        return "<{}(msg='{}')>".format(type(self).__name__,str(self.msg))
+        return "<{}(msg='{}')>".format(type(self).__name__, str(self.msg))
 
 
 class ParseError(GitsPetException):

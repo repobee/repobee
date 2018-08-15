@@ -1,13 +1,15 @@
 """Wrapper functions for git commands.
 
-This module contains wrapper functions for git commands, such as push and clone.
+.. module:: git
+    :synopsis: Wrapper functions for git CLI commands, such as push and clone.
+
+.. moduleauthor:: Simon Larsén
 """
+import asyncio
 import os
-import sys
 import subprocess
 import collections
 import daiquiri
-import asyncio
 from typing import Sequence, Tuple, Iterable, List, Any, Callable
 
 from gits_pet import util

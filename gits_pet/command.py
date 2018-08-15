@@ -1,12 +1,16 @@
-"""Functions for administrating repos.
+"""Primary API for gits_pet.
 
-This module contains functions for administrating repositories, such as
-creating student repos from some master repo template. Currently, the
-philosophy is that each student has an associated team with the same
-name as the student's username. The team is then granted access to repos.
+This module contains high level functions for administrating repositories, such
+as creating student repos from some master repo template. All functions follow
+the conventions specified in :ref:`conventions`.
 
 Each public function in this module is to be treated as a self-contained
 program.
+
+.. module:: command
+    :synopsis: The primary API of gits_pet containing high level functions for administrating GitHub repos in an opinionated fashion.
+
+.. moduleauthor:: Simon Larsén
 """
 
 import shutil
@@ -32,21 +36,20 @@ MASTER_TEAM = 'master_repos'
 def setup_student_repos(master_repo_urls: Iterable[str],
                         students: Iterable[str], user: str,
                         api: GitHubAPI) -> None:
-    """Setup student repositories based on master repo templates. Perform three
+    """Setup student repositories based on master repo templates. Performs three
     primary tasks:
 
         1. Create one team per student and add the corresponding students to
-        the team. If a team already exists, it is left as-is. If a student is
-        already in its team, nothing happens. If no account exists with the
+        their teams. If a team already exists, it is left as-is. If a student
+        is already in its team, nothing happens. If no account exists with the
         specified username, the team is created regardless but no one is added
         to it.
 
-        2. For each master repository, one private student repo is created and
-        added to the corresponding student team. If a repository already
-        exists, it is skipped.
+        2. For each master repository, create one student repo per team and add
+        it to the corresponding student team. If a repository already exists,
+        it is skipped.
         
-        3. Files from the master repos are pushed to the corresponding student
-        repos.
+        3. Push files from the master repos to the corresponding student repos.
 
     Args:
         master_repo_urls: URLs to master repos. Must be in the organization

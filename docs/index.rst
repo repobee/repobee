@@ -5,11 +5,23 @@
 
 Welcome to gits_pet's documentation!
 ==================================================
+If you are new to ``gits_pet``, the :ref:`fundamentals` and
+:ref:`userguide` sections are must-reads. Developers looking to modify
+or utilize the core functionality in ways the CLI does not allow will be best
+served by looking at the :ref:`modindex`.
+
+Please open an issue and tag it with the ``docs`` tag for any bugs or missing
+information.
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
-    code
+
+   fundamentals
+   install
+   userguide
+   configuration
+   code
 
 
 

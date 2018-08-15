@@ -1,17 +1,21 @@
 """GitHub API module.
 
-This module contains the GitHubAPI class, which is meant to be the prime means
-of interacting with the GitHub API in gits_pet. The methods of GitHubAPI are
-mostly high-level bulk operations.
+This module contains the :py:class:`GitHubAPI` class, which is meant to be the
+prime means of interacting with the GitHub API in ``gits_pet``. The methods of
+GitHubAPI are mostly high-level bulk operations.
+
+The :py:class:`APIWrapper` class is an abstraction layer for the actual API
+used to communicate with GitHub.
+
+.. module:: github_api
+    :synopsis: Top level interface for interacting with a GitHub instance within gits_pet.
+
+.. moduleauthor:: Simon Larsén
 """
-import collections
-import re
 from typing import List, Iterable, Mapping
 import daiquiri
-import github
 
 from gits_pet import APIWrapper
-from gits_pet import util
 from gits_pet import exception
 from gits_pet import tuples
 

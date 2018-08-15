@@ -1,3 +1,19 @@
+"""Contains a wrapper class for the PyGithub library.
+
+:py:class:`PyGithubWrapper` is a wrapper class that implements the
+:py:class:`AbstractAPIWrapper` class and thereby provides a means of
+interacting with a GitHub instance's API. As the name suggests, the underlying
+library is PyGithub.
+
+The point of this abstraction layer can be read about in the
+:py:mod:`abstract_api_wrapper` module.
+
+.. module:: pygithub_wrapper
+    :synopsis: Contains a wrapper class for the PyGithub library.
+
+.. moduleauthor:: Simon Larsén
+"""
+
 import contextlib
 import collections
 import re
