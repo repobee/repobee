@@ -222,6 +222,8 @@ our master repos are migrated, we can move on to setting up the student repos!
 
         $ gits_pet migrate -mu https://some-enterprise-host/other-org/master-repo-1
 
+.. _setup:
+
 Setup Student Repositories
 ==========================
 Now that the master repos have been added to the target organization, it's time
