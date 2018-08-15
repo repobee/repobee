@@ -95,12 +95,18 @@ students, plain text is more helpful. Now it's just a matter of using
     [INFO] Pushed files to https://some-enterprise-host/gits-pet-demo/spam-master-repo-1 master
     [INFO] Pushed files to https://some-enterprise-host/gits-pet-demo/eggs-master-repo-1 master
     [ERROR] Failed to push to https://some-enterprise-host/gits-pet-demo/ham-master-repo-1
+    return code: 128
+    fatal: repository 'https://some-enterprise-host/gits-pet-demo/ham-master-repo-1/' not found
     [WARNING] 1 pushes failed ...
     [INFO] pushing, attempt 2/3
     [ERROR] Failed to push to https://some-enterprise-host/gits-pet-demo/ham-master-repo-1
+    return code: 128
+    fatal: repository 'https://some-enterprise-host/gits-pet-demo/ham-master-repo-1/' not found
     [WARNING] 1 pushes failed ...
     [INFO] pushing, attempt 3/3
     [ERROR] Failed to push to https://some-enterprise-host/gits-pet-demo/ham-master-repo-1
+    return code: 128
+    fatal: repository 'https://some-enterprise-host/gits-pet-demo/ham-master-repo-1/' not found
     [WARNING] 1 pushes failed ...
     [INFO] Opening issue in repos to which push failed
     [INFO] Opened issue ham-master-repo-1/#1-'Nice title'

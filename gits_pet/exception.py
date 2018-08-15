@@ -11,6 +11,7 @@ extends :py:class:`Exception`. In other words, exceptions raised within
 """
 import os
 import sys
+import re
 
 
 class GitsPetException(Exception):
@@ -69,14 +70,16 @@ class GitError(GitsPetException):
     """
 
     def __init__(self, msg: str, returncode: int, stderr: bytes):
-        msg_ = ("{}{}"
-                "return code: {}{}"
-                "stderr: {}").format(
-                    msg,
-                    os.linesep,
-                    returncode,
-                    os.linesep,
-                    stderr.decode(encoding=sys.getdefaultencoding()))
+        stderr_decoded = stderr.decode(encoding=sys.getdefaultencoding()) or ''
+        fatal = re.findall('fatal:.*', stderr_decoded)
+        # either fatal reason or first line of error message
+        err = fatal[0] if fatal else stderr_decoded.split(os.linesep)[0]
+
+        # sanitize from secure token
+        err = re.sub("https://.*?@", "https://", err)
+
+        msg_ = ("{}{}return code: {}{}{}").format(msg, os.linesep, returncode,
+                                                  os.linesep, err)
         super().__init__(msg_)
         self.returncode = returncode
         self.stderr = stderr

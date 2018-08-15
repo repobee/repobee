@@ -122,7 +122,6 @@ async def _clone_async(repo_url: str,
     _, stderr = await proc.communicate()
 
     if proc.returncode != 0:
-        print("failed to clone " + repo_url)
         raise exception.CloneFailedError(
             "Failed to clone {}".format(repo_url),
             returncode=proc.returncode,
