@@ -1,7 +1,7 @@
 .. _getting_started:
 
-Getting Started
-***************
+Getting Started (the ``verify-connection``, ``migrate`` and ``setup`` commands)
+*******************************************************************************
 .. important::
 
     This guide assumes that the user has access to a ``bash`` shell, or is
@@ -209,7 +209,7 @@ repos in some way are safe to run over and over. This is mostly because of
 how ``git`` works, and has little to do with ``gits_pet`` itself. Now that
 our master repos are migrated, we can move on to setting up the student repos!
 
-.. important::
+.. note::
 
     The ``migrate`` command can also be used to migrate repos from somewhere
     on the GitHub instance into the target organization. To do this, use the
@@ -281,13 +281,13 @@ complex, but again, it's as simple as issuing a single command with
     [INFO] Pushed files to https://some-enterprise-host/gits-pet-demo/spam-master-repo-2 master
 
 Note that there was a ``[WARNING]`` message for the username ``eggs``: the user
-does not exist. At KTH, this is common, as many (sometimes most) students will
-not have created their GitHub accounts until sometime after the course starts.
-These students will still have their repos created, but the users need to be
-added to their teams at a later time (for example with the ``gits_pet
-add-to-teams`` command). This is one reason for why we use teams for access
-privileges: it's easy to set everything up even when the students have yet to
-create their accounts (given that their usernames are pre-determined).
+does not exist. At KTH, this is common, as many (sometimes most) first-time
+students will not have created their GitHub accounts until sometime after the
+course starts.  These students will still have their repos created, but the
+users need to be added to their teams at a later time (for example with the
+``gits_pet add-to-teams`` command). This is one reason for why we use teams for
+access privileges: it's easy to set everything up even when the students have
+yet to create their accounts (given that their usernames are pre-determined).
 
 And that's it, the organization is primed and the students should have access
 to their repositories!

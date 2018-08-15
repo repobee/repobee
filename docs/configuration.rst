@@ -41,7 +41,9 @@ a single course (and, as a consequence, a single organization).
 run `gits_pet -h`. At the very top, there should be a line looking something
 like this:
 
-`[INFO] no config file found. Expected config file location: /home/USERNAME/.config/gits_pet/config.cnf`
+.. code-block:: bash
+
+    [INFO] no config file found. Expected config file location: /home/USERNAME/.config/gits_pet/config.cnf
 
 The filepath at the end is where you should put your config file.
 
