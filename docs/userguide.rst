@@ -11,4 +11,3 @@
    update
    issues
    clone
-   configuration
