@@ -6,7 +6,7 @@
 Welcome to gits_pet's documentation!
 ==================================================
 If you are new to ``gits_pet``, the :ref:`fundamentals` and
-:ref:`getting_started` sections are must-reads. Developers looking to modify
+:ref:`userguide` sections are must-reads. Developers looking to modify
 or utilize the core functionality in ways the CLI does not allow will be best
 served by looking at the :ref:`modindex`.
 
@@ -18,10 +18,7 @@ information.
    :caption: Contents:
 
    fundamentals
-   getting_started
-   update
-   issues
-   clone
+   userguide
    configuration
    code
    cli_reference
