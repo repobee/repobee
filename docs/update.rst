@@ -37,6 +37,14 @@ Let's say that we've updated ``master-repo-1``, and that users ``spam``,
 That's all there is to it for this super simple case. But what if ``ham`` had
 started working on ``ham-master-repo-1``?
 
+.. note::
+    
+    Here, ``-s spam eggs ham`` was used to directly specify student usernames on
+    the command line, instead of pointing to a students file with ``-sf
+    students.txt``. All commands that require you to specify student usernames
+    can be used with either the ``-s|--students`` or the ``-sf|--students-file``
+    options.
+
 Scenario 2: At Least 1 Repo Altered
 -----------------------------------
 Let's assume now that ``ham`` has started working on the repo. Since we do not
