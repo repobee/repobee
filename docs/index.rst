@@ -20,6 +20,7 @@ information.
    fundamentals
    getting_started
    update
+   issues
    configuration
    code
    cli_reference
