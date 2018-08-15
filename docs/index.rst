@@ -18,6 +18,7 @@ information.
    :caption: Contents:
 
    fundamentals
+   install
    userguide
    configuration
    code
