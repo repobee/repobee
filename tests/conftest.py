@@ -29,6 +29,7 @@ GITHUB_BASE_URL = '{}/api/v3'.format(HOST_URL)
 STUDENTS = tuple(string.ascii_lowercase[:4])
 ISSUE_PATH = 'some/issue/path'
 ISSUE = tuples.Issue(title="Best title", body="This is the body of the issue.")
+PLUGINS = ['javac', 'pylint', 'crosscheck']
 
 
 GENERATE_REPO_URL = lambda repo_name:\
@@ -43,7 +44,9 @@ def pytest_namespace():
         ORG_NAME=ORG_NAME,
         STUDENTS=STUDENTS,
         ISSUE_PATH=ISSUE_PATH,
-        ISSUE=ISSUE)
+        ISSUE=ISSUE,
+        PLUGINS=PLUGINS,
+    )
     functions = dict(GENERATE_REPO_URL=GENERATE_REPO_URL, raise_=raise_)
     return dict(constants=constants, functions=functions)
 
@@ -109,8 +112,12 @@ def empty_config_mock(mocker, isfile_mock, tmpdir):
     mocker.patch(
         'repomate.config._read_config',
         side_effect=lambda _: read_config(pathlib.Path(str(file))))
+    read_defaults = repomate.config._read_defaults
+    mocker.patch(
+        'repomate.config._read_defaults',
+        side_effect=lambda _: read_defaults(pathlib.Path(str(file))))
     isfile = isfile_mock.side_effect
-    isfile_mock.side_effect = lambda path: isfile(path) or str(path) == file.name
+    isfile_mock.side_effect = lambda path: isfile(path) or str(path) == str(file)
     yield file
 
 
@@ -165,6 +172,7 @@ def config_mock(empty_config_mock, students_file):
         "user = {}".format(USER),
         "org_name = {}".format(ORG_NAME),
         "students_file = {!s}".format(students_file),
+        "plugins = {!s}".format(','.join(PLUGINS)),
     ])
     empty_config_mock.write(config_contents)
     yield empty_config_mock

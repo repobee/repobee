@@ -9,7 +9,7 @@ Contains the code required for pre-configuring user interfaces.
 """
 import pathlib
 import configparser
-from typing import Union
+from typing import Union, List
 import daiquiri
 import appdirs
 import repomate
@@ -27,7 +27,7 @@ assert DEFAULT_CONFIG_FILE.is_absolute()
 
 # arguments that can be configured via config file
 CONFIGURABLE_ARGS = set(('user', 'org_name', 'github_base_url',
-                         'students_file'))
+                         'students_file', 'plugins'))
 
 
 def get_configured_defaults(
@@ -43,13 +43,23 @@ def get_configured_defaults(
     """
     config_file = pathlib.Path(config_file) if isinstance(config_file,
                                                           str) else config_file
-    config = _read_config(config_file)
-    configured = config.keys()
+    config_dict = _read_defaults(config_file)
+    configured = config_dict.keys()
     if configured - CONFIGURABLE_ARGS:  # there are surpluss arguments
         raise exception.FileError("config contains invalid keys: {}".format(
             ", ".join(configured - CONFIGURABLE_ARGS)))
 
-    # following is logging only
+    _log_config(config_dict)
+
+    return config_dict
+
+
+def _log_config(config: dict) -> None:
+    """Pretty print the configuration file in the log.
+
+    Args:
+        config: a ConfigParser after reading the file.
+    """
     if config:
         LOGGER.info("config file defaults:\n{}".format("\n   ".join([""] + [
             "{}: {}".format(key, value) for key, value in config.items()
@@ -60,13 +70,35 @@ def get_configured_defaults(
             "no config file found. Expected config file location: {!s}".format(
                 DEFAULT_CONFIG_FILE))
 
-    return config
+
+def get_plugin_names(
+        config_file: Union[str, pathlib.Path] = DEFAULT_CONFIG_FILE
+) -> List[str]:
+    """Return a list of unqualified names of plugins listed in the config. The
+    order of the plugins is preserved.
+
+    Args:
+        config_file: path to the config file.
+
+    Returns:
+        a list of unqualified names of plugin modules, or an empty list if no
+        plugins are listed.
+    """
+    config_file = pathlib.Path(config_file) if isinstance(config_file,
+                                                          str) else config_file
+    config = _read_config(config_file)
+    plugin_string = config.get('DEFAULTS', 'plugins', fallback="")
+    return [name.strip() for name in plugin_string.split(",") if name]
 
 
-def _read_config(config_file: pathlib.Path = DEFAULT_CONFIG_FILE) -> dict:
+def _read_defaults(config_file: pathlib.Path = DEFAULT_CONFIG_FILE) -> dict:
     if not config_file.is_file():
         return {}
+    return dict(_read_config(config_file)['DEFAULTS'])
 
+
+def _read_config(config_file: pathlib.Path = DEFAULT_CONFIG_FILE
+                 ) -> configparser.ConfigParser:
     config_parser = configparser.ConfigParser()
     try:
         config_parser.read(str(config_file))
@@ -77,4 +109,4 @@ def _read_config(config_file: pathlib.Path = DEFAULT_CONFIG_FILE) -> dict:
         raise exception.FileError(
             "config file at '{!s}' does not contain the required [DEFAULTS] header".
             format(config_file))
-    return dict(config_parser["DEFAULTS"])
+    return config_parser
