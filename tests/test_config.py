@@ -1,7 +1,7 @@
 import os
 import pytest
-from gits_pet import config
-from gits_pet import exception
+from repomate import config
+from repomate import exception
 
 STUDENTS = pytest.constants.STUDENTS
 USER = pytest.constants.USER

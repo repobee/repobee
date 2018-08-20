@@ -5,9 +5,9 @@ from unittest.mock import patch, MagicMock, PropertyMock, call
 from collections import namedtuple
 
 import github
-from gits_pet import github_api
-from gits_pet import exception
-from gits_pet import tuples
+from repomate import github_api
+from repomate import exception
+from repomate import tuples
 
 ORG_NAME = pytest.constants.ORG_NAME
 ISSUE = pytest.constants.ISSUE
@@ -78,7 +78,7 @@ def api_wrapper_mock(mocker, existing_teams, repos):
         lambda repo_names: [repo for repo in repos if repo.name in repo_names]
 
     api_wrapper_mock = mocker.patch(
-        'gits_pet.github_api.APIWrapper', return_value=api_wrapper_instance)
+        'repomate.github_api.APIWrapper', return_value=api_wrapper_instance)
 
     return api_wrapper_instance
 
@@ -265,10 +265,10 @@ class TestCreateRepos:
             raise VALIDATION_ERROR
 
         mocker.patch(
-            'gits_pet.github_api.APIWrapper.create_repo',
+            'repomate.github_api.APIWrapper.create_repo',
             side_effect=create_repo_side_effect)
         mocker.patch(
-            'gits_pet.github_api.APIWrapper.get_repo_url',
+            'repomate.github_api.APIWrapper.get_repo_url',
             side_effect=lambda repo_name: repo_name)
 
         actual_urls = api.create_repos(repos)

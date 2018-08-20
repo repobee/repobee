@@ -8,8 +8,8 @@ from collections import namedtuple
 
 from conftest import TOKEN
 
-from gits_pet import git
-from gits_pet import exception
+from repomate import git
+from repomate import exception
 
 URL_TEMPLATE = 'https://{}github.com/slarse/clanim'
 USER = pytest.constants.USER
@@ -24,7 +24,7 @@ AioSubproc = namedtuple('AioSubproc', ('create_subprocess', 'process'))
 def env_setup(mocker):
     mocker.patch(
         'subprocess.run', autospec=True, return_value=RunTuple(0, b'', b''))
-    # TOKEN was mocked as the environment token when gits_pet.git was imported
+    # TOKEN was mocked as the environment token when repomate.git was imported
     expected_url = URL_TEMPLATE.format(TOKEN + '@')
     expected_url_with_username = URL_TEMPLATE.format("{}:{}@".format(
         USER, TOKEN))
@@ -236,7 +236,7 @@ class TestPushSingle:
             raise exception.PushFailedError("Push failed", 128, b"some error",
                                             pt.repo_url)
 
-        mocker.patch('gits_pet.git._push_async', side_effect=raise_)
+        mocker.patch('repomate.git._push_async', side_effect=raise_)
 
         with pytest.raises(exception.PushFailedError) as exc_info:
             git.push_single('some_repo', USER, url)
@@ -353,7 +353,7 @@ class TestPush:
             raise exception.PushFailedError("Push failed", 128, b"some error",
                                             pt.repo_url)
 
-        mocker.patch('gits_pet.git._push_async', side_effect=raise_)
+        mocker.patch('repomate.git._push_async', side_effect=raise_)
         expected_failed_urls = [pt.repo_url for pt in push_tuples]
 
         failed_urls = git.push(push_tuples, USER, tries=tries)
@@ -380,7 +380,7 @@ class TestPush:
                                             pt.repo_url)
 
         async_push_mock = mocker.patch(
-            'gits_pet.git._push_async', side_effect=raise_once)
+            'repomate.git._push_async', side_effect=raise_once)
 
         git.push(push_tuples, USER, tries=10)
 
@@ -441,7 +441,7 @@ class TestClone:
                     url=repo_url)
 
         clone_mock = mocker.patch(
-            'gits_pet.git._clone_async', autospec=True, side_effect=raise_)
+            'repomate.git._clone_async', autospec=True, side_effect=raise_)
 
         failed_urls = git.clone(urls)
 

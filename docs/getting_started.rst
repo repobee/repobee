@@ -8,28 +8,28 @@ Getting Started (the ``verify-connection``, ``migrate`` and ``setup`` commands)
     tech-savvy enough to translate the instructions into some other shell
     environment.
 
-The basic workflow of ``gits_pet`` is best described by example. In this section,
+The basic workflow of ``repomate`` is best described by example. In this section,
 I will walk you through how to set up an Organization_ with master and student
 repositories by showing every single step I would perform myself. The basic
 workflow can be summarized in the following steps:
 
 1. Create an organization (the target organization).
-2. Configure ``gits_pet`` for the target organization.
+2. Configure ``repomate`` for the target organization.
 3. Verify settings.
 4. Migrate master repositories into the target organization.
 5. Create one copy of each master repo for each student.
 
-There is more to ``gits_pet``, such as opening/closing issues, updating student
+There is more to ``repomate``, such as opening/closing issues, updating student
 repos and cloning repos in batches, but here we will just look at the bare
 minimum to get started. Now, let's delve into these steps in greater detail.
 
 Create an Organization
 ======================
-This is an absolutely necessary pre-requisite for using ``gits_pet``.
+This is an absolutely necessary pre-requisite for using ``repomate``.
 Create an organization with an appropriate name on the GitHub instance you
 intend to use. You can find the ``New organization`` button by going to
 ``Settings -> Organization``. I will call my *target organization*
-``gits_pet_demo``, so whenever you see that, substitute in the name of your
+``repomate_demo``, so whenever you see that, substitute in the name of your
 target organization.
 
 .. important::
@@ -42,7 +42,7 @@ target organization.
     disallow students from viewing each others' repos unless explicitly given
     permission by an organization owner (e.g. you).
 
-Configure ``gits_pet`` For the Target Organization
+Configure ``repomate`` For the Target Organization
 ==================================================
 For the tool to work at all, an environment variable called ``GITS_PET_OAUTH``
 must contain an OAUTH2 token to whichever GitHub instance you intend to use.
@@ -72,12 +72,12 @@ You should see your token in the output.
     only ``echo $GITS_PET_OAUTH``, for example.
 
 With that out of the way, let's create a configuration file We can now use
-``gits_pet`` to figure out where it should be located.
+``repomate`` to figure out where it should be located.
 
 .. code-block:: bash
     
-    $ gits_pet -h
-    [INFO] no config file found. Expected config file location: /home/USERNAME/.config/gits_pet/config.cnf
+    $ repomate -h
+    [INFO] no config file found. Expected config file location: /home/USERNAME/.config/repomate/config.cnf
 
     <HELP MESSAGE OMITTED>
 
@@ -103,11 +103,11 @@ Now, you need to substitute in some of your own values in place of mine.
 * Replace ``gits-pet-demo`` with whatever you named your target organization.
 
 That's it for configuration, and we can check that the file is correctly found
-and parsed by running ``gits_pet -h`` again.
+and parsed by running ``repomate -h`` again.
 
 .. code-block:: bash
 
-    $ gits_pet -h
+    $ repomate -h
     [INFO] config file defaults:
 
         github_base_url: https://some-enterprise-host/api/v3
@@ -117,9 +117,9 @@ and parsed by running ``gits_pet -h`` again.
     <HELP MESSAGE OMITTED>
 
 The ``[INFO] config file defaults:`` message (along with the defaults) will pop
-up on every ``gits_pet`` command. I should note that the configuration file
+up on every ``repomate`` command. I should note that the configuration file
 isn't strictly necessary, but it will save us the hassle of typing in the url,
-username and organization name on every single command to ``gits_pet``.
+username and organization name on every single command to ``repomate``.
 
 Verify Settings
 ===============
@@ -129,7 +129,7 @@ you can simply run the ``verify-settings`` command without any options.
 
 .. code-block:: bash
 
-    $ gits_pet verify-settings
+    $ repomate verify-settings
     [INFO] config file defaults:
 
        github_base_url: https://some-enterprise-host/api/v3
@@ -154,7 +154,7 @@ next section!
 Migrate Master Repositories Into the Target Organization
 ========================================================
 This step sounds complicated, but it's actually very easy, and can be performed
-with a single ``gits_pet`` command. There is however a pre-requisite that must
+with a single ``repomate`` command. There is however a pre-requisite that must
 be fulfilled. You must either
 
 * Have local copies of your master repos.
@@ -168,7 +168,7 @@ current working directory (i.e. local repos), all we have to do is this:
 
 .. code-block:: bash
 
-    $ gits_pet migrate -mn master-repo-1 master-repo-2
+    $ repomate migrate -mn master-repo-1 master-repo-2
     [INFO] config file defaults:
 
        github_base_url: https://some-enterprise-host/api/v3
@@ -199,7 +199,7 @@ Running the same thing again yields the following output:
 
 .. code-block:: bash
 
-    $ gits_pet migrate -mn master-repo-1 master-repo-2
+    $ repomate migrate -mn master-repo-1 master-repo-2
     [INFO] config file defaults:
 
        github_base_url: https://some-enterprise-host/api/v3
@@ -215,9 +215,9 @@ Running the same thing again yields the following output:
     [INFO] https://some-enterprise-host/gits-pet-demo/master-repo-2 master is up-to-date
     [INFO] done!
 
-In fact, all ``gits_pet`` commands that deal with pushing to or cloning from
+In fact, all ``repomate`` commands that deal with pushing to or cloning from
 repos in some way are safe to run over and over. This is mostly because of
-how ``git`` works, and has little to do with ``gits_pet`` itself. Now that
+how ``git`` works, and has little to do with ``repomate`` itself. Now that
 our master repos are migrated, we can move on to setting up the student repos!
 
 .. note::
@@ -231,7 +231,7 @@ our master repos are migrated, we can move on to setting up the student repos!
 
     .. code-block:: bash
 
-        $ gits_pet migrate -mu https://some-enterprise-host/other-org/master-repo-1
+        $ repomate migrate -mu https://some-enterprise-host/other-org/master-repo-1
 
 .. _setup:
 
@@ -256,11 +256,11 @@ uniqueness. Each student will also be added to a team (which bears the same
 name as the student's user), and it is the team that is allowed access to the
 student's repos, and not the student's actual user. That all sounded fairly
 complex, but again, it's as simple as issuing a single command with
-``gits_pet``.
+``repomate``.
 
 .. code-block:: bash
     
-    $ gits_pet setup -mn master-repo-1 master-repo-2 -sf students.txt 
+    $ repomate setup -mn master-repo-1 master-repo-2 -sf students.txt 
     [INFO] config file defaults:
 
        github_base_url: https://some-enterprise-host/api/v3
@@ -298,7 +298,7 @@ does not exist. At KTH, this is common, as many (sometimes most) first-time
 students will not have created their GitHub accounts until sometime after the
 course starts.  These students will still have their repos created, but the
 users need to be added to their teams at a later time (for example with the
-``gits_pet add-to-teams`` command). This is one reason for why we use teams for
+``repomate add-to-teams`` command). This is one reason for why we use teams for
 access privileges: it's easy to set everything up even when the students have
 yet to create their accounts (given that their usernames are pre-determined).
 

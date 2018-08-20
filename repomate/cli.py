@@ -1,9 +1,9 @@
 """CLI module.
 
-This module contains the CLI for gits_pet.
+This module contains the CLI for repomate.
 
 .. module:: cli
-    :synopsis: The CLI for gits_pet.
+    :synopsis: The CLI for repomate.
 
 .. moduleauthor:: Simon Larsén
 """
@@ -18,14 +18,14 @@ from typing import List, Iterable, Optional
 import logging
 import daiquiri
 
-from gits_pet import command
-from gits_pet import github_api
-from gits_pet import git
-from gits_pet import util
-from gits_pet import tuples
-from gits_pet import exception
-from gits_pet import config
-from gits_pet import APIWrapper
+from repomate import command
+from repomate import github_api
+from repomate import git
+from repomate import util
+from repomate import tuples
+from repomate import exception
+from repomate import config
+from repomate import APIWrapper
 
 daiquiri.setup(
     level=logging.INFO,
@@ -190,7 +190,7 @@ def _create_parser():
     """Create the parser."""
 
     parser = argparse.ArgumentParser(
-        prog='gits_pet',
+        prog='repomate',
         description='A CLI tool for administrating student repositories.')
     _add_subparsers(parser)
     return parser

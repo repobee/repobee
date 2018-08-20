@@ -12,8 +12,8 @@ import collections
 import daiquiri
 from typing import Sequence, Tuple, Iterable, List, Any, Callable
 
-from gits_pet import util
-from gits_pet import exception
+from repomate import util
+from repomate import exception
 
 CONCURRENT_TASKS = 20
 

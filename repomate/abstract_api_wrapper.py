@@ -1,8 +1,8 @@
 """Contains an abstract class defining an interface to a GitHub API.
 
 Provides an abstract class that defines all of the functions required by the
-:py:class:`gits_pet.github_api.GitHubAPI` class' internal API. The idea is to
-completely separate :py:class:`gits_pet.github_api.GitHubAPI` from the API calls to the *actual*
+:py:class:`repomate.github_api.GitHubAPI` class' internal API. The idea is to
+completely separate :py:class:`repomate.github_api.GitHubAPI` from the API calls to the *actual*
 GitHub API, so that the latter can be swapped out more easily. In theory,
 any implementation of :py:class:`AbstractAPIWrapper` should be usable as the
 API layer toward GitHub. The interface is however heavily influenced by the
@@ -15,7 +15,7 @@ by the package level constant :py:const:`APIWrapper`.
 Current implementations:
 
 .. module:: abstract_api_wrapper
-   :synopsis: Abstract class defining the interface required for the internal API of gits_pet.github_api.GitHubAPI.
+   :synopsis: Abstract class defining the interface required for the internal API of repomate.github_api.GitHubAPI.
 
 .. moduleauthor:: Simon Larsén
 """
@@ -24,14 +24,14 @@ import abc
 
 from typing import Optional, Iterable, Generator
 
-from gits_pet import tuples
+from repomate import tuples
 
 REQUIRED_OAUTH_SCOPES = {'admin:org', 'repo'}
 
 
 class AbstractAPIWrapper(abc.ABC):
     """An abstract class that defines the internal API for
-    :py:class:`gits_pet.github_api.GitHubAPI`. Methods should provide
+    :py:class:`repomate.github_api.GitHubAPI`. Methods should provide
     adequate logging where it makes sense.
     """
 

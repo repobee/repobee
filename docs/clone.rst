@@ -10,7 +10,7 @@ repos based on ``master-repo-1`` and ``master-repo-2``.
 
 .. code-block:: bash
 
-    $ gits_pet clone -mn master-repo-1 master-repo-2 -sf students.txt
+    $ repomate clone -mn master-repo-1 master-repo-2 -sf students.txt
     [INFO] config file defaults:
 
        github_base_url: https://some-enterprise-host/api/v3

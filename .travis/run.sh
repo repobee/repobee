@@ -5,7 +5,7 @@ if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
     eval "$(pyenv init -)"
     pyenv global "$PYTHON"
     python --version
-    python -m pytest tests --cov=gits_pet
+    python -m pytest tests --cov=repomate
 else
-    pytest tests --cov=gits_pet
+    pytest tests --cov=repomate
 fi

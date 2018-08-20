@@ -1,11 +1,11 @@
-.. gits_pet documentation master file, created by
+.. repomate documentation master file, created by
    sphinx-quickstart on Thu Jun 29 18:11:20 2017.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to gits_pet's documentation!
+Welcome to repomate's documentation!
 ==================================================
-If you are new to ``gits_pet``, the :ref:`fundamentals` and
+If you are new to ``repomate``, the :ref:`fundamentals` and
 :ref:`userguide` sections are must-reads. Developers looking to modify
 or utilize the core functionality in ways the CLI does not allow will be best
 served by looking at the :ref:`modindex`.

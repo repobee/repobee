@@ -22,10 +22,10 @@ from socket import gaierror
 import daiquiri
 import github
 
-from gits_pet import exception
-from gits_pet import util
-from gits_pet import tuples
-from gits_pet.abstract_api_wrapper import AbstractAPIWrapper, REQUIRED_OAUTH_SCOPES
+from repomate import exception
+from repomate import util
+from repomate import tuples
+from repomate.abstract_api_wrapper import AbstractAPIWrapper, REQUIRED_OAUTH_SCOPES
 
 LOGGER = daiquiri.getLogger(__file__)
 

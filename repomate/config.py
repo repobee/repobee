@@ -12,15 +12,15 @@ import configparser
 from typing import Union
 import daiquiri
 import appdirs
-import gits_pet
+import repomate
 
-from gits_pet import exception
+from repomate import exception
 
 LOGGER = daiquiri.getLogger(__file__)
 
 CONFIG_DIR = pathlib.Path(
     appdirs.user_config_dir(
-        appname=__package__, appauthor=gits_pet.__author__))
+        appname=__package__, appauthor=repomate.__author__))
 
 DEFAULT_CONFIG_FILE = CONFIG_DIR / 'config.cnf'
 assert DEFAULT_CONFIG_FILE.is_absolute()

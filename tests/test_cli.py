@@ -7,13 +7,13 @@ from unittest.mock import MagicMock, PropertyMock
 from contextlib import contextmanager
 import pytest
 
-import gits_pet
-from gits_pet import cli
-from gits_pet import git
-from gits_pet import tuples
-from gits_pet import exception
-from gits_pet import config
-from gits_pet.tuples import Team
+import repomate
+from repomate import cli
+from repomate import git
+from repomate import tuples
+from repomate import exception
+from repomate import config
+from repomate.tuples import Team
 
 USER = pytest.constants.USER
 ORG_NAME = pytest.constants.ORG_NAME
@@ -44,7 +44,7 @@ VALID_PARSED_ARGS = dict(
 
 @pytest.fixture(autouse=True)
 def api_instance_mock(mocker):
-    instance_mock = MagicMock(spec=gits_pet.github_api.GitHubAPI)
+    instance_mock = MagicMock(spec=repomate.github_api.GitHubAPI)
     instance_mock.get_repo_urls.side_effect = lambda repo_names: list(map(GENERATE_REPO_URL, repo_names))
     instance_mock.ensure_teams_and_members.side_effect = lambda team_dict:\
             [Team(name, members, id=0) for name, members in team_dict.items()]
@@ -53,14 +53,14 @@ def api_instance_mock(mocker):
 
 @pytest.fixture(autouse=True)
 def api_class_mock(mocker, api_instance_mock):
-    class_mock = mocker.patch('gits_pet.github_api.GitHubAPI', autospec=True)
+    class_mock = mocker.patch('repomate.github_api.GitHubAPI', autospec=True)
     class_mock.return_value = api_instance_mock
     return class_mock
 
 
 @pytest.fixture
 def admin_mock(mocker):
-    return mocker.patch('gits_pet.cli.command', autospec=True)
+    return mocker.patch('repomate.cli.command', autospec=True)
 
 
 @pytest.fixture
@@ -75,12 +75,12 @@ def read_issue_mock(mocker):
         return ISSUE
 
     return mocker.patch(
-        'gits_pet.util.read_issue', autospec=True, side_effect=read_issue)
+        'repomate.util.read_issue', autospec=True, side_effect=read_issue)
 
 
 @pytest.fixture
 def git_mock(mocker):
-    return mocker.patch('gits_pet.git', autospec=True)
+    return mocker.patch('repomate.git', autospec=True)
 
 
 @pytest.fixture(
@@ -107,7 +107,7 @@ def parsed_args_all_subparsers(request):
         exception.APIError('some message')
     ])
 def admin_all_raise_mock(admin_mock, request):
-    """Mock of gits_pet.command where all functions raise expected exceptions
+    """Mock of repomate.command where all functions raise expected exceptions
     (i.e. those caught in _sys_exit_on_expected_error)
     """
 
@@ -223,7 +223,7 @@ class TestHandleParsedArgs:
         # regular mockaing is broken for static methods, it seems, produces non-callable
         # so using monkeypatch instead
         verify_mock = MagicMock()
-        monkeypatch.setattr('gits_pet.cli.APIWrapper.verify_settings',
+        monkeypatch.setattr('repomate.cli.APIWrapper.verify_settings',
                             verify_mock)
         args = tuples.Args(
             cli.VERIFY_PARSER,
@@ -486,7 +486,7 @@ class TestSetupAndUpdateParsers:
         """
         local_repo = REPO_NAMES[-1]
         is_git_repo_mock = mocker.patch(
-            'gits_pet.util.is_git_repo',
+            'repomate.util.is_git_repo',
             side_effect=lambda path: path.endswith(local_repo))
         expected_urls = [
             GENERATE_REPO_URL(name) for name in REPO_NAMES
@@ -518,7 +518,7 @@ class TestMigrateParser:
     @pytest.fixture(autouse=True)
     def is_git_repo_mock(self, mocker):
         return mocker.patch(
-            'gits_pet.util.is_git_repo', autospec=True, return_value=True)
+            'repomate.util.is_git_repo', autospec=True, return_value=True)
 
     def assert_migrate_args(self, parsed_args, *, uses_urls: bool) -> bool:
         assert parsed_args.user == USER

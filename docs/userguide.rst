@@ -1,6 +1,6 @@
 .. _userguide:
 
-``gits_pet`` User Guide
+``repomate`` User Guide
 ==================================================
 
 .. toctree::

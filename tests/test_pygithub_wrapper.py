@@ -4,11 +4,11 @@ from collections import namedtuple
 import pytest
 import github
 
-from gits_pet.abstract_api_wrapper import REQUIRED_OAUTH_SCOPES
-from gits_pet import pygithub_wrapper
-from gits_pet import git
-from gits_pet import exception
-from gits_pet import tuples
+from repomate.abstract_api_wrapper import REQUIRED_OAUTH_SCOPES
+from repomate import pygithub_wrapper
+from repomate import git
+from repomate import exception
+from repomate import tuples
 
 USER = pytest.constants.USER
 NOT_OWNER = 'notanowner'

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# gits_pet documentation build configuration file, created by
+# repomate documentation build configuration file, created by
 # sphinx-quickstart on Thu Jun 29 18:11:20 2017.
 #
 # This file is execfile()d with the current directory set to its
@@ -59,7 +59,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'gits_pet'
+project = 'repomate'
 copyright = '2017, Simon Larsén'
 author = 'Simon Larsén'
 
@@ -111,7 +111,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'gits_pet_namedoc'
+htmlhelp_basename = 'repomate_namedoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -137,7 +137,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'gits_pet_name.tex',
+    (master_doc, 'repomate_name.tex',
      '\\{cookiecutter.app\\_name\\} Documentation',
      '\\{cookiecutter.author\\_name\\}', 'manual'),
 ]
@@ -146,7 +146,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, 'gits_pet_name', 'gits_pet Documentation', [author],
+man_pages = [(master_doc, 'repomate_name', 'repomate Documentation', [author],
               1)]
 
 # -- Options for Texinfo output -------------------------------------------
@@ -155,8 +155,8 @@ man_pages = [(master_doc, 'gits_pet_name', 'gits_pet Documentation', [author],
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'gits_pet_name', 'gits_pet Documentation', author,
-     'gits_pet_name', 'One line description of project.', 'Miscellaneous'),
+    (master_doc, 'repomate_name', 'repomate Documentation', author,
+     'repomate_name', 'One line description of project.', 'Miscellaneous'),
 ]
 
 # Example configuration for intersphinx: refer to the Python standard library.

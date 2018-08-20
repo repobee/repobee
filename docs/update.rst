@@ -18,7 +18,7 @@ Let's say that we've updated ``master-repo-1``, and that users ``spam``,
 
 .. code-block:: bash
 
-    $ gits_pet update -mn master-repo-1 -s spam eggs ham
+    $ repomate update -mn master-repo-1 -s spam eggs ham
     [INFO] config file defaults:
 
        github_base_url: https://some-enterprise-host/api/v3
@@ -52,12 +52,12 @@ Let's assume now that ``ham`` has started working on the repo. Since we do not
 push to ``ham-master-repo-1`` will be rejected. This is good, we don't want to
 overwrite a student's progress because we messed up with the original
 repository. There are a number of things one *could* do in this situation, but
-in ``gits_pet``, we opted for a very simple solution: open an issue in the
+in ``repomate``, we opted for a very simple solution: open an issue in the
 student's repo that explains the situation.
 
 .. important::
     
-    If we don't specify an issue to ``gits_pet update``, rejected pushes will
+    If we don't specify an issue to ``repomate update``, rejected pushes will
     simply be ignored.
 
 So, let's first create that issue. It should be a Markdown-formatted file, and
@@ -77,11 +77,11 @@ file called ``issue.md``.
 Something like that. If the students have used ``git`` for a while, it may be
 enough to include the ouptut from ``git diff``, but for less experienced
 students, plain text is more helpful. Now it's just a matter of using
-``gits_pet update`` and including ``issue.md`` with the ``-i|--issue`` argument.
+``repomate update`` and including ``issue.md`` with the ``-i|--issue`` argument.
 
 .. code-block:: bash
 
-    $ gits_pet update -mn master-repo-1 -s spam eggs ham -i issue.md 
+    $ repomate update -mn master-repo-1 -s spam eggs ham -i issue.md 
     [INFO] config file defaults:
 
        github_base_url: https://some-enterprise-host/api/v3
@@ -112,7 +112,7 @@ students, plain text is more helpful. Now it's just a matter of using
     [INFO] Opened issue ham-master-repo-1/#1-'Nice title'
     [INFO] done!
 
-Note that ``gits_pet`` tries to push 3 times before finally giving up and
+Note that ``repomate`` tries to push 3 times before finally giving up and
 opening an issue. This is because pushes can fail for other reasons than
 rejections, such as timeouts and other network errors.
 

@@ -8,13 +8,13 @@ from asyncio import coroutine
 from unittest.mock import patch, PropertyMock, MagicMock, Mock, call
 from collections import namedtuple
 
-import gits_pet
-from gits_pet import command
-from gits_pet import github_api
-from gits_pet import git
-from gits_pet import tuples
-from gits_pet import util
-from gits_pet import exception
+import repomate
+from repomate import command
+from repomate import github_api
+from repomate import git
+from repomate import tuples
+from repomate import util
+from repomate import exception
 
 USER = 'slarse'
 ORG_NAME = 'test-org'
@@ -52,7 +52,7 @@ def validate_types_mock(request, mocker):
             **{key: val
                for key, val in kwargs.items() if key not in remove})
 
-    return mocker.patch('gits_pet.util.validate_types', side_effect=validate)
+    return mocker.patch('repomate.util.validate_types', side_effect=validate)
 
 
 @pytest.fixture(autouse=True)
@@ -62,8 +62,8 @@ def git_mock(request, mocker):
     """
     if 'nogitmock' in request.keywords:
         return
-    pt = gits_pet.git.Push
-    git_mock = mocker.patch('gits_pet.command.git', autospec=True)
+    pt = repomate.git.Push
+    git_mock = mocker.patch('repomate.command.git', autospec=True)
     git_mock.Push = pt
     return git_mock
 
@@ -72,8 +72,8 @@ def git_mock(request, mocker):
 def api_mock(request, mocker):
     if 'noapimock' in request.keywords:
         return
-    mock = MagicMock(spec=gits_pet.command.GitHubAPI)
-    api_class = mocker.patch('gits_pet.command.GitHubAPI', autospec=True)
+    mock = MagicMock(spec=repomate.command.GitHubAPI)
+    api_class = mocker.patch('repomate.command.GitHubAPI', autospec=True)
     api_class.return_value = mock
 
     url_from_repo_info = lambda repo_info: GENERATE_REPO_URL(repo_info.name)
@@ -158,7 +158,7 @@ def students():
 @pytest.fixture(autouse=True)
 def is_git_repo_mock(mocker):
     return mocker.patch(
-        'gits_pet.util.is_git_repo', return_value=True, autospec=True)
+        'repomate.util.is_git_repo', return_value=True, autospec=True)
 
 
 @pytest.fixture(autouse=True)
@@ -206,7 +206,7 @@ class TestSetupStudentRepos:
 
     @pytest.fixture(autouse=True)
     def is_git_repo_mock(self, mocker):
-        return mocker.patch('gits_pet.util.is_git_repo', return_value=True)
+        return mocker.patch('repomate.util.is_git_repo', return_value=True)
 
     def test_raises_on_clone_failure(self, master_urls, students, git_mock,
                                      api_mock):
@@ -406,8 +406,8 @@ class TestUpdateStudentRepos:
                                                 b"some error", pt.repo_url)
 
         git_push_async_mock = mocker.patch(
-            'gits_pet.git._push_async', side_effect=raise_specific)
-        git_clone_mock = mocker.patch('gits_pet.git.clone_single')
+            'repomate.git._push_async', side_effect=raise_specific)
+        git_clone_mock = mocker.patch('repomate.git.clone_single')
 
         command.update_student_repos(master_urls, students, USER, api_mock,
                                    issue)
@@ -452,8 +452,8 @@ class TestUpdateStudentRepos:
                                                 b"some error", repo_url)
 
         git_push_async_mock = mocker.patch(
-            'gits_pet.git._push_async', side_effect=raise_specific)
-        git_clone_mock = mocker.patch('gits_pet.git.clone_single')
+            'repomate.git._push_async', side_effect=raise_specific)
+        git_clone_mock = mocker.patch('repomate.git.clone_single')
 
         command.update_student_repos(master_urls, students, USER, api_mock)
 
@@ -596,8 +596,8 @@ class TestMigrateRepo:
 
         api_mock.create_repos.side_effect = lambda infos: [GENERATE_REPO_URL(info.name) for info in infos]
         git_clone_mock = mocker.patch(
-            'gits_pet.git.clone_single', autospec=True)
-        git_push_mock = mocker.patch('gits_pet.git.push', autospec=True)
+            'repomate.git.clone_single', autospec=True)
+        git_push_mock = mocker.patch('repomate.git.push', autospec=True)
 
         command.migrate_repos(master_urls, USER, api_mock)
 

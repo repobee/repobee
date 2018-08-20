@@ -1,11 +1,11 @@
-"""Modules for all custom gits_pet exceptions.
+"""Modules for all custom repomate exceptions.
 
 All exceptions extend the :py:class:`GitsPetException` base class, which itself
 extends :py:class:`Exception`. In other words, exceptions raised within
-``gits_pet`` can all be caught by catching :py:class:`GitsPetException`.
+``repomate`` can all be caught by catching :py:class:`GitsPetException`.
 
 .. module:: exception
-    :synopsis: Custom exceptions for gits_pet.
+    :synopsis: Custom exceptions for repomate.
 
 .. moduleauthor:: Simon Larsén
 """
@@ -15,7 +15,7 @@ import re
 
 
 class GitsPetException(Exception):
-    """Base exception for all gits_pet exceptions."""
+    """Base exception for all repomate exceptions."""
 
     def __init__(self, msg="", *args, **kwargs):
         super().__init__(self, msg, *args, **kwargs)

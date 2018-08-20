@@ -1,29 +1,29 @@
 """GitHub API module.
 
 This module contains the :py:class:`GitHubAPI` class, which is meant to be the
-prime means of interacting with the GitHub API in ``gits_pet``. The methods of
+prime means of interacting with the GitHub API in ``repomate``. The methods of
 GitHubAPI are mostly high-level bulk operations.
 
 The :py:class:`APIWrapper` class is an abstraction layer for the actual API
 used to communicate with GitHub.
 
 .. module:: github_api
-    :synopsis: Top level interface for interacting with a GitHub instance within gits_pet.
+    :synopsis: Top level interface for interacting with a GitHub instance within repomate.
 
 .. moduleauthor:: Simon Larsén
 """
 from typing import List, Iterable, Mapping
 import daiquiri
 
-from gits_pet import APIWrapper
-from gits_pet import exception
-from gits_pet import tuples
+from repomate import APIWrapper
+from repomate import exception
+from repomate import tuples
 
 LOGGER = daiquiri.getLogger(__file__)
 
 
 class GitHubAPI:
-    """A highly specialized GitHub API class for gits_pet. The API is
+    """A highly specialized GitHub API class for repomate. The API is
     affiliated both with an organization, and with the whole GitHub
     instance. Almost all operations take place on the target
     organization.

@@ -14,13 +14,13 @@ sys.modules['github'] = MagicMock()
 # the git module must be imported with a mocked env variable
 TOKEN = 'besttoken1337'
 with patch('os.getenv', autospec=True, return_value=TOKEN):
-    import gits_pet
-    from gits_pet import git
+    import repomate
+    from repomate import git
 
-from gits_pet import tuples
-from gits_pet import config
+from repomate import tuples
+from repomate import config
 
-assert TOKEN == gits_pet.git.OAUTH_TOKEN
+assert TOKEN == repomate.git.OAUTH_TOKEN
 
 USER = 'slarse'
 ORG_NAME = 'test-org'
@@ -105,9 +105,9 @@ def empty_config_mock(mocker, isfile_mock, tmpdir):
     function."""
     file = tmpdir.join('config.cnf')
     file.ensure()
-    read_config = gits_pet.config._read_config
+    read_config = repomate.config._read_config
     mocker.patch(
-        'gits_pet.config._read_config',
+        'repomate.config._read_config',
         side_effect=lambda _: read_config(pathlib.Path(str(file))))
     isfile = isfile_mock.side_effect
     isfile_mock.side_effect = lambda path: isfile(path) or str(path) == file.name

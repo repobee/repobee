@@ -2,7 +2,7 @@
 
 Configuration
 *************
-``gits_pet`` *must* be configured with a mandatory environment variable (see
+``repomate`` *must* be configured with a mandatory environment variable (see
 oauth_). Additionally, some of the command line parameters can be
 pre-configured with e.g. the GitHub instances' API url and the target
 organization's name (see `config`_).
@@ -37,12 +37,12 @@ a single course (and, as a consequence, a single organization).
     students_file = STUDENTS_FILE_ABSOLUTE_PATH
 
 **To find out where to place the configuration file (and what to name it)**,
-run `gits_pet -h`. At the very top, there should be a line looking something
+run `repomate -h`. At the very top, there should be a line looking something
 like this:
 
 .. code-block:: bash
 
-    [INFO] no config file found. Expected config file location: /home/USERNAME/.config/gits_pet/config.cnf
+    [INFO] no config file found. Expected config file location: /home/USERNAME/.config/repomate/config.cnf
 
 The filepath at the end is where you should put your config file.
 
@@ -56,5 +56,5 @@ The filepath at the end is where you should put your config file.
 
 .. note::
 
-    You can run ``gits_pet verify-settings`` to verify the basic configuration.
+    You can run ``repomate verify-settings`` to verify the basic configuration.
     This will check all settings but the students file.
