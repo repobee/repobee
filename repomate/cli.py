@@ -26,6 +26,7 @@ from repomate import tuples
 from repomate import exception
 from repomate import config
 from repomate import APIWrapper
+from repomate import hookspec
 
 daiquiri.setup(
     level=logging.INFO,
@@ -141,7 +142,7 @@ def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
             command.clone_repos(args.master_repo_names, args.students, api)
     elif args.subparser == VERIFY_PARSER:
         APIWrapper.verify_settings(args.user, args.org_name,
-                                     args.github_base_url, git.OAUTH_TOKEN)
+                                   args.github_base_url, git.OAUTH_TOKEN)
     else:
         raise exception.ParseError(
             "Illegal value for subparser: {}. This is a bug, please open an issue.".
@@ -285,6 +286,8 @@ def _add_subparsers(parser):
         description="Clone student repos asynchronously in bulk.",
         parents=[base_student_parser, repo_name_parser])
 
+    hookspec.pm.hook.clone_parser_hook(clone_parser=clone)
+
     add_to_teams = subparsers.add_parser(
         ADD_TO_TEAMS_PARSER,
         help=("Create student teams and add students to them. This command is "
@@ -316,6 +319,8 @@ def _add_subparsers(parser):
 def _create_base_parsers():
     """Create the base parsers."""
     configured_defaults = config.get_configured_defaults()
+    config.execute_config_hooks()
+
     default = lambda arg_name: configured_defaults[arg_name] if arg_name in configured_defaults else None
     is_required = lambda arg_name: True if arg_name not in configured_defaults else False
 
@@ -416,9 +421,9 @@ def _extract_students(args: argparse.Namespace) -> List[str]:
         if not students_file.stat().st_size:
             raise exception.FileError("'{!s}' is empty".format(students_file))
         students = [
-            student.strip() for student in
-            students_file.read_text(encoding=sys.getdefaultencoding()).split(
-                os.linesep) if student  # skip blank lines
+            student.strip() for student in students_file.read_text(
+                encoding=sys.getdefaultencoding()).split(os.linesep)
+            if student  # skip blank lines
         ]
     else:
         students = None

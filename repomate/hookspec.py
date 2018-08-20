@@ -50,7 +50,7 @@ class CloneHook:
         """
 
     @hookspec
-    def config_hook(self, config: configparser.ConfigParser):
+    def config_hook(self, config_parser: configparser.ConfigParser):
         """Hook into the config file parsing.
         
         Args:

@@ -21,8 +21,7 @@ class JavacCloneHook:
     def act_on_cloned_repo(self, path):
         """Run javac on all Java files. Requires globbing."""
         java_files = [
-            str(file)
-            for file in util.find_files_by_extension(path, '.java')
+            str(file) for file in util.find_files_by_extension(path, '.java')
             if file.name not in self._ignore
         ]
         if not java_files:
@@ -58,9 +57,10 @@ class JavacCloneHook:
             self._ignore = args.ignore
 
     @hookimpl
-    def config_hook(self, config):
+    def config_hook(self, config_parser):
         """Check for configured ignore files."""
-        if "JAVAC" in config and "ignore" in config["JAVAC"]:
-            self._ignore = [
-                file.strip() for file in config["JAVAC"]["ignore"].split(",")
-            ]
+        self._ignore = [
+            file.strip()
+            for file in config_parser.get('JAVAC', 'ignore', fallback='').split(",")
+            if file.strip()
+        ]

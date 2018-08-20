@@ -15,6 +15,7 @@ import appdirs
 import repomate
 
 from repomate import exception
+from repomate import hookspec
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -93,8 +94,22 @@ def get_plugin_names(
     return [name.strip() for name in plugin_string.split(",") if name]
 
 
+def execute_config_hooks(
+        config_file: Union[str, pathlib.Path] = DEFAULT_CONFIG_FILE) -> None:
+    """Execute all config hooks.
+
+    Args:
+        config_file: path to the config file.
+    """
+    config_file = pathlib.Path(config_file) if isinstance(config_file,
+                                                          str) else config_file
+    if not config_file.is_file():
+        return
+    config_parser = _read_config(config_file)
+    hookspec.pm.hook.config_hook(config_parser=config_parser)
+
+
 def _read_defaults(config_file: pathlib.Path = DEFAULT_CONFIG_FILE) -> dict:
-    LOGGER.info(config_file.is_file())
     if not config_file.is_file():
         return {}
     return dict(_read_config(config_file)['DEFAULTS'])
@@ -112,4 +127,5 @@ def _read_config(config_file: pathlib.Path = DEFAULT_CONFIG_FILE
         raise exception.FileError(
             "config file at '{!s}' does not contain the required [DEFAULTS] header".
             format(config_file))
+
     return config_parser
