@@ -29,7 +29,7 @@ GITHUB_BASE_URL = '{}/api/v3'.format(HOST_URL)
 STUDENTS = tuple(string.ascii_lowercase[:4])
 ISSUE_PATH = 'some/issue/path'
 ISSUE = tuples.Issue(title="Best title", body="This is the body of the issue.")
-PLUGINS = ['javac', 'pylint', 'crosscheck']
+PLUGINS = ['javac', 'pylint']
 
 
 GENERATE_REPO_URL = lambda repo_name:\
@@ -100,6 +100,14 @@ def isfile_mock(request, mocker):
     isfile = lambda path: path != config.DEFAULT_CONFIG_FILE
     return mocker.patch(
         'pathlib.Path.is_file', autospec=True, side_effect=isfile)
+
+
+@pytest.fixture
+def no_config_mock(mocker, isfile_mock, tmpdir):
+    """Mock which ensures that no config file is found."""
+    isfile = isfile_mock.side_effect
+    isfile_mock.side_effect = \
+        lambda path: path != config.DEFAULT_CONFIG_FILE and isfile(path)
 
 
 @pytest.fixture
