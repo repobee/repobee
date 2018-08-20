@@ -90,7 +90,7 @@ configuration file with the following contents:
     [DEFAULTS]
     github_base_url = https://some-enterprise-host/api/v3
     user = slarse
-    org_name = gits-pet-demo
+    org_name = repomate-demo
 
 Now, you need to substitute in some of your own values in place of mine.
 
@@ -100,7 +100,7 @@ Now, you need to substitute in some of your own values in place of mine.
     - If you are working with ``github.com``, replace the whole url
       with ``https://api.github.com``.
 * Replace ``slarse`` with your GitHub username.
-* Replace ``gits-pet-demo`` with whatever you named your target organization.
+* Replace ``repomate-demo`` with whatever you named your target organization.
 
 That's it for configuration, and we can check that the file is correctly found
 and parsed by running ``repomate -h`` again.
@@ -112,7 +112,7 @@ and parsed by running ``repomate -h`` again.
 
         github_base_url: https://some-enterprise-host/api/v3
         user: slarse
-        org_name: gits-pet-demo
+        org_name: repomate-demo
 
     <HELP MESSAGE OMITTED>
 
@@ -134,7 +134,7 @@ you can simply run the ``verify-settings`` command without any options.
 
        github_base_url: https://some-enterprise-host/api/v3
        user: slarse
-       org_name: gits-pet-demo
+       org_name: repomate-demo
        
     [INFO] verifying settings ...
     [INFO] trying to fetch user information ...
@@ -143,8 +143,8 @@ you can simply run the ``verify-settings`` command without any options.
     [INFO] SUCCESS: oauth scopes look okay
     [INFO] trying to fetch organization ...
     [INFO] SUCCESS: found organization test-tools
-    [INFO] verifying that user slarse is an owner of organization gits-pet-demo
-    [INFO] SUCCESS: user slarse is an owner of organization gits-pet-demo
+    [INFO] verifying that user slarse is an owner of organization repomate-demo
+    [INFO] SUCCESS: user slarse is an owner of organization repomate-demo
     [INFO] GREAT SUCCESS: All settings check out!
 
 If any of the checks fail, you should be provided with a semi-helpful error
@@ -173,16 +173,16 @@ current working directory (i.e. local repos), all we have to do is this:
 
        github_base_url: https://some-enterprise-host/api/v3
        user: slarse
-       org_name: gits-pet-demo
+       org_name: repomate-demo
        
     [INFO] created team master_repos
     [INFO] cloning into file:///some/directory/path/master-repo-1
     [INFO] cloning into file:///some/directory/path/master-repo-2
-    [INFO] created gits-pet-demo/master-repo-1
-    [INFO] created gits-pet-demo/master-repo-2
+    [INFO] created repomate-demo/master-repo-1
+    [INFO] created repomate-demo/master-repo-2
     [INFO] pushing, attempt 1/3
-    [INFO] Pushed files to https://some-enterprise-host/gits-pet-demo/master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/gits-pet-demo/master-repo-2 master
+    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/master-repo-2 master
     [INFO] done!
 
 There are a few things to note here. First of all, the team ``master_repos`` is
@@ -204,15 +204,15 @@ Running the same thing again yields the following output:
 
        github_base_url: https://some-enterprise-host/api/v3
        user: slarse
-       org_name: gits-pet-demo
+       org_name: repomate-demo
        
     [INFO] cloning into file:///some/directory/path/master-repo-1
     [INFO] cloning into file:///some/directory/path/master-repo-2
-    [INFO] gits-pet-demo/master-repo-1 already exists
-    [INFO] gits-pet-demo/master-repo-2 already exists
+    [INFO] repomate-demo/master-repo-1 already exists
+    [INFO] repomate-demo/master-repo-2 already exists
     [INFO] pushing, attempt 1/3
-    [INFO] https://some-enterprise-host/gits-pet-demo/master-repo-1 master is up-to-date
-    [INFO] https://some-enterprise-host/gits-pet-demo/master-repo-2 master is up-to-date
+    [INFO] https://some-enterprise-host/repomate-demo/master-repo-1 master is up-to-date
+    [INFO] https://some-enterprise-host/repomate-demo/master-repo-2 master is up-to-date
     [INFO] done!
 
 In fact, all ``repomate`` commands that deal with pushing to or cloning from
@@ -227,7 +227,7 @@ our master repos are migrated, we can move on to setting up the student repos!
     ``-mu`` option and provide the urls, instead of ``-mn`` with local paths.
     For example, given a repo at
     ``https://some-enterprise-host/other-org/master-repo-1``, it can be
-    migrated into ``gits-pet-demo`` by typing
+    migrated into ``repomate-demo`` by typing
 
     .. code-block:: bash
 
@@ -265,7 +265,7 @@ complex, but again, it's as simple as issuing a single command with
 
        github_base_url: https://some-enterprise-host/api/v3
        user: slarse
-       org_name: gits-pet-demo
+       org_name: repomate-demo
        
     [INFO] cloning into master repos ...
     [INFO] cloning into file:///home/slarse/tmp/master-repo-1
@@ -278,20 +278,20 @@ complex, but again, it's as simple as issuing a single command with
     [INFO] adding members ham to team ham
     [INFO] adding members spam to team spam
     [INFO] creating student repos ...
-    [INFO] created gits-pet-demo/eggs-master-repo-1
-    [INFO] created gits-pet-demo/ham-master-repo-1
-    [INFO] created gits-pet-demo/spam-master-repo-1
-    [INFO] created gits-pet-demo/eggs-master-repo-2
-    [INFO] created gits-pet-demo/ham-master-repo-2
-    [INFO] created gits-pet-demo/spam-master-repo-2
+    [INFO] created repomate-demo/eggs-master-repo-1
+    [INFO] created repomate-demo/ham-master-repo-1
+    [INFO] created repomate-demo/spam-master-repo-1
+    [INFO] created repomate-demo/eggs-master-repo-2
+    [INFO] created repomate-demo/ham-master-repo-2
+    [INFO] created repomate-demo/spam-master-repo-2
     [INFO] pushing files to student repos ...
     [INFO] pushing, attempt 1/3
-    [INFO] Pushed files to https://some-enterprise-host/gits-pet-demo/ham-master-repo-2 master
-    [INFO] Pushed files to https://some-enterprise-host/gits-pet-demo/ham-master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/gits-pet-demo/spam-master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/gits-pet-demo/eggs-master-repo-2 master
-    [INFO] Pushed files to https://some-enterprise-host/gits-pet-demo/eggs-master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/gits-pet-demo/spam-master-repo-2 master
+    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/ham-master-repo-2 master
+    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/ham-master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/spam-master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/eggs-master-repo-2 master
+    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/eggs-master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/spam-master-repo-2 master
 
 Note that there was a ``[WARNING]`` message for the username ``eggs``: the user
 does not exist. At KTH, this is common, as many (sometimes most) first-time

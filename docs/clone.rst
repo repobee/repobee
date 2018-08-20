@@ -15,15 +15,15 @@ repos based on ``master-repo-1`` and ``master-repo-2``.
 
        github_base_url: https://some-enterprise-host/api/v3
        user: slarse
-       org_name: gits-pet-demo
+       org_name: repomate-demo
        
     [INFO] cloning into student repos ...
-    [INFO] Cloned into https://some-enterprise-host/gits-pet-demo/spam-master-repo-1
-    [INFO] Cloned into https://some-enterprise-host/gits-pet-demo/ham-master-repo-1
-    [INFO] Cloned into https://some-enterprise-host/gits-pet-demo/ham-master-repo-2
-    [INFO] Cloned into https://some-enterprise-host/gits-pet-demo/eggs-master-repo-1
-    [INFO] Cloned into https://some-enterprise-host/gits-pet-demo/spam-master-repo-2
-    [INFO] Cloned into https://some-enterprise-host/gits-pet-demo/eggs-master-repo-2
+    [INFO] Cloned into https://some-enterprise-host/repomate-demo/spam-master-repo-1
+    [INFO] Cloned into https://some-enterprise-host/repomate-demo/ham-master-repo-1
+    [INFO] Cloned into https://some-enterprise-host/repomate-demo/ham-master-repo-2
+    [INFO] Cloned into https://some-enterprise-host/repomate-demo/eggs-master-repo-1
+    [INFO] Cloned into https://some-enterprise-host/repomate-demo/spam-master-repo-2
+    [INFO] Cloned into https://some-enterprise-host/repomate-demo/eggs-master-repo-2
 
 Splendid! That's really all there is to it, the repos should now be in your
 current working directory.

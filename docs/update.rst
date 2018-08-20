@@ -23,15 +23,15 @@ Let's say that we've updated ``master-repo-1``, and that users ``spam``,
 
        github_base_url: https://some-enterprise-host/api/v3
        user: slarse
-       org_name: gits-pet-demo
+       org_name: repomate-demo
        
     [INFO] cloning into master repos ...
-    [INFO] cloning into https://some-enterprise-host/gits-pet-demo/master-repo-1
+    [INFO] cloning into https://some-enterprise-host/repomate-demo/master-repo-1
     [INFO] pushing files to student repos ...
     [INFO] pushing, attempt 1/3
-    [INFO] Pushed files to https://some-enterprise-host/gits-pet-demo/spam-master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/gits-pet-demo/eggs-master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/gits-pet-demo/ham-master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/spam-master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/eggs-master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/ham-master-repo-1 master
     [INFO] done!
 
 That's all there is to it for this super simple case. But what if ``ham`` had
@@ -86,27 +86,27 @@ students, plain text is more helpful. Now it's just a matter of using
 
        github_base_url: https://some-enterprise-host/api/v3
        user: slarse
-       org_name: gits-pet-demo
+       org_name: repomate-demo
        
     [INFO] cloning into master repos ...
-    [INFO] cloning into https://some-enterprise-host/gits-pet-demo/master-repo-1
+    [INFO] cloning into https://some-enterprise-host/repomate-demo/master-repo-1
     [INFO] pushing files to student repos ...
     [INFO] pushing, attempt 1/3
-    [INFO] Pushed files to https://some-enterprise-host/gits-pet-demo/spam-master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/gits-pet-demo/eggs-master-repo-1 master
-    [ERROR] Failed to push to https://some-enterprise-host/gits-pet-demo/ham-master-repo-1
+    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/spam-master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/eggs-master-repo-1 master
+    [ERROR] Failed to push to https://some-enterprise-host/repomate-demo/ham-master-repo-1
     return code: 128
-    fatal: repository 'https://some-enterprise-host/gits-pet-demo/ham-master-repo-1/' not found
+    fatal: repository 'https://some-enterprise-host/repomate-demo/ham-master-repo-1/' not found
     [WARNING] 1 pushes failed ...
     [INFO] pushing, attempt 2/3
-    [ERROR] Failed to push to https://some-enterprise-host/gits-pet-demo/ham-master-repo-1
+    [ERROR] Failed to push to https://some-enterprise-host/repomate-demo/ham-master-repo-1
     return code: 128
-    fatal: repository 'https://some-enterprise-host/gits-pet-demo/ham-master-repo-1/' not found
+    fatal: repository 'https://some-enterprise-host/repomate-demo/ham-master-repo-1/' not found
     [WARNING] 1 pushes failed ...
     [INFO] pushing, attempt 3/3
-    [ERROR] Failed to push to https://some-enterprise-host/gits-pet-demo/ham-master-repo-1
+    [ERROR] Failed to push to https://some-enterprise-host/repomate-demo/ham-master-repo-1
     return code: 128
-    fatal: repository 'https://some-enterprise-host/gits-pet-demo/ham-master-repo-1/' not found
+    fatal: repository 'https://some-enterprise-host/repomate-demo/ham-master-repo-1/' not found
     [WARNING] 1 pushes failed ...
     [INFO] Opening issue in repos to which push failed
     [INFO] Opened issue ham-master-repo-1/#1-'Nice title'

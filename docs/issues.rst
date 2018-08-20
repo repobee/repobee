@@ -37,7 +37,7 @@ for our dear students ``spam``, ``eggs`` and ``ham``, who are listed in the
 
        github_base_url: https://some-enterprise-host/api/v3
        user: slarse
-       org_name: gits-pet-demo
+       org_name: repomate-demo
        
     [INFO] Opened issue spam-master-repo-2/#1-'An important announcement'
     [INFO] Opened issue eggs-master-repo-2/#1-'An important announcement'
@@ -63,7 +63,7 @@ announcement`` is simple: we provide the regex ``\AAn important announcement\Z``
 
        github_base_url: https://some-enterprise-host/api/v3
        user: slarse
-       org_name: gits-pet-demo
+       org_name: repomate-demo
        
     [INFO] closed issue spam-master-repo-2/#1-'An important announcement'
     [INFO] closed issue eggs-master-repo-2/#1-'An important announcement'
