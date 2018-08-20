@@ -50,10 +50,10 @@ def load_plugin_modules() -> List[ModuleType]:
         try:
             plugin = importlib.import_module(PLUGIN_QUALNAME(name))
             loaded_modules.append(plugin)
-        except OSError as exc:
+        except ModuleNotFoundError as exc:
             LOGGER.error(str(exc))
             msg = "failed to load plugin module " + name
-            exception.PluginError(msg)
+            raise exception.PluginError(msg)
 
     LOGGER.info("loaded modules {}".format(
         [mod.__name__ for mod in loaded_modules]))
@@ -76,6 +76,4 @@ def register_plugins(modules: List[ModuleType]) -> None:
         for key, value in module.__dict__.items():
             if isinstance(value, Plugin):
                 hookspec.pm.register(value())
-                LOGGER.info("registered {}".format(key))
-
-    LOGGER.info("registered class {}".format(key))
+                LOGGER.info("registered class {}".format(key))

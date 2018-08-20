@@ -8,7 +8,13 @@
 """
 import pytest
 import os
+import builtins
+from unittest.mock import call, MagicMock
+
+import repomate
 from repomate import plugin
+from repomate import hookspec
+from repomate import exception
 
 PLUGINS = pytest.constants.PLUGINS
 
@@ -46,3 +52,75 @@ class TestLoadPluginModules:
         module_names = [mod.__name__ for mod in modules]
 
         assert module_names == [plugin_qualname]
+
+    def test_raises_when_loading_invalid_module(self, empty_config_mock):
+        """Test that PluginError is raised when when the plugin specified
+        does not exist.
+        """
+        plugin_name = "this_plugin_does_not_exist"
+        config_contents = os.linesep.join(
+            ["[DEFAULTS]", "plugins = {}".format(plugin_name)])
+        empty_config_mock.write(config_contents)
+
+        with pytest.raises(exception.PluginError) as exc:
+            plugin.load_plugin_modules()
+
+        assert "failed to load plugin module " + plugin_name in str(exc)
+
+
+class TestRegisterPlugins:
+    """Tests for register_plugins."""
+
+    @pytest.fixture
+    def plugin_manager_mock(self, mocker):
+        return mocker.patch('repomate.hookspec.pm')
+
+    @pytest.fixture
+    def javac_clone_hook_mock(self, monkeypatch):
+        """Return an instance of the clone hook mock"""
+        instance_mock = MagicMock()
+        class_mock = MagicMock(
+            spec='repomate.ext.javac.JavacCloneHook._class',
+            return_value=instance_mock)
+        monkeypatch.setattr('repomate.ext.javac.JavacCloneHook._class',
+                            class_mock)
+        return instance_mock
+
+    def test_register_module(self, plugin_manager_mock):
+        """Test registering a plugin module with module level hooks."""
+        from repomate.ext import pylint
+
+        plugin.register_plugins([pylint])
+
+        plugin_manager_mock.register.assert_called_once_with(pylint)
+
+    def test_register_module_with_plugin_class(self, plugin_manager_mock,
+                                               javac_clone_hook_mock):
+        """Test that both the module itself and the class (instance) are
+        registered."""
+        from repomate.ext import javac
+        expected_calls = [call(javac), call(javac_clone_hook_mock)]
+
+        plugin.register_plugins([javac])
+
+        plugin_manager_mock.register.assert_has_calls(expected_calls)
+
+    def test_register_modules_and_classes(self, plugin_manager_mock,
+                                          javac_clone_hook_mock):
+        """Test that both module level hooks and class hooks are registered
+        properly at the same time.
+
+        Among other things, checks the reverse order of registration.
+        """
+        from repomate.ext import javac, pylint
+        modules = [javac, pylint]
+        # pylint should be registered before javac because of FIFO order
+        expected_calls = [
+            call(pylint),
+            call(javac),
+            call(javac_clone_hook_mock),
+        ]
+
+        plugin.register_plugins([javac, pylint])
+
+        plugin_manager_mock.register.assert_has_calls(expected_calls)

@@ -21,6 +21,7 @@ Args.__new__.__defaults__ = (None, ) * len(Args._fields)
 
 Team = namedtuple('Team', ('name', 'members', 'id'))
 
+HookResult = namedtuple('HookResult', ('hook', 'status', 'msg'))
 
 class Repo(
         namedtuple('Repo',
