@@ -2,21 +2,21 @@
 
 Configuration
 *************
-``gits_pet`` *must* be configured with a mandatory environment variable (see
+``repomate`` *must* be configured with a mandatory environment variable (see
 oauth_). Additionally, some of the command line parameters can be
 pre-configured with e.g. the GitHub instances' API url and the target
 organization's name (see `config`_).
 
 .. _oauth:
 
-GITS_PET_OAUTH Environment Variable
+REPOMATE_OAUTH Environment Variable
 ===================================
-For the tool to work at all, an environment variable called ``GITS_PET_OAUTH``
+For the tool to work at all, an environment variable called ``REPOMATE_OAUTH``
 must contain an OAUTH2 token to whichever GitHub instance you intend to use.
 See the `GitHub OAUTH docs`_ for how to create a token. The token should
 have the ``repo`` and ``admin:org`` scopes. Once you have the token, you should
 set the environment variable. In a ``bash`` terminal, this can be done with the
-command ``export GITS_PET_OAUTH=<YOUR TOKEN>``, where ``<YOUR TOKEN>`` is
+command ``export REPOMATE_OAUTH=<YOUR TOKEN>``, where ``<YOUR TOKEN>`` is
 replaced with the token.
 
 .. _config:
@@ -37,12 +37,12 @@ a single course (and, as a consequence, a single organization).
     students_file = STUDENTS_FILE_ABSOLUTE_PATH
 
 **To find out where to place the configuration file (and what to name it)**,
-run `gits_pet -h`. At the very top, there should be a line looking something
+run `repomate -h`. At the very top, there should be a line looking something
 like this:
 
 .. code-block:: bash
 
-    [INFO] no config file found. Expected config file location: /home/USERNAME/.config/gits_pet/config.cnf
+    [INFO] no config file found. Expected config file location: /home/USERNAME/.config/repomate/config.cnf
 
 The filepath at the end is where you should put your config file.
 
@@ -56,5 +56,5 @@ The filepath at the end is where you should put your config file.
 
 .. note::
 
-    You can run ``gits_pet verify-settings`` to verify the basic configuration.
+    You can run ``repomate verify-settings`` to verify the basic configuration.
     This will check all settings but the students file.

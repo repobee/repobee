@@ -4,7 +4,7 @@ import tempfile
 from contextlib import contextmanager
 import pytest
 
-from gits_pet import util
+from repomate import util
 
 
 @contextmanager

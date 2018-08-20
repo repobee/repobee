@@ -8,7 +8,7 @@
 import os
 import sys
 from typing import Iterable
-from gits_pet import tuples
+from repomate import tuples
 
 
 def validate_non_empty(**kwargs) -> None:

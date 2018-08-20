@@ -3,10 +3,10 @@ import builtins
 import pytest
 
 from pytest.functions import raise_
-import gits_pet
-from gits_pet import cli
-from gits_pet import main
-from gits_pet import tuples
+import repomate
+from repomate import cli
+from repomate import main
+from repomate import tuples
 
 ORG_NAME = pytest.constants.ORG_NAME
 GITHUB_BASE_URL = pytest.constants.GITHUB_BASE_URL
@@ -34,20 +34,20 @@ def monkeypatch_sys_args(monkeypatch):
 
 @pytest.fixture
 def api_instance_mock(mocker):
-    return MagicMock(spec='gits_pet.APIWrapper')
+    return MagicMock(spec='repomate.APIWrapper')
 
 
 @pytest.fixture
 def parse_args_mock(mocker, api_instance_mock):
     return mocker.patch(
-        'gits_pet.cli.parse_args',
+        'repomate.cli.parse_args',
         autospec=True,
         return_value=(PARSED_ARGS, api_instance_mock))
 
 
 @pytest.fixture
 def dispatch_command_mock(mocker):
-    return mocker.patch('gits_pet.cli.dispatch_command', autospec=True)
+    return mocker.patch('repomate.cli.dispatch_command', autospec=True)
 
 
 def test_happy_path(monkeypatch_sys_args, api_instance_mock, parse_args_mock,

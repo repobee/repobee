@@ -1,62 +1,62 @@
-``gits_pet`` Module Reference
+``repomate`` Module Reference
 *****************************
 
 abstract_api_wrapper
 ====================
 
-.. automodule:: gits_pet.abstract_api_wrapper
+.. automodule:: repomate.abstract_api_wrapper
     :members:
 
 command
 ====================
 
-.. automodule:: gits_pet.command
+.. automodule:: repomate.command
     :members:
 
 cli
 ====================
 
-.. automodule:: gits_pet.cli
+.. automodule:: repomate.cli
     :members:
 
 config
 ====================
 
-.. automodule:: gits_pet.config
+.. automodule:: repomate.config
     :members:
 
 exception
 ====================
 
-.. automodule:: gits_pet.exception
+.. automodule:: repomate.exception
     :members:
 
 github_api
 ====================
 
-.. automodule:: gits_pet.github_api
+.. automodule:: repomate.github_api
     :members:
 
 git
 ====================
 
-.. automodule:: gits_pet.git
+.. automodule:: repomate.git
     :members:
 
 pygithub_wrapper
 ====================
 
-.. automodule:: gits_pet.pygithub_wrapper
+.. automodule:: repomate.pygithub_wrapper
     :members:
 
 tuples
 ====================
 
-.. automodule:: gits_pet.tuples
+.. automodule:: repomate.tuples
     :members:
 
 util
 ====================
 
-.. automodule:: gits_pet.util
+.. automodule:: repomate.util
     :members:

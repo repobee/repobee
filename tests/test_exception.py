@@ -1,16 +1,16 @@
 import os
 import sys
 import pytest
-from gits_pet import exception
-from gits_pet import git
+from repomate import exception
+from repomate import git
 
 USER = pytest.constants.USER
 
 
-def test_gits_pet_exception_repr():
+def test_repomate_exception_repr():
     msg = "an exception message"
-    expected_repr = "<GitsPetException(msg='{}')>".format(msg)
-    exc = exception.GitsPetException(msg)
+    expected_repr = "<RepomateException(msg='{}')>".format(msg)
+    exc = exception.RepomateException(msg)
 
     assert repr(exc) == expected_repr
 

@@ -3,7 +3,7 @@ Opening and Closing issues (the ``open-issue`` and ``close-issue`` commands)
 Sometimes, the best way to handle an error in a repo is to simply notify
 affected students about it. This is especially true if the due date for the
 assignment is rapidly approaching, and most students have already started
-modifying their repositories. Therefore, ``gits_pet`` provides the
+modifying their repositories. Therefore, ``repomate`` provides the
 ``open-issue`` command, which can open issues in bulk. When the time is right
 (perhaps after the deadline has passed), issues can be closed with the
 ``close-issue`` command.
@@ -32,12 +32,12 @@ for our dear students ``spam``, ``eggs`` and ``ham``, who are listed in the
 
 .. code-block:: bash
 
-    $ gits_pet open-issue -mn master-repo-2 -sf students.txt -i issue.md 
+    $ repomate open-issue -mn master-repo-2 -sf students.txt -i issue.md 
     [INFO] config file defaults:
 
        github_base_url: https://some-enterprise-host/api/v3
        user: slarse
-       org_name: gits-pet-demo
+       org_name: repomate-demo
        
     [INFO] Opened issue spam-master-repo-2/#1-'An important announcement'
     [INFO] Opened issue eggs-master-repo-2/#1-'An important announcement'
@@ -58,12 +58,12 @@ announcement`` is simple: we provide the regex ``\AAn important announcement\Z``
 
 .. code-block:: bash
 
-    $ gits_pet close-issue -mn master-repo-2 -sf students.txt -r '\AAn important announcement\Z'
+    $ repomate close-issue -mn master-repo-2 -sf students.txt -r '\AAn important announcement\Z'
     [INFO] config file defaults:
 
        github_base_url: https://some-enterprise-host/api/v3
        user: slarse
-       org_name: gits-pet-demo
+       org_name: repomate-demo
        
     [INFO] closed issue spam-master-repo-2/#1-'An important announcement'
     [INFO] closed issue eggs-master-repo-2/#1-'An important announcement'

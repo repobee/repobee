@@ -1,9 +1,9 @@
-# gits_pet
+# repomate
 
-[![Build Status](https://travis-ci.com/slarse/gits_pet.svg?token=1VKcbDz66bMbTdt1ebsN&branch=master)](https://travis-ci.com/slarse/gits_pet)
-[![Code Coverage](https://codecov.io/gh/slarse/gits_pet/branch/master/graph/badge.svg)](https://codecov.io/gh/slarse/gits_pet)
-[![Documentation Status](https://readthedocs.org/projects/gits_pet/badge/?version=latest)](http://gits_pet.readthedocs.io/en/latest/?badge=latest)
-[![PyPi Version](https://badge.fury.io/py/gits_pet.svg)](https://badge.fury.io/py/gits_pet)
+[![Build Status](https://travis-ci.com/slarse/repomate.svg?token=1VKcbDz66bMbTdt1ebsN&branch=master)](https://travis-ci.com/slarse/repomate)
+[![Code Coverage](https://codecov.io/gh/slarse/repomate/branch/master/graph/badge.svg)](https://codecov.io/gh/slarse/repomate)
+[![Documentation Status](https://readthedocs.org/projects/repomate/badge/?version=latest)](http://repomate.readthedocs.io/en/latest/?badge=latest)
+[![PyPi Version](https://badge.fury.io/py/repomate.svg)](https://badge.fury.io/py/repomate)
 ![Supported Python Versions](https://img.shields.io/badge/python-3.5%2C%203.6%2C%203.7-blue.svg)
 ![Supported Platforms](https://img.shields.io/badge/platforms-OSX%2C%20Linux-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
@@ -16,8 +16,8 @@ A CLI tool for administrating large amounts of GitHub repositories, geared towar
 ### Install
 
 #### Requirements
-`gits_pet` requires Python 3.5+ and a somewhat up-to-date version of `git`.
-Officially supported platforms are `Ubuntu 17.04+` and `OSX`, but `gits_pet`
+`repomate` requires Python 3.5+ and a somewhat up-to-date version of `git`.
+Officially supported platforms are `Ubuntu 17.04+` and `OSX`, but `repomate`
 should run fine on any Linux distribution and also on
 [WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10) on Windows 10.
 Please report any issues with operating systems and/or `git` versions on the
@@ -28,12 +28,12 @@ issue tracker.
 
 > **Important:** Not yet available on PyPi!
 
-The latest release of `gits_pet` is on PyPi, and can thus be installed as usual with `pip`.
+The latest release of `repomate` is on PyPi, and can thus be installed as usual with `pip`.
 I strongly discourage system-wide `pip` installs (i.e. `sudo pip install <package>`), as this
 may land you with incompatible packages in a very short amount of time. A per-user install
 can be done like this:
 
-1. Execute `pip install --user gits_pet` to install the package.
+1. Execute `pip install --user repomate` to install the package.
 2. Further steps to be added ...
 
 
@@ -43,8 +43,8 @@ If you want the dev version, you will need to clone the repo, as only release ve
 to PyPi. Unless you are planning to work on this yourself, I suggest going with the release version.
 
 1. Clone the repo with `git`:
-    - `git clone https://github.com/slarse/gits_pet`
-2. `cd` into the project root directory with `cd gits_pet`.
+    - `git clone https://github.com/slarse/repomate`
+2. `cd` into the project root directory with `cd repomate`.
 3. Install the requirements with `pip install -r requirements.txt`
     - To be able to run the tests, you must install the `requirements.test.txt` file.
 4. Install locally with `pip`.
@@ -59,14 +59,14 @@ to PyPi. Unless you are planning to work on this yourself, I suggest going with 
 There is one mandatory environment variable, and an optional configuration file
 that can be added.
 
-#### GITS_PET_OAUTH
+#### REPOMATE_OAUTH
 
-For the tool to work at all, an environment variable called `GITS_PET_OAUTH`
+For the tool to work at all, an environment variable called `REPOMATE_OAUTH`
 must contain an OAUTH2 token to whichever GitHub instance you intend to use.
 See [the GitHub docs](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/)
 for how to create a token. Once you have it, configure the environment
-variable with `export GITS_PET_OAUTH=<YOUR TOKEN>`. If it is not
-configured, you will get an error message when trying to run `gits_pet`
+variable with `export REPOMATE_OAUTH=<YOUR TOKEN>`. If it is not
+configured, you will get an error message when trying to run `repomate`
 
 #### Config file
 
@@ -84,16 +84,16 @@ org_name = ORGANIZATION_NAME
 students_file = STUDENTS_FILE_ABSOLUTE_PATH
 ```
 
-To find out where to place the file (and what to name it) run `gits_pet -h`.
+To find out where to place the file (and what to name it) run `repomate -h`.
 At the very top, there should be a line looking something like this:
 
-`[INFO] no config file found. Expected config file location: /home/USERNAME/.config/gits_pet/config.cnf`
+`[INFO] no config file found. Expected config file location: /home/USERNAME/.config/repomate/config.cnf`
 
 The filepath at the end is where you should put your config file.
 
-### Running gits_pet
+### Running repomate
 
-Run `gits_pet -h` for usage. All the commands have help sections of their own,
+Run `repomate -h` for usage. All the commands have help sections of their own,
 so e.g. `gits-pet setup -h` will provide the help section for the `setup`
 command.
    

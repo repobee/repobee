@@ -1,7 +1,7 @@
-"""Main entrypoint for the gits_pet CLI application.
+"""Main entrypoint for the repomate CLI application.
 
 .. module:: main
-    :synopsis: Main entrypoint for the gits_pet CLI application.
+    :synopsis: Main entrypoint for the repomate CLI application.
 
 .. moduleauthor:: Simon Larsén
 """
@@ -9,15 +9,15 @@
 import sys
 import daiquiri
 
-from gits_pet import cli
-from gits_pet import exception
+from repomate import cli
+from repomate import exception
 
 LOGGER = daiquiri.getLogger(__file__)
 
 
 # if the OAUTH token is not set, OSError is raised
 def main():
-    """Start the gits_pet CLI."""
+    """Start the repomate CLI."""
     try:
         parsed_args, api = cli.parse_args(sys.argv[1:])
         cli.dispatch_command(parsed_args, api)

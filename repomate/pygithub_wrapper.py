@@ -22,10 +22,10 @@ from socket import gaierror
 import daiquiri
 import github
 
-from gits_pet import exception
-from gits_pet import util
-from gits_pet import tuples
-from gits_pet.abstract_api_wrapper import AbstractAPIWrapper, REQUIRED_OAUTH_SCOPES
+from repomate import exception
+from repomate import util
+from repomate import tuples
+from repomate.abstract_api_wrapper import AbstractAPIWrapper, REQUIRED_OAUTH_SCOPES
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -340,7 +340,7 @@ class PyGithubWrapper(AbstractAPIWrapper):
         LOGGER.info("verifying settings ...")
         if not token:
             raise exception.BadCredentials(
-                msg="token is empty. Check that GITS_PET_OAUTH environment "
+                msg="token is empty. Check that REPOMATE_OAUTH environment "
                 "variable is properly set.")
 
         util.validate_types(

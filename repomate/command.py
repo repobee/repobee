@@ -1,4 +1,4 @@
-"""Primary API for gits_pet.
+"""Primary API for repomate.
 
 This module contains high level functions for administrating repositories, such
 as creating student repos from some master repo template. All functions follow
@@ -8,7 +8,7 @@ Each public function in this module is to be treated as a self-contained
 program.
 
 .. module:: command
-    :synopsis: The primary API of gits_pet containing high level functions for administrating GitHub repos in an opinionated fashion.
+    :synopsis: The primary API of repomate containing high level functions for administrating GitHub repos in an opinionated fashion.
 
 .. moduleauthor:: Simon Larsén
 """
@@ -19,14 +19,14 @@ import tempfile
 from typing import Iterable, List, Optional
 from collections import namedtuple
 import daiquiri
-from gits_pet import git
-from gits_pet import github_api
-from gits_pet import util
-from gits_pet import tuples
-from gits_pet import exception
-from gits_pet.github_api import GitHubAPI
-from gits_pet.tuples import Team
-from gits_pet.git import Push
+from repomate import git
+from repomate import github_api
+from repomate import util
+from repomate import tuples
+from repomate import exception
+from repomate.github_api import GitHubAPI
+from repomate.tuples import Team
+from repomate.git import Push
 
 LOGGER = daiquiri.getLogger(__file__)
 

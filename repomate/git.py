@@ -12,8 +12,8 @@ import collections
 import daiquiri
 from typing import Sequence, Tuple, Iterable, List, Any, Callable
 
-from gits_pet import util
-from gits_pet import exception
+from repomate import util
+from repomate import exception
 
 CONCURRENT_TASKS = 20
 
@@ -21,7 +21,7 @@ LOGGER = daiquiri.getLogger(__file__)
 
 Push = collections.namedtuple('Push', ('local_path', 'repo_url', 'branch'))
 
-OAUTH_TOKEN = os.getenv('GITS_PET_OAUTH') or ""
+OAUTH_TOKEN = os.getenv('REPOMATE_OAUTH') or ""
 
 
 def _insert_token(url: str, token: str = OAUTH_TOKEN) -> str:
