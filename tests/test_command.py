@@ -1,12 +1,7 @@
 import sys
 import os
 import pytest
-import tempfile
-import subprocess
-import string
-from asyncio import coroutine
-from unittest.mock import patch, PropertyMock, MagicMock, Mock, call, ANY
-from collections import namedtuple
+from unittest.mock import patch, MagicMock, Mock, call, ANY
 
 import repomate
 from repomate import command
