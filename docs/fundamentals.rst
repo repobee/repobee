@@ -34,7 +34,7 @@ Terminology
 ===========
 Some terms occur frequently in ``repomate`` and are best defined up front.
 Some of the descriptions may not click entirely before reading the
-:ref:`Getting-Started` section, so quickly browsing through these definitions and
+:ref:`userguide` section, so quickly browsing through these definitions and
 re-visiting them when needed is probably the best course of action.
 
 * *Target organization*: The GitHub Organization_ related to the current course

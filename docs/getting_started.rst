@@ -1,6 +1,6 @@
 .. _getting_started:
 
-Getting Started (the ``verify-connection``, ``migrate`` and ``setup`` commands)
+Getting Started (the ``verify-settings``, ``migrate`` and ``setup`` commands)
 *******************************************************************************
 .. important::
 
