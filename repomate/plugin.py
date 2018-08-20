@@ -23,6 +23,11 @@ LOGGER = daiquiri.getLogger(__file__)
 
 PLUGIN_QUALNAME = lambda plugin_name: "{}.ext.{}".format(__package__, plugin_name)
 
+# status messages
+ERROR = "error"
+WARNING = "warning"
+SUCCESS = "success"
+
 
 class Plugin:
     """Wrapper class for plugin classes. Used to dynamically detect plugin
@@ -38,15 +43,19 @@ class Plugin:
         return self._class(*args, **kwargs)
 
 
-def load_plugin_modules() -> List[ModuleType]:
+def load_plugin_modules(
+        config_file: Union[str, pathlib.Path] = config.DEFAULT_CONFIG_FILE
+) -> List[ModuleType]:
     """Load plugins that are specified in the config.
     
+    Args:
+
     Returns:
         a list of loaded modules.
     """
     loaded_modules = []
 
-    for name in config.get_plugin_names():
+    for name in config.get_plugin_names(config_file):
         try:
             plugin = importlib.import_module(PLUGIN_QUALNAME(name))
             loaded_modules.append(plugin)

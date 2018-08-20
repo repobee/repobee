@@ -11,10 +11,13 @@ from unittest.mock import patch, MagicMock
 # mock the PyGithub github module
 sys.modules['github'] = MagicMock()
 
-# the git module must be imported with a mocked env variable
-TOKEN = 'besttoken1337'
-with patch('os.getenv', autospec=True, return_value=TOKEN):
+# must mock out the _initialize_plugins function
+with patch('repomate._initialize_plugins'):
     import repomate
+
+TOKEN = 'besttoken1337'
+# the git module must be imported with a mocked env variable
+with patch('os.getenv', autospec=True, return_value=TOKEN):
     from repomate import git
 
 from repomate import tuples

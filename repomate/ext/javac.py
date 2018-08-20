@@ -5,20 +5,14 @@ import os
 import daiquiri
 
 from repomate import tuples
+from repomate import util
+from repomate import plugin
 from repomate.hookspec import hookimpl
-from repomate.plugin import Plugin
 
 LOGGER = daiquiri.getLogger(name=__file__)
 
 
-def _java_files(root, ignore=[]):
-    for cwd, dirs, files in os.walk(root):
-        for file in files:
-            if file.endswith('.java') and file not in ignore:
-                yield os.path.join(cwd, file)
-
-
-@Plugin
+@plugin.Plugin
 class JavacCloneHook:
     def __init__(self):
         self._ignore = []
@@ -26,27 +20,25 @@ class JavacCloneHook:
     @hookimpl
     def act_on_cloned_repo(self, path):
         """Run javac on all Java files. Requires globbing."""
-        java_files = list(_java_files(path, self._ignore))
+        java_files = [
+            str(file)
+            for file in util.find_files_by_extension(path, '.java')
+            if file.name not in self._ignore
+        ]
         if not java_files:
-            LOGGER.error("no java files found in {}".format(path))
             msg = "no .java files found"
-            status = "warning"
+            status = plugin.WARNING
             return tuples.HookResult('javac', status, msg)
-
-        LOGGER.info("found java files: {}".format(java_files))
 
         command = 'javac {}'.format(' '.join(java_files)).split()
         proc = subprocess.run(
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if proc.returncode != 0:
-            status = "error"
+            status = plugin.ERROR
             msg = proc.stderr.decode(sys.getdefaultencoding())
-            #LOGGER.warning("Compilation error")
-            #LOGGER.warning(proc.stderr.decode("utf-8"))
         else:
             msg = "all files compiled successfully"
-            status = "success"
-            #LOGGER.info("All files compiled successfully")
+            status = plugin.SUCCESS
         return tuples.HookResult('javac', status, msg)
 
     @hookimpl

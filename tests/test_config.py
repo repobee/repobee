@@ -74,7 +74,7 @@ class TestGetPluginNames:
 
     def test_with_full_config(self, config_mock):
         """Test that plugins are read correctly from a full config file."""
-        plugin_names = config.get_plugin_names()
+        plugin_names = config.get_plugin_names(str(config_mock))
 
         assert plugin_names == PLUGINS
 
@@ -92,6 +92,6 @@ class TestGetPluginNames:
         ])
         empty_config_mock.write(contents)
 
-        plugin_names = config.get_plugin_names()
+        plugin_names = config.get_plugin_names(str(empty_config_mock))
 
         assert plugin_names == expected_plugins

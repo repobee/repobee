@@ -182,7 +182,8 @@ class TestFindFilesByExtension:
 
         assert not files
 
-    def test_does_not_find_files_when_dot_is_omitted(self, directory_structure):
+    def test_does_not_find_files_when_dot_is_omitted(self,
+                                                     directory_structure):
         root, *_ = directory_structure
 
         files = list(util.find_files_by_extension(str(root), 'java'))

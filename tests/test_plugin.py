@@ -28,7 +28,7 @@ class TestLoadPluginModules:
         """
         expected_names = list(map(plugin.PLUGIN_QUALNAME, PLUGINS))
 
-        modules = plugin.load_plugin_modules()
+        modules = plugin.load_plugin_modules(str(config_mock))
         module_names = [mod.__name__ for mod in modules]
 
         assert module_names == expected_names
@@ -48,7 +48,7 @@ class TestLoadPluginModules:
             ["[DEFAULTS]", "plugins = {}".format(plugin_name)])
         empty_config_mock.write(config_contents)
 
-        modules = plugin.load_plugin_modules()
+        modules = plugin.load_plugin_modules(str(empty_config_mock))
         module_names = [mod.__name__ for mod in modules]
 
         assert module_names == [plugin_qualname]
@@ -63,7 +63,7 @@ class TestLoadPluginModules:
         empty_config_mock.write(config_contents)
 
         with pytest.raises(exception.PluginError) as exc:
-            plugin.load_plugin_modules()
+            plugin.load_plugin_modules(str(empty_config_mock))
 
         assert "failed to load plugin module " + plugin_name in str(exc)
 

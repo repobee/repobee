@@ -1,8 +1,8 @@
-from gits_pet.hookspec import hookimpl
+from repomate.hookspec import hookimpl
 import subprocess
 import os
 import daiquiri
-from gits_pet import tuples
+from repomate import tuples
 
 LOGGER = daiquiri.getLogger(name=__file__)
 

@@ -22,7 +22,7 @@ CONFIG_DIR = pathlib.Path(
     appdirs.user_config_dir(
         appname=__package__, appauthor=repomate.__author__))
 
-DEFAULT_CONFIG_FILE = CONFIG_DIR / 'config.cnf'
+DEFAULT_CONFIG_FILE = (CONFIG_DIR / 'config.cnf').resolve()
 assert DEFAULT_CONFIG_FILE.is_absolute()
 
 # arguments that can be configured via config file
@@ -86,12 +86,15 @@ def get_plugin_names(
     """
     config_file = pathlib.Path(config_file) if isinstance(config_file,
                                                           str) else config_file
+    if not config_file.is_file():
+        return []
     config = _read_config(config_file)
     plugin_string = config.get('DEFAULTS', 'plugins', fallback="")
     return [name.strip() for name in plugin_string.split(",") if name]
 
 
 def _read_defaults(config_file: pathlib.Path = DEFAULT_CONFIG_FILE) -> dict:
+    LOGGER.info(config_file.is_file())
     if not config_file.is_file():
         return {}
     return dict(_read_config(config_file)['DEFAULTS'])
