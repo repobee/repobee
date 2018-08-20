@@ -59,13 +59,13 @@ to PyPi. Unless you are planning to work on this yourself, I suggest going with 
 There is one mandatory environment variable, and an optional configuration file
 that can be added.
 
-#### GITS_PET_OAUTH
+#### REPOMATE_OAUTH
 
-For the tool to work at all, an environment variable called `GITS_PET_OAUTH`
+For the tool to work at all, an environment variable called `REPOMATE_OAUTH`
 must contain an OAUTH2 token to whichever GitHub instance you intend to use.
 See [the GitHub docs](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/)
 for how to create a token. Once you have it, configure the environment
-variable with `export GITS_PET_OAUTH=<YOUR TOKEN>`. If it is not
+variable with `export REPOMATE_OAUTH=<YOUR TOKEN>`. If it is not
 configured, you will get an error message when trying to run `repomate`
 
 #### Config file

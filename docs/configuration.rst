@@ -9,14 +9,14 @@ organization's name (see `config`_).
 
 .. _oauth:
 
-GITS_PET_OAUTH Environment Variable
+REPOMATE_OAUTH Environment Variable
 ===================================
-For the tool to work at all, an environment variable called ``GITS_PET_OAUTH``
+For the tool to work at all, an environment variable called ``REPOMATE_OAUTH``
 must contain an OAUTH2 token to whichever GitHub instance you intend to use.
 See the `GitHub OAUTH docs`_ for how to create a token. The token should
 have the ``repo`` and ``admin:org`` scopes. Once you have the token, you should
 set the environment variable. In a ``bash`` terminal, this can be done with the
-command ``export GITS_PET_OAUTH=<YOUR TOKEN>``, where ``<YOUR TOKEN>`` is
+command ``export REPOMATE_OAUTH=<YOUR TOKEN>``, where ``<YOUR TOKEN>`` is
 replaced with the token.
 
 .. _config:

@@ -340,7 +340,7 @@ class PyGithubWrapper(AbstractAPIWrapper):
         LOGGER.info("verifying settings ...")
         if not token:
             raise exception.BadCredentials(
-                msg="token is empty. Check that GITS_PET_OAUTH environment "
+                msg="token is empty. Check that REPOMATE_OAUTH environment "
                 "variable is properly set.")
 
         util.validate_types(

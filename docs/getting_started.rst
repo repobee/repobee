@@ -44,7 +44,7 @@ target organization.
 
 Configure ``repomate`` For the Target Organization
 ==================================================
-For the tool to work at all, an environment variable called ``GITS_PET_OAUTH``
+For the tool to work at all, an environment variable called ``REPOMATE_OAUTH``
 must contain an OAUTH2 token to whichever GitHub instance you intend to use.
 See the `GitHub OAUTH docs`_ for how to create a token. The token should have
 the ``repo`` and ``admin:org`` scopes. Setting the token is easy in ``bash``.
@@ -53,7 +53,7 @@ Linux distros, and ``~/.bash_profile`` on OSX).
 
 .. code-block:: bash
     
-    export GITS_PET_OAUTH=<SUPER SECRET TOKEN>
+    export REPOMATE_OAUTH=<SUPER SECRET TOKEN>
 
 When that's added, either source the file with ``source path/to/bash/config``
 or simply start another ``bash`` shell, which will automatically read the
@@ -61,7 +61,7 @@ file. Verify that the token is there by typing:
 
 .. code-block:: bash
 
-    $ echo $GITS_PET_OAUTH
+    $ echo $REPOMATE_OAUTH
 
 You should see your token in the output. 
 
@@ -69,7 +69,7 @@ You should see your token in the output.
 
     Whenever you see a ``$`` sign preceeding a line in a code block, you are meant
     to type what's *after* the ``$`` sign into your shell. Here, you should type
-    only ``echo $GITS_PET_OAUTH``, for example.
+    only ``echo $REPOMATE_OAUTH``, for example.
 
 With that out of the way, let's create a configuration file We can now use
 ``repomate`` to figure out where it should be located.

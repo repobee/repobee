@@ -9,8 +9,8 @@ USER = pytest.constants.USER
 
 def test_repomate_exception_repr():
     msg = "an exception message"
-    expected_repr = "<GitsPetException(msg='{}')>".format(msg)
-    exc = exception.GitsPetException(msg)
+    expected_repr = "<RepomateException(msg='{}')>".format(msg)
+    exc = exception.RepomateException(msg)
 
     assert repr(exc) == expected_repr
 

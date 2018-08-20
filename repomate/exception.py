@@ -1,8 +1,8 @@
 """Modules for all custom repomate exceptions.
 
-All exceptions extend the :py:class:`GitsPetException` base class, which itself
+All exceptions extend the :py:class:`RepomateException` base class, which itself
 extends :py:class:`Exception`. In other words, exceptions raised within
-``repomate`` can all be caught by catching :py:class:`GitsPetException`.
+``repomate`` can all be caught by catching :py:class:`RepomateException`.
 
 .. module:: exception
     :synopsis: Custom exceptions for repomate.
@@ -14,7 +14,7 @@ import sys
 import re
 
 
-class GitsPetException(Exception):
+class RepomateException(Exception):
     """Base exception for all repomate exceptions."""
 
     def __init__(self, msg="", *args, **kwargs):
@@ -28,15 +28,15 @@ class GitsPetException(Exception):
         return "<{}(msg='{}')>".format(type(self).__name__, str(self.msg))
 
 
-class ParseError(GitsPetException):
+class ParseError(RepomateException):
     """Raise when something goes wrong in parsing."""
 
 
-class FileError(GitsPetException):
+class FileError(RepomateException):
     """Raise when reading or writing to a file errors out."""
 
 
-class GitHubError(GitsPetException):
+class GitHubError(RepomateException):
     """An exception raised when the API responds with an error code."""
 
     def __init__(self, msg="", status=None):
@@ -60,11 +60,11 @@ class UnexpectedException(GitHubError):
     """An exception raised when an API request raises an unexpected exception."""
 
 
-class APIError(GitsPetException):
+class APIError(RepomateException):
     """Raise when something unexpected happens when interacting with the API."""
 
 
-class GitError(GitsPetException):
+class GitError(RepomateException):
     """A generic error to raise when a git command exits with a non-zero
     exit status.
     """
