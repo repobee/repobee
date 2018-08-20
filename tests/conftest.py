@@ -11,8 +11,8 @@ from unittest.mock import patch, MagicMock
 # mock the PyGithub github module
 sys.modules['github'] = MagicMock()
 
-# must mock out the _initialize_plugins function
-with patch('repomate._initialize_plugins'):
+# don't register any plugins initially, need to be able to mock them
+with patch('pluggy.PluginManager.register', autospec=True):
     import repomate
 
 TOKEN = 'besttoken1337'
