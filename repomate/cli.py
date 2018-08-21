@@ -75,6 +75,9 @@ def parse_args(sys_args: Iterable[str]
             github_base_url=args.github_base_url,
             user=args.user,
         ), None  # only here is return None for api allowed
+    elif getattr(args, SUB) == CLONE_PARSER:
+        # only if clone is chosen should plugins be able to hook in
+        hookspec.pm.hook.parse_args(args=args)
 
     api = _connect_to_api(args.github_base_url, git.OAUTH_TOKEN, args.org_name)
 

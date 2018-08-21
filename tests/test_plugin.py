@@ -72,10 +72,6 @@ class TestRegisterPlugins:
     """Tests for register_plugins."""
 
     @pytest.fixture
-    def plugin_manager_mock(self, mocker):
-        return mocker.patch('repomate.hookspec.pm')
-
-    @pytest.fixture
     def javac_clone_hook_mock(self, monkeypatch):
         """Return an instance of the clone hook mock"""
         instance_mock = MagicMock()

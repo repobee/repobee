@@ -77,6 +77,11 @@ def _students_file(populate: bool = True):
 
 
 @pytest.fixture
+def plugin_manager_mock(mocker):
+    return mocker.patch('repomate.hookspec.pm', autospec=True)
+
+
+@pytest.fixture
 def empty_students_file(mocker, tmpdir):
     """Fixture with an empty temporary file."""
     file = tmpdir.join("students")

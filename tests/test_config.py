@@ -1,4 +1,5 @@
 import os
+from unittest import mock
 import pytest
 from repomate import config
 from repomate import exception
@@ -95,3 +96,18 @@ class TestGetPluginNames:
         plugin_names = config.get_plugin_names(str(empty_config_mock))
 
         assert plugin_names == expected_plugins
+
+
+class TestExecuteConfigHooks:
+    """Tests for execute_config_hooks."""
+
+    def test_with_no_config_file(self, no_config_mock, plugin_manager_mock):
+        config.execute_config_hooks()
+        assert not plugin_manager_mock.hook.config_hook.called
+
+    def test_with_config_file(self, config_mock, plugin_manager_mock):
+        config.execute_config_hooks(str(config_mock))
+
+        # TODO assert with a real value instead of mock.ANY
+        plugin_manager_mock.hook.config_hook.assert_called_once_with(
+            config_parser=mock.ANY)
