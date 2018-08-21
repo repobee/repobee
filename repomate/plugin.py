@@ -59,8 +59,9 @@ def load_plugin_modules(
         try:
             plugin = importlib.import_module(PLUGIN_QUALNAME(name))
             loaded_modules.append(plugin)
-        except (ModuleNotFoundError, ImportError) as exc:
+        except ImportError as exc:
             # ImportError in 3.5, ModuleNotFoundError in 3.6+
+            # using ImportError for compatability
             LOGGER.error(str(exc))
             msg = "failed to load plugin module " + name
             raise exception.PluginError(msg)
