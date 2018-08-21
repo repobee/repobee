@@ -603,8 +603,8 @@ class TestCloneParser:
             (cli.VERIFY_PARSER, ['-u', USER]),
             (cli.MIGRATE_PARSER, ['-u', USER, '-mn', *REPO_NAMES]),
         ])
-    def test_no_other_parser_gets_parse_hook(self, parser, extra_args,
-                                             plugin_manager_mock, read_issue_mock):
+    def test_no_other_parser_gets_parse_hook(
+            self, parser, extra_args, plugin_manager_mock, read_issue_mock):
         sys_args = [parser, *BASE_ARGS, *extra_args]
 
         args, _ = cli.parse_args(sys_args)
