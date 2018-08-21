@@ -23,7 +23,7 @@ CONFIG_DIR = pathlib.Path(
     appdirs.user_config_dir(
         appname=__package__, appauthor=repomate.__author__))
 
-DEFAULT_CONFIG_FILE = (CONFIG_DIR / 'config.cnf').resolve()
+DEFAULT_CONFIG_FILE = CONFIG_DIR / 'config.cnf'
 assert DEFAULT_CONFIG_FILE.is_absolute()
 
 # arguments that can be configured via config file
