@@ -1,4 +1,5 @@
 appdirs
+colored
 codecov
 daiquiri
 pytest
