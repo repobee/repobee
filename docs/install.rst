@@ -6,7 +6,7 @@ Install
 Requirements
 ------------
 ``repomate`` requires Python 3.5+ and a somewhat up-to-date version of ``git``.
-Officially supported platforms are ``Ubuntu 17.04+`` and ``OSX``, but
+Officially supported platforms are ``Ubuntu 17.04+`` and ``macOS``, but
 ``repomate`` should run fine on any Linux distribution and also on WSL_ on
 Windows 10. Please report any issues with operating systems and/or ``git``
 versions on the `issue tracker`_.

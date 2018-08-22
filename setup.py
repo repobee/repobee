@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from setuptools import setup, find_packages
 
 with open('README.md') as f:
@@ -11,7 +10,7 @@ test_requirements = [
     'appdirs', 'daiquiri', 'pytest>=3.1.1', 'pytest-cov>=2.5.1', 'pytest-mock',
     'codecov'
 ]
-required = ['appdirs', 'daiquiri', 'pygithub', 'colored']
+required = ['appdirs', 'daiquiri', 'pygithub', 'colored', 'pluggy']
 
 setup(
     name='repomate',
@@ -30,4 +29,15 @@ setup(
     extras_require=dict(TEST=test_requirements),
     scripts=['bin/repomate'],
     include_package_data=True,
-    zip_safe=False)
+    zip_safe=False,
+    classifiers=[
+        'Development Status :: 5 - Beta',
+        'Intended Audience :: Teachers',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: Implementation :: CPython',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: Linux'
+        'Operating System :: macOS',
+    ])
