@@ -17,12 +17,12 @@ A CLI tool for administrating large amounts of GitHub repositories, geared towar
 
 #### Requirements
 `repomate` requires Python 3.5+ and a somewhat up-to-date version of `git`.
-Officially supported platforms are `Ubuntu 17.04+` and `OSX`, but `repomate`
-should run fine on any Linux distribution and also on
-[WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10) on Windows 10.
-Please report any issues with operating systems and/or `git` versions on the
-issue tracker.
-
+The Python packages listed in [requirements.txt](requirements.txt) must also be
+installed. Officially supported platforms are `Ubuntu 17.04+` and `OSX`, but
+`repomate` should run fine on any Linux distribution and also on
+[WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10) on Windows
+10.  Please report any issues with operating systems and/or `git` versions on
+the issue tracker.
 
 #### Option 1: Install from PyPi with `pip`
 
@@ -52,7 +52,6 @@ to PyPi. Unless you are planning to work on this yourself, I suggest going with 
     - Or just `pip install .` if you use `virtualenv`.
     - For development, use `pip install -e .` in a `virtualenv`.
 5. Further steps to be added ...
-
 
 ### Configuration
 
