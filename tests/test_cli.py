@@ -599,7 +599,7 @@ class TestCloneParser:
              ['-s', STUDENTS_STRING, '-mn', *REPO_NAMES, '-i', ISSUE_PATH]),
             (cli.CLOSE_ISSUE_PARSER,
              ['-s', STUDENTS_STRING, '-mn', *REPO_NAMES, '-r', 'some-regex']),
-            #(cli.ADD_TO_TEAMS_PARSER, ['-s', STUDENTS_STRING]), # TODO fix add-to-teams or remove
+            (cli.ADD_TO_TEAMS_PARSER, ['-s', STUDENTS_STRING]), # TODO fix add-to-teams or remove
             (cli.VERIFY_PARSER, ['-u', USER]),
             (cli.MIGRATE_PARSER, ['-u', USER, '-mn', *REPO_NAMES]),
         ])

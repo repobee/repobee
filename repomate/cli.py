@@ -81,13 +81,18 @@ def parse_args(sys_args: Iterable[str]
 
     api = _connect_to_api(args.github_base_url, git.OAUTH_TOKEN, args.org_name)
 
-    if 'master_repo_urls' in args and args.master_repo_urls:
-        master_urls = args.master_repo_urls
-        master_names = [util.repo_name(url) for url in master_urls]
+    # TODO remove this dirty hack, needed as add-to-teams has no repo args
+    if getattr(args, SUB) == ADD_TO_TEAMS_PARSER:
+        args.master_repo_urls = []
+        master_urls, master_names = None, None
     else:
-        master_names = args.master_repo_names
-        master_urls = _repo_names_to_urls(master_names, api)
-    assert master_urls and master_names
+        if 'master_repo_urls' in args and args.master_repo_urls:
+            master_urls = args.master_repo_urls
+            master_names = [util.repo_name(url) for url in master_urls]
+        else:
+            master_names = args.master_repo_names
+            master_urls = _repo_names_to_urls(master_names, api)
+        assert master_urls and master_names
 
     parsed_args = tuples.Args(
         subparser=getattr(args, SUB),
@@ -415,7 +420,7 @@ def _extract_students(args: argparse.Namespace) -> List[str]:
     elif 'students_file' in args and args.students_file:
         students_file = pathlib.Path(args.students_file)
         try:  # raises FileNotFoundError in 3.5 if no such file exists
-            students_file.resolve()
+            students_file = students_file.resolve()
         except FileNotFoundError:
             pass  # handled by next check
         if not students_file.is_file():
