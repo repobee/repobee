@@ -11,7 +11,7 @@ test_requirements = [
     'appdirs', 'daiquiri', 'pytest>=3.1.1', 'pytest-cov>=2.5.1', 'pytest-mock',
     'codecov'
 ]
-required = ['appdirs', 'daiquiri', 'pygithub']
+required = ['appdirs', 'daiquiri', 'pygithub', 'colored']
 
 setup(
     name='repomate',

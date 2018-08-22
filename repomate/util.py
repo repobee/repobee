@@ -7,7 +7,8 @@
 """
 import os
 import sys
-from typing import Iterable
+import pathlib
+from typing import Iterable, List, Generator, Union, Tuple
 from repomate import tuples
 
 
@@ -102,6 +103,7 @@ def repo_name(repo_url: str) -> str:
         return repo_name[:-4]
     return repo_name
 
+
 def is_git_repo(path: str) -> bool:
     """Check if a directory has a .git subdirectory.
     
@@ -112,3 +114,26 @@ def is_git_repo(path: str) -> bool:
     """
     return os.path.isdir(path) and '.git' in os.listdir(path)
 
+
+def _ends_with_ext(path: Union[str, pathlib.Path],
+                   extensions: Iterable[str]) -> bool:
+    _, ext = os.path.splitext(str(path))
+    return ext in extensions
+
+
+def find_files_by_extension(root: Union[str, pathlib.Path], *extensions: str
+                            ) -> Generator[pathlib.Path, None, None]:
+    """Find all files with the given file extensions, starting from root.
+
+    Args:
+        root: The directory to start searching.
+        extensions: One or more file extensions to look for.
+    Returns:
+        a generator that yields a Path objects to the files.
+    """
+    if not extensions:
+        raise ValueError("must provide at least one extension")
+    for cwd, _, files in os.walk(root):
+        for file in files:
+            if _ends_with_ext(file, extensions):
+                yield pathlib.Path(cwd) / file

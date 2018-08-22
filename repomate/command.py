@@ -24,6 +24,7 @@ from repomate import github_api
 from repomate import util
 from repomate import tuples
 from repomate import exception
+from repomate import hookspec
 from repomate.github_api import GitHubAPI
 from repomate.tuples import Team
 from repomate.git import Push
@@ -258,6 +259,24 @@ def clone_repos(master_repo_names: Iterable[str], students: Iterable[str],
     LOGGER.info("cloning into student repos ...")
     git.clone(repo_urls)
 
+    if hookspec.pm.get_plugins():
+        _execute_post_clone_hooks(repo_names)
+
+
+def _execute_post_clone_hooks(repo_names: List[str]):
+    LOGGER.info("executing post clone hooks on repos")
+    local_repos = [name for name in os.listdir() if name in repo_names]
+
+    results = {}
+    for repo_name in local_repos:
+        LOGGER.info("executing post clone hooks on {}".format(repo_name))
+        res = hookspec.pm.hook.act_on_cloned_repo(
+            path=os.path.abspath(repo_name))
+        results[repo_name] = res
+    LOGGER.info(_format_hook_results_output(results))
+
+    LOGGER.info("post clone hooks done")
+
 
 def migrate_repos(master_repo_urls: Iterable[str], user: str,
                   api: GitHubAPI) -> None:
@@ -349,3 +368,34 @@ def _create_push_tuples(master_repo_paths: Iterable[str],
             for repo_url in repo_urls if repo_url.endswith(repo_base_name)
         ]
     return push_tuples
+
+def _format_hook_result(hook_result):
+    from colored import bg, style
+    if hook_result.status == "error":
+        out = bg('red')
+    elif hook_result.status == "warning":
+        out = bg('yellow')
+    else:
+        out = bg('dark_green')
+
+    out += hook_result.hook + ": " + hook_result.status + style.RESET + os.linesep
+    out += hook_result.msg
+
+    return out
+
+
+def _format_hook_results_output(result_mapping):
+    from colored import bg, style
+    out = ""
+    for repo_name, results in result_mapping.items():
+        out += "{}hook results for {}{}{}".format(
+            bg('dark_gray'), repo_name, style.RESET, os.linesep * 2)
+        out += os.linesep.join([
+            "{}{}".format(_format_hook_result(res), os.linesep)
+            for res in results
+        ])
+        out += os.linesep * 2
+
+    return out
+
+

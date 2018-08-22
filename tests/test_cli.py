@@ -4,6 +4,7 @@ import string
 import tempfile
 import pathlib
 from unittest.mock import MagicMock, PropertyMock
+from unittest import mock
 from contextlib import contextmanager
 import pytest
 
@@ -124,7 +125,7 @@ def admin_all_raise_mock(admin_mock, request):
     return admin_mock
 
 
-class TestHandleParsedArgs:
+class TestDispatchCommand:
     """Test the handling of parsed arguments."""
 
     def test_raises_on_invalid_subparser_value(self, api_instance_mock):
@@ -147,8 +148,7 @@ class TestHandleParsedArgs:
             admin_all_raise_mock):
         """Test that any of the expected exceptions results in SystemExit."""
         with pytest.raises(SystemExit) as exc_info:
-            cli.dispatch_command(parsed_args_all_subparsers,
-                                   api_instance_mock)
+            cli.dispatch_command(parsed_args_all_subparsers, api_instance_mock)
 
     def test_add_students_to_teams_called_with_correct_args(
             self, admin_mock, api_instance_mock):
@@ -563,3 +563,52 @@ class TestVerifyParser:
         assert args.org_name == ORG_NAME
         assert args.github_base_url == GITHUB_BASE_URL
         assert args.user == USER
+
+
+class TestCloneParser:
+    """Tests for the CLONE_PARSER."""
+
+    def test_happy_path(self, students_file, plugin_manager_mock):
+        sys_args = [
+            cli.CLONE_PARSER, *BASE_ARGS, '-mn', *REPO_NAMES, '-sf',
+            str(students_file)
+        ]
+
+        args, _ = cli.parse_args(sys_args)
+
+        assert args.subparser == cli.CLONE_PARSER
+        assert args.org_name == ORG_NAME
+        assert args.github_base_url == GITHUB_BASE_URL
+        assert args.students == list(STUDENTS)
+        # TODO assert with actual value
+        plugin_manager_mock.hook.clone_parser_hook.assert_called_once_with(
+            clone_parser=mock.ANY)
+        plugin_manager_mock.hook.parse_args.assert_called_once_with(
+            args=mock.ANY)
+
+    STUDENTS_STRING = ' '.join(STUDENTS)
+
+    @pytest.mark.parametrize(
+        'parser, extra_args',
+        [
+            (cli.SETUP_PARSER,
+             ['-u', USER, '-s', STUDENTS_STRING, '-mn', *REPO_NAMES]),
+            (cli.UPDATE_PARSER,
+             ['-u', USER, '-s', STUDENTS_STRING, '-mn', *REPO_NAMES]),
+            (cli.OPEN_ISSUE_PARSER,
+             ['-s', STUDENTS_STRING, '-mn', *REPO_NAMES, '-i', ISSUE_PATH]),
+            (cli.CLOSE_ISSUE_PARSER,
+             ['-s', STUDENTS_STRING, '-mn', *REPO_NAMES, '-r', 'some-regex']),
+            #(cli.ADD_TO_TEAMS_PARSER, ['-s', STUDENTS_STRING]), # TODO fix add-to-teams or remove
+            (cli.VERIFY_PARSER, ['-u', USER]),
+            (cli.MIGRATE_PARSER, ['-u', USER, '-mn', *REPO_NAMES]),
+        ])
+    def test_no_other_parser_gets_parse_hook(
+            self, parser, extra_args, plugin_manager_mock, read_issue_mock):
+        sys_args = [parser, *BASE_ARGS, *extra_args]
+
+        args, _ = cli.parse_args(sys_args)
+
+        plugin_manager_mock.hook.clone_parser_hook.assert_called_once_with(
+            clone_parser=mock.ANY)
+        assert not plugin_manager_mock.hook.parse_args.called

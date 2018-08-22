@@ -1,3 +1,4 @@
 appdirs
+colored
 daiquiri
 pygithub

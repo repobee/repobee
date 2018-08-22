@@ -99,3 +99,7 @@ class PushFailedError(GitError):
     def __init__(self, msg: str, returncode: int, stderr: bytes, url: str):
         self.url = url
         super().__init__(msg, returncode, stderr)
+
+
+class PluginError(RepomateException):
+    """Generic error to raise when something goes wrong with loading plugins."""

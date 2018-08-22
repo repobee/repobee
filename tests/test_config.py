@@ -1,4 +1,5 @@
 import os
+from unittest import mock
 import pytest
 from repomate import config
 from repomate import exception
@@ -7,6 +8,7 @@ STUDENTS = pytest.constants.STUDENTS
 USER = pytest.constants.USER
 GITHUB_BASE_URL = pytest.constants.GITHUB_BASE_URL
 ORG_NAME = pytest.constants.ORG_NAME
+PLUGINS = pytest.constants.PLUGINS
 
 
 class TestGetConfiguredDefaults:
@@ -29,6 +31,7 @@ class TestGetConfiguredDefaults:
         assert defaults['github_base_url'] == GITHUB_BASE_URL
         assert defaults['org_name'] == ORG_NAME
         assert defaults['students_file'] == str(students_file)
+        assert defaults['plugins'] == ','.join(PLUGINS)
 
     def test_get_configured_defaults_raises_on_invalid_keys(
             self, empty_config_mock, students_file):
@@ -39,6 +42,7 @@ class TestGetConfiguredDefaults:
             "user = {}".format(USER),
             "org_name = {}".format(ORG_NAME),
             "students_file = {!s}".format(students_file),
+            "plugins = {!s}".format(PLUGINS),
             "{} = whatever".format(invalid_key),
         ])
         empty_config_mock.write(config_contents)
@@ -64,3 +68,46 @@ class TestGetConfiguredDefaults:
 
         assert "does not contain the required [DEFAULTS] header" in str(
             exc_info)
+
+
+class TestGetPluginNames:
+    """Tests for get_plugin_names."""
+
+    def test_with_full_config(self, config_mock):
+        """Test that plugins are read correctly from a full config file."""
+        plugin_names = config.get_plugin_names(str(config_mock))
+
+        assert plugin_names == PLUGINS
+
+    @pytest.mark.parametrize('plugins_string, expected_plugins', [
+        (','.join(PLUGINS), PLUGINS),
+        (', '.join(PLUGINS), PLUGINS),
+        ('javac', ['javac']),
+        ('', []),
+    ])
+    def test_with_only_plugins(self, plugins_string, expected_plugins,
+                               empty_config_mock):
+        contents = os.linesep.join([
+            "[DEFAULTS]",
+            "plugins = " + plugins_string,
+        ])
+        empty_config_mock.write(contents)
+
+        plugin_names = config.get_plugin_names(str(empty_config_mock))
+
+        assert plugin_names == expected_plugins
+
+
+class TestExecuteConfigHooks:
+    """Tests for execute_config_hooks."""
+
+    def test_with_no_config_file(self, no_config_mock, plugin_manager_mock):
+        config.execute_config_hooks()
+        assert not plugin_manager_mock.hook.config_hook.called
+
+    def test_with_config_file(self, config_mock, plugin_manager_mock):
+        config.execute_config_hooks(str(config_mock))
+
+        # TODO assert with a real value instead of mock.ANY
+        plugin_manager_mock.hook.config_hook.assert_called_once_with(
+            config_parser=mock.ANY)

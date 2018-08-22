@@ -1,12 +1,7 @@
 import sys
 import os
 import pytest
-import tempfile
-import subprocess
-import string
-from asyncio import coroutine
-from unittest.mock import patch, PropertyMock, MagicMock, Mock, call
-from collections import namedtuple
+from unittest.mock import patch, MagicMock, Mock, call, ANY
 
 import repomate
 from repomate import command
@@ -15,6 +10,8 @@ from repomate import git
 from repomate import tuples
 from repomate import util
 from repomate import exception
+from repomate import plugin
+from repomate import hookspec
 
 USER = 'slarse'
 ORG_NAME = 'test-org'
@@ -22,6 +19,7 @@ GITHUB_BASE_URL = 'https://some_enterprise_host/api/v3'
 API = github_api.GitHubAPI("bla", "bla", "bla")
 ISSUE = tuples.Issue("Oops, something went wrong!",
                      "This is the body **with some formatting**.")
+PLUGINS = pytest.constants.PLUGINS
 
 GENERATE_TEAM_REPO_URL = lambda student, base_name:\
         "https://slarse.se/repos/{}".format(
@@ -410,7 +408,7 @@ class TestUpdateStudentRepos:
         git_clone_mock = mocker.patch('repomate.git.clone_single')
 
         command.update_student_repos(master_urls, students, USER, api_mock,
-                                   issue)
+                                     issue)
 
         if issue:  # expect issue to be opened
             call_list = api_mock.open_issue.call_args_list
@@ -505,7 +503,7 @@ class TestCloseIssue:
         """only the regex is allowed ot be empty."""
         with pytest.raises(ValueError) as exc_info:
             command.close_issue('someregex', master_repo_names, students,
-                              api_mock)
+                                api_mock)
         assert empty_arg in str(exc_info)
 
     @pytest.mark.noapimock
@@ -538,6 +536,50 @@ class TestCloseIssue:
 class TestCloneRepos:
     """Tests for clone_repos."""
 
+    @pytest.fixture
+    def register_default_plugins(self, config_mock):
+        modules = plugin.load_plugin_modules(str(config_mock))
+        plugin.register_plugins(modules)
+
+    @pytest.fixture
+    def act_hook_mocks(self, monkeypatch, config_mock):
+        """Mocks for the act_on_cloned_repo functions and method. This is a bit
+        messy as the functions must be marked with the hookspec.hookimpl
+        decorator to be picked up by pluggy.
+        """
+        javac_hook = MagicMock(
+            spec='repomate.ext.javac.JavacCloneHook._class.act_on_cloned_repo',
+            return_value=tuples.HookResult('javac', plugin.SUCCESS,
+                                           'Great success!'))
+        pylint_hook = MagicMock(
+            spec='repomate.ext.pylint.act_on_cloned_repo',
+            return_value=tuples.HookResult('pylint', plugin.WARNING,
+                                           'Minor warning.'))
+
+        @hookspec.hookimpl
+        def act_hook_func(path):
+            return pylint_hook(path)
+
+        @hookspec.hookimpl
+        def act_hook_meth(self, path):
+            return javac_hook(self, path)
+
+        monkeypatch.setattr(
+            'repomate.ext.javac.JavacCloneHook._class.act_on_cloned_repo',
+            act_hook_meth)
+        monkeypatch.setattr('repomate.ext.pylint.act_on_cloned_repo',
+                            act_hook_func)
+
+        modules = plugin.load_plugin_modules(str(config_mock))
+        plugin.register_plugins(modules)
+
+        return javac_hook, pylint_hook
+
+    @pytest.fixture
+    def get_plugin_names_mock(self, mocker):
+        return mocker.patch(
+            'repomate.config.get_plugin_names', return_value=PLUGINS)
+
     @pytest.mark.parametrize('master_repo_names, students, empty_arg',
                              [([], students(), 'master_repo_names'),
                               (master_names(master_urls()), [], 'students')])
@@ -556,6 +598,23 @@ class TestCloneRepos:
         command.clone_repos(master_names, students, api_mock)
 
         git_mock.clone.assert_called_once_with(expected_urls)
+
+    def test_executes_act_hooks(self, api_mock, git_mock, master_names,
+                                students, act_hook_mocks):
+        javac_hook, pylint_hook = act_hook_mocks
+        repo_names = util.generate_repo_names(students, master_names)
+        expected_pylint_calls = [
+            call(os.path.abspath(repo_name)) for repo_name in repo_names
+        ]
+        expected_javac_calls = [
+            call(ANY, os.path.abspath(repo_name)) for repo_name in repo_names
+        ]
+
+        with patch('os.listdir', return_value=repo_names):
+            command.clone_repos(master_names, students, api_mock)
+
+        javac_hook.assert_has_calls(expected_javac_calls, any_order=True)
+        pylint_hook.assert_has_calls(expected_pylint_calls)
 
 
 class TestMigrateRepo:
