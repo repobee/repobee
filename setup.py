@@ -15,14 +15,14 @@ required = ['appdirs', 'daiquiri', 'pygithub', 'colored']
 
 setup(
     name='repomate',
-    version='0.0.1',
+    version='0.1.0',
     description=('A CLI tool for GitHub'),
     long_description=readme,
     long_description_content_type='text/markdown',
     author='Simon Larsén',
     author_email='slarse@kth.se',
     url='https://github.com/slarse/repomate',
-    #download_url='https://github.com/slarse/repomate/archive/v0.1.0.tar.gz',
+    download_url='https://github.com/slarse/repomate/archive/v0.1.0.tar.gz',
     license=license,
     packages=find_packages(exclude=('tests', 'docs')),
     tests_require=test_requirements,
