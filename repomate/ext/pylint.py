@@ -16,7 +16,7 @@ files in a repo, and runs pylint on them, storing the results in files named
 """
 
 import subprocess
-import os
+import sys
 import pathlib
 from typing import Tuple, Union, Iterable
 
@@ -50,8 +50,7 @@ def act_on_cloned_repo(path: Union[str, pathlib.Path]):
     return tuples.HookResult(hook="pylint", status="success", msg=msg)
 
 
-def _pylint(
-        python_files: Iterable[Union[str, pathlib.Path]]) -> Tuple[str, str]:
+def _pylint(python_files: Iterable[Union[pathlib.Path]]) -> Tuple[str, str]:
     """Run ``pylint`` on all of the specified files.
 
     Args:
@@ -61,17 +60,17 @@ def _pylint(
         the message describes the outcome in plain text.
     """
     linted_files = []
-    for cwd, py_file in python_files:
-        LOGGER.info("running pylint on {}".format(py_file))
-        infile = os.path.join(cwd, py_file)
-        outfile = os.path.join(cwd, "{}.lint".format(py_file))
-        command = 'pylint {}'.format(infile).split()
+    for py_file in python_files:
+        LOGGER.info("running pylint on {!s}".format(py_file))
+        command = 'pylint {!s}'.format(py_file).split()
         proc = subprocess.run(
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        with open(outfile, 'w', encoding='utf8') as f:
-            f.write(proc.stdout.decode('utf8'))
-        linted_files.append(py_file)
+        outfile = pathlib.Path("{}/{}.lint".format(py_file.parent, py_file.name))
+        print(outfile)
+        outfile.touch()
+        outfile.write_bytes(proc.stdout)
+        linted_files.append(str(py_file))
 
     msg = "linted files: {}".format(", ".join(linted_files))
     return plugin.SUCCESS, msg
