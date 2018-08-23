@@ -11,7 +11,7 @@ required = ['appdirs', 'daiquiri', 'pygithub', 'colored', 'pluggy', 'repomate-pl
 
 setup(
     name='repomate',
-    version='0.1.1',
+    version='0.1.2',
     description=(
         'A CLI tool for managing large amounts of GitHub repositories'),
     long_description=readme,
@@ -19,7 +19,7 @@ setup(
     author='Simon Larsén',
     author_email='slarse@kth.se',
     url='https://github.com/slarse/repomate',
-    download_url='https://github.com/slarse/repomate/archive/v0.1.1.tar.gz',
+    download_url='https://github.com/slarse/repomate/archive/v0.1.2.tar.gz',
     license='MIT',
     packages=find_packages(exclude=('tests', 'docs')),
     tests_require=test_requirements,
