@@ -18,16 +18,19 @@ import os
 import tempfile
 from typing import Iterable, List, Optional
 from collections import namedtuple
+
 import daiquiri
+
 from repomate import git
 from repomate import github_api
 from repomate import util
 from repomate import tuples
 from repomate import exception
-from repomate import hookspec
 from repomate.github_api import GitHubAPI
 from repomate.tuples import Team
 from repomate.git import Push
+
+from repomate_plug import plug
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -259,7 +262,7 @@ def clone_repos(master_repo_names: Iterable[str], students: Iterable[str],
     LOGGER.info("cloning into student repos ...")
     git.clone(repo_urls)
 
-    if hookspec.pm.get_plugins():
+    if plug.pm.get_plugins():
         _execute_post_clone_hooks(repo_names)
 
 
@@ -270,7 +273,7 @@ def _execute_post_clone_hooks(repo_names: List[str]):
     results = {}
     for repo_name in local_repos:
         LOGGER.info("executing post clone hooks on {}".format(repo_name))
-        res = hookspec.pm.hook.act_on_cloned_repo(
+        res = plug.pm.hook.act_on_cloned_repo(
             path=os.path.abspath(repo_name))
         results[repo_name] = res
     LOGGER.info(_format_hook_results_output(results))
@@ -369,6 +372,7 @@ def _create_push_tuples(master_repo_paths: Iterable[str],
         ]
     return push_tuples
 
+
 def _format_hook_result(hook_result):
     from colored import bg, style
     if hook_result.status == "error":
@@ -397,5 +401,3 @@ def _format_hook_results_output(result_mapping):
         out += os.linesep * 2
 
     return out
-
-

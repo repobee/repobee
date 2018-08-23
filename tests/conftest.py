@@ -11,9 +11,7 @@ from unittest.mock import patch, MagicMock
 # mock the PyGithub github module
 sys.modules['github'] = MagicMock()
 
-# don't register any plugins initially, need to be able to mock them
-with patch('pluggy.PluginManager.register', autospec=True):
-    import repomate
+import repomate
 
 TOKEN = 'besttoken1337'
 # the git module must be imported with a mocked env variable
@@ -78,7 +76,7 @@ def _students_file(populate: bool = True):
 
 @pytest.fixture
 def plugin_manager_mock(mocker):
-    return mocker.patch('repomate.hookspec.pm', autospec=True)
+    return mocker.patch('repomate_plug.plug.pm', autospec=True)
 
 
 @pytest.fixture

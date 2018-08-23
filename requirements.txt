@@ -3,3 +3,4 @@ colored
 daiquiri
 pluggy
 pygithub
+repomate-plug

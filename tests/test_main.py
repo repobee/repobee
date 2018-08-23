@@ -51,17 +51,17 @@ def dispatch_command_mock(mocker):
 
 
 def test_happy_path(monkeypatch_sys_args, api_instance_mock, parse_args_mock,
-                    dispatch_command_mock):
+                    dispatch_command_mock, no_config_mock):
     main.main()
 
     parse_args_mock.assert_called_once_with(monkeypatch_sys_args[1:])
     dispatch_command_mock.assert_called_once_with(PARSED_ARGS,
-                                                    api_instance_mock)
+                                                  api_instance_mock)
 
 
 def test_does_not_raise_on_exception_in_parsing(
         monkeypatch_sys_args, api_instance_mock, parse_args_mock,
-        dispatch_command_mock):
+        dispatch_command_mock, no_config_mock):
     """should just log, but not raise."""
     msg = "some nice error message"
     parse_args_mock.side_effect = raise_(Exception(msg))

@@ -26,7 +26,7 @@ from repomate import tuples
 from repomate import exception
 from repomate import config
 from repomate import APIWrapper
-from repomate import hookspec
+from repomate_plug import plug
 
 daiquiri.setup(
     level=logging.INFO,
@@ -77,7 +77,7 @@ def parse_args(sys_args: Iterable[str]
         ), None  # only here is return None for api allowed
     elif getattr(args, SUB) == CLONE_PARSER:
         # only if clone is chosen should plugins be able to hook in
-        hookspec.pm.hook.parse_args(args=args)
+        plug.pm.hook.parse_args(args=args)
 
     api = _connect_to_api(args.github_base_url, git.OAUTH_TOKEN, args.org_name)
 
@@ -294,7 +294,7 @@ def _add_subparsers(parser):
         description="Clone student repos asynchronously in bulk.",
         parents=[base_student_parser, repo_name_parser])
 
-    hookspec.pm.hook.clone_parser_hook(clone_parser=clone)
+    plug.pm.hook.clone_parser_hook(clone_parser=clone)
 
     add_to_teams = subparsers.add_parser(
         ADD_TO_TEAMS_PARSER,

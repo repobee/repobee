@@ -25,29 +25,30 @@ import daiquiri
 from repomate import plugin
 from repomate import tuples
 from repomate import util
-from repomate.hookspec import hookimpl
+
+from repomate_plug import plug
 
 LOGGER = daiquiri.getLogger(name=__file__)
 
 
-@hookimpl
+@plug.hookimpl
 def act_on_cloned_repo(path: Union[str, pathlib.Path]):
     """Run pylint on all Python files in a repo.
     
     Args:
         path: Path to the repo.
     Returns:
-        a tuples.HookResult specifying the outcome.
+        a plug.HookResult specifying the outcome.
     """
     python_files = list(util.find_files_by_extension(path, '.py'))
 
     if not python_files:
         msg = "no .py files found"
         status = "warning"
-        return tuples.HookResult('pylint', status, msg)
+        return plug.HookResult('pylint', status, msg)
 
     status, msg = _pylint(python_files)
-    return tuples.HookResult(hook="pylint", status="success", msg=msg)
+    return plug.HookResult(hook="pylint", status="success", msg=msg)
 
 
 def _pylint(python_files: Iterable[Union[pathlib.Path]]) -> Tuple[str, str]:
@@ -66,7 +67,8 @@ def _pylint(python_files: Iterable[Union[pathlib.Path]]) -> Tuple[str, str]:
         proc = subprocess.run(
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        outfile = pathlib.Path("{}/{}.lint".format(py_file.parent, py_file.name))
+        outfile = pathlib.Path("{}/{}.lint".format(py_file.parent,
+                                                   py_file.name))
         print(outfile)
         outfile.touch()
         outfile.write_bytes(proc.stdout)

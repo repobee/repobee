@@ -5,6 +5,7 @@ daiquiri
 pytest
 pytest-cov
 pytest-mock
+repomate-plug
 sphinx
 sphinx-autodoc-typehints
 sphinx_rtd_theme

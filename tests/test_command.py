@@ -11,7 +11,8 @@ from repomate import tuples
 from repomate import util
 from repomate import exception
 from repomate import plugin
-from repomate import hookspec
+
+from repomate_plug import plug
 
 USER = 'slarse'
 ORG_NAME = 'test-org'
@@ -549,18 +550,18 @@ class TestCloneRepos:
         """
         javac_hook = MagicMock(
             spec='repomate.ext.javac.JavacCloneHook._class.act_on_cloned_repo',
-            return_value=tuples.HookResult('javac', plugin.SUCCESS,
-                                           'Great success!'))
+            return_value=plug.HookResult('javac', plug.SUCCESS,
+                                         'Great success!'))
         pylint_hook = MagicMock(
             spec='repomate.ext.pylint.act_on_cloned_repo',
-            return_value=tuples.HookResult('pylint', plugin.WARNING,
-                                           'Minor warning.'))
+            return_value=plug.HookResult('pylint', plug.WARNING,
+                                         'Minor warning.'))
 
-        @hookspec.hookimpl
+        @plug.hookimpl
         def act_hook_func(path):
             return pylint_hook(path)
 
-        @hookspec.hookimpl
+        @plug.hookimpl
         def act_hook_meth(self, path):
             return javac_hook(self, path)
 
