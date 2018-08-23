@@ -10,43 +10,38 @@ Module containing plugin system utility functions and classes.
 
 import pathlib
 import importlib
+import sys
 from types import ModuleType
-from typing import Union, List
+from typing import Union, List, Optional
 
 import daiquiri
 
 from repomate import config
 from repomate import exception
-from repomate import hookspec
+from repomate_plug import plug
 
 LOGGER = daiquiri.getLogger(__file__)
 
 PLUGIN_QUALNAME = lambda plugin_name: "{}.ext.{}".format(__package__, plugin_name)
-
-# status messages
-ERROR = "error"
-WARNING = "warning"
-SUCCESS = "success"
-
-
-class Plugin:
-    """Wrapper class for plugin classes. Used to dynamically detect plugin
-    classes during plugin registration. Any plugin class must be decorated
-    with this class.
-    """
-
-    def __init__(self, class_):
-        assert isinstance(class_, type)  # sanity check
-        self._class = class_
-
-    def __call__(self, *args, **kwargs):
-        return self._class(*args, **kwargs)
+EXTERNAL_PLUGIN_QUALNAME = lambda plugin_name: "{}_{}.{}".format(
+    __package__, plugin_name, plugin_name)
 
 
 def load_plugin_modules(
         config_file: Union[str, pathlib.Path] = config.DEFAULT_CONFIG_FILE
 ) -> List[ModuleType]:
-    """Load plugins that are specified in the config.
+    """Load plugins that are specified in the config. Try to import first from
+    :py:mod:`repomate.ext`, and then from ``repomate_<plugin>``. For example,
+    if ``javac`` is listed as a plugin, the following imports will be attempted:
+
+    .. code-block:: python
+
+        # import nr 1
+        from repomate.ext import javac
+
+        # import nr 2
+        from repomate_javac import javac
+
     
     Args:
 
@@ -56,20 +51,34 @@ def load_plugin_modules(
     loaded_modules = []
 
     for name in config.get_plugin_names(config_file):
-        try:
-            plugin = importlib.import_module(PLUGIN_QUALNAME(name))
-            loaded_modules.append(plugin)
-        except ImportError as exc:
-            # ImportError in 3.5, ModuleNotFoundError in 3.6+
-            # using ImportError for compatability
-            LOGGER.error(str(exc))
+        plug_mod = _try_load_module(PLUGIN_QUALNAME(name)) or\
+                 _try_load_module(EXTERNAL_PLUGIN_QUALNAME(name))
+        if not plug_mod:
             msg = "failed to load plugin module " + name
             raise exception.PluginError(msg)
+        loaded_modules.append(plug_mod)
 
     LOGGER.info("loaded modules {}".format(
         [mod.__name__ for mod in loaded_modules]))
 
     return loaded_modules
+
+
+def _try_load_module(qualname: str) -> Optional[ModuleType]:
+    """Try to load a module.
+
+    Args:
+        qualname: Qualified name of the module.
+
+    Returns:
+        the module if loaded properly, None otherwise
+    """
+    try:
+        return importlib.import_module(qualname)
+    except ImportError:
+        # ImportError in 3.5, ModuleNotFoundError in 3.6+
+        # using ImportError for compatability
+        return None
 
 
 def register_plugins(modules: List[ModuleType]) -> None:
@@ -82,9 +91,15 @@ def register_plugins(modules: List[ModuleType]) -> None:
     """
     assert all([isinstance(mod, ModuleType) for mod in modules])
     for module in reversed(modules):  # reverse because plugins are run FIFO
-        hookspec.pm.register(module)
+        plug.pm.register(module)
         LOGGER.info("registered {}".format(module.__name__))
         for key, value in module.__dict__.items():
-            if isinstance(value, Plugin):
-                hookspec.pm.register(value())
+            if isinstance(value, plug.Plugin):
+                plug.pm.register(value())
                 LOGGER.info("registered class {}".format(key))
+
+
+def initialize_plugins():
+    """Load and register plugins."""
+    plug_modules = load_plugin_modules()
+    register_plugins(plug_modules)

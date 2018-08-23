@@ -13,8 +13,9 @@ from unittest.mock import call, MagicMock
 
 import repomate
 from repomate import plugin
-from repomate import hookspec
 from repomate import exception
+
+from repomate_plug import plug
 
 PLUGINS = pytest.constants.PLUGINS
 
