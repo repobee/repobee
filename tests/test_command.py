@@ -12,7 +12,7 @@ from repomate import util
 from repomate import exception
 from repomate import plugin
 
-from repomate_plug import plug
+from repomate_plug import HookResult, repomate_hook, Status
 
 USER = 'slarse'
 ORG_NAME = 'test-org'
@@ -545,28 +545,28 @@ class TestCloneRepos:
     @pytest.fixture
     def act_hook_mocks(self, monkeypatch, config_mock):
         """Mocks for the act_on_cloned_repo functions and method. This is a bit
-        messy as the functions must be marked with the hookspec.hookimpl
-        decorator to be picked up by pluggy.
+        messy as the functions must be marked with the
+        repomate_plug.repomate_hook decorator to be picked up by pluggy.
         """
         javac_hook = MagicMock(
             spec='repomate.ext.javac.JavacCloneHook._class.act_on_cloned_repo',
-            return_value=plug.HookResult('javac', plug.SUCCESS,
+            return_value=HookResult('javac', Status.SUCCESS,
                                          'Great success!'))
         pylint_hook = MagicMock(
             spec='repomate.ext.pylint.act_on_cloned_repo',
-            return_value=plug.HookResult('pylint', plug.WARNING,
+            return_value=HookResult('pylint', Status.WARNING,
                                          'Minor warning.'))
 
-        @plug.hookimpl
+        @repomate_hook
         def act_hook_func(path):
             return pylint_hook(path)
 
-        @plug.hookimpl
+        @repomate_hook
         def act_hook_meth(self, path):
             return javac_hook(self, path)
 
         monkeypatch.setattr(
-            'repomate.ext.javac.JavacCloneHook._class.act_on_cloned_repo',
+            'repomate.ext.javac.JavacCloneHook.act_on_cloned_repo',
             act_hook_meth)
         monkeypatch.setattr('repomate.ext.pylint.act_on_cloned_repo',
                             act_hook_func)

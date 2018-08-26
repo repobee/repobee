@@ -15,7 +15,7 @@ import repomate
 from repomate import plugin
 from repomate import exception
 
-from repomate_plug import plug
+from repomate.ext import javac, pylint
 
 PLUGINS = pytest.constants.PLUGINS
 
@@ -73,20 +73,17 @@ class TestRegisterPlugins:
     """Tests for register_plugins."""
 
     @pytest.fixture
-    def javac_clone_hook_mock(self, monkeypatch):
+    def javac_clone_hook_mock(self, mocker):
         """Return an instance of the clone hook mock"""
         instance_mock = MagicMock()
-        class_mock = MagicMock(
-            spec='repomate.ext.javac.JavacCloneHook._class',
+        mocker.patch(
+            'repomate.ext.javac.JavacCloneHook.__new__',
+            autospec=True,
             return_value=instance_mock)
-        monkeypatch.setattr('repomate.ext.javac.JavacCloneHook._class',
-                            class_mock)
         return instance_mock
 
     def test_register_module(self, plugin_manager_mock):
         """Test registering a plugin module with module level hooks."""
-        from repomate.ext import pylint
-
         plugin.register_plugins([pylint])
 
         plugin_manager_mock.register.assert_called_once_with(pylint)
@@ -95,7 +92,6 @@ class TestRegisterPlugins:
                                                javac_clone_hook_mock):
         """Test that both the module itself and the class (instance) are
         registered."""
-        from repomate.ext import javac
         expected_calls = [call(javac), call(javac_clone_hook_mock)]
 
         plugin.register_plugins([javac])
@@ -109,7 +105,6 @@ class TestRegisterPlugins:
 
         Among other things, checks the reverse order of registration.
         """
-        from repomate.ext import javac, pylint
         modules = [javac, pylint]
         # pylint should be registered before javac because of FIFO order
         expected_calls = [
@@ -117,6 +112,9 @@ class TestRegisterPlugins:
             call(javac),
             call(javac_clone_hook_mock),
         ]
+
+        print(javac.JavacCloneHook())
+        print(javac_clone_hook_mock)
 
         plugin.register_plugins([javac, pylint])
 

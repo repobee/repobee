@@ -15,7 +15,8 @@ import appdirs
 import repomate
 
 from repomate import exception
-from repomate_plug import plug
+
+import repomate_plug as plug
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -106,7 +107,7 @@ def execute_config_hooks(
     if not config_file.is_file():
         return
     config_parser = _read_config(config_file)
-    plug.pm.hook.config_hook(config_parser=config_parser)
+    plug.manager.hook.config_hook(config_parser=config_parser)
 
 
 def _read_defaults(config_file: pathlib.Path = DEFAULT_CONFIG_FILE) -> dict:

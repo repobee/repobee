@@ -76,7 +76,7 @@ def _students_file(populate: bool = True):
 
 @pytest.fixture
 def plugin_manager_mock(mocker):
-    return mocker.patch('repomate_plug.plug.pm', autospec=True)
+    return mocker.patch('repomate_plug.manager', autospec=True)
 
 
 @pytest.fixture

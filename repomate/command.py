@@ -30,7 +30,7 @@ from repomate.github_api import GitHubAPI
 from repomate.tuples import Team
 from repomate.git import Push
 
-from repomate_plug import plug
+import repomate_plug as plug
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -262,7 +262,7 @@ def clone_repos(master_repo_names: Iterable[str], students: Iterable[str],
     LOGGER.info("cloning into student repos ...")
     git.clone(repo_urls)
 
-    if plug.pm.get_plugins():
+    if plug.manager.get_plugins():
         _execute_post_clone_hooks(repo_names)
 
 
@@ -273,8 +273,7 @@ def _execute_post_clone_hooks(repo_names: List[str]):
     results = {}
     for repo_name in local_repos:
         LOGGER.info("executing post clone hooks on {}".format(repo_name))
-        res = plug.pm.hook.act_on_cloned_repo(
-            path=os.path.abspath(repo_name))
+        res = plug.manager.hook.act_on_cloned_repo(path=os.path.abspath(repo_name))
         results[repo_name] = res
     LOGGER.info(_format_hook_results_output(results))
 
@@ -382,7 +381,7 @@ def _format_hook_result(hook_result):
     else:
         out = bg('dark_green')
 
-    out += hook_result.hook + ": " + hook_result.status + style.RESET + os.linesep
+    out += hook_result.hook + ": " + hook_result.status.name + style.RESET + os.linesep
     out += hook_result.msg
 
     return out
