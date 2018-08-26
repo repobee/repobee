@@ -1,4 +1,4 @@
-"""Plugin that runs javac on all files in a repo.
+"""Plugin that runs pylint on all files in a repo.
 
 .. important::
 

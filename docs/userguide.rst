@@ -11,3 +11,4 @@
    update
    issues
    clone
+   plugins

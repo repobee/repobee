@@ -46,15 +46,18 @@ like this:
 
 The filepath at the end is where you should put your config file.
 
+The configuration file can also be used to configure ``repomate`` plugins. See
+the :ref:`configure_plugs` section for more details.
+
 .. important::
 
     Do note that the configuration file contains only default values. Specifying
     any of the parameters on the command line will override the configuration
     file's values.
 
-.. _`GitHub OAUTH docs`: https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/
-
 .. note::
 
     You can run ``repomate verify-settings`` to verify the basic configuration.
     This will check all settings but the students file.
+
+.. _`GitHub OAUTH docs`: https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/

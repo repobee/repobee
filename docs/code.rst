@@ -60,3 +60,12 @@ util
 
 .. automodule:: repomate.util
     :members:
+
+Plugin modules
+==============
+
+.. automodule:: repomate.ext.javac
+    :members:
+
+.. automodule:: repomate.ext.pylint
+    :members:
