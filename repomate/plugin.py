@@ -96,7 +96,6 @@ def register_plugins(modules: List[ModuleType]) -> None:
         LOGGER.info("registered {}".format(module.__name__))
         for key, value in module.__dict__.items():
             if isinstance(value, type) and issubclass(value, plug.Plugin) and value != plug.Plugin:
-                print('registering ', str(value()), value)
                 plug.manager.register(value())
                 LOGGER.info("registered class {}".format(key))
 
