@@ -34,6 +34,25 @@ class TestLoadPluginModules:
 
         assert module_names == expected_names
 
+    def test_plugin_names_override_config_file(self, config_mock, mocker):
+        """Test that the plugin_names argument override the configuration
+        file."""
+        plugin_names = ["awesome", "the_slarse_plugin", "ric_easter_egg"]
+        expected_calls = [
+            call(plug) for plug in map(plugin.PLUGIN_QUALNAME, plugin_names)
+        ]
+
+        class module:
+            pass
+
+        load_module_mock = mocker.patch(
+            'repomate.plugin._try_load_module', return_value=module)
+
+        plugin.load_plugin_modules(
+            config_file=str(config_mock), plugin_names=plugin_names)
+
+        load_module_mock.assert_has_calls(expected_calls)
+
     def test_load_no_plugins(self, no_config_mock):
         """Test calling load plugins when no plugins are specified in the
         config.
@@ -112,10 +131,6 @@ class TestRegisterPlugins:
             call(javac),
             call(javac_clone_hook_mock),
         ]
-
-        print(javac.JavacCloneHook())
-        print(javac_clone_hook_mock)
-
         plugin.register_plugins([javac, pylint])
 
         plugin_manager_mock.register.assert_has_calls(expected_calls)

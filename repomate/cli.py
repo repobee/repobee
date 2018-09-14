@@ -13,7 +13,7 @@ import pathlib
 import os
 import sys
 from contextlib import contextmanager
-from typing import List, Iterable, Optional
+from typing import List, Iterable, Optional, Tuple
 
 import logging
 import daiquiri
@@ -44,6 +44,8 @@ daiquiri.setup(
 
 LOGGER = daiquiri.getLogger(__file__)
 SUB = 'subparser'
+
+# Any new subparser mus tbe added to the PARSER_NAMES tuple!
 SETUP_PARSER = 'setup'
 UPDATE_PARSER = 'update'
 CLONE_PARSER = 'clone'
@@ -52,6 +54,10 @@ ADD_TO_TEAMS_PARSER = 'add-to-teams'
 OPEN_ISSUE_PARSER = 'open-issue'
 CLOSE_ISSUE_PARSER = 'close-issue'
 VERIFY_PARSER = 'verify-settings'
+
+PARSER_NAMES = (SETUP_PARSER, UPDATE_PARSER, CLONE_PARSER, MIGRATE_PARSER,
+                ADD_TO_TEAMS_PARSER, OPEN_ISSUE_PARSER, CLONE_PARSER,
+                VERIFY_PARSER,)
 
 
 def parse_args(sys_args: Iterable[str]
@@ -430,9 +436,9 @@ def _extract_students(args: argparse.Namespace) -> List[str]:
         if not students_file.stat().st_size:
             raise exception.FileError("'{!s}' is empty".format(students_file))
         students = [
-            student.strip() for student in students_file.read_text(
-                encoding=sys.getdefaultencoding()).split(os.linesep)
-            if student  # skip blank lines
+            student.strip() for student in
+            students_file.read_text(encoding=sys.getdefaultencoding()).split(
+                os.linesep) if student  # skip blank lines
         ]
     else:
         students = None
@@ -482,3 +488,32 @@ def _repo_names_to_urls(repo_names: Iterable[str],
     ]
 
     return non_local_urls + local_uris
+
+
+def parse_plugins(sys_args: Tuple[str]):
+    """Parse all plugin arguments.
+    
+    Args:
+        sys_args: Command line arguments.
+    """
+    parser = argparse.ArgumentParser(
+        prog='repomate',
+        description='A CLI tool for administrating student repositories.')
+    mutex_grp = parser.add_mutually_exclusive_group(required=True)
+    mutex_grp.add_argument(
+        '-p',
+        '--plugins',
+        help="One or more plugin names.",
+        type=str,
+        nargs='+',
+    )
+    mutex_grp.add_argument(
+        '-np',
+        '--no-plugins',
+        help="Disable plugins.",
+        action='store_true',
+    )
+
+    args = parser.parse_args(sys_args)
+
+    return args

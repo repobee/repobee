@@ -12,7 +12,7 @@ import pathlib
 import importlib
 import sys
 from types import ModuleType
-from typing import Union, List, Optional
+from typing import Union, List, Optional, Iterable
 
 import daiquiri
 
@@ -29,8 +29,8 @@ EXTERNAL_PLUGIN_QUALNAME = lambda plugin_name: "{}_{}.{}".format(
 
 
 def load_plugin_modules(
-        config_file: Union[str, pathlib.Path] = config.DEFAULT_CONFIG_FILE
-) -> List[ModuleType]:
+        config_file: Union[str, pathlib.Path] = config.DEFAULT_CONFIG_FILE,
+        plugin_names: Iterable[str] = None) -> List[ModuleType]:
     """Load plugins that are specified in the config. Try to import first from
     :py:mod:`repomate.ext`, and then from ``repomate_<plugin>``. For example,
     if ``javac`` is listed as a plugin, the following imports will be attempted:
@@ -43,15 +43,17 @@ def load_plugin_modules(
         # import nr 2
         from repomate_javac import javac
 
-    
     Args:
+        config_file: Path to the configuration file.
+        plugin_names: A list of plugin names. Overrides the config file.
 
     Returns:
         a list of loaded modules.
     """
     loaded_modules = []
 
-    for name in config.get_plugin_names(config_file):
+    plugin_names = plugin_names or config.get_plugin_names(config_file)
+    for name in plugin_names:
         plug_mod = _try_load_module(PLUGIN_QUALNAME(name)) or\
                  _try_load_module(EXTERNAL_PLUGIN_QUALNAME(name))
         if not plug_mod:
@@ -95,12 +97,18 @@ def register_plugins(modules: List[ModuleType]) -> None:
         plug.manager.register(module)
         LOGGER.info("registered {}".format(module.__name__))
         for key, value in module.__dict__.items():
-            if isinstance(value, type) and issubclass(value, plug.Plugin) and value != plug.Plugin:
+            if isinstance(value, type) and issubclass(
+                    value, plug.Plugin) and value != plug.Plugin:
                 plug.manager.register(value())
                 LOGGER.info("registered class {}".format(key))
 
 
-def initialize_plugins():
-    """Load and register plugins."""
-    plug_modules = load_plugin_modules()
+def initialize_plugins(plugin_names: List[str] = None):
+    """Load and register plugins.
+
+    Args:
+        plugin_names: An optional list of plugin names that overrides the
+        configuration file's plugins.
+    """
+    plug_modules = load_plugin_modules(plugin_names=plugin_names)
     register_plugins(plug_modules)
