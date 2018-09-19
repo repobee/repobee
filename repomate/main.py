@@ -9,20 +9,19 @@
 import sys
 import itertools
 import daiquiri
+from typing import List
 
 from repomate import cli
-from repomate import exception
 from repomate import plugin
 
 LOGGER = daiquiri.getLogger(__file__)
 
 
-# if the OAUTH token is not set, OSError is raised
-def main():
+def main(sys_args: List[str]):
     """Start the repomate CLI."""
-    args = sys.argv[1:]
+    args = sys_args[1:]  # drop the name of the program
     try:
-        if args and 'plugins' in args[0]:
+        if args and (args[0].startswith('-p') or 'plugin' in args[0]):
             plugin_args = list(
                 itertools.takewhile(lambda arg: arg not in cli.PARSER_NAMES,
                                     args))
@@ -30,7 +29,7 @@ def main():
             if parsed_plugin_args.no_plugins:
                 LOGGER.info("plugins disabled")
             else:
-                plugin.initialize_plugins(parsed_plugin_args.plugins)
+                plugin.initialize_plugins(parsed_plugin_args.plug)
             args = args[len(plugin_args):]
         else:
             plugin.initialize_plugins()
@@ -41,4 +40,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv)

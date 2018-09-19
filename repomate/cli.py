@@ -55,9 +55,16 @@ OPEN_ISSUE_PARSER = 'open-issue'
 CLOSE_ISSUE_PARSER = 'close-issue'
 VERIFY_PARSER = 'verify-settings'
 
-PARSER_NAMES = (SETUP_PARSER, UPDATE_PARSER, CLONE_PARSER, MIGRATE_PARSER,
-                ADD_TO_TEAMS_PARSER, OPEN_ISSUE_PARSER, CLONE_PARSER,
-                VERIFY_PARSER,)
+PARSER_NAMES = (
+    SETUP_PARSER,
+    UPDATE_PARSER,
+    CLONE_PARSER,
+    MIGRATE_PARSER,
+    ADD_TO_TEAMS_PARSER,
+    OPEN_ISSUE_PARSER,
+    CLONE_PARSER,
+    VERIFY_PARSER,
+)
 
 
 def parse_args(sys_args: Iterable[str]
@@ -502,13 +509,12 @@ def parse_plugins(sys_args: Tuple[str]):
     mutex_grp = parser.add_mutually_exclusive_group(required=True)
     mutex_grp.add_argument(
         '-p',
-        '--plugins',
-        help="One or more plugin names.",
+        '--plug',
+        help="Specify the name of a plugin to use.",
         type=str,
-        nargs='+',
+        action='append',
     )
     mutex_grp.add_argument(
-        '-np',
         '--no-plugins',
         help="Disable plugins.",
         action='store_true',
