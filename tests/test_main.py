@@ -25,6 +25,8 @@ VALID_PARSED_ARGS = dict(
 
 PARSED_ARGS = tuples.Args(cli.SETUP_PARSER, **VALID_PARSED_ARGS)
 
+CLONE_ARGS = 'clone -mn week-2 -s slarse'.split()
+
 module = namedtuple('module', ('name', ))
 
 
@@ -102,21 +104,52 @@ def test_does_not_raise_on_exception_in_handling_parsed_args(
 def test_plugins_args(parse_args_mock, dispatch_command_mock,
                       init_plugins_mock):
     plugin_args = '-p javac -p pylint'.split()
-    clone_args = 'clone -mn week-2 -s slarse'.split()
-    sys_args = ['repomate', *plugin_args, *clone_args]
+    sys_args = ['repomate', *plugin_args, *CLONE_ARGS]
 
     main.main(sys_args)
 
     init_plugins_mock.assert_called_once_with(['javac', 'pylint'])
-    parse_args_mock.assert_called_once_with(clone_args)
+    parse_args_mock.assert_called_once_with(CLONE_ARGS)
 
 
 def test_no_plugins_arg(parse_args_mock, dispatch_command_mock,
                         init_plugins_mock):
-    clone_args = 'clone -mn week-2 -s slarse'.split()
-    sys_args = ['repomate', '--no-plugins', *clone_args]
+    sys_args = ['repomate', '--no-plugins', *CLONE_ARGS]
 
     main.main(sys_args)
 
     assert not init_plugins_mock.called
-    parse_args_mock.assert_called_once_with(clone_args)
+    parse_args_mock.assert_called_once_with(CLONE_ARGS)
+
+
+def test_plugin_with_subparser_name(parse_args_mock, dispatch_command_mock,
+                                    init_plugins_mock):
+    sys_args = ['repomate', '-p', 'javac', '-p', 'clone', *CLONE_ARGS]
+
+    main.main(sys_args)
+
+    init_plugins_mock.assert_called_once_with(['javac', 'clone'])
+    parse_args_mock.assert_called_once_with(CLONE_ARGS)
+
+
+def test_plug_arg_incompatible_with_no_plugins(dispatch_command_mock,
+                                               init_plugins_mock):
+    sys_args = ['repomate', '-p', 'javac', '--no-plugins', *CLONE_ARGS]
+
+    with pytest.raises(SystemExit):
+        main.main(sys_args)
+
+    assert not init_plugins_mock.called
+    assert not dispatch_command_mock.called
+
+
+def test_invalid_plug_options(dispatch_command_mock, init_plugins_mock):
+    # -f is not a valid option for plugins and should be bumped to the
+    # main parser
+    sys_args = ['repomate', '-p', 'javac', '-f', *CLONE_ARGS]
+
+    with pytest.raises(SystemExit):
+        main.main(sys_args)
+
+    init_plugins_mock.assert_called_once_with(['javac'])
+    assert not dispatch_command_mock.called
