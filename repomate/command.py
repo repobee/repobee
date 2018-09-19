@@ -21,6 +21,8 @@ from collections import namedtuple
 
 import daiquiri
 
+from repomate_plug import Status
+
 from repomate import git
 from repomate import github_api
 from repomate import util
@@ -273,7 +275,8 @@ def _execute_post_clone_hooks(repo_names: List[str]):
     results = {}
     for repo_name in local_repos:
         LOGGER.info("executing post clone hooks on {}".format(repo_name))
-        res = plug.manager.hook.act_on_cloned_repo(path=os.path.abspath(repo_name))
+        res = plug.manager.hook.act_on_cloned_repo(
+            path=os.path.abspath(repo_name))
         results[repo_name] = res
     LOGGER.info(_format_hook_results_output(results))
 
@@ -374,12 +377,17 @@ def _create_push_tuples(master_repo_paths: Iterable[str],
 
 def _format_hook_result(hook_result):
     from colored import bg, style
-    if hook_result.status == "error":
+    if hook_result.status == Status.ERROR:
         out = bg('red')
-    elif hook_result.status == "warning":
+    elif hook_result.status == Status.WARNING:
         out = bg('yellow')
-    else:
+    elif hook_result.status == Status.SUCCESS:
         out = bg('dark_green')
+    else:
+        raise ValueError(
+            "expected hook_result.status to be one of Status.ERROR, "
+            "Status.WARNING or Status.SUCCESS, but was {!r}".format(hook_result.status)
+        )
 
     out += hook_result.hook + ": " + hook_result.status.name + style.RESET + os.linesep
     out += hook_result.msg

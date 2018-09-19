@@ -47,8 +47,7 @@ def act_on_cloned_repo(path: Union[str, pathlib.Path]):
 
     if not python_files:
         msg = "no .py files found"
-        status = "warning"
-        return HookResult(SECTION, status, msg)
+        return HookResult(SECTION, Status.WARNING, msg)
 
     status, msg = _pylint(python_files)
     return HookResult(hook=SECTION, status=Status.SUCCESS, msg=msg)
@@ -77,4 +76,4 @@ def _pylint(python_files: Iterable[Union[pathlib.Path]]) -> Tuple[str, str]:
         linted_files.append(str(py_file))
 
     msg = "linted files: {}".format(", ".join(linted_files))
-    return Status.SUCCESS, msg
+    return HookResult(hook=SECTION, status=Status.SUCCESS, msg=msg)
