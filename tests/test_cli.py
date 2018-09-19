@@ -40,7 +40,9 @@ VALID_PARSED_ARGS = dict(
     master_repo_names=REPO_NAMES,
     students=STUDENTS,
     issue=ISSUE,
-    title_regex="some regex")
+    title_regex="some regex",
+    traceback=False,
+)
 
 
 @pytest.fixture(autouse=True)

@@ -88,6 +88,7 @@ def parse_args(sys_args: Iterable[str]
             org_name=args.org_name,
             github_base_url=args.github_base_url,
             user=args.user,
+            traceback=args.traceback,
         ), None  # only here is return None for api allowed
     elif getattr(args, SUB) == CLONE_PARSER:
         # only if clone is chosen should plugins be able to hook in
@@ -119,6 +120,7 @@ def parse_args(sys_args: Iterable[str]
         issue=util.read_issue(args.issue)
         if 'issue' in args and args.issue else None,
         title_regex=args.title_regex if 'title_regex' in args else None,
+        traceback=args.traceback,
     )
 
     return parsed_args, api
@@ -363,6 +365,13 @@ def _create_base_parsers():
         required=is_required('github_base_url'),
         default=default('github_base_url'))
 
+    base_parser.add_argument(
+        '-tb',
+        '--traceback',
+        help=
+        "Let any exceptions propagate up so that the full traceback can be viewed.",
+        action='store_true',
+    )
     # base parser for when student lists are involved
     base_student_parser = argparse.ArgumentParser(add_help=False)
     students = base_student_parser.add_mutually_exclusive_group(

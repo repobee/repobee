@@ -9,6 +9,7 @@
 import sys
 import itertools
 import daiquiri
+import traceback
 from typing import List
 
 from repomate import cli
@@ -37,6 +38,7 @@ def _separate_args(args: List[str]) -> (List[str], List[str]):
 def main(sys_args: List[str]):
     """Start the repomate CLI."""
     args = sys_args[1:]  # drop the name of the program
+    traceback = False
     try:
         plugin_args, app_args = _separate_args(args)
 
@@ -49,9 +51,13 @@ def main(sys_args: List[str]):
         else:
             plugin.initialize_plugins()
         parsed_args, api = cli.parse_args(app_args)
+        traceback = parsed_args.traceback
         cli.dispatch_command(parsed_args, api)
     except Exception as exc:
-        LOGGER.error("{.__class__.__name__}: {}".format(exc, str(exc)))
+        if traceback:
+            LOGGER.exception("critical exception")
+        else:
+            LOGGER.error("{.__class__.__name__}: {}".format(exc, str(exc)))
 
 
 if __name__ == "__main__":

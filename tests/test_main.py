@@ -31,6 +31,11 @@ module = namedtuple('module', ('name', ))
 
 
 @pytest.fixture
+def logger_exception_mock(mocker):
+    return mocker.patch('repomate.main.LOGGER.exception', autospec=True)
+
+
+@pytest.fixture
 def api_instance_mock(mocker):
     return MagicMock(spec='repomate.APIWrapper')
 
@@ -153,3 +158,31 @@ def test_invalid_plug_options(dispatch_command_mock, init_plugins_mock):
 
     init_plugins_mock.assert_called_once_with(['javac'])
     assert not dispatch_command_mock.called
+
+
+def test_does_not_raise_on_exception_in_dispatch(
+        api_instance_mock, parse_args_mock, dispatch_command_mock,
+        no_config_mock, logger_exception_mock):
+    sys_args = ['repomate', *CLONE_ARGS]
+    main.main(sys_args)
+
+    assert not logger_exception_mock.called
+
+
+def test_logs_traceback_on_exception_in_dispatch_if_traceback(
+        api_instance_mock, parse_args_mock, dispatch_command_mock,
+        no_config_mock, logger_exception_mock):
+    msg = "oh this is bad!!"
+    parsed_args = tuples.Args(**VALID_PARSED_ARGS, traceback=True)
+    parse_args_mock.return_value = parsed_args, api_instance_mock
+
+    def raise_():
+        raise ValueError(msg)
+
+    sys_args = ['repomate', *CLONE_ARGS, '--traceback']
+    dispatch_command_mock.side_effect = lambda *args, **kwargs: raise_()
+
+    main.main(sys_args)
+
+    assert logger_exception_mock.called
+    parse_args_mock.assert_called_once_with([*CLONE_ARGS, '--traceback'])
