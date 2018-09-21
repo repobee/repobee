@@ -79,7 +79,7 @@ class JavacCloneHook(Plugin):
             :py:class:`repomate_plug.Status` code and the message describes the
             outcome in plain text.
         """
-        command = 'javac {}'.format(' '.join(java_files)).split()
+        command = ["javac", *[str(path) for path in java_files]]
         proc = subprocess.run(
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
