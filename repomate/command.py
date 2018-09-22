@@ -14,6 +14,7 @@ program.
 """
 
 import shutil
+import re
 import os
 import tempfile
 from typing import Iterable, List, Optional
@@ -205,6 +206,93 @@ def _open_issue_by_urls(repo_urls: Iterable[str], issue: tuples.Issue,
     api.open_issue(issue, repo_names)
 
 
+def list_issues(master_repo_names: Iterable[str],
+                students: Iterable[str],
+                api: GitHubAPI,
+                state: str = 'open',
+                title_regex: str = "",
+                show_body: bool = False) -> None:
+    """List all issues in the specified repos.
+
+    Args:
+        master_repo_names: Names of master repositories.
+        students: An iterable of student GitHub usernames.
+        state: state of the repo (open or closed). Defaults to 'open'.
+        api: A GitHubAPI instance used to interface with the GitHub instance.
+        title_regex: If specified, only issues with titles matching the regex
+        are displayed. Defaults to the empty string (which matches everything).
+        show_body: If True, the body of the issue is displayed along with the
+        default info.
+    """
+    util.validate_types(api=(api, GitHubAPI))
+    util.validate_non_empty(
+        master_repo_names=master_repo_names, students=students)
+
+    repo_names = util.generate_repo_names(students, master_repo_names)
+
+    issues_per_repo = api.get_issues(repo_names, state, title_regex)
+
+    for repo_name, issues in issues_per_repo:
+        LOGGER.info(repo_name + ":")
+        issue_list = list(issues)
+        if not issue_list:
+            LOGGER.warning("no matching issues")
+        else:
+            LOGGER.info(_format_repo_issues(repo_name, issue_list, show_body))
+
+
+def _format_repo_issues(repo_name: str, issues: List[tuples.Issue],
+                        show_body: bool) -> str:
+    """Format output for repo issues.
+    
+    Args:
+        repo_name: Name of the repo.
+        issues: tuples.Issue objects.
+        show_body: Include the body of the issue in the output.
+    Returns:
+        a nicely formatted string representing the repo's issues
+    """
+    out = os.linesep * 2 + repo_name
+    if not issues:
+        out += "{}No matching issues".format(os.linesep)
+        return out
+
+    for issue in issues:
+        out += "{}#{}: {}   --- created_at={!s}".format(
+            os.linesep * 2, issue.number, issue.title, issue.created_at)
+        if show_body:
+            out += "{}Body:{}{}".format(os.linesep,
+                                        _limit_line_length(issue.body),
+                                        os.linesep)
+    return out
+
+
+def _limit_line_length(s: str, max_line_length: int = 100) -> str:
+    """Return the input string with lines no longer than max_line_length.
+
+    Args:
+        s: Any string.
+        max_line_length: Maximum allowed line length.
+    Returns:
+        the input string with lines no longer than max_line_length.
+    """
+    # potentially very slow regex, but it seems to be fast enough in practice!
+    dangling_ws_pattern = re.compile(r'(^\s+|\s+$)')
+    lines = s.split(os.linesep)
+    out = ""
+    for line in lines:
+        cur = 0
+        while len(line) - cur > max_line_length:
+            # find ws closest to the line length
+            idx = line.rfind(' ', cur, max_line_length + cur)
+            idx = max_line_length - 1 if idx == 0 else idx
+            out += re.sub(dangling_ws_pattern, '', line[cur:idx]) + os.linesep
+            cur = idx
+        out += re.sub(dangling_ws_pattern, '',
+                      line[cur:cur + max_line_length]) + os.linesep
+    return out
+
+
 def open_issue(issue: tuples.Issue, master_repo_names: Iterable[str],
                students: Iterable[str], api: GitHubAPI) -> None:
     """Open an issue in student repos.
@@ -386,8 +474,8 @@ def _format_hook_result(hook_result):
     else:
         raise ValueError(
             "expected hook_result.status to be one of Status.ERROR, "
-            "Status.WARNING or Status.SUCCESS, but was {!r}".format(hook_result.status)
-        )
+            "Status.WARNING or Status.SUCCESS, but was {!r}".format(
+                hook_result.status))
 
     out += hook_result.hook + ": " + hook_result.status.name + style.RESET + os.linesep
     out += hook_result.msg

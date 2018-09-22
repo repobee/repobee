@@ -32,15 +32,16 @@ GITHUB_BASE_URL = pytest.constants.GITHUB_BASE_URL
 ISSUE = pytest.constants.ISSUE
 
 # titles are purposefully similar
-CLOSE_ISSUE = tuples.Issue('close this issue', 'This is a body', RANDOM_DATE())
-DONT_CLOSE_ISSUE = tuples.Issue("Don't close this issue", 'Another body',
+CLOSE_ISSUE = tuples.Issue('close this issue', 'This is a body', 3,
+                           RANDOM_DATE())
+DONT_CLOSE_ISSUE = tuples.Issue("Don't close this issue", 'Another body', 4,
                                 RANDOM_DATE())
 OPEN_ISSUES = [CLOSE_ISSUE, DONT_CLOSE_ISSUE]
 
 CLOSED_ISSUES = [
-    tuples.Issue('This is a closed issue', 'With an uninteresting body',
+    tuples.Issue('This is a closed issue', 'With an uninteresting body', 1,
                  RANDOM_DATE()),
-    tuples.Issue('Yet another closed issue', 'Even less interesting body',
+    tuples.Issue('Yet another closed issue', 'Even less interesting body', 2,
                  RANDOM_DATE())
 ]
 
@@ -194,6 +195,7 @@ def to_magic_mock_issue(issue):
     mock.title = issue.title
     mock.body = issue.body
     mock.created_at = issue.created_at
+    mock.number = issue.number
     return mock
 
 
@@ -202,6 +204,7 @@ def from_magic_mock_issue(mock_issue):
     return tuples.Issue(
         title=mock_issue.title,
         body=mock_issue.body,
+        number=mock_issue.number,
         created_at=mock_issue.created_at)
 
 

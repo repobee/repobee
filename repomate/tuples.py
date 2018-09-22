@@ -12,9 +12,9 @@ the goal is to collect all container types in this module.
 from collections import namedtuple
 
 
-class Issue(namedtuple('Issue', ('title', 'body', 'created_at'))):
-    def __new__(cls, title, body, created_at=None):
-        return super().__new__(cls, title, body, created_at)
+class Issue(namedtuple('Issue', ('title', 'body', 'number', 'created_at'))):
+    def __new__(cls, title, body, number=None, created_at=None):
+        return super().__new__(cls, title, body, number, created_at)
 
 
 Args = namedtuple(

@@ -286,7 +286,6 @@ class PyGithubWrapper(AbstractAPIWrapper):
         Returns:
             A generator that yields (repo_name, issue generator) tuples.
         """
-        repo_names = list(repo_names)
         repos = self._get_repos_by_name(repo_names)
 
         with _try_api_request():
@@ -296,17 +295,13 @@ class PyGithubWrapper(AbstractAPIWrapper):
                                    re.match(title_regex or "", issue.title)))
                                  for repo in repos)
 
-            repo_name_set = set(repo_names)
             for (repo_name, pygh_issues) in name_issues_pairs:
-                repo_name_set.remove(repo_name)
                 issues = (tuples.Issue(
                     title=issue.title,
-                    body=issue.body, created_at=issue.created_at) for issue in pygh_issues)
+                    body=issue.body,
+                    number=issue.number,
+                    created_at=issue.created_at) for issue in pygh_issues)
                 yield repo_name, issues
-
-            if repo_name_set:
-                LOGGER.warning("could not find repos: ",
-                               ", ".join(repo_name_set))
 
     def _repo_factory(self, repo: github.Repository.Repository) -> tuples.Repo:
         """Create a tuples.Repo object from a Repository object. Warn if
