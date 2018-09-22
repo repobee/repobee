@@ -255,7 +255,7 @@ def _log_repo_issues(repo_name: str, issues: List[tuples.Issue],
             bg('grey_23'), repo_name, issue.number, issue.title, style.RESET,
             os.linesep, issue.created_at, issue.author)
         if show_body:
-            out += os.linesep + _limit_line_length(issue.body) + os.linesep
+            out += os.linesep * 2 + _limit_line_length(issue.body)
         LOGGER.info(out)
 
 
