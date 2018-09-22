@@ -299,8 +299,9 @@ class PyGithubWrapper(AbstractAPIWrapper):
             repo_name_set = set(repo_names)
             for (repo_name, pygh_issues) in name_issues_pairs:
                 repo_name_set.remove(repo_name)
-                issues = (tuples.Issue(title=issue.title, body=issue.body)
-                          for issue in pygh_issues)
+                issues = (tuples.Issue(
+                    title=issue.title,
+                    body=issue.body, created_at=issue.created_at) for issue in pygh_issues)
                 yield repo_name, issues
 
             if repo_name_set:

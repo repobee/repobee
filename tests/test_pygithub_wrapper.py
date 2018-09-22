@@ -4,12 +4,26 @@ from unittest.mock import MagicMock, PropertyMock, patch, call
 from collections import namedtuple
 import pytest
 import github
+from datetime import datetime, timedelta
 
 from repomate.abstract_api_wrapper import REQUIRED_OAUTH_SCOPES
 from repomate import pygithub_wrapper
 from repomate import git
 from repomate import exception
 from repomate import tuples
+
+random.seed(41235)
+
+FIXED_DATETIME = datetime(2009, 11, 22)
+
+RANDOM_DATE = lambda: \
+        (FIXED_DATETIME -
+         timedelta(
+             days=random.randint(0, 1000),
+             hours=random.randint(0, 1000),
+             minutes=random.randint(0, 1000),
+             seconds=random.randint(0, 1000))
+        )
 
 USER = pytest.constants.USER
 NOT_OWNER = 'notanowner'
@@ -18,13 +32,16 @@ GITHUB_BASE_URL = pytest.constants.GITHUB_BASE_URL
 ISSUE = pytest.constants.ISSUE
 
 # titles are purposefully similar
-CLOSE_ISSUE = tuples.Issue('close this issue', 'This is a body')
-DONT_CLOSE_ISSUE = tuples.Issue("Don't close this issue", 'Another body')
+CLOSE_ISSUE = tuples.Issue('close this issue', 'This is a body', RANDOM_DATE())
+DONT_CLOSE_ISSUE = tuples.Issue("Don't close this issue", 'Another body',
+                                RANDOM_DATE())
 OPEN_ISSUES = [CLOSE_ISSUE, DONT_CLOSE_ISSUE]
 
 CLOSED_ISSUES = [
-    tuples.Issue('This is a closed issue', 'With an uninteresting body'),
-    tuples.Issue('Yet another closed issue', 'Even less interesting body')
+    tuples.Issue('This is a closed issue', 'With an uninteresting body',
+                 RANDOM_DATE()),
+    tuples.Issue('Yet another closed issue', 'Even less interesting body',
+                 RANDOM_DATE())
 ]
 
 GENERATE_REPO_URL = pytest.functions.GENERATE_REPO_URL
@@ -176,12 +193,16 @@ def to_magic_mock_issue(issue):
     mock = MagicMock()
     mock.title = issue.title
     mock.body = issue.body
+    mock.created_at = issue.created_at
     return mock
 
 
 def from_magic_mock_issue(mock_issue):
     """Convert a MagicMock issue into a tuples.Issue."""
-    return tuples.Issue(title=mock_issue.title, body=mock_issue.body)
+    return tuples.Issue(
+        title=mock_issue.title,
+        body=mock_issue.body,
+        created_at=mock_issue.created_at)
 
 
 @pytest.fixture
@@ -620,8 +641,7 @@ class TestGetIssues:
         """It should just ignore the repo that does not exist (and log the
         error)."""
         non_existing = 'definitely-non-existing-repo'
-        repo_names = [repo.name
-                      for repo in repos] + [non_existing]
+        repo_names = [repo.name for repo in repos] + [non_existing]
         random.shuffle(repo_names)
 
         name_issues_pairs = wrapper.get_issues(repo_names, state='open')
@@ -638,6 +658,25 @@ class TestGetIssues:
         assert len(found_repos) + 1 == len(repo_names)
         assert set(found_repos) == set(repo_names) - {non_existing}
 
+    def test_get_open_issues_by_regex(self, repos, issues, wrapper):
+        """Should filter by regex."""
+        sought_issue = OPEN_ISSUES[1]
+        repo_names = [repo.name for repo in repos]
+        regex = "^{}$".format(sought_issue.title)
+
+        name_issues_pairs = wrapper.get_issues(
+            repo_names, state='open', title_regex=regex)
+
+        found_repos = []
+        for repo_name, issue_gen in name_issues_pairs:
+            found_repos.append(repo_name)
+
+            actual_issues = [
+                from_magic_mock_issue(issue) for issue in issue_gen
+            ]
+            assert actual_issues == [sought_issue]
+
+        assert sorted(found_repos) == sorted(repo_names)
 
 
 def test_org_url(organization, wrapper):
