@@ -1,4 +1,5 @@
 import socket
+import random
 from unittest.mock import MagicMock, PropertyMock, patch, call
 from collections import namedtuple
 import pytest
@@ -19,6 +20,12 @@ ISSUE = pytest.constants.ISSUE
 # titles are purposefully similar
 CLOSE_ISSUE = tuples.Issue('close this issue', 'This is a body')
 DONT_CLOSE_ISSUE = tuples.Issue("Don't close this issue", 'Another body')
+OPEN_ISSUES = [CLOSE_ISSUE, DONT_CLOSE_ISSUE]
+
+CLOSED_ISSUES = [
+    tuples.Issue('This is a closed issue', 'With an uninteresting body'),
+    tuples.Issue('Yet another closed issue', 'Even less interesting body')
+]
 
 GENERATE_REPO_URL = pytest.functions.GENERATE_REPO_URL
 raise_ = pytest.functions.raise_
@@ -163,6 +170,20 @@ def wrapper(happy_github):
                                             ORG_NAME)
 
 
+def to_magic_mock_issue(issue):
+    """Convert an issue to a MagicMock with all of the correct
+    attribuets."""
+    mock = MagicMock()
+    mock.title = issue.title
+    mock.body = issue.body
+    return mock
+
+
+def from_magic_mock_issue(mock_issue):
+    """Convert a MagicMock issue into a tuples.Issue."""
+    return tuples.Issue(title=mock_issue.title, body=mock_issue.body)
+
+
 @pytest.fixture
 def issues(repos):
     """Adds two issues to all repos such that Repo.get_issues returns the
@@ -174,14 +195,14 @@ def issues(repos):
     def attach_issues(repo):
         # for some reason, putting this inline in the loop caused every single
         # repo to get the SAME mocks returned by the lambda
-        close_issue = MagicMock()
-        close_issue.title = CLOSE_ISSUE.title
-        close_issue.body = CLOSE_ISSUE.body
-        dont_close_issue = MagicMock()
-        dont_close_issue.title = DONT_CLOSE_ISSUE.title
-        dont_close_issue.body = DONT_CLOSE_ISSUE.body
-        repo.get_issues.side_effect = lambda state: [dont_close_issue, close_issue] if state == 'open' else []
-        return close_issue, dont_close_issue
+        open_issue_mocks = [
+            to_magic_mock_issue(issue) for issue in OPEN_ISSUES
+        ]
+        closed_issue_mocks = [
+            to_magic_mock_issue(issue) for issue in CLOSED_ISSUES
+        ]
+        repo.get_issues.side_effect = lambda state: open_issue_mocks if state == 'open' else closed_issue_mocks
+        return open_issue_mocks + closed_issue_mocks
 
     issues = []
     for repo in repos:
@@ -232,7 +253,7 @@ class TestVerifySettings:
             GithubException("internal server error", 500))
         with pytest.raises(exception.UnexpectedException) as exc_info:
             wrapper.verify_settings(USER, ORG_NAME, GITHUB_BASE_URL,
-                                      git.OAUTH_TOKEN)
+                                    git.OAUTH_TOKEN)
 
 
 def team_mock_to_tuple(team_mock):
@@ -557,6 +578,66 @@ class TestGetRepos:
         actual_repos = list(wrapper.get_repos())
 
         assert actual_repos == repo_tuples
+
+
+class TestGetIssues:
+    """Tests for get_issues."""
+
+    def test_get_all_open_issues(self, repos, issues, wrapper):
+        repo_names = [repo.name for repo in repos]
+
+        name_issues_pairs = wrapper.get_issues(repo_names, state='open')
+
+        found_repos = []
+        for repo_name, issue_gen in name_issues_pairs:
+            found_repos.append(repo_name)
+
+            actual_issues = [
+                from_magic_mock_issue(issue) for issue in issue_gen
+            ]
+            assert actual_issues == OPEN_ISSUES
+
+        assert sorted(found_repos) == sorted(repo_names)
+
+    def test_get_all_closed_issues(self, repos, issues, wrapper):
+        repo_names = [repo.name for repo in repos]
+
+        name_issues_pairs = wrapper.get_issues(repo_names, state='closed')
+
+        found_repos = []
+        for repo_name, issue_gen in name_issues_pairs:
+            found_repos.append(repo_name)
+
+            actual_issues = [
+                from_magic_mock_issue(issue) for issue in issue_gen
+            ]
+            assert actual_issues == CLOSED_ISSUES
+
+        assert sorted(found_repos) == sorted(repo_names)
+
+    def test_get_issues_when_one_repo_doesnt_exist(self, repos, issues,
+                                                   wrapper):
+        """It should just ignore the repo that does not exist (and log the
+        error)."""
+        non_existing = 'definitely-non-existing-repo'
+        repo_names = [repo.name
+                      for repo in repos] + [non_existing]
+        random.shuffle(repo_names)
+
+        name_issues_pairs = wrapper.get_issues(repo_names, state='open')
+
+        found_repos = []
+        for repo_name, issue_gen in name_issues_pairs:
+            found_repos.append(repo_name)
+
+            actual_issues = [
+                from_magic_mock_issue(issue) for issue in issue_gen
+            ]
+            assert actual_issues == OPEN_ISSUES
+
+        assert len(found_repos) + 1 == len(repo_names)
+        assert set(found_repos) == set(repo_names) - {non_existing}
+
 
 
 def test_org_url(organization, wrapper):

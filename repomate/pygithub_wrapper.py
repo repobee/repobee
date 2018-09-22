@@ -271,6 +271,42 @@ class PyGithubWrapper(AbstractAPIWrapper):
                         for repo in self._get_repos_by_name(repo_names))
             return (self._repo_factory(repo) for repo in self._org.get_repos())
 
+    def get_issues(self,
+                   repo_names: Iterable[str],
+                   state: str = 'open',
+                   title_regex: str = ""):
+        """Get all issues for the repos in repo_names an return a generator
+        that yields (repo_name, issue generator) tuples.
+
+        Args:
+            repo_names: An iterable of repo names.
+            state: Specifying the state of the issue ('open' or 'closed').
+            title_regex: If specified, only issues matching this regex are
+            returned. Defaults to the empty string (which matches anything).
+        Returns:
+            A generator that yields (repo_name, issue generator) tuples.
+        """
+        repo_names = list(repo_names)
+        repos = self._get_repos_by_name(repo_names)
+
+        with _try_api_request():
+            name_issues_pairs = ((repo.name,
+                                  (issue
+                                   for issue in repo.get_issues(state=state) if
+                                   re.match(title_regex or "", issue.title)))
+                                 for repo in repos)
+
+            repo_name_set = set(repo_names)
+            for (repo_name, pygh_issues) in name_issues_pairs:
+                repo_name_set.remove(repo_name)
+                issues = (tuples.Issue(title=issue.title, body=issue.body)
+                          for issue in pygh_issues)
+                yield repo_name, issues
+
+            if repo_name_set:
+                LOGGER.warning("could not find repos: ",
+                               ", ".join(repo_name_set))
+
     def _repo_factory(self, repo: github.Repository.Repository) -> tuples.Repo:
         """Create a tuples.Repo object from a Repository object. Warn if
         there is anything but exactly one team affiliated with the repo.
