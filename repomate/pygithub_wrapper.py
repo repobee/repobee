@@ -303,17 +303,17 @@ class PyGithubWrapper(AbstractAPIWrapper):
         Returns:
             a generator of repo objects.
         """
-        repos = []
+        repos = set()
         for name in repo_names:
             with _try_api_request(ignore_statuses=[404]):
-                repos.append(self._org.get_repo(name))
+                repo = self._org.get_repo(name)
+                yield repo
+                repos.add(repo.name)
 
-        missing_repos = set(repo_names) - {repo.name for repo in repos}
+        missing_repos = set(repo_names) - repos
         if missing_repos:
             LOGGER.warning("can't find repos: {}".format(
                 ", ".join(missing_repos)))
-
-        return repos
 
     @staticmethod
     def verify_settings(user: str, org_name: str, base_url: str, token: str):
