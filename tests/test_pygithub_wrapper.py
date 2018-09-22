@@ -33,16 +33,16 @@ ISSUE = pytest.constants.ISSUE
 
 # titles are purposefully similar
 CLOSE_ISSUE = tuples.Issue('close this issue', 'This is a body', 3,
-                           RANDOM_DATE())
+                           RANDOM_DATE(), 'slarse')
 DONT_CLOSE_ISSUE = tuples.Issue("Don't close this issue", 'Another body', 4,
-                                RANDOM_DATE())
+                                RANDOM_DATE(), 'glassey')
 OPEN_ISSUES = [CLOSE_ISSUE, DONT_CLOSE_ISSUE]
 
 CLOSED_ISSUES = [
     tuples.Issue('This is a closed issue', 'With an uninteresting body', 1,
-                 RANDOM_DATE()),
+                 RANDOM_DATE(), 'tmore'),
     tuples.Issue('Yet another closed issue', 'Even less interesting body', 2,
-                 RANDOM_DATE())
+                 RANDOM_DATE(), 'viklu')
 ]
 
 GENERATE_REPO_URL = pytest.functions.GENERATE_REPO_URL
@@ -53,6 +53,7 @@ User = namedtuple('User', ('login', ))
 
 class GithubException(Exception):
     def __init__(self, msg, status):
+        super().__init__(msg)
         self.msg = msg
         self.status = status
 
@@ -192,10 +193,12 @@ def to_magic_mock_issue(issue):
     """Convert an issue to a MagicMock with all of the correct
     attribuets."""
     mock = MagicMock()
+    mock.user = MagicMock()
     mock.title = issue.title
     mock.body = issue.body
     mock.created_at = issue.created_at
     mock.number = issue.number
+    mock.user = User(issue.author)
     return mock
 
 
@@ -205,7 +208,8 @@ def from_magic_mock_issue(mock_issue):
         title=mock_issue.title,
         body=mock_issue.body,
         number=mock_issue.number,
-        created_at=mock_issue.created_at)
+        created_at=mock_issue.created_at,
+        author=mock_issue.user.login)
 
 
 @pytest.fixture
@@ -616,9 +620,7 @@ class TestGetIssues:
         for repo_name, issue_gen in name_issues_pairs:
             found_repos.append(repo_name)
 
-            actual_issues = [
-                from_magic_mock_issue(issue) for issue in issue_gen
-            ]
+            actual_issues = list(issue_gen)
             assert actual_issues == OPEN_ISSUES
 
         assert sorted(found_repos) == sorted(repo_names)
@@ -632,9 +634,7 @@ class TestGetIssues:
         for repo_name, issue_gen in name_issues_pairs:
             found_repos.append(repo_name)
 
-            actual_issues = [
-                from_magic_mock_issue(issue) for issue in issue_gen
-            ]
+            actual_issues = list(issue_gen)
             assert actual_issues == CLOSED_ISSUES
 
         assert sorted(found_repos) == sorted(repo_names)
@@ -653,9 +653,7 @@ class TestGetIssues:
         for repo_name, issue_gen in name_issues_pairs:
             found_repos.append(repo_name)
 
-            actual_issues = [
-                from_magic_mock_issue(issue) for issue in issue_gen
-            ]
+            actual_issues = list(issue_gen)
             assert actual_issues == OPEN_ISSUES
 
         assert len(found_repos) + 1 == len(repo_names)
@@ -674,9 +672,7 @@ class TestGetIssues:
         for repo_name, issue_gen in name_issues_pairs:
             found_repos.append(repo_name)
 
-            actual_issues = [
-                from_magic_mock_issue(issue) for issue in issue_gen
-            ]
+            actual_issues = list(issue_gen)
             assert actual_issues == [sought_issue]
 
         assert sorted(found_repos) == sorted(repo_names)

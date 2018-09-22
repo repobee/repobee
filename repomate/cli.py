@@ -53,6 +53,7 @@ MIGRATE_PARSER = 'migrate'
 ADD_TO_TEAMS_PARSER = 'add-to-teams'
 OPEN_ISSUE_PARSER = 'open-issue'
 CLOSE_ISSUE_PARSER = 'close-issue'
+LIST_ISSUES_PARSER = 'list-issues'
 VERIFY_PARSER = 'verify-settings'
 
 PARSER_NAMES = (
@@ -62,7 +63,8 @@ PARSER_NAMES = (
     MIGRATE_PARSER,
     ADD_TO_TEAMS_PARSER,
     OPEN_ISSUE_PARSER,
-    CLONE_PARSER,
+    CLOSE_ISSUE_PARSER,
+    LIST_ISSUES_PARSER,
     VERIFY_PARSER,
 )
 
@@ -121,6 +123,8 @@ def parse_args(sys_args: Iterable[str]
         if 'issue' in args and args.issue else None,
         title_regex=args.title_regex if 'title_regex' in args else None,
         traceback=args.traceback,
+        state=args.state if 'state' in args else None,
+        show_body=args.show_body if 'show_body' in args else None,
     )
 
     return parsed_args, api
@@ -167,10 +171,19 @@ def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
     elif args.subparser == VERIFY_PARSER:
         APIWrapper.verify_settings(args.user, args.org_name,
                                    args.github_base_url, git.OAUTH_TOKEN)
+    elif args.subparser == LIST_ISSUES_PARSER:
+        with _sys_exit_on_expected_error():
+            command.list_issues(
+                args.master_repo_names,
+                args.students,
+                api,
+                state=args.state,
+                title_regex=args.title_regex or "",
+                show_body=args.show_body)
     else:
         raise exception.ParseError(
-            "Illegal value for subparser: {}. This is a bug, please open an issue.".
-            format(args.subparser))
+            "Illegal value for subparser: {}. This is a bug, please open an issue."
+            .format(args.subparser))
 
 
 def _add_issue_parsers(base_parsers, subparsers):
@@ -209,6 +222,48 @@ def _add_issue_parsers(base_parsers, subparsers):
             "regex will be closed."),
         type=str,
         required=True)
+
+    list_parser = subparsers.add_parser(
+        LIST_ISSUES_PARSER,
+        description="List issues in student repos.",
+        help="List issues in student repos.",
+        parents=base_parsers,
+    )
+    list_parser.add_argument(
+        '-r',
+        '--title-regex',
+        help=
+        ("Regex to match against titles. Only issues matching this regex will "
+         "be listed."),
+    )
+    list_parser.add_argument(
+        '-b',
+        '--show-body',
+        action='store_true',
+        help="Show the body of the issue, alongside the default info.")
+    state = list_parser.add_mutually_exclusive_group()
+    state.add_argument(
+        '--open',
+        help="List open issues.",
+        action='store_const',
+        dest='state',
+        const='open',
+    )
+    state.add_argument(
+        '--closed',
+        help="List closed issues.",
+        action='store_const',
+        dest='state',
+        const='closed',
+    )
+    state.add_argument(
+        '--all',
+        help="List all issues (open and closed).",
+        action='store_const',
+        dest='state',
+        const='all',
+    )
+    list_parser.set_defaults(state='open')
 
 
 def _create_parser():
@@ -412,8 +467,8 @@ def _sys_exit_on_expected_error():
         yield
     except exception.PushFailedError as exc:
         LOGGER.error(
-            "There was an error pushing to {}. Verify that your token has adequate access.".
-            format(exc.url))
+            "There was an error pushing to {}. Verify that your token has adequate access."
+            .format(exc.url))
         sys.exit(1)
     except exception.CloneFailedError as exc:
         LOGGER.error(
@@ -452,9 +507,9 @@ def _extract_students(args: argparse.Namespace) -> List[str]:
         if not students_file.stat().st_size:
             raise exception.FileError("'{!s}' is empty".format(students_file))
         students = [
-            student.strip() for student in
-            students_file.read_text(encoding=sys.getdefaultencoding()).split(
-                os.linesep) if student  # skip blank lines
+            student.strip() for student in students_file.read_text(
+                encoding=sys.getdefaultencoding()).split(os.linesep)
+            if student  # skip blank lines
         ]
     else:
         students = None
@@ -470,8 +525,8 @@ def _connect_to_api(github_base_url: str, token: str,
     except exception.NotFoundError:
         # more informative message
         raise exception.NotFoundError(
-            "either organization {} could not be found, or the base url '{}' is incorrect".
-            format(org_name, github_base_url))
+            "either organization {} could not be found, or the base url '{}' is incorrect"
+            .format(org_name, github_base_url))
     return api
 
 

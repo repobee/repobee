@@ -233,38 +233,30 @@ def list_issues(master_repo_names: Iterable[str],
     issues_per_repo = api.get_issues(repo_names, state, title_regex)
 
     for repo_name, issues in issues_per_repo:
-        LOGGER.info(repo_name + ":")
         issue_list = list(issues)
-        if not issue_list:
-            LOGGER.warning("no matching issues")
-        else:
-            LOGGER.info(_format_repo_issues(repo_name, issue_list, show_body))
+        _log_repo_issues(repo_name, issue_list, show_body)
 
 
-def _format_repo_issues(repo_name: str, issues: List[tuples.Issue],
-                        show_body: bool) -> str:
-    """Format output for repo issues.
+def _log_repo_issues(repo_name: str, issues: List[tuples.Issue],
+                     show_body: bool) -> None:
+    """Log repo issues.
     
     Args:
         repo_name: Name of the repo.
         issues: tuples.Issue objects.
         show_body: Include the body of the issue in the output.
-    Returns:
-        a nicely formatted string representing the repo's issues
     """
-    out = os.linesep * 2 + repo_name
+    from colored import bg, style
     if not issues:
-        out += "{}No matching issues".format(os.linesep)
-        return out
+        LOGGER.warning("{}: No matching issues".format(repo_name))
 
     for issue in issues:
-        out += "{}#{}: {}   --- created_at={!s}".format(
-            os.linesep * 2, issue.number, issue.title, issue.created_at)
+        out = "{}{}/#{}: {}{}{}created {!s} by {}".format(
+            bg('grey_23'), repo_name, issue.number, issue.title, style.RESET,
+            os.linesep, issue.created_at, issue.author)
         if show_body:
-            out += "{}Body:{}{}".format(os.linesep,
-                                        _limit_line_length(issue.body),
-                                        os.linesep)
-    return out
+            out += os.linesep + _limit_line_length(issue.body) + os.linesep
+        LOGGER.info(out)
 
 
 def _limit_line_length(s: str, max_line_length: int = 100) -> str:
@@ -402,15 +394,13 @@ def migrate_repos(master_repo_urls: Iterable[str], user: str,
         _clone_all(master_repo_urls, cwd=tmpdir)
         repo_urls = api.create_repos(infos)
 
-        git.push(
-            [
-                git.Push(
-                    local_path=os.path.join(tmpdir, info.name),
-                    repo_url=repo_url,
-                    branch='master')
-                for repo_url, info in zip(repo_urls, infos)
-            ],
-            user=user)
+        git.push([
+            git.Push(
+                local_path=os.path.join(tmpdir, info.name),
+                repo_url=repo_url,
+                branch='master') for repo_url, info in zip(repo_urls, infos)
+        ],
+                 user=user)
 
     LOGGER.info("done!")
 
@@ -488,7 +478,7 @@ def _format_hook_results_output(result_mapping):
     out = ""
     for repo_name, results in result_mapping.items():
         out += "{}hook results for {}{}{}".format(
-            bg('dark_gray'), repo_name, style.RESET, os.linesep * 2)
+            bg('grey_23'), repo_name, style.RESET, os.linesep * 2)
         out += os.linesep.join([
             "{}{}".format(_format_hook_result(res), os.linesep)
             for res in results

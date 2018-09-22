@@ -300,7 +300,8 @@ class PyGithubWrapper(AbstractAPIWrapper):
                     title=issue.title,
                     body=issue.body,
                     number=issue.number,
-                    created_at=issue.created_at) for issue in pygh_issues)
+                    created_at=issue.created_at,
+                    author=issue.user.login) for issue in pygh_issues)
                 yield repo_name, issues
 
     def _repo_factory(self, repo: github.Repository.Repository) -> tuples.Repo:
