@@ -8,17 +8,64 @@
 ![Supported Platforms](https://img.shields.io/badge/platforms-Linux%2C%20macOS-blue.svg)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-### Overview
+## Overview
 
 `repomate` is A CLI tool for administrating large amounts of GitHub
-repositories, geared towards teachers and GitHub Enterprise. The best way to
-get started with `repomate` is to head over to the
+repositories, geared towards teachers and GitHub Enterprise. `repomate` is currently being used for the introductory courses in computer
+science at KTH Royal Technical Institute of Technology. The courses have
+roughly 200 students and several thousands of repositories, allowing us
+to test `repomate` at quite a large scale.
+
+### Getting started
+The best way to get started with `repomate` is to head over to the
 [Docs](https://repomate.readthedocs.io/en/latest/), where you (among other
 things) will find the
 [install instructions](https://repomate.readthedocs.io/en/latest/install.html)
 and
 [user guide](https://repomate.readthedocs.io/en/latest/userguide.html).
 
-### License
+
+## Why `repomate`?
+`repomate` was developed at KTH Royal Technical Institute of Technology to help
+teachers and teaching assistants administrate GitHub repositories. It is
+inspired by the old
+[`teachers_pet` tool](https://github.com/education/teachers_pet), with added
+features and a user experience more to our liking. Features range from creating
+student repositories based on master (template) repos, to opening and closing
+issues in bulk. `repomate` also allows for cloning repos in bulk, and executing
+arbitrary tasks on the cloned repos by utlizing its simple but powerful
+[plugin system](https://github.com/slarse/repomate-plug). Below is the output
+from running `repomate --h`, giving brief descriptions of each of the main
+featues:
+
+```
+$ repomate --help
+usage: repomate [-h]
+                {setup,update,migrate,clone,add-to-teams,open-issue,close-issue,list-issues,verify-settings}
+                ...
+
+A CLI tool for administrating student repositories.
+
+positional arguments:
+  {setup,update,migrate,clone,add-to-teams,open-issue,close-issue,list-issues,verify-settings}
+    setup               Setup student repos.
+    update              Update existing student repos.
+    migrate             Migrate master repositories into the target
+                        organization.
+    clone               Clone student repos.
+    add-to-teams        Create student teams and add students to them. This
+                        command is automatically executed by the `setup`
+                        command.
+    open-issue          Open issues in student repos.
+    close-issue         Close issues in student repos.
+    list-issues         List issues in student repos.
+    verify-settings     Verify your settings, such as the base url and the
+                        OAUTH token.
+
+optional arguments:
+  -h, --help            show this help message and exit
+```
+
+## License
 
 This software is licensed under the MIT License. See the [LICENSE](LICENSE) file for specifics.
