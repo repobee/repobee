@@ -254,7 +254,7 @@ def _log_repo_issues(
         title_alignment: Where the issue title should start counting from the
         start of the line.
     """
-    from colored import bg, style
+    from colored import bg, fg, style
     even = True
     for repo_name, issues in issues_per_repo:
         issues = list(issues)
@@ -263,7 +263,7 @@ def _log_repo_issues(
             LOGGER.warning("{}: No matching issues".format(repo_name))
 
         for issue in issues:
-            color = bg('grey_30') if even else bg('grey_15')
+            color = (bg('grey_30') if even else bg('grey_15')) + fg('white')
             even = not even  # cycle color
             adjusted_alignment = title_alignment + len(
                 color)  # color takes character space
@@ -473,7 +473,7 @@ def _create_push_tuples(master_repo_paths: Iterable[str],
 
 
 def _format_hook_result(hook_result):
-    from colored import bg, style
+    from colored import bg, fg, style
     if hook_result.status == Status.ERROR:
         out = bg('red')
     elif hook_result.status == Status.WARNING:
@@ -486,7 +486,7 @@ def _format_hook_result(hook_result):
             "Status.WARNING or Status.SUCCESS, but was {!r}".format(
                 hook_result.status))
 
-    out += hook_result.hook + ": " + hook_result.status.name + style.RESET + os.linesep
+    out += fg('white') + hook_result.hook + ": " + hook_result.status.name + style.RESET + os.linesep
     out += hook_result.msg
 
     return out
