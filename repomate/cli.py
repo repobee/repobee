@@ -33,6 +33,7 @@ daiquiri.setup(
     level=logging.INFO,
     outputs=(
         daiquiri.output.Stream(
+            sys.stdout,
             formatter=daiquiri.formatter.ColorFormatter(
                 fmt="[%(levelname)s] %(message)s")),
         daiquiri.output.File(
@@ -516,9 +517,9 @@ def _extract_students(args: argparse.Namespace) -> List[str]:
         if not students_file.stat().st_size:
             raise exception.FileError("'{!s}' is empty".format(students_file))
         students = [
-            student.strip() for student in students_file.read_text(
-                encoding=sys.getdefaultencoding()).split(os.linesep)
-            if student  # skip blank lines
+            student.strip() for student in
+            students_file.read_text(encoding=sys.getdefaultencoding()).split(
+                os.linesep) if student  # skip blank lines
         ]
     else:
         students = None
