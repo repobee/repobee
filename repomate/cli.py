@@ -249,11 +249,11 @@ def _add_issue_parsers(base_parsers, subparsers):
         help="Only show issues by this author (GitHub username).",
         type=str,
         default=None,
-        )
+    )
     state = list_parser.add_mutually_exclusive_group()
     state.add_argument(
         '--open',
-        help="List open issues.",
+        help="List open issues (default).",
         action='store_const',
         dest='state',
         const='open',
