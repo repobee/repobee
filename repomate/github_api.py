@@ -183,16 +183,7 @@ class GitHubAPI:
         Returns:
             A generator that yields (repo_name, issue generator) tuples.
         """
-        repo_names = list(repo_names)
-        name_issue_pairs = self._api.get_issues(repo_names, state, title_regex)
-
-        repo_name_set = set(repo_names)
-        for repo_name, issues in name_issue_pairs:
-            repo_name_set.remove(repo_name)
-            yield repo_name, issues
-
-        if repo_name_set:
-            LOGGER.warning("could not find repos: {}".format(", ".join(repo_name_set)))
+        yield from self._api.get_issues(repo_names, state, title_regex)
 
     def open_issue(self, issue: tuples.Issue,
                    repo_names: Iterable[str]) -> None:
