@@ -21,6 +21,12 @@ API = github_api.GitHubAPI("bla", "bla", "bla")
 ISSUE = tuples.Issue("Oops, something went wrong!",
                      "This is the body **with some formatting**.")
 PLUGINS = pytest.constants.PLUGINS
+STUDENTS = pytest.constants.STUDENTS
+
+MASTER_URLS = ('https://someurl.git', 'https://better_url.git',
+               'https://another-url.git')
+MASTER_NAMES = tuple(util.repo_name(url) for url in MASTER_URLS)
+
 
 GENERATE_TEAM_REPO_URL = lambda student, base_name:\
         "https://slarse.se/repos/{}".format(
@@ -83,6 +89,11 @@ def api_mock(request, mocker):
 
 
 @pytest.fixture
+def students():
+    return list(STUDENTS)
+
+
+@pytest.fixture
 def ensure_teams_and_members_mock(api_mock, students):
     api_mock.ensure_teams_and_members.side_effect = lambda member_lists: [tuples.Team(student, [student], id)
                     for id, student
@@ -91,16 +102,12 @@ def ensure_teams_and_members_mock(api_mock, students):
 
 @pytest.fixture
 def master_urls():
-    master_urls = [
-        'https://someurl.git', 'https://better_url.git',
-        'https://another-url.git'
-    ]
-    return master_urls
+    return list(MASTER_URLS)
 
 
 @pytest.fixture
-def master_names(master_urls):
-    return [util.repo_name(url) for url in master_urls]
+def master_names():
+    return list(MASTER_NAMES)
 
 
 @pytest.fixture
@@ -149,11 +156,6 @@ def rmtree_mock(mocker):
     return mocker.patch('shutil.rmtree', autospec=True)
 
 
-@pytest.fixture
-def students():
-    return list(pytest.constants.STUDENTS)
-
-
 @pytest.fixture(autouse=True)
 def is_git_repo_mock(mocker):
     return mocker.patch(
@@ -179,10 +181,9 @@ def assert_raises_on_duplicate_master_urls(function, master_urls, students):
 
 RAISES_ON_EMPTY_ARGS_PARAMETRIZATION = (
     'master_urls, students, user, empty_arg',
-    [([], students(), USER, 'master_repo_urls'), (master_urls(), [], USER,
-                                                  'students'), (master_urls(),
-                                                                students(), '',
-                                                                'user')])
+    [([], list(STUDENTS), USER, 'master_repo_urls'),
+     (list(MASTER_URLS), [], USER, 'students'),
+     (list(MASTER_URLS), list(STUDENTS), '', 'user')])
 
 RAISES_ON_EMPTY_ARGS_IDS = [
     "|".join([str(val) for val in line])
@@ -466,8 +467,8 @@ class TestOpenIssue:
     # can probably use the RAISES_ON_EMPTY_ARGS_PARAMETRIZATION for that,
     # somehow
     @pytest.mark.parametrize('master_repo_names, students, empty_arg', [
-        ([], students(), 'master_repo_names'),
-        (master_names(master_urls()), [], 'students'),
+        ([], list(STUDENTS), 'master_repo_names'),
+        (list(MASTER_NAMES), [], 'students'),
     ])
     def test_raises_on_empty_args(self, api_mock, master_repo_names, students,
                                   empty_arg):
@@ -496,8 +497,8 @@ class TestCloseIssue:
     """Tests for close_issue."""
 
     @pytest.mark.parametrize('master_repo_names, students, empty_arg', [
-        ([], students(), 'master_repo_names'),
-        (master_names(master_urls()), [], 'students'),
+        ([], list(STUDENTS), 'master_repo_names'),
+        (list(MASTER_NAMES), [], 'students'),
     ])
     def test_raises_on_empty_args(self, api_mock, master_repo_names, students,
                                   empty_arg):
@@ -550,12 +551,11 @@ class TestCloneRepos:
         """
         javac_hook = MagicMock(
             spec='repomate.ext.javac.JavacCloneHook._class.act_on_cloned_repo',
-            return_value=HookResult('javac', Status.SUCCESS,
-                                         'Great success!'))
+            return_value=HookResult('javac', Status.SUCCESS, 'Great success!'))
         pylint_hook = MagicMock(
             spec='repomate.ext.pylint.act_on_cloned_repo',
             return_value=HookResult('pylint', Status.WARNING,
-                                         'Minor warning.'))
+                                    'Minor warning.'))
 
         @repomate_hook
         def act_hook_func(path):
@@ -582,8 +582,8 @@ class TestCloneRepos:
             'repomate.config.get_plugin_names', return_value=PLUGINS)
 
     @pytest.mark.parametrize('master_repo_names, students, empty_arg',
-                             [([], students(), 'master_repo_names'),
-                              (master_names(master_urls()), [], 'students')])
+                             [([], list(STUDENTS), 'master_repo_names'),
+                              (list(MASTER_NAMES), [], 'students')])
     def test_raises_on_empty_args(self, api_mock, master_repo_names, students,
                                   empty_arg):
         with pytest.raises(ValueError) as exc_info:
