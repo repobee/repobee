@@ -2,11 +2,16 @@
 import sys
 import pathlib
 import pytest
+from collections import namedtuple
+from datetime import datetime, timedelta
+import random
 from contextlib import contextmanager
 import tempfile
 import string
 import os
 from unittest.mock import patch, MagicMock
+
+random.seed(41235)
 
 # mock the PyGithub github module
 sys.modules['github'] = MagicMock()
@@ -36,6 +41,8 @@ PLUGINS = ['javac', 'pylint']
 GENERATE_REPO_URL = lambda repo_name:\
         "{}/{}/{}".format(HOST_URL, ORG_NAME, repo_name)
 
+User = namedtuple('User', ('login', ))
+
 
 def pytest_namespace():
     constants = dict(
@@ -48,8 +55,14 @@ def pytest_namespace():
         ISSUE=ISSUE,
         PLUGINS=PLUGINS,
     )
-    functions = dict(GENERATE_REPO_URL=GENERATE_REPO_URL, raise_=raise_)
-    return dict(constants=constants, functions=functions)
+    functions = dict(
+        GENERATE_REPO_URL=GENERATE_REPO_URL,
+        raise_=raise_,
+        to_magic_mock_issue=to_magic_mock_issue,
+        from_magic_mock_issue=from_magic_mock_issue,
+        RANDOM_DATE=RANDOM_DATE)
+    classes = dict(User=User)
+    return dict(constants=constants, functions=functions, classes=classes)
 
 
 @contextmanager
@@ -190,3 +203,37 @@ def config_mock(empty_config_mock, students_file):
     ])
     empty_config_mock.write(config_contents)
     yield empty_config_mock
+
+
+def to_magic_mock_issue(issue):
+    """Convert an issue to a MagicMock with all of the correct
+    attribuets."""
+    mock = MagicMock()
+    mock.user = MagicMock()
+    mock.title = issue.title
+    mock.body = issue.body
+    mock.created_at = issue.created_at
+    mock.number = issue.number
+    mock.user = User(issue.author)
+    return mock
+
+
+def from_magic_mock_issue(mock_issue):
+    """Convert a MagicMock issue into a tuples.Issue."""
+    return tuples.Issue(
+        title=mock_issue.title,
+        body=mock_issue.body,
+        number=mock_issue.number,
+        created_at=mock_issue.created_at,
+        author=mock_issue.user.login)
+
+
+FIXED_DATETIME = datetime(2009, 11, 22)
+RANDOM_DATE = lambda: \
+        (FIXED_DATETIME -
+         timedelta(
+             days=random.randint(0, 1000),
+             hours=random.randint(0, 1000),
+             minutes=random.randint(0, 1000),
+             seconds=random.randint(0, 1000))
+        )

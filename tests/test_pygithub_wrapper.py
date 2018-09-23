@@ -12,18 +12,10 @@ from repomate import git
 from repomate import exception
 from repomate import tuples
 
-random.seed(41235)
+to_magic_mock_issue = pytest.functions.to_magic_mock_issue
+from_magic_mock_issue = pytest.functions.from_magic_mock_issue
+RANDOM_DATE = pytest.functions.RANDOM_DATE
 
-FIXED_DATETIME = datetime(2009, 11, 22)
-
-RANDOM_DATE = lambda: \
-        (FIXED_DATETIME -
-         timedelta(
-             days=random.randint(0, 1000),
-             hours=random.randint(0, 1000),
-             minutes=random.randint(0, 1000),
-             seconds=random.randint(0, 1000))
-        )
 
 USER = pytest.constants.USER
 NOT_OWNER = 'notanowner'
@@ -48,7 +40,7 @@ CLOSED_ISSUES = [
 GENERATE_REPO_URL = pytest.functions.GENERATE_REPO_URL
 raise_ = pytest.functions.raise_
 
-User = namedtuple('User', ('login', ))
+User = pytest.classes.User
 
 
 class GithubException(Exception):
@@ -187,29 +179,6 @@ def repo_mock_to_tuple(repo_mock):
 def wrapper(happy_github):
     return pygithub_wrapper.PyGithubWrapper(GITHUB_BASE_URL, git.OAUTH_TOKEN,
                                             ORG_NAME)
-
-
-def to_magic_mock_issue(issue):
-    """Convert an issue to a MagicMock with all of the correct
-    attribuets."""
-    mock = MagicMock()
-    mock.user = MagicMock()
-    mock.title = issue.title
-    mock.body = issue.body
-    mock.created_at = issue.created_at
-    mock.number = issue.number
-    mock.user = User(issue.author)
-    return mock
-
-
-def from_magic_mock_issue(mock_issue):
-    """Convert a MagicMock issue into a tuples.Issue."""
-    return tuples.Issue(
-        title=mock_issue.title,
-        body=mock_issue.body,
-        number=mock_issue.number,
-        created_at=mock_issue.created_at,
-        author=mock_issue.user.login)
 
 
 @pytest.fixture

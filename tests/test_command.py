@@ -14,6 +14,29 @@ from repomate import plugin
 
 from repomate_plug import HookResult, repomate_hook, Status
 
+from_magic_mock_issue = pytest.functions.from_magic_mock_issue
+to_magic_mock_issue = pytest.functions.to_magic_mock_issue
+User = pytest.classes.User
+
+RANDOM_DATE = pytest.functions.RANDOM_DATE
+
+OPEN_ISSUES = [
+    tuples.Issue('close this issue', 'This is a body', 3, RANDOM_DATE(),
+                 'slarse'),
+    tuples.Issue("Don't close this issue", 'Another body', 4, RANDOM_DATE(),
+                 'glassey')
+]
+
+CLOSED_ISSUES = [
+    tuples.Issue('This is a closed issue',
+'With an uninteresting body that has a single very,'
+'very long line that would probably break the implementation '
+'if something was off with the line limit function.', 1,
+                 RANDOM_DATE(), 'tmore'),
+    tuples.Issue('Yet another closed issue', 'Even less interesting body', 2,
+                 RANDOM_DATE(), 'viklu')
+]
+
 USER = 'slarse'
 ORG_NAME = 'test-org'
 GITHUB_BASE_URL = 'https://some_enterprise_host/api/v3'
@@ -23,16 +46,18 @@ ISSUE = tuples.Issue("Oops, something went wrong!",
 PLUGINS = pytest.constants.PLUGINS
 STUDENTS = pytest.constants.STUDENTS
 
-MASTER_URLS = ('https://someurl.git', 'https://better_url.git',
-               'https://another-url.git')
-MASTER_NAMES = tuple(util.repo_name(url) for url in MASTER_URLS)
-
-
 GENERATE_TEAM_REPO_URL = lambda student, base_name:\
         "https://slarse.se/repos/{}".format(
             util.generate_repo_name(student, base_name))
 
 GENERATE_REPO_URL = lambda name: GENERATE_TEAM_REPO_URL(name, 'd')[:-2]
+
+MASTER_NAMES = ('week-1', 'week-2', 'week-3')
+MASTER_URLS = tuple(GENERATE_REPO_URL(name) for name in MASTER_NAMES)
+
+STUDENT_REPO_NAMES = tuple(
+    util.generate_repo_name(student, master_name)
+    for master_name in MASTER_NAMES for student in STUDENTS)
 
 raise_ = pytest.functions.raise_
 
@@ -73,6 +98,24 @@ def git_mock(request, mocker):
     return git_mock
 
 
+def _get_issues(repo_names, state='open', title_regex=""):
+    """Bogus version of GitHubAPI.get_issues"""
+    for repo_name in repo_names:
+        if repo_name == STUDENT_REPO_NAMES[-2]:
+            # repo without issues
+            yield repo_name, iter([])
+        elif repo_name in STUDENT_REPO_NAMES:
+            if state == 'open':
+                issues = iter(OPEN_ISSUES)
+            elif state == 'closed':
+                issues = iter(CLOSED_ISSUES)
+            elif state == 'all':
+                issues = iter(OPEN_ISSUES + CLOSED_ISSUES)
+            else:
+                raise ValueError("Unexpected value for 'state': ", state)
+            yield repo_name, issues
+
+
 @pytest.fixture(autouse=True)
 def api_mock(request, mocker):
     if 'noapimock' in request.keywords:
@@ -85,6 +128,9 @@ def api_mock(request, mocker):
     mock.get_repo_urls.side_effect = lambda repo_names: list(map(GENERATE_REPO_URL, repo_names))
     mock.create_repos.side_effect =\
         lambda repo_infos: list(map(url_from_repo_info, repo_infos))
+    mock.get_issues = MagicMock(
+        spec='repomate.github_api.GitHubAPI.get_issues',
+        side_effect=_get_issues)
     return mock
 
 
@@ -667,3 +713,25 @@ class TestMigrateRepo:
             command.MASTER_TEAM: []
         })
         git_push_mock.assert_called_once_with(expected_pts, user=USER)
+
+
+class TestListIssues:
+    """Tests for list_issues. Since this is essentially just a print command,
+    it is only tested for stability.
+    """
+
+    @pytest.mark.parametrize('state', ('open', 'closed', 'all'))
+    @pytest.mark.parametrize('regex', ('', r'^.*$'))
+    @pytest.mark.parametrize('show_body', (True, False))
+    def test_happy_path(self, master_names, students, api_mock, state, regex,
+                        show_body):
+        command.list_issues(
+            master_names,
+            students,
+            api_mock,
+            state=state,
+            title_regex=regex,
+            show_body=show_body)
+
+        api_mock.get_issues.assert_called_once_with(
+            list(STUDENT_REPO_NAMES), state, regex)
