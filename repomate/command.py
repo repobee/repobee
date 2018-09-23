@@ -287,8 +287,6 @@ def _limit_line_length(s: str, max_line_length: int = 100) -> str:
     Returns:
         the input string with lines no longer than max_line_length.
     """
-    # potentially very slow regex, but it seems to be fast enough in practice!
-    dangling_ws_pattern = re.compile(r'(^\s+|\s+$)')
     lines = s.split(os.linesep)
     out = ""
     for line in lines:
@@ -296,11 +294,14 @@ def _limit_line_length(s: str, max_line_length: int = 100) -> str:
         while len(line) - cur > max_line_length:
             # find ws closest to the line length
             idx = line.rfind(' ', cur, max_line_length + cur)
-            idx = max_line_length - 1 if idx == 0 else idx
-            out += re.sub(dangling_ws_pattern, '', line[cur:idx]) + os.linesep
-            cur = idx
-        out += re.sub(dangling_ws_pattern, '',
-                      line[cur:cur + max_line_length]) + os.linesep
+            idx = max_line_length + cur if idx <= 0 else idx
+            if line[idx] == ' ':
+                out += line[cur:idx]
+            else:
+                out += line[cur:idx + 1]
+            out += os.linesep
+            cur = idx + 1
+        out += line[cur:cur + max_line_length] + os.linesep
     return out
 
 
@@ -413,13 +414,15 @@ def migrate_repos(master_repo_urls: Iterable[str], user: str,
         _clone_all(master_repo_urls, cwd=tmpdir)
         repo_urls = api.create_repos(infos)
 
-        git.push([
-            git.Push(
-                local_path=os.path.join(tmpdir, info.name),
-                repo_url=repo_url,
-                branch='master') for repo_url, info in zip(repo_urls, infos)
-        ],
-                 user=user)
+        git.push(
+            [
+                git.Push(
+                    local_path=os.path.join(tmpdir, info.name),
+                    repo_url=repo_url,
+                    branch='master')
+                for repo_url, info in zip(repo_urls, infos)
+            ],
+            user=user)
 
     LOGGER.info("done!")
 
@@ -486,7 +489,9 @@ def _format_hook_result(hook_result):
             "Status.WARNING or Status.SUCCESS, but was {!r}".format(
                 hook_result.status))
 
-    out += fg('white') + hook_result.hook + ": " + hook_result.status.name + style.RESET + os.linesep
+    out += fg(
+        'white'
+    ) + hook_result.hook + ": " + hook_result.status.name + style.RESET + os.linesep
     out += hook_result.msg
 
     return out
