@@ -271,6 +271,39 @@ class PyGithubWrapper(AbstractAPIWrapper):
                         for repo in self._get_repos_by_name(repo_names))
             return (self._repo_factory(repo) for repo in self._org.get_repos())
 
+    def get_issues(self,
+                   repo_names: Iterable[str],
+                   state: str = 'open',
+                   title_regex: str = ""):
+        """Get all issues for the repos in repo_names an return a generator
+        that yields (repo_name, issue generator) tuples.
+
+        Args:
+            repo_names: An iterable of repo names.
+            state: Specifying the state of the issue ('open' or 'closed').
+            title_regex: If specified, only issues matching this regex are
+            returned. Defaults to the empty string (which matches anything).
+        Returns:
+            A generator that yields (repo_name, issue generator) tuples.
+        """
+        repos = self._get_repos_by_name(repo_names)
+
+        with _try_api_request():
+            name_issues_pairs = ((repo.name,
+                                  (issue
+                                   for issue in repo.get_issues(state=state) if
+                                   re.match(title_regex or "", issue.title)))
+                                 for repo in repos)
+
+            for (repo_name, pygh_issues) in name_issues_pairs:
+                issues = (tuples.Issue(
+                    title=issue.title,
+                    body=issue.body,
+                    number=issue.number,
+                    created_at=issue.created_at,
+                    author=issue.user.login) for issue in pygh_issues)
+                yield repo_name, issues
+
     def _repo_factory(self, repo: github.Repository.Repository) -> tuples.Repo:
         """Create a tuples.Repo object from a Repository object. Warn if
         there is anything but exactly one team affiliated with the repo.
@@ -303,17 +336,17 @@ class PyGithubWrapper(AbstractAPIWrapper):
         Returns:
             a generator of repo objects.
         """
-        repos = []
+        repos = set()
         for name in repo_names:
             with _try_api_request(ignore_statuses=[404]):
-                repos.append(self._org.get_repo(name))
+                repo = self._org.get_repo(name)
+                yield repo
+                repos.add(repo.name)
 
-        missing_repos = set(repo_names) - {repo.name for repo in repos}
+        missing_repos = set(repo_names) - repos
         if missing_repos:
             LOGGER.warning("can't find repos: {}".format(
                 ", ".join(missing_repos)))
-
-        return repos
 
     @staticmethod
     def verify_settings(user: str, org_name: str, base_url: str, token: str):

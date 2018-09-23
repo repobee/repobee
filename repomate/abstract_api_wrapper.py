@@ -136,6 +136,23 @@ class AbstractAPIWrapper(abc.ABC):
             a generator of repo objects.
         """
 
+    @abc.abstractmethod
+    def get_issues(self,
+                   repo_names: Iterable[str],
+                   state: str = 'open',
+                   title_regex: str = ""):
+        """Get all issues for the repos in repo_names an return a generator
+        that yields (repo_name, issue generator) tuples.
+
+        Args:
+            repo_names: An iterable of repo names.
+            state: Specifying the state of the issue ('open' or 'closed').
+            title_regex: If specified, only issues matching this regex are
+            returned. Defaults to the empty string (which matches anything).
+        Returns:
+            A generator that yields (repo_name, issue generator) tuples.
+        """
+
     @staticmethod
     @abc.abstractmethod
     def verify_settings(user: str, org_name: str, base_url: str, token: str):

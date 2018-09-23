@@ -14,6 +14,29 @@ from repomate import plugin
 
 from repomate_plug import HookResult, repomate_hook, Status
 
+from_magic_mock_issue = pytest.functions.from_magic_mock_issue
+to_magic_mock_issue = pytest.functions.to_magic_mock_issue
+User = pytest.classes.User
+
+RANDOM_DATE = pytest.functions.RANDOM_DATE
+
+OPEN_ISSUES = [
+    tuples.Issue('close this issue', 'This is a body', 3, RANDOM_DATE(),
+                 'slarse'),
+    tuples.Issue("Don't close this issue", 'Another body', 4, RANDOM_DATE(),
+                 'glassey')
+]
+
+CLOSED_ISSUES = [
+    tuples.Issue('This is a closed issue',
+'With an uninteresting body that has a single very,'
+'very long line that would probably break the implementation '
+'if something was off with the line limit function.', 1,
+                 RANDOM_DATE(), 'tmore'),
+    tuples.Issue('Yet another closed issue', 'Even less interesting body', 2,
+                 RANDOM_DATE(), 'viklu')
+]
+
 USER = 'slarse'
 ORG_NAME = 'test-org'
 GITHUB_BASE_URL = 'https://some_enterprise_host/api/v3'
@@ -21,12 +44,20 @@ API = github_api.GitHubAPI("bla", "bla", "bla")
 ISSUE = tuples.Issue("Oops, something went wrong!",
                      "This is the body **with some formatting**.")
 PLUGINS = pytest.constants.PLUGINS
+STUDENTS = pytest.constants.STUDENTS
 
 GENERATE_TEAM_REPO_URL = lambda student, base_name:\
         "https://slarse.se/repos/{}".format(
             util.generate_repo_name(student, base_name))
 
 GENERATE_REPO_URL = lambda name: GENERATE_TEAM_REPO_URL(name, 'd')[:-2]
+
+MASTER_NAMES = ('week-1', 'week-2', 'week-3')
+MASTER_URLS = tuple(GENERATE_REPO_URL(name) for name in MASTER_NAMES)
+
+STUDENT_REPO_NAMES = tuple(
+    util.generate_repo_name(student, master_name)
+    for master_name in MASTER_NAMES for student in STUDENTS)
 
 raise_ = pytest.functions.raise_
 
@@ -67,6 +98,24 @@ def git_mock(request, mocker):
     return git_mock
 
 
+def _get_issues(repo_names, state='open', title_regex=""):
+    """Bogus version of GitHubAPI.get_issues"""
+    for repo_name in repo_names:
+        if repo_name == STUDENT_REPO_NAMES[-2]:
+            # repo without issues
+            yield repo_name, iter([])
+        elif repo_name in STUDENT_REPO_NAMES:
+            if state == 'open':
+                issues = iter(OPEN_ISSUES)
+            elif state == 'closed':
+                issues = iter(CLOSED_ISSUES)
+            elif state == 'all':
+                issues = iter(OPEN_ISSUES + CLOSED_ISSUES)
+            else:
+                raise ValueError("Unexpected value for 'state': ", state)
+            yield repo_name, issues
+
+
 @pytest.fixture(autouse=True)
 def api_mock(request, mocker):
     if 'noapimock' in request.keywords:
@@ -79,7 +128,15 @@ def api_mock(request, mocker):
     mock.get_repo_urls.side_effect = lambda repo_names: list(map(GENERATE_REPO_URL, repo_names))
     mock.create_repos.side_effect =\
         lambda repo_infos: list(map(url_from_repo_info, repo_infos))
+    mock.get_issues = MagicMock(
+        spec='repomate.github_api.GitHubAPI.get_issues',
+        side_effect=_get_issues)
     return mock
+
+
+@pytest.fixture
+def students():
+    return list(STUDENTS)
 
 
 @pytest.fixture
@@ -91,16 +148,12 @@ def ensure_teams_and_members_mock(api_mock, students):
 
 @pytest.fixture
 def master_urls():
-    master_urls = [
-        'https://someurl.git', 'https://better_url.git',
-        'https://another-url.git'
-    ]
-    return master_urls
+    return list(MASTER_URLS)
 
 
 @pytest.fixture
-def master_names(master_urls):
-    return [util.repo_name(url) for url in master_urls]
+def master_names():
+    return list(MASTER_NAMES)
 
 
 @pytest.fixture
@@ -149,11 +202,6 @@ def rmtree_mock(mocker):
     return mocker.patch('shutil.rmtree', autospec=True)
 
 
-@pytest.fixture
-def students():
-    return list(pytest.constants.STUDENTS)
-
-
 @pytest.fixture(autouse=True)
 def is_git_repo_mock(mocker):
     return mocker.patch(
@@ -179,10 +227,9 @@ def assert_raises_on_duplicate_master_urls(function, master_urls, students):
 
 RAISES_ON_EMPTY_ARGS_PARAMETRIZATION = (
     'master_urls, students, user, empty_arg',
-    [([], students(), USER, 'master_repo_urls'), (master_urls(), [], USER,
-                                                  'students'), (master_urls(),
-                                                                students(), '',
-                                                                'user')])
+    [([], list(STUDENTS), USER, 'master_repo_urls'),
+     (list(MASTER_URLS), [], USER, 'students'),
+     (list(MASTER_URLS), list(STUDENTS), '', 'user')])
 
 RAISES_ON_EMPTY_ARGS_IDS = [
     "|".join([str(val) for val in line])
@@ -466,8 +513,8 @@ class TestOpenIssue:
     # can probably use the RAISES_ON_EMPTY_ARGS_PARAMETRIZATION for that,
     # somehow
     @pytest.mark.parametrize('master_repo_names, students, empty_arg', [
-        ([], students(), 'master_repo_names'),
-        (master_names(master_urls()), [], 'students'),
+        ([], list(STUDENTS), 'master_repo_names'),
+        (list(MASTER_NAMES), [], 'students'),
     ])
     def test_raises_on_empty_args(self, api_mock, master_repo_names, students,
                                   empty_arg):
@@ -496,8 +543,8 @@ class TestCloseIssue:
     """Tests for close_issue."""
 
     @pytest.mark.parametrize('master_repo_names, students, empty_arg', [
-        ([], students(), 'master_repo_names'),
-        (master_names(master_urls()), [], 'students'),
+        ([], list(STUDENTS), 'master_repo_names'),
+        (list(MASTER_NAMES), [], 'students'),
     ])
     def test_raises_on_empty_args(self, api_mock, master_repo_names, students,
                                   empty_arg):
@@ -550,12 +597,11 @@ class TestCloneRepos:
         """
         javac_hook = MagicMock(
             spec='repomate.ext.javac.JavacCloneHook._class.act_on_cloned_repo',
-            return_value=HookResult('javac', Status.SUCCESS,
-                                         'Great success!'))
+            return_value=HookResult('javac', Status.SUCCESS, 'Great success!'))
         pylint_hook = MagicMock(
             spec='repomate.ext.pylint.act_on_cloned_repo',
             return_value=HookResult('pylint', Status.WARNING,
-                                         'Minor warning.'))
+                                    'Minor warning.'))
 
         @repomate_hook
         def act_hook_func(path):
@@ -582,8 +628,8 @@ class TestCloneRepos:
             'repomate.config.get_plugin_names', return_value=PLUGINS)
 
     @pytest.mark.parametrize('master_repo_names, students, empty_arg',
-                             [([], students(), 'master_repo_names'),
-                              (master_names(master_urls()), [], 'students')])
+                             [([], list(STUDENTS), 'master_repo_names'),
+                              (list(MASTER_NAMES), [], 'students')])
     def test_raises_on_empty_args(self, api_mock, master_repo_names, students,
                                   empty_arg):
         with pytest.raises(ValueError) as exc_info:
@@ -667,3 +713,27 @@ class TestMigrateRepo:
             command.MASTER_TEAM: []
         })
         git_push_mock.assert_called_once_with(expected_pts, user=USER)
+
+
+class TestListIssues:
+    """Tests for list_issues. Since this is essentially just a print command,
+    it is only tested for stability.
+    """
+
+    @pytest.mark.parametrize('state', ('open', 'closed', 'all'))
+    @pytest.mark.parametrize('regex', ('', r'^.*$'))
+    @pytest.mark.parametrize('show_body', (True, False))
+    @pytest.mark.parametrize('author', (None, 'slarse'))
+    def test_happy_path(self, master_names, students, api_mock, state, regex,
+                        show_body, author):
+        command.list_issues(
+            master_names,
+            students,
+            api_mock,
+            state=state,
+            title_regex=regex,
+            show_body=show_body,
+            author=author)
+
+        api_mock.get_issues.assert_called_once_with(
+            list(STUDENT_REPO_NAMES), state, regex)

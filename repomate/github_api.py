@@ -168,6 +168,23 @@ class GitHubAPI:
             for repo_name in list(repo_names)
         ]
 
+    def get_issues(self,
+                   repo_names: Iterable[str],
+                   state: str = 'open',
+                   title_regex: str = ""):
+        """Get all issues for the repos in repo_names an return a generator
+        that yields (repo_name, issue generator) tuples.
+
+        Args:
+            repo_names: An iterable of repo names.
+            state: Specifying the state of the issue ('open' or 'closed').
+            title_regex: If specified, only issues matching this regex are
+            returned. Defaults to the empty string (which matches anything).
+        Returns:
+            A generator that yields (repo_name, issue generator) tuples.
+        """
+        yield from self._api.get_issues(repo_names, state, title_regex)
+
     def open_issue(self, issue: tuples.Issue,
                    repo_names: Iterable[str]) -> None:
         """Open the specified issue in all repos with the given names.

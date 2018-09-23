@@ -42,6 +42,9 @@ VALID_PARSED_ARGS = dict(
     issue=ISSUE,
     title_regex="some regex",
     traceback=False,
+    state='open',
+    show_body=True,
+    author=None,
 )
 
 

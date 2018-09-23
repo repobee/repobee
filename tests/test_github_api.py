@@ -29,8 +29,8 @@ def repos():
     return [
         tuples.Repo(
             name, description, private, team_id, url=GENERATE_REPO_URL(name))
-        for name, description, private, team_id in
-        zip(repo_names, descriptions, privacy, team_id)
+        for name, description, private, team_id in zip(
+            repo_names, descriptions, privacy, team_id)
     ]
 
 
@@ -286,7 +286,10 @@ class TestGetRepoUrls:
 
         assert sorted(urls) == sorted(expected_urls)
 
-    @pytest.mark.skip(msg="not currently relevant as repo urls are generated, rather than fetched")
+    @pytest.mark.skip(
+        msg=
+        "not currently relevant as repo urls are generated, rather than fetched"
+    )
     def test_some_repos_found(self, api_wrapper_mock, repos, api):
         found_repo_names = [repo.name for repo in repos[:2]]
         not_found_repo_names = [repo.name for repo in repos[2:]]
@@ -318,3 +321,5 @@ class TestIssueFunctions:
 
         api_wrapper_mock.close_issue_in.assert_called_once_with(
             regex, repo_names)
+
+

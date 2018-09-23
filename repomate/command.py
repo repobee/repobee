@@ -14,9 +14,10 @@ program.
 """
 
 import shutil
+import re
 import os
 import tempfile
-from typing import Iterable, List, Optional
+from typing import Iterable, List, Optional, Tuple, Generator
 from collections import namedtuple
 
 import daiquiri
@@ -205,6 +206,104 @@ def _open_issue_by_urls(repo_urls: Iterable[str], issue: tuples.Issue,
     api.open_issue(issue, repo_names)
 
 
+def list_issues(master_repo_names: Iterable[str],
+                students: Iterable[str],
+                api: GitHubAPI,
+                state: str = 'open',
+                title_regex: str = "",
+                show_body: bool = False,
+                author: Optional[str] = None) -> None:
+    """List all issues in the specified repos.
+
+    Args:
+        master_repo_names: Names of master repositories.
+        students: An iterable of student GitHub usernames.
+        state: state of the repo (open or closed). Defaults to 'open'.
+        api: A GitHubAPI instance used to interface with the GitHub instance.
+        title_regex: If specified, only issues with titles matching the regex
+        are displayed. Defaults to the empty string (which matches everything).
+        show_body: If True, the body of the issue is displayed along with the
+        default info.
+        author: Only show issues by this author.
+    """
+    util.validate_types(api=(api, GitHubAPI))
+    util.validate_non_empty(
+        master_repo_names=master_repo_names, students=students)
+
+    repo_names = util.generate_repo_names(students, master_repo_names)
+    max_repo_name_length = max(map(len, repo_names))
+
+    issues_per_repo = api.get_issues(repo_names, state, title_regex)
+
+    if author:
+        issues_per_repo = ((repo_name, (issue for issue in issues
+                                        if issue.author == author))
+                           for repo_name, issues in issues_per_repo)
+
+    _log_repo_issues(issues_per_repo, show_body, max_repo_name_length + 6)
+
+
+def _log_repo_issues(
+        issues_per_repo: Tuple[str, Generator[tuples.Issue, None, None]],
+        show_body: bool, title_alignment: int) -> None:
+    """Log repo issues.
+    
+    Args:
+        issues_per_repo: (repo_name, issue generator) pairs
+        show_body: Include the body of the issue in the output.
+        title_alignment: Where the issue title should start counting from the
+        start of the line.
+    """
+    from colored import bg, fg, style
+    even = True
+    for repo_name, issues in issues_per_repo:
+        issues = list(issues)
+
+        if not issues:
+            LOGGER.warning("{}: No matching issues".format(repo_name))
+
+        for issue in issues:
+            color = (bg('grey_30') if even else bg('grey_15')) + fg('white')
+            even = not even  # cycle color
+            adjusted_alignment = title_alignment + len(
+                color)  # color takes character space
+
+            id_ = "{}{}/#{}:".format(color, repo_name,
+                                     issue.number).ljust(adjusted_alignment)
+            out = "{}{}{}{}created {!s} by {}".format(
+                id_, issue.title, style.RESET, " ", issue.created_at,
+                issue.author)
+            if show_body:
+                out += os.linesep * 2 + _limit_line_length(issue.body)
+            LOGGER.info(out)
+
+
+def _limit_line_length(s: str, max_line_length: int = 100) -> str:
+    """Return the input string with lines no longer than max_line_length.
+
+    Args:
+        s: Any string.
+        max_line_length: Maximum allowed line length.
+    Returns:
+        the input string with lines no longer than max_line_length.
+    """
+    # potentially very slow regex, but it seems to be fast enough in practice!
+    dangling_ws_pattern = re.compile(r'(^\s+|\s+$)')
+    lines = s.split(os.linesep)
+    out = ""
+    for line in lines:
+        cur = 0
+        while len(line) - cur > max_line_length:
+            # find ws closest to the line length
+            idx = line.rfind(' ', cur, max_line_length + cur)
+            idx = max_line_length - 1 if idx == 0 else idx
+            out += re.sub(dangling_ws_pattern, '', line[cur:idx]) + os.linesep
+            cur = idx
+        out += re.sub(dangling_ws_pattern, '',
+                      line[cur:cur + max_line_length]) + os.linesep
+    return out
+
+
 def open_issue(issue: tuples.Issue, master_repo_names: Iterable[str],
                students: Iterable[str], api: GitHubAPI) -> None:
     """Open an issue in student repos.
@@ -314,15 +413,13 @@ def migrate_repos(master_repo_urls: Iterable[str], user: str,
         _clone_all(master_repo_urls, cwd=tmpdir)
         repo_urls = api.create_repos(infos)
 
-        git.push(
-            [
-                git.Push(
-                    local_path=os.path.join(tmpdir, info.name),
-                    repo_url=repo_url,
-                    branch='master')
-                for repo_url, info in zip(repo_urls, infos)
-            ],
-            user=user)
+        git.push([
+            git.Push(
+                local_path=os.path.join(tmpdir, info.name),
+                repo_url=repo_url,
+                branch='master') for repo_url, info in zip(repo_urls, infos)
+        ],
+                 user=user)
 
     LOGGER.info("done!")
 
@@ -376,7 +473,7 @@ def _create_push_tuples(master_repo_paths: Iterable[str],
 
 
 def _format_hook_result(hook_result):
-    from colored import bg, style
+    from colored import bg, fg, style
     if hook_result.status == Status.ERROR:
         out = bg('red')
     elif hook_result.status == Status.WARNING:
@@ -386,10 +483,10 @@ def _format_hook_result(hook_result):
     else:
         raise ValueError(
             "expected hook_result.status to be one of Status.ERROR, "
-            "Status.WARNING or Status.SUCCESS, but was {!r}".format(hook_result.status)
-        )
+            "Status.WARNING or Status.SUCCESS, but was {!r}".format(
+                hook_result.status))
 
-    out += hook_result.hook + ": " + hook_result.status.name + style.RESET + os.linesep
+    out += fg('white') + hook_result.hook + ": " + hook_result.status.name + style.RESET + os.linesep
     out += hook_result.msg
 
     return out
@@ -400,7 +497,7 @@ def _format_hook_results_output(result_mapping):
     out = ""
     for repo_name, results in result_mapping.items():
         out += "{}hook results for {}{}{}".format(
-            bg('dark_gray'), repo_name, style.RESET, os.linesep * 2)
+            bg('grey_23'), repo_name, style.RESET, os.linesep * 2)
         out += os.linesep.join([
             "{}{}".format(_format_hook_result(res), os.linesep)
             for res in results
