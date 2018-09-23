@@ -61,8 +61,9 @@ def load_plugin_modules(
             raise exception.PluginError(msg)
         loaded_modules.append(plug_mod)
 
-    LOGGER.info("loaded modules {}".format(
-        [mod.__name__ for mod in loaded_modules]))
+    if loaded_modules:
+        LOGGER.info("loaded modules {}".format(
+            [mod.__name__ for mod in loaded_modules]))
 
     return loaded_modules
 
