@@ -17,7 +17,7 @@ import shutil
 import re
 import os
 import tempfile
-from typing import Iterable, List, Optional
+from typing import Iterable, List, Optional, Tuple, Generator
 from collections import namedtuple
 
 import daiquiri
@@ -211,7 +211,8 @@ def list_issues(master_repo_names: Iterable[str],
                 api: GitHubAPI,
                 state: str = 'open',
                 title_regex: str = "",
-                show_body: bool = False) -> None:
+                show_body: bool = False,
+                author: Optional[str] = None) -> None:
     """List all issues in the specified repos.
 
     Args:
@@ -223,40 +224,58 @@ def list_issues(master_repo_names: Iterable[str],
         are displayed. Defaults to the empty string (which matches everything).
         show_body: If True, the body of the issue is displayed along with the
         default info.
+        author: Only show issues by this author.
     """
     util.validate_types(api=(api, GitHubAPI))
     util.validate_non_empty(
         master_repo_names=master_repo_names, students=students)
 
     repo_names = util.generate_repo_names(students, master_repo_names)
+    max_repo_name_length = max(map(len, repo_names))
 
     issues_per_repo = api.get_issues(repo_names, state, title_regex)
 
-    for repo_name, issues in issues_per_repo:
-        issue_list = list(issues)
-        _log_repo_issues(repo_name, issue_list, show_body)
+    if author:
+        issues_per_repo = ((repo_name, (issue for issue in issues
+                                        if issue.author == author))
+                           for repo_name, issues in issues_per_repo)
+
+    _log_repo_issues(issues_per_repo, show_body, max_repo_name_length + 6)
 
 
-def _log_repo_issues(repo_name: str, issues: List[tuples.Issue],
-                     show_body: bool) -> None:
+def _log_repo_issues(
+        issues_per_repo: Tuple[str, Generator[tuples.Issue, None, None]],
+        show_body: bool, title_alignment: int) -> None:
     """Log repo issues.
     
     Args:
-        repo_name: Name of the repo.
-        issues: tuples.Issue objects.
+        issues_per_repo: (repo_name, issue generator) pairs
         show_body: Include the body of the issue in the output.
+        title_alignment: Where the issue title should start counting from the
+        start of the line.
     """
     from colored import bg, style
-    if not issues:
-        LOGGER.warning("{}: No matching issues".format(repo_name))
+    even = True
+    for repo_name, issues in issues_per_repo:
+        issues = list(issues)
 
-    for issue in issues:
-        out = "{}{}/#{}: {}{}{}created {!s} by {}".format(
-            bg('grey_23'), repo_name, issue.number, issue.title, style.RESET,
-            os.linesep, issue.created_at, issue.author)
-        if show_body:
-            out += os.linesep * 2 + _limit_line_length(issue.body)
-        LOGGER.info(out)
+        if not issues:
+            LOGGER.warning("{}: No matching issues".format(repo_name))
+
+        for issue in issues:
+            color = bg('grey_30') if even else bg('grey_15')
+            even = not even  # cycle color
+            adjusted_alignment = title_alignment + len(
+                color)  # color takes character space
+
+            id_ = "{}{}/#{}:".format(color, repo_name,
+                                     issue.number).ljust(adjusted_alignment)
+            out = "{}{}{}{}created {!s} by {}".format(
+                id_, issue.title, style.RESET, " ", issue.created_at,
+                issue.author)
+            if show_body:
+                out += os.linesep * 2 + _limit_line_length(issue.body)
+            LOGGER.info(out)
 
 
 def _limit_line_length(s: str, max_line_length: int = 100) -> str:

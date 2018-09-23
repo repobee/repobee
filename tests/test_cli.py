@@ -44,6 +44,7 @@ VALID_PARSED_ARGS = dict(
     traceback=False,
     state='open',
     show_body=True,
+    author=None,
 )
 
 

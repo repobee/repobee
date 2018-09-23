@@ -125,6 +125,7 @@ def parse_args(sys_args: Iterable[str]
         traceback=args.traceback,
         state=args.state if 'state' in args else None,
         show_body=args.show_body if 'show_body' in args else None,
+        author=args.author if 'author' in args else None,
     )
 
     return parsed_args, api
@@ -179,7 +180,8 @@ def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
                 api,
                 state=args.state,
                 title_regex=args.title_regex or "",
-                show_body=args.show_body)
+                show_body=args.show_body,
+                author=args.author)
     else:
         raise exception.ParseError(
             "Illegal value for subparser: {}. This is a bug, please open an issue."
@@ -241,6 +243,13 @@ def _add_issue_parsers(base_parsers, subparsers):
         '--show-body',
         action='store_true',
         help="Show the body of the issue, alongside the default info.")
+    list_parser.add_argument(
+        '-a',
+        '--author',
+        help="Only show issues by this author (GitHub username).",
+        type=str,
+        default=None,
+        )
     state = list_parser.add_mutually_exclusive_group()
     state.add_argument(
         '--open',

@@ -723,15 +723,17 @@ class TestListIssues:
     @pytest.mark.parametrize('state', ('open', 'closed', 'all'))
     @pytest.mark.parametrize('regex', ('', r'^.*$'))
     @pytest.mark.parametrize('show_body', (True, False))
+    @pytest.mark.parametrize('author', (None, 'slarse'))
     def test_happy_path(self, master_names, students, api_mock, state, regex,
-                        show_body):
+                        show_body, author):
         command.list_issues(
             master_names,
             students,
             api_mock,
             state=state,
             title_regex=regex,
-            show_body=show_body)
+            show_body=show_body,
+            author=author)
 
         api_mock.get_issues.assert_called_once_with(
             list(STUDENT_REPO_NAMES), state, regex)

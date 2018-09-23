@@ -20,7 +20,7 @@ class Issue(namedtuple('Issue', ('title', 'body', 'number', 'created_at', 'autho
 Args = namedtuple('Args',
                   ('subparser', 'org_name', 'github_base_url', 'user',
                    'master_repo_urls', 'master_repo_names', 'students',
-                   'issue', 'title_regex', 'traceback', 'state', 'show_body'))
+                   'issue', 'title_regex', 'traceback', 'state', 'show_body', 'author'))
 Args.__new__.__defaults__ = (None, ) * len(Args._fields)
 
 Team = namedtuple('Team', ('name', 'members', 'id'))
