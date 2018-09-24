@@ -18,6 +18,7 @@ from typing import List, Iterable, Optional, Tuple
 import logging
 import daiquiri
 
+import repomate
 from repomate import command
 from repomate import github_api
 from repomate import git
@@ -282,6 +283,12 @@ def _create_parser():
     parser = argparse.ArgumentParser(
         prog='repomate',
         description='A CLI tool for administrating student repositories.')
+    parser.add_argument(
+        '-v',
+        '--version',
+        help="Display version info",
+        action='version',
+        version="{} v{}".format(repomate.__package__, repomate.__version__))
     _add_subparsers(parser)
     return parser
 
