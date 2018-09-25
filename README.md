@@ -64,6 +64,7 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
+  -v, --version         Display version info
 ```
 
 ## License

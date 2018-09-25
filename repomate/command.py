@@ -203,7 +203,7 @@ def _open_issue_by_urls(repo_urls: Iterable[str], issue: tuples.Issue,
     api: A GitHubAPI to use.
     """
     repo_names = [util.repo_name(url) for url in repo_urls]
-    api.open_issue(issue, repo_names)
+    api.open_issue(issue.title, issue.body, repo_names)
 
 
 def list_issues(master_repo_names: Iterable[str],
@@ -365,10 +365,10 @@ def clone_repos(master_repo_names: Iterable[str], students: Iterable[str],
     git.clone(repo_urls)
 
     if plug.manager.get_plugins():
-        _execute_post_clone_hooks(repo_names)
+        _execute_post_clone_hooks(repo_names, api)
 
 
-def _execute_post_clone_hooks(repo_names: List[str]):
+def _execute_post_clone_hooks(repo_names: List[str], api: GitHubAPI):
     LOGGER.info("executing post clone hooks on repos")
     local_repos = [name for name in os.listdir() if name in repo_names]
 
@@ -376,7 +376,7 @@ def _execute_post_clone_hooks(repo_names: List[str]):
     for repo_name in local_repos:
         LOGGER.info("executing post clone hooks on {}".format(repo_name))
         res = plug.manager.hook.act_on_cloned_repo(
-            path=os.path.abspath(repo_name))
+            path=os.path.abspath(repo_name), api=api)
         results[repo_name] = res
     LOGGER.info(_format_hook_results_output(results))
 

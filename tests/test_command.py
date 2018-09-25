@@ -463,8 +463,9 @@ class TestUpdateStudentRepos:
             call = call_list[0]
             args = call[0]
             assert len(call_list) == 1
-            assert args[0] == issue
-            assert sorted(args[1]) == sorted(fail_repo_names)
+            assert args[0] == issue.title
+            assert args[1] == issue.body
+            assert sorted(args[2]) == sorted(fail_repo_names)
         else:  # expect issue not to be opened
             assert not api_mock.open_issue.called
 

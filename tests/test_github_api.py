@@ -309,7 +309,7 @@ class TestIssueFunctions:
 
     def test_open_issue(self, api_wrapper_mock, repos, api):
         repo_names = [repo.name for repo in repos]
-        api.open_issue(ISSUE, repo_names)
+        api.open_issue(ISSUE.title, ISSUE.body, repo_names)
 
         api_wrapper_mock.open_issue_in.assert_called_once_with(
             ISSUE, repo_names)

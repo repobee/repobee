@@ -185,15 +185,19 @@ class GitHubAPI:
         """
         yield from self._api.get_issues(repo_names, state, title_regex)
 
-    def open_issue(self, issue: tuples.Issue,
+    def open_issue(self, title: str, body: str,
                    repo_names: Iterable[str]) -> None:
-        """Open the specified issue in all repos with the given names.
+        """Open the specified issue in all repos with the given names. The
++        reason the title and body are passed as strings, instead of in a
++        :py:class:`~repomate.tuples.Issue` tuple is that pluggins should be
++        able to use this method without having access to that class.
 
         Args:
-            issue: The issue to open.
+            title: Title of the issue.
+            body: Body of the issue.
             repo_names: Names of repos to open the issue in.
         """
-        self._api.open_issue_in(issue, repo_names)
+        self._api.open_issue_in(tuples.Issue(title, body), repo_names)
 
     def close_issue(self, title_regex: str, repo_names: Iterable[str]) -> None:
         """Close any issues in the given repos whose titles match the title_regex.

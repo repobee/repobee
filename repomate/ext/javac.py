@@ -30,6 +30,7 @@ import daiquiri
 
 from repomate import tuples
 from repomate import util
+from repomate import github_api
 
 from repomate_plug import Plugin, HookResult, Status
 
@@ -46,11 +47,13 @@ class JavacCloneHook(Plugin):
     def __init__(self):
         self._ignore = []
 
-    def act_on_cloned_repo(self, path: Union[str, pathlib.Path]) -> HookResult:
+    def act_on_cloned_repo(self, path: Union[str, pathlib.Path],
+                           api: github_api.GitHubAPI) -> HookResult:
         """Run ``javac`` on all .java files in the repo.
         
         Args:
             path: Path to the repo.
+            api: A :py:class:`~repomate.github_api.GitHubAPI` instance.
         Returns:
             a HookResult specifying the outcome.
         """

@@ -25,6 +25,7 @@ import daiquiri
 from repomate import plugin
 from repomate import tuples
 from repomate import util
+from repomate import github_api
 
 from repomate_plug import repomate_hook, HookResult, Status
 
@@ -34,11 +35,12 @@ SECTION = 'pylint'
 
 
 @repomate_hook
-def act_on_cloned_repo(path: Union[str, pathlib.Path]):
+def act_on_cloned_repo(path: Union[str, pathlib.Path], api: github_api.GitHubAPI):
     """Run pylint on all Python files in a repo.
     
     Args:
         path: Path to the repo.
+        api: A :py:class:`github_api.GitHubAPI` instance.
     Returns:
         a plug.HookResult specifying the outcome.
     """
