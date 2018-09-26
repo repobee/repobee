@@ -537,7 +537,7 @@ class TestOpenIssue:
             "A title", "And a nice **formatted** body\n### With headings!")
         command.open_issue(issue, master_names, students, api_mock)
 
-        api_mock.open_issue.assert_called_once_with(issue, expected_repo_names)
+        api_mock.open_issue.assert_called_once_with(issue.title, issue.body, expected_repo_names)
 
 
 class TestCloseIssue:

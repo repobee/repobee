@@ -321,7 +321,7 @@ def open_issue(issue: tuples.Issue, master_repo_names: Iterable[str],
 
     repo_names = util.generate_repo_names(students, master_repo_names)
 
-    api.open_issue(issue, repo_names)
+    api.open_issue(issue.title, issue.body, repo_names)
 
 
 def close_issue(title_regex: str, master_repo_names: Iterable[str],
