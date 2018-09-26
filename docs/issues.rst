@@ -80,3 +80,46 @@ And there we go, easy as pie!
     announcement``. In other words, it matches exactly the title ``An important
     announcement``, and nothing else. Not even an extra space or linebreak is
     allowed.
+
+Listing Issues
+--------------
+It can often be interesting to check what issues exist in a set of repos,
+especially so if you're a teaching assistant who just doesn't want to leave your
+trusty terminal. This is where the ``list-issues`` command comes into play.
+Typically, we are only interested in open issues, and can then use list
+issues like so:
+
+.. code-block:: bash
+
+    $ repomate list-issues -mn master-repo-2 -sf students.txt
+    [INFO] config file defaults:
+
+       github_base_url: https://some-enterprise-host/api/v3
+       user: slarse
+       org_name: repomate-demo
+       
+    [INFO] spam-master-repo-2/#1:  Grading Criteria created 2018-09-12 18:20:56 by glassey
+    [INFO] eggs-master-repo-2/#1:  Grading Criteria created 2018-09-12 18:20:56 by glassey
+    [INFO] ham-master-repo-2/#1:   Grading Criteria created 2018-09-12 18:20:56 by glassey
+
+So, just grading critera issues posted by the user ``glassey``. What happened to
+the important announcements? Well, they are closed. If we want to se closed
+issues, we must specifically say so with the ``--closed`` argument.
+
+.. code-block:: bash
+
+    $ repomate list-issues -mn master-repo-2 -sf students.txt --closed
+    [INFO] config file defaults:
+
+       github_base_url: https://some-enterprise-host/api/v3
+       user: slarse
+       org_name: repomate-demo
+       
+    [INFO] spam-master-repo-2/#2:  An important announcement created 2018-09-17 17:46:43 by slarse
+    [INFO] eggs-master-repo-2/#2:  An important announcement created 2018-09-17 17:46:43 by slarse
+    [INFO] ham-master-repo-2/#2:   An important announcement created 2018-09-17 17:46:43 by slarse
+
+Other interesting arguments include ``--all`` for both open and closed issues,
+``--show-body`` for showing the body of each issue, and ``--author <username>``
+for filtering by author. There's not much more to it, see ``repomate list-issues
+-h`` for complete and up-to-date information on usage!

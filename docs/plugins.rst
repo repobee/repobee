@@ -27,6 +27,19 @@ plugins. This is useful for plugins that rely on the results of other plugins.
 This system for deciding execution order may be overhauled in the future, if
 anyone comes up with a better idea.
 
+.. note::
+
+    **New in v0.3.0:** Plugins to use can now be specified on the command line
+    using the ``-p|--plug`` argument *before* entering any of the subparsers.
+    Example for using the ``pylint`` and ``javac`` plugins:
+
+    .. code-block:: bash
+        
+        $ repomate -p pylint -p javac clone -mn master-repo-1 -sf students.txt
+
+    Note that this argument is *hidden*, so it does not show when running
+    ``repomate -h``.
+
 .. _builtins:
 
 Built-in Plugins
