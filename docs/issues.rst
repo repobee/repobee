@@ -1,18 +1,18 @@
-Opening and Closing issues (the ``open-issue`` and ``close-issue`` commands)
+Opening and Closing issues (the ``open-issues`` and ``close-issues`` commands)
 ****************************************************************************
 Sometimes, the best way to handle an error in a repo is to simply notify
 affected students about it. This is especially true if the due date for the
 assignment is rapidly approaching, and most students have already started
 modifying their repositories. Therefore, ``repomate`` provides the
-``open-issue`` command, which can open issues in bulk. When the time is right
+``open-issues`` command, which can open issues in bulk. When the time is right
 (perhaps after the deadline has passed), issues can be closed with the
-``close-issue`` command.
+``close-issues`` command.
 
 .. _open:
 
 Opening Issues
 --------------
-The ``open-issue`` command is very simple. Before we use it, however, we need
+The ``open-issues`` command is very simple. Before we use it, however, we need
 to write a Markdown-formatted issue. Just like with the ``update`` command, the
 **first line of the file is the title**. Here is ``issue.md``:
 
@@ -32,7 +32,7 @@ for our dear students ``spam``, ``eggs`` and ``ham``, who are listed in the
 
 .. code-block:: bash
 
-    $ repomate open-issue -mn master-repo-2 -sf students.txt -i issue.md 
+    $ repomate open-issues -mn master-repo-2 -sf students.txt -i issue.md 
     [INFO] config file defaults:
 
        github_base_url: https://some-enterprise-host/api/v3
@@ -51,14 +51,14 @@ correctly. And that's it! Neat, right?
 Closing Issues
 --------------
 Now that the deadline has passed for ``master-repo-2``, we want to close the
-issues opened in open_. The ``close-issue`` command takes a *regex* that runs
+issues opened in open_. The ``close-issues`` command takes a *regex* that runs
 against titles. All issues with matching titles are closed. While you *can*
 make this really difficult, closing all issues with the title ``An important
 announcement`` is simple: we provide the regex ``\AAn important announcement\Z``.
 
 .. code-block:: bash
 
-    $ repomate close-issue -mn master-repo-2 -sf students.txt -r '\AAn important announcement\Z'
+    $ repomate close-issues -mn master-repo-2 -sf students.txt -r '\AAn important announcement\Z'
     [INFO] config file defaults:
 
        github_base_url: https://some-enterprise-host/api/v3

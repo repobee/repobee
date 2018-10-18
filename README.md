@@ -56,8 +56,8 @@ positional arguments:
     add-to-teams        Create student teams and add students to them. This
                         command is automatically executed by the `setup`
                         command.
-    open-issue          Open issues in student repos.
-    close-issue         Close issues in student repos.
+    open-issues         Open issues in student repos.
+    close-issues        Close issues in student repos.
     list-issues         List issues in student repos.
     verify-settings     Verify your settings, such as the base url and the
                         OAUTH token.
