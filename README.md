@@ -11,10 +11,11 @@
 ## Overview
 
 `repomate` is A CLI tool for administrating large amounts of GitHub
-repositories, geared towards teachers and GitHub Enterprise. `repomate` is currently being used for the introductory courses in computer
-science at KTH Royal Technical Institute of Technology. The courses have
-roughly 200 students and several thousands of repositories, allowing us
-to test `repomate` at quite a large scale.
+repositories, geared towards teachers and GitHub Enterprise. `repomate` is
+currently being used for the introductory courses in computer science at
+[KTH Royal Technical Institute of Technology](https://www.kth.se/en/eecs). The
+courses have roughly 200 students and several thousands of repositories,
+allowing us to test `repomate` at quite a large scale.
 
 ### Getting started
 The best way to get started with `repomate` is to head over to the
