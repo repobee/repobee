@@ -8,6 +8,7 @@ import repomate
 from repomate import cli
 from repomate import main
 from repomate import tuples
+from repomate import github_api
 
 ORG_NAME = pytest.constants.ORG_NAME
 GITHUB_BASE_URL = pytest.constants.GITHUB_BASE_URL
@@ -37,7 +38,7 @@ def logger_exception_mock(mocker):
 
 @pytest.fixture
 def api_instance_mock(mocker):
-    return MagicMock(spec='repomate.APIWrapper')
+    return MagicMock(spec='repomate.github_api.GitHubAPI')
 
 
 @pytest.fixture

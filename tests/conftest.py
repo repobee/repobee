@@ -54,6 +54,7 @@ def pytest_namespace():
         ISSUE_PATH=ISSUE_PATH,
         ISSUE=ISSUE,
         PLUGINS=PLUGINS,
+        TOKEN=TOKEN,
     )
     functions = dict(
         GENERATE_REPO_URL=GENERATE_REPO_URL,
