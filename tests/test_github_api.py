@@ -1,4 +1,5 @@
 import sys
+import random
 import os
 import itertools
 import pytest
@@ -7,6 +8,8 @@ from collections import namedtuple
 
 import github
 from repomate import exception
+from repomate import github_api
+from repomate import git
 from repomate import tuples
 from repomate.abstract_api_wrapper import REQUIRED_OAUTH_SCOPES
 
@@ -33,8 +36,24 @@ ISSUE = pytest.constants.ISSUE
 TOKEN = pytest.constants.TOKEN
 
 GENERATE_REPO_URL = pytest.functions.GENERATE_REPO_URL
+RANDOM_DATE = pytest.functions.RANDOM_DATE
+to_magic_mock_issue = pytest.functions.to_magic_mock_issue
+from_magic_mock_issue = pytest.functions.from_magic_mock_issue
 
 User = pytest.classes.User
+
+CLOSE_ISSUE = tuples.Issue('close this issue', 'This is a body', 3,
+                           RANDOM_DATE(), 'slarse')
+DONT_CLOSE_ISSUE = tuples.Issue("Don't close this issue", 'Another body', 4,
+                                RANDOM_DATE(), 'glassey')
+OPEN_ISSUES = [CLOSE_ISSUE, DONT_CLOSE_ISSUE]
+
+CLOSED_ISSUES = [
+    tuples.Issue('This is a closed issue', 'With an uninteresting body', 1,
+                 RANDOM_DATE(), 'tmore'),
+    tuples.Issue('Yet another closed issue', 'Even less interesting body', 2,
+                 RANDOM_DATE(), 'viklu')
+]
 
 
 def raise_404(*args, **kwargs):
@@ -75,12 +94,12 @@ def happy_github(mocker, monkeypatch, teams_and_members):
                           for _, members in teams_and_members.items()]))
 
     def get_user(username):
-        if username in usernames:
+        if username in [*usernames, USER, NOT_OWNER]:
             user = MagicMock(spec=github.NamedUser.NamedUser)
             type(user).login = PropertyMock(return_value=username)
             return user
         else:
-            raise_422()
+            raise_404()
 
     github_instance.get_user.side_effect = get_user
     monkeypatch.setattr(github, 'GithubException', GithubException)
@@ -153,7 +172,7 @@ def teams(organization, no_teams, teams_and_members):
 
 
 def mock_repo(name, description, private, team_id):
-    repo = MagicMock(spec=github.Repository.Repository)
+    repo = MagicMock()
     type(repo).name = PropertyMock(return_value=name)
     type(repo).description = PropertyMock(
         return_value="description of {}".format(name))
@@ -163,11 +182,17 @@ def mock_repo(name, description, private, team_id):
 
 
 @pytest.fixture
-def repos(teams_and_members, teams, organization):
+def repo_infos(teams_and_members, teams):
     descriptions = ["A nice repo for {}".format(team.name) for team in teams]
-    repo_names = [
-        "{}-week-2".format(team.name) for team in organization.get_teams()
+    repo_names = ["{}-week-2".format(team.name) for team in teams]
+    return [
+        tuples.Repo(name, description, True, team.id)
+        for name, description, team in zip(repo_names, descriptions, teams)
     ]
+
+
+@pytest.fixture
+def no_repos(teams_and_members, teams, organization):
     repos_in_org = {}
 
     def get_repo(repo_name):
@@ -185,12 +210,43 @@ def repos(teams_and_members, teams, organization):
 
     organization.create_repo.side_effect = create_repo
     organization.get_repo.side_effect = get_repo
+    organization.get_repos.side_effect = lambda: list(repos_in_org.values())
 
-    return [
-        tuples.Repo(
-            name, description, True, team.id, url=GENERATE_REPO_URL(name))
-        for name, description, team in zip(repo_names, descriptions, teams)
-    ]
+
+@pytest.fixture
+def repos(organization, no_repos, repo_infos):
+    for ri in repo_infos:
+        organization.create_repo(ri.name, ri.description, ri.private,
+                                 ri.team_id)
+
+    return organization.get_repos()
+
+
+@pytest.fixture
+def issues(repos):
+    """Adds two issues to all repos such that Repo.get_issues returns the
+    issues. One issue is expected to be closed and has title CLOSE_ISSUE.title
+    and is marked with, while the other is expected not to be closed and has
+    title DONT_CLOSE_ISSUE.title.
+    """
+
+    def attach_issues(repo):
+        # for some reason, putting this inline in the loop caused every single
+        # repo to get the SAME mocks returned by the lambda
+        open_issue_mocks = [
+            to_magic_mock_issue(issue) for issue in OPEN_ISSUES
+        ]
+        closed_issue_mocks = [
+            to_magic_mock_issue(issue) for issue in CLOSED_ISSUES
+        ]
+        repo.get_issues.side_effect = lambda state: open_issue_mocks if state == 'open' else closed_issue_mocks
+        return open_issue_mocks + closed_issue_mocks
+
+    issues = []
+    for repo in repos:
+        issues.extend(attach_issues(repo))
+
+    return issues
 
 
 @pytest.fixture(scope='function')
@@ -253,7 +309,7 @@ class TestEnsureTeamsAndMembers:
 
 
 class TestCreateRepos:
-    def test_creates_correct_repos(self, repos, api):
+    def test_creates_correct_repos(self, no_repos, repo_infos, api):
         """Assert that org.create_repo is called with the correct arguments."""
         # expect (self, repo_info) call args
         expected_calls = [
@@ -262,15 +318,15 @@ class TestCreateRepos:
                 description=info.description,
                 private=info.private,
                 team_id=info.team_id,
-            ) for info in repos
+            ) for info in repo_infos
         ]
 
-        api.create_repos(repos)
+        api.create_repos(repo_infos)
 
         assert repos
         api.org.create_repo.assert_has_calls(expected_calls)
 
-    def test_skips_existing_repos(self, repos, api):
+    def test_skips_existing_repos(self, no_repos, repo_infos, api):
         """Assert that create_repo is called with all repos even when there are exceptions."""
         expected_calls = [
             call(
@@ -278,36 +334,36 @@ class TestCreateRepos:
                 description=info.description,
                 private=info.private,
                 team_id=info.team_id,
-            ) for info in repos
+            ) for info in repo_infos
         ]
-
         # create one repo in advance
-        api.create_repos(repos[:1])
+        api.create_repos(repo_infos[:1])
 
-        api.create_repos(repos)
+        # start test
+        api.create_repos(repo_infos)
 
         api.org.create_repo.assert_has_calls(expected_calls)
 
     @pytest.mark.parametrize(
         'unexpected_exception',
         (SERVER_ERROR, RuntimeError(), NOT_FOUND_EXCEPTION))
-    def test_raises_on_unexpected_error(self, repos, api,
+    def test_raises_on_unexpected_error(self, no_repos, repo_infos, api,
                                         unexpected_exception):
         create_repo_mock = api.org.create_repo
-        side_effect = [create_repo_mock] * len(repos)
+        side_effect = [create_repo_mock] * len(repo_infos)
         side_effect_github_exception = [unexpected_exception] + side_effect[1:]
 
         create_repo_mock.side_effect = side_effect_github_exception
         with pytest.raises(exception.GitHubError):
-            api.create_repos(repos)
+            api.create_repos(repo_infos)
 
-    def test_returns_all_urls(self, mocker, repos, api):
+    def test_returns_all_urls(self, mocker, repos, repo_infos, api):
         """Assert that create_repo returns the urls for all repos, even if there
         are validation errors.
         """
-        expected_urls = [GENERATE_REPO_URL(info.name) for info in repos]
+        expected_urls = [GENERATE_REPO_URL(info.name) for info in repo_infos]
 
-        actual_urls = api.create_repos(repos)
+        actual_urls = api.create_repos(repo_infos)
         assert actual_urls == expected_urls
 
 
@@ -316,7 +372,7 @@ class TestGetRepoUrls:
 
     def test_all_repos_found(self, repos, api):
         repo_names = [repo.name for repo in repos]
-        expected_urls = [repo.url for repo in repos]
+        expected_urls = [repo.html_url for repo in repos]
 
         urls = api.get_repo_urls(repo_names)
 
@@ -340,20 +396,205 @@ class TestGetRepoUrls:
         assert sorted(not_found) == sorted(not_found_repo_names)
 
 
-class TestIssueFunctions:
-    """Tests for open_issue and close_issue."""
+class TestOpenIssue:
+    """Tests for open_issue."""
 
-    def test_open_issue(self, repos, api):
+    def test_on_existing_repos(self, api, repos, issues):
         repo_names = [repo.name for repo in repos]
+
         api.open_issue(ISSUE.title, ISSUE.body, repo_names)
 
-        api_wrapper_mock.open_issue_in.assert_called_once_with(
-            ISSUE, repo_names)
+        for repo in repos:
+            repo.create_issue.assert_called_once_with(
+                ISSUE.title, body=ISSUE.body)
 
-    def test_close_issue(self, repos, api):
+    def test_on_some_non_existing_repos(self, api, repos):
+        """Assert that repos that do not exist are simply skipped."""
+
+        repo_names = [
+            "repo-that-does-not-exist-{}".format(i) for i in range(10)
+        ] + [repo.name for repo in repos]
+
+        api.open_issue(ISSUE.title, ISSUE.body, repo_names)
+
+        for repo in repos:
+            repo.create_issue.assert_called_once_with(
+                ISSUE.title, body=ISSUE.body)
+
+    def test_no_crash_when_no_repos_are_found(self, api, repos, happy_github):
+        repo_names = [
+            "repo-that-does-not-exist-{}".format(i) for i in range(10)
+        ]
+
+        api.open_issue(ISSUE.title, ISSUE.body, repo_names)
+
+
+class TestCloseIssue:
+    """Tests for close_issue."""
+
+    def test_closes_correct_issues(self, repos, issues, api):
+        """Given repos with existing issues, assert that the corect issues are closed."""
         repo_names = [repo.name for repo in repos]
-        regex = "some-regex"
+        expected_closed = [
+            issue for issue in issues if issue.title == CLOSE_ISSUE.title
+        ]
+        expected_not_closed = [
+            issue for issue in issues if issue.title == DONT_CLOSE_ISSUE.title
+        ]
+        assert expected_closed, "pre-test assert"
+        assert expected_not_closed, "pre-test assert"
+        regex = "^{}$".format(CLOSE_ISSUE.title)
+
         api.close_issue(regex, repo_names)
 
-        api_wrapper_mock.close_issue_in.assert_called_once_with(
-            regex, repo_names)
+        for issue in expected_not_closed:
+            assert not issue.edit.called
+        for issue in expected_closed:
+            #issue.edit.assert_called_once_with(state='closed')
+            assert issue.edit.called
+
+    def test_no_crash_if_no_repos_found(self, api, repos, issues):
+        """Tests that there is no crash if no repos are found."""
+        repo_names = [
+            "repo-that-does-not-exist-{}".format(i) for i in range(10)
+        ]
+
+        regex = "^{}$".format(CLOSE_ISSUE.title)
+        api.close_issue(regex, repo_names)
+
+        for issue in issues:
+            assert not issue.edit.called
+
+    def test_no_crash_if_no_issues_found(self, api, repos, issues):
+        """Tests that there is no crash if repos are found, but no matching issues."""
+        repo_names = [repo.name for repo in repos]
+        regex = "^{}$".format("non-matching-regex")
+
+        api.close_issue(regex, repo_names)
+
+        for issue in issues:
+            assert not issue.edit.called
+
+
+class TestGetIssues:
+    """Tests for get_issues."""
+
+    def test_get_all_open_issues(self, repos, issues, api):
+        repo_names = [repo.name for repo in repos]
+
+        name_issues_pairs = api.get_issues(repo_names, state='open')
+
+        found_repos = []
+        for repo_name, issue_gen in name_issues_pairs:
+            found_repos.append(repo_name)
+
+            actual_issues = list(map(from_magic_mock_issue, issue_gen))
+            assert actual_issues == OPEN_ISSUES
+
+        assert sorted(found_repos) == sorted(repo_names)
+
+    def test_get_all_closed_issues(self, repos, issues, api):
+        repo_names = [repo.name for repo in repos]
+
+        print(api.get_issues(repo_names, state='closed'))
+
+        name_issues_pairs = api.get_issues(repo_names, state='closed')
+
+        found_repos = []
+        for repo_name, issue_gen in name_issues_pairs:
+            found_repos.append(repo_name)
+
+            actual_issues = list(map(from_magic_mock_issue, issue_gen))
+            assert actual_issues == CLOSED_ISSUES
+
+        assert sorted(found_repos) == sorted(repo_names)
+
+    def test_get_issues_when_one_repo_doesnt_exist(self, repos, issues, api):
+        """It should just ignore the repo that does not exist (and log the
+        error)."""
+        non_existing = 'definitely-non-existing-repo'
+        repo_names = [repo.name for repo in repos] + [non_existing]
+        random.shuffle(repo_names)
+
+        name_issues_pairs = api.get_issues(repo_names, state='open')
+
+        found_repos = []
+        for repo_name, issue_gen in name_issues_pairs:
+            found_repos.append(repo_name)
+
+            actual_issues = list(map(from_magic_mock_issue, issue_gen))
+            assert actual_issues == OPEN_ISSUES
+
+        assert len(found_repos) + 1 == len(repo_names)
+        assert set(found_repos) == set(repo_names) - {non_existing}
+
+    def test_get_open_issues_by_regex(self, repos, issues, api):
+        """Should filter by regex."""
+        sought_issue = OPEN_ISSUES[1]
+        repo_names = [repo.name for repo in repos]
+        regex = "^{}$".format(sought_issue.title)
+
+        name_issues_pairs = api.get_issues(
+            repo_names, state='open', title_regex=regex)
+
+        found_repos = []
+        for repo_name, issue_gen in name_issues_pairs:
+            found_repos.append(repo_name)
+
+            actual_issues = list(map(from_magic_mock_issue, issue_gen))
+            assert actual_issues == [sought_issue]
+
+        assert sorted(found_repos) == sorted(repo_names)
+
+
+@pytest.fixture(params=['get_user', 'get_organization'])
+def github_bad_info(request, api, happy_github):
+    """Fixture with a github instance that raises GithubException 404 when
+    use the user, base_url and org_name arguments to .
+    """
+    getattr(happy_github, request.param).side_effect = raise_404
+    return happy_github
+
+
+class TestVerifySettings:
+    """Tests for the verify_settings function."""
+
+    def test_happy_path(self, happy_github, organization, api):
+        """Tests that no exceptions are raised when all info is correct."""
+        github_api.GitHubAPI.verify_settings(USER, ORG_NAME, GITHUB_BASE_URL,
+                                             git.OAUTH_TOKEN)
+
+    def test_empty_token_raises_bad_credentials(self, happy_github,
+                                                monkeypatch, api):
+        with pytest.raises(exception.BadCredentials) as exc_info:
+            github_api.GitHubAPI.verify_settings(USER, ORG_NAME,
+                                                 GITHUB_BASE_URL, '')
+
+        assert "token is empty" in str(exc_info)
+
+    def test_incorrect_info_raises_not_found_error(self, github_bad_info, api):
+        with pytest.raises(exception.NotFoundError) as exc_info:
+            github_api.GitHubAPI.verify_settings(
+                USER, ORG_NAME, GITHUB_BASE_URL, git.OAUTH_TOKEN)
+
+    def test_bad_token_scope_raises(self, happy_github, api):
+        type(happy_github).oauth_scopes = PropertyMock(return_value=['repo'])
+
+        with pytest.raises(exception.BadCredentials) as exc_info:
+            github_api.GitHubAPI.verify_settings(
+                USER, ORG_NAME, GITHUB_BASE_URL, git.OAUTH_TOKEN)
+        assert "missing one or more oauth scopes" in str(exc_info)
+
+    def test_not_owner_raises(self, happy_github, organization, api):
+        with pytest.raises(exception.BadCredentials) as exc_info:
+            github_api.GitHubAPI.verify_settings(
+                NOT_OWNER, ORG_NAME, GITHUB_BASE_URL, git.OAUTH_TOKEN)
+
+        assert "user {} is not an owner".format(NOT_OWNER) in str(exc_info)
+
+    def test_raises_unexpected_exception_on_unexpected_status(
+            self, happy_github, api):
+        happy_github.get_user.side_effect = SERVER_ERROR
+        with pytest.raises(exception.UnexpectedException) as exc_info:
+            api.verify_settings(USER, ORG_NAME, GITHUB_BASE_URL,
+                                git.OAUTH_TOKEN)

@@ -79,7 +79,6 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
         raise exception.ServiceNotFoundError(
             "GitHub service could not be found, check the url")
     except Exception as e:
-        print("hello")
         raise exception.UnexpectedException(
             "a {} occured unexpectedly: {}".format(type(e).__name__, str(e)))
 
@@ -306,7 +305,7 @@ class GitHubAPI:
                 issue for issue in repo.get_issues(state=state)
                 if re.match(title_regex or "", issue.title)))
                                  for repo in repos)
-            yield from name_issues_pairs
+        yield from name_issues_pairs
 
     def open_issue(self, title: str, body: str,
                    repo_names: Iterable[str]) -> None:
