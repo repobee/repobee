@@ -224,12 +224,9 @@ class TestDispatchCommand:
         admin_mock.clone_repos.assert_called_once_with(
             args.master_repo_names, args.students, api_instance_mock)
 
-    def test_verify_settings_called_with_correct_args(self, monkeypatch):
+    def test_verify_settings_called_with_correct_args(self, api_class_mock):
         # regular mockaing is broken for static methods, it seems, produces non-callable
         # so using monkeypatch instead
-        verify_mock = MagicMock()
-        monkeypatch.setattr('repomate.cli.APIWrapper.verify_settings',
-                            verify_mock)
         args = tuples.Args(
             cli.VERIFY_PARSER,
             user=USER,
@@ -238,7 +235,7 @@ class TestDispatchCommand:
 
         cli.dispatch_command(args, None)
 
-        verify_mock.assert_called_once_with(
+        api_class_mock.verify_settings.assert_called_once_with(
             args.user, args.org_name, args.github_base_url, git.OAUTH_TOKEN)
 
 

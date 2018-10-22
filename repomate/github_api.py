@@ -4,9 +4,6 @@ This module contains the :py:class:`GitHubAPI` class, which is meant to be the
 prime means of interacting with the GitHub API in ``repomate``. The methods of
 GitHubAPI are mostly high-level bulk operations.
 
-The :py:class:`APIWrapper` class is an abstraction layer for the actual API
-used to communicate with GitHub.
-
 .. module:: github_api
     :synopsis: Top level interface for interacting with a GitHub instance within repomate.
 
@@ -19,9 +16,11 @@ import daiquiri
 import contextlib
 import github
 
-from repomate import APIWrapper
 from repomate import exception
 from repomate import tuples
+from repomate import util
+
+REQUIRED_OAUTH_SCOPES = {'admin:org', 'repo'}
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -101,7 +100,6 @@ class GitHubAPI:
             token: A GitHub OAUTH token.
             org_name: Name of the target organization.
         """
-        self._api = APIWrapper(base_url, token, org_name)
         self._github = github.Github(login_or_token=token, base_url=base_url)
         with _try_api_request():
             self._org = self._github.get_organization(org_name)
@@ -113,7 +111,8 @@ class GitHubAPI:
         return "GitHubAPI(base_url={}, token={}, org_name={})".format(
             self._base_url, self._token, self._org_name)
 
-    def get_teams_in(self, team_names: Iterable[str]) -> List[tuples.Team]:
+    def get_teams_in(self,
+                     team_names: Iterable[str]) -> List[github.Team.Team]:
         """Get all teams that match any team name in the team_names iterable.
 
         Args:
@@ -169,7 +168,7 @@ class GitHubAPI:
         for team in [team for team in teams if member_lists[team.name]]:
             self._ensure_members_in_team(team, member_lists[team.name])
 
-        return self._api.get_teams_in(set(member_lists.keys()))
+        return self.get_teams_in(set(member_lists.keys()))
 
     def _ensure_teams_exist(self,
                             team_names: Iterable[str]) -> List[tuples.Team]:
@@ -184,13 +183,18 @@ class GitHubAPI:
             exception.UnexpectedException if anything but a 422 (team already
             exists) is raised when trying to create a team.
         """
-        existing_team_names = set(team.name for team in self._api.get_teams())
+        existing_teams = list(self._org.get_teams())
+        existing_team_names = set(team.name for team in existing_teams)
 
         required_team_names = set(team_names)
+        teams = [
+            team for team in existing_teams if team.name in required_team_names
+        ]
         for team_name in required_team_names - existing_team_names:
             try:
-                self._org.create_team(team_name, permission='push')
+                new_team = self._org.create_team(team_name, permission='push')
                 LOGGER.info("created team {}".format(team_name))
+                teams.append(new_team)
             except exception.GitHubError as exc:
                 if exc.status != 422:
                     raise exception.UnexpectedException(
@@ -198,10 +202,6 @@ class GitHubAPI:
                         format(exc.status, str(exc)))
                 LOGGER.info("team {} already exists".format(team_name))
 
-        teams = [
-            team for team in self._api.get_teams()
-            if team.name in required_team_names
-        ]
         return teams
 
     def _ensure_members_in_team(self, team: github.Team.Team,
@@ -250,20 +250,23 @@ class GitHubAPI:
         """
         repo_urls = []
         for info in repo_infos:
-            try:
-                repo_urls.append(self._api.create_repo(info))
+            created = False
+            with _try_api_request(ignore_statuses=[422]):
+                repo_urls.append(
+                    self._org.create_repo(
+                        info.name,
+                        description=info.description,
+                        private=info.private,
+                        team_id=info.team_id,
+                    ).html_url)
                 LOGGER.info("created {}/{}".format(self._org_name, info.name))
-            except exception.GitHubError as exc:
-                if exc.status != 422:
-                    raise exception.UnexpectedException(
-                        "Got unexpected response code {} from the GitHub API".
-                        format(exc.status))
+                created = True
+
+            if not created:
+                repo_urls.append(self._org.get_repo(info.name).html_url)
                 LOGGER.info("{}/{} already exists".format(
                     self._org_name, info.name))
-                repo_urls.append(self._api.get_repo_url(info.name))
-            except Exception as exc:
-                raise exception.UnexpectedException(
-                    "An unexpected exception was raised.")
+
         return repo_urls
 
     def get_repo_urls(self, repo_names: Iterable[str]) -> List[str]:
@@ -278,7 +281,7 @@ class GitHubAPI:
             a list of urls corresponding to the repo names.
         """
         return [
-            "{}/{}".format(self._api.org_url, repo_name)
+            "{}/{}".format(self._org.html_url, repo_name)
             for repo_name in list(repo_names)
         ]
 
@@ -368,3 +371,83 @@ class GitHubAPI:
         if missing_repos:
             LOGGER.warning("can't find repos: {}".format(
                 ", ".join(missing_repos)))
+
+    @staticmethod
+    def verify_settings(user: str, org_name: str, base_url: str, token: str):
+        """Verify the following:
+
+        .. code-block: markdown
+
+            1. Base url is correct (verify by fetching user).
+            2. The token has correct access privileges (verify by getting oauth scopes)
+            3. Organization exists (verify by getting the org)
+            4. User is owner in organization (verify by getting
+            organization member list and checking roles)
+
+            Raises exceptions if something goes wrong.
+
+        Args:
+            user: The username to try to fetch.
+            org_name: Name of an organization.
+            base_url: A base url to a github API.
+            token: A secure OAUTH2 token.
+        Returns:
+            True if the connection is well formed.
+        """
+        LOGGER.info("verifying settings ...")
+        if not token:
+            raise exception.BadCredentials(
+                msg="token is empty. Check that REPOMATE_OAUTH environment "
+                "variable is properly set.")
+
+        util.validate_types(
+            base_url=(base_url, str),
+            token=(token, str),
+            user=(user, str),
+            org_name=(org_name, str))
+        util.validate_non_empty(
+            base_url=base_url, token=token, user=user, org_name=org_name)
+
+        g = github.Github(login_or_token=token, base_url=base_url)
+
+        LOGGER.info("trying to fetch user information ...")
+
+        user_not_found_msg = (
+            "user {} could not be found. Possible reasons: "
+            "bad base url, bad username or bad oauth permissions").format(user)
+        with _convert_404_to_not_found_error(user_not_found_msg):
+            g.get_user(user)
+        LOGGER.info(
+            "SUCCESS: found user {}, user exists and base url looks okay".
+            format(user))
+
+        LOGGER.info("verifying oauth scopes ...")
+        scopes = g.oauth_scopes
+        if not REQUIRED_OAUTH_SCOPES.issubset(scopes):
+            raise exception.BadCredentials(
+                "missing one or more oauth scopes. Actual: {}. Required {}".
+                format(scopes, REQUIRED_OAUTH_SCOPES))
+        LOGGER.info("SUCCESS: oauth scopes look okay")
+
+        LOGGER.info("trying to fetch organization ...")
+        org_not_found_msg = (
+            "organization {} could not be found. Possible "
+            "reasons: org does not exist, user does not have "
+            "sufficient access to organization.").format(org_name)
+        with _convert_404_to_not_found_error(org_not_found_msg):
+            org = g.get_organization(org_name)
+        LOGGER.info("SUCCESS: found organization {}".format(org_name))
+
+        LOGGER.info(
+            "verifying that user {} is an owner of organization {}".format(
+                user, org_name))
+        owner_usernames = (owner.login
+                           for owner in org.get_members(role='admin'))
+        if user not in owner_usernames:
+            raise exception.BadCredentials(
+                "user {} is not an owner of organization {}".format(
+                    user, org_name))
+        LOGGER.info("SUCCESS: user {} is an owner of organization {}".format(
+            user, org_name))
+
+        LOGGER.info("GREAT SUCCESS: All settings check out!")
