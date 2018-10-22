@@ -26,7 +26,6 @@ from repomate import util
 from repomate import tuples
 from repomate import exception
 from repomate import config
-from repomate import APIWrapper
 
 import repomate_plug as plug
 

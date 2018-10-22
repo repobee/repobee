@@ -11,7 +11,7 @@ from repomate import exception
 from repomate import github_api
 from repomate import git
 from repomate import tuples
-from repomate.abstract_api_wrapper import REQUIRED_OAUTH_SCOPES
+from repomate.github_api import REQUIRED_OAUTH_SCOPES
 
 ORG_NAME = pytest.constants.ORG_NAME
 ISSUE = pytest.constants.ISSUE
