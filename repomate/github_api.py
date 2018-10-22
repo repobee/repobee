@@ -79,6 +79,7 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
         raise exception.ServiceNotFoundError(
             "GitHub service could not be found, check the url")
     except Exception as e:
+        print("hello")
         raise exception.UnexpectedException(
             "a {} occured unexpectedly: {}".format(type(e).__name__, str(e)))
 
@@ -110,6 +111,10 @@ class GitHubAPI:
     def __repr__(self):
         return "GitHubAPI(base_url={}, token={}, org_name={})".format(
             self._base_url, self._token, self._org_name)
+
+    @property
+    def org(self):
+        return self._org
 
     def get_teams_in(self,
                      team_names: Iterable[str]) -> List[github.Team.Team]:
@@ -190,18 +195,12 @@ class GitHubAPI:
         teams = [
             team for team in existing_teams if team.name in required_team_names
         ]
+
         for team_name in required_team_names - existing_team_names:
-            try:
+            with _try_api_request():
                 new_team = self._org.create_team(team_name, permission='push')
                 LOGGER.info("created team {}".format(team_name))
                 teams.append(new_team)
-            except exception.GitHubError as exc:
-                if exc.status != 422:
-                    raise exception.UnexpectedException(
-                        "Unexpected GitHubError {} on team creation: {}".
-                        format(exc.status, str(exc)))
-                LOGGER.info("team {} already exists".format(team_name))
-
         return teams
 
     def _ensure_members_in_team(self, team: github.Team.Team,
@@ -223,7 +222,7 @@ class GitHubAPI:
                 ", ".join(missing_members), team.name))
         if existing_members:
             LOGGER.info("{} already in team {}, skipping...".format(
-                ", ".join(members), team.name))
+                ", ".join(existing_members), team.name))
         self.add_to_team(missing_members, team)
 
     def add_to_team(self, members: Iterable[str], team: github.Team.Team):
