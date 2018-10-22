@@ -124,7 +124,7 @@ class PyGithubWrapper(AbstractAPIWrapper):
             teams = [
                 team for team in self.get_teams() if team.name in team_names
             ]
-            return teams
+        return teams
 
     def _get_users(self, usernames: Iterable[str]) -> List[_User]:
         """Get all existing users corresponding to the usernames.

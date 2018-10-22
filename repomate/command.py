@@ -237,7 +237,7 @@ def list_issues(master_repo_names: Iterable[str],
 
     if author:
         issues_per_repo = ((repo_name, (issue for issue in issues
-                                        if issue.author == author))
+                                        if issue.user.login == author))
                            for repo_name, issues in issues_per_repo)
 
     _log_repo_issues(issues_per_repo, show_body, max_repo_name_length + 6)
@@ -272,7 +272,7 @@ def _log_repo_issues(
                                      issue.number).ljust(adjusted_alignment)
             out = "{}{}{}{}created {!s} by {}".format(
                 id_, issue.title, style.RESET, " ", issue.created_at,
-                issue.author)
+                issue.user.login)
             if show_body:
                 out += os.linesep * 2 + _limit_line_length(issue.body)
             LOGGER.info(out)
@@ -414,15 +414,13 @@ def migrate_repos(master_repo_urls: Iterable[str], user: str,
         _clone_all(master_repo_urls, cwd=tmpdir)
         repo_urls = api.create_repos(infos)
 
-        git.push(
-            [
-                git.Push(
-                    local_path=os.path.join(tmpdir, info.name),
-                    repo_url=repo_url,
-                    branch='master')
-                for repo_url, info in zip(repo_urls, infos)
-            ],
-            user=user)
+        git.push([
+            git.Push(
+                local_path=os.path.join(tmpdir, info.name),
+                repo_url=repo_url,
+                branch='master') for repo_url, info in zip(repo_urls, infos)
+        ],
+                 user=user)
 
     LOGGER.info("done!")
 

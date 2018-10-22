@@ -21,20 +21,23 @@ User = pytest.classes.User
 RANDOM_DATE = pytest.functions.RANDOM_DATE
 
 OPEN_ISSUES = [
-    tuples.Issue('close this issue', 'This is a body', 3, RANDOM_DATE(),
-                 'slarse'),
-    tuples.Issue("Don't close this issue", 'Another body', 4, RANDOM_DATE(),
-                 'glassey')
+    to_magic_mock_issue(issue)
+    for issue in (tuples.Issue('close this issue', 'This is a body', 3,
+                               RANDOM_DATE(), 'slarse'),
+                  tuples.Issue("Don't close this issue", 'Another body', 4,
+                               RANDOM_DATE(), 'glassey'))
 ]
 
 CLOSED_ISSUES = [
-    tuples.Issue('This is a closed issue',
-'With an uninteresting body that has a single very,'
-'very long line that would probably break the implementation '
-'if something was off with the line limit function.', 1,
-                 RANDOM_DATE(), 'tmore'),
+        to_magic_mock_issue(issue) for issue in (
+    tuples.Issue(
+        'This is a closed issue',
+        'With an uninteresting body that has a single very,'
+        'very long line that would probably break the implementation '
+        'if something was off with the line limit function.', 1, RANDOM_DATE(),
+        'tmore'),
     tuples.Issue('Yet another closed issue', 'Even less interesting body', 2,
-                 RANDOM_DATE(), 'viklu')
+                 RANDOM_DATE(), 'viklu'))
 ]
 
 USER = 'slarse'
@@ -491,7 +494,6 @@ class TestUpdateStudentRepos:
         fail_repo_urls = [generate_url(name) for name in fail_repo_names]
 
         api_mock.get_repo_urls.side_effect = lambda repo_names: [generate_url(name) for name in repo_names]
-        issue = tuples.Issue("Oops", "Sorry, we failed to push to your repo!")
 
         async def raise_specific(pt, branch):
             if pt.repo_url in fail_repo_urls:
@@ -537,7 +539,8 @@ class TestOpenIssue:
             "A title", "And a nice **formatted** body\n### With headings!")
         command.open_issue(issue, master_names, students, api_mock)
 
-        api_mock.open_issue.assert_called_once_with(issue.title, issue.body, expected_repo_names)
+        api_mock.open_issue.assert_called_once_with(issue.title, issue.body,
+                                                    expected_repo_names)
 
 
 class TestCloseIssue:

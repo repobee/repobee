@@ -8,6 +8,7 @@ import github
 from repomate import github_api
 from repomate import exception
 from repomate import tuples
+from repomate.abstract_api_wrapper import REQUIRED_OAUTH_SCOPES
 
 ORG_NAME = pytest.constants.ORG_NAME
 ISSUE = pytest.constants.ISSUE
@@ -17,6 +18,25 @@ VALIDATION_ERROR = exception.GitHubError(msg=None, status=422)
 SERVER_ERROR = exception.GitHubError(msg=None, status=500)
 
 GENERATE_REPO_URL = pytest.functions.GENERATE_REPO_URL
+
+
+class GithubException(Exception):
+    def __init__(self, msg, status):
+        super().__init__(msg)
+        self.msg = msg
+        self.status = status
+
+
+def raise_404(*args, **kwargs):
+    raise GithubException("Couldn't find something", 404)
+
+
+def raise_422(*args, **kwargs):
+    raise GithubException("Already exists", 422)
+
+
+def raise_401(*args, **kwargs):
+    raise GithubException("Access denied", 401)
 
 
 @pytest.fixture(scope='function')
@@ -35,55 +55,6 @@ def repos():
 
 
 @pytest.fixture
-def existing_teams():
-    existing_teams = {}
-    yield existing_teams
-
-
-@pytest.fixture
-def api_wrapper_mock(mocker, existing_teams, repos):
-    api_wrapper_instance = MagicMock()
-
-    # have create_team and get_teams work on a mocked dictionary
-    api_wrapper_instance.create_repo.side_effect = \
-        lambda repo_info: GENERATE_REPO_URL(repo_info.name)
-    api_wrapper_instance.create_team.side_effect = \
-        lambda team_name, permission: existing_teams.update({team_name: []})
-
-    api_wrapper_instance.get_teams.side_effect = \
-        lambda: [tuples.Team(name=name, members=members, id=hash(name)) for name, members in existing_teams.items()]
-
-    api_wrapper_instance.get_teams_in.side_effect = \
-        lambda team_names: list(set(team_names).intersection(existing_teams.keys()))
-
-    # empty repo name and remove trailing slash
-    type(api_wrapper_instance).org_url = PropertyMock(
-        return_value=GENERATE_REPO_URL("").rstrip("/"))
-
-    def add_to_team(members, team):
-        for user in members:
-            if user in existing_teams[team.name]:
-                raise exception.GitHubError(
-                    "{} already in {}".format(user, team.name), 422)
-            existing_teams[team.name].append(user)
-
-    api_wrapper_instance.add_to_team.side_effect = add_to_team
-
-    api_wrapper_instance.get_user.side_effect = lambda username: username
-
-    api_wrapper_instance.get_repo_url.side_effect = \
-        lambda repo_name: GENERATE_REPO_URL(repo_name)
-
-    api_wrapper_instance.get_repos.side_effect = \
-        lambda repo_names: [repo for repo in repos if repo.name in repo_names]
-
-    api_wrapper_mock = mocker.patch(
-        'repomate.github_api.APIWrapper', return_value=api_wrapper_instance)
-
-    return api_wrapper_instance
-
-
-@pytest.fixture
 def teams_and_members():
     """Fixture with a dictionary contain a few teams with member lists."""
     return {
@@ -94,55 +65,101 @@ def teams_and_members():
 
 
 @pytest.fixture
-def existing_teams_prefilled(existing_teams, teams_and_members):
-    """Fixture with all of the teams (and members) in the teams_and_members
-    fixture added to the existing teams. Note that the members are copied,
-    so it's not the same sets.
+def happy_github(mocker, monkeypatch):
+    """mock of github.Github which raises no exceptions and returns the
+    correct values.
     """
-    for team_name, members in teams_and_members.items():
-        existing_teams[team_name] = list(members)  # copy
-        assert id(existing_teams[team_name]) != id(
-            teams_and_members[team_name])
-    assert existing_teams == teams_and_members
+    github_instance = MagicMock()
+    github_instance.get_user.side_effect = \
+        lambda user: User(login=user) if user in [USER, NOT_OWNER] else raise_404()
+    type(github_instance).oauth_scopes = PropertyMock(
+        return_value=REQUIRED_OAUTH_SCOPES)
 
-    return existing_teams
+    monkeypatch.setattr(github, 'GithubException', GithubException)
+    mocker.patch(
+        'github.Github',
+        side_effect=lambda login_or_token, base_url: github_instance)
+
+    return github_instance
+
+
+@pytest.fixture
+def organization(happy_github):
+    """Attaches an Organization mock to github.Github.get_organization, and
+    returns the mock.
+    """
+    organization = MagicMock()
+    organization.get_members = lambda role: \
+        [User(login='blablabla'), User(login='hello'), User(login=USER)]
+    type(organization).html_url = PropertyMock(
+        return_value=GENERATE_REPO_URL('').rstrip('/'))
+    happy_github.get_organization.side_effect = \
+        lambda org_name: organization if org_name == ORG_NAME else raise_404()
+    return organization
+
+
+@pytest.fixture
+def teams(organization, teams_and_members):
+    """A fixture that returns a list of teams, which are all returned by the
+    github.Organization.Organization.get_teams function."""
+    team_names = teams_and_members.keys()
+    teams = []
+    ids_to_teams = {}
+    for name in team_names:
+        team = MagicMock()
+        members = set()
+        team.get_members.side_effect = lambda: list(members)
+        team.add_membership.side_effect = lambda user: members.add(user)
+        type(team).name = PropertyMock(return_value=name)
+        type(team).id = PropertyMock(return_value=hash(name))
+        ids_to_teams[team.id] = team
+        teams.append(team)
+
+    assert teams
+
+    organization.get_team.side_effect = lambda team_id: \
+        ids_to_teams[team_id] if team_id in ids_to_teams else raise_404()
+    organization.get_teams.side_effect = lambda: list(teams)
+    organization.create_team.side_effect = lambda team_name, permission: \
+        raise_422() if team_name in team_names else None
+    return teams
 
 
 @pytest.fixture(scope='function')
-def api(api_wrapper_mock, mocker):
+def api(happy_github, mocker):
     return github_api.GitHubAPI('bla', 'blue', 'bli')
 
 
 class TestEnsureTeamsAndMembers:
-    def test_no_previous_teams(self, api_wrapper_mock, existing_teams, api,
-                               teams_and_members):
+    def test_no_previous_teams(self, api, teams_and_members):
         """Test that ensure_teams_and_members works as expected when there are no
         previous teams, and all users exist. This is a massive end-to-end test of
         the function with only the lower level API's mocked out.
         """
         api.ensure_teams_and_members(teams_and_members)
 
-        assert existing_teams == teams_and_members
+        fail()
+        #assert existing_teams == teams_and_members
 
-    def test_all_teams_exist_but_without_members(
-            self, api_wrapper_mock, existing_teams, api, teams_and_members):
+    def test_all_teams_exist_but_without_members(self, api, teams_and_members):
         """Test that ensure_teams_and_members works as expected when all of
         the teams already exist, but have no members in them.
         """
         for team in teams_and_members.keys():
-            existing_teams[team] = []
+            #existing_teams[team] = []
+            fail()
 
         api.ensure_teams_and_members(teams_and_members)
 
-        assert existing_teams == teams_and_members
+        assert api.get_teams() == teams_and_members
 
     @pytest.mark.parametrize('unexpected_exc', [
         exception.GitHubError("", 404),
         exception.GitHubError("", 400),
         exception.GitHubError("", 500)
     ])
-    def test_raises_on_non_422_exception(self, api_wrapper_mock, api,
-                                         teams_and_members, unexpected_exc):
+    def test_raises_on_non_422_exception(self, api, teams_and_members,
+                                         unexpected_exc):
         """Should raise if anything but a 422 http error is raised when
         creating the team.
         """
@@ -157,30 +174,28 @@ class TestEnsureTeamsAndMembers:
 
         assert str(unexpected_exc.status) in str(exc_info)
 
-    def test_skips_team_on_422_exception(self, api_wrapper_mock, api,
-                                         teams_and_members, existing_teams):
+    def test_skips_team_on_422_exception(self, api, teams_and_members):
         """422 http error means that the team already exists, so it should just
         be skipped. Here, we verify that it is skipped by it _not_ being adde
         to ``existing_teams``.
         """
         raise_team, *_ = teams_and_members.keys()
-        create_team = api_wrapper_mock.create_team.side_effect
+        create_team = api._org.create_team.side_effect
 
-        def raise_on_specific(team_name, permission):
+        def raise_on_specific(team_name, permission, *args, **kwargs):
             if team_name == raise_team:
                 raise exception.GitHubError("", 422)
             create_team(team_name, permission)
 
-        api_wrapper_mock.create_team.side_effect = raise_on_specific
+        api._org.create_team.side_effect = raise_on_specific
 
         api.ensure_teams_and_members(teams_and_members)
 
         del teams_and_members[raise_team]
-        assert teams_and_members == existing_teams
+        assert api._org.get_teams() == teams_and_members
 
-    def test_skips_members_already_in_teams(self, api_wrapper_mock, api,
-                                            teams_and_members,
-                                            existing_teams_prefilled):
+    @pytest.mark.skip("must be completely rewritten")
+    def test_skips_members_already_in_teams(self, api, teams_and_members):
         """Test that only members that are not already in their teams are
         added.
         """
@@ -201,8 +216,7 @@ class TestEnsureTeamsAndMembers:
             expected_calls, any_order=True)
 
         def test_no_members_are_added_when_all_teams_filled(
-                self, api_wrapper_mock, api, teams_and_members,
-                existing_teams_prefilled):
+                self, api, teams_and_members):
             """Tests that add_to_team is not called if all members are already
             in it."""
             api.ensure_teams_and_members(teams_and_members)
@@ -278,7 +292,7 @@ class TestCreateRepos:
 class TestGetRepoUrls:
     """Tests for get_repo_urls."""
 
-    def test_all_repos_found(self, api_wrapper_mock, repos, api):
+    def test_all_repos_found(self, repos, api):
         repo_names = [repo.name for repo in repos]
         expected_urls = [repo.url for repo in repos]
 
@@ -290,7 +304,7 @@ class TestGetRepoUrls:
         msg=
         "not currently relevant as repo urls are generated, rather than fetched"
     )
-    def test_some_repos_found(self, api_wrapper_mock, repos, api):
+    def test_some_repos_found(self, repos, api):
         found_repo_names = [repo.name for repo in repos[:2]]
         not_found_repo_names = [repo.name for repo in repos[2:]]
         expected_urls = [GENERATE_REPO_URL(name) for name in found_repo_names]
@@ -307,19 +321,17 @@ class TestGetRepoUrls:
 class TestIssueFunctions:
     """Tests for open_issue and close_issue."""
 
-    def test_open_issue(self, api_wrapper_mock, repos, api):
+    def test_open_issue(self, repos, api):
         repo_names = [repo.name for repo in repos]
         api.open_issue(ISSUE.title, ISSUE.body, repo_names)
 
         api_wrapper_mock.open_issue_in.assert_called_once_with(
             ISSUE, repo_names)
 
-    def test_close_issue(self, api_wrapper_mock, repos, api):
+    def test_close_issue(self, repos, api):
         repo_names = [repo.name for repo in repos]
         regex = "some-regex"
         api.close_issue(regex, repo_names)
 
         api_wrapper_mock.close_issue_in.assert_called_once_with(
             regex, repo_names)
-
-
