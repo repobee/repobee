@@ -155,7 +155,8 @@ class GitHubAPI:
 
     def ensure_teams_and_members(
             self,
-            member_lists: Mapping[str, Iterable[str]]) -> List[tuples.Team]:
+            member_lists: Mapping[str, Iterable[str]],
+            permission: str = 'push') -> List[tuples.Team]:
         """Create teams that do not exist and add members not in their
         specified teams (if they exist as users).
 
@@ -167,7 +168,8 @@ class GitHubAPI:
             the member_lists mapping.
         """
         teams = self._ensure_teams_exist(
-            [team_name for team_name in member_lists.keys()])
+            [team_name for team_name in member_lists.keys()],
+            permission=permission)
 
         for team in [team for team in teams if member_lists[team.name]]:
             self._ensure_members_in_team(team, member_lists[team.name])
@@ -175,7 +177,8 @@ class GitHubAPI:
         return self.get_teams_in(set(member_lists.keys()))
 
     def _ensure_teams_exist(self,
-                            team_names: Iterable[str]) -> List[tuples.Team]:
+                            team_names: Iterable[str],
+                            permission: str = 'push') -> List[tuples.Team]:
         """Create any teams that do not yet exist.
         
         Args:
@@ -197,7 +200,8 @@ class GitHubAPI:
 
         for team_name in required_team_names - existing_team_names:
             with _try_api_request():
-                new_team = self._org.create_team(team_name, permission='push')
+                new_team = self._org.create_team(
+                    team_name, permission=permission)
                 LOGGER.info("created team {}".format(team_name))
                 teams.append(new_team)
         return teams
@@ -346,6 +350,24 @@ class GitHubAPI:
 
         if not closed:
             LOGGER.warning("Found no matching issues.")
+
+    def add_repos_to_teams(self, team_to_repos: Mapping[str, Iterable[str]]):
+        """Add repos to teams.
+
+        Args:
+            team_to_repos: A mapping from a team name to a sequence of repo names.
+        """
+        team_names = set(team_to_repos.keys())
+        with _try_api_request():
+            teams = (team for team in self._org.get_teams()
+                     if team.name in team_names)
+        for team in teams:
+            repos = self._get_repos_by_name(team_to_repos[team.name])
+            for repo in repos:
+                LOGGER.info(f"adding team {team.name} to repo {repo.name} "
+                            f"with '{team.permission}' permission")
+                with _try_api_request():
+                    team.add_to_repos(repo)
 
     def _get_repos_by_name(
             self, repo_names: Iterable[str]) -> Generator[_Repo, None, None]:
