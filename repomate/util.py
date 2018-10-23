@@ -8,7 +8,8 @@
 import os
 import sys
 import pathlib
-from typing import Iterable, List, Generator, Union, Tuple
+import random
+from typing import Iterable, Generator, Union, Tuple, Mapping, List
 from repomate import tuples
 
 
@@ -92,6 +93,10 @@ def generate_repo_names(team_names: Iterable[str],
     ]
 
 
+def generate_review_team_name(student: str, master_repo_name: str):
+    return generate_repo_name(student, master_repo_name) + "-review"
+
+
 def repo_name(repo_url: str) -> str:
     """Extract the name of the repo from its url.
 
@@ -137,3 +142,43 @@ def find_files_by_extension(root: Union[str, pathlib.Path], *extensions: str
         for file in files:
             if _ends_with_ext(file, extensions):
                 yield pathlib.Path(cwd) / file
+
+
+def generate_review_allocations(master_repo_name, students,
+                                num_reviews) -> Mapping[str, List[str]]:
+    """Generate a (peer_review_team -> reviewers) mapping for each student
+    repository (i.e. <student>-<master_repo_name>), where len(reviewers) =
+    num_reviews.
+
+    .. important::
+            
+        There must be strictly more students than reviewers per repo
+        (`num_reviews`). Otherwise, allocation is impossible.
+
+    Args:
+        master_repo_name: 
+    """
+    if num_reviews >= len(students):
+        raise ValueError("num_reviews must be less than len(students)")
+    if num_reviews <= 0:
+        raise ValueError("num_reviews must be greater than 0")
+
+    students = list(students)
+    random.shuffle(students)
+    allocations = [students]
+
+    # create a list of lists, where each non-first list is a left-shifted
+    # version of the previous list (lists wrap around)
+    # e.g. for students [4, 3, 1] and num_reviews = 2, the result is
+    # allocations = [[4, 3, 1], [3, 1, 4], [1, 4, 3]] and means that
+    # student 4 gets reviewed by 3 and 1, 3 by 1 and 4 etc.
+    for _ in range(num_reviews):
+        next_reviewers = list(allocations[-1])
+        next_reviewers.append(next_reviewers.pop(0))  # shift list left
+        allocations.append(next_reviewers)
+
+    review_map = {
+        generate_review_team_name(reviewee, master_repo_name): reviewers
+        for reviewee, *reviewers in zip(*allocations)
+    }
+    return review_map
