@@ -424,9 +424,13 @@ def migrate_repos(master_repo_urls: Iterable[str], user: str,
     LOGGER.info("done!")
 
 
-def assign_peer_reviewers(master_repo_names: Iterable[str],
-                          students: Iterable[str], num_reviewers: int,
-                          api: GitHubAPI):
+def assign_peer_reviewers(
+        master_repo_names: Iterable[str],
+        students: Iterable[str],
+        num_reviews: int,
+        issue: Optional[tuples.Issue],
+        api: GitHubAPI,
+) -> None:
     """Assign peer reviewers among the students to each student repo.
 
     Args:
@@ -435,20 +439,30 @@ def assign_peer_reviewers(master_repo_names: Iterable[str],
         num_reviewers: Amount of reviewers to assign to each repo.
         api: A GitHubAPI instance used to interface with the GitHub instance.
     """
-    if len(students) <= num_reviewers:
+    if len(students) <= num_reviews:
         raise ValueError(
-            "there must be more students in total than reviewers per repo")
+            "there must be more students in total than reviews per repo")
 
     for master_name in master_repo_names:
         peer_review_allocations = util.generate_review_allocations(
-            master_name, students, num_reviewers)
+            master_name, students, num_reviews)
         api.ensure_teams_and_members(
             peer_review_allocations, permission='pull')
-        api.add_repos_to_teams({
+        api.add_repos_to_review_teams({
             util.generate_review_team_name(student, master_name):
             [util.generate_repo_name(student, master_name)]
             for student in students
-        })
+        }, issue)
+
+
+def purge_review_teams(master_repo_names: Iterable[str],
+                       students: Iterable[str], api: GitHubAPI) -> None:
+    """Purge all review teams associated with the given master repo names and students."""
+    review_team_names = [
+        util.generate_review_team_name(student, master_repo_name)
+        for student in students for master_repo_name in master_repo_names
+    ]
+    api.delete_teams(review_team_names)
 
 
 def _create_repo_infos(urls: Iterable[str],

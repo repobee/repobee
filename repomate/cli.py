@@ -56,6 +56,8 @@ OPEN_ISSUE_PARSER = 'open-issues'
 CLOSE_ISSUE_PARSER = 'close-issues'
 LIST_ISSUES_PARSER = 'list-issues'
 VERIFY_PARSER = 'verify-settings'
+ASSIGN_REVIEWS_PARSER = 'assign-peer-reviews'
+PURGE_REVIEW_TEAMS_PARSER = 'purge-peer-review-teams'
 
 PARSER_NAMES = (
     SETUP_PARSER,
@@ -67,6 +69,8 @@ PARSER_NAMES = (
     CLOSE_ISSUE_PARSER,
     LIST_ISSUES_PARSER,
     VERIFY_PARSER,
+    ASSIGN_REVIEWS_PARSER,
+    PURGE_REVIEW_TEAMS_PARSER,
 )
 
 
@@ -127,6 +131,7 @@ def parse_args(sys_args: Iterable[str]
         state=args.state if 'state' in args else None,
         show_body=args.show_body if 'show_body' in args else None,
         author=args.author if 'author' in args else None,
+        num_reviews=args.num_reviews if 'num_reviews' in args else None,
     )
 
     return parsed_args, api
@@ -171,8 +176,8 @@ def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
         with _sys_exit_on_expected_error():
             command.clone_repos(args.master_repo_names, args.students, api)
     elif args.subparser == VERIFY_PARSER:
-        github_api.GitHubAPI.verify_settings(args.user, args.org_name,
-                                  args.github_base_url, git.OAUTH_TOKEN)
+        github_api.GitHubAPI.verify_settings(
+            args.user, args.org_name, args.github_base_url, git.OAUTH_TOKEN)
     elif args.subparser == LIST_ISSUES_PARSER:
         with _sys_exit_on_expected_error():
             command.list_issues(
@@ -183,10 +188,56 @@ def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
                 title_regex=args.title_regex or "",
                 show_body=args.show_body,
                 author=args.author)
+    elif args.subparser == ASSIGN_REVIEWS_PARSER:
+        with _sys_exit_on_expected_error():
+            command.assign_peer_reviewers(args.master_repo_names,
+                                          args.students, args.num_reviews,
+                                          args.issue, api)
+    elif args.subparser == PURGE_REVIEW_TEAMS_PARSER:
+        with _sys_exit_on_expected_error():
+            command.purge_review_teams(args.master_repo_names, args.students,
+                                       api)
     else:
         raise exception.ParseError(
             "Illegal value for subparser: {}. This is a bug, please open an issue."
             .format(args.subparser))
+
+
+def _add_peer_review_parsers(base_parsers, subparsers):
+    assign_parser = subparsers.add_parser(
+        ASSIGN_REVIEWS_PARSER,
+        description=
+        "For each student repo, create a review team with pull access "
+        "named <student>-<master_repo_name>-review and randomly assign other "
+        "students to it. All students are assigned to the same amount of "
+        "review teams, as specified by `--num-reviews`",
+        help="Manage peer review teams.",
+        parents=base_parsers)
+    assign_parser.add_argument(
+        '-n',
+        '--num-reviews',
+        help="Assign each student to review n repos (consequently, each repo "
+        "is reviewed by n students). n must be strictly smaller than the "
+        "amount of students.",
+        type=int,
+        required=True,
+    )
+    assign_parser.add_argument(
+        '-i',
+        '--issue',
+        help=
+        "Path to an issue to open in student repos. If specified, this issue "
+        "will be opened in each student repo, and the body will be "
+        "prepended with user mentions of all students assigned to review the "
+        "repo. NOTE: The first line is assumed to be the title.",
+        type=str,
+    )
+    purge_team_parser = subparsers.add_parser(
+        PURGE_REVIEW_TEAMS_PARSER,
+        description="Remove review teams assigned with `assign-peer-reviews`",
+        help="Remove all review teams associated with the specified "
+        "students and master repos.",
+        parents=base_parsers)
 
 
 def _add_issue_parsers(base_parsers, subparsers):
@@ -398,6 +449,8 @@ def _add_subparsers(parser):
         parents=[base_student_parser, base_parser])
 
     _add_issue_parsers([base_student_parser, repo_name_parser], subparsers)
+    _add_peer_review_parsers([base_student_parser, repo_name_parser],
+                             subparsers)
 
     verify = subparsers.add_parser(
         VERIFY_PARSER,

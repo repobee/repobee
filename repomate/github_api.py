@@ -10,7 +10,8 @@ GitHubAPI are mostly high-level bulk operations.
 .. moduleauthor:: Simon Larsén
 """
 import re
-from typing import List, Iterable, Mapping, Union, Optional, Generator
+import os
+from typing import List, Iterable, Mapping, Union, Optional, Generator, Tuple
 from socket import gaierror
 import daiquiri
 import contextlib
@@ -115,8 +116,8 @@ class GitHubAPI:
     def org(self):
         return self._org
 
-    def get_teams_in(self,
-                     team_names: Iterable[str]) -> List[github.Team.Team]:
+    def get_teams_in(self, team_names: Iterable[str]
+                     ) -> Generator[github.Team.Team, None, None]:
         """Get all teams that match any team name in the team_names iterable.
 
         Args:
@@ -126,11 +127,27 @@ class GitHubAPI:
         """
         team_names = set(team_names)
         with _try_api_request():
-            teams = [
-                team for team in self._org.get_teams()
-                if team.name in team_names
-            ]
-        return teams
+            yield from (team for team in self.org.get_teams()
+                        if team.name in team_names)
+
+    def delete_teams(self, team_names: Iterable[str]) -> None:
+        """Delete all teams that match any of the team names. Skip any team
+        name for which no team can be found.
+
+        Args:
+            team_names: A list of team names for teams to be deleted.
+        """
+        deleted = set()  # only for logging
+        for team in self.get_teams_in(team_names):
+            team.delete()
+            deleted.add(team.name)
+            LOGGER.info("deleted team {}".format(team.name))
+
+        # only logging
+        missing = set(team_names) - deleted
+        if missing:
+            LOGGER.warning("could not find teams: {}".format(
+                ", ".join(missing)))
 
     def _get_users(self, usernames: Iterable[str]) -> List[_User]:
         """Get all existing users corresponding to the usernames.
@@ -174,7 +191,7 @@ class GitHubAPI:
         for team in [team for team in teams if member_lists[team.name]]:
             self._ensure_members_in_team(team, member_lists[team.name])
 
-        return self.get_teams_in(set(member_lists.keys()))
+        return list(self.get_teams_in(set(member_lists.keys())))
 
     def _ensure_teams_exist(self,
                             team_names: Iterable[str],
@@ -351,11 +368,41 @@ class GitHubAPI:
         if not closed:
             LOGGER.warning("Found no matching issues.")
 
-    def add_repos_to_teams(self, team_to_repos: Mapping[str, Iterable[str]]):
-        """Add repos to teams.
+    def add_repos_to_review_teams(self,
+                                  team_to_repos: Mapping[str, Iterable[str]],
+                                  issue: Optional[tuples.Issue]) -> None:
+        """Add repos to review teams. For each repo, an issue is opened, and
+        every user in the review team is assigned to it. If no issue is
+        specified, sensible defaults for title and body are used.
 
         Args:
             team_to_repos: A mapping from a team name to a sequence of repo names.
+            issue: An an optional Issue tuple to override the default issue.
+        """
+        issue = issue or tuples.Issue(
+            title="Peer review",
+            body="You have been assigned to peer review this repo.")
+        team_repo_gen = self.add_repos_to_teams(team_to_repos)
+        for team, repo in self.add_repos_to_teams(team_to_repos):
+            # TODO team.get_members() api request is a bit redundant, it
+            # can be solved in a more efficient way by passing in the
+            # allocations
+            reviewers = team.get_members()
+            created_issue = repo.create_issue(
+                issue.title, body=issue.body, assignees=reviewers)
+            LOGGER.info("Opened issue {}/#{}-'{}'".format(
+                repo.name, created_issue.number, created_issue.title))
+
+    def add_repos_to_teams(
+            self, team_to_repos: Mapping[str, Iterable[str]]
+    ) -> Generator[Tuple[github.Team.Team, github.Repository.
+                         Repository], None, None]:
+        """Add repos to teams and yield each (team, repo) combination.
+
+        Args:
+            team_to_repos: A mapping from a team name to a sequence of repo names.
+        Returns:
+            a generator yielding each repo in turn.
         """
         team_names = set(team_to_repos.keys())
         with _try_api_request():
@@ -364,8 +411,9 @@ class GitHubAPI:
         for team in teams:
             repos = self._get_repos_by_name(team_to_repos[team.name])
             for repo in repos:
-                LOGGER.info(f"adding team {team.name} to repo {repo.name} "
-                            f"with '{team.permission}' permission")
+                yield team, repo
+                LOGGER.info("adding team {} to repo {} with '{}' permission"\
+                        .format(team.name, repo.name, team.permission))
                 with _try_api_request():
                     team.add_to_repos(repo)
 
