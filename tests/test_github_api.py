@@ -579,7 +579,8 @@ class TestAddReposToReviewTeams:
         api.add_repos_to_review_teams(team_to_repos, None)
 
         for team_name, repo_name in team_repo_tuples:
-            team = organization.get_team(hash(team_name)) # hash(team_name) is the id, see the fixture!
+            team = organization.get_team(
+                hash(team_name))  # hash(team_name) is the id, see the fixture!
             repo = organization.get_repo(repo_name)
             assert team.add_to_repos.called_once_with(repo)
 
@@ -609,6 +610,20 @@ class TestAddReposToTeams:
             actual_team.add_to_repos.assert_called_once_with(actual_repo)
             assert actual_team.name == expected_team_name
             assert actual_repo.name == expected_repo_name
+
+
+class TestDeleteTeams:
+    def test_delete_non_existing_teams_does_not_crash(self, no_teams, api):
+        team_names = ["week-{}".format(i) for i in range(10)]
+
+        api.delete_teams(team_names)
+
+    def test_delete_existing_teams(self, teams, api):
+        team_names = [team.name for team in teams]
+
+        api.delete_teams(team_names)
+
+        assert all(map(lambda t: t.delete.called, teams))
 
 
 @pytest.fixture(params=['get_user', 'get_organization'])

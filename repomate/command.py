@@ -451,9 +451,6 @@ def assign_peer_reviewers(
         api=(api, GitHubAPI), issue=(issue, (tuples.Issue, type(None))))
     util.validate_non_empty(
         master_repo_names=master_repo_names, students=students)
-    if len(students) <= num_reviews:
-        raise ValueError(
-            "there must be more students in total than reviews per repo")
 
     for master_name in master_repo_names:
         peer_review_allocations = util.generate_review_allocations(
@@ -464,7 +461,7 @@ def assign_peer_reviewers(
             util.generate_review_team_name(student, master_name):
             [util.generate_repo_name(student, master_name)]
             for student in students
-        }, issue)
+        }, issue=issue)
 
 
 def purge_review_teams(master_repo_names: Iterable[str],

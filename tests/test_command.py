@@ -29,15 +29,15 @@ OPEN_ISSUES = [
 ]
 
 CLOSED_ISSUES = [
-        to_magic_mock_issue(issue) for issue in (
-    tuples.Issue(
-        'This is a closed issue',
-        'With an uninteresting body that has a single very,'
-        'very long line that would probably break the implementation '
-        'if something was off with the line limit function.', 1, RANDOM_DATE(),
-        'tmore'),
-    tuples.Issue('Yet another closed issue', 'Even less interesting body', 2,
-                 RANDOM_DATE(), 'viklu'))
+    to_magic_mock_issue(issue) for issue in (
+        tuples.Issue(
+            'This is a closed issue',
+            'With an uninteresting body that has a single very,'
+            'very long line that would probably break the implementation '
+            'if something was off with the line limit function.', 1,
+            RANDOM_DATE(), 'tmore'),
+        tuples.Issue('Yet another closed issue', 'Even less interesting body',
+                     2, RANDOM_DATE(), 'viklu'))
 ]
 
 USER = 'slarse'
@@ -741,3 +741,73 @@ class TestListIssues:
 
         api_mock.get_issues.assert_called_once_with(
             list(STUDENT_REPO_NAMES), state, regex)
+
+
+# TODO add more test cases
+def test_purge_review_teams(master_names, students, api_mock):
+    expected_review_teams = [
+        util.generate_review_team_name(s, mn) for s in students
+        for mn in master_names
+    ]
+
+    command.purge_review_teams(master_names, students, api_mock)
+
+    api_mock.delete_teams.assert_called_once_with(expected_review_teams)
+
+
+# TODO add more test cases
+class TestAssignPeerReviewers:
+    @pytest.mark.parametrize(
+        'num_students, num_reviews',
+        [
+            (3, 3),  # equal amount
+            (3, 4),  # more reviews than students
+        ])
+    def test_too_few_students_raises(self, master_names, students, api_mock,
+                                     num_students, num_reviews):
+        students = students[:num_students]
+
+        with pytest.raises(ValueError) as exc_info:
+            command.assign_peer_reviewers(
+                master_repo_names=master_names,
+                students=students,
+                num_reviews=num_reviews,
+                issue=None,
+                api=api_mock)
+
+        assert "num_reviews must be less than" in str(exc_info)
+
+    def test_zero_reviews_raises(self, master_names, students, api_mock):
+        num_reviews = 0
+
+        with pytest.raises(ValueError) as exc_info:
+            command.assign_peer_reviewers(
+                master_repo_names=master_names,
+                students=students,
+                num_reviews=num_reviews,
+                issue=None,
+                api=api_mock)
+
+        assert "num_reviews must be greater than 0"
+
+    def test_happy_path(self, master_names, students, api_mock):
+        issue = tuples.Issue("this is a title", "this is a body")
+        mappings = [{
+            util.generate_review_team_name(student, master_name):
+            [util.generate_repo_name(student, master_name)]
+            for student in students
+        } for master_name in master_names]
+
+        expected_calls = [call(mapping, issue=issue) for mapping in mappings]
+        num_reviews = 3
+
+        command.assign_peer_reviewers(
+            master_repo_names=master_names,
+            students=students,
+            num_reviews=num_reviews,
+            issue=issue,
+            api=api_mock)
+
+        assert api_mock.ensure_teams_and_members.called
+        api_mock.add_repos_to_review_teams.assert_has_calls(
+            expected_calls, any_order=True)
