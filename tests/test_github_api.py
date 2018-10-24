@@ -200,7 +200,7 @@ def no_repos(teams_and_members, teams, organization):
             return repos_in_org[repo_name]
         raise NOT_FOUND_EXCEPTION
 
-    def create_repo(name, description, private, team_id):
+    def create_repo(name, description='', private=True, team_id=None):
         nonlocal repos_in_org
         if name in repos_in_org:
             raise VALIDATION_ERROR
@@ -545,6 +545,70 @@ class TestGetIssues:
             assert actual_issues == [sought_issue]
 
         assert sorted(found_repos) == sorted(repo_names)
+
+
+@pytest.fixture
+def team_to_repos(api, no_repos, organization):
+    """Create a team_to_repos mapping for use in add_repos_to_teams, anc create
+    each team and repo. Return the team_to_repos mapping.
+    """
+    num_teams = 10
+    # arrange
+    team_names = ["team-{}".format(i) for i in range(num_teams)]
+    repo_names = ["some-repo-{}".format(i) for i in range(num_teams)]
+    for name in team_names:
+        organization.create_team(name, permission='pull')
+    for name in repo_names:
+        organization.create_repo(name)
+    team_to_repos = {
+        team_name: [repo_name]
+        for team_name, repo_name in zip(team_names, repo_names)
+    }
+    return team_to_repos
+
+
+class TestAddReposToReviewTeams:
+    def test_with_default_issue(self, team_to_repos, organization, api):
+        num_teams = len(team_to_repos)
+        default_issue = github_api.DEFAULT_REVIEW_ISSUE
+        assert num_teams, "pre-test assert"
+        team_repo_tuples = [(team, *repos)
+                            for team, repos in team_to_repos.items()]
+        assert len(team_repo_tuples) == num_teams, "pre-test assert"
+
+        api.add_repos_to_review_teams(team_to_repos, None)
+
+        for team_name, repo_name in team_repo_tuples:
+            team = organization.get_team(hash(team_name)) # hash(team_name) is the id, see the fixture!
+            repo = organization.get_repo(repo_name)
+            assert team.add_to_repos.called_once_with(repo)
+
+            repo.create_issue.assert_called_once_with(
+                default_issue.title,
+                body=default_issue.body,
+                assignees=team.get_members())
+
+
+class TestAddReposToTeams:
+    def test_happy_path(self, team_to_repos, api):
+        num_teams = len(team_to_repos)
+        expected_tups = sorted(team_to_repos.items())
+
+        # act
+        result = list(api.add_repos_to_teams(team_to_repos))
+        result.sort(key=lambda tup: tup[0].name)
+
+        # assert
+        assert len(result) == len(team_to_repos) == num_teams
+        for res_tup, expected_tup in zip(result, expected_tups):
+            expected_team_name, expected_repo_names = expected_tup
+            expected_repo_name = expected_repo_names[0]
+
+            actual_team, actual_repo = res_tup
+
+            actual_team.add_to_repos.assert_called_once_with(actual_repo)
+            assert actual_team.name == expected_team_name
+            assert actual_repo.name == expected_repo_name
 
 
 @pytest.fixture(params=['get_user', 'get_organization'])

@@ -30,6 +30,10 @@ _Team = github.Team.Team
 _User = github.NamedUser.NamedUser
 _Repo = github.Repository.Repository
 
+DEFAULT_REVIEW_ISSUE = tuples.Issue(
+    title="Peer review",
+    body="You have been assigned to peer review this repo.")
+
 
 @contextlib.contextmanager
 def _convert_404_to_not_found_error(msg):
@@ -379,9 +383,7 @@ class GitHubAPI:
             team_to_repos: A mapping from a team name to a sequence of repo names.
             issue: An an optional Issue tuple to override the default issue.
         """
-        issue = issue or tuples.Issue(
-            title="Peer review",
-            body="You have been assigned to peer review this repo.")
+        issue = issue or DEFAULT_REVIEW_ISSUE
         team_repo_gen = self.add_repos_to_teams(team_to_repos)
         for team, repo in self.add_repos_to_teams(team_to_repos):
             # TODO team.get_members() api request is a bit redundant, it
@@ -402,7 +404,7 @@ class GitHubAPI:
         Args:
             team_to_repos: A mapping from a team name to a sequence of repo names.
         Returns:
-            a generator yielding each repo in turn.
+            a generator yielding each (team, repo) tuple in turn.
         """
         team_names = set(team_to_repos.keys())
         with _try_api_request():
