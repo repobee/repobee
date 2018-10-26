@@ -392,7 +392,7 @@ class GitHubAPI:
             reviewers = team.get_members()
             created_issue = repo.create_issue(
                 issue.title, body=issue.body, assignees=reviewers)
-            LOGGER.info("Opened issue {}/#{}-'{}'".format(
+            LOGGER.info("opened issue {}/#{}-'{}'".format(
                 repo.name, created_issue.number, created_issue.title))
 
     def add_repos_to_teams(
