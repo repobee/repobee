@@ -216,6 +216,7 @@ def _add_peer_review_parsers(base_parsers, subparsers):
     assign_parser.add_argument(
         '-n',
         '--num-reviews',
+        metavar='N',
         help="Assign each student to review n repos (consequently, each repo "
         "is reviewed by n students). n must be strictly smaller than the "
         "amount of students.",
