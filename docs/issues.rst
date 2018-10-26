@@ -1,5 +1,5 @@
 Opening and Closing issues (the ``open-issues`` and ``close-issues`` commands)
-****************************************************************************
+******************************************************************************
 Sometimes, the best way to handle an error in a repo is to simply notify
 affected students about it. This is especially true if the due date for the
 assignment is rapidly approaching, and most students have already started
@@ -47,6 +47,8 @@ From the output, we can read that in each of the repos, an issue with the title
 ``An important announcement`` was opened as issue nr 1 (``#1``). The number
 isn't that important, it's mostly good to note that the title was fetched
 correctly. And that's it! Neat, right?
+
+.. _close:
 
 Closing Issues
 --------------

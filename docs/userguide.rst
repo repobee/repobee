@@ -12,3 +12,4 @@
    issues
    clone
    plugins
+   peer
