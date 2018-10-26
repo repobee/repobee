@@ -12,15 +12,18 @@ the goal is to collect all container types in this module.
 from collections import namedtuple
 
 
-class Issue(namedtuple('Issue', ('title', 'body', 'number', 'created_at', 'author'))):
+class Issue(
+        namedtuple('Issue',
+                   ('title', 'body', 'number', 'created_at', 'author'))):
     def __new__(cls, title, body, number=None, created_at=None, author=None):
         return super().__new__(cls, title, body, number, created_at, author)
 
 
-Args = namedtuple('Args',
-                  ('subparser', 'org_name', 'github_base_url', 'user',
-                   'master_repo_urls', 'master_repo_names', 'students',
-                   'issue', 'title_regex', 'traceback', 'state', 'show_body', 'author'))
+Args = namedtuple(
+    'Args',
+    ('subparser', 'org_name', 'github_base_url', 'user', 'master_repo_urls',
+     'master_repo_names', 'students', 'issue', 'title_regex', 'traceback',
+     'state', 'show_body', 'author', 'num_reviews'))
 Args.__new__.__defaults__ = (None, ) * len(Args._fields)
 
 Team = namedtuple('Team', ('name', 'members', 'id'))

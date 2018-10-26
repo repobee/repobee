@@ -36,19 +36,20 @@ student repositories based on master (template) repos, to opening and closing
 issues in bulk. `repomate` also allows for cloning repos in bulk, and executing
 arbitrary tasks on the cloned repos by utlizing its simple but powerful
 [plugin system](https://github.com/slarse/repomate-plug). Below is the output
-from running `repomate --h`, giving brief descriptions of each of the main
+from running `repomate -h`, giving brief descriptions of each of the main
 featues:
 
 ```
-$ repomate --help
-usage: repomate [-h]
-                {setup,update,migrate,clone,add-to-teams,open-issue,close-issue,list-issues,verify-settings}
+(repomate-EQUnzodV) [repomate 2001] $ repomate -h
+usage: repomate [-h] [-v]
+                {setup,update,migrate,clone,add-to-teams,open-issues,close-issues,list-issues,
+assign-peer-reviews,purge-peer-review-teams,verify-settings}
                 ...
 
 A CLI tool for administrating student repositories.
 
 positional arguments:
-  {setup,update,migrate,clone,add-to-teams,open-issue,close-issue,list-issues,verify-settings}
+  {setup,update,migrate,clone,add-to-teams,open-issues,close-issues,list-issues,assign-peer-reviews,purge-peer-review-teams,verify-settings}
     setup               Setup student repos.
     update              Update existing student repos.
     migrate             Migrate master repositories into the target
@@ -60,12 +61,18 @@ positional arguments:
     open-issues         Open issues in student repos.
     close-issues        Close issues in student repos.
     list-issues         List issues in student repos.
+    assign-peer-reviews
+                        Manage peer review teams.
+    purge-peer-review-teams
+                        Remove all review teams associated with the specified
+                        students and master repos.
     verify-settings     Verify your settings, such as the base url and the
                         OAUTH token.
 
 optional arguments:
   -h, --help            show this help message and exit
   -v, --version         Display version info
+
 ```
 
 ## License

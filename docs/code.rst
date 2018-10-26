@@ -1,12 +1,6 @@
 ``repomate`` Module Reference
 *****************************
 
-abstract_api_wrapper
-====================
-
-.. automodule:: repomate.abstract_api_wrapper
-    :members:
-
 command
 ====================
 
@@ -41,12 +35,6 @@ git
 ====================
 
 .. automodule:: repomate.git
-    :members:
-
-pygithub_wrapper
-====================
-
-.. automodule:: repomate.pygithub_wrapper
     :members:
 
 tuples

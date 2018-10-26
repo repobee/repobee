@@ -13,10 +13,9 @@ program.
 .. moduleauthor:: Simon Larsén
 """
 
-import shutil
-import re
 import os
 import tempfile
+import random
 from typing import Iterable, List, Optional, Tuple, Generator
 from collections import namedtuple
 
@@ -423,6 +422,64 @@ def migrate_repos(master_repo_urls: Iterable[str], user: str,
                  user=user)
 
     LOGGER.info("done!")
+
+
+def assign_peer_reviewers(
+        master_repo_names: Iterable[str],
+        students: Iterable[str],
+        num_reviews: int,
+        issue: Optional[tuples.Issue],
+        api: GitHubAPI,
+) -> None:
+    """Assign peer reviewers among the students to each student repo. Each
+    student is assigned to review num_reviews repos, and consequently, each
+    repo gets reviewed by num_reviews reviewers.
+
+    In practice, each student repo has a review team generated (called
+    <student-repo-name>-review), to which num_reviews _other_ students are
+    assigned. The team itself is given pull-access to the student repo, so
+    that reviewers can view code and open issues, but cannot modify the
+    contents of the repo.
+
+    Args:
+        master_repo_names: Names of master repos.
+        students: An iterable of student GitHub usernames.
+        num_reviewers: Amount of reviewers to assign to each repo.
+        api: A GitHubAPI instance used to interface with the GitHub instance.
+    """
+    util.validate_types(
+        api=(api, GitHubAPI), issue=(issue, (tuples.Issue, type(None))))
+    util.validate_non_empty(
+        master_repo_names=master_repo_names, students=students)
+
+    for master_name in master_repo_names:
+        peer_review_allocations = util.generate_review_allocations(
+            master_name, students, num_reviews)
+        api.ensure_teams_and_members(
+            peer_review_allocations, permission='pull')
+        api.add_repos_to_review_teams({
+            util.generate_review_team_name(student, master_name):
+            [util.generate_repo_name(student, master_name)]
+            for student in students
+        }, issue=issue)
+
+
+def purge_review_teams(master_repo_names: Iterable[str],
+                       students: Iterable[str], api: GitHubAPI) -> None:
+    """Delete all review teams associated with the given master repo names and students.
+    
+    Args:
+        master_repo_names: Names of master repos.
+        students: An iterable of student GitHub usernames.
+    """
+    util.validate_non_empty(
+        master_repo_names=master_repo_names, students=students)
+
+    review_team_names = [
+        util.generate_review_team_name(student, master_repo_name)
+        for student in students for master_repo_name in master_repo_names
+    ]
+    api.delete_teams(review_team_names)
 
 
 def _create_repo_infos(urls: Iterable[str],
