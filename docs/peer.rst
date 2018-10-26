@@ -76,7 +76,7 @@ configuration file (if you don't know what this mean, have a look at
 :ref:`config`). Thus, the only things we must specify are
 ``--students/--students-file`` and ``--num-reviews`` (``--issue`` is optional,
 more on that later). Let's make a minimal call with the
-``assign-peer-reviewers`` command, and then inspect the log output to figure
+``assign-peer-reviews`` command, and then inspect the log output to figure
 out what happened. Recall that ``students.txt`` lists our three favorite
 students spam, ham and eggs (see :ref:`setup`).
 
