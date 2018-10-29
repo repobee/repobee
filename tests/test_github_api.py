@@ -677,3 +677,31 @@ class TestVerifySettings:
         with pytest.raises(exception.UnexpectedException) as exc_info:
             api.verify_settings(USER, ORG_NAME, GITHUB_BASE_URL,
                                 git.OAUTH_TOKEN)
+
+    def test_none_user_raises(self, happy_github, organization, api):
+        """If NamedUser.login is None, there should be an exception. Happens if
+        you provide a URL that points to a GitHub instance, but not to the API
+        endpoint.
+        """
+        happy_github.get_user.side_effect = lambda _: User(login=None)
+
+        with pytest.raises(exception.UnexpectedException) as exc_info:
+            github_api.GitHubAPI.verify_settings(
+                USER, ORG_NAME, GITHUB_BASE_URL, git.OAUTH_TOKEN)
+
+        assert "Possible reasons: bad api url" in str(exc_info)
+
+    def test_mismatching_user_login_raises(self, happy_github, organization,
+                                           api):
+        """I'm not sure if this can happen, but since the None-user thing
+        happened, better safe than sorry.
+        """
+        wrong_username = USER + "other"
+        happy_github.get_user.side_effect = lambda username: User(username+"other")
+
+        with pytest.raises(exception.UnexpectedException) as exc_info:
+            github_api.GitHubAPI.verify_settings(
+                USER, ORG_NAME, GITHUB_BASE_URL, git.OAUTH_TOKEN)
+
+        assert "specified login is {}, but the fetched user's login is {}".format(USER, wrong_username) in str(exc_info)
+        assert "Possible reasons: unknown" in str(exc_info)

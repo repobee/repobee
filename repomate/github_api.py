@@ -486,7 +486,19 @@ class GitHubAPI:
             "user {} could not be found. Possible reasons: "
             "bad base url, bad username or bad oauth permissions").format(user)
         with _convert_404_to_not_found_error(user_not_found_msg):
-            g.get_user(user)
+            user_ = g.get_user(user)
+            msg = "specified login is {}, but the fetched user's login is {}.".format(
+                user, user_.login)
+            if user_.login is None:
+                msg = (
+                    "{} Possible reasons: bad api url that points to a "
+                    "GitHub instance, but not to the api endpoint.").format(msg)
+                raise exception.UnexpectedException(msg=msg)
+            elif user_.login != user:
+                msg = (
+                    "{} Possible reasons: unknown, rerun with -tb and open an "
+                    "issue on GitHub.".format(msg))
+                raise exception.UnexpectedException(msg=msg)
         LOGGER.info(
             "SUCCESS: found user {}, user exists and base url looks okay".
             format(user))
