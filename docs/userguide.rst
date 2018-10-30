@@ -11,5 +11,5 @@
    update
    issues
    clone
-   plugins
    peer
+   plugins

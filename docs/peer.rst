@@ -1,5 +1,5 @@
-Peer review (``assign-peer-reviews`` and ``purge-peer-review-teams`` commands)
-******************************************************************************
+[NEW IN v0.4.0] Peer review (``assign-peer-reviews`` and ``purge-peer-review-teams`` commands)
+**********************************************************************************************
 
 New in ``v0.4.0`` are the ``assign-peer-reviews`` and
 ``purge-peer-review-teams`` commands, which bring basic peer review
@@ -37,7 +37,8 @@ look at the help message (i.e. run ``repomate assign-peer-reviews -h``):
     For each student repo, create a review team with pull access named
     <student>-<master_repo_name>-review and randomly assign other students to it.
     All students are assigned to the same amount of review teams, as specified by
-    `--num-reviews`
+    `--num-reviews`. Note that `--num-reviews` must be strictly less than the
+    amount of students.
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -67,6 +68,7 @@ look at the help message (i.e. run ``repomate assign-peer-reviews -h``):
                             repo, and the body will be prepended with user
                             mentions of all students assigned to review the repo.
                             NOTE: The first line is assumed to be the title.
+
 
 Most of this, we've seen before. The only non-standard arguments are
 ``--issue`` and ``--num-reviews``, the former of which we've actually already

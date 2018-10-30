@@ -1,5 +1,4 @@
 # repomate
-
 [![Build Status](https://travis-ci.com/slarse/repomate.svg?token=1VKcbDz66bMbTdt1ebsN&branch=master)](https://travis-ci.com/slarse/repomate)
 [![Code Coverage](https://codecov.io/gh/slarse/repomate/branch/master/graph/badge.svg)](https://codecov.io/gh/slarse/repomate)
 [![Documentation Status](https://readthedocs.org/projects/repomate/badge/?version=latest)](http://repomate.readthedocs.io/en/latest/)
@@ -9,7 +8,6 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## Overview
-
 `repomate` is A CLI tool for administrating large amounts of GitHub
 repositories, geared towards teachers and GitHub Enterprise. `repomate` is
 currently being used for the introductory courses in computer science at
@@ -40,10 +38,9 @@ from running `repomate -h`, giving brief descriptions of each of the main
 featues:
 
 ```
-(repomate-EQUnzodV) [repomate 2001] $ repomate -h
+$ repomate -h
 usage: repomate [-h] [-v]
-                {setup,update,migrate,clone,add-to-teams,open-issues,close-issues,list-issues,
-assign-peer-reviews,purge-peer-review-teams,verify-settings}
+                {setup,update,migrate,clone,add-to-teams,open-issues,close-issues,list-issues,assign-peer-reviews,purge-peer-review-teams,verify-settings}
                 ...
 
 A CLI tool for administrating student repositories.
@@ -62,7 +59,8 @@ positional arguments:
     close-issues        Close issues in student repos.
     list-issues         List issues in student repos.
     assign-peer-reviews
-                        Manage peer review teams.
+                        Randomly assign students to peer review each others'
+                        repos.
     purge-peer-review-teams
                         Remove all review teams associated with the specified
                         students and master repos.
@@ -75,6 +73,18 @@ optional arguments:
 
 ```
 
-## License
+## Roadmap
+`repomate` is currently in public beta. The currently existing commands are
+fairly stable and are unlikely to change, barring unexpected bugs or usability
+issues. This is with the exception of the peer review commands, that are under
+active development.
 
+**The internal API of `repomate`, including the plugin system, is less stable and
+may or may not change significantly in the near future.**
+
+Any breaking changes will be advertised with deprecation messages in the
+application well before they are put in effect. `repomate` is expected to reach
+a 1.0 release sometime this year.
+
+## License
 This software is licensed under the MIT License. See the [LICENSE](LICENSE) file for specifics.

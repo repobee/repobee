@@ -210,8 +210,9 @@ def _add_peer_review_parsers(base_parsers, subparsers):
         "For each student repo, create a review team with pull access "
         "named <student>-<master_repo_name>-review and randomly assign other "
         "students to it. All students are assigned to the same amount of "
-        "review teams, as specified by `--num-reviews`",
-        help="Manage peer review teams.",
+        "review teams, as specified by `--num-reviews`. Note that "
+        "`--num-reviews` must be strictly less than the amount of students.",
+        help="Randomly assign students to peer review each others' repos.",
         parents=base_parsers)
     assign_parser.add_argument(
         '-n',
