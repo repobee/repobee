@@ -384,7 +384,6 @@ class GitHubAPI:
             issue: An an optional Issue tuple to override the default issue.
         """
         issue = issue or DEFAULT_REVIEW_ISSUE
-        team_repo_gen = self.add_repos_to_teams(team_to_repos)
         for team, repo in self.add_repos_to_teams(team_to_repos):
             # TODO team.get_members() api request is a bit redundant, it
             # can be solved in a more efficient way by passing in the
@@ -399,7 +398,8 @@ class GitHubAPI:
             self, team_to_repos: Mapping[str, Iterable[str]]
     ) -> Generator[Tuple[github.Team.Team, github.Repository.
                          Repository], None, None]:
-        """Add repos to teams and yield each (team, repo) combination.
+        """Add repos to teams and yield each (team, repo) combination _after_
+        the repo has been added to the team.
 
         Args:
             team_to_repos: A mapping from a team name to a sequence of repo names.
@@ -413,11 +413,11 @@ class GitHubAPI:
         for team in teams:
             repos = self._get_repos_by_name(team_to_repos[team.name])
             for repo in repos:
-                yield team, repo
                 LOGGER.info("adding team {} to repo {} with '{}' permission"\
                         .format(team.name, repo.name, team.permission))
                 with _try_api_request():
                     team.add_to_repos(repo)
+                yield team, repo
 
     def _get_repos_by_name(
             self, repo_names: Iterable[str]) -> Generator[_Repo, None, None]:
@@ -490,9 +490,9 @@ class GitHubAPI:
             msg = "specified login is {}, but the fetched user's login is {}.".format(
                 user, user_.login)
             if user_.login is None:
-                msg = (
-                    "{} Possible reasons: bad api url that points to a "
-                    "GitHub instance, but not to the api endpoint.").format(msg)
+                msg = ("{} Possible reasons: bad api url that points to a "
+                       "GitHub instance, but not to the api endpoint."
+                       ).format(msg)
                 raise exception.UnexpectedException(msg=msg)
             elif user_.login != user:
                 msg = (
