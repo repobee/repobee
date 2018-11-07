@@ -444,7 +444,8 @@ def assign_peer_reviewers(
     Args:
         master_repo_names: Names of master repos.
         students: An iterable of student GitHub usernames.
-        num_reviewers: Amount of reviewers to assign to each repo.
+        num_reviews: Amount of reviews each student should perform
+            (consequently, the amount of reviews of each repo)
         api: A GitHubAPI instance used to interface with the GitHub instance.
     """
     util.validate_types(
@@ -453,15 +454,19 @@ def assign_peer_reviewers(
         master_repo_names=master_repo_names, students=students)
 
     for master_name in master_repo_names:
-        peer_review_allocations = util.generate_review_allocations(
-            master_name, students, num_reviews)
+        peer_review_allocations = plug.manager.hook.generate_review_allocations(
+            master_repo_name=master_name,
+            students=students,
+            num_reviews=num_reviews,
+            review_team_name_function=util.generate_review_team_name)
         api.ensure_teams_and_members(
             peer_review_allocations, permission='pull')
         api.add_repos_to_review_teams({
             util.generate_review_team_name(student, master_name):
             [util.generate_repo_name(student, master_name)]
             for student in students
-        }, issue=issue)
+        },
+                                      issue=issue)
 
 
 def purge_review_teams(master_repo_names: Iterable[str],
