@@ -38,7 +38,8 @@ can be done like this:
 1. Execute ``python3 -m pip install --user repomate`` to install the package.
 2. Run ``repomate -h`` to verify that you can find the script.
    - If that doesn't work, the ``repomate`` script can't be found. try
-   ``python3 -m repomate -h`` to run ``repomate`` as a module instead.
+   ``python3 -m repomate.main -h`` to run the ``main`` module of ``repomate``
+   (which is all the ``repomate`` script does anyway).
 
 .. important::
 
