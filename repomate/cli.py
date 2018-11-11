@@ -190,9 +190,8 @@ def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
                 author=args.author)
     elif args.subparser == ASSIGN_REVIEWS_PARSER:
         with _sys_exit_on_expected_error():
-            command.assign_peer_reviewers(args.master_repo_names,
-                                          args.students, args.num_reviews,
-                                          args.issue, api)
+            command.assign_peer_reviews(args.master_repo_names, args.students,
+                                        args.num_reviews, args.issue, api)
     elif args.subparser == PURGE_REVIEW_TEAMS_PARSER:
         with _sys_exit_on_expected_error():
             command.purge_review_teams(args.master_repo_names, args.students,
@@ -222,7 +221,7 @@ def _add_peer_review_parsers(base_parsers, subparsers):
         "is reviewed by n students). n must be strictly smaller than the "
         "amount of students.",
         type=int,
-        required=True,
+        default=1,
     )
     assign_parser.add_argument(
         '-i',

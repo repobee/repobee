@@ -424,7 +424,7 @@ def migrate_repos(master_repo_urls: Iterable[str], user: str,
     LOGGER.info("done!")
 
 
-def assign_peer_reviewers(
+def assign_peer_reviews(
         master_repo_names: Iterable[str],
         students: Iterable[str],
         num_reviews: int,

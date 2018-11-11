@@ -60,7 +60,7 @@ def load_plugin_modules(
 
     # default plugins first!
     plugin_names = [
-        *(plugin_names or config.get_plugin_names(config_file)), *
+        *(plugin_names or config.get_plugin_names(config_file) or []), *
         DEFAULT_PLUGINS,
     ]
     for name in plugin_names:
