@@ -26,7 +26,7 @@ PLUGIN_QUALNAME = lambda plugin_name: "{}.ext.{}".format(__package__, plugin_nam
 EXTERNAL_PLUGIN_QUALNAME = lambda plugin_name: "{}_{}.{}".format(
     __package__, plugin_name, plugin_name)
 
-DEFAULT_PLUGINS = ['default_peer_review']
+DEFAULT_PLUGIN = 'defaults'
 
 
 def load_plugin_modules(
@@ -58,10 +58,10 @@ def load_plugin_modules(
     """
     loaded_modules = []
 
-    # default plugins first!
     plugin_names = [
-        *(plugin_names or config.get_plugin_names(config_file) or []), *
-        DEFAULT_PLUGINS,
+        *(plugin_names or config.get_plugin_names(config_file) or []),
+        # default plugin last so hooks are overridden by user-specified hooks
+        DEFAULT_PLUGIN,
     ]
     for name in plugin_names:
         plug_mod = _try_load_module(PLUGIN_QUALNAME(name)) or\
@@ -72,7 +72,7 @@ def load_plugin_modules(
         loaded_modules.append(plug_mod)
 
     if loaded_modules:
-        LOGGER.info("loaded modules {}".format(
+        LOGGER.info("loaded plugins {}".format(
             [mod.__name__ for mod in loaded_modules]))
 
     return loaded_modules

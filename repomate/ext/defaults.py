@@ -1,15 +1,25 @@
-"""The default peer review plugin.
+"""The defaults plugin contains all default hook implementations.
 
-.. module:: default_peer_review
-    :synopsis: Plugin that provides the default peer review functionality
+The goal is to make core parts of repomate pluggable using hooks that only
+return the first result that is not None. The standard behavior will be provided
+by the default plugin (this one), which implements all of the required hooks.
+The default plugin will always be run last, so any user-defined hooks will run
+before it and therefore effectively override the default hooks.
+
+Currently, only the peer review related generate_review_allocations hook has a
+default implementation.
+
+.. module:: defaults
+    :synopsis: Plugin the default behavior for core repomate functionality.
     for repomate.
 
 .. moduleauthor:: Simon Larsén
 """
 import random
+from typing import Callable, Iterable, Mapping, List
+
 import daiquiri
 
-from typing import Callable, Iterable, Mapping, List
 from repomate_plug import repomate_hook
 
 LOGGER = daiquiri.getLogger(name=__file__)
@@ -17,7 +27,7 @@ LOGGER = daiquiri.getLogger(name=__file__)
 
 @repomate_hook
 def generate_review_allocations(
-        self, master_repo_name: str, students: Iterable[str], num_reviews: int,
+        master_repo_name: str, students: Iterable[str], num_reviews: int,
         review_team_name_function: Callable[[str, str], str]
 ) -> Mapping[str, List[str]]:
     """Generate a (peer_review_team -> reviewers) mapping for each student
@@ -56,8 +66,6 @@ def generate_review_allocations(
         raise ValueError(
             "there must be at least 2 students for peer review, but {} were provided"
             .format(len(students)))
-
-
 
     random.shuffle(students)
 
