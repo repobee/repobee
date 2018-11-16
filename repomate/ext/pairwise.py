@@ -24,8 +24,10 @@ LOGGER = daiquiri.getLogger(name=__file__)
 
 @repomate_hook
 def generate_review_allocations(
-        master_repo_name: str, students: Iterable[str], num_reviews: int,
-        review_team_name_function: Callable[[str, str], str]
+        master_repo_name: str,
+        students: Iterable[str],
+        num_reviews: int = None,
+        review_team_name_function: Callable[[str, str], str] = None
 ) -> Mapping[str, List[str]]:
     """Generate a (peer_review_team -> reviewers) mapping for each student
     repository (i.e. <student>-<master_repo_name>), where len(reviewers) =
@@ -65,6 +67,6 @@ def generate_review_allocations(
     for group in groups:
         for i, reviewer in enumerate(group):
             student = group[(i + 1) % len(group)]
-            allocations[review_team_name_function(master_repo_name,
-                                                  student)] = [reviewer]
+            allocations[review_team_name_function(student,
+                                                  master_repo_name)] = [reviewer]
     return allocations
