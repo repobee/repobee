@@ -768,7 +768,7 @@ class TestAssignPeerReviewers:
         students = students[:num_students]
 
         with pytest.raises(ValueError) as exc_info:
-            command.assign_peer_reviewers(
+            command.assign_peer_reviews(
                 master_repo_names=master_names,
                 students=students,
                 num_reviews=num_reviews,
@@ -781,7 +781,7 @@ class TestAssignPeerReviewers:
         num_reviews = 0
 
         with pytest.raises(ValueError) as exc_info:
-            command.assign_peer_reviewers(
+            command.assign_peer_reviews(
                 master_repo_names=master_names,
                 students=students,
                 num_reviews=num_reviews,
@@ -801,7 +801,7 @@ class TestAssignPeerReviewers:
         expected_calls = [call(mapping, issue=issue) for mapping in mappings]
         num_reviews = 3
 
-        command.assign_peer_reviewers(
+        command.assign_peer_reviews(
             master_repo_names=master_names,
             students=students,
             num_reviews=num_reviews,
