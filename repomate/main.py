@@ -7,10 +7,9 @@
 """
 
 import sys
-import itertools
-import daiquiri
-import traceback
 from typing import List
+
+import daiquiri
 
 from repomate import cli
 from repomate import plugin
@@ -39,6 +38,7 @@ def main(sys_args: List[str]):
     """Start the repomate CLI."""
     args = sys_args[1:]  # drop the name of the program
     traceback = False
+    pre_init = True
     try:
         plugin_args, app_args = _separate_args(args)
 
@@ -52,9 +52,15 @@ def main(sys_args: List[str]):
             plugin.initialize_plugins()
         parsed_args, api = cli.parse_args(app_args)
         traceback = parsed_args.traceback
+        pre_init = False
         cli.dispatch_command(parsed_args, api)
     except Exception as exc:
-        if traceback:
+        if traceback or pre_init:
+            if pre_init:
+                LOGGER.error(
+                    "unexpected exception raised before pre-initialization was complete. "
+                    "This shouldn't happen, please open an issue on GitHub "
+                    "and supply the stacktrace that follows below.")
             LOGGER.exception("critical exception")
         else:
             LOGGER.error("{.__class__.__name__}: {}".format(exc, str(exc)))

@@ -15,19 +15,24 @@ import repomate
 from repomate import plugin
 from repomate import exception
 
-from repomate.ext import javac, pylint
+from repomate.plugin import DEFAULT_PLUGIN
+from repomate.ext import javac, pylint, defaults
 
 PLUGINS = pytest.constants.PLUGINS
 
 
 class TestLoadPluginModules:
-    """Tests for loda_plugin_modules"""
+    """Tests for load_plugin_modules.
+    
+    Note that the default plugin repomate.ext.defaults is always loaded.
+    """
 
-    def test_load_all_default_plugins(self, config_mock):
-        """Test load the default plugins, i.e. the ones listed in
+    def test_load_all_bundled_plugins(self, config_mock):
+        """Test load the bundled plugins, i.e. the ones listed in
         pytest.constants.PLUGINS.
         """
-        expected_names = list(map(plugin.PLUGIN_QUALNAME, PLUGINS))
+        expected_names = list(
+            map(plugin.PLUGIN_QUALNAME, [*PLUGINS, DEFAULT_PLUGIN]))
 
         modules = plugin.load_plugin_modules(str(config_mock))
         module_names = [mod.__name__ for mod in modules]
@@ -39,7 +44,8 @@ class TestLoadPluginModules:
         file."""
         plugin_names = ["awesome", "the_slarse_plugin", "ric_easter_egg"]
         expected_calls = [
-            call(plug) for plug in map(plugin.PLUGIN_QUALNAME, plugin_names)
+            call(plug) for plug in map(plugin.PLUGIN_QUALNAME, plugin_names +
+                                       [DEFAULT_PLUGIN])
         ]
 
         class module:
@@ -54,14 +60,14 @@ class TestLoadPluginModules:
         load_module_mock.assert_has_calls(expected_calls)
 
     def test_load_no_plugins(self, no_config_mock):
-        """Test calling load plugins when no plugins are specified in the
-        config.
+        """Test calling load plugins when no plugins are specified results in
+        only the default being loaded.
         """
         modules = plugin.load_plugin_modules()
 
-        assert not modules
+        assert modules == [defaults]
 
-    def test_load_single_plugin(self, empty_config_mock):
+    def test_specify_single_plugin(self, empty_config_mock):
         plugin_name = "javac"
         plugin_qualname = plugin.PLUGIN_QUALNAME(plugin_name)
         config_contents = os.linesep.join(
@@ -71,7 +77,7 @@ class TestLoadPluginModules:
         modules = plugin.load_plugin_modules(str(empty_config_mock))
         module_names = [mod.__name__ for mod in modules]
 
-        assert module_names == [plugin_qualname]
+        assert module_names == list(map(plugin.PLUGIN_QUALNAME, [plugin_name, DEFAULT_PLUGIN]))
 
     def test_raises_when_loading_invalid_module(self, empty_config_mock):
         """Test that PluginError is raised when when the plugin specified

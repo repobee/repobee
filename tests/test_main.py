@@ -31,6 +31,15 @@ CLONE_ARGS = 'clone -mn week-2 -s slarse'.split()
 module = namedtuple('module', ('name', ))
 
 
+@pytest.fixture(autouse=True)
+def register_plugins_mock(mocker):
+    """As initialize_plugins is called multiple times, we need to mock out the
+    register_plugins method. Otherwise, it raises when trying to load the same
+    plugin twice.
+    """
+    return mocker.patch('repomate.plugin.register_plugins', autospec=True)
+
+
 @pytest.fixture
 def logger_exception_mock(mocker):
     return mocker.patch('repomate.main.LOGGER.exception', autospec=True)
