@@ -8,7 +8,6 @@ If N is odd, the students are split into (N-1)/2 groups, in which one group has
 
 .. module:: pairwise
     :synopsis: Plugin that provides pairwise peer review allocations.
-    for repomate.
 
 .. moduleauthor:: Simon Larsén
 """

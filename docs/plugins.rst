@@ -1,49 +1,72 @@
-Plugins for ``repomate clone``
-******************************
+.. _plugins:
+
+Plugins for ``repomate``
+************************
 ``repomate`` defines a fairly simple but powerful plugin system that allows
-programmers to hook into certain execution points in the ``clone`` command.
-The purpose is to be able to execute arbitrary tasks on cloned repos, e.g.
-running tests on code or finding the average word length in the repository.
-You know. Arbitrary tasks. Plugins can currently hook into the configuration
-file, add command line arguments and act on cloned repos. In this section,
-we'll walk through how to use existing plugins. If you feel the itch to creatie
-your own plugin, head over to the `repomate-plug docs`_!
+programmers to hook into certain execution points. To read more about the
+details of these hooks (and how to write your own plugins), see the
+`repomate-plug docs`_. Currently, plugins can hook into the ``clone`` command
+to perform arbitrary tasks on the cloned repos (such as running test classes),
+and the ``assign-peer-reviews`` command, to change the way reviews are
+assigned.
 
 .. _configure_plugs:
 
 Using Existing Plugins
 ======================
-To use an installed plugin, it must be specified in the :ref:`config` in the
-``plugins`` option under the ``[DEFAULT]`` section. Here is an example of using
-the builtins_ ``javac`` and ``pylint``.
+You can specify which plugins you want to use either by adding them to the
+configuration file, or by specifying them on the command line. Personally,
+I find it most convenient to specify plugins on the command line. To do this,
+we can use the ``-p|--plug`` option *before* any other options. The reson the
+plugins must go before any other options is that some plugins add command line
+arguments, and must therefore be parsed separately. As an example, we can
+activate the builtins_ ``javac`` and ``pylint`` like this:
+
+.. code-block:: bash
+
+    $ repomate -p pylint -p javac clone -mn master-repo-1 -sf students.txt
+
+This will clone the repos, and the run the plugins on the repos. We can also
+specify the default plugins we'd like to use in the configuration file by adding
+the ``plugins`` option under the ``[DEFAULT]`` section. Here is an example of
+using the builtins_ ``javac`` and ``pylint``.
 
 .. code-block:: bash
 
     [DEFAULTS]
     plugins = javac, pylint
 
-The order of the plugins is significant and implies the execution order of the
-plugins. This is useful for plugins that rely on the results of other plugins.
-This system for deciding execution order may be overhauled in the future, if
-anyone comes up with a better idea.
+Like with all other configuration values, they are only used if no command line
+options are specified. If you have defaults specified, but want to run without
+any plugins, you can use the ``--no-plugins``, which disables plugins.
 
-.. note::
+.. important::
 
-    **New in v0.3.0:** Plugins to use can now be specified on the command line
-    using the ``-p|--plug`` argument *before* entering any of the subparsers.
-    Example for using the ``pylint`` and ``javac`` plugins:
+    The order plugins are specified in is significant and implies the execution
+    order of the plugins. This is useful for plugins that rely on the results
+    of other plugins. This system for deciding execution order may be
+    overhauled in the future, if anyone comes up with a better idea.
 
-    .. code-block:: bash
-        
-        $ repomate -p pylint -p javac clone -mn master-repo-1 -sf students.txt
+.. _built-in _peer review plugins:
 
-    Note that this argument is *hidden*, so it does not show when running
-    ``repomate -h``.
+Built-in plugins for ``repomate assign-peer-reviews``
+=====================================================
+``repomate`` ships with two plugins for the ``assign-peer-reviews`` command.
+The first of these is the :py:mod:`~repomate.ext.defaults` plugin, which
+provides the default allocation algorithm. As the name suggests, this plugin is
+loaded by default, without the user specifying anything. The second plugin is
+the :py:mod:`~repomate.ext.pairwise` plugin. This plugin will divide ``N``
+students into ``N/2`` groups of 2 students (and possibly one with 3 students,
+if ``N`` is odd), and have them peer review the other person in the group. The
+intention is to let students sit together and be able to ask questions
+regarding the repo they are peer reviewing. To use this allocation algorithm,
+simply specify the plugin with ``-p pairwise`` to override the default
+algorithm. Note that this plugin ignores the ``--num-reviews`` argument.
 
 .. _builtins:
 
-Built-in Plugins
-================
+Built-in Plugins for ``repomate clone``
+=======================================
 ``repomate`` currently ships with two built-in plugins:
 :py:mod:`~repomate.ext.javac` and :py:mod:`~repomate.ext.pylint`. The former
 attempts to compile all ``.java`` files in each cloned repo, while the latter
@@ -124,7 +147,6 @@ define some defaults:
     [junit4]
     hamcrest_path = /absolute/path/to/hamcrest-1.3.jar
     junit_path = /absolute/path/to/junit-4.12.jar
-
 
 .. _repomate-junit4: https://github.com/slarse/repomate-junit4
 .. _repomate-plug: https://github.com/slarse/repomate-plug

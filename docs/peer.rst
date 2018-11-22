@@ -1,19 +1,21 @@
-[NEW IN v0.4.0] Peer review (``assign-peer-reviews`` and ``purge-peer-review-teams`` commands)
-**********************************************************************************************
+.. _peer review:
 
-New in ``v0.4.0`` are the ``assign-peer-reviews`` and
-``purge-peer-review-teams`` commands, which bring basic peer review
-functionality to ``repomate``. Like much of the
-other functionality in ``repomate``, the peer review functionality is built
-around teams and limited access privileges. In short, every student repo up for
-review gets an associated peer review team generated, which has ``pull`` access
-to the repo. Each student then gets added to ``0 < N < num_students`` peer
-review teams, and are to open a peer review issue in the associated repos.
-Let's have a closer look at how this is managed.
+Peer review (``assign-peer-reviews`` and ``purge-peer-review-teams`` commands)
+**********************************************************************************************
+Peer reviewing is an important part of a programming curriculum, so of course
+``repomate`` facilitates this! The relevant commands are
+``assign-peer-reviews`` and ``purge-peer-review-teams``.
+Like much of the other functionality in ``repomate``, the peer review
+functionality is built around teams and limited access privileges. In short,
+every student repo up for review gets an associated peer review team generated,
+which has ``pull`` access to the repo. Each student then gets added to ``0 < N
+< num_students`` peer review teams, and are to open a peer review issue in the
+associated repos. This is at least the the default. See :ref:`review allocation
+algorithm` for other available review allocation schemes.
 
 .. note::
 
-    A third command, ``check-peer-review-progress``, is planned for ``v0.5.0``.
+    A third command, ``check-peer-review-progress``, is planned for ``v0.6.0``.
     With this command, it will be possible to quickly get an overview of which
     students have opened peer review issues, and which have not.
 
@@ -84,7 +86,7 @@ students spam, ham and eggs (see :ref:`setup`).
 
 .. code-block:: bash
 
-    $ repomate assign-peer-reviews -mn master-repo-1 -s spam ham eggs --num-reviews 2
+    $ repomate assign-peer-reviews -mn master-repo-1 -sf students.txt --num-reviews 2
     [INFO] config file defaults:
 
        github_base_url: https://some-enterprise-host/api/v3
@@ -128,6 +130,14 @@ students assigned to the different peer review teams have created their review
 issue. Of course, other schemes can be cooked up, but that is my current vision
 of how I myself will use it. Now, let's talk a bit about that ``--issue``
 argument.
+
+.. important::
+
+    Assigning peer reviews gives the reviewers read-access to the repos they are
+    to review. This means that if you use issues to communicate grades/feedback
+    to your students, the reviewers will also see this feedback! It is therefore
+    important to remove the peer review teams (see :ref:`purge peer review
+    teams`).
 
 Specifying a custom issue
 -------------------------
@@ -175,14 +185,8 @@ specifying the issue like this:
     [INFO] created team eggs-master-repo-2-review
     [INFO] created team ham-master-repo-2-review
     [INFO] adding members ham, eggs to team spam-master-repo-2-review
-    [WARNING] user ham does not exist
-    [WARNING] user eggs does not exist
     [INFO] adding members spam, ham to team eggs-master-repo-2-review
-    [WARNING] user spam does not exist
-    [WARNING] user ham does not exist
     [INFO] adding members eggs, spam to team ham-master-repo-2-review
-    [WARNING] user eggs does not exist
-    [WARNING] user spam does not exist
     [INFO] opened issue eggs-master-repo-2/#2-'Review of master-repo-2'
     [INFO] adding team eggs-master-repo-2-review to repo eggs-master-repo-2 with 'pull' permission
     [INFO] opened issue ham-master-repo-2/#2-'Review of master-repo-2'
@@ -194,8 +198,11 @@ As you can tell from the last few lines, the title is the one specified in the
 issue, and not the default title as it was before. And that's pretty much it for
 setting up the peer review repos.
 
-Cleaning up peer review teams with ``purge-peer-review-teams``
-==============================================================
+
+.. _purge peer review teams:
+
+Cleaning with ``purge-peer-review-teams``
+=========================================
 The one downside of using teams for access privileges is that we bloat the
 organization with a ton of teams. Once the deadline has passed and all peer
 reviews are done, there is little reason to keep them (in my mind). Therefore,
@@ -255,3 +262,27 @@ the student ``cabbage`` in the reviews for ``master-repo-2`` back at
    --issue issue.md``
 
 And that's it! Disaster averted.
+
+
+.. _review allocation algorithm:
+
+Selecting peer review allocation algorithm
+==========================================
+The default allocation algorithm is as described in :ref:`peer review`, and is
+suitable for when reviewers do not need to interact with the students whom they
+review. This is however not always the case, sometimes it is beneficial for
+reviewers to to interact with reviewees (is that a word?), especially if the
+peer review is done in the classroom. Because of this, ``repomate`` also
+provides a _pairwise_ allocation scheme, which allocates reviews such that
+if student ``A`` reviews student ``B``, then student ``B`` reviews student
+``A`` (except for an ``A->B->C->A`` kind of deal in one group if there are an
+odd amount of students). This implemented as a plugin, so to run with this
+scheme, you add ``-p pairwise`` in front of the command.
+
+.. code-block:: bash
+
+    $ repomate -p pairwise assign-peer-reviews -mn master-repo-1 -sf students.txt
+
+Note that the pairwise algorithm ignores the ``--num-reviews`` argument, and
+will issue a warning if this is set (to anything but 1, but you should just not
+specify it). For more details on plugins in ``repomate``, :ref:`plugins`.

@@ -49,11 +49,33 @@ util
 .. automodule:: repomate.util
     :members:
 
-Plugin modules
-==============
+Core plugins
+============
+
+defaults
+--------
+
+.. automodule:: repomate.ext.defaults
+    :members:
+
+pairwise
+--------
+
+.. automodule:: repomate.ext.pairwise
+    :members:
+
+
+Extension plugins
+=================
+
+javac
+-----
 
 .. automodule:: repomate.ext.javac
     :members:
+
+pylint
+------
 
 .. automodule:: repomate.ext.pylint
     :members:

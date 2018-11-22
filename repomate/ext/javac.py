@@ -79,8 +79,8 @@ class JavacCloneHook(Plugin):
             java_files: paths to ``.java`` files.
         Returns:
             (status, msg), where status is e.g. is a
-            :py:class:`repomate_plug.Status` code and the message describes the
-            outcome in plain text.
+                :py:class:`repomate_plug.Status` code and the message describes the
+                outcome in plain text.
         """
         command = ["javac", *[str(path) for path in java_files]]
         proc = subprocess.run(
@@ -111,7 +111,7 @@ class JavacCloneHook(Plugin):
 
         Args:
             args: The full namespace returned by
-            :py:func:`argparse.ArgumentParser.parse_args`
+                :py:func:`argparse.ArgumentParser.parse_args`
         """
         if args.ignore:
             self._ignore = args.ignore

@@ -10,8 +10,8 @@ Currently, only the peer review related generate_review_allocations hook has a
 default implementation.
 
 .. module:: defaults
-    :synopsis: Plugin the default behavior for core repomate functionality.
-    for repomate.
+    :synopsis: Plugin that provides the default behavior for core repomate
+        functionality.
 
 .. moduleauthor:: Simon Larsén
 """
