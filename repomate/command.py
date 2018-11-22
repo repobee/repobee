@@ -363,7 +363,8 @@ def clone_repos(master_repo_names: Iterable[str], students: Iterable[str],
     LOGGER.info("cloning into student repos ...")
     git.clone(repo_urls)
 
-    if plug.manager.get_plugins():
+    if len(plug.manager.
+           get_plugins()) > 1:  # something else than the default loaded
         _execute_post_clone_hooks(repo_names, api)
 
 
