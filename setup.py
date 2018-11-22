@@ -15,7 +15,7 @@ test_requirements = [
     'codecov'
 ]
 required = [
-    'appdirs', 'daiquiri', 'pygithub', 'colored', 'pluggy', 'repomate-plug'
+    'appdirs', 'daiquiri', 'pygithub', 'colored', 'pluggy', 'repomate-plug>=0.4.0'
 ]
 
 setup(

@@ -3,4 +3,4 @@ colored
 daiquiri
 pluggy
 pygithub
-repomate-plug
+repomate-plug>=0.4.0
