@@ -1,2 +1,2 @@
-__version__ = '0.4.1'
+from repomate.__version import __version__
 __author__ = 'Simon Larsén'
