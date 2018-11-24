@@ -64,8 +64,8 @@ def _log_config(config: dict) -> None:
     """
     if config:
         LOGGER.info("config file defaults:\n{}".format("\n   ".join([""] + [
-            "{}: {}".format(key, value) for key, value in config.items()
-            if key in CONFIGURABLE_ARGS
+            "{}: {}".format(key, value)
+            for key, value in config.items() if key in CONFIGURABLE_ARGS
         ] + [""])))
     else:
         LOGGER.info(
@@ -110,6 +110,21 @@ def execute_config_hooks(
     plug.manager.hook.config_hook(config_parser=config_parser)
 
 
+def read_sections(config_file: pathlib.Path = DEFAULT_CONFIG_FILE) -> dict:
+    """Read all sections of the configuration file and return as a dictionary.
+
+    Returns:
+        a dictionary representing the config file (empty if there is no config file)
+    """
+    if not config_file.is_file():
+        return {}
+    config = _read_config(config_file)
+    return {
+        section: dict(contents)
+        for section, contents in config.items() if section != 'DEFAULT'
+    }
+
+
 def _read_defaults(config_file: pathlib.Path = DEFAULT_CONFIG_FILE) -> dict:
     if not config_file.is_file():
         return {}
@@ -126,7 +141,7 @@ def _read_config(config_file: pathlib.Path = DEFAULT_CONFIG_FILE
 
     if "DEFAULTS" not in config_parser:
         raise exception.FileError(
-            "config file at '{!s}' does not contain the required [DEFAULTS] header".
-            format(config_file))
+            "config file at '{!s}' does not contain the required [DEFAULTS] header"
+            .format(config_file))
 
     return config_parser

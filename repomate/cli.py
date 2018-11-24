@@ -58,6 +58,7 @@ LIST_ISSUES_PARSER = 'list-issues'
 VERIFY_PARSER = 'verify-settings'
 ASSIGN_REVIEWS_PARSER = 'assign-peer-reviews'
 PURGE_REVIEW_TEAMS_PARSER = 'purge-peer-review-teams'
+SHOW_CONFIG_PARSER = 'show-config'
 
 PARSER_NAMES = (
     SETUP_PARSER,
@@ -97,6 +98,8 @@ def parse_args(sys_args: Iterable[str]
             user=args.user,
             traceback=args.traceback,
         ), None  # only here is return None for api allowed
+    elif getattr(args, SUB) == SHOW_CONFIG_PARSER:
+        return tuples.Args(subparser=SHOW_CONFIG_PARSER), None
     elif getattr(args, SUB) == CLONE_PARSER:
         # only if clone is chosen should plugins be able to hook in
         plug.manager.hook.parse_args(args=args)
@@ -196,6 +199,8 @@ def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
         with _sys_exit_on_expected_error():
             command.purge_review_teams(args.master_repo_names, args.students,
                                        api)
+    elif args.subparser == SHOW_CONFIG_PARSER:
+        command.show_config()
     else:
         raise exception.ParseError(
             "Illegal value for subparser: {}. This is a bug, please open an issue."
@@ -350,6 +355,7 @@ def _add_subparsers(parser):
     them must also inherit from the required `base_parser` (unless it is a
     `base_` prefixed parser, of course).
     """
+
     base_parser, base_student_parser, base_user_parser = _create_base_parsers()
 
     repo_name_parser = argparse.ArgumentParser(
@@ -366,6 +372,14 @@ def _add_subparsers(parser):
 
     subparsers = parser.add_subparsers(dest=SUB)
     subparsers.required = True
+
+    show_config = subparsers.add_parser(
+        SHOW_CONFIG_PARSER,
+        help="Show the configuration file",
+        description=
+        "Show the contents of the configuration file. If no configuration "
+        "file can be found, show the path where repomate expectes to find it.",
+    )
 
     create = subparsers.add_parser(
         SETUP_PARSER,

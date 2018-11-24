@@ -14,7 +14,9 @@ program.
 """
 
 import os
+import sys
 import tempfile
+import subprocess
 import random
 from typing import Iterable, List, Optional, Tuple, Generator
 from collections import namedtuple
@@ -28,6 +30,7 @@ from repomate import github_api
 from repomate import util
 from repomate import tuples
 from repomate import exception
+from repomate import config
 from repomate.github_api import GitHubAPI
 from repomate.tuples import Team
 from repomate.git import Push
@@ -534,6 +537,26 @@ def _create_push_tuples(master_repo_paths: Iterable[str],
             for repo_url in repo_urls if repo_url.endswith(repo_base_name)
         ]
     return push_tuples
+
+
+def show_config():
+    """Print the configuration file to the log."""
+    if not config.DEFAULT_CONFIG_FILE.is_file():
+        LOGGER.warning("no config file found, expected location: " +
+                       str(config.DEFAULT_CONFIG_FILE))
+        return
+
+    LOGGER.info("found config file at " + str(config.DEFAULT_CONFIG_FILE))
+    proc = subprocess.run(
+        ['cat', str(config.DEFAULT_CONFIG_FILE.resolve())],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE)
+
+    if proc.returncode:
+        LOGGER.error("something went wrong: " +
+                     proc.stderr.decode(sys.getdefaultencoding()))
+
+    LOGGER.info(os.linesep +proc.stdout.decode(sys.getdefaultencoding()))
 
 
 def _format_hook_result(hook_result):
