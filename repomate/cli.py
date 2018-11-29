@@ -18,6 +18,8 @@ from typing import List, Iterable, Optional, Tuple
 import logging
 import daiquiri
 
+import repomate_plug as plug
+
 import repomate
 from repomate import command
 from repomate import github_api
@@ -26,8 +28,6 @@ from repomate import util
 from repomate import tuples
 from repomate import exception
 from repomate import config
-
-import repomate_plug as plug
 
 daiquiri.setup(
     level=logging.INFO,
@@ -200,7 +200,8 @@ def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
             command.purge_review_teams(args.master_repo_names, args.students,
                                        api)
     elif args.subparser == SHOW_CONFIG_PARSER:
-        command.show_config()
+        with _sys_exit_on_expected_error():
+            command.show_config()
     else:
         raise exception.ParseError(
             "Illegal value for subparser: {}. This is a bug, please open an issue."

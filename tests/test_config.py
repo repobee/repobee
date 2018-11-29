@@ -50,7 +50,7 @@ class TestGetConfiguredDefaults:
         with pytest.raises(exception.FileError) as exc_info:
             config.get_configured_defaults()
 
-        assert "invalid keys" in str(exc_info)
+        assert "invalid default keys" in str(exc_info)
         assert invalid_key in str(exc_info)
 
     def test_get_configured_defaults_raises_on_missing_header(
@@ -141,7 +141,7 @@ class TestCheckConfigIntegrity:
         with pytest.raises(exception.FileError) as exc_info:
             config.check_config_integrity(str(empty_config_mock))
 
-        assert "config contains invalid keys" in str(exc_info)
+        assert "config contains invalid default keys" in str(exc_info)
         assert "option" in str(exc_info)
         assert "user" not in str(exc_info)
 

@@ -60,8 +60,9 @@ def check_defaults(defaults: Mapping[str, str]):
     """
     configured = defaults.keys()
     if configured - CONFIGURABLE_ARGS:  # there are surpluss arguments
-        raise exception.FileError("config contains invalid keys: {}".format(
-            ", ".join(configured - CONFIGURABLE_ARGS)))
+        raise exception.FileError(
+            "config contains invalid default keys: {}".format(
+                ", ".join(configured - CONFIGURABLE_ARGS)))
 
 
 def get_plugin_names(
