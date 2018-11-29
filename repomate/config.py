@@ -50,9 +50,6 @@ def get_configured_defaults(
     if configured - CONFIGURABLE_ARGS:  # there are surpluss arguments
         raise exception.FileError("config contains invalid keys: {}".format(
             ", ".join(configured - CONFIGURABLE_ARGS)))
-
-    _log_config(config_dict)
-
     return config_dict
 
 
