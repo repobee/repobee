@@ -7,9 +7,10 @@ Contains the code required for pre-configuring user interfaces.
 
 .. moduleauthor:: Simon Larsén
 """
+import os
 import pathlib
 import configparser
-from typing import Union, List
+from typing import Union, List, Mapping
 import daiquiri
 import appdirs
 import repomate
@@ -24,6 +25,7 @@ CONFIG_DIR = pathlib.Path(
     appdirs.user_config_dir(
         appname=__package__, appauthor=repomate.__author__))
 
+DEFAULTS_SECTION_HDR = 'DEFAULTS'
 DEFAULT_CONFIG_FILE = CONFIG_DIR / 'config.cnf'
 assert DEFAULT_CONFIG_FILE.is_absolute()
 
@@ -43,31 +45,23 @@ def get_configured_defaults(
         a dict with the contents of the config file. If there is no config
         file, the return value is an empty dict.
     """
-    config_file = pathlib.Path(config_file) if isinstance(config_file,
-                                                          str) else config_file
-    config_dict = _read_defaults(config_file)
-    configured = config_dict.keys()
+    config_file = pathlib.Path(config_file)
+    defaults = _read_defaults(config_file)
+    check_defaults(defaults)
+    return defaults
+
+
+def check_defaults(defaults: Mapping[str, str]):
+    """Raise an exception if defaults contain keys that are not configurable
+    arguments.
+
+    Args:
+        defaults: A dictionary of defaults.
+    """
+    configured = defaults.keys()
     if configured - CONFIGURABLE_ARGS:  # there are surpluss arguments
         raise exception.FileError("config contains invalid keys: {}".format(
             ", ".join(configured - CONFIGURABLE_ARGS)))
-    return config_dict
-
-
-def _log_config(config: dict) -> None:
-    """Pretty print the configuration file in the log.
-
-    Args:
-        config: a ConfigParser after reading the file.
-    """
-    if config:
-        LOGGER.info("config file defaults:\n{}".format("\n   ".join([""] + [
-            "{}: {}".format(key, value)
-            for key, value in config.items() if key in CONFIGURABLE_ARGS
-        ] + [""])))
-    else:
-        LOGGER.info(
-            "no config file found. Expected config file location: {!s}".format(
-                DEFAULT_CONFIG_FILE))
 
 
 def get_plugin_names(
@@ -88,7 +82,7 @@ def get_plugin_names(
     if not config_file.is_file():
         return []
     config = _read_config(config_file)
-    plugin_string = config.get('DEFAULTS', 'plugins', fallback="")
+    plugin_string = config.get(DEFAULTS_SECTION_HDR, 'plugins', fallback="")
     return [name.strip() for name in plugin_string.split(",") if name]
 
 
@@ -99,33 +93,41 @@ def execute_config_hooks(
     Args:
         config_file: path to the config file.
     """
-    config_file = pathlib.Path(config_file) if isinstance(config_file,
-                                                          str) else config_file
+    config_file = pathlib.Path(config_file)
     if not config_file.is_file():
         return
     config_parser = _read_config(config_file)
     plug.manager.hook.config_hook(config_parser=config_parser)
 
 
-def read_sections(config_file: pathlib.Path = DEFAULT_CONFIG_FILE) -> dict:
-    """Read all sections of the configuration file and return as a dictionary.
+def check_config_integrity(
+        config_file: Union[str, pathlib.Path] = DEFAULT_CONFIG_FILE) -> None:
+    """Raise an exception if the configuration file contains syntactical
+    errors, or if the defaults are misconfigured. Note that plugin options are
+    not checked.
 
-    Returns:
-        a dictionary representing the config file (empty if there is no config file)
+    Args:
+        config_file: path to the config file.
     """
+    config_file = pathlib.Path(config_file)
     if not config_file.is_file():
-        return {}
-    config = _read_config(config_file)
-    return {
-        section: dict(contents)
-        for section, contents in config.items() if section != 'DEFAULT'
-    }
+        raise exception.FileError("no config file found, expected location: " +
+                                  str(config_file))
+
+    try:
+        defaults = _read_defaults(config_file)
+    except configparser.ParsingError as exc:
+        errors = ', '.join("(line {}: {})".format(line_nr, line)
+                           for line_nr, line in exc.errors)
+        raise exception.FileError(
+            msg="config file contains syntax errors: " + errors)
+    check_defaults(defaults)
 
 
 def _read_defaults(config_file: pathlib.Path = DEFAULT_CONFIG_FILE) -> dict:
     if not config_file.is_file():
         return {}
-    return dict(_read_config(config_file)['DEFAULTS'])
+    return dict(_read_config(config_file)[DEFAULTS_SECTION_HDR])
 
 
 def _read_config(config_file: pathlib.Path = DEFAULT_CONFIG_FILE
@@ -136,7 +138,7 @@ def _read_config(config_file: pathlib.Path = DEFAULT_CONFIG_FILE
     except configparser.MissingSectionHeaderError:
         pass  # handled by the next check
 
-    if "DEFAULTS" not in config_parser:
+    if DEFAULTS_SECTION_HDR not in config_parser:
         raise exception.FileError(
             "config file at '{!s}' does not contain the required [DEFAULTS] header"
             .format(config_file))
