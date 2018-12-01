@@ -117,12 +117,12 @@ def isfile_mock(request, mocker):
     """
     if 'noisfilemock' in request.keywords:
         return
-    isfile = lambda path: path != config.DEFAULT_CONFIG_FILE
+    isfile = lambda path: str(path) != str(config.DEFAULT_CONFIG_FILE) and os.path.isfile(path)
     return mocker.patch(
         'pathlib.Path.is_file', autospec=True, side_effect=isfile)
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def no_config_mock(mocker, isfile_mock, tmpdir):
     """Mock which ensures that no config file is found."""
     isfile = isfile_mock.side_effect

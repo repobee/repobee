@@ -10,6 +10,12 @@ If you are new to ``repomate``, the :ref:`fundamentals` and
 or utilize the core functionality in ways the CLI does not allow will be best
 served by looking at the :ref:`modindex`.
 
+.. important::
+    
+    If you use the :ref:`userguide` in any way and feel like skipping
+    :ref:`getting_started`, make sure to read :ref:`configure_repomate` anyway!
+    The rest of the guide assumes a configuration as described there.
+
 Please open an issue and tag it with the ``docs`` tag for any bugs or missing
 information.
 

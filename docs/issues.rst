@@ -33,12 +33,6 @@ for our dear students ``spam``, ``eggs`` and ``ham``, who are listed in the
 .. code-block:: bash
 
     $ repomate open-issues -mn master-repo-2 -sf students.txt -i issue.md 
-    [INFO] config file defaults:
-
-       github_base_url: https://some-enterprise-host/api/v3
-       user: slarse
-       org_name: repomate-demo
-       
     [INFO] Opened issue spam-master-repo-2/#1-'An important announcement'
     [INFO] Opened issue eggs-master-repo-2/#1-'An important announcement'
     [INFO] Opened issue ham-master-repo-2/#1-'An important announcement'
@@ -61,12 +55,6 @@ announcement`` is simple: we provide the regex ``\AAn important announcement\Z``
 .. code-block:: bash
 
     $ repomate close-issues -mn master-repo-2 -sf students.txt -r '\AAn important announcement\Z'
-    [INFO] config file defaults:
-
-       github_base_url: https://some-enterprise-host/api/v3
-       user: slarse
-       org_name: repomate-demo
-       
     [INFO] closed issue spam-master-repo-2/#1-'An important announcement'
     [INFO] closed issue eggs-master-repo-2/#1-'An important announcement'
     [INFO] closed issue ham-master-repo-2/#1-'An important announcement'
@@ -94,12 +82,6 @@ issues like so:
 .. code-block:: bash
 
     $ repomate list-issues -mn master-repo-2 -sf students.txt
-    [INFO] config file defaults:
-
-       github_base_url: https://some-enterprise-host/api/v3
-       user: slarse
-       org_name: repomate-demo
-       
     [INFO] spam-master-repo-2/#1:  Grading Criteria created 2018-09-12 18:20:56 by glassey
     [INFO] eggs-master-repo-2/#1:  Grading Criteria created 2018-09-12 18:20:56 by glassey
     [INFO] ham-master-repo-2/#1:   Grading Criteria created 2018-09-12 18:20:56 by glassey
@@ -111,12 +93,6 @@ issues, we must specifically say so with the ``--closed`` argument.
 .. code-block:: bash
 
     $ repomate list-issues -mn master-repo-2 -sf students.txt --closed
-    [INFO] config file defaults:
-
-       github_base_url: https://some-enterprise-host/api/v3
-       user: slarse
-       org_name: repomate-demo
-       
     [INFO] spam-master-repo-2/#2:  An important announcement created 2018-09-17 17:46:43 by slarse
     [INFO] eggs-master-repo-2/#2:  An important announcement created 2018-09-17 17:46:43 by slarse
     [INFO] ham-master-repo-2/#2:   An important announcement created 2018-09-17 17:46:43 by slarse

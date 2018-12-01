@@ -14,25 +14,23 @@ program.
 """
 
 import os
+import sys
 import tempfile
-import random
 from typing import Iterable, List, Optional, Tuple, Generator
-from collections import namedtuple
 
 import daiquiri
 
 from repomate_plug import Status
+import repomate_plug as plug
 
 from repomate import git
-from repomate import github_api
 from repomate import util
 from repomate import tuples
 from repomate import exception
+from repomate import config
 from repomate.github_api import GitHubAPI
 from repomate.tuples import Team
 from repomate.git import Push
-
-import repomate_plug as plug
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -54,7 +52,7 @@ def setup_student_repos(master_repo_urls: Iterable[str],
         2. For each master repository, create one student repo per team and add
         it to the corresponding student team. If a repository already exists,
         it is skipped.
-        
+
         3. Push files from the master repos to the corresponding student repos.
 
     Args:
@@ -534,6 +532,23 @@ def _create_push_tuples(master_repo_paths: Iterable[str],
             for repo_url in repo_urls if repo_url.endswith(repo_base_name)
         ]
     return push_tuples
+
+
+def show_config():
+    """Print the configuration file to the log."""
+    config.check_config_integrity()
+
+    LOGGER.info("found valid config file at " +
+                str(config.DEFAULT_CONFIG_FILE))
+    with config.DEFAULT_CONFIG_FILE.open(
+            encoding=sys.getdefaultencoding()) as f:
+        config_contents = "".join(f.readlines())
+
+    output = os.linesep + "BEGIN CONFIG FILE".center(
+        50, "-") + os.linesep + config_contents + "END CONFIG FILE".center(
+            50, "-")
+
+    LOGGER.info(output)
 
 
 def _format_hook_result(hook_result):

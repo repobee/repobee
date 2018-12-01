@@ -5,7 +5,12 @@ Configuration
 ``repomate`` *must* be configured with a mandatory environment variable (see
 oauth_). Additionally, some of the command line parameters can be
 pre-configured with e.g. the GitHub instances' API url and the target
-organization's name (see `config`_).
+organization's name (see `config`_). 
+
+.. important::
+
+    The :ref:`userguide` expects there to be
+    a configuration file as described in :ref:`getting_started`.
 
 .. _oauth:
 
@@ -37,14 +42,18 @@ a single course (and, as a consequence, a single organization).
     students_file = STUDENTS_FILE_ABSOLUTE_PATH
 
 **To find out where to place the configuration file (and what to name it)**,
-run `repomate -h`. At the very top, there should be a line looking something
-like this:
+run ``repomate show-config``. Assuming there is no config file, you'll get
+an error message on the following form:
 
 .. code-block:: bash
 
-    [INFO] no config file found. Expected config file location: /home/USERNAME/.config/repomate/config.cnf
+    $ repomate show-config
+    [ERROR] FileError: no config file found, expected location: /home/USERNAME/.config/repomate/config.cnf
 
-The filepath at the end is where you should put your config file.
+The filepath at the end is where you should put your config file. Note that
+this differs between operating systems, so just copying the path listed *here*
+may not work. Run ``show-config`` again to check that the file can be found
+and parsed properly.
 
 The configuration file can also be used to configure ``repomate`` plugins. See
 the :ref:`configure_plugs` section for more details.
