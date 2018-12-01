@@ -117,7 +117,7 @@ def isfile_mock(request, mocker):
     """
     if 'noisfilemock' in request.keywords:
         return
-    isfile = lambda path: str(path) != str(config.DEFAULT_CONFIG_FILE) and os.path.isfile(path)
+    isfile = lambda path: str(path) != str(config.DEFAULT_CONFIG_FILE) and os.path.isfile(str(path))
     return mocker.patch(
         'pathlib.Path.is_file', autospec=True, side_effect=isfile)
 
