@@ -16,6 +16,8 @@ program.
 import os
 import sys
 import tempfile
+import re
+import collections
 from typing import Iterable, List, Optional, Tuple, Generator
 
 import daiquiri
@@ -484,6 +486,46 @@ def purge_review_teams(master_repo_names: Iterable[str],
         for student in students for master_repo_name in master_repo_names
     ]
     api.delete_teams(review_team_names)
+
+
+def check_peer_review_progress(master_repo_names: Iterable[str],
+                               students: Iterable[str], title_regex: str,
+                               api: GitHubAPI) -> None:
+    review_team_names = [
+        util.generate_review_team_name(student, master_name)
+        for student in students for master_name in master_repo_names
+    ]
+    missing_reviews = collections.defaultdict(list)
+    teams = api.get_teams_in(review_team_names)
+    for team in teams:
+        member_names = set(m.login for m in team.get_members())
+        repos = list(team.get_repos())
+        if len(repos) != 1:
+            LOGGER.warning(
+                "expected {} to have 1 associated repo, found {}. Skipping...".
+                format(team.name, len(repos)))
+            continue
+
+        repo = repos[0]
+        issues = repo.get_issues()
+        for issue in issues:
+            if re.match(title_regex, issue.title):
+                username = issue.user.login
+                if username in member_names:
+                    LOGGER.info("{} has reviewed {}".format(
+                        username, repo.name))
+                    LOGGER.info(issue.title)
+                    member_names.remove(username)
+
+        for name in member_names:
+            LOGGER.info("{} has not reviewed {}".format(name, repo.name))
+            missing_reviews[name].append(repo.name)
+
+    if missing_reviews:
+        LOGGER.info(
+            "Summary of missing reviews: " + os.linesep + os.linesep.join(
+                "{} has not reviewed {}".format(student, ", ".join(repos))
+                for student, repos in missing_reviews.items()))
 
 
 def _create_repo_infos(urls: Iterable[str],

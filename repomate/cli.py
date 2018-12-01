@@ -58,6 +58,7 @@ LIST_ISSUES_PARSER = 'list-issues'
 VERIFY_PARSER = 'verify-settings'
 ASSIGN_REVIEWS_PARSER = 'assign-peer-reviews'
 PURGE_REVIEW_TEAMS_PARSER = 'purge-peer-review-teams'
+CHECK_REVIEW_PROGRESS_PARSER = 'check-peer-review-progress'
 SHOW_CONFIG_PARSER = 'show-config'
 
 PARSER_NAMES = (
@@ -202,6 +203,10 @@ def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
     elif args.subparser == SHOW_CONFIG_PARSER:
         with _sys_exit_on_expected_error():
             command.show_config()
+    elif args.subparser == CHECK_REVIEW_PROGRESS_PARSER:
+        with _sys_exit_on_expected_error():
+            command.check_peer_review_progress(
+                args.master_repo_names, args.students, args.title_regex, api)
     else:
         raise exception.ParseError(
             "Illegal value for subparser: {}. This is a bug, please open an issue."
@@ -245,6 +250,24 @@ def _add_peer_review_parsers(base_parsers, subparsers):
         help="Remove all review teams associated with the specified "
         "students and master repos.",
         parents=base_parsers)
+    check_review_progress = subparsers.add_parser(
+        CHECK_REVIEW_PROGRESS_PARSER,
+        description=
+        "Check which students have opened review review issues in their assigned repos.",
+        help=(
+            "Fetch all peer review teams for the specified student repos, and "
+            "check which assigned reviews have been done (i.e. which issues "
+            "have been opened)."),
+        parents=base_parsers,
+    )
+    check_review_progress.add_argument(
+        '-r',
+        '--title-regex',
+        help=
+        ("Regex to match against titles. Only issues matching this regex will "
+         "count as review issues."),
+        required=True,
+    )
 
 
 def _add_issue_parsers(base_parsers, subparsers):
