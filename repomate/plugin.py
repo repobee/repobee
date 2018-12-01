@@ -70,11 +70,6 @@ def load_plugin_modules(
             msg = "failed to load plugin module " + name
             raise exception.PluginError(msg)
         loaded_modules.append(plug_mod)
-
-    if loaded_modules:
-        LOGGER.info("loaded plugins {}".format(
-            [mod.__name__ for mod in loaded_modules]))
-
     return loaded_modules
 
 
@@ -99,19 +94,17 @@ def register_plugins(modules: List[ModuleType]) -> None:
     """Register the namespaces of the provided modules, and any plug.Plugin
     instances in them. Registers modules in reverse order as they are
     run in LIFO order.
-    
+
     Args:
         modules: A list of modules.
     """
     assert all([isinstance(mod, ModuleType) for mod in modules])
     for module in reversed(modules):  # reverse because plugins are run FIFO
         plug.manager.register(module)
-        LOGGER.info("registered {}".format(module.__name__))
-        for key, value in module.__dict__.items():
+        for value in module.__dict__.values():
             if isinstance(value, type) and issubclass(
                     value, plug.Plugin) and value != plug.Plugin:
                 plug.manager.register(value())
-                LOGGER.info("registered class {}".format(key))
 
 
 def initialize_plugins(plugin_names: List[str] = None):
