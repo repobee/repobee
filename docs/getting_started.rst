@@ -42,6 +42,8 @@ target organization.
     disallow students from viewing each others' repos unless explicitly given
     permission by an organization owner (e.g. you).
 
+.. _configure_repomate:
+
 Configure ``repomate`` for the target organization
 ==================================================
 For the tool to work at all, an environment variable called ``REPOMATE_OAUTH``
