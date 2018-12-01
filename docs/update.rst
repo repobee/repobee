@@ -19,12 +19,6 @@ Let's say that we've updated ``master-repo-1``, and that users ``spam``,
 .. code-block:: bash
 
     $ repomate update -mn master-repo-1 -s spam eggs ham
-    [INFO] config file defaults:
-
-       github_base_url: https://some-enterprise-host/api/v3
-       user: slarse
-       org_name: repomate-demo
-       
     [INFO] cloning into master repos ...
     [INFO] cloning into https://some-enterprise-host/repomate-demo/master-repo-1
     [INFO] pushing files to student repos ...
@@ -82,12 +76,6 @@ students, plain text is more helpful. Now it's just a matter of using
 .. code-block:: bash
 
     $ repomate update -mn master-repo-1 -s spam eggs ham -i issue.md 
-    [INFO] config file defaults:
-
-       github_base_url: https://some-enterprise-host/api/v3
-       user: slarse
-       org_name: repomate-demo
-       
     [INFO] cloning into master repos ...
     [INFO] cloning into https://some-enterprise-host/repomate-demo/master-repo-1
     [INFO] pushing files to student repos ...

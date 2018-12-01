@@ -87,12 +87,6 @@ students spam, ham and eggs (see :ref:`setup`).
 .. code-block:: bash
 
     $ repomate assign-peer-reviews -mn master-repo-1 -sf students.txt --num-reviews 2
-    [INFO] config file defaults:
-
-       github_base_url: https://some-enterprise-host/api/v3
-       user: slarse
-       org_name: repomate-demo
-
     # step 1
     [INFO] created team spam-master-repo-1-review
     [INFO] created team eggs-master-repo-1-review
@@ -175,12 +169,6 @@ specifying the issue like this:
 .. code-block:: bash
 
     $ repomate assign-peer-reviews -mn master-repo-2 -sf students.txt --num-reviews 2 --issue issue.md
-    [INFO] config file defaults:
-
-       github_base_url: https://some-enterprise-host/api/v3
-       user: slarse
-       org_name: repomate-demo
-
     [INFO] created team spam-master-repo-2-review
     [INFO] created team eggs-master-repo-2-review
     [INFO] created team ham-master-repo-2-review
@@ -214,12 +202,6 @@ It's as simple as:
 .. code-block:: bash
 
     $ repomate purge-peer-review-teams -mn master-repo-1 -sf students.txt
-    [INFO] config file defaults:
-
-       github_base_url: https://some-enterprise-host/api/v3
-       user: slarse
-       org_name: repomate-demo
-       
     [INFO] deleted team eggs-master-repo-1-review
     [INFO] deleted team ham-master-repo-1-review
     [INFO] deleted team spam-master-repo-1-review

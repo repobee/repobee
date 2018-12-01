@@ -11,12 +11,6 @@ repos based on ``master-repo-1`` and ``master-repo-2``.
 .. code-block:: bash
 
     $ repomate clone -mn master-repo-1 master-repo-2 -sf students.txt
-    [INFO] config file defaults:
-
-       github_base_url: https://some-enterprise-host/api/v3
-       user: slarse
-       org_name: repomate-demo
-       
     [INFO] cloning into student repos ...
     [INFO] Cloned into https://some-enterprise-host/repomate-demo/spam-master-repo-1
     [INFO] Cloned into https://some-enterprise-host/repomate-demo/ham-master-repo-1
@@ -25,5 +19,8 @@ repos based on ``master-repo-1`` and ``master-repo-2``.
     [INFO] Cloned into https://some-enterprise-host/repomate-demo/spam-master-repo-2
     [INFO] Cloned into https://some-enterprise-host/repomate-demo/eggs-master-repo-2
 
-Splendid! That's really all there is to it, the repos should now be in your
-current working directory.
+Splendid! That's really all there is to the basic functionality, the repos
+should now be in your current working directory. There is also a possibility to
+run automated tasks on cloned repos, such as running test suites or linters. If
+you're not satisfied with the tasks on offer, you can define your own. Read more
+about it in the :ref:`plugins` section.

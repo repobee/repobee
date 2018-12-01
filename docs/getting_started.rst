@@ -1,7 +1,7 @@
 .. _getting_started:
 
-Getting Started (the ``verify-settings``, ``migrate`` and ``setup`` commands)
-*******************************************************************************
+Getting started (the ``show-config``, ``verify-settings``, ``migrate`` and ``setup`` commands)
+**********************************************************************************************
 .. important::
 
     This guide assumes that the user has access to a ``bash`` shell, or is
@@ -23,13 +23,13 @@ There is more to ``repomate``, such as opening/closing issues, updating student
 repos and cloning repos in batches, but here we will just look at the bare
 minimum to get started. Now, let's delve into these steps in greater detail.
 
-Create an Organization
+Create an organization
 ======================
 This is an absolutely necessary pre-requisite for using ``repomate``.
 Create an organization with an appropriate name on the GitHub instance you
 intend to use. You can find the ``New organization`` button by going to
 ``Settings -> Organization``. I will call my *target organization*
-``repomate_demo``, so whenever you see that, substitute in the name of your
+``repomate-demo``, so whenever you see that, substitute in the name of your
 target organization.
 
 .. important::
@@ -42,7 +42,7 @@ target organization.
     disallow students from viewing each others' repos unless explicitly given
     permission by an organization owner (e.g. you).
 
-Configure ``repomate`` For the Target Organization
+Configure ``repomate`` for the target organization
 ==================================================
 For the tool to work at all, an environment variable called ``REPOMATE_OAUTH``
 must contain an OAUTH2 token to whichever GitHub instance you intend to use.
@@ -67,23 +67,34 @@ You should see your token in the output.
 
 .. note::
 
+    Putting your OAUTH token in the bash config file is just a suggestion, and
+    by no means a requirement. The only requirement is that the
+    `REPOMATE_OAUTH` environment variable contains the token when you run
+    `repomate`.
+
+.. note::
+
     Whenever you see a ``$`` sign preceeding a line in a code block, you are meant
     to type what's *after* the ``$`` sign into your shell. Here, you should type
     only ``echo $REPOMATE_OAUTH``, for example.
 
-With that out of the way, let's create a configuration file We can now use
-``repomate`` to figure out where it should be located.
+With that out of the way, let's create a configuration file. This is not
+technically required, but if we don't, we'll have to supply things like
+username and url to GitHub instance's API on the command line for almost every
+command. We can use the ``show-config`` command to figure out where to put the
+config file.
 
 .. code-block:: bash
     
-    $ repomate -h
-    [INFO] no config file found. Expected config file location: /home/USERNAME/.config/repomate/config.cnf
+    $ repomate show-config
+    [ERROR] FileError: no config file found, expected location: /home/USERNAME/.config/repomate/config.cnf
 
-    <HELP MESSAGE OMITTED>
-
-At the very top, you will find the expected config file location. The exact
-path will vary depending on operating system and username. Let's add a
-configuration file with the following contents:
+``show-config`` will check that the configuration file exists and is
+syntactically correct. Well, technically it will try to load the config and fail to do so if it
+doesn't exist or is incorrectly formatted and then display it to the user. Here,
+the error message is telling use that it expected a config file at
+``/home/USERNAME/.config/repomate/config.cnf``, so let's add one there. It
+should look something like this:
 
 .. code-block:: bash
 
@@ -103,23 +114,19 @@ Now, you need to substitute in some of your own values in place of mine.
 * Replace ``repomate-demo`` with whatever you named your target organization.
 
 That's it for configuration, and we can check that the file is correctly found
-and parsed by running ``repomate -h`` again.
+and parsed by running ``show-config`` again:
 
 .. code-block:: bash
-
-    $ repomate -h
-    [INFO] config file defaults:
-
-        github_base_url: https://some-enterprise-host/api/v3
-        user: slarse
-        org_name: repomate-demo
-
-    <HELP MESSAGE OMITTED>
-
-The ``[INFO] config file defaults:`` message (along with the defaults) will pop
-up on every ``repomate`` command. I should note that the configuration file
-isn't strictly necessary, but it will save us the hassle of typing in the url,
-username and organization name on every single command to ``repomate``.
+    
+    $ repomate show-config
+    [INFO] found valid config file at /home/slarse/.config/repomate/config.cnf
+    [INFO] 
+    ----------------BEGIN CONFIG FILE-----------------
+    [DEFAULTS]
+    github_base_url = https://some-enterprise-host/api/v3
+    user = slarse
+    org_name = repomate-demo
+    -----------------END CONFIG FILE------------------
 
 Verify Settings
 ===============
@@ -130,12 +137,6 @@ you can simply run the ``verify-settings`` command without any options.
 .. code-block:: bash
 
     $ repomate verify-settings
-    [INFO] config file defaults:
-
-       github_base_url: https://some-enterprise-host/api/v3
-       user: slarse
-       org_name: repomate-demo
-       
     [INFO] verifying settings ...
     [INFO] trying to fetch user information ...
     [INFO] SUCCESS: found user slarse, user exists and base url looks okay
@@ -169,12 +170,6 @@ current working directory (i.e. local repos), all we have to do is this:
 .. code-block:: bash
 
     $ repomate migrate -mn master-repo-1 master-repo-2
-    [INFO] config file defaults:
-
-       github_base_url: https://some-enterprise-host/api/v3
-       user: slarse
-       org_name: repomate-demo
-       
     [INFO] created team master_repos
     [INFO] cloning into file:///some/directory/path/master-repo-1
     [INFO] cloning into file:///some/directory/path/master-repo-2
@@ -200,12 +195,6 @@ Running the same thing again yields the following output:
 .. code-block:: bash
 
     $ repomate migrate -mn master-repo-1 master-repo-2
-    [INFO] config file defaults:
-
-       github_base_url: https://some-enterprise-host/api/v3
-       user: slarse
-       org_name: repomate-demo
-       
     [INFO] cloning into file:///some/directory/path/master-repo-1
     [INFO] cloning into file:///some/directory/path/master-repo-2
     [INFO] repomate-demo/master-repo-1 already exists
@@ -261,12 +250,6 @@ complex, but again, it's as simple as issuing a single command with
 .. code-block:: bash
     
     $ repomate setup -mn master-repo-1 master-repo-2 -sf students.txt 
-    [INFO] config file defaults:
-
-       github_base_url: https://some-enterprise-host/api/v3
-       user: slarse
-       org_name: repomate-demo
-       
     [INFO] cloning into master repos ...
     [INFO] cloning into file:///home/slarse/tmp/master-repo-1
     [INFO] cloning into file:///home/slarse/tmp/master-repo-2
