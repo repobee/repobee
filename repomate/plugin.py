@@ -57,12 +57,15 @@ def load_plugin_modules(
         a list of loaded modules.
     """
     loaded_modules = []
-
     plugin_names = [
         *(plugin_names or config.get_plugin_names(config_file) or []),
         # default plugin last so hooks are overridden by user-specified hooks
         DEFAULT_PLUGIN,
     ]
+    if plugin_names == [DEFAULT_PLUGIN]:
+        from .ext import defaults
+        return [defaults]
+
     for name in plugin_names:
         plug_mod = _try_load_module(PLUGIN_QUALNAME(name)) or\
                  _try_load_module(EXTERNAL_PLUGIN_QUALNAME(name))
@@ -84,7 +87,8 @@ def _try_load_module(qualname: str) -> Optional[ModuleType]:
     """
     try:
         return importlib.import_module(qualname)
-    except ImportError:
+    except ImportError as exc:
+        LOGGER.error(str(exc))
         # ImportError in 3.5, ModuleNotFoundError in 3.6+
         # using ImportError for compatability
         return None

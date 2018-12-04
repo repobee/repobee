@@ -16,6 +16,7 @@ from contextlib import contextmanager
 from typing import List, Iterable, Optional, Tuple
 
 import logging
+from colored import bg, fg, style
 import daiquiri
 
 import repomate_plug as plug

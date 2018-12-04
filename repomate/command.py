@@ -18,7 +18,8 @@ import sys
 import tempfile
 import re
 import collections
-from typing import Iterable, List, Optional, Tuple, Generator
+from typing import Iterable, List, Optional, Tuple, Generator, Mapping
+from colored import bg, fg, style
 
 import daiquiri
 
@@ -491,14 +492,20 @@ def purge_review_teams(master_repo_names: Iterable[str],
 def check_peer_review_progress(master_repo_names: Iterable[str],
                                students: Iterable[str], title_regex: str,
                                api: GitHubAPI) -> None:
+    num_reviews = 1
+
+    Review = collections.namedtuple('Review', ['repo', 'done'])
+    reviews = collections.defaultdict(list)
     review_team_names = [
         util.generate_review_team_name(student, master_name)
         for student in students for master_name in master_repo_names
     ]
+
     missing_reviews = collections.defaultdict(list)
     teams = api.get_teams_in(review_team_names)
     for team in teams:
-        member_names = set(m.login for m in team.get_members())
+        LOGGER.info("processing {}".format(team.name))
+        reviewers = set(m.login for m in team.get_members())
         repos = list(team.get_repos())
         if len(repos) != 1:
             LOGGER.warning(
@@ -507,25 +514,56 @@ def check_peer_review_progress(master_repo_names: Iterable[str],
             continue
 
         repo = repos[0]
-        issues = repo.get_issues()
-        for issue in issues:
-            if re.match(title_regex, issue.title):
-                username = issue.user.login
-                if username in member_names:
-                    LOGGER.info("{} has reviewed {}".format(
-                        username, repo.name))
-                    LOGGER.info(issue.title)
-                    member_names.remove(username)
+        review_issue_authors = {
+            issue.user.login
+            for issue in repo.get_issues()
+            if re.match(title_regex, issue.title)
+        }
 
-        for name in member_names:
-            LOGGER.info("{} has not reviewed {}".format(name, repo.name))
-            missing_reviews[name].append(repo.name)
+        for reviewer in reviewers:
+            reviews[reviewer].append(
+                Review(repo=repo.name, done=reviewer in review_issue_authors))
 
-    if missing_reviews:
-        LOGGER.info(
-            "Summary of missing reviews: " + os.linesep + os.linesep.join(
-                "{} has not reviewed {}".format(student, ", ".join(repos))
-                for student, repos in missing_reviews.items()))
+    LOGGER.info(
+        _format_peer_review_progress_output(reviews, students, num_reviews))
+
+
+def _format_peer_review_progress_output(reviews: Mapping[str, List[str]],
+                                        students: List[str], num_reviews: int):
+
+    # can't use tabs for spacing as they are not background colored in output for some reason
+    # each column should be exactly 16 characters
+    column_width = 16
+    format_row = lambda items: "".join([str(item).ljust(column_width) for item in items])
+    output = [
+        "Color coding: grey: not done, green: done, red: num done + num remaining != num_reviews",
+        fg('white') + format_row([
+            "Reviewer", "Num done", "Num remaining", "Repos remaining"
+        ]) + style.RESET
+    ]
+    even = False
+    for reviewer in students:
+        review_list = reviews[reviewer]
+        performed_reviews = [rev.repo for rev in review_list if rev.done]
+        remaining_reviews = [rev.repo for rev in review_list if not rev.done]
+        even = not even
+        color = (bg('grey_30') if even else bg('grey_15'))
+        if len(performed_reviews) == num_reviews and not remaining_reviews:
+            color = bg('dark_green')
+        elif len(review_list) != num_reviews:
+            LOGGER.warning(
+                ("expected {} to be assigned to {} repos, but found {}. "
+                 "Review teams may have been tampered with.").format(
+                     reviewer, num_reviews, len(review_list)))
+            color = bg('red')
+        color += fg('white')
+        res = color + format_row([
+            reviewer,
+            len(performed_reviews),
+            len(remaining_reviews), ",".join(remaining_reviews)
+        ]) + style.RESET
+        output.append(res)
+    return os.linesep.join(output)
 
 
 def _create_repo_infos(urls: Iterable[str],
@@ -594,7 +632,6 @@ def show_config():
 
 
 def _format_hook_result(hook_result):
-    from colored import bg, fg, style
     if hook_result.status == Status.ERROR:
         out = bg('red')
     elif hook_result.status == Status.WARNING:
