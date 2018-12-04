@@ -88,7 +88,6 @@ def _try_load_module(qualname: str) -> Optional[ModuleType]:
     try:
         return importlib.import_module(qualname)
     except ImportError as exc:
-        LOGGER.error(str(exc))
         # ImportError in 3.5, ModuleNotFoundError in 3.6+
         # using ImportError for compatability
         return None

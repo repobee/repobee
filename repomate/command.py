@@ -23,7 +23,6 @@ from colored import bg, fg, style
 
 import daiquiri
 
-from repomate_plug import Status
 import repomate_plug as plug
 
 from repomate import git
@@ -31,6 +30,7 @@ from repomate import util
 from repomate import tuples
 from repomate import exception
 from repomate import config
+from repomate import formatters
 from repomate.github_api import GitHubAPI
 from repomate.tuples import Team
 from repomate.git import Push
@@ -379,7 +379,7 @@ def _execute_post_clone_hooks(repo_names: List[str], api: GitHubAPI):
         res = plug.manager.hook.act_on_cloned_repo(
             path=os.path.abspath(repo_name), api=api)
         results[repo_name] = res
-    LOGGER.info(_format_hook_results_output(results))
+    LOGGER.info(formatters.format_hook_results_output(results))
 
     LOGGER.info("post clone hooks done")
 
@@ -525,45 +525,8 @@ def check_peer_review_progress(master_repo_names: Iterable[str],
                 Review(repo=repo.name, done=reviewer in review_issue_authors))
 
     LOGGER.info(
-        _format_peer_review_progress_output(reviews, students, num_reviews))
-
-
-def _format_peer_review_progress_output(reviews: Mapping[str, List[str]],
-                                        students: List[str], num_reviews: int):
-
-    # can't use tabs for spacing as they are not background colored in output for some reason
-    # each column should be exactly 16 characters
-    column_width = 16
-    format_row = lambda items: "".join([str(item).ljust(column_width) for item in items])
-    output = [
-        "Color coding: grey: not done, green: done, red: num done + num remaining != num_reviews",
-        fg('white') + format_row([
-            "Reviewer", "Num done", "Num remaining", "Repos remaining"
-        ]) + style.RESET
-    ]
-    even = False
-    for reviewer in students:
-        review_list = reviews[reviewer]
-        performed_reviews = [rev.repo for rev in review_list if rev.done]
-        remaining_reviews = [rev.repo for rev in review_list if not rev.done]
-        even = not even
-        color = (bg('grey_30') if even else bg('grey_15'))
-        if len(performed_reviews) == num_reviews and not remaining_reviews:
-            color = bg('dark_green')
-        elif len(review_list) != num_reviews:
-            LOGGER.warning(
-                ("expected {} to be assigned to {} repos, but found {}. "
-                 "Review teams may have been tampered with.").format(
-                     reviewer, num_reviews, len(review_list)))
-            color = bg('red')
-        color += fg('white')
-        res = color + format_row([
-            reviewer,
-            len(performed_reviews),
-            len(remaining_reviews), ",".join(remaining_reviews)
-        ]) + style.RESET
-        output.append(res)
-    return os.linesep.join(output)
+        formatters.format_peer_review_progress_output(reviews, students,
+                                                      num_reviews))
 
 
 def _create_repo_infos(urls: Iterable[str],
@@ -629,39 +592,3 @@ def show_config():
             50, "-")
 
     LOGGER.info(output)
-
-
-def _format_hook_result(hook_result):
-    if hook_result.status == Status.ERROR:
-        out = bg('red')
-    elif hook_result.status == Status.WARNING:
-        out = bg('yellow')
-    elif hook_result.status == Status.SUCCESS:
-        out = bg('dark_green')
-    else:
-        raise ValueError(
-            "expected hook_result.status to be one of Status.ERROR, "
-            "Status.WARNING or Status.SUCCESS, but was {!r}".format(
-                hook_result.status))
-
-    out += fg(
-        'white'
-    ) + hook_result.hook + ": " + hook_result.status.name + style.RESET + os.linesep
-    out += hook_result.msg
-
-    return out
-
-
-def _format_hook_results_output(result_mapping):
-    from colored import bg, style
-    out = ""
-    for repo_name, results in result_mapping.items():
-        out += "{}hook results for {}{}{}".format(
-            bg('grey_23'), repo_name, style.RESET, os.linesep * 2)
-        out += os.linesep.join([
-            "{}{}".format(_format_hook_result(res), os.linesep)
-            for res in results
-        ])
-        out += os.linesep * 2
-
-    return out
