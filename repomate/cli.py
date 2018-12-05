@@ -36,7 +36,7 @@ daiquiri.setup(
         daiquiri.output.Stream(
             sys.stdout,
             formatter=daiquiri.formatter.ColorFormatter(
-                fmt="[%(levelname)s] %(message)s")),
+                fmt="[%(color)s%(levelname)s] %(message)s%(color_stop)s")),
         daiquiri.output.File(
             filename="{}.log".format(__package__),
             formatter=daiquiri.formatter.ColorFormatter(
@@ -206,8 +206,9 @@ def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
             command.show_config()
     elif args.subparser == CHECK_REVIEW_PROGRESS_PARSER:
         with _sys_exit_on_expected_error():
-            command.check_peer_review_progress(
-                args.master_repo_names, args.students, args.title_regex, api)
+            command.check_peer_review_progress(args.master_repo_names,
+                                               args.students, args.title_regex,
+                                               args.num_reviews, api)
     else:
         raise exception.ParseError(
             "Illegal value for subparser: {}. This is a bug, please open an issue."
@@ -267,6 +268,16 @@ def _add_peer_review_parsers(base_parsers, subparsers):
         help=
         ("Regex to match against titles. Only issues matching this regex will "
          "count as review issues."),
+        required=True,
+    )
+    check_review_progress.add_argument(
+        '-n',
+        '--num-reviews',
+        metavar='N',
+        help="The expected amount of reviews each student should be assigned to "
+        " perform. If a student is not assigned to `num_reviews` review teams, "
+        "warnings will be displayed.",
+        type=int,
         required=True,
     )
 

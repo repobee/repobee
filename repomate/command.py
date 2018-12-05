@@ -491,9 +491,7 @@ def purge_review_teams(master_repo_names: Iterable[str],
 
 def check_peer_review_progress(master_repo_names: Iterable[str],
                                students: Iterable[str], title_regex: str,
-                               api: GitHubAPI) -> None:
-    num_reviews = 1
-
+                               num_reviews: int, api: GitHubAPI) -> None:
     Review = collections.namedtuple('Review', ['repo', 'done'])
     reviews = collections.defaultdict(list)
     review_team_names = [

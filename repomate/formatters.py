@@ -23,9 +23,8 @@ def format_peer_review_progress_output(reviews: Mapping[str, List[str]],
     # each column should be exactly 16 characters
     output = [
         "Color coding: grey: not done, green: done, red: num done + num remaining != num_reviews",
-        fg('white') + _format_row([
-            "reviewer", "num done", "num remaining", "repos remaining"
-        ]) + style.RESET
+        style.RESET + _format_row(
+            ["reviewer", "num done", "num remaining", "repos remaining"])
     ]
     even = False
     for reviewer in students:
@@ -52,7 +51,7 @@ def _format_reviewer(reviewer: str, review_list: List[str],
         color = bg('dark_green')
     elif len(review_list) != num_reviews:
         LOGGER.warning(
-            ("expected {} to be assigned to {} repos, but found {}. "
+            ("expected {} to be assigned to {} review teams, but found {}. "
              "Review teams may have been tampered with.").format(
                  reviewer, num_reviews, len(review_list)))
         color = bg('red')
