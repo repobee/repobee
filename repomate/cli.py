@@ -36,7 +36,7 @@ daiquiri.setup(
         daiquiri.output.Stream(
             sys.stdout,
             formatter=daiquiri.formatter.ColorFormatter(
-                fmt="[%(color)s%(levelname)s] %(message)s%(color_stop)s")),
+                fmt="[%(levelname)s] %(message)s")),
         daiquiri.output.File(
             filename="{}.log".format(__package__),
             formatter=daiquiri.formatter.ColorFormatter(
