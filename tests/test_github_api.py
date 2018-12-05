@@ -7,6 +7,7 @@ from unittest.mock import patch, MagicMock, PropertyMock, call
 from collections import namedtuple
 
 import github
+from repomate import util
 from repomate import exception
 from repomate import github_api
 from repomate import git
@@ -69,12 +70,28 @@ def raise_401(*args, **kwargs):
 
 
 @pytest.fixture
-def teams_and_members():
+def review_students():
+    return ['ham', 'spam', 'bacon', 'eggs']
+
+
+@pytest.fixture
+def review_teams(review_students):
+    master_repo = 'week-1'
+    review_teams = {}
+    for i, student in enumerate(review_students):
+        review_teams[util.generate_review_team_name(student, master_repo)] = \
+                review_students[:i] + review_students[i + 1:]
+    return review_teams
+
+
+@pytest.fixture
+def teams_and_members(review_teams):
     """Fixture with a dictionary contain a few teams with member lists."""
     return {
-        'team_one': ['first', 'second'],
+        'one': ['first', 'second'],
         'two': ['two'],
-        'last_team': [str(i) for i in range(10)]
+        'last_team': [str(i) for i in range(10)],
+        **review_teams
     }
 
 
@@ -697,11 +714,31 @@ class TestVerifySettings:
         happened, better safe than sorry.
         """
         wrong_username = USER + "other"
-        happy_github.get_user.side_effect = lambda username: User(username+"other")
+        happy_github.get_user.side_effect = lambda username: User(username + "other")
 
         with pytest.raises(exception.UnexpectedException) as exc_info:
             github_api.GitHubAPI.verify_settings(
                 USER, ORG_NAME, GITHUB_BASE_URL, git.OAUTH_TOKEN)
 
-        assert "specified login is {}, but the fetched user's login is {}".format(USER, wrong_username) in str(exc_info)
+        assert "specified login is {}, but the fetched user's login is {}".format(
+            USER, wrong_username) in str(exc_info)
         assert "Possible reasons: unknown" in str(exc_info)
+
+
+class TestGetPeerReviewProgress:
+    """Tests for get_peer_review_progress
+
+    TODO: These tests need to be expanded. A lot.
+    """
+
+    def test_nothing_returns(self, review_students, review_teams, api):
+        """Test calling the function when none of the functions return
+        iterables.
+        """
+        review_team_names = list(review_teams.keys())
+        api.get_review_progress(review_team_names, review_students, 'peer')
+
+    def test_with_review_teams_but_no_repos(self, review_students,
+                                            review_teams, teams, api):
+        review_team_names = list(review_teams.keys())
+        api.get_review_progress(review_team_names, review_students, 'peer')

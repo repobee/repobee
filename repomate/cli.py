@@ -74,6 +74,8 @@ PARSER_NAMES = (
     VERIFY_PARSER,
     ASSIGN_REVIEWS_PARSER,
     PURGE_REVIEW_TEAMS_PARSER,
+    SHOW_CONFIG_PARSER,
+    CHECK_REVIEW_PROGRESS_PARSER,
 )
 
 
@@ -181,8 +183,9 @@ def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
         with _sys_exit_on_expected_error():
             command.clone_repos(args.master_repo_names, args.students, api)
     elif args.subparser == VERIFY_PARSER:
-        github_api.GitHubAPI.verify_settings(
-            args.user, args.org_name, args.github_base_url, git.OAUTH_TOKEN)
+        with _sys_exit_on_expected_error():
+            github_api.GitHubAPI.verify_settings(
+                args.user, args.org_name, args.github_base_url, git.OAUTH_TOKEN)
     elif args.subparser == LIST_ISSUES_PARSER:
         with _sys_exit_on_expected_error():
             command.list_issues(

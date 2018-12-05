@@ -816,15 +816,17 @@ class TestAssignPeerReviewers:
 class TestCheckPeerReviewProgress:
     """Tests for check_peer_review_progress"""
 
-    def test_nothing_returns(self, master_names, students, api_mock):
-        """Just test to run the function when nothing returns anything useful."""
+    def test_happy_path(self, master_names, students, api_mock):
+        """Pretty much just tests that there is no crash when calling the
+        method with reasonable args.
+        """
         title_regex = "Peer"
         review_team_names = [
             util.generate_review_team_name(student, master_name)
             for student in students for master_name in master_names
         ]
-        command.check_peer_review_progress(master_names, students, title_regex, 2,
-                                           api_mock)
+        command.check_peer_review_progress(master_names, students, title_regex,
+                                           2, api_mock)
 
         api_mock.get_review_progress.assert_called_once_with(
             review_team_names, students, title_regex)
