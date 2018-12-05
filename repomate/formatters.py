@@ -14,11 +14,14 @@ from colored import fg, bg, style
 from repomate_plug import Status
 import daiquiri
 
+from repomate import tuples
+
 LOGGER = daiquiri.getLogger(__name__)
 
 
-def format_peer_review_progress_output(reviews: Mapping[str, List[str]],
-                                       students: List[str], num_reviews: int):
+def format_peer_review_progress_output(
+        reviews: Mapping[str, List[tuples.Review]], students: List[str],
+        num_reviews: int):
     # can't use tabs for spacing as they are not background colored in output for some reason
     # each column should be exactly 16 characters
     output = [
@@ -41,7 +44,7 @@ def _format_row(items: List[str]) -> str:
     return "".join([str(item).ljust(column_width) for item in items])
 
 
-def _format_reviewer(reviewer: str, review_list: List[str],
+def _format_reviewer(reviewer: str, review_list: List[tuples.Review],
                      students: List[str], num_reviews: bool, even: bool):
     performed_reviews = [rev.repo for rev in review_list if rev.done]
     remaining_reviews = [rev.repo for rev in review_list if not rev.done]

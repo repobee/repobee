@@ -34,3 +34,6 @@ class Repo(
                    ('name', 'description', 'private', 'team_id', 'url'))):
     def __new__(cls, name, description, private, team_id=None, url=None):
         return super().__new__(cls, name, description, private, team_id, url)
+
+
+Review = namedtuple('Review', ['repo', 'done'])
