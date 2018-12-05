@@ -13,6 +13,7 @@ import re
 import os
 from typing import List, Iterable, Mapping, Union, Optional, Generator, Tuple
 from socket import gaierror
+import collections
 import daiquiri
 import contextlib
 import github
@@ -393,6 +394,35 @@ class GitHubAPI:
                 issue.title, body=issue.body, assignees=reviewers)
             LOGGER.info("opened issue {}/#{}-'{}'".format(
                 repo.name, created_issue.number, created_issue.title))
+
+    def get_review_progress(self, review_team_names, students,
+                            title_regex) -> List[tuples.Review]:
+        reviews = collections.defaultdict(list)
+        teams = self.get_teams_in(review_team_names)
+        for team in teams:
+            with _try_api_request():
+                LOGGER.info("processing {}".format(team.name))
+                reviewers = set(m.login for m in team.get_members())
+                repos = list(team.get_repos())
+                if len(repos) != 1:
+                    LOGGER.warning(
+                        "expected {} to have 1 associated repo, found {}. Skipping..."
+                        .format(team.name, len(repos)))
+                    continue
+
+                repo = repos[0]
+                review_issue_authors = {
+                    issue.user.login
+                    for issue in repo.get_issues()
+                    if re.match(title_regex, issue.title)
+                }
+
+                for reviewer in reviewers:
+                    reviews[reviewer].append(
+                        tuples.Review(
+                            repo=repo.name, done=reviewer in review_issue_authors))
+
+        return reviews
 
     def add_repos_to_teams(
             self, team_to_repos: Mapping[str, Iterable[str]]

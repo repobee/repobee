@@ -492,34 +492,11 @@ def purge_review_teams(master_repo_names: Iterable[str],
 def check_peer_review_progress(master_repo_names: Iterable[str],
                                students: Iterable[str], title_regex: str,
                                num_reviews: int, api: GitHubAPI) -> None:
-    reviews = collections.defaultdict(list)
     review_team_names = [
         util.generate_review_team_name(student, master_name)
         for student in students for master_name in master_repo_names
     ]
-
-    missing_reviews = collections.defaultdict(list)
-    teams = api.get_teams_in(review_team_names)
-    for team in teams:
-        LOGGER.info("processing {}".format(team.name))
-        reviewers = set(m.login for m in team.get_members())
-        repos = list(team.get_repos())
-        if len(repos) != 1:
-            LOGGER.warning(
-                "expected {} to have 1 associated repo, found {}. Skipping...".
-                format(team.name, len(repos)))
-            continue
-
-        repo = repos[0]
-        review_issue_authors = {
-            issue.user.login
-            for issue in repo.get_issues()
-            if re.match(title_regex, issue.title)
-        }
-
-        for reviewer in reviewers:
-            reviews[reviewer].append(
-                tuples.Review(repo=repo.name, done=reviewer in review_issue_authors))
+    reviews = api.get_review_progress(review_team_names, students, title_regex)
 
     LOGGER.info(
         formatters.format_peer_review_progress_output(reviews, students,
