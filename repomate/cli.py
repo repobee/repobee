@@ -36,7 +36,7 @@ daiquiri.setup(
         daiquiri.output.Stream(
             sys.stdout,
             formatter=daiquiri.formatter.ColorFormatter(
-                fmt="[%(levelname)s] %(message)s")),
+                fmt="%(color)s[%(levelname)s] %(message)s%(color_stop)s")),
         daiquiri.output.File(
             filename="{}.log".format(__package__),
             formatter=daiquiri.formatter.ColorFormatter(
@@ -184,8 +184,9 @@ def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
             command.clone_repos(args.master_repo_names, args.students, api)
     elif args.subparser == VERIFY_PARSER:
         with _sys_exit_on_expected_error():
-            github_api.GitHubAPI.verify_settings(
-                args.user, args.org_name, args.github_base_url, git.OAUTH_TOKEN)
+            github_api.GitHubAPI.verify_settings(args.user, args.org_name,
+                                                 args.github_base_url,
+                                                 git.OAUTH_TOKEN)
     elif args.subparser == LIST_ISSUES_PARSER:
         with _sys_exit_on_expected_error():
             command.list_issues(
