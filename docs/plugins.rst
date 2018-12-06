@@ -47,6 +47,9 @@ any plugins, you can use the ``--no-plugins``, which disables plugins.
     of other plugins. This system for deciding execution order may be
     overhauled in the future, if anyone comes up with a better idea.
 
+Some plugins can be further configured in the configuration file by adding
+new headers. See the documentation of the specific plugins
+
 .. _built-in _peer review plugins:
 
 Built-in plugins for ``repomate assign-peer-reviews``
@@ -147,6 +150,15 @@ define some defaults:
     [junit4]
     hamcrest_path = /absolute/path/to/hamcrest-1.3.jar
     junit_path = /absolute/path/to/junit-4.12.jar
+
+
+.. important::
+
+    If the configuration file exeists, it *must* contain the ``[DEFAULTS]``
+    header, even if you don't put anything in that section. This is to minimize
+    the risk of subtle misconfiguration errors by novice users. If you only
+    want to configure plugins, just add the ``[DEFAULTS]`` header by itself,
+    without options, to meet this requirement.
 
 .. _repomate-junit4: https://github.com/slarse/repomate-junit4
 .. _repomate-plug: https://github.com/slarse/repomate-plug

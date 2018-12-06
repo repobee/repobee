@@ -31,22 +31,31 @@ inspired by the old
 [`teachers_pet` tool](https://github.com/education/teachers_pet), with added
 features and a user experience more to our liking. Features range from creating
 student repositories based on master (template) repos, to opening and closing
-issues in bulk. `repomate` also allows for cloning repos in bulk, and executing
-arbitrary tasks on the cloned repos by utlizing its simple but powerful
-[plugin system](https://github.com/slarse/repomate-plug). Below is the output
-from running `repomate -h`, giving brief descriptions of each of the main
-featues:
+issues in bulk, to assigning peer reviews and cloning repos in bulk. Some parts
+of `repomate` can be customized using a simple but powerful [plugin
+system](https://github.com/slarse/repomate-plug). For example, the
+[`repomate-junit4` plugin](https://github.com/slarse/repomate-junit4) allows for
+automatically running `JUnit4` test classes on production code in student repos.
+Below is the output from running `repomate -h`, giving brief descriptions of
+each of the main featues:
 
 ```
 $ repomate -h
 usage: repomate [-h] [-v]
-                {setup,update,migrate,clone,add-to-teams,open-issues,close-issues,list-issues,assign-peer-reviews,purge-peer-review-teams,verify-settings}
+                {show-config,setup,update,migrate,clone,add-to-teams,
+                 open-issues,close-issues,list-issues,assign-peer-reviews,
+                 purge-peer-review-teams,check-peer-review-progress,
+                 verify-settings}
                 ...
 
 A CLI tool for administrating student repositories.
 
 positional arguments:
-  {setup,update,migrate,clone,add-to-teams,open-issues,close-issues,list-issues,assign-peer-reviews,purge-peer-review-teams,verify-settings}
+  {show-config,setup,update,migrate,clone,add-to-teams,
+   open-issues,close-issues,list-issues,assign-peer-reviews,
+   purge-peer-review-teams,check-peer-review-progress,
+   verify-settings}
+    show-config         Show the configuration file
     setup               Setup student repos.
     update              Update existing student repos.
     migrate             Migrate master repositories into the target
@@ -64,13 +73,16 @@ positional arguments:
     purge-peer-review-teams
                         Remove all review teams associated with the specified
                         students and master repos.
+    check-peer-review-progress
+                        Fetch all peer review teams for the specified student
+                        repos, and check which assigned reviews have been done
+                        (i.e. which issues have been opened).
     verify-settings     Verify your settings, such as the base url and the
                         OAUTH token.
 
 optional arguments:
   -h, --help            show this help message and exit
   -v, --version         Display version info
-
 ```
 
 ## Roadmap
@@ -83,8 +95,8 @@ active development.
 may or may not change significantly in the near future.**
 
 Any breaking changes will be advertised with deprecation messages in the
-application well before they are put in effect. `repomate` is expected to reach
-a 1.0 release sometime this year.
+application well before they are put in effect. `repomate` is expected to
+reach 1.0 before December 14th.
 
 ## License
 This software is licensed under the MIT License. See the [LICENSE](LICENSE) file for specifics.

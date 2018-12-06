@@ -41,6 +41,11 @@ a single course (and, as a consequence, a single organization).
     org_name = ORGANIZATION_NAME
     students_file = STUDENTS_FILE_ABSOLUTE_PATH
 
+.. important::
+
+    If the configuration file exists, it *must* contain the ``[DEFAULTS]``
+    header. This is to minimize the risk of misconfiguration by novice users.
+
 **To find out where to place the configuration file (and what to name it)**,
 run ``repomate show-config``. Assuming there is no config file, you'll get
 an error message on the following form:
@@ -67,6 +72,6 @@ the :ref:`configure_plugs` section for more details.
 .. note::
 
     You can run ``repomate verify-settings`` to verify the basic configuration.
-    This will check all settings but the students file.
+    This will check the most important settings configurable in ``DEFAULTS``.
 
 .. _`GitHub OAUTH docs`: https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/
