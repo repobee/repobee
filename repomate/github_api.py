@@ -13,6 +13,7 @@ import re
 import os
 from typing import List, Iterable, Mapping, Union, Optional, Generator, Tuple
 from socket import gaierror
+import collections
 import daiquiri
 import contextlib
 import github
@@ -393,6 +394,56 @@ class GitHubAPI:
                 issue.title, body=issue.body, assignees=reviewers)
             LOGGER.info("opened issue {}/#{}-'{}'".format(
                 repo.name, created_issue.number, created_issue.title))
+
+    def get_review_progress(self, review_team_names, students,
+                            title_regex) -> Mapping[str, List[tuples.Review]]:
+        """Get the peer review progress for the specified review teams and
+        students. Only issues matching the title regex will be considered peer
+        review issues. If a reviewer has opened an issue in the assigned repo
+        with a title matching the regex, the review will be considered done.
+
+        Note that reviews only count if the student is in the review team for
+        that repo. Review teams must only have one associated repo, or the
+        repo is skipped. This could potentially be relaxed if there is reason
+        to, because it is not critical to the functionality of the algorithm.
+
+        Args:
+            review_team_names: Names of review teams.
+            students: The reviewing students (supposedly also the ones being
+                reviewed, but not necessarily)
+            title_regex: If an issue title matches this regex, the issue is
+                considered a potential peer review issue.
+        Returns:
+            a mapping (reviewer -> assigned_repos), where reviewer is a str and
+            assigned_repos is a :py:class:`~repomate.tuples.Review`.
+        """
+        reviews = collections.defaultdict(list)
+        teams = self.get_teams_in(review_team_names)
+        for team in teams:
+            with _try_api_request():
+                LOGGER.info("processing {}".format(team.name))
+                reviewers = set(m.login for m in team.get_members())
+                repos = list(team.get_repos())
+                if len(repos) != 1:
+                    LOGGER.warning(
+                        "expected {} to have 1 associated repo, found {}. Skipping..."
+                        .format(team.name, len(repos)))
+                    continue
+
+                repo = repos[0]
+                review_issue_authors = {
+                    issue.user.login
+                    for issue in repo.get_issues()
+                    if re.match(title_regex, issue.title)
+                }
+
+                for reviewer in reviewers:
+                    reviews[reviewer].append(
+                        tuples.Review(
+                            repo=repo.name,
+                            done=reviewer in review_issue_authors))
+
+        return reviews
 
     def add_repos_to_teams(
             self, team_to_repos: Mapping[str, Iterable[str]]

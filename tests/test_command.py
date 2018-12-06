@@ -811,3 +811,22 @@ class TestAssignPeerReviewers:
         assert api_mock.ensure_teams_and_members.called
         api_mock.add_repos_to_review_teams.assert_has_calls(
             expected_calls, any_order=True)
+
+
+class TestCheckPeerReviewProgress:
+    """Tests for check_peer_review_progress"""
+
+    def test_happy_path(self, master_names, students, api_mock):
+        """Pretty much just tests that there is no crash when calling the
+        method with reasonable args.
+        """
+        title_regex = "Peer"
+        review_team_names = [
+            util.generate_review_team_name(student, master_name)
+            for student in students for master_name in master_names
+        ]
+        command.check_peer_review_progress(master_names, students, title_regex,
+                                           2, api_mock)
+
+        api_mock.get_review_progress.assert_called_once_with(
+            review_team_names, students, title_regex)

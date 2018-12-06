@@ -65,7 +65,7 @@ def api_class_mock(mocker, api_instance_mock):
 
 
 @pytest.fixture
-def admin_mock(mocker):
+def command_mock(mocker):
     return mocker.patch('repomate.cli.command', autospec=True)
 
 
@@ -89,13 +89,7 @@ def git_mock(mocker):
     return mocker.patch('repomate.git', autospec=True)
 
 
-@pytest.fixture(
-    scope='function',
-    params=[
-        cli.SETUP_PARSER, cli.UPDATE_PARSER, cli.CLONE_PARSER,
-        cli.MIGRATE_PARSER, cli.ADD_TO_TEAMS_PARSER, cli.OPEN_ISSUE_PARSER,
-        cli.CLOSE_ISSUE_PARSER
-    ])
+@pytest.fixture(scope='function', params=cli.PARSER_NAMES)
 def parsed_args_all_subparsers(request):
     """Parametrized fixture which returns a tuples.Args for each of the
     subparsers. These arguments are valid for all subparsers, even though
@@ -112,7 +106,7 @@ def parsed_args_all_subparsers(request):
         exception.GitError('some message', 128, b'error'),
         exception.APIError('some message')
     ])
-def admin_all_raise_mock(admin_mock, request):
+def command_all_raise_mock(command_mock, api_class_mock, request):
     """Mock of repomate.command where all functions raise expected exceptions
     (i.e. those caught in _sys_exit_on_expected_error)
     """
@@ -120,14 +114,20 @@ def admin_all_raise_mock(admin_mock, request):
     def raise_(*args, **kwargs):
         raise request.param
 
-    admin_mock.add_students_to_teams.side_effect = raise_
-    admin_mock.setup_student_repos.side_effect = raise_
-    admin_mock.update_student_repos.side_effect = raise_
-    admin_mock.open_issue.side_effect = raise_
-    admin_mock.close_issue.side_effect = raise_
-    admin_mock.migrate_repos.side_effect = raise_
-    admin_mock.clone_repos.side_effect = raise_
-    return admin_mock
+    command_mock.add_students_to_teams.side_effect = raise_
+    command_mock.setup_student_repos.side_effect = raise_
+    command_mock.update_student_repos.side_effect = raise_
+    command_mock.open_issue.side_effect = raise_
+    command_mock.close_issue.side_effect = raise_
+    command_mock.migrate_repos.side_effect = raise_
+    command_mock.clone_repos.side_effect = raise_
+    command_mock.check_peer_review_progress.side_effect = raise_
+    command_mock.show_config.side_effect = raise_
+    command_mock.purge_review_teams.side_effect = raise_
+    command_mock.assign_peer_reviews.side_effect = raise_
+    command_mock.list_issues.side_effect = raise_
+    api_class_mock.verify_settings.side_effect = raise_
+    return command_mock
 
 
 class TestDispatchCommand:
@@ -143,85 +143,85 @@ class TestDispatchCommand:
             exc_info)
 
     def test_no_crash_on_valid_args(self, parsed_args_all_subparsers,
-                                    api_instance_mock, admin_mock):
+                                    api_instance_mock, command_mock):
         """Test that valid arguments does not result in crash. Only validates
         that there are no crashes, does not validate any other behavior!"""
         cli.dispatch_command(parsed_args_all_subparsers, api_instance_mock)
 
     def test_expected_exception_results_in_system_exit(
             self, parsed_args_all_subparsers, api_instance_mock,
-            admin_all_raise_mock):
+            command_all_raise_mock):
         """Test that any of the expected exceptions results in SystemExit."""
         with pytest.raises(SystemExit) as exc_info:
             cli.dispatch_command(parsed_args_all_subparsers, api_instance_mock)
 
     def test_add_students_to_teams_called_with_correct_args(
-            self, admin_mock, api_instance_mock):
+            self, command_mock, api_instance_mock):
         args = tuples.Args(cli.ADD_TO_TEAMS_PARSER, **VALID_PARSED_ARGS)
 
         cli.dispatch_command(args, api_instance_mock)
 
-        admin_mock.add_students_to_teams.assert_called_once_with(
+        command_mock.add_students_to_teams.assert_called_once_with(
             args.students, api_instance_mock)
 
     def test_setup_student_repos_called_with_correct_args(
-            self, admin_mock, api_instance_mock):
+            self, command_mock, api_instance_mock):
         args = tuples.Args(cli.SETUP_PARSER, **VALID_PARSED_ARGS)
 
         cli.dispatch_command(args, api_instance_mock)
 
-        admin_mock.setup_student_repos.assert_called_once_with(
+        command_mock.setup_student_repos.assert_called_once_with(
             args.master_repo_urls, args.students, args.user, api_instance_mock)
 
     def test_update_student_repos_called_with_correct_args(
-            self, admin_mock, api_instance_mock):
+            self, command_mock, api_instance_mock):
         args = tuples.Args(cli.UPDATE_PARSER, **VALID_PARSED_ARGS)
 
         cli.dispatch_command(args, api_instance_mock)
 
-        admin_mock.update_student_repos.assert_called_once_with(
+        command_mock.update_student_repos.assert_called_once_with(
             args.master_repo_urls,
             args.students,
             args.user,
             api_instance_mock,
             issue=args.issue)
 
-    def test_open_issue_called_with_correct_args(self, admin_mock,
+    def test_open_issue_called_with_correct_args(self, command_mock,
                                                  api_instance_mock):
         args = tuples.Args(cli.OPEN_ISSUE_PARSER, **VALID_PARSED_ARGS)
 
         cli.dispatch_command(args, api_instance_mock)
 
-        admin_mock.open_issue.assert_called_once_with(
+        command_mock.open_issue.assert_called_once_with(
             args.issue, args.master_repo_names, args.students,
             api_instance_mock)
 
-    def test_close_issue_called_with_correct_args(self, admin_mock,
+    def test_close_issue_called_with_correct_args(self, command_mock,
                                                   api_instance_mock):
         args = tuples.Args(cli.CLOSE_ISSUE_PARSER, **VALID_PARSED_ARGS)
 
         cli.dispatch_command(args, api_instance_mock)
 
-        admin_mock.close_issue.assert_called_once_with(
+        command_mock.close_issue.assert_called_once_with(
             args.title_regex, args.master_repo_names, args.students,
             api_instance_mock)
 
-    def test_migrate_repos_called_with_correct_args(self, admin_mock,
+    def test_migrate_repos_called_with_correct_args(self, command_mock,
                                                     api_instance_mock):
         args = tuples.Args(cli.MIGRATE_PARSER, **VALID_PARSED_ARGS)
 
         cli.dispatch_command(args, api_instance_mock)
 
-        admin_mock.migrate_repos.assert_called_once_with(
+        command_mock.migrate_repos.assert_called_once_with(
             args.master_repo_urls, args.user, api_instance_mock)
 
-    def test_clone_repos_called_with_correct_args(self, admin_mock,
+    def test_clone_repos_called_with_correct_args(self, command_mock,
                                                   api_instance_mock):
         args = tuples.Args(cli.CLONE_PARSER, **VALID_PARSED_ARGS)
 
         cli.dispatch_command(args, api_instance_mock)
 
-        admin_mock.clone_repos.assert_called_once_with(
+        command_mock.clone_repos.assert_called_once_with(
             args.master_repo_names, args.students, api_instance_mock)
 
     def test_verify_settings_called_with_correct_args(self, api_class_mock):

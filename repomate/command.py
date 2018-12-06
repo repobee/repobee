@@ -16,11 +16,13 @@ program.
 import os
 import sys
 import tempfile
-from typing import Iterable, List, Optional, Tuple, Generator
+import re
+import collections
+from typing import Iterable, List, Optional, Tuple, Generator, Mapping
+from colored import bg, fg, style
 
 import daiquiri
 
-from repomate_plug import Status
 import repomate_plug as plug
 
 from repomate import git
@@ -28,6 +30,7 @@ from repomate import util
 from repomate import tuples
 from repomate import exception
 from repomate import config
+from repomate import formatters
 from repomate.github_api import GitHubAPI
 from repomate.tuples import Team
 from repomate.git import Push
@@ -376,7 +379,7 @@ def _execute_post_clone_hooks(repo_names: List[str], api: GitHubAPI):
         res = plug.manager.hook.act_on_cloned_repo(
             path=os.path.abspath(repo_name), api=api)
         results[repo_name] = res
-    LOGGER.info(_format_hook_results_output(results))
+    LOGGER.info(formatters.format_hook_results_output(results))
 
     LOGGER.info("post clone hooks done")
 
@@ -486,6 +489,20 @@ def purge_review_teams(master_repo_names: Iterable[str],
     api.delete_teams(review_team_names)
 
 
+def check_peer_review_progress(master_repo_names: Iterable[str],
+                               students: Iterable[str], title_regex: str,
+                               num_reviews: int, api: GitHubAPI) -> None:
+    review_team_names = [
+        util.generate_review_team_name(student, master_name)
+        for student in students for master_name in master_repo_names
+    ]
+    reviews = api.get_review_progress(review_team_names, students, title_regex)
+
+    LOGGER.info(
+        formatters.format_peer_review_progress_output(reviews, students,
+                                                      num_reviews))
+
+
 def _create_repo_infos(urls: Iterable[str],
                        teams: Iterable[Team]) -> List[tuples.Repo]:
     """Create Repo namedtuples for all combinations of url and team.
@@ -549,40 +566,3 @@ def show_config():
             50, "-")
 
     LOGGER.info(output)
-
-
-def _format_hook_result(hook_result):
-    from colored import bg, fg, style
-    if hook_result.status == Status.ERROR:
-        out = bg('red')
-    elif hook_result.status == Status.WARNING:
-        out = bg('yellow')
-    elif hook_result.status == Status.SUCCESS:
-        out = bg('dark_green')
-    else:
-        raise ValueError(
-            "expected hook_result.status to be one of Status.ERROR, "
-            "Status.WARNING or Status.SUCCESS, but was {!r}".format(
-                hook_result.status))
-
-    out += fg(
-        'white'
-    ) + hook_result.hook + ": " + hook_result.status.name + style.RESET + os.linesep
-    out += hook_result.msg
-
-    return out
-
-
-def _format_hook_results_output(result_mapping):
-    from colored import bg, style
-    out = ""
-    for repo_name, results in result_mapping.items():
-        out += "{}hook results for {}{}{}".format(
-            bg('grey_23'), repo_name, style.RESET, os.linesep * 2)
-        out += os.linesep.join([
-            "{}{}".format(_format_hook_result(res), os.linesep)
-            for res in results
-        ])
-        out += os.linesep * 2
-
-    return out
