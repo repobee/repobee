@@ -186,33 +186,6 @@ async def _push_async(pt: Push, user: str):
         LOGGER.info("Pushed files to {} {}".format(pt.repo_url, pt.branch))
 
 
-def push_single(local_repo: str,
-                user: str,
-                repo_url: str,
-                branch: str = 'master'):
-    """Push from a local repository to a remote repository without first adding
-    push remotes.
-
-    Args:
-        local_repo: Path to the repo to push.
-        user: The username to put on the push.
-        repo_url: HTTPS url to the remote repo (without username/token!).
-        branch: The branch to push to.
-    """
-    util.validate_types(
-        local_repo=(local_repo, str),
-        user=(user, str),
-        repo_url=(repo_url, str),
-        branch=(branch, str))
-    util.validate_non_empty(
-        local_repo=local_repo, user=user, repo_url=repo_url, branch=branch)
-
-    loop = asyncio.get_event_loop()
-    pt = Push(local_path=local_repo, repo_url=repo_url, branch=branch)
-    task = loop.create_task(_push_async(pt, user))
-    loop.run_until_complete(task)
-
-
 def _push_no_retry(push_tuples: Iterable[Push], user: str) -> List[str]:
     """Push to all repos defined in push_tuples asynchronously. Amount of
     concurrent tasks is limited by CONCURRENT_TASKS.
