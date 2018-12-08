@@ -30,6 +30,7 @@ assert TOKEN == repomate.git.OAUTH_TOKEN
 
 USER = 'slarse'
 ORG_NAME = 'test-org'
+MASTER_ORG_NAME = 'test-master-org'
 HOST_URL = 'https://some_enterprise_host'
 GITHUB_BASE_URL = '{}/api/v3'.format(HOST_URL)
 STUDENTS = tuple(string.ascii_lowercase[:4])
@@ -38,8 +39,8 @@ ISSUE = tuples.Issue(title="Best title", body="This is the body of the issue.")
 PLUGINS = ['javac', 'pylint']
 
 
-GENERATE_REPO_URL = lambda repo_name:\
-        "{}/{}/{}".format(HOST_URL, ORG_NAME, repo_name)
+GENERATE_REPO_URL = lambda repo_name, org_name:\
+        "{}/{}/{}".format(HOST_URL, org_name, repo_name)
 
 User = namedtuple('User', ('login', ))
 
@@ -50,6 +51,7 @@ def pytest_namespace():
         HOST_URL=HOST_URL,
         GITHUB_BASE_URL=GITHUB_BASE_URL,
         ORG_NAME=ORG_NAME,
+        MASTER_ORG_NAME=MASTER_ORG_NAME,
         STUDENTS=STUDENTS,
         ISSUE_PATH=ISSUE_PATH,
         ISSUE=ISSUE,
@@ -170,9 +172,10 @@ def raise_(exception):
 _config_user = "user = {}".format(USER)
 _config_base = "github_base_url = {}".format(GITHUB_BASE_URL)
 _config_org = "org_name = {}".format(ORG_NAME)
+_config_master_org = "master_org_name = {}".format(MASTER_ORG_NAME)
 
 
-@pytest.fixture(params=['-g', '-u', '-sf', '-o'])
+@pytest.fixture(params=['-g', '-u', '-sf', '-o', '-mo'])
 def config_missing_option(request, empty_config_mock, students_file):
     missing_option = request.param
 
@@ -185,6 +188,8 @@ def config_missing_option(request, empty_config_mock, students_file):
         config_contents.append("students_file = {!s}".format(students_file))
     if not missing_option == '-u':
         config_contents.append(_config_user)
+    if not missing_option == '-mo':
+        config_contents.append(_config_master_org)
 
     empty_config_mock.write(os.linesep.join(config_contents))
 
@@ -199,6 +204,7 @@ def config_mock(empty_config_mock, students_file):
         "github_base_url = {}".format(GITHUB_BASE_URL),
         "user = {}".format(USER),
         "org_name = {}".format(ORG_NAME),
+        "master_org_name = {}".format(MASTER_ORG_NAME),
         "students_file = {!s}".format(students_file),
         "plugins = {!s}".format(','.join(PLUGINS)),
     ])

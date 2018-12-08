@@ -31,7 +31,7 @@ assert DEFAULT_CONFIG_FILE.is_absolute()
 
 # arguments that can be configured via config file
 CONFIGURABLE_ARGS = set(('user', 'org_name', 'github_base_url',
-                         'students_file', 'plugins'))
+                         'students_file', 'plugins', 'master_org_name'))
 
 
 def get_configured_defaults(

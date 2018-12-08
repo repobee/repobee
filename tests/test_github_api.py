@@ -136,7 +136,7 @@ def organization(happy_github):
     organization.get_members = lambda role: \
         [User(login='blablabla'), User(login='hello'), User(login=USER)]
     type(organization).html_url = PropertyMock(
-        return_value=GENERATE_REPO_URL('').rstrip('/'))
+        return_value=GENERATE_REPO_URL('', ORG_NAME).rstrip('/'))
     happy_github.get_organization.side_effect = \
         lambda org_name: organization if org_name == ORG_NAME else raise_404()
     return organization
@@ -193,7 +193,7 @@ def mock_repo(name, description, private, team_id):
     type(repo).name = PropertyMock(return_value=name)
     type(repo).description = PropertyMock(
         return_value="description of {}".format(name))
-    type(repo).html_url = PropertyMock(return_value=GENERATE_REPO_URL(name))
+    type(repo).html_url = PropertyMock(return_value=GENERATE_REPO_URL(name, ORG_NAME))
     #repo.get_teams.side_effect = lambda: [team]
     return repo
 
@@ -378,7 +378,7 @@ class TestCreateRepos:
         """Assert that create_repo returns the urls for all repos, even if there
         are validation errors.
         """
-        expected_urls = [GENERATE_REPO_URL(info.name) for info in repo_infos]
+        expected_urls = [GENERATE_REPO_URL(info.name, ORG_NAME) for info in repo_infos]
 
         actual_urls = api.create_repos(repo_infos)
         assert actual_urls == expected_urls
@@ -402,7 +402,7 @@ class TestGetRepoUrls:
     def test_some_repos_found(self, repos, api):
         found_repo_names = [repo.name for repo in repos[:2]]
         not_found_repo_names = [repo.name for repo in repos[2:]]
-        expected_urls = [GENERATE_REPO_URL(name) for name in found_repo_names]
+        expected_urls = [GENERATE_REPO_URL(name, ORG_NAME) for name in found_repo_names]
         api_wrapper_mock.get_repos.side_effect = \
             lambda repo_names: [repo for repo in repos if repo.name in found_repo_names]
 

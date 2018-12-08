@@ -101,6 +101,7 @@ def parse_args(sys_args: Iterable[str]
             github_base_url=args.github_base_url,
             user=args.user,
             traceback=args.traceback,
+            master_org_name=args.master_org_name if 'master_org_name' in args else None,
         ), None  # only here is return None for api allowed
     elif getattr(args, SUB) == SHOW_CONFIG_PARSER:
         return tuples.Args(subparser=SHOW_CONFIG_PARSER), None
@@ -119,13 +120,19 @@ def parse_args(sys_args: Iterable[str]
             master_urls = args.master_repo_urls
             master_names = [util.repo_name(url) for url in master_urls]
         else:
+            master_org_name = args.org_name
+            if 'master_org_name' in args and args.master_org_name is not None:
+                master_org_name = args.master_org_name
             master_names = args.master_repo_names
-            master_urls = _repo_names_to_urls(master_names, api)
+            master_urls = _repo_names_to_urls(master_names, master_org_name,
+                                              api)
         assert master_urls and master_names
 
     parsed_args = tuples.Args(
         subparser=getattr(args, SUB),
         org_name=args.org_name,
+        master_org_name=args.master_org_name
+        if 'master_org_name' in args else None,
         github_base_url=args.github_base_url,
         user=args.user if 'user' in args else None,
         master_repo_urls=master_urls,
@@ -184,9 +191,9 @@ def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
             command.clone_repos(args.master_repo_names, args.students, api)
     elif args.subparser == VERIFY_PARSER:
         with _sys_exit_on_expected_error():
-            github_api.GitHubAPI.verify_settings(args.user, args.org_name,
-                                                 args.github_base_url,
-                                                 git.OAUTH_TOKEN)
+            github_api.GitHubAPI.verify_settings(
+                args.user, args.org_name, args.github_base_url,
+                git.OAUTH_TOKEN, args.master_org_name)
     elif args.subparser == LIST_ISSUES_PARSER:
         with _sys_exit_on_expected_error():
             command.list_issues(
@@ -396,7 +403,8 @@ def _add_subparsers(parser):
     `base_` prefixed parser, of course).
     """
 
-    base_parser, base_student_parser, base_user_parser = _create_base_parsers()
+    base_parser, base_student_parser, base_user_parser, master_org_parser = \
+        _create_base_parsers()
 
     repo_name_parser = argparse.ArgumentParser(
         add_help=False, parents=[base_parser])
@@ -433,7 +441,12 @@ def _add_subparsers(parser):
          "any previously performed step will simply be skipped. The master "
          "repo is assumed to be located in the target organization, and will "
          "be temporarily cloned to disk for the duration of the command. "),
-        parents=[base_user_parser, base_student_parser, repo_name_parser])
+        parents=[
+            base_user_parser,
+            base_student_parser,
+            master_org_parser,
+            repo_name_parser,
+        ])
 
     update = subparsers.add_parser(
         UPDATE_PARSER,
@@ -442,7 +455,12 @@ def _add_subparsers(parser):
             "Push changes from master repos to student repos. The master repos "
             "must be available within the organization. They can be added "
             "manually, or with the `migrate-repos` command."),
-        parents=[base_user_parser, base_student_parser, repo_name_parser])
+        parents=[
+            base_user_parser,
+            base_student_parser,
+            master_org_parser,
+            repo_name_parser,
+        ])
     update.add_argument(
         '-i',
         '--issue',
@@ -516,7 +534,7 @@ def _add_subparsers(parser):
          "the OAUTH token), organization exists, user is an owner of the "
          "organization. If any one of the checks fails, the verification is "
          "aborted and an error message is displayed."),
-        parents=[base_parser, base_user_parser])
+        parents=[base_parser, base_user_parser, master_org_parser])
 
 
 def _create_base_parsers():
@@ -581,7 +599,17 @@ def _create_base_parsers():
         required=is_required('user'),
         default=default('user'))
 
-    return base_parser, base_student_parser, base_user_parser
+    master_org_parser = argparse.ArgumentParser(add_help=False)
+    master_org_parser.add_argument(
+        '-mo',
+        '--master-org-name',
+        help="Name of the organization containing the master repos. "
+        "Defaults to the same value as `-o|--org-name` if not specified "
+        "both on command line or in config file",
+        default=default('master_org_name'),
+    )
+
+    return base_parser, base_student_parser, base_user_parser, master_org_parser
 
 
 @contextmanager
@@ -654,18 +682,19 @@ def _connect_to_api(github_base_url: str, token: str,
     return api
 
 
-def _repo_names_to_urls(repo_names: Iterable[str],
+def _repo_names_to_urls(repo_names: Iterable[str], org_name: str,
                         api: github_api.GitHubAPI) -> List[str]:
-    """Use the repo_names to extract urls to the repos. Look for git repos
-    with the correct names in the local directory and create local uris for them.
-    For the rest, create urls to the repos assuming they are in the target
-    organization. Do note that there is _no_ guarantee that the remote repos
-    exist as checking this takes too much time with the REST API.
+    """Use the repo_names to extract urls to the repos. Look for git
+    repos with the correct names in the local directory and create local uris
+    for them.  For the rest, create urls to the repos assuming they are in the
+    target organization. Do note that there is _no_ guarantee that the remote
+    repos exist as checking this takes too much time with the REST API.
 
     A possible improvement would be to use the GraphQL API for this function.
 
     Args:
         repo_names: names of repositories.
+        org_name: Name of the organization these repos are expected in.
         api: A GitHubAPI instance.
 
     Returns:
@@ -676,12 +705,11 @@ def _repo_names_to_urls(repo_names: Iterable[str],
     ]
     non_local = [name for name in repo_names if name not in local]
 
-    non_local_urls = api.get_repo_urls(non_local)
+    non_local_urls = api.get_repo_urls(non_local, org_name)
     local_uris = [
         pathlib.Path(os.path.abspath(repo_name)).as_uri()
         for repo_name in local
     ]
-
     return non_local_urls + local_uris
 
 

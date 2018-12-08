@@ -107,11 +107,11 @@ class GitHubAPI:
             org_name: Name of the target organization.
         """
         self._github = github.Github(login_or_token=token, base_url=base_url)
-        with _try_api_request():
-            self._org = self._github.get_organization(org_name)
         self._org_name = org_name
         self._base_url = base_url
         self._token = token
+        with _try_api_request():
+            self._org = self._github.get_organization(self._org_name)
 
     def __repr__(self):
         return "GitHubAPI(base_url={}, token={}, org_name={})".format(
@@ -293,19 +293,26 @@ class GitHubAPI:
 
         return repo_urls
 
-    def get_repo_urls(self, repo_names: Iterable[str]) -> List[str]:
-        """Get repo urls for all specified repo names in the current organization.
-        Assumes that the repos exist, there is no guarantee that they actually do
-        as checking this with the REST API takes too much time.
+    def get_repo_urls(self,
+                      repo_names: Iterable[str],
+                      org_name: Optional[str] = None) -> List[str]:
+        """Get repo urls for all specified repo names in organization.  Assumes
+        that the repos exist, there is no guarantee that they actually do as
+        checking this with the REST API takes too much time.
 
         Args:
             repo_names: A list of repository names.
+            org_name: Organization in which repos are expected. Defaults to the
+                target organization of the API instance.
 
         Returns:
             a list of urls corresponding to the repo names.
         """
+        with _try_api_request():
+            org = self._org if not org_name else self._github.get_organization(
+                org_name)
         return [
-            "{}/{}".format(self._org.html_url, repo_name)
+            "{}/{}".format(org.html_url, repo_name)
             for repo_name in list(repo_names)
         ]
 
@@ -494,7 +501,11 @@ class GitHubAPI:
                 ", ".join(missing_repos)))
 
     @staticmethod
-    def verify_settings(user: str, org_name: str, base_url: str, token: str):
+    def verify_settings(user: str,
+                        org_name: str,
+                        base_url: str,
+                        token: str,
+                        master_org_name: Optional[str] = None):
         """Verify the following:
 
         .. code-block: markdown
@@ -502,7 +513,10 @@ class GitHubAPI:
             1. Base url is correct (verify by fetching user).
             2. The token has correct access privileges (verify by getting oauth scopes)
             3. Organization exists (verify by getting the org)
+                - If master_org_name is supplied, this is also checked to exist.
             4. User is owner in organization (verify by getting
+                - If master_org_name is supplied, user is also checked to be an
+                  owner of it.
             organization member list and checking roles)
 
             Raises exceptions if something goes wrong.
@@ -562,7 +576,16 @@ class GitHubAPI:
                 format(scopes, REQUIRED_OAUTH_SCOPES))
         LOGGER.info("SUCCESS: oauth scopes look okay")
 
-        LOGGER.info("trying to fetch organization ...")
+        GitHubAPI._verify_org(org_name, user, g)
+        if master_org_name:
+            GitHubAPI._verify_org(master_org_name, user, g)
+
+        LOGGER.info("GREAT SUCCESS: All settings check out!")
+
+    @staticmethod
+    def _verify_org(org_name: str, user: str, g: github.MainClass.Github):
+        """Check that the organization exists and that the user is an owner."""
+        LOGGER.info("trying to fetch organization {} ...".format(org_name))
         org_not_found_msg = (
             "organization {} could not be found. Possible "
             "reasons: org does not exist, user does not have "
@@ -582,5 +605,3 @@ class GitHubAPI:
                     user, org_name))
         LOGGER.info("SUCCESS: user {} is an owner of organization {}".format(
             user, org_name))
-
-        LOGGER.info("GREAT SUCCESS: All settings check out!")

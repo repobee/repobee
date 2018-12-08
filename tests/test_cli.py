@@ -23,9 +23,10 @@ STUDENTS = pytest.constants.STUDENTS
 ISSUE_PATH = pytest.constants.ISSUE_PATH
 ISSUE = pytest.constants.ISSUE
 GENERATE_REPO_URL = pytest.functions.GENERATE_REPO_URL
+MASTER_ORG_NAME = pytest.constants.MASTER_ORG_NAME
 
 REPO_NAMES = ('week-1', 'week-2', 'week-3')
-REPO_URLS = tuple(map(GENERATE_REPO_URL, REPO_NAMES))
+REPO_URLS = tuple(map(lambda rn: GENERATE_REPO_URL(rn, ORG_NAME), REPO_NAMES))
 
 BASE_ARGS = ['-g', GITHUB_BASE_URL, '-o', ORG_NAME]
 BASE_PUSH_ARGS = ['-u', USER, '-mn', *REPO_NAMES]
@@ -51,7 +52,8 @@ VALID_PARSED_ARGS = dict(
 @pytest.fixture(autouse=True)
 def api_instance_mock(mocker):
     instance_mock = MagicMock(spec=repomate.github_api.GitHubAPI)
-    instance_mock.get_repo_urls.side_effect = lambda repo_names: list(map(GENERATE_REPO_URL, repo_names))
+    instance_mock.get_repo_urls.side_effect = lambda repo_names, org_name: \
+        [GENERATE_REPO_URL(rn, org_name) for rn in repo_names]
     instance_mock.ensure_teams_and_members.side_effect = lambda team_dict:\
             [Team(name, members, id=0) for name, members in team_dict.items()]
     return instance_mock
@@ -236,7 +238,22 @@ class TestDispatchCommand:
         cli.dispatch_command(args, None)
 
         api_class_mock.verify_settings.assert_called_once_with(
-            args.user, args.org_name, args.github_base_url, git.OAUTH_TOKEN)
+            args.user, args.org_name, args.github_base_url, git.OAUTH_TOKEN,
+            None)
+
+    def test_verify_settings_called_with_master_org_name(self, api_class_mock):
+        args = tuples.Args(
+            cli.VERIFY_PARSER,
+            user=USER,
+            github_base_url=GITHUB_BASE_URL,
+            org_name=ORG_NAME,
+            master_org_name=MASTER_ORG_NAME)
+
+        cli.dispatch_command(args, None)
+
+        api_class_mock.verify_settings.assert_called_once_with(
+            args.user, args.org_name, args.github_base_url, git.OAUTH_TOKEN,
+            MASTER_ORG_NAME)
 
 
 class TestBaseParsing:
@@ -290,6 +307,30 @@ class TestBaseParsing:
 
         assert "GitHub service could not be found, check the url" in str(
             exc_info)
+
+    @pytest.mark.parametrize('parser', [cli.SETUP_PARSER, cli.UPDATE_PARSER])
+    def test_master_org_overrides_target_org_for_master_repos(
+            self, command_mock, api_instance_mock, students_file, parser):
+        parsed_args, _ = cli.parse_args([
+            cli.SETUP_PARSER, *COMPLETE_PUSH_ARGS, '-sf',
+            str(students_file), '-mo', MASTER_ORG_NAME
+        ])
+
+        assert all([
+            '/' + MASTER_ORG_NAME + '/' in url
+            for url in parsed_args.master_repo_urls
+        ])
+
+    @pytest.mark.parametrize('parser', [cli.SETUP_PARSER, cli.UPDATE_PARSER])
+    def test_master_org_name_defaults_to_org_name(
+            self, command_mock, api_instance_mock, students_file, parser):
+        parsed_args, _ = cli.parse_args(
+            [cli.SETUP_PARSER, *COMPLETE_PUSH_ARGS, '-sf',
+             str(students_file)])
+
+        assert all([
+            '/' + ORG_NAME + '/' in url for url in parsed_args.master_repo_urls
+        ])
 
 
 class TestStudentParsing:
@@ -385,8 +426,9 @@ def assert_base_push_args(parsed_args, api):
     assert parsed_args.github_base_url == GITHUB_BASE_URL
     assert parsed_args.user == USER
     assert parsed_args.master_repo_names == list(REPO_NAMES)
-    assert parsed_args.master_repo_urls == list(
-        map(GENERATE_REPO_URL, REPO_NAMES))
+    assert parsed_args.master_repo_urls == [
+        GENERATE_REPO_URL(rn, ORG_NAME) for rn in REPO_NAMES
+    ]
     api.assert_called_once_with(GITHUB_BASE_URL, git.OAUTH_TOKEN, ORG_NAME)
 
 
@@ -426,6 +468,10 @@ class TestConfig:
         """Test that a config that is missing one option (that is not 
         specified on the command line) causes a SystemExit on parsing.
         """
+        # -mo is not required
+        if config_missing_option == '-mo':
+            return
+
         sys_args = [cli.SETUP_PARSER, '-mn', *REPO_NAMES]
 
         with pytest.raises(SystemExit):
@@ -473,7 +519,7 @@ class TestSetupAndUpdateParsers:
 
         # TODO this is incorrect, get_repo_urls generates urls for all repo names
         # and does not check if they exist
-        api_instance_mock.get_repo_urls.side_effect = lambda repo_names:\
+        api_instance_mock.get_repo_urls.side_effect = lambda repo_names, _:\
                 ([name for name in repo_names if name != not_found], [not_found])
 
         sys_args = [parser, *COMPLETE_PUSH_ARGS, '-s', *STUDENTS]
@@ -491,13 +537,13 @@ class TestSetupAndUpdateParsers:
             'repomate.util.is_git_repo',
             side_effect=lambda path: path.endswith(local_repo))
         expected_urls = [
-            GENERATE_REPO_URL(name) for name in REPO_NAMES
+            GENERATE_REPO_URL(name, ORG_NAME) for name in REPO_NAMES
             if name != local_repo
         ]
         expected_uris = [pathlib.Path(os.path.abspath(local_repo)).as_uri()]
         expected = expected_urls + expected_uris
-        api_instance_mock.get_repo_urls.side_effect = lambda repo_names: \
-            [GENERATE_REPO_URL(name) for name in repo_names]
+        api_instance_mock.get_repo_urls.side_effect = lambda repo_names, _: \
+            [GENERATE_REPO_URL(name, ORG_NAME) for name in repo_names]
 
         sys_args = [parser, *COMPLETE_PUSH_ARGS, '-s', *STUDENTS]
 
