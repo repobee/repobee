@@ -16,17 +16,11 @@ random.seed(41235)
 # mock the PyGithub github module
 sys.modules['github'] = MagicMock()
 
-import repomate
 
-TOKEN = 'besttoken1337'
-# the git module must be imported with a mocked env variable
-with patch('os.getenv', autospec=True, return_value=TOKEN):
-    from repomate import git
+import repomate
 
 from repomate import tuples
 from repomate import config
-
-assert TOKEN == repomate.git.OAUTH_TOKEN
 
 USER = 'slarse'
 ORG_NAME = 'test-org'
@@ -37,6 +31,8 @@ STUDENTS = tuple(string.ascii_lowercase[:4])
 ISSUE_PATH = 'some/issue/path'
 ISSUE = tuples.Issue(title="Best title", body="This is the body of the issue.")
 PLUGINS = ['javac', 'pylint']
+TOKEN = 'besttoken1337'
+CONFIG_TOKEN = 'bestconfigtoken'
 
 
 GENERATE_REPO_URL = lambda repo_name, org_name:\
@@ -57,6 +53,7 @@ def pytest_namespace():
         ISSUE=ISSUE,
         PLUGINS=PLUGINS,
         TOKEN=TOKEN,
+        CONFIG_TOKEN=CONFIG_TOKEN,
     )
     functions = dict(
         GENERATE_REPO_URL=GENERATE_REPO_URL,
@@ -89,6 +86,14 @@ def _students_file(populate: bool = True):
                 file.flush()
         yield file
 
+@pytest.fixture(autouse=True)
+def mock_getenv(mocker):
+    def _side_effect(name):
+        if name != 'REPOMATE_OAUTH':
+            raise ValueError("no such environment variable")
+        return TOKEN
+    mock = mocker.patch('os.getenv', side_effect=_side_effect)
+    return mock
 
 @pytest.fixture
 def plugin_manager_mock(mocker):
@@ -207,6 +212,7 @@ def config_mock(empty_config_mock, students_file):
         "master_org_name = {}".format(MASTER_ORG_NAME),
         "students_file = {!s}".format(students_file),
         "plugins = {!s}".format(','.join(PLUGINS)),
+        "token = {}".format(CONFIG_TOKEN),
     ])
     empty_config_mock.write(config_contents)
     yield empty_config_mock

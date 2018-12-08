@@ -10,6 +10,7 @@ GITHUB_BASE_URL = pytest.constants.GITHUB_BASE_URL
 ORG_NAME = pytest.constants.ORG_NAME
 MASTER_ORG_NAME = pytest.constants.MASTER_ORG_NAME
 PLUGINS = pytest.constants.PLUGINS
+CONFIG_TOKEN = pytest.constants.CONFIG_TOKEN
 
 
 class TestGetConfiguredDefaults:
@@ -34,6 +35,7 @@ class TestGetConfiguredDefaults:
         assert defaults['students_file'] == str(students_file)
         assert defaults['plugins'] == ','.join(PLUGINS)
         assert defaults['master_org_name'] == MASTER_ORG_NAME
+        assert defaults['token'] == CONFIG_TOKEN
 
     def test_get_configured_defaults_raises_on_invalid_keys(
             self, empty_config_mock, students_file):

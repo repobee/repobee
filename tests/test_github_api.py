@@ -16,6 +16,7 @@ from repomate.github_api import REQUIRED_OAUTH_SCOPES
 
 ORG_NAME = pytest.constants.ORG_NAME
 ISSUE = pytest.constants.ISSUE
+TOKEN = pytest.constants.TOKEN
 
 
 class GithubException(Exception):
@@ -193,7 +194,8 @@ def mock_repo(name, description, private, team_id):
     type(repo).name = PropertyMock(return_value=name)
     type(repo).description = PropertyMock(
         return_value="description of {}".format(name))
-    type(repo).html_url = PropertyMock(return_value=GENERATE_REPO_URL(name, ORG_NAME))
+    type(repo).html_url = PropertyMock(
+        return_value=GENERATE_REPO_URL(name, ORG_NAME))
     #repo.get_teams.side_effect = lambda: [team]
     return repo
 
@@ -378,7 +380,9 @@ class TestCreateRepos:
         """Assert that create_repo returns the urls for all repos, even if there
         are validation errors.
         """
-        expected_urls = [GENERATE_REPO_URL(info.name, ORG_NAME) for info in repo_infos]
+        expected_urls = [
+            GENERATE_REPO_URL(info.name, ORG_NAME) for info in repo_infos
+        ]
 
         actual_urls = api.create_repos(repo_infos)
         assert actual_urls == expected_urls
@@ -402,7 +406,9 @@ class TestGetRepoUrls:
     def test_some_repos_found(self, repos, api):
         found_repo_names = [repo.name for repo in repos[:2]]
         not_found_repo_names = [repo.name for repo in repos[2:]]
-        expected_urls = [GENERATE_REPO_URL(name, ORG_NAME) for name in found_repo_names]
+        expected_urls = [
+            GENERATE_REPO_URL(name, ORG_NAME) for name in found_repo_names
+        ]
         api_wrapper_mock.get_repos.side_effect = \
             lambda repo_names: [repo for repo in repos if repo.name in found_repo_names]
 
@@ -658,7 +664,7 @@ class TestVerifySettings:
     def test_happy_path(self, happy_github, organization, api):
         """Tests that no exceptions are raised when all info is correct."""
         github_api.GitHubAPI.verify_settings(USER, ORG_NAME, GITHUB_BASE_URL,
-                                             git.OAUTH_TOKEN)
+                                             TOKEN)
 
     def test_empty_token_raises_bad_credentials(self, happy_github,
                                                 monkeypatch, api):
@@ -671,20 +677,20 @@ class TestVerifySettings:
     def test_incorrect_info_raises_not_found_error(self, github_bad_info, api):
         with pytest.raises(exception.NotFoundError) as exc_info:
             github_api.GitHubAPI.verify_settings(
-                USER, ORG_NAME, GITHUB_BASE_URL, git.OAUTH_TOKEN)
+                USER, ORG_NAME, GITHUB_BASE_URL, TOKEN)
 
     def test_bad_token_scope_raises(self, happy_github, api):
         type(happy_github).oauth_scopes = PropertyMock(return_value=['repo'])
 
         with pytest.raises(exception.BadCredentials) as exc_info:
             github_api.GitHubAPI.verify_settings(
-                USER, ORG_NAME, GITHUB_BASE_URL, git.OAUTH_TOKEN)
+                USER, ORG_NAME, GITHUB_BASE_URL, TOKEN)
         assert "missing one or more oauth scopes" in str(exc_info)
 
     def test_not_owner_raises(self, happy_github, organization, api):
         with pytest.raises(exception.BadCredentials) as exc_info:
             github_api.GitHubAPI.verify_settings(
-                NOT_OWNER, ORG_NAME, GITHUB_BASE_URL, git.OAUTH_TOKEN)
+                NOT_OWNER, ORG_NAME, GITHUB_BASE_URL, TOKEN)
 
         assert "user {} is not an owner".format(NOT_OWNER) in str(exc_info)
 
@@ -693,7 +699,7 @@ class TestVerifySettings:
         happy_github.get_user.side_effect = SERVER_ERROR
         with pytest.raises(exception.UnexpectedException) as exc_info:
             api.verify_settings(USER, ORG_NAME, GITHUB_BASE_URL,
-                                git.OAUTH_TOKEN)
+                                TOKEN)
 
     def test_none_user_raises(self, happy_github, organization, api):
         """If NamedUser.login is None, there should be an exception. Happens if
@@ -704,7 +710,7 @@ class TestVerifySettings:
 
         with pytest.raises(exception.UnexpectedException) as exc_info:
             github_api.GitHubAPI.verify_settings(
-                USER, ORG_NAME, GITHUB_BASE_URL, git.OAUTH_TOKEN)
+                USER, ORG_NAME, GITHUB_BASE_URL, TOKEN)
 
         assert "Possible reasons: bad api url" in str(exc_info)
 
@@ -718,7 +724,7 @@ class TestVerifySettings:
 
         with pytest.raises(exception.UnexpectedException) as exc_info:
             github_api.GitHubAPI.verify_settings(
-                USER, ORG_NAME, GITHUB_BASE_URL, git.OAUTH_TOKEN)
+                USER, ORG_NAME, GITHUB_BASE_URL, TOKEN)
 
         assert "specified login is {}, but the fetched user's login is {}".format(
             USER, wrong_username) in str(exc_info)

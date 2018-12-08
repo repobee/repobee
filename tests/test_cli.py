@@ -24,6 +24,7 @@ ISSUE_PATH = pytest.constants.ISSUE_PATH
 ISSUE = pytest.constants.ISSUE
 GENERATE_REPO_URL = pytest.functions.GENERATE_REPO_URL
 MASTER_ORG_NAME = pytest.constants.MASTER_ORG_NAME
+TOKEN = pytest.constants.TOKEN
 
 REPO_NAMES = ('week-1', 'week-2', 'week-3')
 REPO_URLS = tuple(map(lambda rn: GENERATE_REPO_URL(rn, ORG_NAME), REPO_NAMES))
@@ -46,6 +47,7 @@ VALID_PARSED_ARGS = dict(
     state='open',
     show_body=True,
     author=None,
+    token=TOKEN,
 )
 
 
@@ -233,13 +235,13 @@ class TestDispatchCommand:
             cli.VERIFY_PARSER,
             user=USER,
             github_base_url=GITHUB_BASE_URL,
+            token=TOKEN,
             org_name=ORG_NAME)
 
         cli.dispatch_command(args, None)
 
         api_class_mock.verify_settings.assert_called_once_with(
-            args.user, args.org_name, args.github_base_url, git.OAUTH_TOKEN,
-            None)
+            args.user, args.org_name, args.github_base_url, TOKEN, None)
 
     def test_verify_settings_called_with_master_org_name(self, api_class_mock):
         args = tuples.Args(
@@ -247,12 +249,13 @@ class TestDispatchCommand:
             user=USER,
             github_base_url=GITHUB_BASE_URL,
             org_name=ORG_NAME,
+            token=TOKEN,
             master_org_name=MASTER_ORG_NAME)
 
         cli.dispatch_command(args, None)
 
         api_class_mock.verify_settings.assert_called_once_with(
-            args.user, args.org_name, args.github_base_url, git.OAUTH_TOKEN,
+            args.user, args.org_name, args.github_base_url, TOKEN,
             MASTER_ORG_NAME)
 
 
@@ -322,15 +325,36 @@ class TestBaseParsing:
         ])
 
     @pytest.mark.parametrize('parser', [cli.SETUP_PARSER, cli.UPDATE_PARSER])
-    def test_master_org_name_defaults_to_org_name(
-            self, command_mock, api_instance_mock, students_file, parser):
+    def test_master_org_name_defaults_to_org_name(self, api_instance_mock,
+                                                  students_file, parser):
         parsed_args, _ = cli.parse_args(
-            [cli.SETUP_PARSER, *COMPLETE_PUSH_ARGS, '-sf',
+            [parser, *COMPLETE_PUSH_ARGS, '-sf',
              str(students_file)])
 
         assert all([
             '/' + ORG_NAME + '/' in url for url in parsed_args.master_repo_urls
         ])
+
+    @pytest.mark.parametrize('parser', [cli.SETUP_PARSER, cli.UPDATE_PARSER])
+    def test_token_env_variable_picked_up(self, api_instance_mock,
+                                          students_file, parser):
+        parsed_args, _ = cli.parse_args(
+            [parser, *COMPLETE_PUSH_ARGS, '-sf',
+             str(students_file)])
+
+        assert parsed_args.token == TOKEN
+
+    @pytest.mark.parametrize('parser', [cli.SETUP_PARSER, cli.UPDATE_PARSER])
+    def test_token_cli_arg_picked_up(self, mocker, api_instance_mock, students_file,
+                                     parser):
+        mocker.patch('os.getenv', return_value='')
+        token = 'supersecretothertoken'
+        parsed_args, _ = cli.parse_args([
+            parser, *COMPLETE_PUSH_ARGS, '-sf',
+            str(students_file), '-t', token
+        ])
+
+        assert parsed_args.token == token
 
 
 class TestStudentParsing:
@@ -429,7 +453,7 @@ def assert_base_push_args(parsed_args, api):
     assert parsed_args.master_repo_urls == [
         GENERATE_REPO_URL(rn, ORG_NAME) for rn in REPO_NAMES
     ]
-    api.assert_called_once_with(GITHUB_BASE_URL, git.OAUTH_TOKEN, ORG_NAME)
+    api.assert_called_once_with(GITHUB_BASE_URL, TOKEN, ORG_NAME)
 
 
 def assert_config_args(parser, parsed_args):

@@ -93,6 +93,10 @@ def parse_args(sys_args: Iterable[str]
     parser = _create_parser()
     args = parser.parse_args(sys_args)
 
+    # environment token overrides config
+    token = os.getenv('REPOMATE_OAUTH') or (args.token
+                                            if 'token' in args else '')
+
     if getattr(args, SUB) == VERIFY_PARSER:
         # quick parse for verify connection
         return tuples.Args(
@@ -101,7 +105,9 @@ def parse_args(sys_args: Iterable[str]
             github_base_url=args.github_base_url,
             user=args.user,
             traceback=args.traceback,
-            master_org_name=args.master_org_name if 'master_org_name' in args else None,
+            master_org_name=args.master_org_name
+            if 'master_org_name' in args else None,
+            token=token,
         ), None  # only here is return None for api allowed
     elif getattr(args, SUB) == SHOW_CONFIG_PARSER:
         return tuples.Args(subparser=SHOW_CONFIG_PARSER), None
@@ -109,7 +115,7 @@ def parse_args(sys_args: Iterable[str]
         # only if clone is chosen should plugins be able to hook in
         plug.manager.hook.parse_args(args=args)
 
-    api = _connect_to_api(args.github_base_url, git.OAUTH_TOKEN, args.org_name)
+    api = _connect_to_api(args.github_base_url, token, args.org_name)
 
     # TODO remove this dirty hack, needed as add-to-teams has no repo args
     if getattr(args, SUB) == ADD_TO_TEAMS_PARSER:
@@ -146,6 +152,7 @@ def parse_args(sys_args: Iterable[str]
         show_body=args.show_body if 'show_body' in args else None,
         author=args.author if 'author' in args else None,
         num_reviews=args.num_reviews if 'num_reviews' in args else None,
+        token=token,
     )
 
     return parsed_args, api
@@ -192,8 +199,8 @@ def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
     elif args.subparser == VERIFY_PARSER:
         with _sys_exit_on_expected_error():
             github_api.GitHubAPI.verify_settings(
-                args.user, args.org_name, args.github_base_url,
-                git.OAUTH_TOKEN, args.master_org_name)
+                args.user, args.org_name, args.github_base_url, args.token,
+                args.master_org_name)
     elif args.subparser == LIST_ISSUES_PARSER:
         with _sys_exit_on_expected_error():
             command.list_issues(
@@ -552,7 +559,8 @@ def _create_base_parsers():
         help="Name of the organization to which repos should be added.",
         type=str,
         required=is_required('org_name'),
-        default=default('org_name'))
+        default=default('org_name'),
+    )
     base_parser.add_argument(
         '-g',
         '--github-base-url',
@@ -560,7 +568,16 @@ def _create_base_parsers():
         "Base url to a GitHub v3 API. For enterprise, this is usually `https://<HOST>/api/v3`",
         type=str,
         required=is_required('github_base_url'),
-        default=default('github_base_url'))
+        default=default('github_base_url'),
+    )
+    base_parser.add_argument(
+        '-t',
+        '--token',
+        help="OAUTH token for the GitHub instance. Can also be specified in "
+        "the `REPOMATE_OAUTH` environment variable.",
+        type=str,
+        default=default('token'),
+    )
 
     base_parser.add_argument(
         '-tb',

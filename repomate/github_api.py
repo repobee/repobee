@@ -121,6 +121,10 @@ class GitHubAPI:
     def org(self):
         return self._org
 
+    @property
+    def token(self):
+        return self.token
+
     def get_teams_in(self, team_names: Iterable[str]
                      ) -> Generator[github.Team.Team, None, None]:
         """Get all teams that match any team name in the team_names iterable.
@@ -533,7 +537,7 @@ class GitHubAPI:
         if not token:
             raise exception.BadCredentials(
                 msg="token is empty. Check that REPOMATE_OAUTH environment "
-                "variable is properly set.")
+                "variable is properly set, or supply the `--token` option.")
 
         util.validate_types(
             base_url=(base_url, str),

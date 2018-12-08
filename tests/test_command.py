@@ -1,7 +1,7 @@
 import sys
 import os
 import pytest
-from unittest.mock import patch, MagicMock, Mock, call, ANY
+from unittest.mock import patch, MagicMock, Mock, call, ANY, PropertyMock
 
 import repomate
 from repomate import command
@@ -17,6 +17,7 @@ from repomate_plug import HookResult, repomate_hook, Status
 from_magic_mock_issue = pytest.functions.from_magic_mock_issue
 to_magic_mock_issue = pytest.functions.to_magic_mock_issue
 User = pytest.classes.User
+TOKEN = pytest.constants.TOKEN
 
 RANDOM_DATE = pytest.functions.RANDOM_DATE
 
@@ -134,6 +135,7 @@ def api_mock(request, mocker):
     mock.get_issues = MagicMock(
         spec='repomate.github_api.GitHubAPI.get_issues',
         side_effect=_get_issues)
+    type(mock).token = PropertyMock(return_value=TOKEN)
     return mock
 
 
@@ -259,7 +261,7 @@ class TestSetupStudentRepos:
 
     def test_raises_on_clone_failure(self, master_urls, students, git_mock,
                                      api_mock):
-        git_mock.clone_single.side_effect = lambda url, cwd: \
+        git_mock.clone_single.side_effect = lambda url, tokwn, cwd: \
             raise_(exception.CloneFailedError("clone failed", 128, b"some error", url))()
 
         with pytest.raises(exception.CloneFailedError) as exc_info:
@@ -299,7 +301,7 @@ class TestSetupStudentRepos:
                         ensure_teams_and_members_mock, tmpdir):
         """Test that setup_student_repos makes the correct function calls."""
         expected_clone_calls = [
-            call(url, cwd=str(tmpdir)) for url in master_urls
+            call(url, TOKEN, cwd=str(tmpdir)) for url in master_urls
         ]
         expected_ensure_teams_arg = {
             student: [student]
@@ -312,7 +314,8 @@ class TestSetupStudentRepos:
         api_mock.ensure_teams_and_members.assert_called_once_with(
             expected_ensure_teams_arg)
         api_mock.create_repos.assert_called_once_with(repo_infos)
-        git_mock.push.assert_called_once_with(push_tuples, user=USER)
+        git_mock.push.assert_called_once_with(
+            push_tuples, user=USER, token=TOKEN)
 
     @pytest.mark.skip(msg="Check iterable contents is not yet implemented")
     def test_raises_on_invalid_iterable_contents(self):
@@ -402,7 +405,8 @@ class TestUpdateStudentRepos:
 
         command.update_student_repos(master_urls, students, USER, api_mock)
 
-        git_mock.push.assert_called_once_with(push_tuples, user=USER)
+        git_mock.push.assert_called_once_with(
+            push_tuples, user=USER, token=TOKEN)
 
     def test_happy_path(self, git_mock, master_urls, students, api_mock,
                         push_tuples, rmtree_mock, tmpdir):
@@ -411,7 +415,7 @@ class TestUpdateStudentRepos:
         NOTE: Ignores the git mock.
         """
         expected_clone_calls = [
-            call(url, cwd=str(tmpdir)) for url in master_urls
+            call(url, TOKEN, cwd=str(tmpdir)) for url in master_urls
         ]
 
         api_mock.get_repo_urls.side_effect = lambda repo_names: \
@@ -420,7 +424,8 @@ class TestUpdateStudentRepos:
         command.update_student_repos(master_urls, students, USER, api_mock)
 
         git_mock.clone_single.assert_has_calls(expected_clone_calls)
-        git_mock.push.assert_called_once_with(push_tuples, user=USER)
+        git_mock.push.assert_called_once_with(
+            push_tuples, user=USER, token=TOKEN)
 
     @pytest.mark.nogitmock
     @pytest.mark.parametrize(
@@ -449,7 +454,7 @@ class TestUpdateStudentRepos:
 
         api_mock.get_repo_urls.side_effect = lambda repo_names: [generate_url(name) for name in repo_names]
 
-        async def raise_specific(pt, user):
+        async def raise_specific(pt, user, token):
             if pt.repo_url in fail_repo_urls:
                 raise exception.PushFailedError("Push failed", 128,
                                                 b"some error", pt.repo_url)
@@ -495,7 +500,7 @@ class TestUpdateStudentRepos:
 
         api_mock.get_repo_urls.side_effect = lambda repo_names: [generate_url(name) for name in repo_names]
 
-        async def raise_specific(pt, branch):
+        async def raise_specific(pt, token, branch):
             if pt.repo_url in fail_repo_urls:
                 raise exception.PushFailedError("Push failed", 128,
                                                 b"some error", repo_url)
@@ -648,7 +653,7 @@ class TestCloneRepos:
         ]
         command.clone_repos(master_names, students, api_mock)
 
-        git_mock.clone.assert_called_once_with(expected_urls)
+        git_mock.clone.assert_called_once_with(expected_urls, TOKEN)
 
     def test_executes_act_hooks(self, api_mock, git_mock, master_names,
                                 students, act_hook_mocks):
@@ -701,7 +706,7 @@ class TestMigrateRepo:
             for name, url in zip(master_names, expected_push_urls)
         ]
         expected_clone_calls = [
-            call(url, cwd=str(tmpdir)) for url in master_urls
+            call(url, TOKEN, cwd=str(tmpdir)) for url in master_urls
         ]
 
         api_mock.create_repos.side_effect = lambda infos: [GENERATE_REPO_URL(info.name) for info in infos]
@@ -716,7 +721,8 @@ class TestMigrateRepo:
         api_mock.ensure_teams_and_members.assert_called_once_with({
             command.MASTER_TEAM: []
         })
-        git_push_mock.assert_called_once_with(expected_pts, user=USER)
+        git_push_mock.assert_called_once_with(
+            expected_pts, user=USER, token=TOKEN)
 
 
 class TestListIssues:
