@@ -123,7 +123,7 @@ class GitHubAPI:
 
     @property
     def token(self):
-        return self.token
+        return self._token
 
     def get_teams_in(self, team_names: Iterable[str]
                      ) -> Generator[github.Team.Team, None, None]:
