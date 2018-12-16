@@ -13,3 +13,4 @@
    clone
    peer
    plugins
+   migrate

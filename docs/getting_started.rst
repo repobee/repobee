@@ -1,25 +1,25 @@
 .. _getting_started:
 
-Getting started (the ``show-config``, ``verify-settings``, ``migrate`` and ``setup`` commands)
-**********************************************************************************************
+Getting started (the ``show-config``, ``verify-settings`` and ``setup`` commands)
+*********************************************************************************
 .. important::
 
     This guide assumes that the user has access to a ``bash`` shell, or is
     tech-savvy enough to translate the instructions into some other shell
     environment.
 
-The basic workflow of ``repomate`` is best described by example. In this section,
+The basic workflow of repomate is best described by example. In this section,
 I will walk you through how to set up an Organization_ with master and student
 repositories by showing every single step I would perform myself. The basic
 workflow can be summarized in the following steps:
 
 1. Create an organization (the target organization).
-2. Configure ``repomate`` for the target organization.
+2. Configure repomate for the target organization.
 3. Verify settings.
 4. Migrate master repositories into the target organization.
 5. Create one copy of each master repo for each student.
 
-There is more to ``repomate``, such as opening/closing issues, updating student
+There is more to repomate, such as opening/closing issues, updating student
 repos and cloning repos in batches, but here we will just look at the bare
 minimum to get started. Now, let's delve into these steps in greater detail.
 
@@ -44,47 +44,15 @@ target organization.
 
 .. _configure_repomate:
 
-Configure ``repomate`` for the target organization
-==================================================
-For the tool to work at all, an environment variable called ``REPOMATE_OAUTH``
-must contain an OAUTH2 token to whichever GitHub instance you intend to use.
-See the `GitHub OAUTH docs`_ for how to create a token. The token should have
-the ``repo`` and ``admin:org`` scopes. Setting the token is easy in ``bash``.
-Just add the following line to your ``bash`` config file (``~/.bashrc`` on most
-Linux distros, and ``~/.bash_profile`` on OSX).
-
-.. code-block:: bash
-    
-    export REPOMATE_OAUTH=<SUPER SECRET TOKEN>
-
-When that's added, either source the file with ``source path/to/bash/config``
-or simply start another ``bash`` shell, which will automatically read the
-file. Verify that the token is there by typing:
-
-.. code-block:: bash
-
-    $ echo $REPOMATE_OAUTH
-
-You should see your token in the output. 
-
-.. note::
-
-    Putting your OAUTH token in the bash config file is just a suggestion, and
-    by no means a requirement. The only requirement is that the
-    `REPOMATE_OAUTH` environment variable contains the token when you run
-    `repomate`.
-
-.. note::
-
-    Whenever you see a ``$`` sign preceeding a line in a code block, you are meant
-    to type what's *after* the ``$`` sign into your shell. Here, you should type
-    only ``echo $REPOMATE_OAUTH``, for example.
-
-With that out of the way, let's create a configuration file. This is not
-technically required, but if we don't, we'll have to supply things like
-username and url to GitHub instance's API on the command line for almost every
-command. We can use the ``show-config`` command to figure out where to put the
-config file.
+Configure repomate for the target organization (``show-config`` and ``verify-settings``)
+========================================================================================
+For the tool to work at all, it needs to be provided with an OAUTH2 token to
+whichever GitHub instance you intend to use. See the `GitHub OAUTH docs`_ for
+how to create a token. The token should have the ``repo`` and ``admin:org``
+scopes. While we can set this token in an environment variable (see
+:ref:`configuration`), it's more convenient to just put it in the configuration
+file, as we will put other default values in there.  We can use the
+``show-config`` command to figure out where to put the config file.
 
 .. code-block:: bash
     
@@ -104,6 +72,8 @@ should look something like this:
     github_base_url = https://some-enterprise-host/api/v3
     user = slarse
     org_name = repomate-demo
+    master_org_name = master-repos
+    token = SUPER_SECRET_TOKEN
 
 Now, you need to substitute in some of your own values in place of mine.
 
@@ -114,6 +84,19 @@ Now, you need to substitute in some of your own values in place of mine.
       with ``https://api.github.com``.
 * Replace ``slarse`` with your GitHub username.
 * Replace ``repomate-demo`` with whatever you named your target organization.
+* Replace ``SUPER_SECRET_TOKEN`` with your OAUTH token.
+* Replace ``master_org_name`` with the name of the organization with your master
+  repos.
+  - It you keep the master repos in the target organization or locally, **remove
+  this option**.
+
+.. important::
+
+    The rest of this guide assumes the simplest possible setup of _not_ having
+    a separate master organization, but it is good practice to have the master
+    repos separate for the sake of maintainability. If the master organization
+    is configured in the config file, it won't matter for any but the
+    ``migrate`` command (which you don't need then, anyway).
 
 That's it for configuration, and we can check that the file is correctly found
 and parsed by running ``show-config`` again:
@@ -128,9 +111,11 @@ and parsed by running ``show-config`` again:
     github_base_url = https://some-enterprise-host/api/v3
     user = slarse
     org_name = repomate-demo
+    master_org_name = master-repos
+    token = SUPER_SECRET_TOKEN
     -----------------END CONFIG FILE------------------
 
-Verify Settings
+Verify settings
 ===============
 Now that everything is set up, it's time to verify all of the settings. Given
 that you have a configuration file that looks something like the one above,
@@ -148,92 +133,36 @@ you can simply run the ``verify-settings`` command without any options.
     [INFO] SUCCESS: found organization test-tools
     [INFO] verifying that user slarse is an owner of organization repomate-demo
     [INFO] SUCCESS: user slarse is an owner of organization repomate-demo
+    [INFO] trying to fetch organization master-repos ...
+    [INFO] SUCCESS: found organization master-repos
+    [INFO] verifying that user slarse is an owner of organization master-repos
+    [INFO] SUCCESS: user slarse is an owner of organization master-repos
     [INFO] GREAT SUCCESS: All settings check out!
 
 If any of the checks fail, you should be provided with a semi-helpful error
 message. When all checks pass and you get ``GREAT SUCCESS``, move on to the
 next section!
 
-Migrate Master Repositories Into the Target Organization
-========================================================
-This step sounds complicated, but it's actually very easy, and can be performed
-with a single ``repomate`` command. There is however a pre-requisite that must
-be fulfilled. You must either
-
-* Have local copies of your master repos.
-
-or
-
-* Have all master repos in the same GitHub instance as your target organization.
-
-Assuming we have the repos ``master-repo-1`` and ``master-repo-2`` in the
-current working directory (i.e. local repos), all we have to do is this:
-
-.. code-block:: bash
-
-    $ repomate migrate -mn master-repo-1 master-repo-2
-    [INFO] created team master_repos
-    [INFO] cloning into file:///some/directory/path/master-repo-1
-    [INFO] cloning into file:///some/directory/path/master-repo-2
-    [INFO] created repomate-demo/master-repo-1
-    [INFO] created repomate-demo/master-repo-2
-    [INFO] pushing, attempt 1/3
-    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/master-repo-2 master
-    [INFO] done!
-
-There are a few things to note here. First of all, the team ``master_repos`` is
-created. This only happens the first time ``migrate`` is run on a new
-organization. As the name suggests, this team houses all of the master repos.
-Each master repo that is migrated with the ``migrate`` command is added to this
-team, so they can easily be found at a later time. It may also be confusing that
-the local repos are being cloned (into a temporary directory). This is simply
-an implementation detail that does not need much thinking about. Finally, the
-local repos are pushed to the ``master`` branch of the remote repo. This command
-is perfectly safe to run several times, in case you think you missed something.
-Running the same thing again yields the following output:
-
-
-.. code-block:: bash
-
-    $ repomate migrate -mn master-repo-1 master-repo-2
-    [INFO] cloning into file:///some/directory/path/master-repo-1
-    [INFO] cloning into file:///some/directory/path/master-repo-2
-    [INFO] repomate-demo/master-repo-1 already exists
-    [INFO] repomate-demo/master-repo-2 already exists
-    [INFO] pushing, attempt 1/3
-    [INFO] https://some-enterprise-host/repomate-demo/master-repo-1 master is up-to-date
-    [INFO] https://some-enterprise-host/repomate-demo/master-repo-2 master is up-to-date
-    [INFO] done!
-
-In fact, all ``repomate`` commands that deal with pushing to or cloning from
-repos in some way are safe to run over and over. This is mostly because of
-how ``git`` works, and has little to do with ``repomate`` itself. Now that
-our master repos are migrated, we can move on to setting up the student repos!
-
-.. note::
-
-    The ``migrate`` command can also be used to migrate repos from somewhere
-    on the GitHub instance into the target organization. To do this, use the
-    ``-mu`` option and provide the urls, instead of ``-mn`` with local paths.
-    For example, given a repo at
-    ``https://some-enterprise-host/other-org/master-repo-1``, it can be
-    migrated into ``repomate-demo`` by typing
-
-    .. code-block:: bash
-
-        $ repomate migrate -mu https://some-enterprise-host/other-org/master-repo-1
+Setting up master repos
+=======================
+How you do this will depend on where you want to have your master repos. I
+recommend having a separate, persistent organization so that you can work on
+repos across course rounds. If you already have a master organization with your
+master repos set up somewhere, and ``master_org_name`` is specified in the
+config, you're good to go. If you need to migrate repos into the target
+organization (i.e. you are not using a master organization), see the
+:ref:`migrate` section. For all commands but the ``migrate`` command, the way
+you set this up does not matter as repomate commands go.
 
 .. _setup:
 
-Setup Student Repositories
+Setup student sepositories
 ==========================
-Now that the master repos have been added to the target organization, it's time
-to create the student repos. While student usernames *can* be specified on the
-command line, it's often convenient to have them written down in a file
-instead. Let's pretend I have three students with usernames ``spam``, ``ham``
-and ``eggs``. I'll simply create a file called ``students.txt`` and type each
-username on a separate line.
+Now that the master repos are set up, it's time to create the student repos.
+While student usernames *can* be specified on the command line, it's often
+convenient to have them written down in a file instead. Let's pretend I have
+three students with usernames ``spam``, ``ham`` and ``eggs``. I'll simply create
+a file called ``students.txt`` and type each username on a separate line.
 
 .. code-block:: bash
 
@@ -241,13 +170,14 @@ username on a separate line.
     ham
     eggs
 
-I want to create one student repo for each student per master repo. The repo
-names will be on the form ``<username>-<master-repo-name>``, guaranteeing their
-uniqueness. Each student will also be added to a team (which bears the same
-name as the student's user), and it is the team that is allowed access to the
-student's repos, and not the student's actual user. That all sounded fairly
-complex, but again, it's as simple as issuing a single command with
-``repomate``.
+An absolute file path to this file can be added to the config file with the
+``students_file`` option (see :ref:`config`). Now, I want to create one student
+repo for each student per master repo. The repo names will be on the form
+``<username>-<master-repo-name>``, guaranteeing their uniqueness. Each student
+will also be added to a team (which bears the same name as the student's user),
+and it is the team that is allowed access to the student's repos, and not the
+student's actual user. That all sounded fairly complex, but again, it's as
+simple as issuing a single command with ``repomate``.
 
 .. code-block:: bash
     
