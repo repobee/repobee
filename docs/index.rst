@@ -27,6 +27,7 @@ information.
    install
    userguide
    configuration
+   cli
    code
 
 

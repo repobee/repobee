@@ -1,38 +1,31 @@
 .. _fundamentals:
 
-Fundamentals
+Introduction
 ************
-``repomate`` is an opinionated tool for managing large amounts of ``GitHub``
-repositories for higher education courses. It was created as a result of the
-old teachers_pet_ tool not fulfilling our every desire, as well as ``GitHub``'s
-migration over to the browser based `GitHub Classroom`_, which did not quite
-strike our fancy. ``repomate`` is essentially a newer (and hopefully better)
-version of ``teachers_pet``, written in Python (which is commonly used at KTH)
-instead of Ruby (which is barely used at all).
+repomate is an opinionated tool for managing anything from a handful to
+thousands of GitHub repositories for higher education courses. It was created as
+the old teachers_pet_ tool was getting long in the tooth, and the new `GitHub
+Classroom`_ wasn't quite what we wanted (we like our command line apps).
+repomate is heavily inspired by teachers_pet, but tries to both make for a more
+complete and streamlined experience.
 
-Philosophy and Goals
+Philosophy and goals
 ====================
-The primary goal of ``repomate`` is to lower the entry level for incorporating
-``git`` and ``GitHub`` into higher education coursework, hopefully opening up
+The primary goal of repomate is to lower the bar for incorporating
+git and GitHub into higher education coursework, hopefully opening up
 the wonderful world of version control to teachers who may not be subject
-experts (and to their students). As such, ``repomate`` is firmly seated in the
-convention over configuration camp, favoring highly opinionated workflows that
-are easy to get started with, rather than highly configurable ones. The target
-audience is primarily teachers seeking to incorporate ``git`` and ``GitHub``
-into their courses, but lack the time or expertise to build their own
-automation system from scratch.
+experts (and to their students). For new users, repomate provides both a
+tool and an opinionated workflow to adopt. For the more experienced user,
+there is also opportunity to customize repomate using its plugin system,
+which I am looking to expand even more. repomate is primarily geared toward
+course administrators looking to generate repos for their students. Many
+features are however highly useful to teaching assistants, such as the ability
+to clone repos in bulk and perform arbitrary tasks on them (tasks can be
+implemented as plugins, see :ref:`plugins`).
 
-.. note::
-
-    Is there a difference between ``git`` and ``GitHub``? Yes! ``git`` is the
-    version control system, and ``GitHub`` is a company that hosts ``git``
-    servers on ``github.com``, and provides enterprise software for hosting
-    your own ``GitHub`` instances. The terms are often intermixed, but the
-    distinction is important.
-
-Terminology
-===========
-Some terms occur frequently in ``repomate`` and are best defined up front.
+Key concepts
+============
+Some terms occur frequently in repomate and are best defined up front.
 Some of the descriptions may not click entirely before reading the
 :ref:`userguide` section, so quickly browsing through these definitions and
 re-visiting them when needed is probably the best course of action.
@@ -41,10 +34,15 @@ re-visiting them when needed is probably the best course of action.
   round.
 * *Master repository*: Or *master repo*, is a template repository upon which
   student repositories are based.
+* *Master organization*: The master organization is an optional organization to
+  keep master repos in. The idea is to be able to have the master repos in this
+  organization to avoid having to migrate them to the target organization for
+  each course round. It is highly recommended to use a master organization if
+  master repos are being worked on across course rounds.
 * *Student repository*: Or *student repo*, refers to a *copy* of a master repo
   for some specific student.
 * *GitHub instance*: A hosted GitHub service. This can be for example
-  ``https://github.com`` or any Enterprise host.
+  *https://github.com* or any Enterprise host.
 
 .. _conventions:
 
@@ -52,22 +50,24 @@ Conventions
 ===========
 The following conventions are fundamental to working with ``repomate``.
 
-* For each course and course round, use one Organization_.
+* For each course and course round, use one target Organization_.
 * Any user of ``repomate`` has unrestricted access to the target organization
   (i.e. is an owner).
-* Master repositories should be available as private repositories in the
-  target organization (using local repos on the current machine is also *ok*
-  and generally works well).
-* Master repositories are added to the ``master_repos`` team.
+* Master repos should be available as private repos in one of three places:
+  - The master organization (recommended if the master repos are being
+  maintained and improved across course rounds).
+  - The target organization. If you are doing a trial run or have trivial
+  (empty) master repos, this may be a good option.
+  - Locally in the current working directory.
 * Student repositories are copies of the default branches of the master
   repositories (i.e. ``--single-branch`` cloning is used by default). That is,
   until students make modifications.
-* Student repositories are named ``<username>-<master_repo_name>`` to guarantee
+* Student repositories are named *<username>-<master_repo_name>* to guarantee
   unique repo names.
 * Each student is assigned to a team with the same name as the student's
   username. It is the team that is granted access to the repositories, not
   the student's actual user.
-* Student teams have ``push`` access to the repositories, but not
+* Student teams have push access to the repositories, but not
   administrative access (i.e. students can't delete their own repos).
 
 .. note::
@@ -75,11 +75,11 @@ The following conventions are fundamental to working with ``repomate``.
     Few of these conventions are actually enforced, and there are ways around
     almost every single one. However, with the exception of the *one
     organization per course round* convention, which must be ensured manually,
-    ``repomate`` will automatically adhere to the other conventions. Although
-    ``repomate`` does adhere to the conventions, there is no way to stop users
+    repomate will automatically adhere to the other conventions. Although
+    repomate does adhere to the conventions, there is no way to stop users
     from breaking them using e.g. the GitHub web interface, manually performing
     master repo migrations etc. Straying form the conventions may cause
-    ``repomate`` to behave unexpectedly.
+    repomate to behave unexpectedly.
 
 .. _teachers_pet: https://github.com/education/teachers_pet
 .. _GitHub Classroom: https://classroom.github.com/

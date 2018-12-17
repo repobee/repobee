@@ -1,6 +1,6 @@
 .. _update:
 
-Updating Student Repositories (the ``update`` command)
+Updating student repositories (the ``update`` command)
 ******************************************************
 Sometimes, we find ourselves in situations where it is necessary to push
 updates to student repositories after they have been published. As long as
@@ -10,7 +10,7 @@ students have started working on their repos, then we have a problem.
 Let's start out with the easy case where no students have worked on their
 repos.
 
-Scenario 1: Repos are Unchanged
+Scenario 1: Repos are unchanged
 -------------------------------
 Let's say that we've updated ``master-repo-1``, and that users ``spam``,
 ``ham`` and ``eggs`` should get the updates. Then, we simply run
@@ -39,7 +39,7 @@ started working on ``ham-master-repo-1``?
     can be used with either the ``-s|--students`` or the ``-sf|--students-file``
     options.
 
-Scenario 2: At Least 1 Repo Altered
+Scenario 2: At least 1 repo altered
 -----------------------------------
 Let's assume now that ``ham`` has started working on the repo. Since we do not
 ``force`` pushes (that would be irresponsible!) to the student repos, the

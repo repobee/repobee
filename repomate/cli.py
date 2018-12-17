@@ -273,7 +273,12 @@ def _add_peer_review_parsers(base_parsers, subparsers):
     check_review_progress = subparsers.add_parser(
         CHECK_REVIEW_PROGRESS_PARSER,
         description=
-        "Check which students have opened review review issues in their assigned repos.",
+        "Check which students have opened review review issues in their "
+        "assigned repos. As it is possible for students to leave the peer "
+        "review teams on their own, the command checks that each student is "
+        "assigned to the expected amound of teams. There is currently no way "
+        "to check if students have been swapped around, so using this command "
+        "fow grading purposes is not recommended.",
         help=(
             "Fetch all peer review teams for the specified student repos, and "
             "check which assigned reviews have been done (i.e. which issues "
@@ -392,7 +397,10 @@ def _create_parser():
 
     parser = argparse.ArgumentParser(
         prog='repomate',
-        description='A CLI tool for administrating student repositories.')
+        description=
+        "A CLI tool for administering large amounts of git repositories on "
+        "GitHub instances. See the full documentation at "
+        "https://repomate.readthedocs.io")
     parser.add_argument(
         '-v',
         '--version',
@@ -418,9 +426,9 @@ def _add_subparsers(parser):
     repo_name_parser.add_argument(
         '-mn',
         '--master-repo-names',
-        help=("One or more names of master repositories. Names must either "
-              "refer to local directories, or to master repositories in the "
-              "target organization."),
+        help="One or more names of master repositories. Names must either "
+        "refer to local directories, or to master repositories in the "
+        "target organization.",
         type=str,
         required=True,
         nargs='+')
@@ -440,14 +448,12 @@ def _add_subparsers(parser):
         SETUP_PARSER,
         help="Setup student repos.",
         description=
-        ("Setup student repositories based on master repositories. This "
-         "command performs three primary actions: sets up the student teams, "
-         "creates one student repository for each master repository and "
-         "finally pushes the master repo files to the corresponding student "
-         "repos. It is perfectly safe to run this command several times, as "
-         "any previously performed step will simply be skipped. The master "
-         "repo is assumed to be located in the target organization, and will "
-         "be temporarily cloned to disk for the duration of the command. "),
+        "Setup student repositories based on master repositories. This "
+        "command performs three primary actions: sets up the student teams, "
+        "creates one student repository for each master repository and "
+        "finally pushes the master repo files to the corresponding student "
+        "repos. It is perfectly safe to run this command several times, as "
+        "any previously performed step will simply be skipped.",
         parents=[
             base_user_parser,
             base_student_parser,
@@ -458,10 +464,7 @@ def _add_subparsers(parser):
     update = subparsers.add_parser(
         UPDATE_PARSER,
         help="Update existing student repos.",
-        description=(
-            "Push changes from master repos to student repos. The master repos "
-            "must be available within the organization. They can be added "
-            "manually, or with the `migrate-repos` command."),
+        description="Push changes from master repos to student repos.",
         parents=[
             base_user_parser,
             base_student_parser,
@@ -481,12 +484,13 @@ def _add_subparsers(parser):
         MIGRATE_PARSER,
         help="Migrate master repositories into the target organization.",
         description=
-        ("Migrate master repositories into the target organization. The repos "
-         "must either be local on disk (and specified with `-mn`), or "
-         "somewhere in the target GitHub instance (and specified with `-mu`). "
-         "Migrate repos are added to the `{}` team.".format(command.MASTER_TEAM) + \
-         "NOTE: `migrate-repos` can also be used to update already migrated "
-         "repos, by simply running the command again."),
+        "Migrate master repositories into the target organization. The repos "
+        "must either be local on disk (and specified with `-mn`), or "
+        "somewhere in the target GitHub instance (and specified with `-mu`). "
+        "Migrate repos are added to the `{}` team. "
+        "`migrate-repos` can also be used to update already migrated "
+        "repos, by simply running the command again.".format(
+            command.MASTER_TEAM),
         parents=[base_parser, base_user_parser])
     names_or_urls = migrate.add_mutually_exclusive_group(required=True)
     names_or_urls.add_argument(
@@ -536,10 +540,11 @@ def _add_subparsers(parser):
         VERIFY_PARSER,
         help="Verify your settings, such as the base url and the OAUTH token.",
         description=
-        ("Verify all settings. Performs the following checks, in order: user "
+        ("Verify core settings. Performs the following checks, in order: user "
          "exists (implicitly verifies base url), oauth scopes (premissions of "
          "the OAUTH token), organization exists, user is an owner of the "
-         "organization. If any one of the checks fails, the verification is "
+         "organization (for both target org and master org if the latter is "
+         "specified). If any one of the checks fails, the verification is "
          "aborted and an error message is displayed."),
         parents=[base_parser, base_user_parser, master_org_parser])
 
@@ -556,7 +561,7 @@ def _create_base_parsers():
     base_parser.add_argument(
         '-o',
         '--org-name',
-        help="Name of the organization to which repos should be added.",
+        help="Name of the target organization",
         type=str,
         required=is_required('org_name'),
         default=default('org_name'),
@@ -582,8 +587,7 @@ def _create_base_parsers():
     base_parser.add_argument(
         '-tb',
         '--traceback',
-        help=
-        "Let any exceptions propagate up so that the full traceback can be viewed.",
+        help="Show the full traceback of critical exceptions.",
         action='store_true',
     )
     # base parser for when student lists are involved
@@ -621,8 +625,8 @@ def _create_base_parsers():
         '-mo',
         '--master-org-name',
         help="Name of the organization containing the master repos. "
-        "Defaults to the same value as `-o|--org-name` if not specified "
-        "both on command line or in config file",
+        "Defaults to the same value as `-o|--org-name` if left unspecified. "
+        "Note that config values take precedence over this default.",
         default=default('master_org_name'),
     )
 
@@ -737,8 +741,8 @@ def parse_plugins(sys_args: Tuple[str]):
         sys_args: Command line arguments.
     """
     parser = argparse.ArgumentParser(
-        prog='repomate',
-        description='A CLI tool for administrating student repositories.')
+        prog='repomate', description="plugin pre-parser for repomate.")
+
     mutex_grp = parser.add_mutually_exclusive_group(required=True)
     mutex_grp.add_argument(
         '-p',
