@@ -9,3 +9,4 @@ repomate-plug
 sphinx>=1.8.2
 sphinx-autodoc-typehints
 sphinx_rtd_theme
+sphinx-argparse
