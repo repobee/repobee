@@ -399,25 +399,6 @@ class TestGetRepoUrls:
 
         assert sorted(urls) == sorted(expected_urls)
 
-    @pytest.mark.skip(
-        msg=
-        "not currently relevant as repo urls are generated, rather than fetched"
-    )
-    def test_some_repos_found(self, repos, api):
-        found_repo_names = [repo.name for repo in repos[:2]]
-        not_found_repo_names = [repo.name for repo in repos[2:]]
-        expected_urls = [
-            GENERATE_REPO_URL(name, ORG_NAME) for name in found_repo_names
-        ]
-        api_wrapper_mock.get_repos.side_effect = \
-            lambda repo_names: [repo for repo in repos if repo.name in found_repo_names]
-
-        urls, not_found = api.get_repo_urls(found_repo_names +
-                                            not_found_repo_names)
-
-        assert urls == expected_urls
-        assert sorted(not_found) == sorted(not_found_repo_names)
-
 
 class TestOpenIssue:
     """Tests for open_issue."""

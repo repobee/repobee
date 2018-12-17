@@ -212,10 +212,11 @@ Note that there was a ``[WARNING]`` message for the username ``eggs``: the user
 does not exist. At KTH, this is common, as many (sometimes most) first-time
 students will not have created their GitHub accounts until sometime after the
 course starts.  These students will still have their repos created, but the
-users need to be added to their teams at a later time (for example with the
-``repomate add-to-teams`` command). This is one reason for why we use teams for
-access privileges: it's easy to set everything up even when the students have
-yet to create their accounts (given that their usernames are pre-determined).
+users need to be added to their teams at a later time (to do this, simply run
+the ``setup`` command again for these students, once they have created
+accounts). This is one reason why we use teams for access privileges: it's
+easy to set everything up even when the students have yet to create their
+accounts (given that their usernames are pre-determined).
 
 And that's it, the organization is primed and the students should have access
 to their repositories!

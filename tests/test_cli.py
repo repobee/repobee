@@ -118,7 +118,6 @@ def command_all_raise_mock(command_mock, api_class_mock, request):
     def raise_(*args, **kwargs):
         raise request.param
 
-    command_mock.add_students_to_teams.side_effect = raise_
     command_mock.setup_student_repos.side_effect = raise_
     command_mock.update_student_repos.side_effect = raise_
     command_mock.open_issue.side_effect = raise_
@@ -158,15 +157,6 @@ class TestDispatchCommand:
         """Test that any of the expected exceptions results in SystemExit."""
         with pytest.raises(SystemExit) as exc_info:
             cli.dispatch_command(parsed_args_all_subparsers, api_instance_mock)
-
-    def test_add_students_to_teams_called_with_correct_args(
-            self, command_mock, api_instance_mock):
-        args = tuples.Args(cli.ADD_TO_TEAMS_PARSER, **VALID_PARSED_ARGS)
-
-        cli.dispatch_command(args, api_instance_mock)
-
-        command_mock.add_students_to_teams.assert_called_once_with(
-            args.students, api_instance_mock)
 
     def test_setup_student_repos_called_with_correct_args(
             self, command_mock, api_instance_mock):
@@ -345,8 +335,8 @@ class TestBaseParsing:
         assert parsed_args.token == TOKEN
 
     @pytest.mark.parametrize('parser', [cli.SETUP_PARSER, cli.UPDATE_PARSER])
-    def test_token_cli_arg_picked_up(self, mocker, api_instance_mock, students_file,
-                                     parser):
+    def test_token_cli_arg_picked_up(self, mocker, api_instance_mock,
+                                     students_file, parser):
         mocker.patch('os.getenv', return_value='')
         token = 'supersecretothertoken'
         parsed_args, _ = cli.parse_args([
@@ -532,26 +522,6 @@ class TestSetupAndUpdateParsers:
 
         assert_base_push_args(parsed_args, api_class_mock)
 
-    @pytest.mark.skip(msg="get_repo_urls no longer checks if repos exist, "
-                      "have to implement external check if needed")
-    def test_raises_when_master_repo_is_not_found(self, api_instance_mock,
-                                                  parser):
-        """Tests that a ParseError is raised if any master repo (specified by
-        name) is not found.
-        """
-        not_found = REPO_NAMES[-1]
-
-        # TODO this is incorrect, get_repo_urls generates urls for all repo names
-        # and does not check if they exist
-        api_instance_mock.get_repo_urls.side_effect = lambda repo_names, _:\
-                ([name for name in repo_names if name != not_found], [not_found])
-
-        sys_args = [parser, *COMPLETE_PUSH_ARGS, '-s', *STUDENTS]
-
-        with pytest.raises(exception.ParseError) as exc_info:
-            cli.parse_args(sys_args)
-        assert "Could not find one or more master repos" in str(exc_info)
-
     def test_finds_local_repo(self, mocker, api_instance_mock, parser):
         """Tests that the parsers pick up local repos when they are not
         found in the organization.
@@ -673,8 +643,6 @@ class TestCloneParser:
              ['-s', STUDENTS_STRING, '-mn', *REPO_NAMES, '-i', ISSUE_PATH]),
             (cli.CLOSE_ISSUE_PARSER,
              ['-s', STUDENTS_STRING, '-mn', *REPO_NAMES, '-r', 'some-regex']),
-            (cli.ADD_TO_TEAMS_PARSER, ['-s', STUDENTS_STRING
-                                       ]),  # TODO fix add-to-teams or remove
             (cli.VERIFY_PARSER, ['-u', USER]),
             (cli.MIGRATE_PARSER, ['-u', USER, '-mn', *REPO_NAMES]),
         ])

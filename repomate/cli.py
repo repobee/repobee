@@ -52,7 +52,6 @@ SETUP_PARSER = 'setup'
 UPDATE_PARSER = 'update'
 CLONE_PARSER = 'clone'
 MIGRATE_PARSER = 'migrate'
-ADD_TO_TEAMS_PARSER = 'add-to-teams'
 OPEN_ISSUE_PARSER = 'open-issues'
 CLOSE_ISSUE_PARSER = 'close-issues'
 LIST_ISSUES_PARSER = 'list-issues'
@@ -67,7 +66,6 @@ PARSER_NAMES = (
     UPDATE_PARSER,
     CLONE_PARSER,
     MIGRATE_PARSER,
-    ADD_TO_TEAMS_PARSER,
     OPEN_ISSUE_PARSER,
     CLOSE_ISSUE_PARSER,
     LIST_ISSUES_PARSER,
@@ -117,22 +115,16 @@ def parse_args(sys_args: Iterable[str]
 
     api = _connect_to_api(args.github_base_url, token, args.org_name)
 
-    # TODO remove this dirty hack, needed as add-to-teams has no repo args
-    if getattr(args, SUB) == ADD_TO_TEAMS_PARSER:
-        args.master_repo_urls = []
-        master_urls, master_names = None, None
+    if 'master_repo_urls' in args and args.master_repo_urls:
+        master_urls = args.master_repo_urls
+        master_names = [util.repo_name(url) for url in master_urls]
     else:
-        if 'master_repo_urls' in args and args.master_repo_urls:
-            master_urls = args.master_repo_urls
-            master_names = [util.repo_name(url) for url in master_urls]
-        else:
-            master_org_name = args.org_name
-            if 'master_org_name' in args and args.master_org_name is not None:
-                master_org_name = args.master_org_name
-            master_names = args.master_repo_names
-            master_urls = _repo_names_to_urls(master_names, master_org_name,
-                                              api)
-        assert master_urls and master_names
+        master_org_name = args.org_name
+        if 'master_org_name' in args and args.master_org_name is not None:
+            master_org_name = args.master_org_name
+        master_names = args.master_repo_names
+        master_urls = _repo_names_to_urls(master_names, master_org_name, api)
+    assert master_urls and master_names
 
     parsed_args = tuples.Args(
         subparser=getattr(args, SUB),
@@ -167,10 +159,7 @@ def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
         args: A namedtuple containing parsed command line arguments.
         api: An initialized GitHubAPI instance.
     """
-    if args.subparser == ADD_TO_TEAMS_PARSER:
-        with _sys_exit_on_expected_error():
-            command.add_students_to_teams(args.students, api)
-    elif args.subparser == SETUP_PARSER:
+    if args.subparser == SETUP_PARSER:
         with _sys_exit_on_expected_error():
             command.setup_student_repos(args.master_repo_urls, args.students,
                                         args.user, api)
@@ -517,20 +506,6 @@ def _add_subparsers(parser):
         parents=[base_student_parser, repo_name_parser])
 
     plug.manager.hook.clone_parser_hook(clone_parser=clone)
-
-    add_to_teams = subparsers.add_parser(
-        ADD_TO_TEAMS_PARSER,
-        help=("Create student teams and add students to them. This command is "
-              "automatically executed by the `setup` command."),
-        description=
-        ("Create student teams and add students to them. This command is "
-         "automatically executed by the `setup` command. It exists mostly to "
-         "be able to quickly add students to their teams if their accounts "
-         "had not been activated at the time of creating the repositories. If "
-         "you are unsure if all the other steps have been performed (repo "
-         "creation, pushing files etc) for the students in question, run the "
-         "`setup` command instead."),
-        parents=[base_student_parser, base_parser])
 
     _add_issue_parsers([base_student_parser, repo_name_parser], subparsers)
     _add_peer_review_parsers([base_student_parser, repo_name_parser],

@@ -317,11 +317,6 @@ class TestSetupStudentRepos:
         git_mock.push.assert_called_once_with(
             push_tuples, user=USER, token=TOKEN)
 
-    @pytest.mark.skip(msg="Check iterable contents is not yet implemented")
-    def test_raises_on_invalid_iterable_contents(self):
-        pass
-
-
 class TestUpdateStudentRepos:
     """Tests for update_student_repos."""
 
@@ -357,56 +352,6 @@ class TestUpdateStudentRepos:
             command.update_student_repos(master_urls, students, user, api)
         assert type_error_arg in str(exc_info.value)
 
-    @pytest.mark.skip(
-        msg="as get_repo_urls generates urls instead of fetching, "
-        "a separate checking of each individual url is required for this feature"
-    )
-    def test_raises_when_no_student_repos_are_found(
-            self, master_urls, master_names, students, api_mock):
-        """Test that an APIError is raised if no student repos corresponding to
-        the master repos are found.
-        """
-        # only master urls are found
-        # TODO this is incorrect for how get_repo_urls currently works, it returns
-        # a single list now
-        api_mock.get_repo_urls.side_effect = lambda repo_names:\
-                ([GENERATE_REPO_URL(name)
-                    for name in repo_names
-                    if name in master_names], [])
-
-        with pytest.raises(exception.APIError) as exc_info:
-            command.update_student_repos(master_urls, students, USER, api_mock)
-
-    @pytest.mark.skip(msg="Checking if repos exist is not implemented anymore")
-    def test_does_not_raise_when_some_student_repos_are_not_found(
-            self, api_mock, git_mock, master_urls, master_names, students,
-            tmpdir):
-        """Test that update_student_repos does not raise if at least
-        one student repo is found.
-        """
-        # only one of the student repos is found, but all master repos are found
-        found_repo_name = util.generate_repo_name(students[2], master_names[1])
-        not_found_repo_names = [
-            util.generate_repo_name(students[i], master_names[j])
-            for i in range(len(students)) for j in range(len(master_names))
-            if not (i == 2 and j == 1)
-        ]
-        api_mock.get_repo_urls.side_effect = lambda repo_names: \
-                ([GENERATE_REPO_URL(name)
-                    for name in repo_names
-                    if name in (*master_names, found_repo_name)], not_found_repo_names)
-
-        push_tuples = [
-            git.Push(
-                local_path=os.path.join(str(tmpdir), master_names[1]),
-                repo_url=GENERATE_TEAM_REPO_URL(students[2], master_names[1]),
-                branch='master')
-        ]
-
-        command.update_student_repos(master_urls, students, USER, api_mock)
-
-        git_mock.push.assert_called_once_with(
-            push_tuples, user=USER, token=TOKEN)
 
     def test_happy_path(self, git_mock, master_urls, students, api_mock,
                         push_tuples, rmtree_mock, tmpdir):
