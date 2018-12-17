@@ -5,7 +5,7 @@
 
 Welcome to repomate's documentation!
 ==================================================
-If you are new to ``repomate``, the :ref:`fundamentals` and
+If you are new to repomate, the :ref:`fundamentals` and
 :ref:`userguide` sections are must-reads. Developers looking to modify
 or utilize the core functionality in ways the CLI does not allow will be best
 served by looking at the :ref:`modindex`.

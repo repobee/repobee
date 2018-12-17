@@ -39,7 +39,7 @@ setup(
     include_package_data=True,
     zip_save=False,
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Education',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
