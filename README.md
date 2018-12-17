@@ -37,33 +37,32 @@ system](https://github.com/slarse/repomate-plug). For example, the
 [`repomate-junit4` plugin](https://github.com/slarse/repomate-junit4) allows for
 automatically running `JUnit4` test classes on production code in student repos.
 Below is the output from running `repomate -h`, giving brief descriptions of
-each of the main featues:
+each of the main features:
 
 ```
 $ repomate -h
 usage: repomate [-h] [-v]
-                {show-config,setup,update,migrate,clone,add-to-teams,
-                 open-issues,close-issues,list-issues,assign-peer-reviews,
+                {show-config,setup,update,migrate,clone,open-issues,
+                 close-issues,list-issues,assign-peer-reviews,
                  purge-peer-review-teams,check-peer-review-progress,
                  verify-settings}
                 ...
 
-A CLI tool for administrating student repositories.
+A CLI tool for administering large amounts of git repositories on GitHub
+instances. See the full documentation at https://repomate.readthedocs.io
 
 positional arguments:
-  {show-config,setup,update,migrate,clone,add-to-teams,
-   open-issues,close-issues,list-issues,assign-peer-reviews,
-   purge-peer-review-teams,check-peer-review-progress,
-   verify-settings}
+    {show-config,setup,update,migrate,clone,open-issues,
+     close-issues,list-issues,assign-peer-reviews,
+     purge-peer-review-teams,check-peer-review-progress,
+     verify-settings}
+
     show-config         Show the configuration file
     setup               Setup student repos.
     update              Update existing student repos.
     migrate             Migrate master repositories into the target
                         organization.
     clone               Clone student repos.
-    add-to-teams        Create student teams and add students to them. This
-                        command is automatically executed by the `setup`
-                        command.
     open-issues         Open issues in student repos.
     close-issues        Close issues in student repos.
     list-issues         List issues in student repos.
@@ -86,17 +85,14 @@ optional arguments:
 ```
 
 ## Roadmap
-`repomate` is currently in public beta. The currently existing commands are
-fairly stable and are unlikely to change, barring unexpected bugs or usability
-issues. This is with the exception of the peer review commands, that are under
-active development.
+As of December 17th 2018, repomate is a stable release. The currently available
+commands will remain available for the foreseeable future, and any deprecation
+will be announced at least one minor version ahead of a feature being removed.
 
-**The internal API of `repomate`, including the plugin system, is less stable and
-may or may not change significantly in the near future.**
-
-Any breaking changes will be advertised with deprecation messages in the
-application well before they are put in effect. `repomate` is expected to
-reach 1.0 before December 14th.
+The plugin system is however still to be considered in the beta phase, as it
+has seen much less live action use. Features will however not be cut, as all
+of them are essential for the way I work personally.
 
 ## License
-This software is licensed under the MIT License. See the [LICENSE](LICENSE) file for specifics.
+This software is licensed under the MIT License. See the [LICENSE](LICENSE)
+file for specifics.
