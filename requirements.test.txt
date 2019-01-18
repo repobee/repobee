@@ -2,6 +2,7 @@ appdirs
 colored
 codecov
 daiquiri
+pluggy>=0.8.0
 pytest>=4.0.0
 pytest-cov
 pytest-mock
