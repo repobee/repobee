@@ -36,6 +36,8 @@ notifications:
     on_failure: always
     secure: Cq4Y2dwkNNE7hIZSEtmvNHI/2TZYzKpAJqbb6QPKG0hilx3PGetbs7fWy+ru6gRVW7A494Yk/4+ZO/9A92Pn0QHbbWtJZuU61pC2zxtkH2VKAzMVFly4gkL7L5Q9B8drAoer1usI4OtlN7eyqegTGAT8NEbhaynsJweEDZbWCWoXdQkl4tX6pYyDX/6HAWkfsQLaLPczLACyKYl812qAt7u6fFD+hcjdVrs/LfM9Cdt1gW3t9cVNm/Lqmla+I5OYjRRgbHm4XgsTrhNR0IoAxbktcxSwemnjTzwTsn7VQ9y4t8NlBRB5LUfw/0ihehKl7O4QS2c1G1uLhKHZZSfU8Di/qGGSvj/QBFvyZPDA8a/fmMBrNIHwy4k46l1ZfdDnX65oDbncHuXcFOVlTx85C5Zpy86tQDVktXf3kDlzsUtLgKtAY5dvLMDAwTvkX5M05DMwC51A+b2wsM1zs14CkeTFjHfsBIhDek91YfUEx6dRmnhg1KXVA+q02DKNoI0D5sNkOcgBnVATQOo29zcRKnyit93LBG3EiQYiIhubtwMkveXlEE3Qd5bUSdVuTMObN2nhm1bmYGrJ68dR+zKbsBZ51fcar6YeecmLCF6epBcZI++3AEH5/gu4qXb7A2pbxtiARJtxliI83d6CwEycPWhpjQ4p5UnByMhvKnKv14w=
 
+before_deploy:
+  - "pip install --upgrade twine setuptools"
 deploy:
   provider: pypi
   user: slarse
@@ -45,5 +47,6 @@ deploy:
     tags: true
     branch: master
     condition: $TRAVIS_OS_NAME = "linux"
+    condition: $TRAVIS_PYTHON_VERSION = "3.5.6"
   distributions: "sdist bdist_wheel"
   skip_existing: true
