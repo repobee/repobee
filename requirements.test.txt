@@ -2,7 +2,7 @@ appdirs
 colored
 codecov
 daiquiri
-pytest
+pytest>=4.0.0
 pytest-cov
 pytest-mock
 repomate-plug
