@@ -4,13 +4,16 @@ import pytest
 from repomate import config
 from repomate import exception
 
-STUDENTS = pytest.constants.STUDENTS
-USER = pytest.constants.USER
-GITHUB_BASE_URL = pytest.constants.GITHUB_BASE_URL
-ORG_NAME = pytest.constants.ORG_NAME
-MASTER_ORG_NAME = pytest.constants.MASTER_ORG_NAME
-PLUGINS = pytest.constants.PLUGINS
-CONFIG_TOKEN = pytest.constants.CONFIG_TOKEN
+import constants
+import functions
+
+STUDENTS = constants.STUDENTS
+USER = constants.USER
+GITHUB_BASE_URL = constants.GITHUB_BASE_URL
+ORG_NAME = constants.ORG_NAME
+MASTER_ORG_NAME = constants.MASTER_ORG_NAME
+PLUGINS = constants.PLUGINS
+CONFIG_TOKEN = constants.CONFIG_TOKEN
 
 
 class TestGetConfiguredDefaults:

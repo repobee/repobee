@@ -18,7 +18,10 @@ from repomate import exception
 from repomate.plugin import DEFAULT_PLUGIN
 from repomate.ext import javac, pylint, defaults
 
-PLUGINS = pytest.constants.PLUGINS
+import constants
+import functions
+
+PLUGINS = constants.PLUGINS
 
 
 class TestLoadPluginModules:
@@ -29,7 +32,7 @@ class TestLoadPluginModules:
 
     def test_load_all_bundled_plugins(self, config_mock):
         """Test load the bundled plugins, i.e. the ones listed in
-        pytest.constants.PLUGINS.
+        constants.PLUGINS.
         """
         expected_names = list(
             map(plugin.PLUGIN_QUALNAME, [*PLUGINS, DEFAULT_PLUGIN]))

@@ -14,12 +14,15 @@ from repomate import plugin
 
 from repomate_plug import HookResult, repomate_hook, Status
 
-from_magic_mock_issue = pytest.functions.from_magic_mock_issue
-to_magic_mock_issue = pytest.functions.to_magic_mock_issue
-User = pytest.classes.User
-TOKEN = pytest.constants.TOKEN
+import constants
+import functions
 
-RANDOM_DATE = pytest.functions.RANDOM_DATE
+from_magic_mock_issue = functions.from_magic_mock_issue
+to_magic_mock_issue = functions.to_magic_mock_issue
+User = constants.User
+TOKEN = constants.TOKEN
+
+RANDOM_DATE = functions.RANDOM_DATE
 
 OPEN_ISSUES = [
     to_magic_mock_issue(issue)
@@ -47,8 +50,8 @@ GITHUB_BASE_URL = 'https://some_enterprise_host/api/v3'
 API = github_api.GitHubAPI("bla", "bla", "bla")
 ISSUE = tuples.Issue("Oops, something went wrong!",
                      "This is the body **with some formatting**.")
-PLUGINS = pytest.constants.PLUGINS
-STUDENTS = pytest.constants.STUDENTS
+PLUGINS = constants.PLUGINS
+STUDENTS = constants.STUDENTS
 
 GENERATE_TEAM_REPO_URL = lambda student, base_name:\
         "https://slarse.se/repos/{}".format(
@@ -63,7 +66,7 @@ STUDENT_REPO_NAMES = tuple(
     util.generate_repo_name(student, master_name)
     for master_name in MASTER_NAMES for student in STUDENTS)
 
-raise_ = pytest.functions.raise_
+raise_ = functions.raise_
 
 
 @pytest.fixture(autouse=True)

@@ -2,6 +2,8 @@ import pytest
 from repomate import formatters
 from repomate import tuples
 
+import constants
+import functions
 
 def strs_to_reviews(*repo_names, done=True):
     return [tuples.Review(repo, done) for repo in repo_names]

@@ -9,6 +9,8 @@ import pytest
 
 from repomate import util
 
+import constants
+import functions
 
 @contextmanager
 def written_tmpfile(text):

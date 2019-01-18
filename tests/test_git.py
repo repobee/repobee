@@ -6,13 +6,16 @@ from asyncio import coroutine
 from unittest.mock import patch, PropertyMock, MagicMock, call
 from collections import namedtuple
 
-from conftest import TOKEN
 
 from repomate import git
 from repomate import exception
 
+from constants import TOKEN
+import constants
+import functions
+
 URL_TEMPLATE = 'https://{}github.com/slarse/clanim'
-USER = pytest.constants.USER
+USER = constants.USER
 
 Env = namedtuple('Env', ('expected_url', 'expected_url_with_username'))
 

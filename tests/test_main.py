@@ -3,16 +3,19 @@ import builtins
 import pytest
 from collections import namedtuple
 
-from pytest.functions import raise_
+from functions import raise_
 import repomate
 from repomate import cli
 from repomate import main
 from repomate import tuples
 from repomate import github_api
 
-ORG_NAME = pytest.constants.ORG_NAME
-GITHUB_BASE_URL = pytest.constants.GITHUB_BASE_URL
-USER = pytest.constants.USER
+import constants
+import functions
+
+ORG_NAME = constants.ORG_NAME
+GITHUB_BASE_URL = constants.GITHUB_BASE_URL
+USER = constants.USER
 
 VALID_PARSED_ARGS = dict(
     org_name=ORG_NAME,
@@ -20,8 +23,8 @@ VALID_PARSED_ARGS = dict(
     user=USER,
     master_repo_urls="url-1 url-2 url-3".split(),
     master_repo_names="1 2 3".split(),
-    students=pytest.constants.STUDENTS,
-    issue=pytest.constants.ISSUE,
+    students=constants.STUDENTS,
+    issue=constants.ISSUE,
     title_regex="some regex")
 
 PARSED_ARGS = tuples.Args(cli.SETUP_PARSER, **VALID_PARSED_ARGS)

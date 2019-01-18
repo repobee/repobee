@@ -14,9 +14,12 @@ from repomate import git
 from repomate import tuples
 from repomate.github_api import REQUIRED_OAUTH_SCOPES
 
-ORG_NAME = pytest.constants.ORG_NAME
-ISSUE = pytest.constants.ISSUE
-TOKEN = pytest.constants.TOKEN
+import constants
+import functions
+
+ORG_NAME = constants.ORG_NAME
+ISSUE = constants.ISSUE
+TOKEN = constants.TOKEN
 
 
 class GithubException(Exception):
@@ -30,19 +33,19 @@ NOT_FOUND_EXCEPTION = GithubException(msg=None, status=404)
 VALIDATION_ERROR = GithubException(msg=None, status=422)
 SERVER_ERROR = GithubException(msg=None, status=500)
 
-USER = pytest.constants.USER
+USER = constants.USER
 NOT_OWNER = 'notanowner'
-ORG_NAME = pytest.constants.ORG_NAME
-GITHUB_BASE_URL = pytest.constants.GITHUB_BASE_URL
-ISSUE = pytest.constants.ISSUE
-TOKEN = pytest.constants.TOKEN
+ORG_NAME = constants.ORG_NAME
+GITHUB_BASE_URL = constants.GITHUB_BASE_URL
+ISSUE = constants.ISSUE
+TOKEN = constants.TOKEN
 
-GENERATE_REPO_URL = pytest.functions.GENERATE_REPO_URL
-RANDOM_DATE = pytest.functions.RANDOM_DATE
-to_magic_mock_issue = pytest.functions.to_magic_mock_issue
-from_magic_mock_issue = pytest.functions.from_magic_mock_issue
+GENERATE_REPO_URL = functions.GENERATE_REPO_URL
+RANDOM_DATE = functions.RANDOM_DATE
+to_magic_mock_issue = functions.to_magic_mock_issue
+from_magic_mock_issue = functions.from_magic_mock_issue
 
-User = pytest.classes.User
+User = constants.User
 
 CLOSE_ISSUE = tuples.Issue('close this issue', 'This is a body', 3,
                            RANDOM_DATE(), 'slarse')

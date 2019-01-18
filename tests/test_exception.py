@@ -4,7 +4,10 @@ import pytest
 from repomate import exception
 from repomate import git
 
-USER = pytest.constants.USER
+import constants
+import functions
+
+USER = constants.USER
 
 
 def test_repomate_exception_repr():
@@ -55,7 +58,7 @@ class TestGitError:
         """
         token = "032957238hfibwt8374"  # random garbage token
         returncode = 128
-        repo_url = "{}/some-repo".format(pytest.constants.HOST_URL)
+        repo_url = "{}/some-repo".format(constants.HOST_URL)
         repo_url_with_token = git._insert_token(repo_url, token)
         fatal = "fatal: repo '{}' could not be found".format(
             repo_url_with_token)
@@ -79,7 +82,7 @@ class TestGitError:
         """
         token = "032957238hfibwt8374"  # random garbage token
         returncode = 128
-        repo_url = "{}/some-repo".format(pytest.constants.HOST_URL)
+        repo_url = "{}/some-repo".format(constants.HOST_URL)
         repo_url_with_user_and_token = git._insert_user_and_token(
             repo_url, USER, token)
         fatal = "fatal: repo '{}' could not be found".format(
