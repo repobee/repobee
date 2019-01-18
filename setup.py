@@ -11,7 +11,7 @@ with open('repomate/__version.py', mode='r', encoding='utf-8') as f:
     assert re.match(r'^\d\.\d\.\d$', __version__)
 
 test_requirements = [
-    'appdirs', 'daiquiri', 'pytest>=3.1.1', 'pytest-cov>=2.5.1', 'pytest-mock',
+    'appdirs', 'daiquiri', 'pytest>=4.0.0', 'pytest-cov>=2.6.1', 'pytest-mock',
     'codecov'
 ]
 required = [
