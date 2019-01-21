@@ -29,7 +29,7 @@ class TestPeerReviewFormatter:
 
         expected_output = """
 Color coding: grey: not done, green: done, red: num done + num remaining != num_reviews
-[0mreviewer        num done        num remaining   repos remaining
+[0mreviewer        num done        num remaining   repos remaining 
 [48;5;22m[38;5;15mham             2               0                               [0m
 [48;5;22m[38;5;15mspam            2               0                               [0m
 [48;5;22m[38;5;15mbacon           2               0                               [0m
@@ -56,7 +56,7 @@ Color coding: grey: not done, green: done, red: num done + num remaining != num_
 
         expected_output = """
 Color coding: grey: not done, green: done, red: num done + num remaining != num_reviews
-[0mreviewer        num done        num remaining   repos remaining
+[0mreviewer        num done        num remaining   repos remaining 
 [48;5;239m[38;5;15mham             0               2               spam-week-1,bacon-week-1[0m
 [48;5;235m[38;5;15mspam            0               2               bacon-week-1,eggs-week-1[0m
 [48;5;239m[38;5;15mbacon           0               2               eggs-week-1,ham-week-1[0m
@@ -79,7 +79,7 @@ Color coding: grey: not done, green: done, red: num done + num remaining != num_
         }
         expected_output = """
 Color coding: grey: not done, green: done, red: num done + num remaining != num_reviews
-[0mreviewer        num done        num remaining   repos remaining
+[0mreviewer        num done        num remaining   repos remaining 
 [48;5;22m[38;5;15mham             2               0                               [0m
 [48;5;22m[38;5;15mspam            2               0                               [0m
 [48;5;1m[38;5;15mbacon           1               0                               [0m
@@ -106,7 +106,7 @@ Color coding: grey: not done, green: done, red: num done + num remaining != num_
         }
         expected_output = """
 Color coding: grey: not done, green: done, red: num done + num remaining != num_reviews
-[0mreviewer        num done        num remaining   repos remaining
+[0mreviewer        num done        num remaining   repos remaining 
 [48;5;239m[38;5;15mham             0               2               spam-week-1,bacon-week-1[0m
 [48;5;235m[38;5;15mspam            0               2               bacon-week-1,eggs-week-1[0m
 [48;5;1m[38;5;15mbacon           0               1               eggs-week-1     [0m
@@ -124,7 +124,7 @@ Color coding: grey: not done, green: done, red: num done + num remaining != num_
         num_reviews = 0
         expected_output = """
 Color coding: grey: not done, green: done, red: num done + num remaining != num_reviews
-[0mreviewer        num done        num remaining   repos remaining
+[0mreviewer        num done        num remaining   repos remaining 
 """
         actual_output = formatters.format_peer_review_progress_output(
             reviews, students, num_reviews
