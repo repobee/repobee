@@ -21,18 +21,18 @@ LOGGER = daiquiri.getLogger(__file__)
 def _separate_args(args: List[str]) -> (List[str], List[str]):
     """Separate args into plugin args and repomate args."""
     plugin_args = []
-    if args and (args[0].startswith('-p') or 'plug' in args[0]):
+    if args and (args[0].startswith("-p") or "plug" in args[0]):
         cur = 0
-        while cur < len(args) and args[cur].startswith('-'):
-            if args[cur].startswith('-p'):
-                plugin_args += args[cur:cur + 2]
+        while cur < len(args) and args[cur].startswith("-"):
+            if args[cur].startswith("-p"):
+                plugin_args += args[cur : cur + 2]
                 cur += 2
-            elif args[cur] == '--no-plugins':
+            elif args[cur] == "--no-plugins":
                 plugin_args.append(args[cur])
                 cur += 1
             else:
                 break
-    return plugin_args, args[len(plugin_args):]
+    return plugin_args, args[len(plugin_args) :]
 
 
 def main(sys_args: List[str]):
@@ -58,13 +58,13 @@ def main(sys_args: List[str]):
     except Exception as exc:
         # FileErrors can occur during pre-init because of reading the config
         # and we don't want tracebacks for those (afaik at this time)
-        if traceback or (pre_init
-                         and not isinstance(exc, exception.FileError)):
+        if traceback or (pre_init and not isinstance(exc, exception.FileError)):
             if pre_init:
                 LOGGER.error(
                     "unexpected exception raised before pre-initialization was complete. "
                     "This shouldn't happen, please open an issue on GitHub "
-                    "and supply the stacktrace that follows below.")
+                    "and supply the stacktrace that follows below."
+                )
             LOGGER.exception("critical exception")
         else:
             LOGGER.error("{.__class__.__name__}: {}".format(exc, str(exc)))

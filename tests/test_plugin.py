@@ -26,7 +26,7 @@ PLUGINS = constants.PLUGINS
 
 class TestLoadPluginModules:
     """Tests for load_plugin_modules.
-    
+
     Note that the default plugin repomate.ext.defaults is always loaded.
     """
 
@@ -34,8 +34,7 @@ class TestLoadPluginModules:
         """Test load the bundled plugins, i.e. the ones listed in
         constants.PLUGINS.
         """
-        expected_names = list(
-            map(plugin.PLUGIN_QUALNAME, [*PLUGINS, DEFAULT_PLUGIN]))
+        expected_names = list(map(plugin.PLUGIN_QUALNAME, [*PLUGINS, DEFAULT_PLUGIN]))
 
         modules = plugin.load_plugin_modules(str(config_mock))
         module_names = [mod.__name__ for mod in modules]
@@ -47,18 +46,20 @@ class TestLoadPluginModules:
         file."""
         plugin_names = ["awesome", "the_slarse_plugin", "ric_easter_egg"]
         expected_calls = [
-            call(plug) for plug in map(plugin.PLUGIN_QUALNAME, plugin_names +
-                                       [DEFAULT_PLUGIN])
+            call(plug)
+            for plug in map(plugin.PLUGIN_QUALNAME, plugin_names + [DEFAULT_PLUGIN])
         ]
 
         class module:
             pass
 
         load_module_mock = mocker.patch(
-            'repomate.plugin._try_load_module', return_value=module)
+            "repomate.plugin._try_load_module", return_value=module
+        )
 
         plugin.load_plugin_modules(
-            config_file=str(config_mock), plugin_names=plugin_names)
+            config_file=str(config_mock), plugin_names=plugin_names
+        )
 
         load_module_mock.assert_has_calls(expected_calls)
 
@@ -74,13 +75,16 @@ class TestLoadPluginModules:
         plugin_name = "javac"
         plugin_qualname = plugin.PLUGIN_QUALNAME(plugin_name)
         config_contents = os.linesep.join(
-            ["[DEFAULTS]", "plugins = {}".format(plugin_name)])
+            ["[DEFAULTS]", "plugins = {}".format(plugin_name)]
+        )
         empty_config_mock.write(config_contents)
 
         modules = plugin.load_plugin_modules(str(empty_config_mock))
         module_names = [mod.__name__ for mod in modules]
 
-        assert module_names == list(map(plugin.PLUGIN_QUALNAME, [plugin_name, DEFAULT_PLUGIN]))
+        assert module_names == list(
+            map(plugin.PLUGIN_QUALNAME, [plugin_name, DEFAULT_PLUGIN])
+        )
 
     def test_raises_when_loading_invalid_module(self, empty_config_mock):
         """Test that PluginError is raised when when the plugin specified
@@ -88,7 +92,8 @@ class TestLoadPluginModules:
         """
         plugin_name = "this_plugin_does_not_exist"
         config_contents = os.linesep.join(
-            ["[DEFAULTS]", "plugins = {}".format(plugin_name)])
+            ["[DEFAULTS]", "plugins = {}".format(plugin_name)]
+        )
         empty_config_mock.write(config_contents)
 
         with pytest.raises(exception.PluginError) as exc:
@@ -105,9 +110,10 @@ class TestRegisterPlugins:
         """Return an instance of the clone hook mock"""
         instance_mock = MagicMock()
         mocker.patch(
-            'repomate.ext.javac.JavacCloneHook.__new__',
+            "repomate.ext.javac.JavacCloneHook.__new__",
             autospec=True,
-            return_value=instance_mock)
+            return_value=instance_mock,
+        )
         return instance_mock
 
     def test_register_module(self, plugin_manager_mock):
@@ -116,8 +122,9 @@ class TestRegisterPlugins:
 
         plugin_manager_mock.register.assert_called_once_with(pylint)
 
-    def test_register_module_with_plugin_class(self, plugin_manager_mock,
-                                               javac_clone_hook_mock):
+    def test_register_module_with_plugin_class(
+        self, plugin_manager_mock, javac_clone_hook_mock
+    ):
         """Test that both the module itself and the class (instance) are
         registered."""
         expected_calls = [call(javac), call(javac_clone_hook_mock)]
@@ -126,8 +133,9 @@ class TestRegisterPlugins:
 
         plugin_manager_mock.register.assert_has_calls(expected_calls)
 
-    def test_register_modules_and_classes(self, plugin_manager_mock,
-                                          javac_clone_hook_mock):
+    def test_register_modules_and_classes(
+        self, plugin_manager_mock, javac_clone_hook_mock
+    ):
         """Test that both module level hooks and class hooks are registered
         properly at the same time.
 
@@ -135,11 +143,7 @@ class TestRegisterPlugins:
         """
         modules = [javac, pylint]
         # pylint should be registered before javac because of FIFO order
-        expected_calls = [
-            call(pylint),
-            call(javac),
-            call(javac_clone_hook_mock),
-        ]
+        expected_calls = [call(pylint), call(javac), call(javac_clone_hook_mock)]
         plugin.register_plugins([javac, pylint])
 
         plugin_manager_mock.register.assert_has_calls(expected_calls)

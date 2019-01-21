@@ -24,19 +24,21 @@ LOGGER = daiquiri.getLogger(__file__)
 
 PLUGIN_QUALNAME = lambda plugin_name: "{}.ext.{}".format(__package__, plugin_name)
 EXTERNAL_PLUGIN_QUALNAME = lambda plugin_name: "{}_{}.{}".format(
-    __package__, plugin_name, plugin_name)
+    __package__, plugin_name, plugin_name
+)
 
-DEFAULT_PLUGIN = 'defaults'
+DEFAULT_PLUGIN = "defaults"
 
 
 def load_plugin_modules(
-        config_file: Union[str, pathlib.Path] = config.DEFAULT_CONFIG_FILE,
-        plugin_names: Iterable[str] = None) -> List[ModuleType]:
+    config_file: Union[str, pathlib.Path] = config.DEFAULT_CONFIG_FILE,
+    plugin_names: Iterable[str] = None,
+) -> List[ModuleType]:
     """Load plugins that are specified in the config, as well as default
     plugins. Note that default plugins are always loaded first, such that
     they are either run last or overridden by plugins with firstresult=True
     (such as the default_peer_review plugin).
-    
+
     Try to import first from :py:mod:`repomate.ext`, and then from
     ``repomate_<plugin>``. For example, if ``javac`` is listed as a plugin, the
     following imports will be attempted:
@@ -64,11 +66,13 @@ def load_plugin_modules(
     ]
     if plugin_names == [DEFAULT_PLUGIN]:
         from .ext import defaults
+
         return [defaults]
 
     for name in plugin_names:
-        plug_mod = _try_load_module(PLUGIN_QUALNAME(name)) or\
-                 _try_load_module(EXTERNAL_PLUGIN_QUALNAME(name))
+        plug_mod = _try_load_module(PLUGIN_QUALNAME(name)) or _try_load_module(
+            EXTERNAL_PLUGIN_QUALNAME(name)
+        )
         if not plug_mod:
             msg = "failed to load plugin module " + name
             raise exception.PluginError(msg)
@@ -105,8 +109,11 @@ def register_plugins(modules: List[ModuleType]) -> None:
     for module in reversed(modules):  # reverse because plugins are run FIFO
         plug.manager.register(module)
         for value in module.__dict__.values():
-            if isinstance(value, type) and issubclass(
-                    value, plug.Plugin) and value != plug.Plugin:
+            if (
+                isinstance(value, type)
+                and issubclass(value, plug.Plugin)
+                and value != plug.Plugin
+            ):
                 plug.manager.register(value())
 
 

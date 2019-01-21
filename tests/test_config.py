@@ -26,33 +26,36 @@ class TestGetConfiguredDefaults:
     def test_get_configured_defaults_empty_file(self, empty_config_mock):
         with pytest.raises(exception.FileError) as exc_info:
             defaults = config.get_configured_defaults()
-        assert "does not contain the required [DEFAULTS] header" in str(
-            exc_info)
+        assert "does not contain the required [DEFAULTS] header" in str(exc_info)
 
-    def test_get_configured_defaults_reads_full_config(self, config_mock,
-                                                       students_file):
+    def test_get_configured_defaults_reads_full_config(
+        self, config_mock, students_file
+    ):
         defaults = config.get_configured_defaults()
-        assert defaults['user'] == USER
-        assert defaults['github_base_url'] == GITHUB_BASE_URL
-        assert defaults['org_name'] == ORG_NAME
-        assert defaults['students_file'] == str(students_file)
-        assert defaults['plugins'] == ','.join(PLUGINS)
-        assert defaults['master_org_name'] == MASTER_ORG_NAME
-        assert defaults['token'] == CONFIG_TOKEN
+        assert defaults["user"] == USER
+        assert defaults["github_base_url"] == GITHUB_BASE_URL
+        assert defaults["org_name"] == ORG_NAME
+        assert defaults["students_file"] == str(students_file)
+        assert defaults["plugins"] == ",".join(PLUGINS)
+        assert defaults["master_org_name"] == MASTER_ORG_NAME
+        assert defaults["token"] == CONFIG_TOKEN
 
     def test_get_configured_defaults_raises_on_invalid_keys(
-            self, empty_config_mock, students_file):
+        self, empty_config_mock, students_file
+    ):
         invalid_key = "not_valid_key"
-        config_contents = os.linesep.join([
-            "[{}]".format(config.DEFAULTS_SECTION_HDR),
-            "github_base_url = {}".format(GITHUB_BASE_URL),
-            "user = {}".format(USER),
-            "org_name = {}".format(ORG_NAME),
-            "master_org_name = {}".format(MASTER_ORG_NAME),
-            "students_file = {!s}".format(students_file),
-            "plugins = {!s}".format(PLUGINS),
-            "{} = whatever".format(invalid_key),
-        ])
+        config_contents = os.linesep.join(
+            [
+                "[{}]".format(config.DEFAULTS_SECTION_HDR),
+                "github_base_url = {}".format(GITHUB_BASE_URL),
+                "user = {}".format(USER),
+                "org_name = {}".format(ORG_NAME),
+                "master_org_name = {}".format(MASTER_ORG_NAME),
+                "students_file = {!s}".format(students_file),
+                "plugins = {!s}".format(PLUGINS),
+                "{} = whatever".format(invalid_key),
+            ]
+        )
         empty_config_mock.write(config_contents)
 
         with pytest.raises(exception.FileError) as exc_info:
@@ -62,20 +65,22 @@ class TestGetConfiguredDefaults:
         assert invalid_key in str(exc_info)
 
     def test_get_configured_defaults_raises_on_missing_header(
-            self, empty_config_mock, students_file):
-        config_contents = os.linesep.join([
-            "github_base_url = {}".format(GITHUB_BASE_URL),
-            "user = {}".format(USER),
-            "org_name = {}".format(ORG_NAME),
-            "students_file = {!s}".format(students_file),
-        ])
+        self, empty_config_mock, students_file
+    ):
+        config_contents = os.linesep.join(
+            [
+                "github_base_url = {}".format(GITHUB_BASE_URL),
+                "user = {}".format(USER),
+                "org_name = {}".format(ORG_NAME),
+                "students_file = {!s}".format(students_file),
+            ]
+        )
         empty_config_mock.write(config_contents)
 
         with pytest.raises(exception.FileError) as exc_info:
             config.get_configured_defaults()
 
-        assert "does not contain the required [DEFAULTS] header" in str(
-            exc_info)
+        assert "does not contain the required [DEFAULTS] header" in str(exc_info)
 
 
 class TestGetPluginNames:
@@ -87,18 +92,21 @@ class TestGetPluginNames:
 
         assert plugin_names == PLUGINS
 
-    @pytest.mark.parametrize('plugins_string, expected_plugins', [
-        (','.join(PLUGINS), PLUGINS),
-        (', '.join(PLUGINS), PLUGINS),
-        ('javac', ['javac']),
-        ('', []),
-    ])
-    def test_with_only_plugins(self, plugins_string, expected_plugins,
-                               empty_config_mock):
-        contents = os.linesep.join([
-            "[{}]".format(config.DEFAULTS_SECTION_HDR),
-            "plugins = " + plugins_string,
-        ])
+    @pytest.mark.parametrize(
+        "plugins_string, expected_plugins",
+        [
+            (",".join(PLUGINS), PLUGINS),
+            (", ".join(PLUGINS), PLUGINS),
+            ("javac", ["javac"]),
+            ("", []),
+        ],
+    )
+    def test_with_only_plugins(
+        self, plugins_string, expected_plugins, empty_config_mock
+    ):
+        contents = os.linesep.join(
+            ["[{}]".format(config.DEFAULTS_SECTION_HDR), "plugins = " + plugins_string]
+        )
         empty_config_mock.write(contents)
 
         plugin_names = config.get_plugin_names(str(empty_config_mock))
@@ -118,7 +126,8 @@ class TestExecuteConfigHooks:
 
         # TODO assert with a real value instead of mock.ANY
         plugin_manager_mock.hook.config_hook.assert_called_once_with(
-            config_parser=mock.ANY)
+            config_parser=mock.ANY
+        )
 
 
 class TestCheckConfigIntegrity:
@@ -130,8 +139,10 @@ class TestCheckConfigIntegrity:
 
     def test_with_well_formed_plugin_options(self, config_mock):
         """Should not raise."""
-        config_mock.write(os.linesep + os.linesep.join(
-            ["[some_config]", "option = value", "bla = blu"]))
+        config_mock.write(
+            os.linesep
+            + os.linesep.join(["[some_config]", "option = value", "bla = blu"])
+        )
 
     def test_with_no_config_file_raises(self, no_config_mock):
         with pytest.raises(exception.FileError) as exc_info:
@@ -141,11 +152,14 @@ class TestCheckConfigIntegrity:
 
     def test_with_invalid_defaults_key_raises(self, empty_config_mock):
         empty_config_mock.write(
-            os.linesep.join([
-                "[{}]".format(config.DEFAULTS_SECTION_HDR),
-                "user = someone",
-                "option = value",
-            ]))
+            os.linesep.join(
+                [
+                    "[{}]".format(config.DEFAULTS_SECTION_HDR),
+                    "user = someone",
+                    "option = value",
+                ]
+            )
+        )
         with pytest.raises(exception.FileError) as exc_info:
             config.check_config_integrity(str(empty_config_mock))
 
@@ -153,16 +167,18 @@ class TestCheckConfigIntegrity:
         assert "option" in str(exc_info)
         assert "user" not in str(exc_info)
 
-    def test_with_valid_but_malformed_default_args_raises(
-            self, empty_config_mock):
+    def test_with_valid_but_malformed_default_args_raises(self, empty_config_mock):
         empty_config_mock.write(
-            os.linesep.join([
-                "[{}]".format(config.DEFAULTS_SECTION_HDR),
-                "user = someone",
-                "github_base_url",
-                "org_name = cool",
-                "plugins  ",
-            ]))
+            os.linesep.join(
+                [
+                    "[{}]".format(config.DEFAULTS_SECTION_HDR),
+                    "user = someone",
+                    "github_base_url",
+                    "org_name = cool",
+                    "plugins  ",
+                ]
+            )
+        )
         with pytest.raises(exception.FileError) as exc_info:
             config.check_config_integrity(str(empty_config_mock))
 

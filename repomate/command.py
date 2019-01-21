@@ -37,12 +37,12 @@ from repomate.git import Push
 
 LOGGER = daiquiri.getLogger(__file__)
 
-MASTER_TEAM = 'master_repos'
+MASTER_TEAM = "master_repos"
 
 
-def setup_student_repos(master_repo_urls: Iterable[str],
-                        students: Iterable[str], user: str,
-                        api: GitHubAPI) -> None:
+def setup_student_repos(
+    master_repo_urls: Iterable[str], students: Iterable[str], user: str, api: GitHubAPI
+) -> None:
     """Setup student repositories based on master repo templates. Performs three
     primary tasks:
 
@@ -67,7 +67,8 @@ def setup_student_repos(master_repo_urls: Iterable[str],
     """
     util.validate_types(user=(user, str), api=(api, GitHubAPI))
     util.validate_non_empty(
-        master_repo_urls=master_repo_urls, students=students, user=user)
+        master_repo_urls=master_repo_urls, students=students, user=user
+    )
 
     urls = list(master_repo_urls)  # safe copy
 
@@ -83,8 +84,7 @@ def setup_student_repos(master_repo_urls: Iterable[str],
         git.push(push_tuples, user=user, token=api.token)
 
 
-def add_students_to_teams(students: Iterable[str],
-                          api: GitHubAPI) -> List[Team]:
+def add_students_to_teams(students: Iterable[str], api: GitHubAPI) -> List[Team]:
     """Create one team for each student (with the same name as the student),
     and add the student to the team. If a team already exists, it is not created.
     If a student is already in his/her team, nothing happens.
@@ -103,8 +103,9 @@ def add_students_to_teams(students: Iterable[str],
     return api.ensure_teams_and_members(member_lists)
 
 
-def _create_student_repos(master_repo_urls: Iterable[str],
-                          teams: Iterable[Team], api: GitHubAPI) -> List[str]:
+def _create_student_repos(
+    master_repo_urls: Iterable[str], teams: Iterable[Team], api: GitHubAPI
+) -> List[str]:
     """Create student repos. Each team (usually representing one student) is assigned a single repo
     per master repo. Repos that already exist are not created, but their urls are returned all
     the same.
@@ -149,11 +150,13 @@ def _clone_all(urls: Iterable[str], token: str, cwd: str):
     return paths
 
 
-def update_student_repos(master_repo_urls: Iterable[str],
-                         students: Iterable[str],
-                         user: str,
-                         api: GitHubAPI,
-                         issue: Optional[tuples.Issue] = None) -> None:
+def update_student_repos(
+    master_repo_urls: Iterable[str],
+    students: Iterable[str],
+    user: str,
+    api: GitHubAPI,
+    issue: Optional[tuples.Issue] = None,
+) -> None:
     """Attempt to update all student repos related to one of the master repos.
 
     Args:
@@ -166,9 +169,11 @@ def update_student_repos(master_repo_urls: Iterable[str],
     util.validate_types(
         user=(user, str),
         api=(api, GitHubAPI),
-        issue=(issue, (tuples.Issue, type(None))))
+        issue=(issue, (tuples.Issue, type(None))),
+    )
     util.validate_non_empty(
-        master_repo_urls=master_repo_urls, user=user, students=students)
+        master_repo_urls=master_repo_urls, user=user, students=students
+    )
     urls = list(master_repo_urls)  # safe copy
 
     if len(set(urls)) != len(urls):
@@ -195,8 +200,9 @@ def update_student_repos(master_repo_urls: Iterable[str],
     LOGGER.info("done!")
 
 
-def _open_issue_by_urls(repo_urls: Iterable[str], issue: tuples.Issue,
-                        api: GitHubAPI) -> None:
+def _open_issue_by_urls(
+    repo_urls: Iterable[str], issue: tuples.Issue, api: GitHubAPI
+) -> None:
     """Open issues in the repos designated by the repo_urls.
 
     repo_urls: URLs to repos in which to open an issue.
@@ -207,13 +213,15 @@ def _open_issue_by_urls(repo_urls: Iterable[str], issue: tuples.Issue,
     api.open_issue(issue.title, issue.body, repo_names)
 
 
-def list_issues(master_repo_names: Iterable[str],
-                students: Iterable[str],
-                api: GitHubAPI,
-                state: str = 'open',
-                title_regex: str = "",
-                show_body: bool = False,
-                author: Optional[str] = None) -> None:
+def list_issues(
+    master_repo_names: Iterable[str],
+    students: Iterable[str],
+    api: GitHubAPI,
+    state: str = "open",
+    title_regex: str = "",
+    show_body: bool = False,
+    author: Optional[str] = None,
+) -> None:
     """List all issues in the specified repos.
 
     Args:
@@ -228,8 +236,7 @@ def list_issues(master_repo_names: Iterable[str],
         author: Only show issues by this author.
     """
     util.validate_types(api=(api, GitHubAPI))
-    util.validate_non_empty(
-        master_repo_names=master_repo_names, students=students)
+    util.validate_non_empty(master_repo_names=master_repo_names, students=students)
 
     repo_names = util.generate_repo_names(students, master_repo_names)
     max_repo_name_length = max(map(len, repo_names))
@@ -237,18 +244,21 @@ def list_issues(master_repo_names: Iterable[str],
     issues_per_repo = api.get_issues(repo_names, state, title_regex)
 
     if author:
-        issues_per_repo = ((repo_name, (issue for issue in issues
-                                        if issue.user.login == author))
-                           for repo_name, issues in issues_per_repo)
+        issues_per_repo = (
+            (repo_name, (issue for issue in issues if issue.user.login == author))
+            for repo_name, issues in issues_per_repo
+        )
 
     _log_repo_issues(issues_per_repo, show_body, max_repo_name_length + 6)
 
 
 def _log_repo_issues(
-        issues_per_repo: Tuple[str, Generator[tuples.Issue, None, None]],
-        show_body: bool, title_alignment: int) -> None:
+    issues_per_repo: Tuple[str, Generator[tuples.Issue, None, None]],
+    show_body: bool,
+    title_alignment: int,
+) -> None:
     """Log repo issues.
-    
+
     Args:
         issues_per_repo: (repo_name, issue generator) pairs
         show_body: Include the body of the issue in the output.
@@ -256,6 +266,7 @@ def _log_repo_issues(
         start of the line.
     """
     from colored import bg, fg, style
+
     even = True
     for repo_name, issues in issues_per_repo:
         issues = list(issues)
@@ -264,16 +275,18 @@ def _log_repo_issues(
             LOGGER.warning("{}: No matching issues".format(repo_name))
 
         for issue in issues:
-            color = (bg('grey_30') if even else bg('grey_15')) + fg('white')
+            color = (bg("grey_30") if even else bg("grey_15")) + fg("white")
             even = not even  # cycle color
             adjusted_alignment = title_alignment + len(
-                color)  # color takes character space
+                color
+            )  # color takes character space
 
-            id_ = "{}{}/#{}:".format(color, repo_name,
-                                     issue.number).ljust(adjusted_alignment)
+            id_ = "{}{}/#{}:".format(color, repo_name, issue.number).ljust(
+                adjusted_alignment
+            )
             out = "{}{}{}{}created {!s} by {}".format(
-                id_, issue.title, style.RESET, " ", issue.created_at,
-                issue.user.login)
+                id_, issue.title, style.RESET, " ", issue.created_at, issue.user.login
+            )
             if show_body:
                 out += os.linesep * 2 + _limit_line_length(issue.body)
             LOGGER.info(out)
@@ -294,20 +307,24 @@ def _limit_line_length(s: str, max_line_length: int = 100) -> str:
         cur = 0
         while len(line) - cur > max_line_length:
             # find ws closest to the line length
-            idx = line.rfind(' ', cur, max_line_length + cur)
+            idx = line.rfind(" ", cur, max_line_length + cur)
             idx = max_line_length + cur if idx <= 0 else idx
-            if line[idx] == ' ':
+            if line[idx] == " ":
                 out += line[cur:idx]
             else:
-                out += line[cur:idx + 1]
+                out += line[cur : idx + 1]
             out += os.linesep
             cur = idx + 1
-        out += line[cur:cur + max_line_length] + os.linesep
+        out += line[cur : cur + max_line_length] + os.linesep
     return out
 
 
-def open_issue(issue: tuples.Issue, master_repo_names: Iterable[str],
-               students: Iterable[str], api: GitHubAPI) -> None:
+def open_issue(
+    issue: tuples.Issue,
+    master_repo_names: Iterable[str],
+    students: Iterable[str],
+    api: GitHubAPI,
+) -> None:
     """Open an issue in student repos.
 
     Args:
@@ -318,15 +335,20 @@ def open_issue(issue: tuples.Issue, master_repo_names: Iterable[str],
     """
     util.validate_types(issue=(issue, tuples.Issue), api=(api, GitHubAPI))
     util.validate_non_empty(
-        master_repo_names=master_repo_names, students=students, issue=issue)
+        master_repo_names=master_repo_names, students=students, issue=issue
+    )
 
     repo_names = util.generate_repo_names(students, master_repo_names)
 
     api.open_issue(issue.title, issue.body, repo_names)
 
 
-def close_issue(title_regex: str, master_repo_names: Iterable[str],
-                students: Iterable[str], api: GitHubAPI) -> None:
+def close_issue(
+    title_regex: str,
+    master_repo_names: Iterable[str],
+    students: Iterable[str],
+    api: GitHubAPI,
+) -> None:
     """Close issues whose titles match the title_regex in student repos.
 
     Args:
@@ -337,17 +359,17 @@ def close_issue(title_regex: str, master_repo_names: Iterable[str],
     """
     util.validate_types(title_regex=(title_regex, str), api=(api, GitHubAPI))
     util.validate_non_empty(
-        title_regex=title_regex,
-        master_repo_names=master_repo_names,
-        students=students)
+        title_regex=title_regex, master_repo_names=master_repo_names, students=students
+    )
 
     repo_names = util.generate_repo_names(students, master_repo_names)
 
     api.close_issue(title_regex, repo_names)
 
 
-def clone_repos(master_repo_names: Iterable[str], students: Iterable[str],
-                api: GitHubAPI) -> None:
+def clone_repos(
+    master_repo_names: Iterable[str], students: Iterable[str], api: GitHubAPI
+) -> None:
     """Clone all student repos related to the provided master repos and students.
 
     Args:
@@ -356,8 +378,7 @@ def clone_repos(master_repo_names: Iterable[str], students: Iterable[str],
         api: A GitHubAPI instance.
     """
     util.validate_types(api=(api, GitHubAPI))
-    util.validate_non_empty(
-        master_repo_names=master_repo_names, students=students)
+    util.validate_non_empty(master_repo_names=master_repo_names, students=students)
 
     repo_names = util.generate_repo_names(students, master_repo_names)
     repo_urls = api.get_repo_urls(repo_names)
@@ -365,8 +386,7 @@ def clone_repos(master_repo_names: Iterable[str], students: Iterable[str],
     LOGGER.info("cloning into student repos ...")
     git.clone(repo_urls, api.token)
 
-    if len(plug.manager.
-           get_plugins()) > 1:  # something else than the default loaded
+    if len(plug.manager.get_plugins()) > 1:  # something else than the default loaded
         _execute_post_clone_hooks(repo_names, api)
 
 
@@ -378,15 +398,15 @@ def _execute_post_clone_hooks(repo_names: List[str], api: GitHubAPI):
     for repo_name in local_repos:
         LOGGER.info("executing post clone hooks on {}".format(repo_name))
         res = plug.manager.hook.act_on_cloned_repo(
-            path=os.path.abspath(repo_name), api=api)
+            path=os.path.abspath(repo_name), api=api
+        )
         results[repo_name] = res
     LOGGER.info(formatters.format_hook_results_output(results))
 
     LOGGER.info("post clone hooks done")
 
 
-def migrate_repos(master_repo_urls: Iterable[str], user: str,
-                  api: GitHubAPI) -> None:
+def migrate_repos(master_repo_urls: Iterable[str], user: str, api: GitHubAPI) -> None:
     """Migrate a repository from an arbitrary URL to the target organization.
     The new repository is added to the master_repos team, which is created if
     it does not already exist.
@@ -409,31 +429,37 @@ def migrate_repos(master_repo_urls: Iterable[str], user: str,
             name=master_name,
             description="Master repository {}".format(master_name),
             private=True,
-            team_id=master_team.id) for master_name in master_names
+            team_id=master_team.id,
+        )
+        for master_name in master_names
     ]
 
     with tempfile.TemporaryDirectory() as tmpdir:
         _clone_all(master_repo_urls, api.token, cwd=tmpdir)
         repo_urls = api.create_repos(infos)
 
-        git.push([
-            git.Push(
-                local_path=os.path.join(tmpdir, info.name),
-                repo_url=repo_url,
-                branch='master') for repo_url, info in zip(repo_urls, infos)
-        ],
-                 user=user,
-                 token=api.token)
+        git.push(
+            [
+                git.Push(
+                    local_path=os.path.join(tmpdir, info.name),
+                    repo_url=repo_url,
+                    branch="master",
+                )
+                for repo_url, info in zip(repo_urls, infos)
+            ],
+            user=user,
+            token=api.token,
+        )
 
     LOGGER.info("done!")
 
 
 def assign_peer_reviews(
-        master_repo_names: Iterable[str],
-        students: Iterable[str],
-        num_reviews: int,
-        issue: Optional[tuples.Issue],
-        api: GitHubAPI,
+    master_repo_names: Iterable[str],
+    students: Iterable[str],
+    num_reviews: int,
+    issue: Optional[tuples.Issue],
+    api: GitHubAPI,
 ) -> None:
     """Assign peer reviewers among the students to each student repo. Each
     student is assigned to review num_reviews repos, and consequently, each
@@ -452,61 +478,67 @@ def assign_peer_reviews(
             (consequently, the amount of reviews of each repo)
         api: A GitHubAPI instance used to interface with the GitHub instance.
     """
-    util.validate_types(
-        api=(api, GitHubAPI), issue=(issue, (tuples.Issue, type(None))))
-    util.validate_non_empty(
-        master_repo_names=master_repo_names, students=students)
+    util.validate_types(api=(api, GitHubAPI), issue=(issue, (tuples.Issue, type(None))))
+    util.validate_non_empty(master_repo_names=master_repo_names, students=students)
 
     for master_name in master_repo_names:
         peer_review_allocations = plug.manager.hook.generate_review_allocations(
             master_repo_name=master_name,
             students=students,
             num_reviews=num_reviews,
-            review_team_name_function=util.generate_review_team_name)
-        api.ensure_teams_and_members(
-            peer_review_allocations, permission='pull')
-        api.add_repos_to_review_teams({
-            util.generate_review_team_name(student, master_name):
-            [util.generate_repo_name(student, master_name)]
-            for student in students
-        },
-                                      issue=issue)
+            review_team_name_function=util.generate_review_team_name,
+        )
+        api.ensure_teams_and_members(peer_review_allocations, permission="pull")
+        api.add_repos_to_review_teams(
+            {
+                util.generate_review_team_name(student, master_name): [
+                    util.generate_repo_name(student, master_name)
+                ]
+                for student in students
+            },
+            issue=issue,
+        )
 
 
-def purge_review_teams(master_repo_names: Iterable[str],
-                       students: Iterable[str], api: GitHubAPI) -> None:
+def purge_review_teams(
+    master_repo_names: Iterable[str], students: Iterable[str], api: GitHubAPI
+) -> None:
     """Delete all review teams associated with the given master repo names and students.
-    
+
     Args:
         master_repo_names: Names of master repos.
         students: An iterable of student GitHub usernames.
     """
-    util.validate_non_empty(
-        master_repo_names=master_repo_names, students=students)
+    util.validate_non_empty(master_repo_names=master_repo_names, students=students)
 
     review_team_names = [
         util.generate_review_team_name(student, master_repo_name)
-        for student in students for master_repo_name in master_repo_names
+        for student in students
+        for master_repo_name in master_repo_names
     ]
     api.delete_teams(review_team_names)
 
 
-def check_peer_review_progress(master_repo_names: Iterable[str],
-                               students: Iterable[str], title_regex: str,
-                               num_reviews: int, api: GitHubAPI) -> None:
+def check_peer_review_progress(
+    master_repo_names: Iterable[str],
+    students: Iterable[str],
+    title_regex: str,
+    num_reviews: int,
+    api: GitHubAPI,
+) -> None:
     review_team_names = [
         util.generate_review_team_name(student, master_name)
-        for student in students for master_name in master_repo_names
+        for student in students
+        for master_name in master_repo_names
     ]
     reviews = api.get_review_progress(review_team_names, students, title_regex)
 
     LOGGER.info(
-        formatters.format_peer_review_progress_output(reviews, students,
-                                                      num_reviews))
+        formatters.format_peer_review_progress_output(reviews, students, num_reviews)
+    )
 
 
-def _create_repo_infos(urls: Iterable[str],
-                       teams: Iterable[Team]) -> List[tuples.Repo]:
+def _create_repo_infos(urls: Iterable[str], teams: Iterable[Team]) -> List[tuples.Repo]:
     """Create Repo namedtuples for all combinations of url and team.
 
     Args:
@@ -522,16 +554,18 @@ def _create_repo_infos(urls: Iterable[str],
         repo_infos += [
             tuples.Repo(
                 name=util.generate_repo_name(team.name, repo_base_name),
-                description="{} created for {}".format(repo_base_name,
-                                                       team.name),
+                description="{} created for {}".format(repo_base_name, team.name),
                 private=True,
-                team_id=team.id) for team in teams
+                team_id=team.id,
+            )
+            for team in teams
         ]
     return repo_infos
 
 
-def _create_push_tuples(master_repo_paths: Iterable[str],
-                        repo_urls: Iterable[str]) -> List[Push]:
+def _create_push_tuples(
+    master_repo_paths: Iterable[str], repo_urls: Iterable[str]
+) -> List[Push]:
     """Create Push namedtuples for all repo urls in repo_urls that share
     repo base name with any of the urls in master_urls.
 
@@ -547,8 +581,9 @@ def _create_push_tuples(master_repo_paths: Iterable[str],
     for path in master_repo_paths:
         repo_base_name = os.path.basename(path)
         push_tuples += [
-            git.Push(local_path=path, repo_url=repo_url, branch='master')
-            for repo_url in repo_urls if repo_url.endswith(repo_base_name)
+            git.Push(local_path=path, repo_url=repo_url, branch="master")
+            for repo_url in repo_urls
+            if repo_url.endswith(repo_base_name)
         ]
     return push_tuples
 
@@ -557,14 +592,16 @@ def show_config():
     """Print the configuration file to the log."""
     config.check_config_integrity()
 
-    LOGGER.info("found valid config file at " +
-                str(config.DEFAULT_CONFIG_FILE))
-    with config.DEFAULT_CONFIG_FILE.open(
-            encoding=sys.getdefaultencoding()) as f:
+    LOGGER.info("found valid config file at " + str(config.DEFAULT_CONFIG_FILE))
+    with config.DEFAULT_CONFIG_FILE.open(encoding=sys.getdefaultencoding()) as f:
         config_contents = "".join(f.readlines())
 
-    output = os.linesep + "BEGIN CONFIG FILE".center(
-        50, "-") + os.linesep + config_contents + "END CONFIG FILE".center(
-            50, "-")
+    output = (
+        os.linesep
+        + "BEGIN CONFIG FILE".center(50, "-")
+        + os.linesep
+        + config_contents
+        + "END CONFIG FILE".center(50, "-")
+    )
 
     LOGGER.info(output)

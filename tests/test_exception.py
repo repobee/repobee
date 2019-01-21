@@ -40,12 +40,14 @@ class TestGitError:
         """
         msg = "something something dark side"
         fatal = "fatal: this is the part we want!"
-        stderr = "Some error stuff\n{}\nmore lines\nmore lines".format(
-            fatal).encode(sys.getdefaultencoding())
+        stderr = "Some error stuff\n{}\nmore lines\nmore lines".format(fatal).encode(
+            sys.getdefaultencoding()
+        )
         returncode = 128
 
         expected_msg = "{}{}return code: {}{}{}".format(
-            msg, os.linesep, returncode, os.linesep, fatal)
+            msg, os.linesep, returncode, os.linesep, fatal
+        )
 
         err = exception.GitError(msg, returncode, stderr)
 
@@ -60,15 +62,19 @@ class TestGitError:
         returncode = 128
         repo_url = "{}/some-repo".format(constants.HOST_URL)
         repo_url_with_token = git._insert_token(repo_url, token)
-        fatal = "fatal: repo '{}' could not be found".format(
-            repo_url_with_token)
+        fatal = "fatal: repo '{}' could not be found".format(repo_url_with_token)
         assert token in fatal  # meta assert, make sure we are testing something
         msg = "something went wrong!"
         stderr = "some lines\n{}\nlast line".format(fatal).encode(
-            sys.getdefaultencoding())
+            sys.getdefaultencoding()
+        )
         expected_msg = "{}{}return code: {}{}{}".format(
-            msg, os.linesep, returncode, os.linesep,
-            "fatal: repo '{}' could not be found".format(repo_url))
+            msg,
+            os.linesep,
+            returncode,
+            os.linesep,
+            "fatal: repo '{}' could not be found".format(repo_url),
+        )
 
         err = exception.GitError(msg, returncode, stderr)
 
@@ -83,18 +89,23 @@ class TestGitError:
         token = "032957238hfibwt8374"  # random garbage token
         returncode = 128
         repo_url = "{}/some-repo".format(constants.HOST_URL)
-        repo_url_with_user_and_token = git._insert_user_and_token(
-            repo_url, USER, token)
+        repo_url_with_user_and_token = git._insert_user_and_token(repo_url, USER, token)
         fatal = "fatal: repo '{}' could not be found".format(
-            repo_url_with_user_and_token)
+            repo_url_with_user_and_token
+        )
         assert token in fatal  # meta assert, make sure we are testing something
         assert USER in fatal
         msg = "something went wrong!"
         stderr = "some lines\n{}\nlast line".format(fatal).encode(
-            sys.getdefaultencoding())
+            sys.getdefaultencoding()
+        )
         expected_msg = "{}{}return code: {}{}{}".format(
-            msg, os.linesep, returncode, os.linesep,
-            "fatal: repo '{}' could not be found".format(repo_url))
+            msg,
+            os.linesep,
+            returncode,
+            os.linesep,
+            "fatal: repo '{}' could not be found".format(repo_url),
+        )
 
         err = exception.GitError(msg, returncode, stderr)
 

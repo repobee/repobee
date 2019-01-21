@@ -27,8 +27,10 @@ LOGGER = daiquiri.getLogger(name=__file__)
 
 @repomate_hook
 def generate_review_allocations(
-        master_repo_name: str, students: Iterable[str], num_reviews: int,
-        review_team_name_function: Callable[[str, str], str]
+    master_repo_name: str,
+    students: Iterable[str],
+    num_reviews: int,
+    review_team_name_function: Callable[[str, str], str],
 ) -> Mapping[str, List[str]]:
     """Generate a (peer_review_team -> reviewers) mapping for each student
     repository (i.e. <student>-<master_repo_name>), where len(reviewers) =
@@ -38,11 +40,11 @@ def generate_review_allocations(
     It should be called like:
 
     .. code-block:: python
-        
+
         review_team_name_function(master_repo_name, student)
 
     .. important::
-            
+
         There must be strictly more students than reviewers per repo
         (`num_reviews`). Otherwise, allocation is impossible.
 
@@ -64,8 +66,10 @@ def generate_review_allocations(
         raise ValueError("num_reviews must be greater than 0")
     if len(students) < 2:
         raise ValueError(
-            "there must be at least 2 students for peer review, but {} were provided"
-            .format(len(students)))
+            "there must be at least 2 students for peer review, but {} were provided".format(
+                len(students)
+            )
+        )
 
     random.shuffle(students)
 

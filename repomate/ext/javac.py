@@ -36,7 +36,7 @@ from repomate_plug import Plugin, HookResult, Status
 
 LOGGER = daiquiri.getLogger(name=__file__)
 
-SECTION = 'javac'
+SECTION = "javac"
 
 
 class JavacCloneHook(Plugin):
@@ -47,10 +47,11 @@ class JavacCloneHook(Plugin):
     def __init__(self):
         self._ignore = []
 
-    def act_on_cloned_repo(self, path: Union[str, pathlib.Path],
-                           api: github_api.GitHubAPI) -> HookResult:
+    def act_on_cloned_repo(
+        self, path: Union[str, pathlib.Path], api: github_api.GitHubAPI
+    ) -> HookResult:
         """Run ``javac`` on all .java files in the repo.
-        
+
         Args:
             path: Path to the repo.
             api: A :py:class:`~repomate.github_api.GitHubAPI` instance.
@@ -58,20 +59,20 @@ class JavacCloneHook(Plugin):
             a HookResult specifying the outcome.
         """
         java_files = [
-            str(file) for file in util.find_files_by_extension(path, '.java')
+            str(file)
+            for file in util.find_files_by_extension(path, ".java")
             if file.name not in self._ignore
         ]
 
         if not java_files:
             msg = "no .java files found"
             status = Status.WARNING
-            return HookResult('javac', status, msg)
+            return HookResult("javac", status, msg)
 
         status, msg = self._javac(java_files)
-        return HookResult('javac', status, msg)
+        return HookResult("javac", status, msg)
 
-    def _javac(self, java_files: Iterable[Union[str, pathlib.Path]]
-               ) -> Tuple[str, str]:
+    def _javac(self, java_files: Iterable[Union[str, pathlib.Path]]) -> Tuple[str, str]:
         """Run ``javac`` on all of the specified files, assuming that they are
         all ``.java`` files.
 
@@ -83,8 +84,7 @@ class JavacCloneHook(Plugin):
                 outcome in plain text.
         """
         command = ["javac", *[str(path) for path in java_files]]
-        proc = subprocess.run(
-            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         if proc.returncode != 0:
             status = Status.ERROR
@@ -103,7 +103,8 @@ class JavacCloneHook(Plugin):
             clone_parser: The ``clone`` subparser.
         """
         clone_parser.add_argument(
-            '-i', '--ignore', help="File names to ignore.", nargs='+')
+            "-i", "--ignore", help="File names to ignore.", nargs="+"
+        )
 
     def parse_args(self, args: argparse.Namespace) -> None:
         """Get the option stored in the ``--ignore`` option added by
@@ -118,11 +119,12 @@ class JavacCloneHook(Plugin):
 
     def config_hook(self, config_parser: configparser.ConfigParser) -> None:
         """Check for configured ignore files.
-        
+
         Args:
             config: the config parser after config has been read.
         """
         self._ignore = [
-            file.strip() for file in config_parser.get(
-                SECTION, 'ignore', fallback='').split(",") if file.strip()
+            file.strip()
+            for file in config_parser.get(SECTION, "ignore", fallback="").split(",")
+            if file.strip()
         ]
