@@ -1,5 +1,5 @@
 # repomate
-[![Build Status](https://travis-ci.com/slarse/repomate.svg?token=1VKcbDz66bMbTdt1ebsN&branch=master)](https://travis-ci.com/slarse/repomate)
+[![Build Status](https://travis-ci.com/slarse/repomate.svg)](https://travis-ci.com/slarse/repomate)
 [![Code Coverage](https://codecov.io/gh/slarse/repomate/branch/master/graph/badge.svg)](https://codecov.io/gh/slarse/repomate)
 [![Documentation Status](https://readthedocs.org/projects/repomate/badge/?version=latest)](http://repomate.readthedocs.io/en/latest/)
 [![PyPi Version](https://badge.fury.io/py/repomate.svg)](https://badge.fury.io/py/repomate)
@@ -90,13 +90,14 @@ optional arguments:
 ```
 
 ## Roadmap
-As of December 17th 2018, repomate is a stable release. The currently available
-commands will remain available for the foreseeable future, and any deprecation
-will be announced at least one minor version ahead of a feature being removed.
+As of December 17th 2018, Repomate's CLI is a stable release and adheres to
+[Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html). The internals
+of Repomate _do not_ adhere to this versioning, so using Repomate as a library
+is not recommended.
 
-The plugin system is however still to be considered in the beta phase, as it
-has seen much less live action use. Features will however not be cut, as all
-of them are essential for the way I work personally.
+The plugin system is still to be considered in the beta phase, as it has seen
+much less live action use than the rest of the CLI. Features are highly
+unlikely to be cut, but hooks may be modified as new use-cases arise.
 
 ## License
 This software is licensed under the MIT License. See the [LICENSE](LICENSE)
