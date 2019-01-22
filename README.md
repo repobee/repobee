@@ -9,31 +9,35 @@
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
 ## Overview
-`repomate` is A CLI tool for administrating large amounts of GitHub
-repositories, geared towards teachers and GitHub Enterprise. `repomate` is
+Repomate is A CLI tool for administrating large amounts of GitHub
+repositories, geared towards teachers and GitHub Enterprise. Repomate is
 currently being used for the introductory courses in computer science at
 [KTH Royal Technical Institute of Technology](https://www.kth.se/en/eecs). The
 courses have roughly 200 students and several thousands of repositories,
-allowing us to test `repomate` at quite a large scale.
+allowing us to test Repomate at quite a large scale.
+
+### Install
+Repomate is on PyPi, so `python3 -m pip install repomate` should do the trick. See the
+[install instructions](https://repomate.readthedocs.io/en/latest/install.html)
+for more elaborate instructions.
 
 ### Getting started
-The best way to get started with `repomate` is to head over to the
+The best way to get started with Repomate is to head over to the
 [Docs](https://repomate.readthedocs.io/en/latest/), where you (among other
 things) will find the
-[install instructions](https://repomate.readthedocs.io/en/latest/install.html)
-and
 [user guide](https://repomate.readthedocs.io/en/latest/userguide.html).
+It covers the use of Repomate's varous commands by way of practical example,
+and should set you on the right path with little effort.
 
-
-## Why `repomate`?
-`repomate` was developed at KTH Royal Technical Institute of Technology to help
+## Why Repomate?
+Repomate was developed at KTH Royal Technical Institute of Technology to help
 teachers and teaching assistants administrate GitHub repositories. It is
 inspired by the old
 [`teachers_pet` tool](https://github.com/education/teachers_pet), with added
 features and a user experience more to our liking. Features range from creating
 student repositories based on master (template) repos, to opening and closing
 issues in bulk, to assigning peer reviews and cloning repos in bulk. Some parts
-of `repomate` can be customized using a simple but powerful [plugin
+of Repomate can be customized using a simple but powerful [plugin
 system](https://github.com/slarse/repomate-plug). For example, the
 [`repomate-junit4` plugin](https://github.com/slarse/repomate-junit4) allows for
 automatically running `JUnit4` test classes on production code in student repos.
