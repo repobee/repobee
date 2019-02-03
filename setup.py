@@ -23,7 +23,7 @@ required = [
     "daiquiri",
     "pygithub",
     "colored",
-    "pluggy>=0.8.0",
+    "pluggy",
     "repomate-plug>=0.4.0",
 ]
 

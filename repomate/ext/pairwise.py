@@ -25,8 +25,8 @@ LOGGER = daiquiri.getLogger(name=__file__)
 def generate_review_allocations(
     master_repo_name: str,
     students: Iterable[str],
-    num_reviews: int = None,
-    review_team_name_function: Callable[[str, str], str] = None,
+    review_team_name_function: Callable[[str, str], str],
+    num_reviews: int = 1,
 ) -> Mapping[str, List[str]]:
     """Generate a (peer_review_team -> reviewers) mapping for each student
     repository (i.e. <student>-<master_repo_name>), where len(reviewers) =
@@ -37,11 +37,10 @@ def generate_review_allocations(
     Args:
         master_repo_name: Name of a master repository.
         students: Students for which to generate peer review allocations.
-        num_reviews: Amount of reviews each student should perform (and
-        consequently amount of reviewers per repo)
         review_team_name_function: A function that takes a master repo name
-        as its first argument, and a student username as its second, and
-        returns a review team name.
+            as its first argument, and a student username as its second, and
+            returns a review team name.
+        num_reviews: Ignored by this plugin.
     Returns:
         a (peer_review_team -> reviewers) mapping for each student repository.
     """
