@@ -24,7 +24,7 @@ required = [
     "pygithub",
     "colored",
     "pluggy",
-    "repomate-plug>=0.4.0",
+    "repomate-plug>=0.4.1",
 ]
 
 setup(
