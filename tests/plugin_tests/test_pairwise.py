@@ -27,7 +27,7 @@ class TestGenerateReviewAllocations:
         assert len(students) == num_students, "pre-test assert"
 
         allocations = pairwise.generate_review_allocations(
-            "week-2", students, num_reviews, util.generate_review_team_name
+            "week-2", students, util.generate_review_team_name, num_reviews
         )
 
         # flatten the peer review lists
@@ -56,7 +56,7 @@ class TestGenerateReviewAllocations:
         ]
 
         allocations = pairwise.generate_review_allocations(
-            master_repo_name, students, num_reviews, util.generate_review_team_name
+            master_repo_name, students, util.generate_review_team_name, num_reviews
         )
 
         assert set(expected_review_teams) == set(allocations.keys())
@@ -76,7 +76,7 @@ class TestGenerateReviewAllocations:
         ]
 
         allocations = pairwise.generate_review_allocations(
-            master_repo_name, students, num_reviews, util.generate_review_team_name
+            master_repo_name, students, util.generate_review_team_name, num_reviews
         )
 
         assert set(expected_review_teams) == set(allocations.keys())
