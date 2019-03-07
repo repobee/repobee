@@ -60,7 +60,9 @@ def generate_review_allocations(
 
     random.shuffle(students)
 
-    groups = [(students[i - 1], students[i]) for i in range(1, len(students), 2)]
+    groups = [
+        (students[i - 1], students[i]) for i in range(1, len(students), 2)
+    ]
     if len(students) % 2:
         groups[-1] = (*groups[-1], students[-1])
 
@@ -68,7 +70,7 @@ def generate_review_allocations(
     for group in groups:
         for i, reviewer in enumerate(group):
             student = group[(i + 1) % len(group)]
-            allocations[review_team_name_function(student, master_repo_name)] = [
-                reviewer
-            ]
+            allocations[
+                review_team_name_function(student, master_repo_name)
+            ] = [reviewer]
     return allocations

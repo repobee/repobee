@@ -38,7 +38,9 @@ def validate_types(**kwargs) -> None:
     for param_name, (argument, expected_types) in kwargs.items():
         if not isinstance(argument, expected_types):
             if isinstance(expected_types, tuple):
-                exp_type_str = " or ".join([t.__name__ for t in expected_types])
+                exp_type_str = " or ".join(
+                    [t.__name__ for t in expected_types]
+                )
             else:
                 exp_type_str = expected_types.__name__
             raise TypeError(
@@ -85,8 +87,12 @@ def generate_repo_names(
     Returns:
         a list of repo names for all combinations of team and master repo.
     """
-    validate_non_empty(team_names=team_names, master_repo_names=master_repo_names)
-    master_repo_names = list(master_repo_names)  # needs to be traversed multiple times
+    validate_non_empty(
+        team_names=team_names, master_repo_names=master_repo_names
+    )
+    master_repo_names = list(
+        master_repo_names
+    )  # needs to be traversed multiple times
     return [
         generate_repo_name(team_name, master_name)
         for master_name in master_repo_names
@@ -131,7 +137,9 @@ def is_git_repo(path: str) -> bool:
     return os.path.isdir(path) and ".git" in os.listdir(path)
 
 
-def _ends_with_ext(path: Union[str, pathlib.Path], extensions: Iterable[str]) -> bool:
+def _ends_with_ext(
+    path: Union[str, pathlib.Path], extensions: Iterable[str]
+) -> bool:
     _, ext = os.path.splitext(str(path))
     return ext in extensions
 

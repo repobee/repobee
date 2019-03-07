@@ -35,7 +35,9 @@ SECTION = "pylint"
 
 
 @repomate_hook
-def act_on_cloned_repo(path: Union[str, pathlib.Path], api: github_api.GitHubAPI):
+def act_on_cloned_repo(
+    path: Union[str, pathlib.Path], api: github_api.GitHubAPI
+):
     """Run pylint on all Python files in a repo.
 
     Args:
@@ -68,9 +70,13 @@ def _pylint(python_files: Iterable[Union[pathlib.Path]]) -> Tuple[str, str]:
     for py_file in python_files:
         LOGGER.info("running pylint on {!s}".format(py_file))
         command = "pylint {!s}".format(py_file).split()
-        proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.run(
+            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
 
-        outfile = pathlib.Path("{}/{}.lint".format(py_file.parent, py_file.name))
+        outfile = pathlib.Path(
+            "{}/{}.lint".format(py_file.parent, py_file.name)
+        )
         outfile.touch()
         outfile.write_bytes(proc.stdout)
         linted_files.append(str(py_file))

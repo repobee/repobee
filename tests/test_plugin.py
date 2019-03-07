@@ -34,7 +34,9 @@ class TestLoadPluginModules:
         """Test load the bundled plugins, i.e. the ones listed in
         constants.PLUGINS.
         """
-        expected_names = list(map(plugin.PLUGIN_QUALNAME, [*PLUGINS, DEFAULT_PLUGIN]))
+        expected_names = list(
+            map(plugin.PLUGIN_QUALNAME, [*PLUGINS, DEFAULT_PLUGIN])
+        )
 
         modules = plugin.load_plugin_modules(str(config_mock))
         module_names = [mod.__name__ for mod in modules]
@@ -47,7 +49,9 @@ class TestLoadPluginModules:
         plugin_names = ["awesome", "the_slarse_plugin", "ric_easter_egg"]
         expected_calls = [
             call(plug)
-            for plug in map(plugin.PLUGIN_QUALNAME, plugin_names + [DEFAULT_PLUGIN])
+            for plug in map(
+                plugin.PLUGIN_QUALNAME, plugin_names + [DEFAULT_PLUGIN]
+            )
         ]
 
         class module:
@@ -143,7 +147,11 @@ class TestRegisterPlugins:
         """
         modules = [javac, pylint]
         # pylint should be registered before javac because of FIFO order
-        expected_calls = [call(pylint), call(javac), call(javac_clone_hook_mock)]
+        expected_calls = [
+            call(pylint),
+            call(javac),
+            call(javac_clone_hook_mock),
+        ]
         plugin.register_plugins([javac, pylint])
 
         plugin_manager_mock.register.assert_has_calls(expected_calls)

@@ -22,7 +22,9 @@ import repomate_plug as plug
 
 LOGGER = daiquiri.getLogger(__file__)
 
-PLUGIN_QUALNAME = lambda plugin_name: "{}.ext.{}".format(__package__, plugin_name)
+PLUGIN_QUALNAME = lambda plugin_name: "{}.ext.{}".format(
+    __package__, plugin_name
+)
 EXTERNAL_PLUGIN_QUALNAME = lambda plugin_name: "{}_{}.{}".format(
     __package__, plugin_name, plugin_name
 )

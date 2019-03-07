@@ -91,7 +91,9 @@ def get_plugin_names(
         plugins are listed.
     """
     config_file = (
-        pathlib.Path(config_file) if isinstance(config_file, str) else config_file
+        pathlib.Path(config_file)
+        if isinstance(config_file, str)
+        else config_file
     )
     if not config_file.is_file():
         return []
@@ -135,9 +137,12 @@ def check_config_integrity(
         defaults = _read_defaults(config_file)
     except configparser.ParsingError as exc:
         errors = ", ".join(
-            "(line {}: {})".format(line_nr, line) for line_nr, line in exc.errors
+            "(line {}: {})".format(line_nr, line)
+            for line_nr, line in exc.errors
         )
-        raise exception.FileError(msg="config file contains syntax errors: " + errors)
+        raise exception.FileError(
+            msg="config file contains syntax errors: " + errors
+        )
     check_defaults(defaults)
 
 

@@ -24,7 +24,10 @@ def written_tmpfile(text):
     """
     with tempfile.TemporaryDirectory() as tmpdir:
         with tempfile.NamedTemporaryFile(
-            dir=tmpdir, mode="w", encoding=sys.getdefaultencoding(), delete=False
+            dir=tmpdir,
+            mode="w",
+            encoding=sys.getdefaultencoding(),
+            delete=False,
         ) as file:
             file.write(text)
             file.flush()
@@ -83,9 +86,14 @@ class TestReadIssue:
 
 @pytest.mark.parametrize(
     "team_name, master_repo_name, empty_arg",
-    [("", "some-repo-name", "team_name"), ("some-team-name", "", "master_repo_name")],
+    [
+        ("", "some-repo-name", "team_name"),
+        ("some-team-name", "", "master_repo_name"),
+    ],
 )
-def test_generate_repo_name_raises_on_empty_arg(team_name, master_repo_name, empty_arg):
+def test_generate_repo_name_raises_on_empty_arg(
+    team_name, master_repo_name, empty_arg
+):
     with pytest.raises(ValueError) as exc:
         util.generate_repo_name(team_name, master_repo_name)
     assert empty_arg in str(exc.value)
@@ -134,7 +142,8 @@ def directory_structure(tmpdir):
             file.ensure()
 
     java_files = [
-        str(f) for f in (tmpdir.join("Main.java"), other_repo.join("Main.java"))
+        str(f)
+        for f in (tmpdir.join("Main.java"), other_repo.join("Main.java"))
     ]
     python_files = [
         str(f)
@@ -175,9 +184,13 @@ class TestFindFilesByExtension:
     def test_find_java_py_md_files(self, directory_structure):
         """Try to find all three types at the same time."""
         root, java_files, python_files, md_files = directory_structure
-        expected_files = list(itertools.chain(java_files, python_files, md_files))
+        expected_files = list(
+            itertools.chain(java_files, python_files, md_files)
+        )
 
-        files = list(util.find_files_by_extension(str(root), ".java", ".py", ".md"))
+        files = list(
+            util.find_files_by_extension(str(root), ".java", ".py", ".md")
+        )
 
         filepaths = [str(file.resolve()) for file in files]
 
@@ -190,7 +203,9 @@ class TestFindFilesByExtension:
 
         assert not files
 
-    def test_does_not_find_files_when_dot_is_omitted(self, directory_structure):
+    def test_does_not_find_files_when_dot_is_omitted(
+        self, directory_structure
+    ):
         root, *_ = directory_structure
 
         files = list(util.find_files_by_extension(str(root), "java"))

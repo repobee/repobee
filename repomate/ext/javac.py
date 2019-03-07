@@ -72,7 +72,9 @@ class JavacCloneHook(Plugin):
         status, msg = self._javac(java_files)
         return HookResult("javac", status, msg)
 
-    def _javac(self, java_files: Iterable[Union[str, pathlib.Path]]) -> Tuple[str, str]:
+    def _javac(
+        self, java_files: Iterable[Union[str, pathlib.Path]]
+    ) -> Tuple[str, str]:
         """Run ``javac`` on all of the specified files, assuming that they are
         all ``.java`` files.
 
@@ -84,7 +86,9 @@ class JavacCloneHook(Plugin):
                 outcome in plain text.
         """
         command = ["javac", *[str(path) for path in java_files]]
-        proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.run(
+            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
 
         if proc.returncode != 0:
             status = Status.ERROR
@@ -125,6 +129,8 @@ class JavacCloneHook(Plugin):
         """
         self._ignore = [
             file.strip()
-            for file in config_parser.get(SECTION, "ignore", fallback="").split(",")
+            for file in config_parser.get(
+                SECTION, "ignore", fallback=""
+            ).split(",")
             if file.strip()
         ]

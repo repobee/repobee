@@ -34,7 +34,7 @@ Color coding: grey: not done, green: done, red: num done + num remaining != num_
 [48;5;22m[38;5;15mspam            2               0                               [0m
 [48;5;22m[38;5;15mbacon           2               0                               [0m
 [48;5;22m[38;5;15meggs            2               0                               [0m
-"""
+"""  # noqa: E501
 
         actual_output = formatters.format_peer_review_progress_output(
             reviews, students, num_reviews
@@ -61,7 +61,7 @@ Color coding: grey: not done, green: done, red: num done + num remaining != num_
 [48;5;235m[38;5;15mspam            0               2               bacon-week-1,eggs-week-1[0m
 [48;5;239m[38;5;15mbacon           0               2               eggs-week-1,ham-week-1[0m
 [48;5;235m[38;5;15meggs            0               2               ham-week-1,spam-week-1[0m
-"""
+"""  # noqa: E501
 
         actual_output = formatters.format_peer_review_progress_output(
             reviews, students, num_reviews
@@ -69,7 +69,9 @@ Color coding: grey: not done, green: done, red: num done + num remaining != num_
         assert actual_output.strip() == expected_output.strip()
 
     def test_student_with_too_few_assigned_reviews(self, students):
-        """Test that the single student (bacon in this case) is highlighted with red."""
+        """Test that the single student (bacon in this case) is highlighted
+        with red.
+        """
         num_reviews = 2
         reviews = {
             "ham": strs_to_reviews("spam-week-1", "bacon-week-1"),
@@ -84,14 +86,16 @@ Color coding: grey: not done, green: done, red: num done + num remaining != num_
 [48;5;22m[38;5;15mspam            2               0                               [0m
 [48;5;1m[38;5;15mbacon           1               0                               [0m
 [48;5;22m[38;5;15meggs            2               0                               [0m
-"""
+"""  # noqa: E501
         actual_output = formatters.format_peer_review_progress_output(
             reviews, students, num_reviews
         )
         assert actual_output.strip() == expected_output.strip()
 
     def test_mixed(self, students):
-        """One student is done, one has performed half, one has too few assigned, one has more"""
+        """One student is done, one has performed half, one has too few
+        assigned, one has more.
+        """
         num_reviews = 2
         reviews = {
             "ham": strs_to_reviews("spam-week-1", "bacon-week-1", done=False),
@@ -111,7 +115,7 @@ Color coding: grey: not done, green: done, red: num done + num remaining != num_
 [48;5;235m[38;5;15mspam            0               2               bacon-week-1,eggs-week-1[0m
 [48;5;1m[38;5;15mbacon           0               1               eggs-week-1     [0m
 [48;5;1m[38;5;15meggs            3               0                               [0m
-"""
+"""  # noqa: E501
         actual_output = formatters.format_peer_review_progress_output(
             reviews, students, num_reviews
         )
@@ -125,7 +129,7 @@ Color coding: grey: not done, green: done, red: num done + num remaining != num_
         expected_output = """
 Color coding: grey: not done, green: done, red: num done + num remaining != num_reviews
 [0mreviewer        num done        num remaining   repos remaining 
-"""
+"""  # noqa: E501
         actual_output = formatters.format_peer_review_progress_output(
             reviews, students, num_reviews
         )

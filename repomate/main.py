@@ -58,7 +58,9 @@ def main(sys_args: List[str]):
     except Exception as exc:
         # FileErrors can occur during pre-init because of reading the config
         # and we don't want tracebacks for those (afaik at this time)
-        if traceback or (pre_init and not isinstance(exc, exception.FileError)):
+        if traceback or (
+            pre_init and not isinstance(exc, exception.FileError)
+        ):
             if pre_init:
                 LOGGER.error(
                     "unexpected exception raised before pre-initialization was complete. "

@@ -26,7 +26,9 @@ class TestGetConfiguredDefaults:
     def test_get_configured_defaults_empty_file(self, empty_config_mock):
         with pytest.raises(exception.FileError) as exc_info:
             defaults = config.get_configured_defaults()
-        assert "does not contain the required [DEFAULTS] header" in str(exc_info)
+        assert "does not contain the required [DEFAULTS] header" in str(
+            exc_info
+        )
 
     def test_get_configured_defaults_reads_full_config(
         self, config_mock, students_file
@@ -80,7 +82,9 @@ class TestGetConfiguredDefaults:
         with pytest.raises(exception.FileError) as exc_info:
             config.get_configured_defaults()
 
-        assert "does not contain the required [DEFAULTS] header" in str(exc_info)
+        assert "does not contain the required [DEFAULTS] header" in str(
+            exc_info
+        )
 
 
 class TestGetPluginNames:
@@ -105,7 +109,10 @@ class TestGetPluginNames:
         self, plugins_string, expected_plugins, empty_config_mock
     ):
         contents = os.linesep.join(
-            ["[{}]".format(config.DEFAULTS_SECTION_HDR), "plugins = " + plugins_string]
+            [
+                "[{}]".format(config.DEFAULTS_SECTION_HDR),
+                "plugins = " + plugins_string,
+            ]
         )
         empty_config_mock.write(contents)
 
@@ -167,7 +174,9 @@ class TestCheckConfigIntegrity:
         assert "option" in str(exc_info)
         assert "user" not in str(exc_info)
 
-    def test_with_valid_but_malformed_default_args_raises(self, empty_config_mock):
+    def test_with_valid_but_malformed_default_args_raises(
+        self, empty_config_mock
+    ):
         empty_config_mock.write(
             os.linesep.join(
                 [

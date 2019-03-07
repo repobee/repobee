@@ -20,21 +20,27 @@ LOGGER = daiquiri.getLogger(__name__)
 
 
 def format_peer_review_progress_output(
-    reviews: Mapping[str, List[tuples.Review]], students: List[str], num_reviews: int
+    reviews: Mapping[str, List[tuples.Review]],
+    students: List[str],
+    num_reviews: int,
 ):
     # can't use tabs for spacing as they are not background colored in output for some reason
     # each column should be exactly 16 characters
     output = [
         "Color coding: grey: not done, green: done, red: num done + num remaining != num_reviews",
         style.RESET
-        + _format_row(["reviewer", "num done", "num remaining", "repos remaining"]),
+        + _format_row(
+            ["reviewer", "num done", "num remaining", "repos remaining"]
+        ),
     ]
     even = False
     for reviewer in students:
         even = not even
         review_list = reviews[reviewer]
         output.append(
-            _format_reviewer(reviewer, review_list, students, num_reviews, even)
+            _format_reviewer(
+                reviewer, review_list, students, num_reviews, even
+            )
         )
     return os.linesep.join(output)
 
@@ -91,7 +97,9 @@ def format_hook_result(hook_result):
     else:
         raise ValueError(
             "expected hook_result.status to be one of Status.ERROR, "
-            "Status.WARNING or Status.SUCCESS, but was {!r}".format(hook_result.status)
+            "Status.WARNING or Status.SUCCESS, but was {!r}".format(
+                hook_result.status
+            )
         )
 
     out += (
@@ -114,7 +122,10 @@ def format_hook_results_output(result_mapping):
             bg("grey_23"), repo_name, style.RESET, os.linesep * 2
         )
         out += os.linesep.join(
-            ["{}{}".format(format_hook_result(res), os.linesep) for res in results]
+            [
+                "{}{}".format(format_hook_result(res), os.linesep)
+                for res in results
+            ]
         )
         out += os.linesep * 2
 

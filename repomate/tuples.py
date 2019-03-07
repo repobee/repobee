@@ -12,7 +12,9 @@ the goal is to collect all container types in this module.
 from collections import namedtuple
 
 
-class Issue(namedtuple("Issue", ("title", "body", "number", "created_at", "author"))):
+class Issue(
+    namedtuple("Issue", ("title", "body", "number", "created_at", "author"))
+):
     def __new__(cls, title, body, number=None, created_at=None, author=None):
         return super().__new__(cls, title, body, number, created_at, author)
 
@@ -43,7 +45,9 @@ Args.__new__.__defaults__ = (None,) * len(Args._fields)
 Team = namedtuple("Team", ("name", "members", "id"))
 
 
-class Repo(namedtuple("Repo", ("name", "description", "private", "team_id", "url"))):
+class Repo(
+    namedtuple("Repo", ("name", "description", "private", "team_id", "url"))
+):
     def __new__(cls, name, description, private, team_id=None, url=None):
         return super().__new__(cls, name, description, private, team_id, url)
 

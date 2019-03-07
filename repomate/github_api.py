@@ -32,7 +32,8 @@ _User = github.NamedUser.NamedUser
 _Repo = github.Repository.Repository
 
 DEFAULT_REVIEW_ISSUE = tuples.Issue(
-    title="Peer review", body="You have been assigned to peer review this repo."
+    title="Peer review",
+    body="You have been assigned to peer review this repo.",
 )
 
 
@@ -144,7 +145,9 @@ class GitHubAPI:
         team_names = set(team_names)
         with _try_api_request():
             yield from (
-                team for team in self.org.get_teams() if team.name in team_names
+                team
+                for team in self.org.get_teams()
+                if team.name in team_names
             )
 
     def delete_teams(self, team_names: Iterable[str]) -> None:
@@ -163,7 +166,9 @@ class GitHubAPI:
         # only logging
         missing = set(team_names) - deleted
         if missing:
-            LOGGER.warning("could not find teams: {}".format(", ".join(missing)))
+            LOGGER.warning(
+                "could not find teams: {}".format(", ".join(missing))
+            )
 
     def _get_users(self, usernames: Iterable[str]) -> List[_User]:
         """Get all existing users corresponding to the usernames.
@@ -188,7 +193,9 @@ class GitHubAPI:
         return existing_users
 
     def ensure_teams_and_members(
-        self, member_lists: Mapping[str, Iterable[str]], permission: str = "push"
+        self,
+        member_lists: Mapping[str, Iterable[str]],
+        permission: str = "push",
     ) -> List[tuples.Team]:
         """Create teams that do not exist and add members not in their
         specified teams (if they exist as users).
@@ -201,7 +208,8 @@ class GitHubAPI:
             the member_lists mapping.
         """
         teams = self._ensure_teams_exist(
-            [team_name for team_name in member_lists.keys()], permission=permission
+            [team_name for team_name in member_lists.keys()],
+            permission=permission,
         )
 
         for team in [team for team in teams if member_lists[team.name]]:
@@ -227,16 +235,22 @@ class GitHubAPI:
         existing_team_names = set(team.name for team in existing_teams)
 
         required_team_names = set(team_names)
-        teams = [team for team in existing_teams if team.name in required_team_names]
+        teams = [
+            team for team in existing_teams if team.name in required_team_names
+        ]
 
         for team_name in required_team_names - existing_team_names:
             with _try_api_request():
-                new_team = self._org.create_team(team_name, permission=permission)
+                new_team = self._org.create_team(
+                    team_name, permission=permission
+                )
                 LOGGER.info("created team {}".format(team_name))
                 teams.append(new_team)
         return teams
 
-    def _ensure_members_in_team(self, team: github.Team.Team, members: Iterable[str]):
+    def _ensure_members_in_team(
+        self, team: github.Team.Team, members: Iterable[str]
+    ):
         """Add all of the users in ``members`` to a team. Skips any users that
         don't exist, or are already in the team.
 
@@ -302,7 +316,9 @@ class GitHubAPI:
 
             if not created:
                 repo_urls.append(self._org.get_repo(info.name).html_url)
-                LOGGER.info("{}/{} already exists".format(self._org_name, info.name))
+                LOGGER.info(
+                    "{}/{} already exists".format(self._org_name, info.name)
+                )
 
         return repo_urls
 
@@ -322,13 +338,21 @@ class GitHubAPI:
             a list of urls corresponding to the repo names.
         """
         with _try_api_request():
-            org = self._org if not org_name else self._github.get_organization(org_name)
+            org = (
+                self._org
+                if not org_name
+                else self._github.get_organization(org_name)
+            )
         return [
-            "{}/{}".format(org.html_url, repo_name) for repo_name in list(repo_names)
+            "{}/{}".format(org.html_url, repo_name)
+            for repo_name in list(repo_names)
         ]
 
     def get_issues(
-        self, repo_names: Iterable[str], state: str = "open", title_regex: str = ""
+        self,
+        repo_names: Iterable[str],
+        state: str = "open",
+        title_regex: str = "",
     ):
         """Get all issues for the repos in repo_names an return a generator
         that yields (repo_name, issue generator) tuples.
@@ -357,7 +381,9 @@ class GitHubAPI:
             )
         yield from name_issues_pairs
 
-    def open_issue(self, title: str, body: str, repo_names: Iterable[str]) -> None:
+    def open_issue(
+        self, title: str, body: str, repo_names: Iterable[str]
+    ) -> None:
         """Open the specified issue in all repos with the given names.
 
         Args:
@@ -396,7 +422,9 @@ class GitHubAPI:
         for issue, repo in issue_repo_gen:
             issue.edit(state="closed")
             LOGGER.info(
-                "closed issue {}/#{}-'{}'".format(repo.name, issue.number, issue.title)
+                "closed issue {}/#{}-'{}'".format(
+                    repo.name, issue.number, issue.title
+                )
             )
             closed += 1
 
@@ -404,7 +432,9 @@ class GitHubAPI:
             LOGGER.warning("Found no matching issues.")
 
     def add_repos_to_review_teams(
-        self, team_to_repos: Mapping[str, Iterable[str]], issue: Optional[tuples.Issue]
+        self,
+        team_to_repos: Mapping[str, Iterable[str]],
+        issue: Optional[tuples.Issue],
     ) -> None:
         """Add repos to review teams. For each repo, an issue is opened, and
         every user in the review team is assigned to it. If no issue is
@@ -477,7 +507,8 @@ class GitHubAPI:
                 for reviewer in reviewers:
                     reviews[reviewer].append(
                         tuples.Review(
-                            repo=repo.name, done=reviewer in review_issue_authors
+                            repo=repo.name,
+                            done=reviewer in review_issue_authors,
                         )
                     )
 
@@ -485,7 +516,9 @@ class GitHubAPI:
 
     def add_repos_to_teams(
         self, team_to_repos: Mapping[str, Iterable[str]]
-    ) -> Generator[Tuple[github.Team.Team, github.Repository.Repository], None, None]:
+    ) -> Generator[
+        Tuple[github.Team.Team, github.Repository.Repository], None, None
+    ]:
         """Add repos to teams and yield each (team, repo) combination _after_
         the repo has been added to the team.
 
@@ -496,7 +529,11 @@ class GitHubAPI:
         """
         team_names = set(team_to_repos.keys())
         with _try_api_request():
-            teams = (team for team in self._org.get_teams() if team.name in team_names)
+            teams = (
+                team
+                for team in self._org.get_teams()
+                if team.name in team_names
+            )
         for team in teams:
             repos = self._get_repos_by_name(team_to_repos[team.name])
             for repo in repos:
@@ -530,7 +567,9 @@ class GitHubAPI:
 
         missing_repos = set(repo_names) - repos
         if missing_repos:
-            LOGGER.warning("can't find repos: {}".format(", ".join(missing_repos)))
+            LOGGER.warning(
+                "can't find repos: {}".format(", ".join(missing_repos))
+            )
 
     @staticmethod
     def verify_settings(
@@ -606,7 +645,9 @@ class GitHubAPI:
                 )
                 raise exception.UnexpectedException(msg=msg)
         LOGGER.info(
-            "SUCCESS: found user {}, user exists and base url looks okay".format(user)
+            "SUCCESS: found user {}, user exists and base url looks okay".format(
+                user
+            )
         )
 
         LOGGER.info("verifying oauth scopes ...")
@@ -643,11 +684,17 @@ class GitHubAPI:
                 user, org_name
             )
         )
-        owner_usernames = (owner.login for owner in org.get_members(role="admin"))
+        owner_usernames = (
+            owner.login for owner in org.get_members(role="admin")
+        )
         if user not in owner_usernames:
             raise exception.BadCredentials(
-                "user {} is not an owner of organization {}".format(user, org_name)
+                "user {} is not an owner of organization {}".format(
+                    user, org_name
+                )
             )
         LOGGER.info(
-            "SUCCESS: user {} is an owner of organization {}".format(user, org_name)
+            "SUCCESS: user {} is an owner of organization {}".format(
+                user, org_name
+            )
         )

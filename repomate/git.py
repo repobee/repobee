@@ -98,11 +98,17 @@ def clone_single(
     rc, _, stderr = captured_run(clone_command, cwd=cwd)
 
     if rc != 0:
-        raise exception.CloneFailedError("Failed to clone", rc, stderr, repo_url)
+        raise exception.CloneFailedError(
+            "Failed to clone", rc, stderr, repo_url
+        )
 
 
 async def _clone_async(
-    repo_url: str, token: str, single_branch: bool = True, branch: str = None, cwd="."
+    repo_url: str,
+    token: str,
+    single_branch: bool = True,
+    branch: str = None,
+    cwd=".",
 ):
     """Clone git repositories asynchronously.
 
@@ -133,7 +139,10 @@ async def _clone_async(
 
 
 def clone(
-    repo_urls: Iterable[str], token: str, single_branch: bool = True, cwd: str = "."
+    repo_urls: Iterable[str],
+    token: str,
+    single_branch: bool = True,
+    cwd: str = ".",
 ) -> List[Exception]:
     """Clone all repos asynchronously.
 
@@ -198,7 +207,9 @@ async def _push_async(pt: Push, user: str, token: str):
         LOGGER.info("Pushed files to {} {}".format(pt.repo_url, pt.branch))
 
 
-def _push_no_retry(push_tuples: Iterable[Push], user: str, token: str) -> List[str]:
+def _push_no_retry(
+    push_tuples: Iterable[Push], user: str, token: str
+) -> List[str]:
     """Push to all repos defined in push_tuples asynchronously. Amount of
     concurrent tasks is limited by CONCURRENT_TASKS.
 
@@ -291,7 +302,9 @@ def _batch_execution(
         loop.run_until_complete(asyncio.wait(tasks))
         completed_tasks += tasks
 
-    exceptions = [task.exception() for task in completed_tasks if task.exception()]
+    exceptions = [
+        task.exception() for task in completed_tasks if task.exception()
+    ]
     for exc in exceptions:
         LOGGER.error(str(exc))
 

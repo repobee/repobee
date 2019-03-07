@@ -98,7 +98,9 @@ def parse_args(
     args = parser.parse_args(sys_args)
 
     # environment token overrides config
-    token = os.getenv("REPOMATE_OAUTH") or (args.token if "token" in args else "")
+    token = os.getenv("REPOMATE_OAUTH") or (
+        args.token if "token" in args else ""
+    )
 
     if getattr(args, SUB) == VERIFY_PARSER:
         # quick parse for verify connection
@@ -138,13 +140,17 @@ def parse_args(
     parsed_args = tuples.Args(
         subparser=getattr(args, SUB),
         org_name=args.org_name,
-        master_org_name=args.master_org_name if "master_org_name" in args else None,
+        master_org_name=args.master_org_name
+        if "master_org_name" in args
+        else None,
         github_base_url=args.github_base_url,
         user=args.user if "user" in args else None,
         master_repo_urls=master_urls,
         master_repo_names=master_names,
         students=_extract_students(args),
-        issue=util.read_issue(args.issue) if "issue" in args and args.issue else None,
+        issue=util.read_issue(args.issue)
+        if "issue" in args and args.issue
+        else None,
         title_regex=args.title_regex if "title_regex" in args else None,
         traceback=args.traceback,
         state=args.state if "state" in args else None,
@@ -174,11 +180,17 @@ def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
     elif args.subparser == UPDATE_PARSER:
         with _sys_exit_on_expected_error():
             command.update_student_repos(
-                args.master_repo_urls, args.students, args.user, api, issue=args.issue
+                args.master_repo_urls,
+                args.students,
+                args.user,
+                api,
+                issue=args.issue,
             )
     elif args.subparser == OPEN_ISSUE_PARSER:
         with _sys_exit_on_expected_error():
-            command.open_issue(args.issue, args.master_repo_names, args.students, api)
+            command.open_issue(
+                args.issue, args.master_repo_names, args.students, api
+            )
     elif args.subparser == CLOSE_ISSUE_PARSER:
         with _sys_exit_on_expected_error():
             command.close_issue(
@@ -213,11 +225,17 @@ def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
     elif args.subparser == ASSIGN_REVIEWS_PARSER:
         with _sys_exit_on_expected_error():
             command.assign_peer_reviews(
-                args.master_repo_names, args.students, args.num_reviews, args.issue, api
+                args.master_repo_names,
+                args.students,
+                args.num_reviews,
+                args.issue,
+                api,
             )
     elif args.subparser == PURGE_REVIEW_TEAMS_PARSER:
         with _sys_exit_on_expected_error():
-            command.purge_review_teams(args.master_repo_names, args.students, api)
+            command.purge_review_teams(
+                args.master_repo_names, args.students, api
+            )
     elif args.subparser == SHOW_CONFIG_PARSER:
         with _sys_exit_on_expected_error():
             command.show_config()
@@ -437,7 +455,9 @@ def _add_subparsers(parser):
         _create_base_parsers()
     )
 
-    repo_name_parser = argparse.ArgumentParser(add_help=False, parents=[base_parser])
+    repo_name_parser = argparse.ArgumentParser(
+        add_help=False, parents=[base_parser]
+    )
     repo_name_parser.add_argument(
         "-mn",
         "--master-repo-names",
@@ -505,7 +525,9 @@ def _add_subparsers(parser):
         "somewhere in the target GitHub instance (and specified with `-mu`). "
         "Migrate repos are added to the `{}` team. "
         "`migrate-repos` can also be used to update already migrated "
-        "repos, by simply running the command again.".format(command.MASTER_TEAM),
+        "repos, by simply running the command again.".format(
+            command.MASTER_TEAM
+        ),
         parents=[base_parser, base_user_parser],
     )
     names_or_urls = migrate.add_mutually_exclusive_group(required=True)
@@ -541,7 +563,9 @@ def _add_subparsers(parser):
     plug.manager.hook.clone_parser_hook(clone_parser=clone)
 
     _add_issue_parsers([base_student_parser, repo_name_parser], subparsers)
-    _add_peer_review_parsers([base_student_parser, repo_name_parser], subparsers)
+    _add_peer_review_parsers(
+        [base_student_parser, repo_name_parser], subparsers
+    )
 
     verify = subparsers.add_parser(
         VERIFY_PARSER,
@@ -647,7 +671,12 @@ def _create_base_parsers():
         default=default("master_org_name"),
     )
 
-    return base_parser, base_student_parser, base_user_parser, master_org_parser
+    return (
+        base_parser,
+        base_student_parser,
+        base_user_parser,
+        master_org_parser,
+    )
 
 
 @contextmanager
@@ -696,7 +725,9 @@ def _extract_students(args: argparse.Namespace) -> List[str]:
         except FileNotFoundError:
             pass  # handled by next check
         if not students_file.is_file():
-            raise exception.FileError("'{!s}' is not a file".format(students_file))
+            raise exception.FileError(
+                "'{!s}' is not a file".format(students_file)
+            )
         if not students_file.stat().st_size:
             raise exception.FileError("'{!s}' is empty".format(students_file))
         students = [
@@ -747,12 +778,15 @@ def _repo_names_to_urls(
     Returns:
         a list of urls corresponding to the repo_names.
     """
-    local = [name for name in repo_names if util.is_git_repo(os.path.abspath(name))]
+    local = [
+        name for name in repo_names if util.is_git_repo(os.path.abspath(name))
+    ]
     non_local = [name for name in repo_names if name not in local]
 
     non_local_urls = api.get_repo_urls(non_local, org_name)
     local_uris = [
-        pathlib.Path(os.path.abspath(repo_name)).as_uri() for repo_name in local
+        pathlib.Path(os.path.abspath(repo_name)).as_uri()
+        for repo_name in local
     ]
     return non_local_urls + local_uris
 
@@ -775,7 +809,9 @@ def parse_plugins(sys_args: Tuple[str]):
         type=str,
         action="append",
     )
-    mutex_grp.add_argument("--no-plugins", help="Disable plugins.", action="store_true")
+    mutex_grp.add_argument(
+        "--no-plugins", help="Disable plugins.", action="store_true"
+    )
 
     args = parser.parse_args(sys_args)
 
