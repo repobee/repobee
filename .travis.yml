@@ -1,4 +1,8 @@
 language: python
+branches:
+  only:
+  - master
+  - "/^v\\d+\\.\\d+\\.\\d+$/"
 matrix:
   include:
   - os: linux
@@ -10,17 +14,15 @@ matrix:
     dist: xenial
     sudo: true
   - os: osx
-    env: PYTHON=3.5.4
     language: generic
     sudo: true
-  - os: osx
-    env: PYTHON=3.6.5
-    language: generic
-    sudo: true
-  - os: osx
-    env: PYTHON=3.7.0
-    language: generic
-    sudo: true
+    before_cache:
+      - brew cleanup
+    cache:
+      directories:
+        # cache homebrew
+        - $HOME/Library/Caches/Homebrew
+        - /Users/travis/.pyenv/versions
 install: ".travis/install.sh"
 script: ".travis/run.sh"
 after_success:
@@ -40,7 +42,6 @@ deploy:
     secure: OTaXQPwYy0vvzsTOWd3xFI5MtfO9c2Y7PmIhuNaavcqElBnUbjkD2wikRGo/gz0vzpUpV41fQbvdQxXtvi7e5nYERSXogE2CY7+EcfT1IfCn9f9czl23g8sWQVIWd3Kz3uTUHqtYCraLIvbKNPZFSArulg86hYs8uZMtZ8c0CwY+0942rU+hUDIycQlZTP+ydjkKq1I/VpG33NSWz4dOgy7dfqNUyL56Uy0BUzcRRNMevNR/aFhJiYXXZW42qJEjXQDOytoxap9aHzV9LvNtqKa/sOB/bYnMyfzBtHHRc9MZFNfsQ68E5UFTriujL2G8Wu4+9RWYMKqkpqyVt1WVawT3ojatxH2xV9bKm3wDsT+wUMN4lYBlfygtEdk76jUHPHlEIA6JqiR8FsHupuB5FgHEVhg7KFg6icT7opDzx5xasvs0rydqguDcur6fvAMwin4/o5FNw2Nlx24wFtiQ0gxTkTLRmjgf8uL0UHZ4hruu3Dw666oxKlytWrw8wA6hmJUx96QmjWUHlcebck9KqNHRm0rYneU4ny2jZpMSVUvTP/UMK68xAG8vPLcpBnuLCDt1UYx161fu15mqruUnmoCLsGraGIWMGmNemAjE4f4RYAVtkv7VK4qSuYedwMmL8v/jOMop4Ky1Bg5dlES9COavEpqJFjN4ik1lFhtiV+4=
   on:
     tags: true
-    all_branches: true
     condition: $TRAVIS_OS_NAME = "linux"
   distributions: sdist bdist_wheel
   repo: slarse/repomate
