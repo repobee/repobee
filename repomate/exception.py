@@ -1,7 +1,7 @@
 """Modules for all custom repomate exceptions.
 
-All exceptions extend the :py:class:`RepomateException` base class, which itself
-extends :py:class:`Exception`. In other words, exceptions raised within
+All exceptions extend the :py:class:`RepomateException` base class, which
+itself extends :py:class:`Exception`. In other words, exceptions raised within
 ``repomate`` can all be caught by catching :py:class:`RepomateException`.
 
 .. module:: exception
@@ -57,16 +57,20 @@ class BadCredentials(GitHubError):
 
 
 class UnexpectedException(GitHubError):
-    """An exception raised when an API request raises an unexpected exception."""
+    """An exception raised when an API request raises an unexpected
+    exception.
+    """
 
 
 class APIError(RepomateException):
-    """Raise when something unexpected happens when interacting with the API."""
+    """Raise when something unexpected happens when interacting with the
+    API.
+    """
 
 
 class GitError(RepomateException):
-    """A generic error to raise when a git command exits with a non-zero
-    exit status.
+    """A generic error to raise when a git command exits with a non-zero exit
+    status.
     """
 
     def __init__(self, msg: str, returncode: int, stderr: bytes):
@@ -103,4 +107,6 @@ class PushFailedError(GitError):
 
 
 class PluginError(RepomateException):
-    """Generic error to raise when something goes wrong with loading plugins."""
+    """Generic error to raise when something goes wrong with loading
+    plugins.
+    """

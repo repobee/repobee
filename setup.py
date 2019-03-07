@@ -18,19 +18,29 @@ test_requirements = [
     "pytest-mock",
     "codecov",
 ]
-required = ["appdirs", "daiquiri", "pygithub", "colored", "repomate-plug>=0.4.1"]
+required = [
+    "appdirs",
+    "daiquiri",
+    "pygithub",
+    "colored",
+    "repomate-plug>=0.4.1",
+]
 
 setup(
     name="repomate",
     version=__version__,
-    description=("A CLI tool for managing large amounts of GitHub repositories"),
+    description=(
+        "A CLI tool for managing large amounts of GitHub repositories"
+    ),
     long_description=readme,
     long_description_content_type="text/markdown",
     author="Simon Larsén",
     author_email="slarse@kth.se",
     url="https://github.com/slarse/repomate",
-    download_url="https://github.com/slarse/repomate/archive/v{}.tar.gz".format(
-        __version__
+    download_url=(
+        "https://github.com/slarse/repomate/archive/v{}.tar.gz".format(
+            __version__
+        )
     ),
     license="MIT",
     packages=find_packages(exclude=("tests", "docs")),

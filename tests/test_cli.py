@@ -1,19 +1,13 @@
 import os
-import sys
-import string
-import tempfile
 import pathlib
-from unittest.mock import MagicMock, PropertyMock
+from unittest.mock import MagicMock
 from unittest import mock
-from contextlib import contextmanager
 import pytest
 
 import repomate
 from repomate import cli
-from repomate import git
 from repomate import tuples
 from repomate import exception
-from repomate import config
 from repomate.tuples import Team
 
 import constants
@@ -25,12 +19,12 @@ GITHUB_BASE_URL = constants.GITHUB_BASE_URL
 STUDENTS = constants.STUDENTS
 ISSUE_PATH = constants.ISSUE_PATH
 ISSUE = constants.ISSUE
-GENERATE_REPO_URL = functions.GENERATE_REPO_URL
+generate_repo_url = functions.generate_repo_url
 MASTER_ORG_NAME = constants.MASTER_ORG_NAME
 TOKEN = constants.TOKEN
 
 REPO_NAMES = ("week-1", "week-2", "week-3")
-REPO_URLS = tuple(map(lambda rn: GENERATE_REPO_URL(rn, ORG_NAME), REPO_NAMES))
+REPO_URLS = tuple(map(lambda rn: generate_repo_url(rn, ORG_NAME), REPO_NAMES))
 
 BASE_ARGS = ["-g", GITHUB_BASE_URL, "-o", ORG_NAME]
 BASE_PUSH_ARGS = ["-u", USER, "-mn", *REPO_NAMES]
@@ -58,7 +52,7 @@ VALID_PARSED_ARGS = dict(
 def api_instance_mock(mocker):
     instance_mock = MagicMock(spec=repomate.github_api.GitHubAPI)
     instance_mock.get_repo_urls.side_effect = lambda repo_names, org_name: [
-        GENERATE_REPO_URL(rn, org_name) for rn in repo_names
+        generate_repo_url(rn, org_name) for rn in repo_names
     ]
     instance_mock.ensure_teams_and_members.side_effect = lambda team_dict: [
         Team(name, members, id=0) for name, members in team_dict.items()
@@ -149,7 +143,9 @@ class TestDispatchCommand:
 
         with pytest.raises(exception.ParseError) as exc_info:
             cli.dispatch_command(args, api_instance_mock)
-        assert "Illegal value for subparser: {}".format(parser) in str(exc_info)
+        assert "Illegal value for subparser: {}".format(parser) in str(
+            exc_info
+        )
 
     def test_no_crash_on_valid_args(
         self, parsed_args_all_subparsers, api_instance_mock, command_mock
@@ -159,10 +155,13 @@ class TestDispatchCommand:
         cli.dispatch_command(parsed_args_all_subparsers, api_instance_mock)
 
     def test_expected_exception_results_in_system_exit(
-        self, parsed_args_all_subparsers, api_instance_mock, command_all_raise_mock
+        self,
+        parsed_args_all_subparsers,
+        api_instance_mock,
+        command_all_raise_mock,
     ):
         """Test that any of the expected exceptions results in SystemExit."""
-        with pytest.raises(SystemExit) as exc_info:
+        with pytest.raises(SystemExit):
             cli.dispatch_command(parsed_args_all_subparsers, api_instance_mock)
 
     def test_setup_student_repos_called_with_correct_args(
@@ -191,13 +190,18 @@ class TestDispatchCommand:
             issue=args.issue,
         )
 
-    def test_open_issue_called_with_correct_args(self, command_mock, api_instance_mock):
+    def test_open_issue_called_with_correct_args(
+        self, command_mock, api_instance_mock
+    ):
         args = tuples.Args(cli.OPEN_ISSUE_PARSER, **VALID_PARSED_ARGS)
 
         cli.dispatch_command(args, api_instance_mock)
 
         command_mock.open_issue.assert_called_once_with(
-            args.issue, args.master_repo_names, args.students, api_instance_mock
+            args.issue,
+            args.master_repo_names,
+            args.students,
+            api_instance_mock,
         )
 
     def test_close_issue_called_with_correct_args(
@@ -208,7 +212,10 @@ class TestDispatchCommand:
         cli.dispatch_command(args, api_instance_mock)
 
         command_mock.close_issue.assert_called_once_with(
-            args.title_regex, args.master_repo_names, args.students, api_instance_mock
+            args.title_regex,
+            args.master_repo_names,
+            args.students,
+            api_instance_mock,
         )
 
     def test_migrate_repos_called_with_correct_args(
@@ -234,8 +241,8 @@ class TestDispatchCommand:
         )
 
     def test_verify_settings_called_with_correct_args(self, api_class_mock):
-        # regular mockaing is broken for static methods, it seems, produces non-callable
-        # so using monkeypatch instead
+        # regular mockaing is broken for static methods, it seems, produces
+        # non-callable so using monkeypatch instead
         args = tuples.Args(
             cli.VERIFY_PARSER,
             user=USER,
@@ -263,7 +270,11 @@ class TestDispatchCommand:
         cli.dispatch_command(args, None)
 
         api_class_mock.verify_settings.assert_called_once_with(
-            args.user, args.org_name, args.github_base_url, TOKEN, MASTER_ORG_NAME
+            args.user,
+            args.org_name,
+            args.github_base_url,
+            TOKEN,
+            MASTER_ORG_NAME,
         )
 
 
@@ -282,10 +293,17 @@ class TestBaseParsing:
 
         with pytest.raises(exception.NotFoundError) as exc_info:
             cli.parse_args(
-                [cli.SETUP_PARSER, *COMPLETE_PUSH_ARGS, "-sf", str(students_file)]
+                [
+                    cli.SETUP_PARSER,
+                    *COMPLETE_PUSH_ARGS,
+                    "-sf",
+                    str(students_file),
+                ]
             )
 
-        assert "organization {} could not be found".format(ORG_NAME) in str(exc_info)
+        assert "organization {} could not be found".format(ORG_NAME) in str(
+            exc_info
+        )
 
     def test_raises_on_bad_credentials(self, api_class_mock, students_file):
         def raise_(*args, **kwargs):
@@ -295,7 +313,12 @@ class TestBaseParsing:
 
         with pytest.raises(exception.BadCredentials) as exc_info:
             cli.parse_args(
-                [cli.SETUP_PARSER, *COMPLETE_PUSH_ARGS, "-sf", str(students_file)]
+                [
+                    cli.SETUP_PARSER,
+                    *COMPLETE_PUSH_ARGS,
+                    "-sf",
+                    str(students_file),
+                ]
             )
 
         assert "bad credentials" in str(exc_info)
@@ -310,10 +333,17 @@ class TestBaseParsing:
 
         with pytest.raises(exception.ServiceNotFoundError) as exc_info:
             cli.parse_args(
-                [cli.SETUP_PARSER, *COMPLETE_PUSH_ARGS, "-sf", str(students_file)]
+                [
+                    cli.SETUP_PARSER,
+                    *COMPLETE_PUSH_ARGS,
+                    "-sf",
+                    str(students_file),
+                ]
             )
 
-        assert "GitHub service could not be found, check the url" in str(exc_info)
+        assert "GitHub service could not be found, check the url" in str(
+            exc_info
+        )
 
     @pytest.mark.parametrize("parser", [cli.SETUP_PARSER, cli.UPDATE_PARSER])
     def test_master_org_overrides_target_org_for_master_repos(
@@ -331,7 +361,10 @@ class TestBaseParsing:
         )
 
         assert all(
-            ["/" + MASTER_ORG_NAME + "/" in url for url in parsed_args.master_repo_urls]
+            [
+                "/" + MASTER_ORG_NAME + "/" in url
+                for url in parsed_args.master_repo_urls
+            ]
         )
 
     @pytest.mark.parametrize("parser", [cli.SETUP_PARSER, cli.UPDATE_PARSER])
@@ -343,7 +376,10 @@ class TestBaseParsing:
         )
 
         assert all(
-            ["/" + ORG_NAME + "/" in url for url in parsed_args.master_repo_urls]
+            [
+                "/" + ORG_NAME + "/" in url
+                for url in parsed_args.master_repo_urls
+            ]
         )
 
     @pytest.mark.parametrize("parser", [cli.SETUP_PARSER, cli.UPDATE_PARSER])
@@ -363,14 +399,22 @@ class TestBaseParsing:
         mocker.patch("os.getenv", return_value="")
         token = "supersecretothertoken"
         parsed_args, _ = cli.parse_args(
-            [parser, *COMPLETE_PUSH_ARGS, "-sf", str(students_file), "-t", token]
+            [
+                parser,
+                *COMPLETE_PUSH_ARGS,
+                "-sf",
+                str(students_file),
+                "-t",
+                token,
+            ]
         )
 
         assert parsed_args.token == token
 
 
 class TestStudentParsing:
-    """Tests for the parsers that use the `--students` and `--students-file` arguments.
+    """Tests for the parsers that use the `--students` and `--students-file`
+    arguments.
 
     Currently these are:
 
@@ -390,7 +434,8 @@ class TestStudentParsing:
         ],
     )
     STUDENT_PARSING_IDS = [
-        "|".join([str(val) for val in line]) for line in STUDENT_PARSING_PARAMS[1]
+        "|".join([str(val) for val in line])
+        for line in STUDENT_PARSING_PARAMS[1]
     ]
 
     @pytest.mark.parametrize(*STUDENT_PARSING_PARAMS, ids=STUDENT_PARSING_IDS)
@@ -404,7 +449,9 @@ class TestStudentParsing:
         assert not_a_file in str(exc_info)
 
     @pytest.mark.parametrize(*STUDENT_PARSING_PARAMS, ids=STUDENT_PARSING_IDS)
-    def test_parser_listing_students(self, read_issue_mock, parser, extra_args):
+    def test_parser_listing_students(
+        self, read_issue_mock, parser, extra_args
+    ):
         """Test that the different subparsers parse arguments corectly when
         students are listed directly on the command line.
         """
@@ -432,7 +479,13 @@ class TestStudentParsing:
         self, read_issue_mock, empty_students_file, parser, extra_args
     ):
         """Test that an error is raised if the student file is empty."""
-        sys_args = [parser, *BASE_ARGS, "-sf", str(empty_students_file), *extra_args]
+        sys_args = [
+            parser,
+            *BASE_ARGS,
+            "-sf",
+            str(empty_students_file),
+            *extra_args,
+        ]
 
         with pytest.raises(exception.FileError) as exc_info:
             cli.parse_args(sys_args)
@@ -456,7 +509,7 @@ class TestStudentParsing:
             *extra_args,
         ]
 
-        with pytest.raises(SystemExit) as exc_info:
+        with pytest.raises(SystemExit):
             cli.parse_args(sys_args)
 
 
@@ -469,7 +522,7 @@ def assert_base_push_args(parsed_args, api):
     assert parsed_args.user == USER
     assert parsed_args.master_repo_names == list(REPO_NAMES)
     assert parsed_args.master_repo_urls == [
-        GENERATE_REPO_URL(rn, ORG_NAME) for rn in REPO_NAMES
+        generate_repo_url(rn, ORG_NAME) for rn in REPO_NAMES
     ]
     api.assert_called_once_with(GITHUB_BASE_URL, TOKEN, ORG_NAME)
 
@@ -495,7 +548,9 @@ class TestConfig:
             (cli.OPEN_ISSUE_PARSER, ["-mn", *REPO_NAMES, "-i", ISSUE_PATH]),
         ],
     )
-    def test_full_config(self, config_mock, read_issue_mock, parser, extra_args):
+    def test_full_config(
+        self, config_mock, read_issue_mock, parser, extra_args
+    ):
         """Test that a fully configured file works. This means that
         github_base_url, org_name, user and student list are all
         preconfigured.
@@ -505,11 +560,11 @@ class TestConfig:
         parsed_args, _ = cli.parse_args(sys_args)
         assert_config_args(parser, parsed_args)
 
-    # TODO test that not having github_base_url, org_name, user or students_file
-    # in the config makes them required!
+    # TODO test that not having github_base_url, org_name, user or
+    # students_file in the config makes them required!
 
     def test_missing_option_is_required(self, config_missing_option):
-        """Test that a config that is missing one option (that is not 
+        """Test that a config that is missing one option (that is not
         specified on the command line) causes a SystemExit on parsing.
         """
         # -mo is not required
@@ -530,7 +585,9 @@ class TestConfig:
         there's no crash.
         """
         missing_arg = (
-            "something" if config_missing_option != "-sf" else str(students_file)
+            "something"
+            if config_missing_option != "-sf"
+            else str(students_file)
         )
 
         sys_args = [
@@ -562,19 +619,19 @@ class TestSetupAndUpdateParsers:
         found in the organization.
         """
         local_repo = REPO_NAMES[-1]
-        is_git_repo_mock = mocker.patch(
+        mocker.patch(
             "repomate.util.is_git_repo",
             side_effect=lambda path: path.endswith(local_repo),
         )
         expected_urls = [
-            GENERATE_REPO_URL(name, ORG_NAME)
+            generate_repo_url(name, ORG_NAME)
             for name in REPO_NAMES
             if name != local_repo
         ]
         expected_uris = [pathlib.Path(os.path.abspath(local_repo)).as_uri()]
         expected = expected_urls + expected_uris
         api_instance_mock.get_repo_urls.side_effect = lambda repo_names, _: [
-            GENERATE_REPO_URL(name, ORG_NAME) for name in repo_names
+            generate_repo_url(name, ORG_NAME) for name in repo_names
         ]
 
         sys_args = [parser, *COMPLETE_PUSH_ARGS, "-s", *STUDENTS]
@@ -592,7 +649,9 @@ class TestMigrateParser:
         "https://someurl.org/{}".format(NAMES[0]),
         "https://otherurl.com/{}".format(NAMES[1]),
     ]
-    LOCAL_URIS = [pathlib.Path(os.path.abspath(name)).as_uri() for name in NAMES]
+    LOCAL_URIS = [
+        pathlib.Path(os.path.abspath(name)).as_uri() for name in NAMES
+    ]
 
     @pytest.fixture(autouse=True)
     def is_git_repo_mock(self, mocker):
@@ -611,16 +670,34 @@ class TestMigrateParser:
             assert parsed_args.master_repo_urls == self.LOCAL_URIS
 
     def test_handles_urls_only(self):
-        """Test that the migrate parser handles master repo urls only correctly."""
-        sys_args = [cli.MIGRATE_PARSER, *BASE_ARGS, "-u", USER, "-mu", *self.URLS]
+        """Test that the migrate parser handles master repo urls only
+        correctly.
+        """
+        sys_args = [
+            cli.MIGRATE_PARSER,
+            *BASE_ARGS,
+            "-u",
+            USER,
+            "-mu",
+            *self.URLS,
+        ]
 
         parsed_args, _ = cli.parse_args(sys_args)
 
         self.assert_migrate_args(parsed_args, uses_urls=True)
 
     def test_handles_names_only(self):
-        """Test that the migrate parser handles master repo names only correctly."""
-        sys_args = [cli.MIGRATE_PARSER, *BASE_ARGS, "-u", USER, "-mn", *self.NAMES]
+        """Test that the migrate parser handles master repo names only
+        correctly.
+        """
+        sys_args = [
+            cli.MIGRATE_PARSER,
+            *BASE_ARGS,
+            "-u",
+            USER,
+            "-mn",
+            *self.NAMES,
+        ]
 
         parsed_args, _ = cli.parse_args(sys_args)
 
@@ -664,7 +741,9 @@ class TestCloneParser:
         plugin_manager_mock.hook.clone_parser_hook.assert_called_once_with(
             clone_parser=mock.ANY
         )
-        plugin_manager_mock.hook.parse_args.assert_called_once_with(args=mock.ANY)
+        plugin_manager_mock.hook.parse_args.assert_called_once_with(
+            args=mock.ANY
+        )
 
     STUDENTS_STRING = " ".join(STUDENTS)
 
@@ -673,7 +752,10 @@ class TestCloneParser:
     @pytest.mark.parametrize(
         "parser, extra_args",
         [
-            (cli.SETUP_PARSER, ["-u", USER, "-s", STUDENTS_STRING, "-mn", *REPO_NAMES]),
+            (
+                cli.SETUP_PARSER,
+                ["-u", USER, "-s", STUDENTS_STRING, "-mn", *REPO_NAMES],
+            ),
             (
                 cli.UPDATE_PARSER,
                 ["-u", USER, "-s", STUDENTS_STRING, "-mn", *REPO_NAMES],
@@ -684,7 +766,14 @@ class TestCloneParser:
             ),
             (
                 cli.CLOSE_ISSUE_PARSER,
-                ["-s", STUDENTS_STRING, "-mn", *REPO_NAMES, "-r", "some-regex"],
+                [
+                    "-s",
+                    STUDENTS_STRING,
+                    "-mn",
+                    *REPO_NAMES,
+                    "-r",
+                    "some-regex",
+                ],
             ),
             (cli.VERIFY_PARSER, ["-u", USER]),
             (cli.MIGRATE_PARSER, ["-u", USER, "-mn", *REPO_NAMES]),

@@ -1,17 +1,14 @@
-from unittest.mock import patch, MagicMock
-import builtins
-import pytest
+from unittest.mock import MagicMock
 from collections import namedtuple
 
+import pytest
+
 from functions import raise_
-import repomate
 from repomate import cli
 from repomate import main
 from repomate import tuples
-from repomate import github_api
 
 import constants
-import functions
 
 ORG_NAME = constants.ORG_NAME
 GITHUB_BASE_URL = constants.GITHUB_BASE_URL
@@ -77,7 +74,9 @@ def parse_plugins_mock(mocker):
     return mocker.patch(
         "repomate.cli.parse_plugins",
         autospec=True,
-        side_effect=lambda args: [arg for arg in args if not arg.startswith("-")],
+        side_effect=lambda args: [
+            arg for arg in args if not arg.startswith("-")
+        ],
     )
 
 
@@ -95,7 +94,9 @@ def test_happy_path(
     main.main(sys_args)
 
     parse_args_mock.assert_called_once_with(sys_args[1:])
-    dispatch_command_mock.assert_called_once_with(PARSED_ARGS, api_instance_mock)
+    dispatch_command_mock.assert_called_once_with(
+        PARSED_ARGS, api_instance_mock
+    )
 
 
 def test_does_not_raise_on_exception_in_parsing(
@@ -123,7 +124,9 @@ def test_does_not_raise_on_exception_in_handling_parsed_args(
     main.main(sys_args)
 
 
-def test_plugins_args(parse_args_mock, dispatch_command_mock, init_plugins_mock):
+def test_plugins_args(
+    parse_args_mock, dispatch_command_mock, init_plugins_mock
+):
     plugin_args = "-p javac -p pylint".split()
     sys_args = ["repomate", *plugin_args, *CLONE_ARGS]
 
@@ -133,7 +136,9 @@ def test_plugins_args(parse_args_mock, dispatch_command_mock, init_plugins_mock)
     parse_args_mock.assert_called_once_with(CLONE_ARGS)
 
 
-def test_no_plugins_arg(parse_args_mock, dispatch_command_mock, init_plugins_mock):
+def test_no_plugins_arg(
+    parse_args_mock, dispatch_command_mock, init_plugins_mock
+):
     sys_args = ["repomate", "--no-plugins", *CLONE_ARGS]
 
     main.main(sys_args)

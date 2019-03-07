@@ -10,7 +10,7 @@ import os
 import subprocess
 import collections
 import daiquiri
-from typing import Sequence, Tuple, Iterable, List, Any, Callable
+from typing import Iterable, List, Any, Callable
 
 from repomate import util
 from repomate import exception
@@ -72,7 +72,8 @@ def clone_single(
     """Clone a git repository.
 
     Args:
-        repo_url: HTTPS url to repository on the form https://<host>/<owner>/<repo>.
+        repo_url: HTTPS url to repository on the form
+            https://<host>/<owner>/<repo>.
         single_branch: Whether or not to clone a single branch.
         branch: The branch to clone.
         cwd: Working directory. Defaults to the current directory.
@@ -98,11 +99,17 @@ def clone_single(
     rc, _, stderr = captured_run(clone_command, cwd=cwd)
 
     if rc != 0:
-        raise exception.CloneFailedError("Failed to clone", rc, stderr, repo_url)
+        raise exception.CloneFailedError(
+            "Failed to clone", rc, stderr, repo_url
+        )
 
 
 async def _clone_async(
-    repo_url: str, token: str, single_branch: bool = True, branch: str = None, cwd="."
+    repo_url: str,
+    token: str,
+    single_branch: bool = True,
+    branch: str = None,
+    cwd=".",
 ):
     """Clone git repositories asynchronously.
 
@@ -133,7 +140,10 @@ async def _clone_async(
 
 
 def clone(
-    repo_urls: Iterable[str], token: str, single_branch: bool = True, cwd: str = "."
+    repo_urls: Iterable[str],
+    token: str,
+    single_branch: bool = True,
+    cwd: str = ".",
 ) -> List[Exception]:
     """Clone all repos asynchronously.
 
@@ -198,7 +208,9 @@ async def _push_async(pt: Push, user: str, token: str):
         LOGGER.info("Pushed files to {} {}".format(pt.repo_url, pt.branch))
 
 
-def _push_no_retry(push_tuples: Iterable[Push], user: str, token: str) -> List[str]:
+def _push_no_retry(
+    push_tuples: Iterable[Push], user: str, token: str
+) -> List[str]:
     """Push to all repos defined in push_tuples asynchronously. Amount of
     concurrent tasks is limited by CONCURRENT_TASKS.
 
@@ -210,8 +222,8 @@ def _push_no_retry(push_tuples: Iterable[Push], user: str, token: str) -> List[s
         token: A GitHub OAUTH token.
 
     Returns:
-        urls to which pushes failed with exception.PushFailedError. Other errors are only
-        logged.
+        urls to which pushes failed with exception.PushFailedError. Other
+        errors are only logged.
     """
     # TODO valdate push_tuples
     util.validate_types(user=(user, str))
@@ -269,14 +281,16 @@ def _batch_execution(
     until it is exhausted. The batch_func_kwargs are provided on each call.
 
     Args:
-        batch_func: A function that takes an iterable as a first argument and returns
+        batch_func: A function that takes an iterable as a first argument and
+            returns
         a list of asyncio.Task objects.
         arg_list: A list of objects that are of the same type as the
         batch_func's first argument.
         batch_func_kwargs: Additional keyword arguments to the batch_func.
 
     Returns:
-        a list of exceptions raised in the tasks returned by the batch function.
+        a list of exceptions raised in the tasks returned by the batch
+        function.
     """
     completed_tasks = []
 
@@ -291,7 +305,9 @@ def _batch_execution(
         loop.run_until_complete(asyncio.wait(tasks))
         completed_tasks += tasks
 
-    exceptions = [task.exception() for task in completed_tasks if task.exception()]
+    exceptions = [
+        task.exception() for task in completed_tasks if task.exception()
+    ]
     for exc in exceptions:
         LOGGER.error(str(exc))
 

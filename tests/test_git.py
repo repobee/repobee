@@ -1,18 +1,15 @@
-import sys
 import os
-import pytest
 import subprocess
-from asyncio import coroutine
-from unittest.mock import patch, PropertyMock, MagicMock, call
+from unittest.mock import call
 from collections import namedtuple
 
+import pytest
 
 from repomate import git
 from repomate import exception
 
-from constants import TOKEN
 import constants
-import functions
+from constants import TOKEN
 
 URL_TEMPLATE = "https://{}github.com/slarse/clanim"
 USER = constants.USER
@@ -25,12 +22,17 @@ AioSubproc = namedtuple("AioSubproc", ("create_subprocess", "process"))
 
 @pytest.fixture(scope="function")
 def env_setup(mocker):
-    mocker.patch("subprocess.run", autospec=True, return_value=RunTuple(0, b"", b""))
+    mocker.patch(
+        "subprocess.run", autospec=True, return_value=RunTuple(0, b"", b"")
+    )
     # TOKEN was mocked as the environment token when repomate.git was imported
     expected_url = URL_TEMPLATE.format(TOKEN + "@")
-    expected_url_with_username = URL_TEMPLATE.format("{}:{}@".format(USER, TOKEN))
+    expected_url_with_username = URL_TEMPLATE.format(
+        "{}:{}@".format(USER, TOKEN)
+    )
     return Env(
-        expected_url=expected_url, expected_url_with_username=expected_url_with_username
+        expected_url=expected_url,
+        expected_url_with_username=expected_url_with_username,
     )
 
 
@@ -76,7 +78,11 @@ def non_zero_aio_subproc(mocker):
 def push_tuples():
     paths = (
         os.path.join(*dirs)
-        for dirs in [("some", "awesome", "path"), ("other", "path"), ("final",)]
+        for dirs in [
+            ("some", "awesome", "path"),
+            ("other", "path"),
+            ("final",),
+        ]
     )
     urls = (
         "https://slarse.se/best-repo.git",
@@ -93,9 +99,9 @@ def push_tuples():
 
 def test_insert_token():
     token = "1209487fbfuq324yfqf78b6"
-    assert git._insert_token(URL_TEMPLATE.format(""), token) == URL_TEMPLATE.format(
-        token + "@"
-    )
+    assert git._insert_token(
+        URL_TEMPLATE.format(""), token
+    ) == URL_TEMPLATE.format(token + "@")
 
 
 def test_insert_empty_token_raises():
@@ -127,7 +133,9 @@ def test_clone_single_raises_on_empty_branch(env_setup):
     assert "branch must not be empty" in str(exc)
 
 
-def test_clone_single_raises_on_non_zero_exit_from_git_clone(env_setup, mocker):
+def test_clone_single_raises_on_non_zero_exit_from_git_clone(
+    env_setup, mocker
+):
     stderr = b"This is pretty bad!"
     # already patched in env_setup fixture
     subprocess.run.return_value = RunTuple(1, "", stderr)
@@ -144,7 +152,10 @@ def test_clone_single_issues_correct_command_with_defaults(env_setup):
 
     git.clone_single(URL_TEMPLATE.format(""), TOKEN)
     subprocess.run.assert_called_once_with(
-        expected_command, cwd=".", stderr=subprocess.PIPE, stdout=subprocess.PIPE
+        expected_command,
+        cwd=".",
+        stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE,
     )
 
 
@@ -153,19 +164,29 @@ def test_clone_single_issues_correct_command_without_single_branch(env_setup):
 
     git.clone_single(URL_TEMPLATE.format(""), TOKEN, single_branch=False)
     subprocess.run.assert_called_once_with(
-        expected_command, cwd=".", stderr=subprocess.PIPE, stdout=subprocess.PIPE
+        expected_command,
+        cwd=".",
+        stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE,
     )
 
 
-def test_clone_single_issues_correct_command_with_single_other_branch(env_setup):
+def test_clone_single_issues_correct_command_with_single_other_branch(
+    env_setup
+):
     branch = "other-branch"
     expected_command = "git clone {} --single-branch -b {}".format(
         env_setup.expected_url, branch
     ).split()
 
-    git.clone_single(URL_TEMPLATE.format(""), TOKEN, single_branch=True, branch=branch)
+    git.clone_single(
+        URL_TEMPLATE.format(""), TOKEN, single_branch=True, branch=branch
+    )
     subprocess.run.assert_called_once_with(
-        expected_command, cwd=".", stderr=subprocess.PIPE, stdout=subprocess.PIPE
+        expected_command,
+        cwd=".",
+        stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE,
     )
 
 
@@ -239,7 +260,9 @@ class TestPush:
         assert not failed_urls
         aio_subproc.create_subprocess.assert_has_calls(expected_calls)
 
-    def test_tries_all_calls_despite_exceptions(self, env_setup, push_tuples, mocker):
+    def test_tries_all_calls_despite_exceptions(
+        self, env_setup, push_tuples, mocker
+    ):
         """Test that push tries to push all push tuple values even if there
         are exceptions.
         """
@@ -338,7 +361,9 @@ class TestClone:
         assert not failed_urls
         aio_subproc.create_subprocess.assert_has_calls(expected_subproc_calls)
 
-    def test_tries_all_calls_despite_exceptions(env_setup, push_tuples, mocker):
+    def test_tries_all_calls_despite_exceptions(
+        env_setup, push_tuples, mocker
+    ):
         urls = [pt.repo_url for pt in push_tuples]
         fail_urls = [urls[0], urls[-1]]
 
@@ -347,7 +372,10 @@ class TestClone:
         async def raise_(repo_url, *args, **kwargs):
             if repo_url in fail_urls:
                 raise exception.CloneFailedError(
-                    "Some error", returncode=128, stderr=b"Something", url=repo_url
+                    "Some error",
+                    returncode=128,
+                    stderr=b"Something",
+                    url=repo_url,
                 )
 
         clone_mock = mocker.patch(

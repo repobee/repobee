@@ -1,4 +1,3 @@
-import sys
 import os
 import pytest
 from unittest.mock import patch, MagicMock, Mock, call, ANY, PropertyMock
@@ -22,14 +21,20 @@ to_magic_mock_issue = functions.to_magic_mock_issue
 User = constants.User
 TOKEN = constants.TOKEN
 
-RANDOM_DATE = functions.RANDOM_DATE
+random_date = functions.random_date
 
 OPEN_ISSUES = [
     to_magic_mock_issue(issue)
     for issue in (
-        tuples.Issue("close this issue", "This is a body", 3, RANDOM_DATE(), "slarse"),
         tuples.Issue(
-            "Don't close this issue", "Another body", 4, RANDOM_DATE(), "glassey"
+            "close this issue", "This is a body", 3, random_date(), "slarse"
+        ),
+        tuples.Issue(
+            "Don't close this issue",
+            "Another body",
+            4,
+            random_date(),
+            "glassey",
         ),
     )
 ]
@@ -43,14 +48,14 @@ CLOSED_ISSUES = [
             "very long line that would probably break the implementation "
             "if something was off with the line limit function.",
             1,
-            RANDOM_DATE(),
+            random_date(),
             "tmore",
         ),
         tuples.Issue(
             "Yet another closed issue",
             "Even less interesting body",
             2,
-            RANDOM_DATE(),
+            random_date(),
             "viklu",
         ),
     )
@@ -66,14 +71,19 @@ ISSUE = tuples.Issue(
 PLUGINS = constants.PLUGINS
 STUDENTS = constants.STUDENTS
 
-GENERATE_TEAM_REPO_URL = lambda student, base_name: "https://slarse.se/repos/{}".format(
-    util.generate_repo_name(student, base_name)
-)
 
-GENERATE_REPO_URL = lambda name: GENERATE_TEAM_REPO_URL(name, "d")[:-2]
+def generate_team_repo_url(student, base_name):
+    return "https://slarse.se/repos/{}".format(
+        util.generate_repo_name(student, base_name)
+    )
+
+
+def generate_repo_url(name):
+    return generate_team_repo_url(name, "d")[:-2]
+
 
 MASTER_NAMES = ("week-1", "week-2", "week-3")
-MASTER_URLS = tuple(GENERATE_REPO_URL(name) for name in MASTER_NAMES)
+MASTER_URLS = tuple(generate_repo_url(name) for name in MASTER_NAMES)
 
 STUDENT_REPO_NAMES = tuple(
     util.generate_repo_name(student, master_name)
@@ -98,10 +108,15 @@ def validate_types_mock(request, mocker):
             if (
                 isinstance(expected_types, (Mock, MagicMock))
                 or isinstance(expected_types, tuple)
-                and any(isinstance(obj, (Mock, MagicMock)) for obj in expected_types)
+                and any(
+                    isinstance(obj, (Mock, MagicMock))
+                    for obj in expected_types
+                )
             ):
                 remove.add(param_name)
-        util_validate(**{key: val for key, val in kwargs.items() if key not in remove})
+        util_validate(
+            **{key: val for key, val in kwargs.items() if key not in remove}
+        )
 
     return mocker.patch("repomate.util.validate_types", side_effect=validate)
 
@@ -145,15 +160,18 @@ def api_mock(request, mocker):
     api_class = mocker.patch("repomate.command.GitHubAPI", autospec=True)
     api_class.return_value = mock
 
-    url_from_repo_info = lambda repo_info: GENERATE_REPO_URL(repo_info.name)
+    def url_from_repo_info(repo_info):
+        return generate_repo_url(repo_info.name)
+
     mock.get_repo_urls.side_effect = lambda repo_names: list(
-        map(GENERATE_REPO_URL, repo_names)
+        map(generate_repo_url, repo_names)
     )
     mock.create_repos.side_effect = lambda repo_infos: list(
         map(url_from_repo_info, repo_infos)
     )
     mock.get_issues = MagicMock(
-        spec="repomate.github_api.GitHubAPI.get_issues", side_effect=_get_issues
+        spec="repomate.github_api.GitHubAPI.get_issues",
+        side_effect=_get_issues,
     )
     type(mock).token = PropertyMock(return_value=TOKEN)
     return mock
@@ -167,7 +185,8 @@ def students():
 @pytest.fixture
 def ensure_teams_and_members_mock(api_mock, students):
     api_mock.ensure_teams_and_members.side_effect = lambda member_lists: [
-        tuples.Team(student, [student], id) for id, student in enumerate(students)
+        tuples.Team(student, [student], id)
+        for id, student in enumerate(students)
     ]
 
 
@@ -192,7 +211,9 @@ def repo_infos(master_urls, students):
         repo_infos += [
             tuples.Repo(
                 name=util.generate_repo_name(student, repo_base_name),
-                description="{} created for {}".format(repo_base_name, student),
+                description="{} created for {}".format(
+                    repo_base_name, student
+                ),
                 private=True,
                 team_id=cur_id,
             )
@@ -207,22 +228,15 @@ def push_tuples(master_urls, students, tmpdir):
     push_tuples = [
         git.Push(
             local_path=os.path.join(str(tmpdir), util.repo_name(url)),
-            repo_url=GENERATE_TEAM_REPO_URL(student, util.repo_name(url)),
+            repo_url=generate_team_repo_url(student, util.repo_name(url)),
             branch="master",
         )
-        # note that the order here is significant, must correspond with util.generate_repo_names
+        # note that the order here is significant, must correspond with
+        # util.generate_repo_names
         for url in master_urls
         for student in students
     ]
     return push_tuples
-
-
-@pytest.fixture
-def push_tuple_lists(master_urls, students):
-    """Create an expected push tuple list for each master url."""
-    pts = []
-    for url in master_urls:
-        repo_base_name = util.repo_name(url)
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -232,7 +246,9 @@ def rmtree_mock(mocker):
 
 @pytest.fixture(autouse=True)
 def is_git_repo_mock(mocker):
-    return mocker.patch("repomate.util.is_git_repo", return_value=True, autospec=True)
+    return mocker.patch(
+        "repomate.util.is_git_repo", return_value=True, autospec=True
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -284,7 +300,9 @@ class TestSetupStudentRepos:
     def is_git_repo_mock(self, mocker):
         return mocker.patch("repomate.util.is_git_repo", return_value=True)
 
-    def test_raises_on_clone_failure(self, master_urls, students, git_mock, api_mock):
+    def test_raises_on_clone_failure(
+        self, master_urls, students, git_mock, api_mock
+    ):
         git_mock.clone_single.side_effect = lambda url, tokwn, cwd: raise_(
             exception.CloneFailedError("clone failed", 128, b"some error", url)
         )()
@@ -310,12 +328,13 @@ class TestSetupStudentRepos:
         self, mocker, api_mock, master_urls, user, students, empty_arg
     ):
         """None of the arguments are allowed to be empty."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError):
             command.setup_student_repos(master_urls, students, user, api_mock)
 
     @pytest.mark.noapimock
     @pytest.mark.parametrize(
-        *RAISES_ON_INVALID_TYPE_PARAMETRIZATION, ids=RAISES_ON_EMPTY_INVALID_TYPE_IDS
+        *RAISES_ON_INVALID_TYPE_PARAMETRIZATION,
+        ids=RAISES_ON_EMPTY_INVALID_TYPE_IDS
     )
     def test_raises_on_invalid_type(
         self, master_urls, students, user, api, type_error_arg
@@ -341,7 +360,9 @@ class TestSetupStudentRepos:
         expected_clone_calls = [
             call(url, TOKEN, cwd=str(tmpdir)) for url in master_urls
         ]
-        expected_ensure_teams_arg = {student: [student] for student in students}
+        expected_ensure_teams_arg = {
+            student: [student] for student in students
+        }
 
         command.setup_student_repos(master_urls, students, USER, api_mock)
 
@@ -350,11 +371,17 @@ class TestSetupStudentRepos:
             expected_ensure_teams_arg
         )
         api_mock.create_repos.assert_called_once_with(repo_infos)
-        git_mock.push.assert_called_once_with(push_tuples, user=USER, token=TOKEN)
+        git_mock.push.assert_called_once_with(
+            push_tuples, user=USER, token=TOKEN
+        )
 
 
 class TestUpdateStudentRepos:
     """Tests for update_student_repos."""
+
+    @staticmethod
+    def generate_url(repo_name):
+        return "{}/{}/{}".format(GITHUB_BASE_URL, ORG_NAME, repo_name)
 
     def test_raises_on_duplicate_master_urls(
         self, mocker, master_urls, students, api_mock
@@ -374,13 +401,17 @@ class TestUpdateStudentRepos:
         """None of the arguments are allowed to be empty."""
         with pytest.raises(ValueError) as exc_info:
             command.update_student_repos(
-                master_repo_urls=master_urls, students=students, user=user, api=api_mock
+                master_repo_urls=master_urls,
+                students=students,
+                user=user,
+                api=api_mock,
             )
         assert empty_arg in str(exc_info)
 
     @pytest.mark.noapimock
     @pytest.mark.parametrize(
-        *RAISES_ON_INVALID_TYPE_PARAMETRIZATION, ids=RAISES_ON_EMPTY_INVALID_TYPE_IDS
+        *RAISES_ON_INVALID_TYPE_PARAMETRIZATION,
+        ids=RAISES_ON_EMPTY_INVALID_TYPE_IDS
     )
     def test_raises_on_invalid_type(
         self, master_urls, students, user, api, type_error_arg
@@ -409,25 +440,29 @@ class TestUpdateStudentRepos:
         ]
 
         api_mock.get_repo_urls.side_effect = lambda repo_names: list(
-            map(GENERATE_REPO_URL, repo_names)
+            map(generate_repo_url, repo_names)
         )
 
         command.update_student_repos(master_urls, students, USER, api_mock)
 
         git_mock.clone_single.assert_has_calls(expected_clone_calls)
-        git_mock.push.assert_called_once_with(push_tuples, user=USER, token=TOKEN)
+        git_mock.push.assert_called_once_with(
+            push_tuples, user=USER, token=TOKEN
+        )
 
     @pytest.mark.nogitmock
     @pytest.mark.parametrize(
-        "issue", [tuples.Issue("Oops", "Sorry, we failed to push to your repo!"), None]
+        "issue",
+        [tuples.Issue("Oops", "Sorry, we failed to push to your repo!"), None],
     )
     def test_issues_on_exceptions(
         self, issue, mocker, api_mock, repo_infos, push_tuples, rmtree_mock
     ):
-        """Test that issues are opened in repos where pushing fails, if and only if
-        the issue is not None.
+        """Test that issues are opened in repos where pushing fails, if and
+        only if the issue is not None.
 
-        IMPORTANT NOTE: the git_mock fixture is ignored in this test. Be careful.
+        IMPORTANT NOTE: the git_mock fixture is ignored in this test. Be
+        careful.
         """
         students = list("abc")
         master_name = "week-1"
@@ -436,16 +471,13 @@ class TestUpdateStudentRepos:
             for name in [master_name, "week-3"]
         ]
 
-        generate_url = lambda repo_name: "{}/{}/{}".format(
-            GITHUB_BASE_URL, ORG_NAME, repo_name
-        )
         fail_repo_names = [
             util.generate_repo_name(stud, master_name) for stud in ["a", "c"]
         ]
-        fail_repo_urls = [generate_url(name) for name in fail_repo_names]
+        fail_repo_urls = [self.generate_url(name) for name in fail_repo_names]
 
         api_mock.get_repo_urls.side_effect = lambda repo_names: [
-            generate_url(name) for name in repo_names
+            self.generate_url(name) for name in repo_names
         ]
 
         async def raise_specific(pt, user, token):
@@ -454,12 +486,12 @@ class TestUpdateStudentRepos:
                     "Push failed", 128, b"some error", pt.repo_url
                 )
 
-        git_push_async_mock = mocker.patch(
-            "repomate.git._push_async", side_effect=raise_specific
-        )
-        git_clone_mock = mocker.patch("repomate.git.clone_single")
+        mocker.patch("repomate.git._push_async", side_effect=raise_specific)
+        mocker.patch("repomate.git.clone_single")
 
-        command.update_student_repos(master_urls, students, USER, api_mock, issue)
+        command.update_student_repos(
+            master_urls, students, USER, api_mock, issue
+        )
 
         if issue:  # expect issue to be opened
             call_list = api_mock.open_issue.call_args_list
@@ -479,7 +511,8 @@ class TestUpdateStudentRepos:
         """Test that issues are not opened in repos where pushing fails, no
         issue has been given.
 
-        IMPORTANT NOTE: the git_mock fixture is ignored in this test. Be careful.
+        IMPORTANT NOTE: the git_mock fixture is ignored in this test. Be
+        careful.
         """
         students = list("abc")
         master_name = "week-1"
@@ -488,28 +521,23 @@ class TestUpdateStudentRepos:
             for name in [master_name, "week-3"]
         ]
 
-        generate_url = lambda repo_name: "{}/{}/{}".format(
-            GITHUB_BASE_URL, ORG_NAME, repo_name
-        )
         fail_repo_names = [
             util.generate_repo_name(stud, master_name) for stud in ["a", "c"]
         ]
-        fail_repo_urls = [generate_url(name) for name in fail_repo_names]
+        fail_repo_urls = [self.generate_url(name) for name in fail_repo_names]
 
         api_mock.get_repo_urls.side_effect = lambda repo_names: [
-            generate_url(name) for name in repo_names
+            self.generate_url(name) for name in repo_names
         ]
 
         async def raise_specific(pt, token, branch):
             if pt.repo_url in fail_repo_urls:
                 raise exception.PushFailedError(
-                    "Push failed", 128, b"some error", repo_url
+                    "Push failed", 128, b"some error", pt.repo_url
                 )
 
-        git_push_async_mock = mocker.patch(
-            "repomate.git._push_async", side_effect=raise_specific
-        )
-        git_clone_mock = mocker.patch("repomate.git.clone_single")
+        mocker.patch("repomate.git._push_async", side_effect=raise_specific)
+        mocker.patch("repomate.git.clone_single")
 
         command.update_student_repos(master_urls, students, USER, api_mock)
 
@@ -519,9 +547,8 @@ class TestUpdateStudentRepos:
 class TestOpenIssue:
     """Tests for open_issue."""
 
-    # TODO expand to also test org_name and github_api_base_url
-    # can probably use the RAISES_ON_EMPTY_ARGS_PARAMETRIZATION for that,
-    # somehow
+    # TODO expand to also test org_name and github_api_base_url can probably
+    # use the RAISES_ON_EMPTY_ARGS_PARAMETRIZATION for that, somehow
     @pytest.mark.parametrize(
         "master_repo_names, students, empty_arg",
         [
@@ -537,8 +564,6 @@ class TestOpenIssue:
         assert empty_arg in str(exc_info)
 
     def test_happy_path(self, mocker, api_mock):
-        title = "Best title"
-        body = "This is some **cool** markdown\n\n### Heading!"
         master_names = ["week-1", "week-2"]
         students = list("abc")
         expected_repo_names = [
@@ -575,7 +600,9 @@ class TestCloseIssue:
     ):
         """only the regex is allowed ot be empty."""
         with pytest.raises(ValueError) as exc_info:
-            command.close_issue("someregex", master_repo_names, students, api_mock)
+            command.close_issue(
+                "someregex", master_repo_names, students, api_mock
+            )
         assert empty_arg in str(exc_info)
 
     @pytest.mark.noapimock
@@ -606,7 +633,9 @@ class TestCloseIssue:
 
         command.close_issue(title_regex, master_names, students, api_mock)
 
-        api_mock.close_issue.assert_called_once_with(title_regex, expected_repo_names)
+        api_mock.close_issue.assert_called_once_with(
+            title_regex, expected_repo_names
+        )
 
 
 class TestCloneRepos:
@@ -629,7 +658,9 @@ class TestCloneRepos:
         )
         pylint_hook = MagicMock(
             spec="repomate.ext.pylint.act_on_cloned_repo",
-            return_value=HookResult("pylint", Status.WARNING, "Minor warning."),
+            return_value=HookResult(
+                "pylint", Status.WARNING, "Minor warning."
+            ),
         )
 
         @repomate_hook
@@ -641,9 +672,12 @@ class TestCloneRepos:
             return javac_hook(self, path)
 
         monkeypatch.setattr(
-            "repomate.ext.javac.JavacCloneHook.act_on_cloned_repo", act_hook_meth
+            "repomate.ext.javac.JavacCloneHook.act_on_cloned_repo",
+            act_hook_meth,
         )
-        monkeypatch.setattr("repomate.ext.pylint.act_on_cloned_repo", act_hook_func)
+        monkeypatch.setattr(
+            "repomate.ext.pylint.act_on_cloned_repo", act_hook_func
+        )
 
         modules = plugin.load_plugin_modules(str(config_mock))
         plugin.register_plugins(modules)
@@ -652,7 +686,9 @@ class TestCloneRepos:
 
     @pytest.fixture
     def get_plugin_names_mock(self, mocker):
-        return mocker.patch("repomate.config.get_plugin_names", return_value=PLUGINS)
+        return mocker.patch(
+            "repomate.config.get_plugin_names", return_value=PLUGINS
+        )
 
     @pytest.mark.parametrize(
         "master_repo_names, students, empty_arg",
@@ -671,7 +707,7 @@ class TestCloneRepos:
     def test_happy_path(self, api_mock, git_mock, master_names, students):
         """Tests that the correct calls are made when there are no errors."""
         expected_urls = [
-            GENERATE_REPO_URL(name)
+            generate_repo_url(name)
             for name in util.generate_repo_names(students, master_names)
         ]
         command.clone_repos(master_names, students, api_mock)
@@ -704,13 +740,17 @@ class TestMigrateRepo:
         "master_repo_urls, user, , empty_arg",
         [([], USER, "master_repo_urls"), (["https://some_url"], "", "user")],
     )
-    def test_raises_on_empty_args(self, api_mock, master_repo_urls, user, empty_arg):
+    def test_raises_on_empty_args(
+        self, api_mock, master_repo_urls, user, empty_arg
+    ):
         with pytest.raises(ValueError) as exc_info:
             command.migrate_repos(master_repo_urls, user, api_mock)
         assert empty_arg in str(exc_info)
 
     @pytest.mark.nogitmock
-    def test_happy_path(self, mocker, api_mock, ensure_teams_and_members_mock, tmpdir):
+    def test_happy_path(
+        self, mocker, api_mock, ensure_teams_and_members_mock, tmpdir
+    ):
         """Test that the correct calls are made to the api and git.
 
         IMPORTANT: Note that this test ignores the git mock. Be careful.
@@ -720,7 +760,7 @@ class TestMigrateRepo:
             "https://some-url-to-/master/repos/week-5",
         ]
         master_names = [util.repo_name(url) for url in master_urls]
-        expected_push_urls = [GENERATE_REPO_URL(name) for name in master_names]
+        expected_push_urls = [generate_repo_url(name) for name in master_names]
         expected_pts = [
             git.Push(
                 local_path=os.path.join(str(tmpdir), name),
@@ -734,9 +774,11 @@ class TestMigrateRepo:
         ]
 
         api_mock.create_repos.side_effect = lambda infos: [
-            GENERATE_REPO_URL(info.name) for info in infos
+            generate_repo_url(info.name) for info in infos
         ]
-        git_clone_mock = mocker.patch("repomate.git.clone_single", autospec=True)
+        git_clone_mock = mocker.patch(
+            "repomate.git.clone_single", autospec=True
+        )
         git_push_mock = mocker.patch("repomate.git.push", autospec=True)
 
         command.migrate_repos(master_urls, USER, api_mock)
@@ -746,7 +788,9 @@ class TestMigrateRepo:
         api_mock.ensure_teams_and_members.assert_called_once_with(
             {command.MASTER_TEAM: []}
         )
-        git_push_mock.assert_called_once_with(expected_pts, user=USER, token=TOKEN)
+        git_push_mock.assert_called_once_with(
+            expected_pts, user=USER, token=TOKEN
+        )
 
 
 class TestListIssues:
@@ -779,7 +823,9 @@ class TestListIssues:
 # TODO add more test cases
 def test_purge_review_teams(master_names, students, api_mock):
     expected_review_teams = [
-        util.generate_review_team_name(s, mn) for s in students for mn in master_names
+        util.generate_review_team_name(s, mn)
+        for s in students
+        for mn in master_names
     ]
 
     command.purge_review_teams(master_names, students, api_mock)
@@ -812,7 +858,7 @@ class TestAssignPeerReviewers:
     def test_zero_reviews_raises(self, master_names, students, api_mock):
         num_reviews = 0
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError):
             command.assign_peer_reviews(
                 master_repo_names=master_names,
                 students=students,

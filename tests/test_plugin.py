@@ -6,12 +6,11 @@
         installed any other plugins, tests in here may fail unexpectedly
         without anything actually being wrong.
 """
-import pytest
 import os
-import builtins
 from unittest.mock import call, MagicMock
 
-import repomate
+import pytest
+
 from repomate import plugin
 from repomate import exception
 
@@ -19,7 +18,6 @@ from repomate.plugin import DEFAULT_PLUGIN
 from repomate.ext import javac, pylint, defaults
 
 import constants
-import functions
 
 PLUGINS = constants.PLUGINS
 
@@ -34,7 +32,9 @@ class TestLoadPluginModules:
         """Test load the bundled plugins, i.e. the ones listed in
         constants.PLUGINS.
         """
-        expected_names = list(map(plugin.PLUGIN_QUALNAME, [*PLUGINS, DEFAULT_PLUGIN]))
+        expected_names = list(
+            map(plugin._plugin_qualname, [*PLUGINS, DEFAULT_PLUGIN])
+        )
 
         modules = plugin.load_plugin_modules(str(config_mock))
         module_names = [mod.__name__ for mod in modules]
@@ -47,7 +47,9 @@ class TestLoadPluginModules:
         plugin_names = ["awesome", "the_slarse_plugin", "ric_easter_egg"]
         expected_calls = [
             call(plug)
-            for plug in map(plugin.PLUGIN_QUALNAME, plugin_names + [DEFAULT_PLUGIN])
+            for plug in map(
+                plugin._plugin_qualname, plugin_names + [DEFAULT_PLUGIN]
+            )
         ]
 
         class module:
@@ -73,7 +75,6 @@ class TestLoadPluginModules:
 
     def test_specify_single_plugin(self, empty_config_mock):
         plugin_name = "javac"
-        plugin_qualname = plugin.PLUGIN_QUALNAME(plugin_name)
         config_contents = os.linesep.join(
             ["[DEFAULTS]", "plugins = {}".format(plugin_name)]
         )
@@ -83,7 +84,7 @@ class TestLoadPluginModules:
         module_names = [mod.__name__ for mod in modules]
 
         assert module_names == list(
-            map(plugin.PLUGIN_QUALNAME, [plugin_name, DEFAULT_PLUGIN])
+            map(plugin._plugin_qualname, [plugin_name, DEFAULT_PLUGIN])
         )
 
     def test_raises_when_loading_invalid_module(self, empty_config_mock):
@@ -143,7 +144,11 @@ class TestRegisterPlugins:
         """
         modules = [javac, pylint]
         # pylint should be registered before javac because of FIFO order
-        expected_calls = [call(pylint), call(javac), call(javac_clone_hook_mock)]
-        plugin.register_plugins([javac, pylint])
+        expected_calls = [
+            call(pylint),
+            call(javac),
+            call(javac_clone_hook_mock),
+        ]
+        plugin.register_plugins(modules)
 
         plugin_manager_mock.register.assert_has_calls(expected_calls)

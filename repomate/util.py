@@ -1,15 +1,15 @@
 """Some general utility functions.
 
 .. module:: util
-    :synopsis: Miscellaneous utility functions that don't really belong anywhere else.
+    :synopsis: Miscellaneous utility functions that don't really belong
+        anywhere else.
 
 .. moduleauthor:: Simon Larsén
 """
 import os
 import sys
 import pathlib
-import random
-from typing import Iterable, Generator, Union, Tuple, Mapping, List
+from typing import Iterable, Generator, Union
 from repomate import tuples
 
 
@@ -38,7 +38,9 @@ def validate_types(**kwargs) -> None:
     for param_name, (argument, expected_types) in kwargs.items():
         if not isinstance(argument, expected_types):
             if isinstance(expected_types, tuple):
-                exp_type_str = " or ".join([t.__name__ for t in expected_types])
+                exp_type_str = " or ".join(
+                    [t.__name__ for t in expected_types]
+                )
             else:
                 exp_type_str = expected_types.__name__
             raise TypeError(
@@ -75,8 +77,8 @@ def generate_repo_name(team_name: str, master_repo_name: str) -> str:
 def generate_repo_names(
     team_names: Iterable[str], master_repo_names: Iterable[str]
 ) -> Iterable[str]:
-    """Construct all combinations of generate_repo_name(team_name, master_repo_name) for the provided
-    team names and master repo names.
+    """Construct all combinations of generate_repo_name(team_name,
+    master_repo_name) for the provided team names and master repo names.
 
     Args:
         team_names: One or more names of teams.
@@ -85,8 +87,12 @@ def generate_repo_names(
     Returns:
         a list of repo names for all combinations of team and master repo.
     """
-    validate_non_empty(team_names=team_names, master_repo_names=master_repo_names)
-    master_repo_names = list(master_repo_names)  # needs to be traversed multiple times
+    validate_non_empty(
+        team_names=team_names, master_repo_names=master_repo_names
+    )
+    master_repo_names = list(
+        master_repo_names
+    )  # needs to be traversed multiple times
     return [
         generate_repo_name(team_name, master_name)
         for master_name in master_repo_names
@@ -131,7 +137,9 @@ def is_git_repo(path: str) -> bool:
     return os.path.isdir(path) and ".git" in os.listdir(path)
 
 
-def _ends_with_ext(path: Union[str, pathlib.Path], extensions: Iterable[str]) -> bool:
+def _ends_with_ext(
+    path: Union[str, pathlib.Path], extensions: Iterable[str]
+) -> bool:
     _, ext = os.path.splitext(str(path))
     return ext in extensions
 

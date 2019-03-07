@@ -22,10 +22,14 @@ import repomate_plug as plug
 
 LOGGER = daiquiri.getLogger(__file__)
 
-PLUGIN_QUALNAME = lambda plugin_name: "{}.ext.{}".format(__package__, plugin_name)
-EXTERNAL_PLUGIN_QUALNAME = lambda plugin_name: "{}_{}.{}".format(
-    __package__, plugin_name, plugin_name
-)
+
+def _plugin_qualname(plugin_name):
+    return "{}.ext.{}".format(__package__, plugin_name)
+
+
+def _external_plugin_qualname(plugin_name):
+    return "{}_{}.{}".format(__package__, plugin_name, plugin_name)
+
 
 DEFAULT_PLUGIN = "defaults"
 
@@ -70,9 +74,9 @@ def load_plugin_modules(
         return [defaults]
 
     for name in plugin_names:
-        plug_mod = _try_load_module(PLUGIN_QUALNAME(name)) or _try_load_module(
-            EXTERNAL_PLUGIN_QUALNAME(name)
-        )
+        plug_mod = _try_load_module(
+            _plugin_qualname(name)
+        ) or _try_load_module(_external_plugin_qualname(name))
         if not plug_mod:
             msg = "failed to load plugin module " + name
             raise exception.PluginError(msg)
@@ -91,7 +95,7 @@ def _try_load_module(qualname: str) -> Optional[ModuleType]:
     """
     try:
         return importlib.import_module(qualname)
-    except ImportError as exc:
+    except ImportError:
         # ImportError in 3.5, ModuleNotFoundError in 3.6+
         # using ImportError for compatability
         return None

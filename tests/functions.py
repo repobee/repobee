@@ -9,19 +9,18 @@ import constants
 
 random.seed(41235)
 
-GENERATE_REPO_URL = lambda repo_name, org_name: "{}/{}/{}".format(
-    constants.HOST_URL, org_name, repo_name
-)
 
-RANDOM_DATE = lambda: (
-    constants.FIXED_DATETIME
-    - datetime.timedelta(
+def generate_repo_url(repo_name, org_name):
+    return "{}/{}/{}".format(constants.HOST_URL, org_name, repo_name)
+
+
+def random_date():
+    return constants.FIXED_DATETIME - datetime.timedelta(
         days=random.randint(0, 1000),
         hours=random.randint(0, 1000),
         minutes=random.randint(0, 1000),
         seconds=random.randint(0, 1000),
     )
-)
 
 
 def raise_(exception):

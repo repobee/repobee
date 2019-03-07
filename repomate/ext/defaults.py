@@ -1,10 +1,10 @@
 """The defaults plugin contains all default hook implementations.
 
 The goal is to make core parts of repomate pluggable using hooks that only
-return the first result that is not None. The standard behavior will be provided
-by the default plugin (this one), which implements all of the required hooks.
-The default plugin will always be run last, so any user-defined hooks will run
-before it and therefore effectively override the default hooks.
+return the first result that is not None. The standard behavior will be
+provided by the default plugin (this one), which implements all of the required
+hooks.  The default plugin will always be run last, so any user-defined hooks
+will run before it and therefore effectively override the default hooks.
 
 Currently, only the peer review related generate_review_allocations hook has a
 default implementation.
@@ -66,9 +66,8 @@ def generate_review_allocations(
         raise ValueError("num_reviews must be greater than 0")
     if len(students) < 2:
         raise ValueError(
-            "there must be at least 2 students for peer review, but {} were provided".format(
-                len(students)
-            )
+            "there must be at least 2 students for peer review, "
+            "but {} were provided".format(len(students))
         )
 
     random.shuffle(students)

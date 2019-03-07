@@ -20,7 +20,6 @@ and specifically the more advanced use of the ``clone_parser_hook`` and
 """
 import subprocess
 import sys
-import os
 import argparse
 import configparser
 import pathlib
@@ -28,7 +27,6 @@ from typing import Union, Iterable, Tuple
 
 import daiquiri
 
-from repomate import tuples
 from repomate import util
 from repomate import github_api
 
@@ -72,7 +70,9 @@ class JavacCloneHook(Plugin):
         status, msg = self._javac(java_files)
         return HookResult("javac", status, msg)
 
-    def _javac(self, java_files: Iterable[Union[str, pathlib.Path]]) -> Tuple[str, str]:
+    def _javac(
+        self, java_files: Iterable[Union[str, pathlib.Path]]
+    ) -> Tuple[str, str]:
         """Run ``javac`` on all of the specified files, assuming that they are
         all ``.java`` files.
 
@@ -80,11 +80,13 @@ class JavacCloneHook(Plugin):
             java_files: paths to ``.java`` files.
         Returns:
             (status, msg), where status is e.g. is a
-                :py:class:`repomate_plug.Status` code and the message describes the
-                outcome in plain text.
+            :py:class:`repomate_plug.Status` code and the message describes the
+            outcome in plain text.
         """
         command = ["javac", *[str(path) for path in java_files]]
-        proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.run(
+            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
 
         if proc.returncode != 0:
             status = Status.ERROR
@@ -97,7 +99,8 @@ class JavacCloneHook(Plugin):
 
     def clone_parser_hook(self, clone_parser: argparse.ArgumentParser) -> None:
         """Add ignore files option to the clone parser. All filenames specified
-        will be ignored when running the :py:func:`act_on_cloned_repo` function.
+        will be ignored when running the :py:func:`act_on_cloned_repo`
+        function.
 
         Args:
             clone_parser: The ``clone`` subparser.
@@ -125,6 +128,8 @@ class JavacCloneHook(Plugin):
         """
         self._ignore = [
             file.strip()
-            for file in config_parser.get(SECTION, "ignore", fallback="").split(",")
+            for file in config_parser.get(
+                SECTION, "ignore", fallback=""
+            ).split(",")
             if file.strip()
         ]

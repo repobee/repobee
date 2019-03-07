@@ -13,10 +13,8 @@ import constants
 sys.modules["github"] = MagicMock()
 
 
-import repomate
-
-from repomate import tuples
-from repomate import config
+import repomate  # noqa: F402
+from repomate import config  # noqa: F402
 
 
 @contextmanager
@@ -30,11 +28,15 @@ def _students_file(populate: bool = True):
     """
     with tempfile.TemporaryDirectory() as tmpdir:
         with tempfile.NamedTemporaryFile(
-            mode="w", encoding=sys.getdefaultencoding(), dir=tmpdir, delete=False
+            mode="w",
+            encoding=sys.getdefaultencoding(),
+            dir=tmpdir,
+            delete=False,
         ) as file:
             if populate:
                 file.writelines(
-                    "{}{}".format(student, os.linesep) for student in constants.STUDENTS
+                    "{}{}".format(student, os.linesep)
+                    for student in constants.STUDENTS
                 )
                 file.flush()
         yield file
@@ -80,10 +82,15 @@ def isfile_mock(request, mocker):
     """
     if "noisfilemock" in request.keywords:
         return
-    isfile = lambda path: str(path) != str(
-        config.DEFAULT_CONFIG_FILE
-    ) and os.path.isfile(str(path))
-    return mocker.patch("pathlib.Path.is_file", autospec=True, side_effect=isfile)
+
+    def isfile(path):
+        return str(path) != str(config.DEFAULT_CONFIG_FILE) and os.path.isfile(
+            str(path)
+        )
+
+    return mocker.patch(
+        "pathlib.Path.is_file", autospec=True, side_effect=isfile
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -112,7 +119,9 @@ def empty_config_mock(mocker, isfile_mock, tmpdir):
         side_effect=lambda _: read_defaults(pathlib.Path(str(file))),
     )
     isfile = isfile_mock.side_effect
-    isfile_mock.side_effect = lambda path: isfile(path) or str(path) == str(file)
+    isfile_mock.side_effect = lambda path: isfile(path) or str(path) == str(
+        file
+    )
     yield file
 
 
