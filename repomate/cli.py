@@ -16,7 +16,6 @@ from contextlib import contextmanager
 from typing import List, Iterable, Optional, Tuple
 
 import logging
-from colored import bg, fg, style
 import daiquiri
 
 import repomate_plug as plug
@@ -24,7 +23,6 @@ import repomate_plug as plug
 import repomate
 from repomate import command
 from repomate import github_api
-from repomate import git
 from repomate import util
 from repomate import tuples
 from repomate import exception
@@ -250,20 +248,22 @@ def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
             )
     else:
         raise exception.ParseError(
-            "Illegal value for subparser: {}. This is a bug, please open an issue.".format(
-                args.subparser
-            )
+            "Illegal value for subparser: {}. "
+            "This is a bug, please open an issue.".format(args.subparser)
         )
 
 
 def _add_peer_review_parsers(base_parsers, subparsers):
     assign_parser = subparsers.add_parser(
         ASSIGN_REVIEWS_PARSER,
-        description="For each student repo, create a review team with pull access "
-        "named <student>-<master_repo_name>-review and randomly assign other "
-        "students to it. All students are assigned to the same amount of "
-        "review teams, as specified by `--num-reviews`. Note that "
-        "`--num-reviews` must be strictly less than the amount of students.",
+        description=(
+            "For each student repo, create a review team with pull access "
+            "named <student>-<master_repo_name>-review and randomly assign "
+            "other students to it. All students are assigned to the same "
+            "amount of review teams, as specified by `--num-reviews`. Note "
+            "that `--num-reviews` must be strictly less than the amount of "
+            "students."
+        ),
         help="Randomly assign students to peer review each others' repos.",
         parents=base_parsers,
     )
@@ -280,13 +280,15 @@ def _add_peer_review_parsers(base_parsers, subparsers):
     assign_parser.add_argument(
         "-i",
         "--issue",
-        help="Path to an issue to open in student repos. If specified, this issue "
-        "will be opened in each student repo, and the body will be "
-        "prepended with user mentions of all students assigned to review the "
-        "repo. NOTE: The first line is assumed to be the title.",
+        help=(
+            "Path to an issue to open in student repos. If specified, this "
+            "issue will be opened in each student repo, and the body will be "
+            "prepended with user mentions of all students assigned to review "
+            "the repo. NOTE: The first line is assumed to be the title."
+        ),
         type=str,
     )
-    purge_team_parser = subparsers.add_parser(
+    subparsers.add_parser(
         PURGE_REVIEW_TEAMS_PARSER,
         description="Remove review teams assigned with `assign-peer-reviews`",
         help="Remove all review teams associated with the specified "
@@ -295,12 +297,14 @@ def _add_peer_review_parsers(base_parsers, subparsers):
     )
     check_review_progress = subparsers.add_parser(
         CHECK_REVIEW_PROGRESS_PARSER,
-        description="Check which students have opened review review issues in their "
-        "assigned repos. As it is possible for students to leave the peer "
-        "review teams on their own, the command checks that each student is "
-        "assigned to the expected amound of teams. There is currently no way "
-        "to check if students have been swapped around, so using this command "
-        "fow grading purposes is not recommended.",
+        description=(
+            "Check which students have opened review review issues in their "
+            "assigned repos. As it is possible for students to leave the peer "
+            "review teams on their own, the command checks that each student "
+            "is assigned to the expected amound of teams. There is currently "
+            "no way to check if students have been swapped around, so using "
+            "this command fow grading purposes is not recommended."
+        ),
         help=(
             "Fetch all peer review teams for the specified student repos, and "
             "check which assigned reviews have been done (i.e. which issues "
@@ -312,8 +316,8 @@ def _add_peer_review_parsers(base_parsers, subparsers):
         "-r",
         "--title-regex",
         help=(
-            "Regex to match against titles. Only issues matching this regex will "
-            "count as review issues."
+            "Regex to match against titles. Only issues matching this regex "
+            "will count as review issues."
         ),
         required=True,
     )
@@ -321,9 +325,11 @@ def _add_peer_review_parsers(base_parsers, subparsers):
         "-n",
         "--num-reviews",
         metavar="N",
-        help="The expected amount of reviews each student should be assigned to "
-        " perform. If a student is not assigned to `num_reviews` review teams, "
-        "warnings will be displayed.",
+        help=(
+            "The expected amount of reviews each student should be assigned "
+            "to perform. If a student is not assigned to `num_reviews` "
+            "review teams, warnings will be displayed."
+        ),
         type=int,
         required=True,
     )
@@ -345,7 +351,7 @@ def _add_issue_parsers(base_parsers, subparsers):
     open_parser.add_argument(
         "-i",
         "--issue",
-        help="Path to an issue. NOTE: The first line is assumed to be the title.",
+        help="Path to an issue. The first line is assumed to be the title.",
         type=str,
         required=True,
     )
@@ -382,8 +388,8 @@ def _add_issue_parsers(base_parsers, subparsers):
         "-r",
         "--title-regex",
         help=(
-            "Regex to match against titles. Only issues matching this regex will "
-            "be listed."
+            "Regex to match against titles. Only issues matching this regex "
+            "will be listed."
         ),
     )
     list_parser.add_argument(
@@ -429,9 +435,11 @@ def _create_parser():
 
     parser = argparse.ArgumentParser(
         prog="repomate",
-        description="A CLI tool for administering large amounts of git repositories on "
-        "GitHub instances. See the full documentation at "
-        "https://repomate.readthedocs.io",
+        description=(
+            "A CLI tool for administering large amounts of git repositories "
+            "on GitHub instances. See the full documentation at "
+            "https://repomate.readthedocs.io"
+        ),
     )
     parser.add_argument(
         "-v",
@@ -472,22 +480,28 @@ def _add_subparsers(parser):
     subparsers = parser.add_subparsers(dest=SUB)
     subparsers.required = True
 
-    show_config = subparsers.add_parser(
+    subparsers.add_parser(
         SHOW_CONFIG_PARSER,
         help="Show the configuration file",
-        description="Show the contents of the configuration file. If no configuration "
-        "file can be found, show the path where repomate expectes to find it.",
+        description=(
+            "Show the contents of the configuration file. If no configuration "
+            "file can be found, show the path where repomate expectes to find "
+            "it."
+        ),
     )
 
-    create = subparsers.add_parser(
+    subparsers.add_parser(
         SETUP_PARSER,
         help="Setup student repos.",
-        description="Setup student repositories based on master repositories. This "
-        "command performs three primary actions: sets up the student teams, "
-        "creates one student repository for each master repository and "
-        "finally pushes the master repo files to the corresponding student "
-        "repos. It is perfectly safe to run this command several times, as "
-        "any previously performed step will simply be skipped.",
+        description=(
+            "Setup student repositories based on master repositories. "
+            "This command performs three primary actions: sets up the "
+            "student teams, creates one student repository for each "
+            "master repository and finally pushes the master repo files to "
+            "the corresponding student repos. It is perfectly safe to run "
+            "this command several times, as any previously performed step "
+            "will simply be skipped."
+        ),
         parents=[
             base_user_parser,
             base_student_parser,
@@ -511,8 +525,8 @@ def _add_subparsers(parser):
         "-i",
         "--issue",
         help=(
-            "Path to issue to open in repos to which update pushes fail. Assumes "
-            "that the first line is the title."
+            "Path to issue to open in repos to which update pushes fail. "
+            "Assumes that the first line is the title."
         ),
         type=str,
     )
@@ -520,13 +534,15 @@ def _add_subparsers(parser):
     migrate = subparsers.add_parser(
         MIGRATE_PARSER,
         help="Migrate master repositories into the target organization.",
-        description="Migrate master repositories into the target organization. The repos "
-        "must either be local on disk (and specified with `-mn`), or "
-        "somewhere in the target GitHub instance (and specified with `-mu`). "
-        "Migrate repos are added to the `{}` team. "
-        "`migrate-repos` can also be used to update already migrated "
-        "repos, by simply running the command again.".format(
-            command.MASTER_TEAM
+        description=(
+            "Migrate master repositories into the target organization. "
+            "The repos must either be local on disk (and specified with "
+            "`-mn`), or somewhere in the target GitHub instance (and "
+            "specified with `-mu`). Migrate repos are added to the `{}` "
+            "team. `migrate-repos` can also be used to update already "
+            "migrated repos, by simply running the command again.".format(
+                command.MASTER_TEAM
+            )
         ),
         parents=[base_parser, base_user_parser],
     )
@@ -567,16 +583,21 @@ def _add_subparsers(parser):
         [base_student_parser, repo_name_parser], subparsers
     )
 
-    verify = subparsers.add_parser(
+    subparsers.add_parser(
         VERIFY_PARSER,
         help="Verify your settings, such as the base url and the OAUTH token.",
         description=(
-            "Verify core settings. Performs the following checks, in order: user "
-            "exists (implicitly verifies base url), oauth scopes (premissions of "
-            "the OAUTH token), organization exists, user is an owner of the "
-            "organization (for both target org and master org if the latter is "
-            "specified). If any one of the checks fails, the verification is "
-            "aborted and an error message is displayed."
+            "Verify core settings. Performs the following checks, in order: "
+            "user exists (implicitly verifies base url), oauth scopes "
+            "(premissions of "
+            "the OAUTH token), organization exists, user "
+            "is an owner of the "
+            "organization (for both target org and "
+            "master org if the latter is "
+            "specified). If any one of "
+            "the checks fails, the verification is "
+            "aborted and an error "
+            "message is displayed."
         ),
         parents=[base_parser, base_user_parser, master_org_parser],
     )
@@ -608,7 +629,10 @@ def _create_base_parsers():
     base_parser.add_argument(
         "-g",
         "--github-base-url",
-        help="Base url to a GitHub v3 API. For enterprise, this is usually `https://<HOST>/api/v3`",
+        help=(
+            "Base url to a GitHub v3 API. For enterprise, this is usually "
+            "`https://<HOST>/api/v3`"
+        ),
         type=str,
         required=is_required("github_base_url"),
         default=default("github_base_url"),
@@ -655,7 +679,10 @@ def _create_base_parsers():
     base_user_parser.add_argument(
         "-u",
         "--user",
-        help="Your GitHub username. Needed for pushing without CLI interaction.",
+        help=(
+            "Your GitHub username. Needed for pushing without CLI "
+            "interaction."
+        ),
         type=str,
         required=is_required("user"),
         default=default("user"),
@@ -686,19 +713,17 @@ def _sys_exit_on_expected_error():
         yield
     except exception.PushFailedError as exc:
         LOGGER.error(
-            "There was an error pushing to {}. Verify that your token has adequate access.".format(
-                exc.url
-            )
+            "There was an error pushing to {}. "
+            "Verify that your token has adequate access.".format(exc.url)
         )
         sys.exit(1)
     except exception.CloneFailedError as exc:
         LOGGER.error(
-            "There was an error cloning from {}. Does the repo really exist?".format(
-                exc.url
-            )
+            "There was an error cloning from {}. "
+            "Does the repo really exist?".format(exc.url)
         )
         sys.exit(1)
-    except exception.GitError as exc:
+    except exception.GitError:
         LOGGER.error("Something went wrong with git. See the logs for info.")
         sys.exit(1)
     except exception.APIError as exc:
@@ -752,7 +777,8 @@ def _connect_to_api(
     except exception.NotFoundError:
         # more informative message
         raise exception.NotFoundError(
-            "either organization {} could not be found, or the base url '{}' is incorrect".format(
+            "either organization {} could not be found, "
+            "or the base url '{}' is incorrect".format(
                 org_name, github_base_url
             )
         )

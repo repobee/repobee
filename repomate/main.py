@@ -63,9 +63,10 @@ def main(sys_args: List[str]):
         ):
             if pre_init:
                 LOGGER.error(
-                    "unexpected exception raised before pre-initialization was complete. "
-                    "This shouldn't happen, please open an issue on GitHub "
-                    "and supply the stacktrace that follows below."
+                    "unexpected exception raised before pre-initialization "
+                    "was complete. This shouldn't happen, please open an "
+                    "issue on GitHub and supply the stacktrace that "
+                    "follows below."
                 )
             LOGGER.exception("critical exception")
         else:

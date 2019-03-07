@@ -5,13 +5,13 @@ prime means of interacting with the GitHub API in ``repomate``. The methods of
 GitHubAPI are mostly high-level bulk operations.
 
 .. module:: github_api
-    :synopsis: Top level interface for interacting with a GitHub instance within repomate.
+    :synopsis: Top level interface for interacting with a GitHub instance
+        within repomate.
 
 .. moduleauthor:: Simon Larsén
 """
 import re
-import os
-from typing import List, Iterable, Mapping, Union, Optional, Generator, Tuple
+from typing import List, Iterable, Mapping, Optional, Generator, Tuple
 from socket import gaierror
 import collections
 import daiquiri
@@ -80,12 +80,12 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
             raise exception.NotFoundError(str(e), status=404)
         elif e.status == 401:
             raise exception.BadCredentials(
-                "credentials were rejected, verify that token has correct access.",
+                "credentials rejected, verify that token has correct access.",
                 status=401,
             )
         else:
             raise exception.GitHubError(str(e), status=e.status)
-    except gaierror as e:
+    except gaierror:
         raise exception.ServiceNotFoundError(
             "GitHub service could not be found, check the url"
         )
@@ -140,7 +140,8 @@ class GitHubAPI:
         Args:
             team_names: An iterable of team names.
         Returns:
-            An iterable of Team namedtuples of all teams that matched any of the team names.
+            An iterable of Team namedtuples of all teams that matched any of
+            the team names.
         """
         team_names = set(team_names)
         with _try_api_request():
@@ -204,8 +205,8 @@ class GitHubAPI:
             member_list: A mapping of (team_name, member_list).
 
         Returns:
-            A list of Team namedtuples of the teams corresponding to the keys of
-            the member_lists mapping.
+            A list of Team namedtuples of the teams corresponding to the keys
+            of the member_lists mapping.
         """
         teams = self._ensure_teams_exist(
             [team_name for team_name in member_lists.keys()],
@@ -225,8 +226,8 @@ class GitHubAPI:
         Args:
             team_names: An iterable of team names.
         Returns:
-            A list of Team namedtuples representing the teams corresponding to the
-            provided team_names.
+            A list of Team namedtuples representing the teams corresponding to
+            the provided team_names.
         Raises:
             exception.UnexpectedException if anything but a 422 (team already
             exists) is raised when trying to create a team.
@@ -441,7 +442,8 @@ class GitHubAPI:
         specified, sensible defaults for title and body are used.
 
         Args:
-            team_to_repos: A mapping from a team name to a sequence of repo names.
+            team_to_repos: A mapping from a team name to a sequence of repo
+                names.
             issue: An an optional Issue tuple to override the default issue.
         """
         issue = issue or DEFAULT_REVIEW_ISSUE
@@ -491,9 +493,8 @@ class GitHubAPI:
                 repos = list(team.get_repos())
                 if len(repos) != 1:
                     LOGGER.warning(
-                        "expected {} to have 1 associated repo, found {}. Skipping...".format(
-                            team.name, len(repos)
-                        )
+                        "expected {} to have 1 associated repo, found {}."
+                        "Skipping...".format(team.name, len(repos))
                     )
                     continue
 
@@ -523,7 +524,8 @@ class GitHubAPI:
         the repo has been added to the team.
 
         Args:
-            team_to_repos: A mapping from a team name to a sequence of repo names.
+            team_to_repos: A mapping from a team name to a sequence of repo
+                names.
         Returns:
             a generator yielding each (team, repo) tuple in turn.
         """
@@ -584,9 +586,11 @@ class GitHubAPI:
         .. code-block: markdown
 
             1. Base url is correct (verify by fetching user).
-            2. The token has correct access privileges (verify by getting oauth scopes)
+            2. The token has correct access privileges (verify by getting oauth
+               scopes)
             3. Organization exists (verify by getting the org)
-                - If master_org_name is supplied, this is also checked to exist.
+                - If master_org_name is supplied, this is also checked to
+                  exist.
             4. User is owner in organization (verify by getting
                 - If master_org_name is supplied, user is also checked to be an
                   owner of it.
@@ -629,8 +633,9 @@ class GitHubAPI:
         ).format(user)
         with _convert_404_to_not_found_error(user_not_found_msg):
             user_ = g.get_user(user)
-            msg = "specified login is {}, but the fetched user's login is {}.".format(
-                user, user_.login
+            msg = (
+                "specified login is {}, "
+                "but the fetched user's login is {}.".format(user, user_.login)
             )
             if user_.login is None:
                 msg = (
@@ -645,18 +650,16 @@ class GitHubAPI:
                 )
                 raise exception.UnexpectedException(msg=msg)
         LOGGER.info(
-            "SUCCESS: found user {}, user exists and base url looks okay".format(
-                user
-            )
+            "SUCCESS: found user {}, "
+            "user exists and base url looks okay".format(user)
         )
 
         LOGGER.info("verifying oauth scopes ...")
         scopes = g.oauth_scopes
         if not REQUIRED_OAUTH_SCOPES.issubset(scopes):
             raise exception.BadCredentials(
-                "missing one or more oauth scopes. Actual: {}. Required {}".format(
-                    scopes, REQUIRED_OAUTH_SCOPES
-                )
+                "missing one or more oauth scopes. "
+                "Actual: {}. Required {}".format(scopes, REQUIRED_OAUTH_SCOPES)
             )
         LOGGER.info("SUCCESS: oauth scopes look okay")
 

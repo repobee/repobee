@@ -10,7 +10,7 @@ import os
 import subprocess
 import collections
 import daiquiri
-from typing import Sequence, Tuple, Iterable, List, Any, Callable
+from typing import Iterable, List, Any, Callable
 
 from repomate import util
 from repomate import exception
@@ -72,7 +72,8 @@ def clone_single(
     """Clone a git repository.
 
     Args:
-        repo_url: HTTPS url to repository on the form https://<host>/<owner>/<repo>.
+        repo_url: HTTPS url to repository on the form
+            https://<host>/<owner>/<repo>.
         single_branch: Whether or not to clone a single branch.
         branch: The branch to clone.
         cwd: Working directory. Defaults to the current directory.
@@ -221,8 +222,8 @@ def _push_no_retry(
         token: A GitHub OAUTH token.
 
     Returns:
-        urls to which pushes failed with exception.PushFailedError. Other errors are only
-        logged.
+        urls to which pushes failed with exception.PushFailedError. Other
+        errors are only logged.
     """
     # TODO valdate push_tuples
     util.validate_types(user=(user, str))
@@ -280,14 +281,16 @@ def _batch_execution(
     until it is exhausted. The batch_func_kwargs are provided on each call.
 
     Args:
-        batch_func: A function that takes an iterable as a first argument and returns
+        batch_func: A function that takes an iterable as a first argument and
+            returns
         a list of asyncio.Task objects.
         arg_list: A list of objects that are of the same type as the
         batch_func's first argument.
         batch_func_kwargs: Additional keyword arguments to the batch_func.
 
     Returns:
-        a list of exceptions raised in the tasks returned by the batch function.
+        a list of exceptions raised in the tasks returned by the batch
+        function.
     """
     completed_tasks = []
 

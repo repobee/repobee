@@ -1,15 +1,15 @@
 """Some general utility functions.
 
 .. module:: util
-    :synopsis: Miscellaneous utility functions that don't really belong anywhere else.
+    :synopsis: Miscellaneous utility functions that don't really belong
+        anywhere else.
 
 .. moduleauthor:: Simon Larsén
 """
 import os
 import sys
 import pathlib
-import random
-from typing import Iterable, Generator, Union, Tuple, Mapping, List
+from typing import Iterable, Generator, Union
 from repomate import tuples
 
 
@@ -77,8 +77,8 @@ def generate_repo_name(team_name: str, master_repo_name: str) -> str:
 def generate_repo_names(
     team_names: Iterable[str], master_repo_names: Iterable[str]
 ) -> Iterable[str]:
-    """Construct all combinations of generate_repo_name(team_name, master_repo_name) for the provided
-    team names and master repo names.
+    """Construct all combinations of generate_repo_name(team_name,
+    master_repo_name) for the provided team names and master repo names.
 
     Args:
         team_names: One or more names of teams.

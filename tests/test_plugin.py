@@ -33,7 +33,7 @@ class TestLoadPluginModules:
         constants.PLUGINS.
         """
         expected_names = list(
-            map(plugin.PLUGIN_QUALNAME, [*PLUGINS, DEFAULT_PLUGIN])
+            map(plugin._plugin_qualname, [*PLUGINS, DEFAULT_PLUGIN])
         )
 
         modules = plugin.load_plugin_modules(str(config_mock))
@@ -48,7 +48,7 @@ class TestLoadPluginModules:
         expected_calls = [
             call(plug)
             for plug in map(
-                plugin.PLUGIN_QUALNAME, plugin_names + [DEFAULT_PLUGIN]
+                plugin._plugin_qualname, plugin_names + [DEFAULT_PLUGIN]
             )
         ]
 
@@ -84,7 +84,7 @@ class TestLoadPluginModules:
         module_names = [mod.__name__ for mod in modules]
 
         assert module_names == list(
-            map(plugin.PLUGIN_QUALNAME, [plugin_name, DEFAULT_PLUGIN])
+            map(plugin._plugin_qualname, [plugin_name, DEFAULT_PLUGIN])
         )
 
     def test_raises_when_loading_invalid_module(self, empty_config_mock):

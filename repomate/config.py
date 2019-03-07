@@ -3,11 +3,11 @@
 Contains the code required for pre-configuring user interfaces.
 
 .. module:: config
-    :synopsis: Configuration functions and constants for pre-configuring CLI parameters.
+    :synopsis: Configuration functions and constants for pre-configuring CLI
+        parameters.
 
 .. moduleauthor:: Simon Larsén
 """
-import os
 import pathlib
 import configparser
 from typing import Union, List, Mapping
@@ -163,9 +163,8 @@ def _read_config(
 
     if DEFAULTS_SECTION_HDR not in config_parser:
         raise exception.FileError(
-            "config file at '{!s}' does not contain the required [DEFAULTS] header".format(
-                config_file
-            )
+            "config file at '{!s}' does not contain the required "
+            "[DEFAULTS] header".format(config_file)
         )
 
     return config_parser

@@ -8,7 +8,8 @@ Each public function in this module is to be treated as a self-contained
 program.
 
 .. module:: command
-    :synopsis: The primary API of repomate containing high level functions for administrating GitHub repos in an opinionated fashion.
+    :synopsis: The primary API of repomate containing high level functions for
+        administrating GitHub repos in an opinionated fashion.
 
 .. moduleauthor:: Simon Larsén
 """
@@ -16,9 +17,7 @@ program.
 import os
 import sys
 import tempfile
-import re
-import collections
-from typing import Iterable, List, Optional, Tuple, Generator, Mapping
+from typing import Iterable, List, Optional, Tuple, Generator
 from colored import bg, fg, style
 
 import daiquiri
@@ -91,8 +90,8 @@ def add_students_to_teams(
     students: Iterable[str], api: GitHubAPI
 ) -> List[Team]:
     """Create one team for each student (with the same name as the student),
-    and add the student to the team. If a team already exists, it is not created.
-    If a student is already in his/her team, nothing happens.
+    and add the student to the team. If a team already exists, it is not
+    created.  If a student is already in his/her team, nothing happens.
 
     Args:
         students: Student GitHub usernames.
@@ -111,12 +110,13 @@ def add_students_to_teams(
 def _create_student_repos(
     master_repo_urls: Iterable[str], teams: Iterable[Team], api: GitHubAPI
 ) -> List[str]:
-    """Create student repos. Each team (usually representing one student) is assigned a single repo
-    per master repo. Repos that already exist are not created, but their urls are returned all
-    the same.
+    """Create student repos. Each team (usually representing one student) is
+    assigned a single repo per master repo. Repos that already exist are not
+    created, but their urls are returned all the same.
 
     Args:
-        master_repo_urls: URLs to master repos. Must be in the organization that the api is set up for.
+        master_repo_urls: URLs to master repos. Must be in the organization
+            that the api is set up for.
         teams: An iterable of namedtuples designating different teams.
         api: A GitHubAPI instance used to interface with the GitHub instance.
 
@@ -165,7 +165,8 @@ def update_student_repos(
     """Attempt to update all student repos related to one of the master repos.
 
     Args:
-        master_repo_urls: URLs to master repos. Must be in the organization that the api is set up for.
+        master_repo_urls: URLs to master repos. Must be in the organization
+            that the api is set up for.
         students: An iterable of student GitHub usernames.
         user: Username of the administrator that setting up the repos.
         api: A GitHubAPI instance used to interface with the GitHub instance.
@@ -275,8 +276,6 @@ def _log_repo_issues(
         title_alignment: Where the issue title should start counting from the
         start of the line.
     """
-    from colored import bg, fg, style
-
     even = True
     for repo_name, issues in issues_per_repo:
         issues = list(issues)
@@ -509,15 +508,13 @@ def assign_peer_reviews(
     )
 
     for master_name in master_repo_names:
-        peer_review_allocations = plug.manager.hook.generate_review_allocations(
+        allocations = plug.manager.hook.generate_review_allocations(
             master_repo_name=master_name,
             students=students,
             num_reviews=num_reviews,
             review_team_name_function=util.generate_review_team_name,
         )
-        api.ensure_teams_and_members(
-            peer_review_allocations, permission="pull"
-        )
+        api.ensure_teams_and_members(allocations, permission="pull")
         api.add_repos_to_review_teams(
             {
                 util.generate_review_team_name(student, master_name): [
@@ -532,7 +529,8 @@ def assign_peer_reviews(
 def purge_review_teams(
     master_repo_names: Iterable[str], students: Iterable[str], api: GitHubAPI
 ) -> None:
-    """Delete all review teams associated with the given master repo names and students.
+    """Delete all review teams associated with the given master repo names and
+    students.
 
     Args:
         master_repo_names: Names of master repos.

@@ -1,7 +1,8 @@
 """A peer review plugin which attempts to assign pairwise peer reviews.
 Intended for students to sit and discuss their code bases with each other, as
-well as leave feedback. More specifically, N students are split into N/2 groups,
-each group member assigned to peer review the other person in the group.
+well as leave feedback. More specifically, N students are split into N/2
+groups, each group member assigned to peer review the other person in the
+group.
 
 If N is odd, the students are split into (N-1)/2 groups, in which one group has
 3 members.
@@ -47,15 +48,13 @@ def generate_review_allocations(
     students = list(students)
     if num_reviews != 1:
         LOGGER.warning(
-            "num_reviews specified to {}, but in pairwise assignment num_reviews is ignored".format(
-                num_reviews
-            )
+            "num_reviews specified to {}, but in pairwise assignment "
+            "num_reviews is ignored".format(num_reviews)
         )
     if len(students) < 2:
         raise ValueError(
-            "there must be at least 2 students for peer review, but {} were provided".format(
-                len(students)
-            )
+            "there must be at least 2 students for peer review, "
+            "but {} were provided".format(len(students))
         )
 
     random.shuffle(students)

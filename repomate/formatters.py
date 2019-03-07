@@ -24,10 +24,10 @@ def format_peer_review_progress_output(
     students: List[str],
     num_reviews: int,
 ):
-    # can't use tabs for spacing as they are not background colored in output for some reason
-    # each column should be exactly 16 characters
+    # can't use tabs for spacing as they are not background colored in output
+    # for some reason each column should be exactly 16 characters
     output = [
-        "Color coding: grey: not done, green: done, red: num done + num remaining != num_reviews",
+        "Color coding: grey: not done, green: done, red: num done + num remaining != num_reviews",  # noqa: E501
         style.RESET
         + _format_row(
             ["reviewer", "num done", "num remaining", "repos remaining"]

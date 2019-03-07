@@ -16,15 +16,11 @@ files in a repo, and runs pylint on them, storing the results in files named
 """
 
 import subprocess
-import sys
 import pathlib
 from typing import Tuple, Union, Iterable
 
 import daiquiri
 
-from repomate import plugin
-from repomate import tuples
-from repomate import util
 from repomate import github_api
 
 from repomate_plug import repomate_hook, HookResult, Status
