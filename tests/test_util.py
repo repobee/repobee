@@ -2,22 +2,17 @@ import os
 import sys
 import itertools
 import tempfile
-import string
-import collections
 from contextlib import contextmanager
 import pytest
 
 from repomate import util
 
-import constants
-import functions
-
 
 @contextmanager
 def written_tmpfile(text):
-    """Create a context within which there is a temporary file with some
-    text in it. The file is deleted after the context exits. Yields the
-    temporary file.
+    """Create a context within which there is a temporary file with some text
+    in it. The file is deleted after the context exits. Yields the temporary
+    file.
 
     Args:
         text: Text to put in the temporary file.
@@ -70,9 +65,11 @@ class TestReadIssue:
         assert issue.body == ""
 
     def test_title_and_body(self):
-        """If there is a line separator in the file, there should be both title and body."""
+        """If there is a line separator in the file, there should be both title
+        and body.
+        """
         expected_title = "This is the title again"
-        expected_body = "This is the body **with some formatting** and{} multiple{}lines".format(
+        expected_body = "Body **with formatting** and{}multiple{}lines".format(
             os.linesep, os.linesep
         )
         text = os.linesep.join([expected_title, expected_body])

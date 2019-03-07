@@ -1,18 +1,15 @@
-import sys
 import os
-import pytest
 import subprocess
-from asyncio import coroutine
-from unittest.mock import patch, PropertyMock, MagicMock, call
+from unittest.mock import call
 from collections import namedtuple
 
+import pytest
 
 from repomate import git
 from repomate import exception
 
-from constants import TOKEN
 import constants
-import functions
+from constants import TOKEN
 
 URL_TEMPLATE = "https://{}github.com/slarse/clanim"
 USER = constants.USER

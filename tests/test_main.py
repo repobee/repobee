@@ -1,17 +1,14 @@
-from unittest.mock import patch, MagicMock
-import builtins
-import pytest
+from unittest.mock import MagicMock
 from collections import namedtuple
 
+import pytest
+
 from functions import raise_
-import repomate
 from repomate import cli
 from repomate import main
 from repomate import tuples
-from repomate import github_api
 
 import constants
-import functions
 
 ORG_NAME = constants.ORG_NAME
 GITHUB_BASE_URL = constants.GITHUB_BASE_URL

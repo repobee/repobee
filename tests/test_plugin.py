@@ -6,12 +6,11 @@
         installed any other plugins, tests in here may fail unexpectedly
         without anything actually being wrong.
 """
-import pytest
 import os
-import builtins
 from unittest.mock import call, MagicMock
 
-import repomate
+import pytest
+
 from repomate import plugin
 from repomate import exception
 
@@ -19,7 +18,6 @@ from repomate.plugin import DEFAULT_PLUGIN
 from repomate.ext import javac, pylint, defaults
 
 import constants
-import functions
 
 PLUGINS = constants.PLUGINS
 
@@ -77,7 +75,6 @@ class TestLoadPluginModules:
 
     def test_specify_single_plugin(self, empty_config_mock):
         plugin_name = "javac"
-        plugin_qualname = plugin.PLUGIN_QUALNAME(plugin_name)
         config_contents = os.linesep.join(
             ["[DEFAULTS]", "plugins = {}".format(plugin_name)]
         )
@@ -152,6 +149,6 @@ class TestRegisterPlugins:
             call(javac),
             call(javac_clone_hook_mock),
         ]
-        plugin.register_plugins([javac, pylint])
+        plugin.register_plugins(modules)
 
         plugin_manager_mock.register.assert_has_calls(expected_calls)

@@ -5,7 +5,6 @@ from repomate import config
 from repomate import exception
 
 import constants
-import functions
 
 STUDENTS = constants.STUDENTS
 USER = constants.USER
@@ -25,7 +24,7 @@ class TestGetConfiguredDefaults:
 
     def test_get_configured_defaults_empty_file(self, empty_config_mock):
         with pytest.raises(exception.FileError) as exc_info:
-            defaults = config.get_configured_defaults()
+            config.get_configured_defaults()
         assert "does not contain the required [DEFAULTS] header" in str(
             exc_info
         )

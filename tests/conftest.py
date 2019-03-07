@@ -13,10 +13,8 @@ import constants
 sys.modules["github"] = MagicMock()
 
 
-import repomate
-
-from repomate import tuples
-from repomate import config
+import repomate  # noqa: F402
+from repomate import config  # noqa: F402
 
 
 @contextmanager
@@ -84,9 +82,12 @@ def isfile_mock(request, mocker):
     """
     if "noisfilemock" in request.keywords:
         return
-    isfile = lambda path: str(path) != str(
-        config.DEFAULT_CONFIG_FILE
-    ) and os.path.isfile(str(path))
+
+    def isfile(path):
+        return str(path) != str(config.DEFAULT_CONFIG_FILE) and os.path.isfile(
+            str(path)
+        )
+
     return mocker.patch(
         "pathlib.Path.is_file", autospec=True, side_effect=isfile
     )

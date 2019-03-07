@@ -1,11 +1,9 @@
 import os
 import sys
-import pytest
 from repomate import exception
 from repomate import git
 
 import constants
-import functions
 
 USER = constants.USER
 

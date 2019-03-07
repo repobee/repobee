@@ -1,16 +1,12 @@
-import sys
 import random
-import os
 import itertools
 import pytest
-from unittest.mock import patch, MagicMock, PropertyMock, call
-from collections import namedtuple
+from unittest.mock import MagicMock, PropertyMock, call
 
 import github
 from repomate import util
 from repomate import exception
 from repomate import github_api
-from repomate import git
 from repomate import tuples
 from repomate.github_api import REQUIRED_OAUTH_SCOPES
 
@@ -40,18 +36,18 @@ GITHUB_BASE_URL = constants.GITHUB_BASE_URL
 ISSUE = constants.ISSUE
 TOKEN = constants.TOKEN
 
-GENERATE_REPO_URL = functions.GENERATE_REPO_URL
-RANDOM_DATE = functions.RANDOM_DATE
+generate_repo_url = functions.generate_repo_url
+random_date = functions.random_date
 to_magic_mock_issue = functions.to_magic_mock_issue
 from_magic_mock_issue = functions.from_magic_mock_issue
 
 User = constants.User
 
 CLOSE_ISSUE = tuples.Issue(
-    "close this issue", "This is a body", 3, RANDOM_DATE(), "slarse"
+    "close this issue", "This is a body", 3, random_date(), "slarse"
 )
 DONT_CLOSE_ISSUE = tuples.Issue(
-    "Don't close this issue", "Another body", 4, RANDOM_DATE(), "glassey"
+    "Don't close this issue", "Another body", 4, random_date(), "glassey"
 )
 OPEN_ISSUES = [CLOSE_ISSUE, DONT_CLOSE_ISSUE]
 
@@ -60,14 +56,14 @@ CLOSED_ISSUES = [
         "This is a closed issue",
         "With an uninteresting body",
         1,
-        RANDOM_DATE(),
+        random_date(),
         "tmore",
     ),
     tuples.Issue(
         "Yet another closed issue",
         "Even less interesting body",
         2,
-        RANDOM_DATE(),
+        random_date(),
         "viklu",
     ),
 ]
@@ -161,7 +157,7 @@ def organization(happy_github):
         User(login=USER),
     ]
     type(organization).html_url = PropertyMock(
-        return_value=GENERATE_REPO_URL("", ORG_NAME).rstrip("/")
+        return_value=generate_repo_url("", ORG_NAME).rstrip("/")
     )
     happy_github.get_organization.side_effect = (
         lambda org_name: organization if org_name == ORG_NAME else raise_404()
@@ -227,7 +223,7 @@ def mock_repo(name, description, private, team_id):
         return_value="description of {}".format(name)
     )
     type(repo).html_url = PropertyMock(
-        return_value=GENERATE_REPO_URL(name, ORG_NAME)
+        return_value=generate_repo_url(name, ORG_NAME)
     )
     # repo.get_teams.side_effect = lambda: [team]
     return repo
@@ -358,7 +354,7 @@ class TestEnsureTeamsAndMembers:
 
         organization.create_team.side_effect = raise_
 
-        with pytest.raises(exception.UnexpectedException) as exc_info:
+        with pytest.raises(exception.UnexpectedException):
             api.ensure_teams_and_members(teams_and_members)
 
     def test_running_twice_has_no_ill_effects(
@@ -432,7 +428,7 @@ class TestCreateRepos:
         are validation errors.
         """
         expected_urls = [
-            GENERATE_REPO_URL(info.name, ORG_NAME) for info in repo_infos
+            generate_repo_url(info.name, ORG_NAME) for info in repo_infos
         ]
 
         actual_urls = api.create_repos(repo_infos)
@@ -720,7 +716,7 @@ class TestVerifySettings:
         assert "token is empty" in str(exc_info)
 
     def test_incorrect_info_raises_not_found_error(self, github_bad_info, api):
-        with pytest.raises(exception.NotFoundError) as exc_info:
+        with pytest.raises(exception.NotFoundError):
             github_api.GitHubAPI.verify_settings(
                 USER, ORG_NAME, GITHUB_BASE_URL, TOKEN
             )
@@ -746,7 +742,7 @@ class TestVerifySettings:
         self, happy_github, api
     ):
         happy_github.get_user.side_effect = SERVER_ERROR
-        with pytest.raises(exception.UnexpectedException) as exc_info:
+        with pytest.raises(exception.UnexpectedException):
             api.verify_settings(USER, ORG_NAME, GITHUB_BASE_URL, TOKEN)
 
     def test_none_user_raises(self, happy_github, organization, api):

@@ -4,7 +4,6 @@ import collections
 from datetime import datetime
 
 from repomate import tuples
-from repomate import config
 
 USER = "slarse"
 ORG_NAME = "test-org"

@@ -1,19 +1,13 @@
 import os
-import sys
-import string
-import tempfile
 import pathlib
-from unittest.mock import MagicMock, PropertyMock
+from unittest.mock import MagicMock
 from unittest import mock
-from contextlib import contextmanager
 import pytest
 
 import repomate
 from repomate import cli
-from repomate import git
 from repomate import tuples
 from repomate import exception
-from repomate import config
 from repomate.tuples import Team
 
 import constants
@@ -25,12 +19,12 @@ GITHUB_BASE_URL = constants.GITHUB_BASE_URL
 STUDENTS = constants.STUDENTS
 ISSUE_PATH = constants.ISSUE_PATH
 ISSUE = constants.ISSUE
-GENERATE_REPO_URL = functions.GENERATE_REPO_URL
+generate_repo_url = functions.generate_repo_url
 MASTER_ORG_NAME = constants.MASTER_ORG_NAME
 TOKEN = constants.TOKEN
 
 REPO_NAMES = ("week-1", "week-2", "week-3")
-REPO_URLS = tuple(map(lambda rn: GENERATE_REPO_URL(rn, ORG_NAME), REPO_NAMES))
+REPO_URLS = tuple(map(lambda rn: generate_repo_url(rn, ORG_NAME), REPO_NAMES))
 
 BASE_ARGS = ["-g", GITHUB_BASE_URL, "-o", ORG_NAME]
 BASE_PUSH_ARGS = ["-u", USER, "-mn", *REPO_NAMES]
@@ -58,7 +52,7 @@ VALID_PARSED_ARGS = dict(
 def api_instance_mock(mocker):
     instance_mock = MagicMock(spec=repomate.github_api.GitHubAPI)
     instance_mock.get_repo_urls.side_effect = lambda repo_names, org_name: [
-        GENERATE_REPO_URL(rn, org_name) for rn in repo_names
+        generate_repo_url(rn, org_name) for rn in repo_names
     ]
     instance_mock.ensure_teams_and_members.side_effect = lambda team_dict: [
         Team(name, members, id=0) for name, members in team_dict.items()
@@ -167,7 +161,7 @@ class TestDispatchCommand:
         command_all_raise_mock,
     ):
         """Test that any of the expected exceptions results in SystemExit."""
-        with pytest.raises(SystemExit) as exc_info:
+        with pytest.raises(SystemExit):
             cli.dispatch_command(parsed_args_all_subparsers, api_instance_mock)
 
     def test_setup_student_repos_called_with_correct_args(
@@ -515,7 +509,7 @@ class TestStudentParsing:
             *extra_args,
         ]
 
-        with pytest.raises(SystemExit) as exc_info:
+        with pytest.raises(SystemExit):
             cli.parse_args(sys_args)
 
 
@@ -528,7 +522,7 @@ def assert_base_push_args(parsed_args, api):
     assert parsed_args.user == USER
     assert parsed_args.master_repo_names == list(REPO_NAMES)
     assert parsed_args.master_repo_urls == [
-        GENERATE_REPO_URL(rn, ORG_NAME) for rn in REPO_NAMES
+        generate_repo_url(rn, ORG_NAME) for rn in REPO_NAMES
     ]
     api.assert_called_once_with(GITHUB_BASE_URL, TOKEN, ORG_NAME)
 
@@ -625,19 +619,19 @@ class TestSetupAndUpdateParsers:
         found in the organization.
         """
         local_repo = REPO_NAMES[-1]
-        is_git_repo_mock = mocker.patch(
+        mocker.patch(
             "repomate.util.is_git_repo",
             side_effect=lambda path: path.endswith(local_repo),
         )
         expected_urls = [
-            GENERATE_REPO_URL(name, ORG_NAME)
+            generate_repo_url(name, ORG_NAME)
             for name in REPO_NAMES
             if name != local_repo
         ]
         expected_uris = [pathlib.Path(os.path.abspath(local_repo)).as_uri()]
         expected = expected_urls + expected_uris
         api_instance_mock.get_repo_urls.side_effect = lambda repo_names, _: [
-            GENERATE_REPO_URL(name, ORG_NAME) for name in repo_names
+            generate_repo_url(name, ORG_NAME) for name in repo_names
         ]
 
         sys_args = [parser, *COMPLETE_PUSH_ARGS, "-s", *STUDENTS]
