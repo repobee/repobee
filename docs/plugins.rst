@@ -7,7 +7,7 @@ programmers to hook into certain execution points. To read more about the
 details of these hooks (and how to write your own plugins), see the
 `repomate-plug docs`_. Currently, plugins can hook into the ``clone`` command
 to perform arbitrary tasks on the cloned repos (such as running test classes),
-and the ``assign-peer-reviews`` command, to change the way reviews are
+and the ``assign-reviews`` command, to change the way reviews are
 assigned.
 
 .. _configure_plugs:
@@ -52,19 +52,19 @@ new headers. See the documentation of the specific plugins
 
 .. _built-in _peer review plugins:
 
-Built-in plugins for ``repomate assign-peer-reviews``
+Built-in plugins for ``repomate assign-reviews``
 =====================================================
-``repomate`` ships with two plugins for the ``assign-peer-reviews`` command.
-The first of these is the :py:mod:`~repomate.ext.defaults` plugin, which
-provides the default allocation algorithm. As the name suggests, this plugin is
-loaded by default, without the user specifying anything. The second plugin is
-the :py:mod:`~repomate.ext.pairwise` plugin. This plugin will divide ``N``
-students into ``N/2`` groups of 2 students (and possibly one with 3 students,
-if ``N`` is odd), and have them peer review the other person in the group. The
-intention is to let students sit together and be able to ask questions
-regarding the repo they are peer reviewing. To use this allocation algorithm,
-simply specify the plugin with ``-p pairwise`` to override the default
-algorithm. Note that this plugin ignores the ``--num-reviews`` argument.
+``repomate`` ships with two plugins for the ``assign-reviews`` command.  The
+first of these is the :py:mod:`~repomate.ext.defaults` plugin, which provides
+the default allocation algorithm. As the name suggests, this plugin is loaded
+by default, without the user specifying anything. The second plugin is the
+:py:mod:`~repomate.ext.pairwise` plugin. This plugin will divide ``N`` students
+into ``N/2`` groups of 2 students (and possibly one with 3 students, if ``N``
+is odd), and have them peer review the other person in the group. The intention
+is to let students sit together and be able to ask questions regarding the repo
+they are peer reviewing. To use this allocation algorithm, simply specify the
+plugin with ``-p pairwise`` to override the default algorithm. Note that this
+plugin ignores the ``--num-reviews`` argument.
 
 .. _builtins:
 
@@ -79,7 +79,7 @@ the ``repomate`` package itself.
 
 ``pylint``
 ----------
-The :py:mod:`~repomate.ext.pylint` plugin is fairly simple: it finds all 
+The :py:mod:`~repomate.ext.pylint` plugin is fairly simple: it finds all
 ``.py`` files in the repo, and runs ``pylint`` on them individually.
 For each file ``somefile.py``, it stores the output in the file
 ``somefile.py.lint`` in the same directory. That's it, the

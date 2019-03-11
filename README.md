@@ -48,20 +48,17 @@ each of the main features:
 $ repomate -h
 usage: repomate [-h] [-v]
                 {show-config,setup,update,migrate,clone,open-issues,
-                 close-issues,list-issues,assign-peer-reviews,
-                 purge-peer-review-teams,check-peer-review-progress,
-                 verify-settings}
+                 close-issues,list-issues,assign-reviews,
+                 purge-review-teams,check-reviews,verify-settings}
                 ...
 
 A CLI tool for administering large amounts of git repositories on GitHub
 instances. See the full documentation at https://repomate.readthedocs.io
 
 positional arguments:
-    {show-config,setup,update,migrate,clone,open-issues,
-     close-issues,list-issues,assign-peer-reviews,
-     purge-peer-review-teams,check-peer-review-progress,
-     verify-settings}
-
+  {show-config,setup,update,migrate,clone,open-issues,
+   close-issues,list-issues,assign-reviews,
+   purge-review-teams,check-reviews,verify-settings}
     show-config         Show the configuration file
     setup               Setup student repos.
     update              Update existing student repos.
@@ -71,14 +68,11 @@ positional arguments:
     open-issues         Open issues in student repos.
     close-issues        Close issues in student repos.
     list-issues         List issues in student repos.
-    assign-peer-reviews
-                        Randomly assign students to peer review each others'
+    assign-reviews      Randomly assign students to peer review each others'
                         repos.
-    purge-peer-review-teams
-                        Remove all review teams associated with the specified
+    purge-review-teams  Remove all review teams associated with the specified
                         students and master repos.
-    check-peer-review-progress
-                        Fetch all peer review teams for the specified student
+    check-reviews       Fetch all peer review teams for the specified student
                         repos, and check which assigned reviews have been done
                         (i.e. which issues have been opened).
     verify-settings     Verify your settings, such as the base url and the
@@ -87,6 +81,7 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -v, --version         Display version info
+
 ```
 
 ## Roadmap
