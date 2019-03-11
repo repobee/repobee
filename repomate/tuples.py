@@ -54,3 +54,5 @@ class Repo(
 
 
 Review = namedtuple("Review", ["repo", "done"])
+
+Deprecation = namedtuple("Deprecation", ["replacement", "remove_by"])
