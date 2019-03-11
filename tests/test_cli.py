@@ -790,3 +790,70 @@ class TestCloneParser:
             clone_parser=mock.ANY
         )
         assert not plugin_manager_mock.hook.parse_args.called
+
+
+class TestCommandDeprecation:
+    """Tests for deprecated commands, making sure they still work and have the
+    same effect as the replacement commands.
+
+    The semantics of deprecation of a command is that the old command should
+    still work, but it should be parsed to the new command.
+    """
+
+    @pytest.mark.parametrize(
+        "deprecated_parser, current_parser, sys_args",
+        [
+            (
+                cli.ASSIGN_REVIEWS_PARSER_OLD,
+                cli.ASSIGN_REVIEWS_PARSER,
+                [
+                    *BASE_ARGS,
+                    "-mn",
+                    "week-10",
+                    "-i",
+                    ISSUE_PATH,
+                    "-s",
+                    *STUDENTS,
+                    "-n",
+                    "3",
+                ],
+            ),
+            (
+                cli.PURGE_REVIEW_TEAMS_PARSER_OLD,
+                cli.PURGE_REVIEW_TEAMS_PARSER,
+                [*BASE_ARGS, "-mn", "week-10", "-s", *STUDENTS],
+            ),
+            (
+                cli.CHECK_REVIEW_PROGRESS_PARSER_OLD,
+                cli.CHECK_REVIEW_PROGRESS_PARSER,
+                [
+                    *BASE_ARGS,
+                    "-mn",
+                    "week-10",
+                    "-r",
+                    "someregex",
+                    "-n",
+                    "3",
+                    "-s",
+                    *STUDENTS,
+                ],
+            ),
+        ],
+    )
+    def test_deprecated_commands_parsed_to_current_commands(
+        self, deprecated_parser, current_parser, sys_args, read_issue_mock
+    ):
+        """Test that the deprecated commands are substituted for the current ones.
+
+        Note that the ``read_issue_mock`` is necessary for the
+        ``assign_reviews`` command only (at this time).
+        """
+        old_sys_args = [deprecated_parser] + sys_args
+        new_sys_args = [current_parser] + sys_args
+
+        old_parsed_args, old_api = cli.parse_args(old_sys_args)
+        new_parsed_args, new_api = cli.parse_args(new_sys_args)
+
+        assert old_parsed_args.subparser == current_parser
+        assert old_parsed_args == new_parsed_args
+        assert old_api == new_api

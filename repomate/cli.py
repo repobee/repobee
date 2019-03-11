@@ -59,10 +59,11 @@ OPEN_ISSUE_PARSER = "open-issues"
 CLOSE_ISSUE_PARSER = "close-issues"
 LIST_ISSUES_PARSER = "list-issues"
 VERIFY_PARSER = "verify-settings"
-ASSIGN_REVIEWS_PARSER = "assign-peer-reviews"
-PURGE_REVIEW_TEAMS_PARSER = "purge-peer-review-teams"
-CHECK_REVIEW_PROGRESS_PARSER = "check-peer-review-progress"
+ASSIGN_REVIEWS_PARSER = "assign-reviews"
+PURGE_REVIEW_TEAMS_PARSER = "purge-review-teams"
+CHECK_REVIEW_PROGRESS_PARSER = "check-reviews"
 SHOW_CONFIG_PARSER = "show-config"
+
 
 PARSER_NAMES = (
     SETUP_PARSER,
@@ -79,6 +80,23 @@ PARSER_NAMES = (
     CHECK_REVIEW_PROGRESS_PARSER,
 )
 
+# TODO Remove support for these deprecated parsers in 2.0
+ASSIGN_REVIEWS_PARSER_OLD = "assign-peer-reviews"
+PURGE_REVIEW_TEAMS_PARSER_OLD = "purge-peer-review-teams"
+CHECK_REVIEW_PROGRESS_PARSER_OLD = "check-peer-review-progress"
+
+DEPRECATED_PARSERS = {
+    ASSIGN_REVIEWS_PARSER_OLD: tuples.Deprecation(
+        replacement=ASSIGN_REVIEWS_PARSER, remove_by="v2.0.0"
+    ),
+    PURGE_REVIEW_TEAMS_PARSER_OLD: tuples.Deprecation(
+        replacement=PURGE_REVIEW_TEAMS_PARSER, remove_by="v2.0.0"
+    ),
+    CHECK_REVIEW_PROGRESS_PARSER_OLD: tuples.Deprecation(
+        replacement=CHECK_REVIEW_PROGRESS_PARSER, remove_by="v2.0.0"
+    ),
+}
+
 
 def parse_args(
     sys_args: Iterable[str]
@@ -93,7 +111,7 @@ def parse_args(
         GitHubAPI instance (or None of testing connection).
     """
     parser = _create_parser()
-    args = parser.parse_args(sys_args)
+    args = parser.parse_args(_handle_deprecation(sys_args))
 
     # environment token overrides config
     token = os.getenv("REPOMATE_OAUTH") or (
@@ -159,6 +177,31 @@ def parse_args(
     )
 
     return parsed_args, api
+
+
+def _handle_deprecation(sys_args: List[str]) -> List[str]:
+    """If the first argument on the arglist is a deprecated command, replace it
+    with the corresponding current command and issue a warning.
+
+    Returns:
+        The sys_args list with any deprecated command replaced with the current
+        one.
+    """
+    if not sys_args:
+        return []
+
+    parser_name = sys_args[0]
+    if parser_name in DEPRECATED_PARSERS:
+        deprecation = DEPRECATED_PARSERS[parser_name]
+        LOGGER.warning(
+            "use of '{}' has been deprecated and will be removed by {}, "
+            "use '{}' instead".format(
+                parser_name, deprecation.remove_by, deprecation.replacement
+            )
+        )
+        return [deprecation.replacement] + sys_args[1:]
+
+    return list(sys_args)
 
 
 def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
@@ -571,6 +614,7 @@ def _add_subparsers(parser):
 
     clone = subparsers.add_parser(
         CLONE_PARSER,
+        add_help=False,
         help="Clone student repos.",
         description="Clone student repos asynchronously in bulk.",
         parents=[base_student_parser, repo_name_parser],
