@@ -3,7 +3,7 @@ Opening and Closing issues (the ``open-issues`` and ``close-issues`` commands)
 Sometimes, the best way to handle an error in a repo is to simply notify
 affected students about it. This is especially true if the due date for the
 assignment is rapidly approaching, and most students have already started
-modifying their repositories. Therefore, ``repomate`` provides the
+modifying their repositories. Therefore, Repomate provides the
 ``open-issues`` command, which can open issues in bulk. When the time is right
 (perhaps after the deadline has passed), issues can be closed with the
 ``close-issues`` command.
@@ -32,11 +32,11 @@ for our dear students ``spam``, ``eggs`` and ``ham``, who are listed in the
 
 .. code-block:: bash
 
-    $ repomate open-issues -mn master-repo-2 -sf students.txt -i issue.md 
+    $ repomate open-issues -mn master-repo-2 -sf students.txt -i issue.md
     [INFO] Opened issue spam-master-repo-2/#1-'An important announcement'
     [INFO] Opened issue eggs-master-repo-2/#1-'An important announcement'
     [INFO] Opened issue ham-master-repo-2/#1-'An important announcement'
- 
+
 From the output, we can read that in each of the repos, an issue with the title
 ``An important announcement`` was opened as issue nr 1 (``#1``). The number
 isn't that important, it's mostly good to note that the title was fetched

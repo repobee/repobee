@@ -5,9 +5,9 @@ Install
 
 Requirements
 ------------
-repomate requires Python 3.5+ and a somewhat up-to-date version of git.
+Repomate requires Python 3.5+ and a somewhat up-to-date version of git.
 Officially supported platforms are Ubuntu 17.04+ and macOS, but
-repomate should run fine on any Linux distribution and also on WSL_ on
+Repomate should run fine on any Linux distribution and also on WSL_ on
 Windows 10. Please report any issues with operating systems and/or git
 versions on the `issue tracker`_.
 
@@ -15,7 +15,7 @@ versions on the `issue tracker`_.
 
 Check your Python version
 -------------------------
-For repomate to run, you need to have Python 3.5 or later. On many
+For Repomate to run, you need to have Python 3.5 or later. On many
 operating systems, python is an alias for Python 2.7, and python3 is an
 alias for the latest version of Python 3 that is installed. For this install
 guide, python3 is assumed to be a Python version 3.5 or higher. You can
@@ -30,26 +30,26 @@ check the version yourself with:
 Option 1: Install from PyPi with `pip`
 --------------------------------------
 
-The latest release of repomate is on PyPi, and can thus be installed as usual with pip.
+The latest release of Repomate is on PyPi, and can thus be installed as usual with pip.
 I strongly discourage system-wide pip installs (e.g. ``sudo pip install <package>``), as this
 may land you with incompatible packages in a very short amount of time. A per-user install
 can be done like this:
 
 1. Execute ``python3 -m pip install --user repomate`` to install the package.
 2. Run ``repomate -h`` to verify that you can find the script.
-   - If that doesn't work, the repomate script can't be found. try
-   ``python3 -m repomate.main -h`` to run the main module of repomate
-   (which is all the repomate script does anyway).
+   - If that doesn't work, the ``repomate`` script can't be found. try
+   ``python3 -m repomate.main -h`` to run the main module of Repomate
+   (which is all the ``repomate`` script does anyway).
 
 .. important::
 
     A ``--user`` install will perform a local install for the current user. Any
     scripts will be installed in a user-local bin directory. If this directory
     is not on your path (which it often is not by default), you will not be
-    able to run the repomate (however, ``python -m repomate.main`` should still
-    work). pip should issue a warning about this, including the path to the
-    local bin directory. To resolve the problem, add the local bin directory to
-    your $PATH variable.
+    able to run the ``repomate`` script (however, ``python -m repomate.main``
+    should still work). pip should issue a warning about this, including the
+    path to the local bin directory. To resolve the problem, add the local bin
+    directory to your $PATH variable.
 
 .. _clone repo:
 

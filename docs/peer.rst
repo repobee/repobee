@@ -3,9 +3,9 @@
 Peer review (``assign-reviews`` and ``purge-review-teams`` commands)
 **********************************************************************************************
 Peer reviewing is an important part of a programming curriculum, so of course
-``repomate`` facilitates this! The relevant commands are
+Repomate facilitates this! The relevant commands are
 ``assign-reviews`` and ``purge-review-teams``.
-Like much of the other functionality in ``repomate``, the peer review
+Like much of the other functionality in Repomate, the peer review
 functionality is built around teams and limited access privileges. In short,
 every student repo up for review gets an associated peer review team generated,
 which has ``pull`` access to the repo. Each student then gets added to ``0 < N
@@ -242,8 +242,8 @@ the student ``cabbage`` in the reviews for ``master-repo-2`` back at
     Sorry, I messed up with the allocations previously. Disregard the previous
     allocations (repo access has been revoked anyway).
 
-5. Assign peer reviews again, with the new issue, with repomate
-   ``assign-reviews -mn master-repo-2 -sf students.txt --num-reviews 2
+5. Assign peer reviews again, with the new issue, with ``repomate
+   assign-reviews -mn master-repo-2 -sf students.txt --num-reviews 2
    --issue issue.md``
 
 And that's it! Disaster averted.
@@ -257,7 +257,7 @@ The default allocation algorithm is as described in :ref:`peer review`, and is
 suitable for when reviewers do not need to interact with the students whom they
 review. This is however not always the case, sometimes it is beneficial for
 reviewers to to interact with reviewees (is that a word?), especially if the
-peer review is done in the classroom. Because of this, ``repomate`` also
+peer review is done in the classroom. Because of this, Repomate also
 provides a _pairwise_ allocation scheme, which allocates reviews such that
 if student ``A`` reviews student ``B``, then student ``B`` reviews student
 ``A`` (except for an ``A->B->C->A`` kind of deal in one group if there are an

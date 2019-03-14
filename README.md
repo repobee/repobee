@@ -1,4 +1,4 @@
-# repomate
+# Repomate
 [![Build Status](https://travis-ci.com/slarse/repomate.svg)](https://travis-ci.com/slarse/repomate)
 [![Code Coverage](https://codecov.io/gh/slarse/repomate/branch/master/graph/badge.svg)](https://codecov.io/gh/slarse/repomate)
 [![Documentation Status](https://readthedocs.org/projects/repomate/badge/?version=latest)](http://repomate.readthedocs.io/en/latest/)

@@ -2,7 +2,7 @@
 
 Plugins for ``repomate``
 ************************
-``repomate`` defines a fairly simple but powerful plugin system that allows
+Repomate defines a fairly simple but powerful plugin system that allows
 programmers to hook into certain execution points. To read more about the
 details of these hooks (and how to write your own plugins), see the
 `repomate-plug docs`_. Currently, plugins can hook into the ``clone`` command
@@ -54,7 +54,7 @@ new headers. See the documentation of the specific plugins
 
 Built-in plugins for ``repomate assign-reviews``
 =====================================================
-``repomate`` ships with two plugins for the ``assign-reviews`` command.  The
+Repomate ships with two plugins for the ``assign-reviews`` command.  The
 first of these is the :py:mod:`~repomate.ext.defaults` plugin, which provides
 the default allocation algorithm. As the name suggests, this plugin is loaded
 by default, without the user specifying anything. The second plugin is the
@@ -70,7 +70,7 @@ plugin ignores the ``--num-reviews`` argument.
 
 Built-in Plugins for ``repomate clone``
 =======================================
-``repomate`` currently ships with two built-in plugins:
+Repomate currently ships with two built-in plugins:
 :py:mod:`~repomate.ext.javac` and :py:mod:`~repomate.ext.pylint`. The former
 attempts to compile all ``.java`` files in each cloned repo, while the latter
 runs pylint_ on every ``.py`` file in each cloned repo. These plugins are
@@ -127,7 +127,7 @@ the ``[javac]`` section. Example:
 
 External Plugins
 ================
-It's also possible to use plugins that are not included with ``repomate``.
+It's also possible to use plugins that are not included with Repomate.
 Following the conventions defined in the `repomate-plug docs`_, all plugins
 uploaded to PyPi should be named ``repomate-<plugin>``, where ``<plugin>`` is
 the name of the plugin and thereby the thing to add to the ``plugins`` option

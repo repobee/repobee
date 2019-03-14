@@ -2,22 +2,22 @@
 
 Introduction
 ************
-repomate is an opinionated tool for managing anything from a handful to
+Repomate is an opinionated tool for managing anything from a handful to
 thousands of GitHub repositories for higher education courses. It was created as
 the old teachers_pet_ tool was getting long in the tooth, and the new `GitHub
 Classroom`_ wasn't quite what we wanted (we like our command line apps).
-repomate is heavily inspired by teachers_pet, but tries to both make for a more
+Repomate is heavily inspired by teachers_pet, but tries to both make for a more
 complete and streamlined experience.
 
 Philosophy and goals
 ====================
-The primary goal of repomate is to lower the bar for incorporating
+The primary goal of Repomate is to lower the bar for incorporating
 git and GitHub into higher education coursework, hopefully opening up
 the wonderful world of version control to teachers who may not be subject
-experts (and to their students). For new users, repomate provides both a
+experts (and to their students). For new users, Repomate provides both a
 tool and an opinionated workflow to adopt. For the more experienced user,
-there is also opportunity to customize repomate using its plugin system,
-which I am looking to expand even more. repomate is primarily geared toward
+there is also opportunity to customize Repomate using its plugin system,
+which I am looking to expand even more. Repomate is primarily geared toward
 course administrators looking to generate repos for their students. Many
 features are however highly useful to teaching assistants, such as the ability
 to clone repos in bulk and perform arbitrary tasks on them (tasks can be
@@ -25,7 +25,7 @@ implemented as plugins, see :ref:`plugins`).
 
 Key concepts
 ============
-Some terms occur frequently in repomate and are best defined up front.
+Some terms occur frequently in Repomate and are best defined up front.
 Some of the descriptions may not click entirely before reading the
 :ref:`userguide` section, so quickly browsing through these definitions and
 re-visiting them when needed is probably the best course of action.
@@ -48,10 +48,10 @@ re-visiting them when needed is probably the best course of action.
 
 Conventions
 ===========
-The following conventions are fundamental to working with ``repomate``.
+The following conventions are fundamental to working with Repomate.
 
 * For each course and course round, use one target Organization_.
-* Any user of ``repomate`` has unrestricted access to the target organization
+* Any user of Repomate has unrestricted access to the target organization
   (i.e. is an owner).
 * Master repos should be available as private repos in one of three places:
   - The master organization (recommended if the master repos are being
@@ -75,11 +75,11 @@ The following conventions are fundamental to working with ``repomate``.
     Few of these conventions are actually enforced, and there are ways around
     almost every single one. However, with the exception of the *one
     organization per course round* convention, which must be ensured manually,
-    repomate will automatically adhere to the other conventions. Although
-    repomate does adhere to the conventions, there is no way to stop users
+    Repomate will automatically adhere to the other conventions. Although
+    Repomate does adhere to the conventions, there is no way to stop users
     from breaking them using e.g. the GitHub web interface, manually performing
     master repo migrations etc. Straying form the conventions may cause
-    repomate to behave unexpectedly.
+    Repomate to behave unexpectedly.
 
 .. _teachers_pet: https://github.com/education/teachers_pet
 .. _GitHub Classroom: https://classroom.github.com/

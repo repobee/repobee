@@ -8,24 +8,24 @@ Getting started (the ``show-config``, ``verify-settings`` and ``setup`` commands
     tech-savvy enough to translate the instructions into some other shell
     environment.
 
-The basic workflow of repomate is best described by example. In this section,
+The basic workflow of Repomate is best described by example. In this section,
 I will walk you through how to set up an Organization_ with master and student
 repositories by showing every single step I would perform myself. The basic
 workflow can be summarized in the following steps:
 
 1. Create an organization (the target organization).
-2. Configure repomate for the target organization.
+2. Configure Repomate for the target organization.
 3. Verify settings.
 4. Migrate master repositories into the target organization.
 5. Create one copy of each master repo for each student.
 
-There is more to repomate, such as opening/closing issues, updating student
+There is more to Repomate, such as opening/closing issues, updating student
 repos and cloning repos in batches, but here we will just look at the bare
 minimum to get started. Now, let's delve into these steps in greater detail.
 
 Create an organization
 ======================
-This is an absolutely necessary pre-requisite for using ``repomate``.
+This is an absolutely necessary pre-requisite for using Repomate.
 Create an organization with an appropriate name on the GitHub instance you
 intend to use. You can find the ``New organization`` button by going to
 ``Settings -> Organization``. I will call my *target organization*
@@ -44,7 +44,7 @@ target organization.
 
 .. _configure_repomate:
 
-Configure repomate for the target organization (``show-config`` and ``verify-settings``)
+Configure Repomate for the target organization (``show-config`` and ``verify-settings``)
 ========================================================================================
 For the tool to work at all, it needs to be provided with an OAUTH2 token to
 whichever GitHub instance you intend to use. See the `GitHub OAUTH docs`_ for
@@ -55,7 +55,7 @@ file, as we will put other default values in there.  We can use the
 ``show-config`` command to figure out where to put the config file.
 
 .. code-block:: bash
-    
+
     $ repomate show-config
     [ERROR] FileError: no config file found, expected location: /home/USERNAME/.config/repomate/config.cnf
 
@@ -102,10 +102,10 @@ That's it for configuration, and we can check that the file is correctly found
 and parsed by running ``show-config`` again:
 
 .. code-block:: bash
-    
+
     $ repomate show-config
     [INFO] found valid config file at /home/slarse/.config/repomate/config.cnf
-    [INFO] 
+    [INFO]
     ----------------BEGIN CONFIG FILE-----------------
     [DEFAULTS]
     github_base_url = https://some-enterprise-host/api/v3
@@ -152,7 +152,7 @@ master repos set up somewhere, and ``master_org_name`` is specified in the
 config, you're good to go. If you need to migrate repos into the target
 organization (i.e. you are not using a master organization), see the
 :ref:`migrate` section. For all commands but the ``migrate`` command, the way
-you set this up does not matter as repomate commands go.
+you set this up does not matter as Repomate commands go.
 
 .. _setup:
 
@@ -177,11 +177,11 @@ repo for each student per master repo. The repo names will be on the form
 will also be added to a team (which bears the same name as the student's user),
 and it is the team that is allowed access to the student's repos, and not the
 student's actual user. That all sounded fairly complex, but again, it's as
-simple as issuing a single command with ``repomate``.
+simple as issuing a single command with Repomate.
 
 .. code-block:: bash
-    
-    $ repomate setup -mn master-repo-1 master-repo-2 -sf students.txt 
+
+    $ repomate setup -mn master-repo-1 master-repo-2 -sf students.txt
     [INFO] cloning into master repos ...
     [INFO] cloning into file:///home/slarse/tmp/master-repo-1
     [INFO] cloning into file:///home/slarse/tmp/master-repo-2

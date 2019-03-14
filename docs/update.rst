@@ -32,7 +32,7 @@ That's all there is to it for this super simple case. But what if ``ham`` had
 started working on ``ham-master-repo-1``?
 
 .. note::
-    
+
     Here, ``-s spam eggs ham`` was used to directly specify student usernames on
     the command line, instead of pointing to a students file with ``-sf
     students.txt``. All commands that require you to specify student usernames
@@ -46,11 +46,11 @@ Let's assume now that ``ham`` has started working on the repo. Since we do not
 push to ``ham-master-repo-1`` will be rejected. This is good, we don't want to
 overwrite a student's progress because we messed up with the original
 repository. There are a number of things one *could* do in this situation, but
-in ``repomate``, we opted for a very simple solution: open an issue in the
+in Repomate, we opted for a very simple solution: open an issue in the
 student's repo that explains the situation.
 
 .. important::
-    
+
     If we don't specify an issue to ``repomate update``, rejected pushes will
     simply be ignored.
 
@@ -75,7 +75,7 @@ students, plain text is more helpful. Now it's just a matter of using
 
 .. code-block:: bash
 
-    $ repomate update -mn master-repo-1 -s spam eggs ham -i issue.md 
+    $ repomate update -mn master-repo-1 -s spam eggs ham -i issue.md
     [INFO] cloning into master repos ...
     [INFO] cloning into https://some-enterprise-host/repomate-demo/master-repo-1
     [INFO] pushing files to student repos ...
@@ -100,7 +100,7 @@ students, plain text is more helpful. Now it's just a matter of using
     [INFO] Opened issue ham-master-repo-1/#1-'Nice title'
     [INFO] done!
 
-Note that ``repomate`` tries to push 3 times before finally giving up and
+Note that Repomate tries to push 3 times before finally giving up and
 opening an issue. This is because pushes can fail for other reasons than
 rejections, such as timeouts and other network errors.
 

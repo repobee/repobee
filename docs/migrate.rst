@@ -3,7 +3,7 @@
 Migrate master repositories into the target (or master) organization (``migrate`` command)
 ******************************************************************************************
 This step sounds complicated, but it's actually very easy, and can be performed
-with a single repomate command. There is however a pre-requisite that must
+with a single Repomate command. There is however a pre-requisite that must
 be fulfilled. You must either
 
 * Have local copies of your master repos.
@@ -57,9 +57,9 @@ Running the same thing again yields the following output:
     [INFO] https://some-enterprise-host/repomate-demo/master-repo-2 master is up-to-date
     [INFO] done!
 
-In fact, all repomate commands that deal with pushing to or cloning from
+In fact, all Repomate commands that deal with pushing to or cloning from
 repos in some way are safe to run over and over. This is mostly because of
-how git works, and has little to do with repomate itself. Now that
+how git works, and has little to do with Repomate itself. Now that
 our master repos are migrated, we can move on to setting up the student repos!
 
 .. note::
