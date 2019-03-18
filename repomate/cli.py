@@ -614,7 +614,6 @@ def _add_subparsers(parser):
 
     clone = subparsers.add_parser(
         CLONE_PARSER,
-        add_help=False,
         help="Clone student repos.",
         description="Clone student repos asynchronously in bulk.",
         parents=[base_student_parser, repo_name_parser],
