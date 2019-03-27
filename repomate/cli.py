@@ -113,6 +113,8 @@ def parse_args(
     parser = _create_parser()
     args = parser.parse_args(_handle_deprecation(sys_args))
 
+    _validate_tls_url(args.github_base_url)
+
     # environment token overrides config
     token = os.getenv("REPOMATE_OAUTH") or (
         args.token if "token" in args else ""
@@ -177,6 +179,15 @@ def parse_args(
     )
 
     return parsed_args, api
+
+
+def _validate_tls_url(url):
+    """Url must use the https protocol."""
+    if not url.startswith("https://"):
+        raise exception.ParseError(
+            "unsupported protocol in {}: "
+            "for security reasons, only https is supported".format(url)
+        )
 
 
 def _handle_deprecation(sys_args: List[str]) -> List[str]:
