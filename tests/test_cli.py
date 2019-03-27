@@ -411,6 +411,36 @@ class TestBaseParsing:
 
         assert parsed_args.token == token
 
+    @pytest.mark.parametrize(
+        "url",
+        [
+            GITHUB_BASE_URL.replace("https://", non_tls_protocol)
+            for non_tls_protocol in ("http://", "ftp://", "")
+        ],
+    )
+    def test_raises_on_non_tls_api_url(
+        self, api_instance_mock, students_file, url
+    ):
+        """Test that a non https url causes parse-args to raise. Sending the token
+        over an unencrypted connection would be a security risk, so https is
+        required.
+        """
+        sys_args = [
+            cli.SETUP_PARSER,
+            "-o",
+            ORG_NAME,
+            "-g",
+            url,
+            *BASE_PUSH_ARGS,
+            "-sf",
+            str(students_file),
+        ]
+
+        with pytest.raises(exception.ParseError) as exc_info:
+            cli.parse_args(sys_args)
+
+        assert "unsupported protocol in {}".format(url) in str(exc_info)
+
 
 class TestStudentParsing:
     """Tests for the parsers that use the `--students` and `--students-file`
@@ -584,11 +614,12 @@ class TestConfig:
         line. Does not assert that the options are parsed correctly, only that
         there's no crash.
         """
-        missing_arg = (
-            "something"
-            if config_missing_option != "-sf"
-            else str(students_file)
-        )
+        if config_missing_option == "-sf":  # must be file
+            missing_arg = str(students_file)
+        elif config_missing_option == "-g":  # must be https url
+            missing_arg = GITHUB_BASE_URL
+        else:
+            missing_arg = "whatever"
 
         sys_args = [
             cli.SETUP_PARSER,
