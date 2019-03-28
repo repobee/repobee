@@ -17,6 +17,15 @@ from repomate import exception
 
 LOGGER = daiquiri.getLogger(__file__)
 
+_PRE_INIT_ERROR_MESSAGE = """exception was raised before pre-initialization was
+complete. This is usually due to incorrect settings.
+Try running the `verify-settings` command and see if
+the problem can be resolved. If all fails, please open
+an issue at https://github.com/slarse/repomate/issues/new
+and supply the stack trace below.""".replace(
+    "\n", " "
+)
+
 
 def _separate_args(args: List[str]) -> (List[str], List[str]):
     """Separate args into plugin args and repomate args."""
@@ -61,13 +70,9 @@ def main(sys_args: List[str]):
         if traceback or (
             pre_init and not isinstance(exc, exception.FileError)
         ):
+            LOGGER.error(str(exc))
             if pre_init:
-                LOGGER.error(
-                    "unexpected exception raised before pre-initialization "
-                    "was complete. This shouldn't happen, please open an "
-                    "issue on GitHub and supply the stacktrace that "
-                    "follows below."
-                )
+                LOGGER.info(_PRE_INIT_ERROR_MESSAGE)
             LOGGER.exception("critical exception")
         else:
             LOGGER.error("{.__class__.__name__}: {}".format(exc, str(exc)))
