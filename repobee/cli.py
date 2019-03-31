@@ -113,6 +113,9 @@ def parse_args(
     parser = _create_parser()
     args = parser.parse_args(_handle_deprecation(sys_args))
 
+    if getattr(args, SUB) == SHOW_CONFIG_PARSER:
+        return tuples.Args(subparser=SHOW_CONFIG_PARSER), None
+
     _validate_tls_url(args.github_base_url)
 
     # environment token overrides config
@@ -135,9 +138,7 @@ def parse_args(
                 token=token,
             ),
             None,
-        )  # only here is return None for api allowed
-    elif getattr(args, SUB) == SHOW_CONFIG_PARSER:
-        return tuples.Args(subparser=SHOW_CONFIG_PARSER), None
+        )
     elif getattr(args, SUB) == CLONE_PARSER:
         # only if clone is chosen should plugins be able to hook in
         plug.manager.hook.parse_args(args=args)

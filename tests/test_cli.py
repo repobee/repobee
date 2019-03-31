@@ -823,6 +823,15 @@ class TestCloneParser:
         assert not plugin_manager_mock.hook.parse_args.called
 
 
+class TestShowConfigParser:
+    """Tests for repobee show-config"""
+
+    def test_happy_path(self):
+        args, _ = cli.parse_args([cli.SHOW_CONFIG_PARSER])
+
+        assert args.subparser == cli.SHOW_CONFIG_PARSER
+
+
 class TestCommandDeprecation:
     """Tests for deprecated commands, making sure they still work and have the
     same effect as the replacement commands.
