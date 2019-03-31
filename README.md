@@ -8,6 +8,9 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
+> **Important:** Repomate has changed name to RepoBee. Please see
+> [RepoBee's GitHub page](https://github.com/repobee/repobee) for details.
+
 ## Overview
 Repomate is A CLI tool for administrating large amounts of GitHub
 repositories, geared towards teachers and GitHub Enterprise. Repomate is
