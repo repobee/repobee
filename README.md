@@ -1,6 +1,6 @@
 # RepoBee
-[![Build Status](https://travis-ci.com/slarse/repobee.svg)](https://travis-ci.com/slarse/repobee)
-[![Code Coverage](https://codecov.io/gh/slarse/repobee/branch/master/graph/badge.svg)](https://codecov.io/gh/slarse/repobee)
+[![Build Status](https://travis-ci.com/repobee/repobee.svg)](https://travis-ci.com/repobee/repobee)
+[![Code Coverage](https://codecov.io/gh/repobee/repobee/branch/master/graph/badge.svg)](https://codecov.io/gh/repobee/repobee)
 [![Documentation Status](https://readthedocs.org/projects/repobee/badge/?version=latest)](http://repobee.readthedocs.io/en/latest/)
 [![PyPi Version](https://badge.fury.io/py/repobee.svg)](https://badge.fury.io/py/repobee)
 ![Supported Python Versions](https://img.shields.io/badge/python-3.5%2C%203.6%2C%203.7-blue.svg)
@@ -38,8 +38,8 @@ features and a user experience more to our liking. Features range from creating
 student repositories based on master (template) repos, to opening and closing
 issues in bulk, to assigning peer reviews and cloning repos in bulk. Some parts
 of RepoBee can be customized using a simple but powerful [plugin
-system](https://github.com/slarse/repobee-plug). For example, the
-[`repobee-junit4` plugin](https://github.com/slarse/repobee-junit4) allows for
+system](https://github.com/repobee/repobee-plug). For example, the
+[`repobee-junit4` plugin](https://github.com/repobee/repobee-junit4) allows for
 automatically running `JUnit4` test classes on production code in student repos.
 Below is the output from running `repobee -h`, giving brief descriptions of
 each of the main features:

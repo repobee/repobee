@@ -36,9 +36,9 @@ setup(
     long_description_content_type="text/markdown",
     author="Simon Larsén",
     author_email="slarse@kth.se",
-    url="https://github.com/slarse/repobee",
+    url="https://github.com/repobee/repobee",
     download_url=(
-        "https://github.com/slarse/repobee/archive/v{}.tar.gz".format(
+        "https://github.com/repobee/repobee/archive/v{}.tar.gz".format(
             __version__
         )
     ),

@@ -21,7 +21,7 @@ _PRE_INIT_ERROR_MESSAGE = """exception was raised before pre-initialization was
 complete. This is usually due to incorrect settings.
 Try running the `verify-settings` command and see if
 the problem can be resolved. If all fails, please open
-an issue at https://github.com/slarse/repobee/issues/new
+an issue at https://github.com/repobee/repobee/issues/new
 and supply the stack trace below.""".replace(
     "\n", " "
 )

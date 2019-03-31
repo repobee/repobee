@@ -60,7 +60,7 @@ If you want the dev version, you will need to clone the repo, as only release ve
 to PyPi. Unless you are planning to work on this yourself, I suggest going with the release version.
 
 1. Clone the repo with git:
-    - ``git clone https://github.com/slarse/repobee``
+    - ``git clone https://github.com/repobee/repobee``
 2. ``cd`` into the project root directory with ``cd repobee``.
 3. Install the requirements with ``python3 -m pip install -r requirements.txt``
     - To be able to run the tests, you must install the ``requirements.test.txt`` file.
@@ -70,4 +70,4 @@ to PyPi. Unless you are planning to work on this yourself, I suggest going with 
     - For development, use ``pip install -e .`` in a ``virtualenv``.
 
 .. _WSL: https://docs.microsoft.com/en-us/windows/wsl/install-win10
-.. _issue tracker: https://github.com/slarse/repobee/issues
+.. _issue tracker: https://github.com/repobee/repobee/issues

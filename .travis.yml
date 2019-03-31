@@ -43,5 +43,5 @@ deploy:
     tags: true
     condition: $TRAVIS_OS_NAME = "linux"
   distributions: sdist bdist_wheel
-  repo: slarse/repobee
+  repo: repobee/repobee
   skip_existing: true

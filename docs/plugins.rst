@@ -160,7 +160,7 @@ define some defaults:
     want to configure plugins, just add the ``[DEFAULTS]`` header by itself,
     without options, to meet this requirement.
 
-.. _repobee-junit4: https://github.com/slarse/repobee-junit4
-.. _repobee-plug: https://github.com/slarse/repobee-plug
+.. _repobee-junit4: https://github.com/repobee/repobee-junit4
+.. _repobee-plug: https://github.com/repobee/repobee-plug
 .. _pylint: https://www.pylint.org/
 .. _repobee-plug docs: https://repobee-plug.readthedocs.io/en/latest/
