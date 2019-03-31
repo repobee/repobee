@@ -8,28 +8,28 @@ Getting started (the ``show-config``, ``verify-settings`` and ``setup`` commands
     tech-savvy enough to translate the instructions into some other shell
     environment.
 
-The basic workflow of Repomate is best described by example. In this section,
+The basic workflow of RepoBee is best described by example. In this section,
 I will walk you through how to set up an Organization_ with master and student
 repositories by showing every single step I would perform myself. The basic
 workflow can be summarized in the following steps:
 
 1. Create an organization (the target organization).
-2. Configure Repomate for the target organization.
+2. Configure RepoBee for the target organization.
 3. Verify settings.
 4. Migrate master repositories into the target organization.
 5. Create one copy of each master repo for each student.
 
-There is more to Repomate, such as opening/closing issues, updating student
+There is more to RepoBee, such as opening/closing issues, updating student
 repos and cloning repos in batches, but here we will just look at the bare
 minimum to get started. Now, let's delve into these steps in greater detail.
 
 Create an organization
 ======================
-This is an absolutely necessary pre-requisite for using Repomate.
+This is an absolutely necessary pre-requisite for using RepoBee.
 Create an organization with an appropriate name on the GitHub instance you
 intend to use. You can find the ``New organization`` button by going to
 ``Settings -> Organization``. I will call my *target organization*
-``repomate-demo``, so whenever you see that, substitute in the name of your
+``repobee-demo``, so whenever you see that, substitute in the name of your
 target organization.
 
 .. important::
@@ -42,9 +42,9 @@ target organization.
     disallow students from viewing each others' repos unless explicitly given
     permission by an organization owner (e.g. you).
 
-.. _configure_repomate:
+.. _configure_repobee:
 
-Configure Repomate for the target organization (``show-config`` and ``verify-settings``)
+Configure RepoBee for the target organization (``show-config`` and ``verify-settings``)
 ========================================================================================
 For the tool to work at all, it needs to be provided with an OAUTH2 token to
 whichever GitHub instance you intend to use. See the `GitHub OAUTH docs`_ for
@@ -56,14 +56,14 @@ file, as we will put other default values in there.  We can use the
 
 .. code-block:: bash
 
-    $ repomate show-config
-    [ERROR] FileError: no config file found, expected location: /home/USERNAME/.config/repomate/config.cnf
+    $ repobee show-config
+    [ERROR] FileError: no config file found, expected location: /home/USERNAME/.config/repobee/config.cnf
 
 ``show-config`` will check that the configuration file exists and is
 syntactically correct. Well, technically it will try to load the config and fail to do so if it
 doesn't exist or is incorrectly formatted and then display it to the user. Here,
 the error message is telling use that it expected a config file at
-``/home/USERNAME/.config/repomate/config.cnf``, so let's add one there. It
+``/home/USERNAME/.config/repobee/config.cnf``, so let's add one there. It
 should look something like this:
 
 .. code-block:: bash
@@ -71,7 +71,7 @@ should look something like this:
     [DEFAULTS]
     github_base_url = https://some-enterprise-host/api/v3
     user = slarse
-    org_name = repomate-demo
+    org_name = repobee-demo
     master_org_name = master-repos
     token = SUPER_SECRET_TOKEN
 
@@ -83,7 +83,7 @@ Now, you need to substitute in some of your own values in place of mine.
     - If you are working with ``github.com``, replace the whole url
       with ``https://api.github.com``.
 * Replace ``slarse`` with your GitHub username.
-* Replace ``repomate-demo`` with whatever you named your target organization.
+* Replace ``repobee-demo`` with whatever you named your target organization.
 * Replace ``SUPER_SECRET_TOKEN`` with your OAUTH token.
 * Replace ``master_org_name`` with the name of the organization with your master
   repos.
@@ -103,14 +103,14 @@ and parsed by running ``show-config`` again:
 
 .. code-block:: bash
 
-    $ repomate show-config
-    [INFO] found valid config file at /home/slarse/.config/repomate/config.cnf
+    $ repobee show-config
+    [INFO] found valid config file at /home/slarse/.config/repobee/config.cnf
     [INFO]
     ----------------BEGIN CONFIG FILE-----------------
     [DEFAULTS]
     github_base_url = https://some-enterprise-host/api/v3
     user = slarse
-    org_name = repomate-demo
+    org_name = repobee-demo
     master_org_name = master-repos
     token = SUPER_SECRET_TOKEN
     -----------------END CONFIG FILE------------------
@@ -123,7 +123,7 @@ you can simply run the ``verify-settings`` command without any options.
 
 .. code-block:: bash
 
-    $ repomate verify-settings
+    $ repobee verify-settings
     [INFO] verifying settings ...
     [INFO] trying to fetch user information ...
     [INFO] SUCCESS: found user slarse, user exists and base url looks okay
@@ -131,8 +131,8 @@ you can simply run the ``verify-settings`` command without any options.
     [INFO] SUCCESS: oauth scopes look okay
     [INFO] trying to fetch organization ...
     [INFO] SUCCESS: found organization test-tools
-    [INFO] verifying that user slarse is an owner of organization repomate-demo
-    [INFO] SUCCESS: user slarse is an owner of organization repomate-demo
+    [INFO] verifying that user slarse is an owner of organization repobee-demo
+    [INFO] SUCCESS: user slarse is an owner of organization repobee-demo
     [INFO] trying to fetch organization master-repos ...
     [INFO] SUCCESS: found organization master-repos
     [INFO] verifying that user slarse is an owner of organization master-repos
@@ -152,7 +152,7 @@ master repos set up somewhere, and ``master_org_name`` is specified in the
 config, you're good to go. If you need to migrate repos into the target
 organization (i.e. you are not using a master organization), see the
 :ref:`migrate` section. For all commands but the ``migrate`` command, the way
-you set this up does not matter as Repomate commands go.
+you set this up does not matter as RepoBee commands go.
 
 .. _setup:
 
@@ -177,11 +177,11 @@ repo for each student per master repo. The repo names will be on the form
 will also be added to a team (which bears the same name as the student's user),
 and it is the team that is allowed access to the student's repos, and not the
 student's actual user. That all sounded fairly complex, but again, it's as
-simple as issuing a single command with Repomate.
+simple as issuing a single command with RepoBee.
 
 .. code-block:: bash
 
-    $ repomate setup -mn master-repo-1 master-repo-2 -sf students.txt
+    $ repobee setup -mn master-repo-1 master-repo-2 -sf students.txt
     [INFO] cloning into master repos ...
     [INFO] cloning into file:///home/slarse/tmp/master-repo-1
     [INFO] cloning into file:///home/slarse/tmp/master-repo-2
@@ -193,20 +193,20 @@ simple as issuing a single command with Repomate.
     [INFO] adding members ham to team ham
     [INFO] adding members spam to team spam
     [INFO] creating student repos ...
-    [INFO] created repomate-demo/eggs-master-repo-1
-    [INFO] created repomate-demo/ham-master-repo-1
-    [INFO] created repomate-demo/spam-master-repo-1
-    [INFO] created repomate-demo/eggs-master-repo-2
-    [INFO] created repomate-demo/ham-master-repo-2
-    [INFO] created repomate-demo/spam-master-repo-2
+    [INFO] created repobee-demo/eggs-master-repo-1
+    [INFO] created repobee-demo/ham-master-repo-1
+    [INFO] created repobee-demo/spam-master-repo-1
+    [INFO] created repobee-demo/eggs-master-repo-2
+    [INFO] created repobee-demo/ham-master-repo-2
+    [INFO] created repobee-demo/spam-master-repo-2
     [INFO] pushing files to student repos ...
     [INFO] pushing, attempt 1/3
-    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/ham-master-repo-2 master
-    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/ham-master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/spam-master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/eggs-master-repo-2 master
-    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/eggs-master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/spam-master-repo-2 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/ham-master-repo-2 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/ham-master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/spam-master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/eggs-master-repo-2 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/eggs-master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/spam-master-repo-2 master
 
 Note that there was a ``[WARNING]`` message for the username ``eggs``: the user
 does not exist. At KTH, this is common, as many (sometimes most) first-time

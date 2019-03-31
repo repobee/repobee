@@ -18,14 +18,14 @@ Let's say that we've updated ``master-repo-1``, and that users ``spam``,
 
 .. code-block:: bash
 
-    $ repomate update -mn master-repo-1 -s spam eggs ham
+    $ repobee update -mn master-repo-1 -s spam eggs ham
     [INFO] cloning into master repos ...
-    [INFO] cloning into https://some-enterprise-host/repomate-demo/master-repo-1
+    [INFO] cloning into https://some-enterprise-host/repobee-demo/master-repo-1
     [INFO] pushing files to student repos ...
     [INFO] pushing, attempt 1/3
-    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/spam-master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/eggs-master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/ham-master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/spam-master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/eggs-master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/ham-master-repo-1 master
     [INFO] done!
 
 That's all there is to it for this super simple case. But what if ``ham`` had
@@ -46,12 +46,12 @@ Let's assume now that ``ham`` has started working on the repo. Since we do not
 push to ``ham-master-repo-1`` will be rejected. This is good, we don't want to
 overwrite a student's progress because we messed up with the original
 repository. There are a number of things one *could* do in this situation, but
-in Repomate, we opted for a very simple solution: open an issue in the
+in RepoBee, we opted for a very simple solution: open an issue in the
 student's repo that explains the situation.
 
 .. important::
 
-    If we don't specify an issue to ``repomate update``, rejected pushes will
+    If we don't specify an issue to ``repobee update``, rejected pushes will
     simply be ignored.
 
 So, let's first create that issue. It should be a Markdown-formatted file, and
@@ -71,36 +71,36 @@ file called ``issue.md``.
 Something like that. If the students have used ``git`` for a while, it may be
 enough to include the ouptut from ``git diff``, but for less experienced
 students, plain text is more helpful. Now it's just a matter of using
-``repomate update`` and including ``issue.md`` with the ``-i|--issue`` argument.
+``repobee update`` and including ``issue.md`` with the ``-i|--issue`` argument.
 
 .. code-block:: bash
 
-    $ repomate update -mn master-repo-1 -s spam eggs ham -i issue.md
+    $ repobee update -mn master-repo-1 -s spam eggs ham -i issue.md
     [INFO] cloning into master repos ...
-    [INFO] cloning into https://some-enterprise-host/repomate-demo/master-repo-1
+    [INFO] cloning into https://some-enterprise-host/repobee-demo/master-repo-1
     [INFO] pushing files to student repos ...
     [INFO] pushing, attempt 1/3
-    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/spam-master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/eggs-master-repo-1 master
-    [ERROR] Failed to push to https://some-enterprise-host/repomate-demo/ham-master-repo-1
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/spam-master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/eggs-master-repo-1 master
+    [ERROR] Failed to push to https://some-enterprise-host/repobee-demo/ham-master-repo-1
     return code: 128
-    fatal: repository 'https://some-enterprise-host/repomate-demo/ham-master-repo-1/' not found
+    fatal: repository 'https://some-enterprise-host/repobee-demo/ham-master-repo-1/' not found
     [WARNING] 1 pushes failed ...
     [INFO] pushing, attempt 2/3
-    [ERROR] Failed to push to https://some-enterprise-host/repomate-demo/ham-master-repo-1
+    [ERROR] Failed to push to https://some-enterprise-host/repobee-demo/ham-master-repo-1
     return code: 128
-    fatal: repository 'https://some-enterprise-host/repomate-demo/ham-master-repo-1/' not found
+    fatal: repository 'https://some-enterprise-host/repobee-demo/ham-master-repo-1/' not found
     [WARNING] 1 pushes failed ...
     [INFO] pushing, attempt 3/3
-    [ERROR] Failed to push to https://some-enterprise-host/repomate-demo/ham-master-repo-1
+    [ERROR] Failed to push to https://some-enterprise-host/repobee-demo/ham-master-repo-1
     return code: 128
-    fatal: repository 'https://some-enterprise-host/repomate-demo/ham-master-repo-1/' not found
+    fatal: repository 'https://some-enterprise-host/repobee-demo/ham-master-repo-1/' not found
     [WARNING] 1 pushes failed ...
     [INFO] Opening issue in repos to which push failed
     [INFO] Opened issue ham-master-repo-1/#1-'Nice title'
     [INFO] done!
 
-Note that Repomate tries to push 3 times before finally giving up and
+Note that RepoBee tries to push 3 times before finally giving up and
 opening an issue. This is because pushes can fail for other reasons than
 rejections, such as timeouts and other network errors.
 

@@ -1,62 +1,59 @@
-# Repomate
-[![Build Status](https://travis-ci.com/slarse/repomate.svg)](https://travis-ci.com/slarse/repomate)
-[![Code Coverage](https://codecov.io/gh/slarse/repomate/branch/master/graph/badge.svg)](https://codecov.io/gh/slarse/repomate)
-[![Documentation Status](https://readthedocs.org/projects/repomate/badge/?version=latest)](http://repomate.readthedocs.io/en/latest/)
-[![PyPi Version](https://badge.fury.io/py/repomate.svg)](https://badge.fury.io/py/repomate)
+# RepoBee
+[![Build Status](https://travis-ci.com/slarse/repobee.svg)](https://travis-ci.com/slarse/repobee)
+[![Code Coverage](https://codecov.io/gh/slarse/repobee/branch/master/graph/badge.svg)](https://codecov.io/gh/slarse/repobee)
+[![Documentation Status](https://readthedocs.org/projects/repobee/badge/?version=latest)](http://repobee.readthedocs.io/en/latest/)
+[![PyPi Version](https://badge.fury.io/py/repobee.svg)](https://badge.fury.io/py/repobee)
 ![Supported Python Versions](https://img.shields.io/badge/python-3.5%2C%203.6%2C%203.7-blue.svg)
 ![Supported Platforms](https://img.shields.io/badge/platforms-Linux%2C%20macOS-blue.svg)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
-> **Important:** Repomate has changed name to RepoBee. Please see
-> [RepoBee's GitHub page](https://github.com/repobee/repobee) for details.
-
 ## Overview
-Repomate is A CLI tool for administrating large amounts of GitHub
-repositories, geared towards teachers and GitHub Enterprise. Repomate is
+RepoBee is A CLI tool for administrating large amounts of GitHub
+repositories, geared towards teachers and GitHub Enterprise. RepoBee is
 currently being used for the introductory courses in computer science at
 [KTH Royal Technical Institute of Technology](https://www.kth.se/en/eecs). The
 courses have roughly 200 students and several thousands of repositories,
-allowing us to test Repomate at quite a large scale.
+allowing us to test RepoBee at quite a large scale.
 
 ### Install
-Repomate is on PyPi, so `python3 -m pip install repomate` should do the trick. See the
-[install instructions](https://repomate.readthedocs.io/en/latest/install.html)
+RepoBee is on PyPi, so `python3 -m pip install repobee` should do the trick. See the
+[install instructions](https://repobee.readthedocs.io/en/latest/install.html)
 for more elaborate instructions.
 
 ### Getting started
-The best way to get started with Repomate is to head over to the
-[Docs](https://repomate.readthedocs.io/en/latest/), where you (among other
+The best way to get started with RepoBee is to head over to the
+[Docs](https://repobee.readthedocs.io/en/latest/), where you (among other
 things) will find the
-[user guide](https://repomate.readthedocs.io/en/latest/userguide.html).
-It covers the use of Repomate's varous commands by way of practical example,
+[user guide](https://repobee.readthedocs.io/en/latest/userguide.html).
+It covers the use of RepoBee's varous commands by way of practical example,
 and should set you on the right path with little effort.
 
-## Why Repomate?
-Repomate was developed at KTH Royal Technical Institute of Technology to help
+## Why RepoBee?
+RepoBee was developed at KTH Royal Technical Institute of Technology to help
 teachers and teaching assistants administrate GitHub repositories. It is
 inspired by the old
 [`teachers_pet` tool](https://github.com/education/teachers_pet), with added
 features and a user experience more to our liking. Features range from creating
 student repositories based on master (template) repos, to opening and closing
 issues in bulk, to assigning peer reviews and cloning repos in bulk. Some parts
-of Repomate can be customized using a simple but powerful [plugin
-system](https://github.com/slarse/repomate-plug). For example, the
-[`repomate-junit4` plugin](https://github.com/slarse/repomate-junit4) allows for
+of RepoBee can be customized using a simple but powerful [plugin
+system](https://github.com/slarse/repobee-plug). For example, the
+[`repobee-junit4` plugin](https://github.com/slarse/repobee-junit4) allows for
 automatically running `JUnit4` test classes on production code in student repos.
-Below is the output from running `repomate -h`, giving brief descriptions of
+Below is the output from running `repobee -h`, giving brief descriptions of
 each of the main features:
 
 ```
-$ repomate -h
-usage: repomate [-h] [-v]
+$ repobee -h
+usage: repobee [-h] [-v]
                 {show-config,setup,update,migrate,clone,open-issues,
                  close-issues,list-issues,assign-reviews,
                  purge-review-teams,check-reviews,verify-settings}
                 ...
 
 A CLI tool for administering large amounts of git repositories on GitHub
-instances. See the full documentation at https://repomate.readthedocs.io
+instances. See the full documentation at https://repobee.readthedocs.io
 
 positional arguments:
   {show-config,setup,update,migrate,clone,open-issues,
@@ -88,9 +85,9 @@ optional arguments:
 ```
 
 ## Roadmap
-As of December 17th 2018, Repomate's CLI is a stable release and adheres to
+As of December 17th 2018, RepoBee's CLI is a stable release and adheres to
 [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html). The internals
-of Repomate _do not_ adhere to this versioning, so using Repomate as a library
+of RepoBee _do not_ adhere to this versioning, so using RepoBee as a library
 is not recommended.
 
 The plugin system is still to be considered in the beta phase, as it has seen

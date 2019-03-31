@@ -1,11 +1,11 @@
 .. _plugins:
 
-Plugins for ``repomate``
+Plugins for ``repobee``
 ************************
-Repomate defines a fairly simple but powerful plugin system that allows
+RepoBee defines a fairly simple but powerful plugin system that allows
 programmers to hook into certain execution points. To read more about the
 details of these hooks (and how to write your own plugins), see the
-`repomate-plug docs`_. Currently, plugins can hook into the ``clone`` command
+`repobee-plug docs`_. Currently, plugins can hook into the ``clone`` command
 to perform arbitrary tasks on the cloned repos (such as running test classes),
 and the ``assign-reviews`` command, to change the way reviews are
 assigned.
@@ -24,7 +24,7 @@ activate the builtins_ ``javac`` and ``pylint`` like this:
 
 .. code-block:: bash
 
-    $ repomate -p pylint -p javac clone -mn master-repo-1 -sf students.txt
+    $ repobee -p pylint -p javac clone -mn master-repo-1 -sf students.txt
 
 This will clone the repos, and the run the plugins on the repos. We can also
 specify the default plugins we'd like to use in the configuration file by adding
@@ -52,13 +52,13 @@ new headers. See the documentation of the specific plugins
 
 .. _built-in _peer review plugins:
 
-Built-in plugins for ``repomate assign-reviews``
+Built-in plugins for ``repobee assign-reviews``
 =====================================================
-Repomate ships with two plugins for the ``assign-reviews`` command.  The
-first of these is the :py:mod:`~repomate.ext.defaults` plugin, which provides
+RepoBee ships with two plugins for the ``assign-reviews`` command.  The
+first of these is the :py:mod:`~repobee.ext.defaults` plugin, which provides
 the default allocation algorithm. As the name suggests, this plugin is loaded
 by default, without the user specifying anything. The second plugin is the
-:py:mod:`~repomate.ext.pairwise` plugin. This plugin will divide ``N`` students
+:py:mod:`~repobee.ext.pairwise` plugin. This plugin will divide ``N`` students
 into ``N/2`` groups of 2 students (and possibly one with 3 students, if ``N``
 is odd), and have them peer review the other person in the group. The intention
 is to let students sit together and be able to ask questions regarding the repo
@@ -68,22 +68,22 @@ plugin ignores the ``--num-reviews`` argument.
 
 .. _builtins:
 
-Built-in Plugins for ``repomate clone``
+Built-in Plugins for ``repobee clone``
 =======================================
-Repomate currently ships with two built-in plugins:
-:py:mod:`~repomate.ext.javac` and :py:mod:`~repomate.ext.pylint`. The former
+RepoBee currently ships with two built-in plugins:
+:py:mod:`~repobee.ext.javac` and :py:mod:`~repobee.ext.pylint`. The former
 attempts to compile all ``.java`` files in each cloned repo, while the latter
 runs pylint_ on every ``.py`` file in each cloned repo. These plugins are
 mostly meant to serve as demonstarations of how to implement simple plugins in
-the ``repomate`` package itself.
+the ``repobee`` package itself.
 
 ``pylint``
 ----------
-The :py:mod:`~repomate.ext.pylint` plugin is fairly simple: it finds all
+The :py:mod:`~repobee.ext.pylint` plugin is fairly simple: it finds all
 ``.py`` files in the repo, and runs ``pylint`` on them individually.
 For each file ``somefile.py``, it stores the output in the file
 ``somefile.py.lint`` in the same directory. That's it, the
-:py:mod:`~repomate.ext.pylint` plugin has no other features, it just does its
+:py:mod:`~repobee.ext.pylint` plugin has no other features, it just does its
 thing.
 
 .. important::
@@ -93,19 +93,19 @@ thing.
 
 ``javac``
 ---------
-The :py:mod:`~repomate.ext.javac` plugin runs the Java compiler program
+The :py:mod:`~repobee.ext.javac` plugin runs the Java compiler program
 ``javac`` on all ``.java`` files in the repo. Note that it tries to compile
 *all* files at the same time.
 
 CLI Option
 ++++++++++
-:py:mod:`~repomate.ext.javac` adds a command line option ``-i|--ignore`` to
-``repomate clone``, which takes a space-separated list of files to ignore when
+:py:mod:`~repobee.ext.javac` adds a command line option ``-i|--ignore`` to
+``repobee clone``, which takes a space-separated list of files to ignore when
 compiling.
 
 Configuration
 +++++++++++++
-:py:mod:`~repomate.ext.javac` also adds a configuration file option
+:py:mod:`~repobee.ext.javac` also adds a configuration file option
 ``ignore`` taking a comma-separated list of files, which must be added under
 the ``[javac]`` section. Example:
 
@@ -119,7 +119,7 @@ the ``[javac]`` section. Example:
 
 .. important::
 
-    The :py:mod:`~repomate.ext.javac` plugin requires ``javac`` to be installed
+    The :py:mod:`~repobee.ext.javac` plugin requires ``javac`` to be installed
     and accessible from the command line. All ``JDK`` distributions come with
     ``javac``, but you must also ensure that it is on the PATH variable.
 
@@ -127,17 +127,17 @@ the ``[javac]`` section. Example:
 
 External Plugins
 ================
-It's also possible to use plugins that are not included with Repomate.
-Following the conventions defined in the `repomate-plug docs`_, all plugins
-uploaded to PyPi should be named ``repomate-<plugin>``, where ``<plugin>`` is
+It's also possible to use plugins that are not included with RepoBee.
+Following the conventions defined in the `repobee-plug docs`_, all plugins
+uploaded to PyPi should be named ``repobee-<plugin>``, where ``<plugin>`` is
 the name of the plugin and thereby the thing to add to the ``plugins`` option
 in the configuration file. Any options for the plugin itself should be
 located under a header named ``[<plugin>]``. For example, if I want to use
-the `repomate-junit4`_ plugin, I first install it:
+the `repobee-junit4`_ plugin, I first install it:
 
 .. code-block:: bash
 
-    python3 -m pip install repomate-junit4
+    python3 -m pip install repobee-junit4
 
 and then use for example this configuration file to activate the plugin, and
 define some defaults:
@@ -160,7 +160,7 @@ define some defaults:
     want to configure plugins, just add the ``[DEFAULTS]`` header by itself,
     without options, to meet this requirement.
 
-.. _repomate-junit4: https://github.com/slarse/repomate-junit4
-.. _repomate-plug: https://github.com/slarse/repomate-plug
+.. _repobee-junit4: https://github.com/slarse/repobee-junit4
+.. _repobee-plug: https://github.com/slarse/repobee-plug
 .. _pylint: https://www.pylint.org/
-.. _repomate-plug docs: https://repomate-plug.readthedocs.io/en/latest/
+.. _repobee-plug docs: https://repobee-plug.readthedocs.io/en/latest/

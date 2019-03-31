@@ -3,7 +3,7 @@ Opening and Closing issues (the ``open-issues`` and ``close-issues`` commands)
 Sometimes, the best way to handle an error in a repo is to simply notify
 affected students about it. This is especially true if the due date for the
 assignment is rapidly approaching, and most students have already started
-modifying their repositories. Therefore, Repomate provides the
+modifying their repositories. Therefore, RepoBee provides the
 ``open-issues`` command, which can open issues in bulk. When the time is right
 (perhaps after the deadline has passed), issues can be closed with the
 ``close-issues`` command.
@@ -32,7 +32,7 @@ for our dear students ``spam``, ``eggs`` and ``ham``, who are listed in the
 
 .. code-block:: bash
 
-    $ repomate open-issues -mn master-repo-2 -sf students.txt -i issue.md
+    $ repobee open-issues -mn master-repo-2 -sf students.txt -i issue.md
     [INFO] Opened issue spam-master-repo-2/#1-'An important announcement'
     [INFO] Opened issue eggs-master-repo-2/#1-'An important announcement'
     [INFO] Opened issue ham-master-repo-2/#1-'An important announcement'
@@ -54,7 +54,7 @@ announcement`` is simple: we provide the regex ``\AAn important announcement\Z``
 
 .. code-block:: bash
 
-    $ repomate close-issues -mn master-repo-2 -sf students.txt -r '\AAn important announcement\Z'
+    $ repobee close-issues -mn master-repo-2 -sf students.txt -r '\AAn important announcement\Z'
     [INFO] closed issue spam-master-repo-2/#1-'An important announcement'
     [INFO] closed issue eggs-master-repo-2/#1-'An important announcement'
     [INFO] closed issue ham-master-repo-2/#1-'An important announcement'
@@ -81,7 +81,7 @@ issues like so:
 
 .. code-block:: bash
 
-    $ repomate list-issues -mn master-repo-2 -sf students.txt
+    $ repobee list-issues -mn master-repo-2 -sf students.txt
     [INFO] spam-master-repo-2/#1:  Grading Criteria created 2018-09-12 18:20:56 by glassey
     [INFO] eggs-master-repo-2/#1:  Grading Criteria created 2018-09-12 18:20:56 by glassey
     [INFO] ham-master-repo-2/#1:   Grading Criteria created 2018-09-12 18:20:56 by glassey
@@ -92,12 +92,12 @@ issues, we must specifically say so with the ``--closed`` argument.
 
 .. code-block:: bash
 
-    $ repomate list-issues -mn master-repo-2 -sf students.txt --closed
+    $ repobee list-issues -mn master-repo-2 -sf students.txt --closed
     [INFO] spam-master-repo-2/#2:  An important announcement created 2018-09-17 17:46:43 by slarse
     [INFO] eggs-master-repo-2/#2:  An important announcement created 2018-09-17 17:46:43 by slarse
     [INFO] ham-master-repo-2/#2:   An important announcement created 2018-09-17 17:46:43 by slarse
 
 Other interesting arguments include ``--all`` for both open and closed issues,
 ``--show-body`` for showing the body of each issue, and ``--author <username>``
-for filtering by author. There's not much more to it, see ``repomate list-issues
+for filtering by author. There's not much more to it, see ``repobee list-issues
 -h`` for complete and up-to-date information on usage!

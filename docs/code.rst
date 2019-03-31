@@ -1,52 +1,52 @@
-``repomate`` Module Reference
+``repobee`` Module Reference
 *****************************
 
 command
 ====================
 
-.. automodule:: repomate.command
+.. automodule:: repobee.command
     :members:
 
 cli
 ====================
 
-.. automodule:: repomate.cli
+.. automodule:: repobee.cli
     :members:
 
 config
 ====================
 
-.. automodule:: repomate.config
+.. automodule:: repobee.config
     :members:
 
 exception
 ====================
 
-.. automodule:: repomate.exception
+.. automodule:: repobee.exception
     :members:
 
 github_api
 ====================
 
-.. automodule:: repomate.github_api
+.. automodule:: repobee.github_api
     :members:
 
 git
 ====================
 
-.. automodule:: repomate.git
+.. automodule:: repobee.git
     :members:
 
 tuples
 ====================
 
-.. automodule:: repomate.tuples
+.. automodule:: repobee.tuples
     :members:
 
 util
 ====================
 
-.. automodule:: repomate.util
+.. automodule:: repobee.util
     :members:
 
 Core plugins
@@ -55,13 +55,13 @@ Core plugins
 defaults
 --------
 
-.. automodule:: repomate.ext.defaults
+.. automodule:: repobee.ext.defaults
     :members:
 
 pairwise
 --------
 
-.. automodule:: repomate.ext.pairwise
+.. automodule:: repobee.ext.pairwise
     :members:
 
 
@@ -71,11 +71,11 @@ Extension plugins
 javac
 -----
 
-.. automodule:: repomate.ext.javac
+.. automodule:: repobee.ext.javac
     :members:
 
 pylint
 ------
 
-.. automodule:: repomate.ext.pylint
+.. automodule:: repobee.ext.pylint
     :members:
