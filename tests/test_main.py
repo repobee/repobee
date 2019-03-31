@@ -4,9 +4,9 @@ from collections import namedtuple
 import pytest
 
 from functions import raise_
-from repomate import cli
-from repomate import main
-from repomate import tuples
+from repobee import cli
+from repobee import main
+from repobee import tuples
 
 import constants
 
@@ -38,23 +38,23 @@ def register_plugins_mock(mocker):
     register_plugins method. Otherwise, it raises when trying to load the same
     plugin twice.
     """
-    return mocker.patch("repomate.plugin.register_plugins", autospec=True)
+    return mocker.patch("repobee.plugin.register_plugins", autospec=True)
 
 
 @pytest.fixture
 def logger_exception_mock(mocker):
-    return mocker.patch("repomate.main.LOGGER.exception", autospec=True)
+    return mocker.patch("repobee.main.LOGGER.exception", autospec=True)
 
 
 @pytest.fixture
 def api_instance_mock(mocker):
-    return MagicMock(spec="repomate.github_api.GitHubAPI")
+    return MagicMock(spec="repobee.github_api.GitHubAPI")
 
 
 @pytest.fixture
 def init_plugins_mock(mocker):
     return mocker.patch(
-        "repomate.plugin.initialize_plugins",
+        "repobee.plugin.initialize_plugins",
         autospec=True,
         side_effect=lambda plugs: list(map(module, plugs)),
     )
@@ -63,7 +63,7 @@ def init_plugins_mock(mocker):
 @pytest.fixture
 def parse_args_mock(mocker, api_instance_mock):
     return mocker.patch(
-        "repomate.cli.parse_args",
+        "repobee.cli.parse_args",
         autospec=True,
         return_value=(PARSED_ARGS, api_instance_mock),
     )
@@ -72,7 +72,7 @@ def parse_args_mock(mocker, api_instance_mock):
 @pytest.fixture
 def parse_plugins_mock(mocker):
     return mocker.patch(
-        "repomate.cli.parse_plugins",
+        "repobee.cli.parse_plugins",
         autospec=True,
         side_effect=lambda args: [
             arg for arg in args if not arg.startswith("-")
@@ -82,7 +82,7 @@ def parse_plugins_mock(mocker):
 
 @pytest.fixture
 def dispatch_command_mock(mocker):
-    return mocker.patch("repomate.cli.dispatch_command", autospec=True)
+    return mocker.patch("repobee.cli.dispatch_command", autospec=True)
 
 
 def test_happy_path(
@@ -128,7 +128,7 @@ def test_plugins_args(
     parse_args_mock, dispatch_command_mock, init_plugins_mock
 ):
     plugin_args = "-p javac -p pylint".split()
-    sys_args = ["repomate", *plugin_args, *CLONE_ARGS]
+    sys_args = ["repobee", *plugin_args, *CLONE_ARGS]
 
     main.main(sys_args)
 
@@ -139,7 +139,7 @@ def test_plugins_args(
 def test_no_plugins_arg(
     parse_args_mock, dispatch_command_mock, init_plugins_mock
 ):
-    sys_args = ["repomate", "--no-plugins", *CLONE_ARGS]
+    sys_args = ["repobee", "--no-plugins", *CLONE_ARGS]
 
     main.main(sys_args)
 
@@ -150,7 +150,7 @@ def test_no_plugins_arg(
 def test_plugin_with_subparser_name(
     parse_args_mock, dispatch_command_mock, init_plugins_mock
 ):
-    sys_args = ["repomate", "-p", "javac", "-p", "clone", *CLONE_ARGS]
+    sys_args = ["repobee", "-p", "javac", "-p", "clone", *CLONE_ARGS]
 
     main.main(sys_args)
 
@@ -161,7 +161,7 @@ def test_plugin_with_subparser_name(
 def test_plug_arg_incompatible_with_no_plugins(
     dispatch_command_mock, init_plugins_mock
 ):
-    sys_args = ["repomate", "-p", "javac", "--no-plugins", *CLONE_ARGS]
+    sys_args = ["repobee", "-p", "javac", "--no-plugins", *CLONE_ARGS]
 
     with pytest.raises(SystemExit):
         main.main(sys_args)
@@ -173,7 +173,7 @@ def test_plug_arg_incompatible_with_no_plugins(
 def test_invalid_plug_options(dispatch_command_mock, init_plugins_mock):
     # -f is not a valid option for plugins and should be bumped to the
     # main parser
-    sys_args = ["repomate", "-p", "javac", "-f", *CLONE_ARGS]
+    sys_args = ["repobee", "-p", "javac", "-f", *CLONE_ARGS]
 
     with pytest.raises(SystemExit):
         main.main(sys_args)
@@ -189,7 +189,7 @@ def test_does_not_raise_on_exception_in_dispatch(
     no_config_mock,
     logger_exception_mock,
 ):
-    sys_args = ["repomate", *CLONE_ARGS]
+    sys_args = ["repobee", *CLONE_ARGS]
     main.main(sys_args)
 
     assert not logger_exception_mock.called
@@ -209,7 +209,7 @@ def test_logs_traceback_on_exception_in_dispatch_if_traceback(
     def raise_():
         raise ValueError(msg)
 
-    sys_args = ["repomate", *CLONE_ARGS, "--traceback"]
+    sys_args = ["repobee", *CLONE_ARGS, "--traceback"]
     dispatch_command_mock.side_effect = lambda *args, **kwargs: raise_()
 
     main.main(sys_args)

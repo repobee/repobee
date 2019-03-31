@@ -15,10 +15,10 @@ from typing import Union, List, Optional, Iterable
 
 import daiquiri
 
-from repomate import config
-from repomate import exception
+from repobee import config
+from repobee import exception
 
-import repomate_plug as plug
+import repobee_plug as plug
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -43,17 +43,17 @@ def load_plugin_modules(
     they are either run last or overridden by plugins with firstresult=True
     (such as the default_peer_review plugin).
 
-    Try to import first from :py:mod:`repomate.ext`, and then from
-    ``repomate_<plugin>``. For example, if ``javac`` is listed as a plugin, the
+    Try to import first from :py:mod:`repobee.ext`, and then from
+    ``repobee_<plugin>``. For example, if ``javac`` is listed as a plugin, the
     following imports will be attempted:
 
     .. code-block:: python
 
         # import nr 1
-        from repomate.ext import javac
+        from repobee.ext import javac
 
         # import nr 2
-        from repomate_javac import javac
+        from repobee_javac import javac
 
     Args:
         config_file: Path to the configuration file.

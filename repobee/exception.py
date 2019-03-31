@@ -1,11 +1,11 @@
-"""Modules for all custom repomate exceptions.
+"""Modules for all custom repobee exceptions.
 
-All exceptions extend the :py:class:`RepomateException` base class, which
+All exceptions extend the :py:class:`RepoBeeException` base class, which
 itself extends :py:class:`Exception`. In other words, exceptions raised within
-``repomate`` can all be caught by catching :py:class:`RepomateException`.
+``repobee`` can all be caught by catching :py:class:`RepoBeeException`.
 
 .. module:: exception
-    :synopsis: Custom exceptions for repomate.
+    :synopsis: Custom exceptions for repobee.
 
 .. moduleauthor:: Simon Larsén
 """
@@ -14,8 +14,8 @@ import sys
 import re
 
 
-class RepomateException(Exception):
-    """Base exception for all repomate exceptions."""
+class RepoBeeException(Exception):
+    """Base exception for all repobee exceptions."""
 
     def __init__(self, msg="", *args, **kwargs):
         super().__init__(self, msg, *args, **kwargs)
@@ -28,15 +28,15 @@ class RepomateException(Exception):
         return "<{}(msg='{}')>".format(type(self).__name__, str(self.msg))
 
 
-class ParseError(RepomateException):
+class ParseError(RepoBeeException):
     """Raise when something goes wrong in parsing."""
 
 
-class FileError(RepomateException):
+class FileError(RepoBeeException):
     """Raise when reading or writing to a file errors out."""
 
 
-class GitHubError(RepomateException):
+class GitHubError(RepoBeeException):
     """An exception raised when the API responds with an error code."""
 
     def __init__(self, msg="", status=None):
@@ -62,13 +62,13 @@ class UnexpectedException(GitHubError):
     """
 
 
-class APIError(RepomateException):
+class APIError(RepoBeeException):
     """Raise when something unexpected happens when interacting with the
     API.
     """
 
 
-class GitError(RepomateException):
+class GitError(RepoBeeException):
     """A generic error to raise when a git command exits with a non-zero exit
     status.
     """
@@ -106,7 +106,7 @@ class PushFailedError(GitError):
         super().__init__(msg, returncode, stderr)
 
 
-class PluginError(RepomateException):
+class PluginError(RepoBeeException):
     """Generic error to raise when something goes wrong with loading
     plugins.
     """

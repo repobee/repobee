@@ -4,11 +4,11 @@ import pytest
 from unittest.mock import MagicMock, PropertyMock, call
 
 import github
-from repomate import util
-from repomate import exception
-from repomate import github_api
-from repomate import tuples
-from repomate.github_api import REQUIRED_OAUTH_SCOPES
+from repobee import util
+from repobee import exception
+from repobee import github_api
+from repobee import tuples
+from repobee.github_api import REQUIRED_OAUTH_SCOPES
 
 import constants
 import functions
@@ -304,7 +304,7 @@ def issues(repos):
 
 @pytest.fixture(scope="function")
 def api(happy_github, organization, no_teams):
-    from repomate import github_api
+    from repobee import github_api
 
     return github_api.GitHubAPI(GITHUB_BASE_URL, TOKEN, ORG_NAME)
 

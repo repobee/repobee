@@ -2,16 +2,16 @@ import os
 import pytest
 from unittest.mock import patch, MagicMock, Mock, call, ANY, PropertyMock
 
-import repomate
-from repomate import command
-from repomate import github_api
-from repomate import git
-from repomate import tuples
-from repomate import util
-from repomate import exception
-from repomate import plugin
+import repobee
+from repobee import command
+from repobee import github_api
+from repobee import git
+from repobee import tuples
+from repobee import util
+from repobee import exception
+from repobee import plugin
 
-from repomate_plug import HookResult, repomate_hook, Status
+from repobee_plug import HookResult, repobee_hook, Status
 
 import constants
 import functions
@@ -118,7 +118,7 @@ def validate_types_mock(request, mocker):
             **{key: val for key, val in kwargs.items() if key not in remove}
         )
 
-    return mocker.patch("repomate.util.validate_types", side_effect=validate)
+    return mocker.patch("repobee.util.validate_types", side_effect=validate)
 
 
 @pytest.fixture(autouse=True)
@@ -128,8 +128,8 @@ def git_mock(request, mocker):
     """
     if "nogitmock" in request.keywords:
         return
-    pt = repomate.git.Push
-    git_mock = mocker.patch("repomate.command.git", autospec=True)
+    pt = repobee.git.Push
+    git_mock = mocker.patch("repobee.command.git", autospec=True)
     git_mock.Push = pt
     return git_mock
 
@@ -156,8 +156,8 @@ def _get_issues(repo_names, state="open", title_regex=""):
 def api_mock(request, mocker):
     if "noapimock" in request.keywords:
         return
-    mock = MagicMock(spec=repomate.command.GitHubAPI)
-    api_class = mocker.patch("repomate.command.GitHubAPI", autospec=True)
+    mock = MagicMock(spec=repobee.command.GitHubAPI)
+    api_class = mocker.patch("repobee.command.GitHubAPI", autospec=True)
     api_class.return_value = mock
 
     def url_from_repo_info(repo_info):
@@ -170,7 +170,7 @@ def api_mock(request, mocker):
         map(url_from_repo_info, repo_infos)
     )
     mock.get_issues = MagicMock(
-        spec="repomate.github_api.GitHubAPI.get_issues",
+        spec="repobee.github_api.GitHubAPI.get_issues",
         side_effect=_get_issues,
     )
     type(mock).token = PropertyMock(return_value=TOKEN)
@@ -247,7 +247,7 @@ def rmtree_mock(mocker):
 @pytest.fixture(autouse=True)
 def is_git_repo_mock(mocker):
     return mocker.patch(
-        "repomate.util.is_git_repo", return_value=True, autospec=True
+        "repobee.util.is_git_repo", return_value=True, autospec=True
     )
 
 
@@ -298,7 +298,7 @@ class TestSetupStudentRepos:
 
     @pytest.fixture(autouse=True)
     def is_git_repo_mock(self, mocker):
-        return mocker.patch("repomate.util.is_git_repo", return_value=True)
+        return mocker.patch("repobee.util.is_git_repo", return_value=True)
 
     def test_raises_on_clone_failure(
         self, master_urls, students, git_mock, api_mock
@@ -486,8 +486,8 @@ class TestUpdateStudentRepos:
                     "Push failed", 128, b"some error", pt.repo_url
                 )
 
-        mocker.patch("repomate.git._push_async", side_effect=raise_specific)
-        mocker.patch("repomate.git.clone_single")
+        mocker.patch("repobee.git._push_async", side_effect=raise_specific)
+        mocker.patch("repobee.git.clone_single")
 
         command.update_student_repos(
             master_urls, students, USER, api_mock, issue
@@ -536,8 +536,8 @@ class TestUpdateStudentRepos:
                     "Push failed", 128, b"some error", pt.repo_url
                 )
 
-        mocker.patch("repomate.git._push_async", side_effect=raise_specific)
-        mocker.patch("repomate.git.clone_single")
+        mocker.patch("repobee.git._push_async", side_effect=raise_specific)
+        mocker.patch("repobee.git.clone_single")
 
         command.update_student_repos(master_urls, students, USER, api_mock)
 
@@ -650,33 +650,33 @@ class TestCloneRepos:
     def act_hook_mocks(self, monkeypatch, config_mock):
         """Mocks for the act_on_cloned_repo functions and method. This is a bit
         messy as the functions must be marked with the
-        repomate_plug.repomate_hook decorator to be picked up by pluggy.
+        repobee_plug.repobee_hook decorator to be picked up by pluggy.
         """
         javac_hook = MagicMock(
-            spec="repomate.ext.javac.JavacCloneHook._class.act_on_cloned_repo",
+            spec="repobee.ext.javac.JavacCloneHook._class.act_on_cloned_repo",
             return_value=HookResult("javac", Status.SUCCESS, "Great success!"),
         )
         pylint_hook = MagicMock(
-            spec="repomate.ext.pylint.act_on_cloned_repo",
+            spec="repobee.ext.pylint.act_on_cloned_repo",
             return_value=HookResult(
                 "pylint", Status.WARNING, "Minor warning."
             ),
         )
 
-        @repomate_hook
+        @repobee_hook
         def act_hook_func(path):
             return pylint_hook(path)
 
-        @repomate_hook
+        @repobee_hook
         def act_hook_meth(self, path):
             return javac_hook(self, path)
 
         monkeypatch.setattr(
-            "repomate.ext.javac.JavacCloneHook.act_on_cloned_repo",
+            "repobee.ext.javac.JavacCloneHook.act_on_cloned_repo",
             act_hook_meth,
         )
         monkeypatch.setattr(
-            "repomate.ext.pylint.act_on_cloned_repo", act_hook_func
+            "repobee.ext.pylint.act_on_cloned_repo", act_hook_func
         )
 
         modules = plugin.load_plugin_modules(str(config_mock))
@@ -687,7 +687,7 @@ class TestCloneRepos:
     @pytest.fixture
     def get_plugin_names_mock(self, mocker):
         return mocker.patch(
-            "repomate.config.get_plugin_names", return_value=PLUGINS
+            "repobee.config.get_plugin_names", return_value=PLUGINS
         )
 
     @pytest.mark.parametrize(
@@ -777,9 +777,9 @@ class TestMigrateRepo:
             generate_repo_url(info.name) for info in infos
         ]
         git_clone_mock = mocker.patch(
-            "repomate.git.clone_single", autospec=True
+            "repobee.git.clone_single", autospec=True
         )
-        git_push_mock = mocker.patch("repomate.git.push", autospec=True)
+        git_push_mock = mocker.patch("repobee.git.push", autospec=True)
 
         command.migrate_repos(master_urls, USER, api_mock)
 

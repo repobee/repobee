@@ -1,6 +1,6 @@
 """The defaults plugin contains all default hook implementations.
 
-The goal is to make core parts of repomate pluggable using hooks that only
+The goal is to make core parts of repobee pluggable using hooks that only
 return the first result that is not None. The standard behavior will be
 provided by the default plugin (this one), which implements all of the required
 hooks.  The default plugin will always be run last, so any user-defined hooks
@@ -10,7 +10,7 @@ Currently, only the peer review related generate_review_allocations hook has a
 default implementation.
 
 .. module:: defaults
-    :synopsis: Plugin that provides the default behavior for core repomate
+    :synopsis: Plugin that provides the default behavior for core repobee
         functionality.
 
 .. moduleauthor:: Simon Larsén
@@ -20,12 +20,12 @@ from typing import Callable, Iterable, Mapping, List
 
 import daiquiri
 
-from repomate_plug import repomate_hook
+from repobee_plug import repobee_hook
 
 LOGGER = daiquiri.getLogger(name=__file__)
 
 
-@repomate_hook
+@repobee_hook
 def generate_review_allocations(
     master_repo_name: str,
     students: Iterable[str],

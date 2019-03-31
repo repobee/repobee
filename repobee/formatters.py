@@ -11,10 +11,10 @@ import os
 from typing import Mapping, List
 
 from colored import fg, bg, style
-from repomate_plug import Status
+from repobee_plug import Status
 import daiquiri
 
-from repomate import tuples
+from repobee import tuples
 
 LOGGER = daiquiri.getLogger(__name__)
 

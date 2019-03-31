@@ -5,7 +5,7 @@ with open("README.md", mode="r", encoding="utf-8") as f:
     readme = f.read()
 
 # parse the version instead of importing it to avoid dependency-related crashes
-with open("repomate/__version.py", mode="r", encoding="utf-8") as f:
+with open("repobee/__version.py", mode="r", encoding="utf-8") as f:
     line = f.readline()
     __version__ = line.split("=")[1].strip(" '\"\n")
     assert re.match(r"^\d+(\.\d+){2}$", __version__)
@@ -23,11 +23,11 @@ required = [
     "daiquiri",
     "pygithub",
     "colored",
-    "repomate-plug>=0.4.1",
+    "repobee-plug>=0.4.1",
 ]
 
 setup(
-    name="repomate",
+    name="repobee",
     version=__version__,
     description=(
         "A CLI tool for managing large amounts of GitHub repositories"
@@ -36,9 +36,9 @@ setup(
     long_description_content_type="text/markdown",
     author="Simon Larsén",
     author_email="slarse@kth.se",
-    url="https://github.com/slarse/repomate",
+    url="https://github.com/slarse/repobee",
     download_url=(
-        "https://github.com/slarse/repomate/archive/v{}.tar.gz".format(
+        "https://github.com/slarse/repobee/archive/v{}.tar.gz".format(
             __version__
         )
     ),
@@ -47,7 +47,7 @@ setup(
     tests_require=test_requirements,
     install_requires=required,
     extras_require=dict(TEST=test_requirements),
-    scripts=["bin/repomate"],
+    scripts=["bin/repobee"],
     include_package_data=True,
     zip_safe=False,
     python_requires=">=3.5",

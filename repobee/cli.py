@@ -1,9 +1,9 @@
 """CLI module.
 
-This module contains the CLI for repomate.
+This module contains the CLI for repobee.
 
 .. module:: cli
-    :synopsis: The CLI for repomate.
+    :synopsis: The CLI for repobee.
 
 .. moduleauthor:: Simon Larsén
 """
@@ -18,15 +18,15 @@ from typing import List, Iterable, Optional, Tuple
 import logging
 import daiquiri
 
-import repomate_plug as plug
+import repobee_plug as plug
 
-import repomate
-from repomate import command
-from repomate import github_api
-from repomate import util
-from repomate import tuples
-from repomate import exception
-from repomate import config
+import repobee
+from repobee import command
+from repobee import github_api
+from repobee import util
+from repobee import tuples
+from repobee import exception
+from repobee import config
 
 daiquiri.setup(
     level=logging.INFO,
@@ -116,7 +116,7 @@ def parse_args(
     _validate_tls_url(args.github_base_url)
 
     # environment token overrides config
-    token = os.getenv("REPOMATE_OAUTH") or (
+    token = os.getenv("REPOBEE_OAUTH") or (
         args.token if "token" in args else ""
     )
 
@@ -488,11 +488,11 @@ def _create_parser():
     """Create the parser."""
 
     parser = argparse.ArgumentParser(
-        prog="repomate",
+        prog="repobee",
         description=(
             "A CLI tool for administering large amounts of git repositories "
             "on GitHub instances. See the full documentation at "
-            "https://repomate.readthedocs.io"
+            "https://repobee.readthedocs.io"
         ),
     )
     parser.add_argument(
@@ -500,7 +500,7 @@ def _create_parser():
         "--version",
         help="Display version info",
         action="version",
-        version="{} v{}".format(repomate.__package__, repomate.__version__),
+        version="{} v{}".format(repobee.__package__, repobee.__version__),
     )
     _add_subparsers(parser)
     return parser
@@ -539,7 +539,7 @@ def _add_subparsers(parser):
         help="Show the configuration file",
         description=(
             "Show the contents of the configuration file. If no configuration "
-            "file can be found, show the path where repomate expectes to find "
+            "file can be found, show the path where repobee expectes to find "
             "it."
         ),
     )
@@ -695,7 +695,7 @@ def _create_base_parsers():
         "-t",
         "--token",
         help="OAUTH token for the GitHub instance. Can also be specified in "
-        "the `REPOMATE_OAUTH` environment variable.",
+        "the `REPOBEE_OAUTH` environment variable.",
         type=str,
         default=default("token"),
     )
@@ -878,7 +878,7 @@ def parse_plugins(sys_args: Tuple[str]):
         sys_args: Command line arguments.
     """
     parser = argparse.ArgumentParser(
-        prog="repomate", description="plugin pre-parser for repomate."
+        prog="repobee", description="plugin pre-parser for repobee."
     )
 
     mutex_grp = parser.add_mutually_exclusive_group(required=True)

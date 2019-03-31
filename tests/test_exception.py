@@ -1,17 +1,17 @@
 import os
 import sys
-from repomate import exception
-from repomate import git
+from repobee import exception
+from repobee import git
 
 import constants
 
 USER = constants.USER
 
 
-def test_repomate_exception_repr():
+def test_repobee_exception_repr():
     msg = "an exception message"
-    expected_repr = "<RepomateException(msg='{}')>".format(msg)
-    exc = exception.RepomateException(msg)
+    expected_repr = "<RepoBeeException(msg='{}')>".format(msg)
+    exc = exception.RepoBeeException(msg)
 
     assert repr(exc) == expected_repr
 

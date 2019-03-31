@@ -1,8 +1,8 @@
 import os
 from unittest import mock
 import pytest
-from repomate import config
-from repomate import exception
+from repobee import config
+from repobee import exception
 
 import constants
 

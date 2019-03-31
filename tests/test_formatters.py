@@ -1,6 +1,6 @@
 import pytest
-from repomate import formatters
-from repomate import tuples
+from repobee import formatters
+from repobee import tuples
 
 
 def strs_to_reviews(*repo_names, done=True):

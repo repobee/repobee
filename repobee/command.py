@@ -1,4 +1,4 @@
-"""Primary API for repomate.
+"""Primary API for repobee.
 
 This module contains high level functions for administrating repositories, such
 as creating student repos from some master repo template. All functions follow
@@ -8,7 +8,7 @@ Each public function in this module is to be treated as a self-contained
 program.
 
 .. module:: command
-    :synopsis: The primary API of repomate containing high level functions for
+    :synopsis: The primary API of repobee containing high level functions for
         administrating GitHub repos in an opinionated fashion.
 
 .. moduleauthor:: Simon Larsén
@@ -22,17 +22,17 @@ from colored import bg, fg, style
 
 import daiquiri
 
-import repomate_plug as plug
+import repobee_plug as plug
 
-from repomate import git
-from repomate import util
-from repomate import tuples
-from repomate import exception
-from repomate import config
-from repomate import formatters
-from repomate.github_api import GitHubAPI
-from repomate.tuples import Team
-from repomate.git import Push
+from repobee import git
+from repobee import util
+from repobee import tuples
+from repobee import exception
+from repobee import config
+from repobee import formatters
+from repobee.github_api import GitHubAPI
+from repobee.tuples import Team
+from repobee.git import Push
 
 LOGGER = daiquiri.getLogger(__file__)
 
