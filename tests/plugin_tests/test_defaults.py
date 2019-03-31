@@ -5,8 +5,8 @@ import collections
 
 import pytest
 
-from repomate import util
-from repomate.ext import defaults
+from repobee import util
+from repobee.ext import defaults
 
 
 class TestGenerateReviewAllocations:

@@ -6,7 +6,7 @@ pluggy>=0.8.0
 pytest>=4.0.0
 pytest-cov
 pytest-mock
-repomate-plug
+repobee-plug
 sphinx>=1.8.2
 sphinx-autodoc-typehints
 sphinx_rtd_theme

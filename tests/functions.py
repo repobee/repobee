@@ -2,7 +2,7 @@
 import datetime
 import random
 from unittest.mock import MagicMock
-from repomate import tuples
+from repobee import tuples
 
 import constants
 

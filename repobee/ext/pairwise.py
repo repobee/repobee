@@ -17,12 +17,12 @@ from typing import Callable, Iterable, Mapping, List
 
 import daiquiri
 
-from repomate_plug import repomate_hook
+from repobee_plug import repobee_hook
 
 LOGGER = daiquiri.getLogger(name=__file__)
 
 
-@repomate_hook
+@repobee_hook
 def generate_review_allocations(
     master_repo_name: str,
     students: Iterable[str],

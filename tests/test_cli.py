@@ -4,11 +4,11 @@ from unittest.mock import MagicMock
 from unittest import mock
 import pytest
 
-import repomate
-from repomate import cli
-from repomate import tuples
-from repomate import exception
-from repomate.tuples import Team
+import repobee
+from repobee import cli
+from repobee import tuples
+from repobee import exception
+from repobee.tuples import Team
 
 import constants
 import functions
@@ -50,7 +50,7 @@ VALID_PARSED_ARGS = dict(
 
 @pytest.fixture(autouse=True)
 def api_instance_mock(mocker):
-    instance_mock = MagicMock(spec=repomate.github_api.GitHubAPI)
+    instance_mock = MagicMock(spec=repobee.github_api.GitHubAPI)
     instance_mock.get_repo_urls.side_effect = lambda repo_names, org_name: [
         generate_repo_url(rn, org_name) for rn in repo_names
     ]
@@ -62,14 +62,14 @@ def api_instance_mock(mocker):
 
 @pytest.fixture(autouse=True)
 def api_class_mock(mocker, api_instance_mock):
-    class_mock = mocker.patch("repomate.github_api.GitHubAPI", autospec=True)
+    class_mock = mocker.patch("repobee.github_api.GitHubAPI", autospec=True)
     class_mock.return_value = api_instance_mock
     return class_mock
 
 
 @pytest.fixture
 def command_mock(mocker):
-    return mocker.patch("repomate.cli.command", autospec=True)
+    return mocker.patch("repobee.cli.command", autospec=True)
 
 
 @pytest.fixture
@@ -84,13 +84,13 @@ def read_issue_mock(mocker):
         return ISSUE
 
     return mocker.patch(
-        "repomate.util.read_issue", autospec=True, side_effect=read_issue
+        "repobee.util.read_issue", autospec=True, side_effect=read_issue
     )
 
 
 @pytest.fixture
 def git_mock(mocker):
-    return mocker.patch("repomate.git", autospec=True)
+    return mocker.patch("repobee.git", autospec=True)
 
 
 @pytest.fixture(scope="function", params=cli.PARSER_NAMES)
@@ -112,7 +112,7 @@ def parsed_args_all_subparsers(request):
     ],
 )
 def command_all_raise_mock(command_mock, api_class_mock, request):
-    """Mock of repomate.command where all functions raise expected exceptions
+    """Mock of repobee.command where all functions raise expected exceptions
     (i.e. those caught in _sys_exit_on_expected_error)
     """
 
@@ -651,7 +651,7 @@ class TestSetupAndUpdateParsers:
         """
         local_repo = REPO_NAMES[-1]
         mocker.patch(
-            "repomate.util.is_git_repo",
+            "repobee.util.is_git_repo",
             side_effect=lambda path: path.endswith(local_repo),
         )
         expected_urls = [
@@ -687,7 +687,7 @@ class TestMigrateParser:
     @pytest.fixture(autouse=True)
     def is_git_repo_mock(self, mocker):
         return mocker.patch(
-            "repomate.util.is_git_repo", autospec=True, return_value=True
+            "repobee.util.is_git_repo", autospec=True, return_value=True
         )
 
     def assert_migrate_args(self, parsed_args, *, uses_urls: bool) -> bool:

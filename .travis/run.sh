@@ -13,5 +13,5 @@ if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
     tox
 else
     run_flake8
-    pytest tests --cov=repomate --cov-branch
+    pytest tests --cov=repobee --cov-branch
 fi

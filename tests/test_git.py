@@ -5,8 +5,8 @@ from collections import namedtuple
 
 import pytest
 
-from repomate import git
-from repomate import exception
+from repobee import git
+from repobee import exception
 
 import constants
 from constants import TOKEN
@@ -25,7 +25,7 @@ def env_setup(mocker):
     mocker.patch(
         "subprocess.run", autospec=True, return_value=RunTuple(0, b"", b"")
     )
-    # TOKEN was mocked as the environment token when repomate.git was imported
+    # TOKEN was mocked as the environment token when repobee.git was imported
     expected_url = URL_TEMPLATE.format(TOKEN + "@")
     expected_url_with_username = URL_TEMPLATE.format(
         "{}:{}@".format(USER, TOKEN)
@@ -277,7 +277,7 @@ class TestPush:
                 "Push failed", 128, b"some error", pt.repo_url
             )
 
-        mocker.patch("repomate.git._push_async", side_effect=raise_)
+        mocker.patch("repobee.git._push_async", side_effect=raise_)
         expected_failed_urls = [pt.repo_url for pt in push_tuples]
 
         failed_urls = git.push(push_tuples, USER, TOKEN, tries=tries)
@@ -307,7 +307,7 @@ class TestPush:
             )
 
         async_push_mock = mocker.patch(
-            "repomate.git._push_async", side_effect=raise_once
+            "repobee.git._push_async", side_effect=raise_once
         )
 
         git.push(push_tuples, USER, TOKEN, tries=10)
@@ -379,7 +379,7 @@ class TestClone:
                 )
 
         clone_mock = mocker.patch(
-            "repomate.git._clone_async", autospec=True, side_effect=raise_
+            "repobee.git._clone_async", autospec=True, side_effect=raise_
         )
 
         failed_urls = git.clone(urls, TOKEN)

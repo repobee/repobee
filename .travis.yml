@@ -17,12 +17,11 @@ matrix:
     language: generic
     sudo: true
     before_cache:
-      - brew cleanup
+    - brew cleanup
     cache:
       directories:
-        # cache homebrew
-        - $HOME/Library/Caches/Homebrew
-        - /Users/travis/.pyenv/versions
+      - "$HOME/Library/Caches/Homebrew"
+      - "/Users/travis/.pyenv/versions"
 install: ".travis/install.sh"
 script: ".travis/run.sh"
 after_success:
@@ -30,19 +29,19 @@ after_success:
 notifications:
   email: false
   slack:
+    secure: dIcoapJPmlFSN/eHmGxklWy3TDvfACO0Ed5JhKbApYzbztvl9JB6ggmtpmq4NFWVkkJKnz7SaDTKdD7Qis7O+fOQ8hc2HMQ9BKC0dYiaBfJlxT68UsBbhhiUYARNNCXLAUSY81V/ea233EK4YyukYj/wKxi7W8uqfPh0/ZSQoCfNE9CW0IJdxIk73NDFshzxHJhPuIqnSvJuDbh9dfxIWUrezH0efe8CBROVHPxBehjCfLBrL/hNPZ6ryzZzqISYmStmQ31H/xmebdizqKEbtFb9AlYHh0yN+Lt2UFcXMI30e5AbDDkb+/gA1hN1hlQOvjpXl2ZiRrC+bwoeBX2dB0RqBz0UyNz6WWoD3w6ebebkVrZEgL6S9G+WdffOqvvElTE0nbR7HAQuzL+E1joqAR63XOhDQO5uT2BdGbJkpWqQQDkZJNBQAoBPLNsZ7oPr9WKvrfzJmkDOZRHEVzY/1FtubRjZAIrmY8xDACziI/XUVMNz2RtmfO9b4RQdP1u1KdFDRq5WbGLBi9B7vMUUVoVQVG6xrLDVG0Thi8DGF+cw/3VomqhERoIMb4WQf2zCVXKUfm5AFJ3VgikvOAV21/ACdDq/gw3RUVKLd3jUdvM2am3kGIxmTB7nq2wIkyLMoshOBcZlLyvRwkIvi+riVHN/XVArOc7wq6EwRS1Jkq0=
     on_success: change
     on_failure: always
-    secure: Cq4Y2dwkNNE7hIZSEtmvNHI/2TZYzKpAJqbb6QPKG0hilx3PGetbs7fWy+ru6gRVW7A494Yk/4+ZO/9A92Pn0QHbbWtJZuU61pC2zxtkH2VKAzMVFly4gkL7L5Q9B8drAoer1usI4OtlN7eyqegTGAT8NEbhaynsJweEDZbWCWoXdQkl4tX6pYyDX/6HAWkfsQLaLPczLACyKYl812qAt7u6fFD+hcjdVrs/LfM9Cdt1gW3t9cVNm/Lqmla+I5OYjRRgbHm4XgsTrhNR0IoAxbktcxSwemnjTzwTsn7VQ9y4t8NlBRB5LUfw/0ihehKl7O4QS2c1G1uLhKHZZSfU8Di/qGGSvj/QBFvyZPDA8a/fmMBrNIHwy4k46l1ZfdDnX65oDbncHuXcFOVlTx85C5Zpy86tQDVktXf3kDlzsUtLgKtAY5dvLMDAwTvkX5M05DMwC51A+b2wsM1zs14CkeTFjHfsBIhDek91YfUEx6dRmnhg1KXVA+q02DKNoI0D5sNkOcgBnVATQOo29zcRKnyit93LBG3EiQYiIhubtwMkveXlEE3Qd5bUSdVuTMObN2nhm1bmYGrJ68dR+zKbsBZ51fcar6YeecmLCF6epBcZI++3AEH5/gu4qXb7A2pbxtiARJtxliI83d6CwEycPWhpjQ4p5UnByMhvKnKv14w=
 before_deploy:
 - pip install --upgrade twine setuptools
 deploy:
   provider: pypi
   user: slarse
   password:
-    secure: OTaXQPwYy0vvzsTOWd3xFI5MtfO9c2Y7PmIhuNaavcqElBnUbjkD2wikRGo/gz0vzpUpV41fQbvdQxXtvi7e5nYERSXogE2CY7+EcfT1IfCn9f9czl23g8sWQVIWd3Kz3uTUHqtYCraLIvbKNPZFSArulg86hYs8uZMtZ8c0CwY+0942rU+hUDIycQlZTP+ydjkKq1I/VpG33NSWz4dOgy7dfqNUyL56Uy0BUzcRRNMevNR/aFhJiYXXZW42qJEjXQDOytoxap9aHzV9LvNtqKa/sOB/bYnMyfzBtHHRc9MZFNfsQ68E5UFTriujL2G8Wu4+9RWYMKqkpqyVt1WVawT3ojatxH2xV9bKm3wDsT+wUMN4lYBlfygtEdk76jUHPHlEIA6JqiR8FsHupuB5FgHEVhg7KFg6icT7opDzx5xasvs0rydqguDcur6fvAMwin4/o5FNw2Nlx24wFtiQ0gxTkTLRmjgf8uL0UHZ4hruu3Dw666oxKlytWrw8wA6hmJUx96QmjWUHlcebck9KqNHRm0rYneU4ny2jZpMSVUvTP/UMK68xAG8vPLcpBnuLCDt1UYx161fu15mqruUnmoCLsGraGIWMGmNemAjE4f4RYAVtkv7VK4qSuYedwMmL8v/jOMop4Ky1Bg5dlES9COavEpqJFjN4ik1lFhtiV+4=
+    secure: pMxkSyf2yvfm3jVdQp0YceZBQx6iqxDERS7oWtJisZtBItkv0LmCc5eUPLl2w9SnEpn7D+PZf5dKluYFvKmogp6cxzuvOJdv+cNtx/VoihCSncyEOHJQ59x83aOjkNcW+wD0SAUJ/hj7RuI2R+CJ6iUaVRnBQ20Em2wvMswZ/J4G6yDuzb91NCyroDIToDuseet/pGV2VnQt+TR8HxyNaEcuU6lqAXRJMhiJGuOYs/ok2iGo2yfBRfk0ENCP0jexVvY3aeMTMzoD7/1iWCxc7QThAlo6jbqLUovlVaxt0YqSpnhE860/7G/tOO0Py87HbcGg/BbddrGTOUA1YUBCNbwu3Den/GRHwMoxRtlwmdrXbmNpi6app1ESIhGPIR5nGtME4vq/ZErSYcI5tTqgO1wQ2fncyPGq8C460IH83sWUd8QjUIy9CU78suSaXEJFZkbXwOAr7IVqbWZmVkupEzJDKZMVA3c83KEQxXumwXOeAZ4LYTQHswGE89ib5iDyy2mxE9RDiC79dKskJC2CA5PyjFahlMM70N/TclXi7W0064DfX7tNkW+w/mAVonbkfBJMdnwqvGxP43n0V6MuUOkGKY3U9nBLMalt8AqnTcAaEblJNCc0FAliU7LJwedkN10pvlH6gKafYLIcS60FoNJDDPMkV/VgBNHBzYFKyoI=
   on:
     tags: true
     condition: $TRAVIS_OS_NAME = "linux"
   distributions: sdist bdist_wheel
-  repo: slarse/repomate
+  repo: repobee/repobee
   skip_existing: true

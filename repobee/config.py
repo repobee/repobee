@@ -13,16 +13,16 @@ import configparser
 from typing import Union, List, Mapping
 import daiquiri
 import appdirs
-import repomate
+import repobee
 
-from repomate import exception
+from repobee import exception
 
-import repomate_plug as plug
+import repobee_plug as plug
 
 LOGGER = daiquiri.getLogger(__file__)
 
 CONFIG_DIR = pathlib.Path(
-    appdirs.user_config_dir(appname=__package__, appauthor=repomate.__author__)
+    appdirs.user_config_dir(appname=__package__, appauthor=repobee.__author__)
 )
 
 DEFAULTS_SECTION_HDR = "DEFAULTS"

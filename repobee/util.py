@@ -10,7 +10,7 @@ import os
 import sys
 import pathlib
 from typing import Iterable, Generator, Union
-from repomate import tuples
+from repobee import tuples
 
 
 def validate_non_empty(**kwargs) -> None:

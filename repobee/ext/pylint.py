@@ -21,16 +21,16 @@ from typing import Tuple, Union, Iterable
 
 import daiquiri
 
-from repomate import github_api
+from repobee import github_api
 
-from repomate_plug import repomate_hook, HookResult, Status
+from repobee_plug import repobee_hook, HookResult, Status
 
 LOGGER = daiquiri.getLogger(name=__file__)
 
 SECTION = "pylint"
 
 
-@repomate_hook
+@repobee_hook
 def act_on_cloned_repo(
     path: Union[str, pathlib.Path], api: github_api.GitHubAPI
 ):

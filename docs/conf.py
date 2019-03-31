@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# repomate documentation build configuration file, created by
+# repobee documentation build configuration file, created by
 # sphinx-quickstart on Thu Jun 29 18:11:20 2017.
 #
 # This file is execfile()d with the current directory set to its
@@ -61,7 +61,7 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = "repomate"
+project = "repobee"
 copyright = "2018, Simon Larsén"
 author = "Simon Larsén"
 
@@ -113,7 +113,7 @@ html_static_path = ["_static"]
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "repomate_namedoc"
+htmlhelp_basename = "repobee_namedoc"
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -138,8 +138,8 @@ latex_elements = {
 latex_documents = [
     (
         master_doc,
-        "repomate_name.tex",
-        "Repomate Documentation",
+        "repobee_name.tex",
+        "RepoBee Documentation",
         "Simon Larsén",
         "manual",
     )
@@ -150,7 +150,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, "repomate_name", "repomate Documentation", [author], 1)
+    (master_doc, "repobee_name", "repobee Documentation", [author], 1)
 ]
 
 # -- Options for Texinfo output -------------------------------------------
@@ -161,10 +161,10 @@ man_pages = [
 texinfo_documents = [
     (
         master_doc,
-        "repomate_name",
-        "repomate Documentation",
+        "repobee_name",
+        "repobee Documentation",
         author,
-        "repomate_name",
+        "repobee_name",
         "One line description of project.",
         "Miscellaneous",
     )

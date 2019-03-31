@@ -3,7 +3,7 @@ import string
 import collections
 from datetime import datetime
 
-from repomate import tuples
+from repobee import tuples
 
 USER = "slarse"
 ORG_NAME = "test-org"

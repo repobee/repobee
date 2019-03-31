@@ -1,6 +1,6 @@
 .. _userguide:
 
-``repomate`` User Guide
+``repobee`` User Guide
 ==================================================
 
 .. toctree::

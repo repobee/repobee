@@ -13,8 +13,8 @@ import constants
 sys.modules["github"] = MagicMock()
 
 
-import repomate  # noqa: F402
-from repomate import config  # noqa: F402
+import repobee  # noqa: F402
+from repobee import config  # noqa: F402
 
 
 @contextmanager
@@ -45,7 +45,7 @@ def _students_file(populate: bool = True):
 @pytest.fixture(autouse=True)
 def mock_getenv(mocker):
     def _side_effect(name):
-        if name != "REPOMATE_OAUTH":
+        if name != "REPOBEE_OAUTH":
             raise ValueError("no such environment variable")
         return constants.TOKEN
 
@@ -55,7 +55,7 @@ def mock_getenv(mocker):
 
 @pytest.fixture
 def plugin_manager_mock(mocker):
-    return mocker.patch("repomate_plug.manager", autospec=True)
+    return mocker.patch("repobee_plug.manager", autospec=True)
 
 
 @pytest.fixture
@@ -108,14 +108,14 @@ def empty_config_mock(mocker, isfile_mock, tmpdir):
     function."""
     file = tmpdir.join("config.cnf")
     file.ensure()
-    read_config = repomate.config._read_config
+    read_config = repobee.config._read_config
     mocker.patch(
-        "repomate.config._read_config",
+        "repobee.config._read_config",
         side_effect=lambda _: read_config(pathlib.Path(str(file))),
     )
-    read_defaults = repomate.config._read_defaults
+    read_defaults = repobee.config._read_defaults
     mocker.patch(
-        "repomate.config._read_defaults",
+        "repobee.config._read_defaults",
         side_effect=lambda _: read_defaults(pathlib.Path(str(file))),
     )
     isfile = isfile_mock.side_effect

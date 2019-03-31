@@ -2,7 +2,7 @@
 
 Configuration
 *************
-``repomate`` *must* be configured with a mandatory environment variable (see
+``repobee`` *must* be configured with a mandatory environment variable (see
 oauth_). Additionally, some of the command line parameters can be
 pre-configured with e.g. the GitHub instances' API url and the target
 organization's name (see `config`_). 
@@ -16,13 +16,13 @@ organization's name (see `config`_).
 
 OAUTH token
 ===================================
-For repomate to work at all, it needs access to an OAUTH token. See the `GitHub
+For repobee to work at all, it needs access to an OAUTH token. See the `GitHub
 OAUTH docs`_ for how to create a token. Make sure that it has the ``repo`` and
-``admin:org`` permissions. There are two ways to hand the token to repomate:
+``admin:org`` permissions. There are two ways to hand the token to repobee:
 
-1. Put it in the ``REPOMATE_OAUTH`` environment variable.
+1. Put it in the ``REPOBEE_OAUTH`` environment variable.
    - On a unix system, this is as simple as ``export
-   REPOMATE_OAUTH=<YOUR_TOKEN>``
+   REPOBEE_OAUTH=<YOUR_TOKEN>``
 2. Put it in the configuration file (see :ref:`config`).
 
 .. _config:
@@ -50,8 +50,8 @@ consequence, a single organization).
     header. This is to minimize the risk of misconfiguration by novice users.
 
 **To find out where to place the configuration file (and what to name it)**,
-run ``repomate show-config``. The configuration file can also be used to
-configure ``repomate`` plugins. See the :ref:`configure_plugs` section for more
+run ``repobee show-config``. The configuration file can also be used to
+configure ``repobee`` plugins. See the :ref:`configure_plugs` section for more
 details.
 
 .. important::
@@ -62,7 +62,7 @@ details.
 
 .. note::
 
-    You can run ``repomate verify-settings`` to verify the basic configuration.
+    You can run ``repobee verify-settings`` to verify the basic configuration.
     This will check the most important settings configurable in ``DEFAULTS``.
 
 .. _`GitHub OAUTH docs`: https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/

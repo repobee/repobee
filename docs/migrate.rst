@@ -3,7 +3,7 @@
 Migrate master repositories into the target (or master) organization (``migrate`` command)
 ******************************************************************************************
 This step sounds complicated, but it's actually very easy, and can be performed
-with a single Repomate command. There is however a pre-requisite that must
+with a single RepoBee command. There is however a pre-requisite that must
 be fulfilled. You must either
 
 * Have local copies of your master repos.
@@ -17,15 +17,15 @@ current working directory (i.e. local repos), all we have to do is this:
 
 .. code-block:: bash
 
-    $ repomate migrate -mn master-repo-1 master-repo-2
+    $ repobee migrate -mn master-repo-1 master-repo-2
     [INFO] created team master_repos
     [INFO] cloning into file:///some/directory/path/master-repo-1
     [INFO] cloning into file:///some/directory/path/master-repo-2
-    [INFO] created repomate-demo/master-repo-1
-    [INFO] created repomate-demo/master-repo-2
+    [INFO] created repobee-demo/master-repo-1
+    [INFO] created repobee-demo/master-repo-2
     [INFO] pushing, attempt 1/3
-    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/repomate-demo/master-repo-2 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/master-repo-2 master
     [INFO] done!
 
 .. important::
@@ -47,19 +47,19 @@ Running the same thing again yields the following output:
 
 .. code-block:: bash
 
-    $ repomate migrate -mn master-repo-1 master-repo-2
+    $ repobee migrate -mn master-repo-1 master-repo-2
     [INFO] cloning into file:///some/directory/path/master-repo-1
     [INFO] cloning into file:///some/directory/path/master-repo-2
-    [INFO] repomate-demo/master-repo-1 already exists
-    [INFO] repomate-demo/master-repo-2 already exists
+    [INFO] repobee-demo/master-repo-1 already exists
+    [INFO] repobee-demo/master-repo-2 already exists
     [INFO] pushing, attempt 1/3
-    [INFO] https://some-enterprise-host/repomate-demo/master-repo-1 master is up-to-date
-    [INFO] https://some-enterprise-host/repomate-demo/master-repo-2 master is up-to-date
+    [INFO] https://some-enterprise-host/repobee-demo/master-repo-1 master is up-to-date
+    [INFO] https://some-enterprise-host/repobee-demo/master-repo-2 master is up-to-date
     [INFO] done!
 
-In fact, all Repomate commands that deal with pushing to or cloning from
+In fact, all RepoBee commands that deal with pushing to or cloning from
 repos in some way are safe to run over and over. This is mostly because of
-how git works, and has little to do with Repomate itself. Now that
+how git works, and has little to do with RepoBee itself. Now that
 our master repos are migrated, we can move on to setting up the student repos!
 
 .. note::
@@ -69,8 +69,8 @@ our master repos are migrated, we can move on to setting up the student repos!
     ``-mu`` option and provide the urls, instead of ``-mn`` with local paths.
     For example, given a repo at
     ``https://some-enterprise-host/other-org/master-repo-1``, it can be
-    migrated into ``repomate-demo`` by typing
+    migrated into ``repobee-demo`` by typing
 
     .. code-block:: bash
 
-        $ repomate migrate -mu https://some-enterprise-host/other-org/master-repo-1
+        $ repobee migrate -mu https://some-enterprise-host/other-org/master-repo-1

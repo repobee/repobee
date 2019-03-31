@@ -1,7 +1,7 @@
-"""Main entrypoint for the repomate CLI application.
+"""Main entrypoint for the repobee CLI application.
 
 .. module:: main
-    :synopsis: Main entrypoint for the repomate CLI application.
+    :synopsis: Main entrypoint for the repobee CLI application.
 
 .. moduleauthor:: Simon Larsén
 """
@@ -11,9 +11,9 @@ from typing import List
 
 import daiquiri
 
-from repomate import cli
-from repomate import plugin
-from repomate import exception
+from repobee import cli
+from repobee import plugin
+from repobee import exception
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -21,14 +21,14 @@ _PRE_INIT_ERROR_MESSAGE = """exception was raised before pre-initialization was
 complete. This is usually due to incorrect settings.
 Try running the `verify-settings` command and see if
 the problem can be resolved. If all fails, please open
-an issue at https://github.com/slarse/repomate/issues/new
+an issue at https://github.com/repobee/repobee/issues/new
 and supply the stack trace below.""".replace(
     "\n", " "
 )
 
 
 def _separate_args(args: List[str]) -> (List[str], List[str]):
-    """Separate args into plugin args and repomate args."""
+    """Separate args into plugin args and repobee args."""
     plugin_args = []
     if args and (args[0].startswith("-p") or "plug" in args[0]):
         cur = 0
@@ -45,14 +45,7 @@ def _separate_args(args: List[str]) -> (List[str], List[str]):
 
 
 def main(sys_args: List[str]):
-    """Start the repomate CLI."""
-    LOGGER.warning(
-        "The repomate package is being renamed repobee. "
-        "This is the final version of repomate, but all "
-        "functionality carries over to repobee. Please see "
-        "https://github.com/repobee/repobee for details."
-    )
-
+    """Start the repobee CLI."""
     args = sys_args[1:]  # drop the name of the program
     traceback = False
     pre_init = True

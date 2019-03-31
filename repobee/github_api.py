@@ -1,12 +1,12 @@
 """GitHub API module.
 
 This module contains the :py:class:`GitHubAPI` class, which is meant to be the
-prime means of interacting with the GitHub API in ``repomate``. The methods of
+prime means of interacting with the GitHub API in ``repobee``. The methods of
 GitHubAPI are mostly high-level bulk operations.
 
 .. module:: github_api
     :synopsis: Top level interface for interacting with a GitHub instance
-        within repomate.
+        within repobee.
 
 .. moduleauthor:: Simon Larsén
 """
@@ -18,9 +18,9 @@ import daiquiri
 import contextlib
 import github
 
-from repomate import exception
-from repomate import tuples
-from repomate import util
+from repobee import exception
+from repobee import tuples
+from repobee import util
 
 REQUIRED_OAUTH_SCOPES = {"admin:org", "repo"}
 
@@ -96,7 +96,7 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
 
 
 class GitHubAPI:
-    """A highly specialized GitHub API class for repomate. The API is
+    """A highly specialized GitHub API class for repobee. The API is
     affiliated both with an organization, and with the whole GitHub
     instance. Almost all operations take place on the target
     organization.
@@ -482,7 +482,7 @@ class GitHubAPI:
                 considered a potential peer review issue.
         Returns:
             a mapping (reviewer -> assigned_repos), where reviewer is a str and
-            assigned_repos is a :py:class:`~repomate.tuples.Review`.
+            assigned_repos is a :py:class:`~repobee.tuples.Review`.
         """
         reviews = collections.defaultdict(list)
         teams = self.get_teams_in(review_team_names)
@@ -609,7 +609,7 @@ class GitHubAPI:
         LOGGER.info("verifying settings ...")
         if not token:
             raise exception.BadCredentials(
-                msg="token is empty. Check that REPOMATE_OAUTH environment "
+                msg="token is empty. Check that REPOBEE_OAUTH environment "
                 "variable is properly set, or supply the `--token` option."
             )
 

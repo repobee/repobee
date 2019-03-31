@@ -27,10 +27,10 @@ from typing import Union, Iterable, Tuple
 
 import daiquiri
 
-from repomate import util
-from repomate import github_api
+from repobee import util
+from repobee import github_api
 
-from repomate_plug import Plugin, HookResult, Status
+from repobee_plug import Plugin, HookResult, Status
 
 LOGGER = daiquiri.getLogger(name=__file__)
 
@@ -52,7 +52,7 @@ class JavacCloneHook(Plugin):
 
         Args:
             path: Path to the repo.
-            api: A :py:class:`~repomate.github_api.GitHubAPI` instance.
+            api: A :py:class:`~repobee.github_api.GitHubAPI` instance.
         Returns:
             a HookResult specifying the outcome.
         """
@@ -80,7 +80,7 @@ class JavacCloneHook(Plugin):
             java_files: paths to ``.java`` files.
         Returns:
             (status, msg), where status is e.g. is a
-            :py:class:`repomate_plug.Status` code and the message describes the
+            :py:class:`repobee_plug.Status` code and the message describes the
             outcome in plain text.
         """
         command = ["javac", *[str(path) for path in java_files]]

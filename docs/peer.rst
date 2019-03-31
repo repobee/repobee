@@ -3,9 +3,9 @@
 Peer review (``assign-reviews`` and ``purge-review-teams`` commands)
 **********************************************************************************************
 Peer reviewing is an important part of a programming curriculum, so of course
-Repomate facilitates this! The relevant commands are
+RepoBee facilitates this! The relevant commands are
 ``assign-reviews`` and ``purge-review-teams``.
-Like much of the other functionality in Repomate, the peer review
+Like much of the other functionality in RepoBee, the peer review
 functionality is built around teams and limited access privileges. In short,
 every student repo up for review gets an associated peer review team generated,
 which has ``pull`` access to the repo. Each student then gets added to ``0 < N
@@ -27,12 +27,12 @@ algorithm` for other available review allocation schemes.
 Getting started with peer reviews using ``assign-reviews``
 =================================================================
 The bulk of the work is performed by ``assign-reviews``. Let's have a
-look at the help message (i.e. run ``repomate assign-reviews -h``):
+look at the help message (i.e. run ``repobee assign-reviews -h``):
 
 .. code-block:: bash
 
-    $ repomate assign-reviews -h
-    usage: repomate assign-reviews [-h]
+    $ repobee assign-reviews -h
+    usage: repobee assign-reviews [-h]
                                    (-sf STUDENTS_FILE | -s STUDENTS [STUDENTS ...])
                                    [-o ORG_NAME] [-g GITHUB_BASE_URL] [-t TOKEN]
                                    [-tb] -mn MASTER_REPO_NAMES
@@ -57,7 +57,7 @@ look at the help message (i.e. run ``repomate assign-reviews -h``):
                             usually `https://<HOST>/api/v3`
       -t TOKEN, --token TOKEN
                             OAUTH token for the GitHub instance. Can also be
-                            specified in the `REPOMATE_OAUTH` environment
+                            specified in the `REPOBEE_OAUTH` environment
                             variable.
       -tb, --traceback      Show the full traceback of critical exceptions.
       -mn MASTER_REPO_NAMES [MASTER_REPO_NAMES ...], --master-repo-names MASTER_REPO_NAMES [MASTER_REPO_NAMES ...]
@@ -89,7 +89,7 @@ students spam, ham and eggs (see :ref:`setup`).
 
 .. code-block:: bash
 
-    $ repomate assign-reviews -mn master-repo-1 -sf students.txt --num-reviews 2
+    $ repobee assign-reviews -mn master-repo-1 -sf students.txt --num-reviews 2
     # step 1
     [INFO] created team spam-master-repo-1-review
     [INFO] created team eggs-master-repo-1-review
@@ -171,7 +171,7 @@ specifying the issue like this:
 
 .. code-block:: bash
 
-    $ repomate assign-reviews -mn master-repo-2 -sf students.txt --num-reviews 2 --issue issue.md
+    $ repobee assign-reviews -mn master-repo-2 -sf students.txt --num-reviews 2 --issue issue.md
     [INFO] created team spam-master-repo-2-review
     [INFO] created team eggs-master-repo-2-review
     [INFO] created team ham-master-repo-2-review
@@ -204,7 +204,7 @@ It's as simple as:
 
 .. code-block:: bash
 
-    $ repomate purge-review-teams -mn master-repo-1 -sf students.txt
+    $ repobee purge-review-teams -mn master-repo-1 -sf students.txt
     [INFO] deleted team eggs-master-repo-1-review
     [INFO] deleted team ham-master-repo-1-review
     [INFO] deleted team spam-master-repo-1-review
@@ -224,14 +224,14 @@ the student ``cabbage`` in the reviews for ``master-repo-2`` back at
 :ref:`assign reviews`. We then do the following:
 
 1. Check if any reviews have already been posted. This can easily be performed
-   with ``repomate list-issues -mn master-repo-2 -sf students.txt -r '^Peer
+   with ``repobee list-issues -mn master-repo-2 -sf students.txt -r '^Peer
    review$'`` (assuming the naming conventions were followed!). Take appropriate
    action if you find any reviews already posted (appropriate being anything you
    see fit to alleviate the situation of affected students possibly being
    assigned new repos to review).
-2. Purge the review teams with ``repomate purge-review-teams -mn master-repo-2
+2. Purge the review teams with ``repobee purge-review-teams -mn master-repo-2
    -sf students.txt``
-3. Close all review issues with ``repomate close-issues -mn master-repo-2 -sf
+3. Close all review issues with ``repobee close-issues -mn master-repo-2 -sf
    students.txt -r '^Review of master-repo-2$'``
 4. Create a new ``issue.md`` file apologetically explaining that you messed up:
 
@@ -242,7 +242,7 @@ the student ``cabbage`` in the reviews for ``master-repo-2`` back at
     Sorry, I messed up with the allocations previously. Disregard the previous
     allocations (repo access has been revoked anyway).
 
-5. Assign peer reviews again, with the new issue, with ``repomate
+5. Assign peer reviews again, with the new issue, with ``repobee
    assign-reviews -mn master-repo-2 -sf students.txt --num-reviews 2
    --issue issue.md``
 
@@ -257,7 +257,7 @@ The default allocation algorithm is as described in :ref:`peer review`, and is
 suitable for when reviewers do not need to interact with the students whom they
 review. This is however not always the case, sometimes it is beneficial for
 reviewers to to interact with reviewees (is that a word?), especially if the
-peer review is done in the classroom. Because of this, Repomate also
+peer review is done in the classroom. Because of this, RepoBee also
 provides a _pairwise_ allocation scheme, which allocates reviews such that
 if student ``A`` reviews student ``B``, then student ``B`` reviews student
 ``A`` (except for an ``A->B->C->A`` kind of deal in one group if there are an
@@ -266,8 +266,8 @@ scheme, you add ``-p pairwise`` in front of the command.
 
 .. code-block:: bash
 
-    $ repomate -p pairwise assign-reviews -mn master-repo-1 -sf students.txt
+    $ repobee -p pairwise assign-reviews -mn master-repo-1 -sf students.txt
 
 Note that the pairwise algorithm ignores the ``--num-reviews`` argument, and
 will issue a warning if this is set (to anything but 1, but you should just not
-specify it). For more details on plugins in ``repomate``, :ref:`plugins`.
+specify it). For more details on plugins in ``repobee``, :ref:`plugins`.

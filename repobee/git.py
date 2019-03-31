@@ -12,8 +12,8 @@ import collections
 import daiquiri
 from typing import Iterable, List, Any, Callable
 
-from repomate import util
-from repomate import exception
+from repobee import util
+from repobee import exception
 
 CONCURRENT_TASKS = 20
 
