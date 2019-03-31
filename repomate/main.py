@@ -46,6 +46,13 @@ def _separate_args(args: List[str]) -> (List[str], List[str]):
 
 def main(sys_args: List[str]):
     """Start the repomate CLI."""
+    LOGGER.warning(
+        "The repomate package is being renamed repobee. "
+        "This is the final version of repomate, but all "
+        "functionality carries over to repobee. Please see "
+        "https://github.com/repobee/repobee for details."
+    )
+
     args = sys_args[1:]  # drop the name of the program
     traceback = False
     pre_init = True
