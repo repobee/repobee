@@ -2,10 +2,10 @@
 
 Configuration
 *************
-``repobee`` *must* be configured with a mandatory environment variable (see
-oauth_). Additionally, some of the command line parameters can be
-pre-configured with e.g. the GitHub instances' API url and the target
-organization's name (see `config`_). 
+RepoBee does not *have* to be configured as all arguments can be provided on
+the command line, but doing so becomes very tedious, very quickly.
+It's typically a good idea to at least configure the oauth_, as well as the
+GitHub base url (for the API) and your GitHub username (see config_).
 
 .. important::
 
