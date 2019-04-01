@@ -1,6 +1,6 @@
 .. _userguide:
 
-``repobee`` User Guide
+RepoBee User Guide
 ==================================================
 
 .. toctree::
