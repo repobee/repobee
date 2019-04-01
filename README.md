@@ -9,9 +9,19 @@
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
 ## Overview
-RepoBee is A CLI tool for administrating large amounts of GitHub
-repositories, geared towards teachers and GitHub Enterprise. RepoBee is
-currently being used for the introductory courses in computer science at
+RepoBee is A CLI tool for administrating large amounts of Git repositories,
+geared towards teachers and GitHub Enterprise. The most basic use case is to
+automate generation of student repositories based on master (i.e. template)
+repositories, that can contain for example instructions and skeleton code.
+There is however a whole lot more on offer, such as batch updating and cloning,
+simple peer review functionality as well as issue management features. There is
+also a [plugin system](https://github.com/repobee/repobee-plug) in place that
+allows Python programmers to expand RepoBee in various ways. The
+[`repobee-junit4` plugin](https://github.com/repobee/repobee-junit4) plugin is
+one such plugins, which JUnit4 test classes on Java code in cloned student
+repos.
+
+RepoBee is currently being used for the introductory courses in computer science at
 [KTH Royal Technical Institute of Technology](https://www.kth.se/en/eecs). The
 courses have roughly 200 students and several thousands of repositories,
 allowing us to test RepoBee at quite a large scale.
@@ -81,7 +91,6 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -v, --version         Display version info
-
 ```
 
 ## Roadmap
