@@ -20,6 +20,11 @@ class Issue(
         return super().__new__(cls, title, body, number, created_at, author)
 
 
+class Group(namedtuple("Group", ("members"))):
+    def __str__(self):
+        return "-".join(sorted(self.members))
+
+
 Args = namedtuple(
     "Args",
     (

@@ -170,8 +170,7 @@ def api_mock(request, mocker):
         map(url_from_repo_info, repo_infos)
     )
     mock.get_issues = MagicMock(
-        spec="repobee.github_api.GitHubAPI.get_issues",
-        side_effect=_get_issues,
+        spec="repobee.github_api.GitHubAPI.get_issues", side_effect=_get_issues
     )
     type(mock).token = PropertyMock(return_value=TOKEN)
     return mock
@@ -361,7 +360,7 @@ class TestSetupStudentRepos:
             call(url, TOKEN, cwd=str(tmpdir)) for url in master_urls
         ]
         expected_ensure_teams_arg = {
-            student: [student] for student in students
+            str(student): [str(student)] for student in students
         }
 
         command.setup_student_repos(master_urls, students, USER, api_mock)

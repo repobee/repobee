@@ -17,6 +17,7 @@ USER = constants.USER
 ORG_NAME = constants.ORG_NAME
 GITHUB_BASE_URL = constants.GITHUB_BASE_URL
 STUDENTS = constants.STUDENTS
+STUDENTS_STRING = " ".join([str(s) for s in STUDENTS])
 ISSUE_PATH = constants.ISSUE_PATH
 ISSUE = constants.ISSUE
 generate_repo_url = functions.generate_repo_url
@@ -485,7 +486,7 @@ class TestStudentParsing:
         """Test that the different subparsers parse arguments corectly when
         students are listed directly on the command line.
         """
-        sys_args = [parser, *BASE_ARGS, "-s", *STUDENTS, *extra_args]
+        sys_args = [parser, *BASE_ARGS, "-s", *STUDENTS_STRING.split(), *extra_args]
 
         parsed_args, _ = cli.parse_args(sys_args)
 
@@ -535,7 +536,7 @@ class TestStudentParsing:
             "-sf",
             str(students_file),
             "-s",
-            *STUDENTS,
+            STUDENTS_STRING,
             *extra_args,
         ]
 
@@ -639,7 +640,7 @@ class TestSetupAndUpdateParsers:
 
     def test_happy_path(self, api_class_mock, parser):
         """Tests standard operation of the parsers."""
-        sys_args = [parser, *COMPLETE_PUSH_ARGS, "-s", *STUDENTS]
+        sys_args = [parser, *COMPLETE_PUSH_ARGS, "-s", STUDENTS_STRING]
 
         parsed_args, _ = cli.parse_args(sys_args)
 
@@ -665,7 +666,7 @@ class TestSetupAndUpdateParsers:
             generate_repo_url(name, ORG_NAME) for name in repo_names
         ]
 
-        sys_args = [parser, *COMPLETE_PUSH_ARGS, "-s", *STUDENTS]
+        sys_args = [parser, *COMPLETE_PUSH_ARGS, "-s", STUDENTS_STRING]
 
         parsed_args, _ = cli.parse_args(sys_args)
 
@@ -776,8 +777,6 @@ class TestCloneParser:
             args=mock.ANY
         )
 
-    STUDENTS_STRING = " ".join(STUDENTS)
-
     # def test_no_plugins_option_drops_plugins()
 
     @pytest.mark.parametrize(
@@ -853,7 +852,7 @@ class TestCommandDeprecation:
                     "-i",
                     ISSUE_PATH,
                     "-s",
-                    *STUDENTS,
+                    *STUDENTS_STRING.split(),
                     "-n",
                     "3",
                 ],
@@ -861,7 +860,7 @@ class TestCommandDeprecation:
             (
                 cli.PURGE_REVIEW_TEAMS_PARSER_OLD,
                 cli.PURGE_REVIEW_TEAMS_PARSER,
-                [*BASE_ARGS, "-mn", "week-10", "-s", *STUDENTS],
+                [*BASE_ARGS, "-mn", "week-10", "-s", STUDENTS_STRING],
             ),
             (
                 cli.CHECK_REVIEW_PROGRESS_PARSER_OLD,
@@ -875,7 +874,7 @@ class TestCommandDeprecation:
                     "-n",
                     "3",
                     "-s",
-                    *STUDENTS,
+                    *STUDENTS_STRING.split(),
                 ],
             ),
         ],

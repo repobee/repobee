@@ -13,6 +13,7 @@ import pathlib
 import os
 import sys
 from contextlib import contextmanager
+from collections import namedtuple
 from typing import List, Iterable, Optional, Tuple
 
 import logging
@@ -156,8 +157,19 @@ def parse_args(
         master_urls = _repo_names_to_urls(master_names, master_org_name, api)
     assert master_urls and master_names
 
+    groups = _extract_groups(args)
+    subparser = getattr(args, SUB)
+    if subparser in [
+        ASSIGN_REVIEWS_PARSER,
+        CHECK_REVIEW_PROGRESS_PARSER,
+        ASSIGN_REVIEWS_PARSER,
+    ] and any([len(g.members) > 1 for g in groups]):
+        raise exception.ParseError(
+            "review commands do not currently support groups of students"
+        )
+
     parsed_args = tuples.Args(
-        subparser=getattr(args, SUB),
+        subparser=subparser,
         org_name=args.org_name,
         master_org_name=args.master_org_name
         if "master_org_name" in args
@@ -166,7 +178,7 @@ def parse_args(
         user=args.user if "user" in args else None,
         master_repo_urls=master_urls,
         master_repo_names=master_names,
-        students=_extract_students(args),
+        students=_extract_groups(args),
         issue=util.read_issue(args.issue)
         if "issue" in args and args.issue
         else None,
@@ -786,8 +798,8 @@ def _sys_exit_on_expected_error():
         sys.exit(1)
 
 
-def _extract_students(args: argparse.Namespace) -> List[str]:
-    """Extract students from args namespace.`
+def _extract_groups(args: argparse.Namespace) -> List[str]:
+    """Extract groups from args namespace.`
 
     Args:
         args: A namespace object.
@@ -797,7 +809,7 @@ def _extract_students(args: argparse.Namespace) -> List[str]:
         `students_file` is in the namespace.
     """
     if "students" in args and args.students:
-        students = args.students
+        students = [tuples.Group([s]) for s in args.students]
     elif "students_file" in args and args.students_file:
         students_file = pathlib.Path(args.students_file)
         try:  # raises FileNotFoundError in 3.5 if no such file exists
@@ -811,11 +823,11 @@ def _extract_students(args: argparse.Namespace) -> List[str]:
         if not students_file.stat().st_size:
             raise exception.FileError("'{!s}' is empty".format(students_file))
         students = [
-            student.strip()
-            for student in students_file.read_text(
+            tuples.Group(members=[s for s in group.strip().split()])
+            for group in students_file.read_text(
                 encoding=sys.getdefaultencoding()
             ).split(os.linesep)
-            if student  # skip blank lines
+            if group  # skip blank lines
         ]
     else:
         students = None
