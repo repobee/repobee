@@ -12,6 +12,10 @@ the goal is to collect all container types in this module.
 """
 from collections import namedtuple
 
+import daiquiri
+
+LOGGER = daiquiri.getLogger(__file__)
+
 
 class Issue(
     namedtuple("Issue", ("title", "body", "number", "created_at", "author"))
@@ -21,8 +25,26 @@ class Issue(
 
 
 class Group(namedtuple("Group", ("members"))):
+    # GitHub allows only 100 characters for repository names
+    MAX_STR_LEN = 100
+
     def __str__(self):
         return "-".join(sorted(self.members))
+
+    def __new__(cls, members):
+        instance = super().__new__(cls, members)
+        str_len = len(Group.__str__(instance))
+        if str_len > cls.MAX_STR_LEN:
+            LOGGER.error(
+                "Team/Repository name {} is too long".format(
+                    Group.__str__(instance)
+                )
+            )
+            raise ValueError(
+                "generated Team/Repository name is too long, was {} chars, "
+                "max is {} chars".format(str_len, cls.MAX_STR_LEN)
+            )
+        return instance
 
 
 Args = namedtuple(

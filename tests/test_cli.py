@@ -583,6 +583,37 @@ class TestStudentParsing:
         # assert
         assert sorted(parsed_args.students) == expected_groups
 
+    @pytest.mark.parametrize(*STUDENT_PARSING_PARAMS, ids=STUDENT_PARSING_IDS)
+    def test_raises_if_generated_team_name_too_long(
+        self, empty_students_file, read_issue_mock, parser, extra_args
+    ):
+        """Test that the parser raises a ValueError if the team name generated
+        from a group of students is longer than the maximum allowed by GitHub.
+        """
+        # arrange
+        groupings = (
+            ["buddy", "shuddy"],
+            ["a" * tuples.Group.MAX_STR_LEN, "b"],
+            ["cat", "dog", "mouse"],
+        )
+        empty_students_file.write(
+            os.linesep.join([" ".join(group) for group in groupings])
+        )
+        sys_args = [
+            parser,
+            *BASE_ARGS,
+            "-sf",
+            str(empty_students_file),
+            *extra_args,
+        ]
+
+        # act
+        with pytest.raises(ValueError) as exc_info:
+            parsed_args, _ = cli.parse_args(sys_args)
+
+        # assert
+        assert "generated Team/Repository name is too long" in str(exc_info)
+
 
 def assert_base_push_args(parsed_args, api):
     """Assert that the parsed arguments are consistend with the
