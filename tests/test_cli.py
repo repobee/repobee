@@ -486,7 +486,13 @@ class TestStudentParsing:
         """Test that the different subparsers parse arguments corectly when
         students are listed directly on the command line.
         """
-        sys_args = [parser, *BASE_ARGS, "-s", *STUDENTS_STRING.split(), *extra_args]
+        sys_args = [
+            parser,
+            *BASE_ARGS,
+            "-s",
+            *STUDENTS_STRING.split(),
+            *extra_args,
+        ]
 
         parsed_args, _ = cli.parse_args(sys_args)
 
@@ -525,7 +531,7 @@ class TestStudentParsing:
 
     @pytest.mark.parametrize(*STUDENT_PARSING_PARAMS, ids=STUDENT_PARSING_IDS)
     def test_parsers_raise_if_both_file_and_listing(
-        read_issue_mock, students_file, parser, extra_args
+        self, read_issue_mock, students_file, parser, extra_args
     ):
         """Test that the student subparsers raise if students are both listed
         on the CLI, and a file is specified.
@@ -542,6 +548,40 @@ class TestStudentParsing:
 
         with pytest.raises(SystemExit):
             cli.parse_args(sys_args)
+
+    @pytest.mark.parametrize(*STUDENT_PARSING_PARAMS, ids=STUDENT_PARSING_IDS)
+    def test_student_groups_parsed_correcly(
+        self, empty_students_file, read_issue_mock, parser, extra_args
+    ):
+        """Test that putting multiple students on the same line in the students
+        file results in them being in the same group.
+        """
+        # arrange
+        groupings = (
+            ["study"],
+            ["buddy", "shuddy"],
+            ["grape"],
+            ["cat", "dog", "mouse"],
+        )
+        expected_groups = sorted(
+            tuples.Group(members=group) for group in groupings
+        )
+        empty_students_file.write(
+            os.linesep.join([" ".join(group) for group in groupings])
+        )
+        sys_args = [
+            parser,
+            *BASE_ARGS,
+            "-sf",
+            str(empty_students_file),
+            *extra_args,
+        ]
+
+        # act
+        parsed_args, _ = cli.parse_args(sys_args)
+
+        # assert
+        assert sorted(parsed_args.students) == expected_groups
 
 
 def assert_base_push_args(parsed_args, api):
