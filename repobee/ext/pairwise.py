@@ -19,15 +19,13 @@ import daiquiri
 
 from repobee_plug import repobee_hook
 
-from repobee import tuples
-
 LOGGER = daiquiri.getLogger(name=__file__)
 
 
 @repobee_hook
 def generate_review_allocations(
     master_repo_name: str,
-    students: Iterable[tuples.Group],
+    students: Iterable[str],
     review_team_name_function: Callable[[str, str], str],
     num_reviews: int = 1,
 ) -> Mapping[str, List[str]]:
@@ -36,10 +34,6 @@ def generate_review_allocations(
     1 or 2.
 
     The ``num_reviews`` argument is ignored by this plugin.
-
-    .. important::
-
-        Currently only supports single-student groups!
 
     Args:
         master_repo_name: Name of a master repository.
@@ -51,7 +45,7 @@ def generate_review_allocations(
     Returns:
         a (peer_review_team -> reviewers) mapping for each student repository.
     """
-    students = [g.members[0] for g in students]
+    students = list(students)
     if num_reviews != 1:
         LOGGER.warning(
             "num_reviews specified to {}, but in pairwise assignment "

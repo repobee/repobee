@@ -71,15 +71,8 @@ def students_file(empty_students_file):
     """A fixture with a temporary file containt the students in
     constants.STUDENTS.
     """
-    empty_students_file.write(
-        os.linesep.join([str(s) for s in constants.STUDENTS])
-    )
+    empty_students_file.write(os.linesep.join([str(s) for s in constants.STUDENTS]))
     yield empty_students_file
-
-
-@pytest.fixture
-def students():
-    yield constants.STUDENTS
 
 
 @pytest.fixture

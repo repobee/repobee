@@ -2,7 +2,6 @@
 import string
 import collections
 from datetime import datetime
-from itertools import permutations
 
 from repobee import tuples
 
@@ -11,9 +10,7 @@ ORG_NAME = "test-org"
 MASTER_ORG_NAME = "test-master-org"
 HOST_URL = "https://some_enterprise_host"
 GITHUB_BASE_URL = "{}/api/v3".format(HOST_URL)
-
-# 5! = 120 different students
-STUDENTS = tuple(tuples.Group(members=[''.join(perm)]) for perm in permutations(string.ascii_lowercase[:5]))
+STUDENTS = tuple(tuples.Group(members=[c]) for c in string.ascii_lowercase[:4])
 ISSUE_PATH = "some/issue/path"
 ISSUE = tuples.Issue(title="Best title", body="This is the body of the issue.")
 PLUGINS = ["javac", "pylint"]

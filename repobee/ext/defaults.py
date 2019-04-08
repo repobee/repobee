@@ -22,15 +22,13 @@ import daiquiri
 
 from repobee_plug import repobee_hook
 
-from repobee import tuples
-
 LOGGER = daiquiri.getLogger(name=__file__)
 
 
 @repobee_hook
 def generate_review_allocations(
     master_repo_name: str,
-    students: Iterable[tuples.Group],
+    students: Iterable[str],
     num_reviews: int,
     review_team_name_function: Callable[[str, str], str],
 ) -> Mapping[str, List[str]]:
@@ -50,10 +48,6 @@ def generate_review_allocations(
         There must be strictly more students than reviewers per repo
         (`num_reviews`). Otherwise, allocation is impossible.
 
-    .. important::
-
-        Currently only supports single-students groups!
-
     Args:
         master_repo_name: Name of a master repository.
         students: Students for which to generate peer review allocations.
@@ -65,7 +59,7 @@ def generate_review_allocations(
     Returns:
         a (peer_review_team -> reviewers) mapping for each student repository.
     """
-    students = [g.members[0] for g in students]
+    students = list(students)
     if num_reviews >= len(students):
         raise ValueError("num_reviews must be less than len(students)")
     if num_reviews <= 0:
