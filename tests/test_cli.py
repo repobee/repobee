@@ -609,7 +609,7 @@ class TestStudentParsing:
 
         # act
         with pytest.raises(ValueError) as exc_info:
-            parsed_args, _ = cli.parse_args(sys_args)
+            cli.parse_args(sys_args)
 
         # assert
         assert "generated Team/Repository name is too long" in str(exc_info)
