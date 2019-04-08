@@ -170,6 +170,18 @@ a file called ``students.txt`` and type each username on a separate line.
     ham
     eggs
 
+.. note::
+
+   **Since v1.3.0:** It is now possible to specify groups of students to get
+   access to the same repos by putting multiple usernames on the same line,
+   separated by spaces. For example, the following file will put `spam` and
+   `ham` in the same group.
+
+   .. code-block:: bash
+
+      spam ham
+      eggs
+
 An absolute file path to this file can be added to the config file with the
 ``students_file`` option (see :ref:`config`). Now, I want to create one student
 repo for each student per master repo. The repo names will be on the form
