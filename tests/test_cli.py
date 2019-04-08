@@ -542,7 +542,7 @@ class TestStudentParsing:
             "-sf",
             str(students_file),
             "-s",
-            STUDENTS_STRING,
+            *STUDENTS_STRING.split(),
             *extra_args,
         ]
 
@@ -711,7 +711,12 @@ class TestSetupAndUpdateParsers:
 
     def test_happy_path(self, api_class_mock, parser):
         """Tests standard operation of the parsers."""
-        sys_args = [parser, *COMPLETE_PUSH_ARGS, "-s", STUDENTS_STRING]
+        sys_args = [
+            parser,
+            *COMPLETE_PUSH_ARGS,
+            "-s",
+            *STUDENTS_STRING.split(),
+        ]
 
         parsed_args, _ = cli.parse_args(sys_args)
 
@@ -737,7 +742,12 @@ class TestSetupAndUpdateParsers:
             generate_repo_url(name, ORG_NAME) for name in repo_names
         ]
 
-        sys_args = [parser, *COMPLETE_PUSH_ARGS, "-s", STUDENTS_STRING]
+        sys_args = [
+            parser,
+            *COMPLETE_PUSH_ARGS,
+            "-s",
+            *STUDENTS_STRING.split(),
+        ]
 
         parsed_args, _ = cli.parse_args(sys_args)
 
@@ -855,21 +865,42 @@ class TestCloneParser:
         [
             (
                 cli.SETUP_PARSER,
-                ["-u", USER, "-s", STUDENTS_STRING, "-mn", *REPO_NAMES],
+                [
+                    "-u",
+                    USER,
+                    "-s",
+                    *STUDENTS_STRING.split(),
+                    "-mn",
+                    *REPO_NAMES,
+                ],
             ),
             (
                 cli.UPDATE_PARSER,
-                ["-u", USER, "-s", STUDENTS_STRING, "-mn", *REPO_NAMES],
+                [
+                    "-u",
+                    USER,
+                    "-s",
+                    *STUDENTS_STRING.split(),
+                    "-mn",
+                    *REPO_NAMES,
+                ],
             ),
             (
                 cli.OPEN_ISSUE_PARSER,
-                ["-s", STUDENTS_STRING, "-mn", *REPO_NAMES, "-i", ISSUE_PATH],
+                [
+                    "-s",
+                    *STUDENTS_STRING.split(),
+                    "-mn",
+                    *REPO_NAMES,
+                    "-i",
+                    ISSUE_PATH,
+                ],
             ),
             (
                 cli.CLOSE_ISSUE_PARSER,
                 [
                     "-s",
-                    STUDENTS_STRING,
+                    *STUDENTS_STRING.split(),
                     "-mn",
                     *REPO_NAMES,
                     "-r",
@@ -931,7 +962,7 @@ class TestCommandDeprecation:
             (
                 cli.PURGE_REVIEW_TEAMS_PARSER_OLD,
                 cli.PURGE_REVIEW_TEAMS_PARSER,
-                [*BASE_ARGS, "-mn", "week-10", "-s", STUDENTS_STRING],
+                [*BASE_ARGS, "-mn", "week-10", "-s", *STUDENTS_STRING.split()],
             ),
             (
                 cli.CHECK_REVIEW_PROGRESS_PARSER_OLD,
