@@ -509,10 +509,15 @@ def assign_peer_reviews(
         master_repo_names=master_repo_names, students=students
     )
 
+    # currently only supports single students
+    # TODO support groups
+    assert all(map(lambda g: len(g.members) == 1, students))
+    single_students = [g.members[0] for g in students]
+
     for master_name in master_repo_names:
         allocations = plug.manager.hook.generate_review_allocations(
             master_repo_name=master_name,
-            students=students,
+            students=single_students,
             num_reviews=num_reviews,
             review_team_name_function=util.generate_review_team_name,
         )
@@ -522,7 +527,7 @@ def assign_peer_reviews(
                 util.generate_review_team_name(student, master_name): [
                     util.generate_repo_name(student, master_name)
                 ]
-                for student in students
+                for student in single_students
             },
             issue=issue,
         )
@@ -559,16 +564,22 @@ def check_peer_review_progress(
     num_reviews: int,
     api: GitHubAPI,
 ) -> None:
+    # TODO support groups
+    assert all(map(lambda g: len(g.members) == 1, students))
+    single_students = [g.members[0] for g in students]
+
     review_team_names = [
         util.generate_review_team_name(student, master_name)
-        for student in students
+        for student in single_students
         for master_name in master_repo_names
     ]
-    reviews = api.get_review_progress(review_team_names, students, title_regex)
+    reviews = api.get_review_progress(
+        review_team_names, single_students, title_regex
+    )
 
     LOGGER.info(
         formatters.format_peer_review_progress_output(
-            reviews, students, num_reviews
+            reviews, single_students, num_reviews
         )
     )
 
