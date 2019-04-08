@@ -1,4 +1,7 @@
-.. _group_assignments:
+.. _groups:
+
+Group assignments
+*****************
 
 .. note::
    
@@ -10,8 +13,6 @@
    The peer review commands (see :ref:`peer review`) do not currently support
    group assignments.
 
-Group assignments
-*****************
 RepoBee supports group assignments such that multiple students are assigned to
 the same student repositories. To put students in a group, they need to be
 entered on the same line in the students file, separated by spaces. This is the

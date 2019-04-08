@@ -182,6 +182,8 @@ a file called ``students.txt`` and type each username on a separate line.
       spam ham
       eggs
 
+   See :ref:`groups` for details.
+
 An absolute file path to this file can be added to the config file with the
 ``students_file`` option (see :ref:`config`). Now, I want to create one student
 repo for each student per master repo. The repo names will be on the form
