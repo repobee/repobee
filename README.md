@@ -1,4 +1,4 @@
-# RepoBee
+# RepoBee - A CLI tool for administrating Git repositories on GitHub
 [![Build Status](https://travis-ci.com/repobee/repobee.svg)](https://travis-ci.com/repobee/repobee)
 [![Code Coverage](https://codecov.io/gh/repobee/repobee/branch/master/graph/badge.svg)](https://codecov.io/gh/repobee/repobee)
 [![Documentation Status](https://readthedocs.org/projects/repobee/badge/?version=latest)](http://repobee.readthedocs.io/en/latest/)
@@ -18,13 +18,32 @@ simple peer review functionality as well as issue management features. There is
 also a [plugin system](https://github.com/repobee/repobee-plug) in place that
 allows Python programmers to expand RepoBee in various ways. The
 [`repobee-junit4` plugin](https://github.com/repobee/repobee-junit4) plugin is
-one such plugins, which JUnit4 test classes on Java code in cloned student
+one such plugin, which runs JUnit4 test classes on Java code in cloned student
 repos.
 
 RepoBee is currently being used for the introductory courses in computer science at
 [KTH Royal Technical Institute of Technology](https://www.kth.se/en/eecs). The
 courses have roughly 200 students and several thousands of repositories,
 allowing us to test RepoBee at quite a large scale.
+
+### Feature highlights
+
+* Generate repositories for students based on master (template) repositories
+* Clone student repositories in batches
+* Peer review features: give students read access to other students'
+  repositories to e.g. code review. Easily revoke read access once reviews are
+  done.
+* Support for group assignments (multiple students per repository)
+* Open, close and list issues for select student repositories.
+* Extend RepoBee with the
+  [plugin system](https://repobee.readthedocs.io/en/latest/plugins.html)
+* Support both for GitHub Enterprise and github.com
+* Very little configuration required on the GitHub side
+    - The only requirements is to have an Organization with private repository
+      capabilities!
+* No local configuration required
+    - Although [setting a few defaults](https://repobee.readthedocs.io/en/latest/configuration.html#configuration)
+      is highly recommended
 
 ### Install
 RepoBee is on PyPi, so `python3 -m pip install repobee` should do the trick. See the
@@ -41,18 +60,10 @@ and should set you on the right path with little effort.
 
 ## Why RepoBee?
 RepoBee was developed at KTH Royal Technical Institute of Technology to help
-teachers and teaching assistants administrate GitHub repositories. It is
-inspired by the old
-[`teachers_pet` tool](https://github.com/education/teachers_pet), with added
-features and a user experience more to our liking. Features range from creating
-student repositories based on master (template) repos, to opening and closing
-issues in bulk, to assigning peer reviews and cloning repos in bulk. Some parts
-of RepoBee can be customized using a simple but powerful [plugin
-system](https://github.com/repobee/repobee-plug). For example, the
-[`repobee-junit4` plugin](https://github.com/repobee/repobee-junit4) allows for
-automatically running `JUnit4` test classes on production code in student repos.
-Below is the output from running `repobee -h`, giving brief descriptions of
-each of the main features:
+teachers and TAs administrate GitHub repositories. It's a tool for teachers, by
+teachers, and we use it in our everyday work. All of the features in RepoBee
+are of some use to us, and so should also be useful to other teachers. Below is
+a complete list of core functionality as described by the `--help` option.
 
 ```
 $ repobee -h
@@ -99,9 +110,21 @@ As of December 17th 2018, RepoBee's CLI is a stable release and adheres to
 of RepoBee _do not_ adhere to this versioning, so using RepoBee as a library
 is not recommended.
 
-The plugin system is still to be considered in the beta phase, as it has seen
-much less live action use than the rest of the CLI. Features are highly
-unlikely to be cut, but hooks may be modified as new use-cases arise.
+The plugin system is considered to be in the alpha phase, as it has seen much
+less live action use than the rest of the CLI. Features are highly unlikely to
+be cut, but hooks may be modified as new use-cases arise as the internals of
+RepoBee need to be altered.
+
+### Upcoming features
+There is still a lot in store for RepoBee. Below is a roadmap for major
+features that are in the works.
+
+| Feature                                   | Status                                                                    |
+| -------                                   | ------                                                                    |
+| Peer review support for group assignments | Work in progress  ([#167](https://github.com/repobee/repobee/issues/167)) |
+| Plugin support for top-level CLI commands | Planning                                                                  |
+| Travis CI plugin                          | Planning ([#165](https://github.com/repobee/repobee/issues/165))          |
+| Cleaner CLI help menus                    | Planning ([#164](https://github.com/repobee/repobee/issues/164))          |
 
 ## License
 This software is licensed under the MIT License. See the [LICENSE](LICENSE)
