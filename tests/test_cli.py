@@ -17,6 +17,7 @@ USER = constants.USER
 ORG_NAME = constants.ORG_NAME
 GITHUB_BASE_URL = constants.GITHUB_BASE_URL
 STUDENTS = constants.STUDENTS
+STUDENTS_STRING = " ".join([str(s) for s in STUDENTS])
 ISSUE_PATH = constants.ISSUE_PATH
 ISSUE = constants.ISSUE
 generate_repo_url = functions.generate_repo_url
@@ -485,7 +486,13 @@ class TestStudentParsing:
         """Test that the different subparsers parse arguments corectly when
         students are listed directly on the command line.
         """
-        sys_args = [parser, *BASE_ARGS, "-s", *STUDENTS, *extra_args]
+        sys_args = [
+            parser,
+            *BASE_ARGS,
+            "-s",
+            *STUDENTS_STRING.split(),
+            *extra_args,
+        ]
 
         parsed_args, _ = cli.parse_args(sys_args)
 
@@ -524,7 +531,7 @@ class TestStudentParsing:
 
     @pytest.mark.parametrize(*STUDENT_PARSING_PARAMS, ids=STUDENT_PARSING_IDS)
     def test_parsers_raise_if_both_file_and_listing(
-        read_issue_mock, students_file, parser, extra_args
+        self, read_issue_mock, students_file, parser, extra_args
     ):
         """Test that the student subparsers raise if students are both listed
         on the CLI, and a file is specified.
@@ -535,12 +542,77 @@ class TestStudentParsing:
             "-sf",
             str(students_file),
             "-s",
-            *STUDENTS,
+            *STUDENTS_STRING.split(),
             *extra_args,
         ]
 
         with pytest.raises(SystemExit):
             cli.parse_args(sys_args)
+
+    @pytest.mark.parametrize(*STUDENT_PARSING_PARAMS, ids=STUDENT_PARSING_IDS)
+    def test_student_groups_parsed_correcly(
+        self, empty_students_file, read_issue_mock, parser, extra_args
+    ):
+        """Test that putting multiple students on the same line in the students
+        file results in them being in the same group.
+        """
+        # arrange
+        groupings = (
+            ["study"],
+            ["buddy", "shuddy"],
+            ["grape"],
+            ["cat", "dog", "mouse"],
+        )
+        expected_groups = sorted(
+            tuples.Group(members=group) for group in groupings
+        )
+        empty_students_file.write(
+            os.linesep.join([" ".join(group) for group in groupings])
+        )
+        sys_args = [
+            parser,
+            *BASE_ARGS,
+            "-sf",
+            str(empty_students_file),
+            *extra_args,
+        ]
+
+        # act
+        parsed_args, _ = cli.parse_args(sys_args)
+
+        # assert
+        assert sorted(parsed_args.students) == expected_groups
+
+    @pytest.mark.parametrize(*STUDENT_PARSING_PARAMS, ids=STUDENT_PARSING_IDS)
+    def test_raises_if_generated_team_name_too_long(
+        self, empty_students_file, read_issue_mock, parser, extra_args
+    ):
+        """Test that the parser raises a ValueError if the team name generated
+        from a group of students is longer than the maximum allowed by GitHub.
+        """
+        # arrange
+        groupings = (
+            ["buddy", "shuddy"],
+            ["a" * tuples.Group.MAX_STR_LEN, "b"],
+            ["cat", "dog", "mouse"],
+        )
+        empty_students_file.write(
+            os.linesep.join([" ".join(group) for group in groupings])
+        )
+        sys_args = [
+            parser,
+            *BASE_ARGS,
+            "-sf",
+            str(empty_students_file),
+            *extra_args,
+        ]
+
+        # act
+        with pytest.raises(ValueError) as exc_info:
+            cli.parse_args(sys_args)
+
+        # assert
+        assert "generated Team/Repository name is too long" in str(exc_info)
 
 
 def assert_base_push_args(parsed_args, api):
@@ -639,7 +711,12 @@ class TestSetupAndUpdateParsers:
 
     def test_happy_path(self, api_class_mock, parser):
         """Tests standard operation of the parsers."""
-        sys_args = [parser, *COMPLETE_PUSH_ARGS, "-s", *STUDENTS]
+        sys_args = [
+            parser,
+            *COMPLETE_PUSH_ARGS,
+            "-s",
+            *STUDENTS_STRING.split(),
+        ]
 
         parsed_args, _ = cli.parse_args(sys_args)
 
@@ -665,7 +742,12 @@ class TestSetupAndUpdateParsers:
             generate_repo_url(name, ORG_NAME) for name in repo_names
         ]
 
-        sys_args = [parser, *COMPLETE_PUSH_ARGS, "-s", *STUDENTS]
+        sys_args = [
+            parser,
+            *COMPLETE_PUSH_ARGS,
+            "-s",
+            *STUDENTS_STRING.split(),
+        ]
 
         parsed_args, _ = cli.parse_args(sys_args)
 
@@ -776,8 +858,6 @@ class TestCloneParser:
             args=mock.ANY
         )
 
-    STUDENTS_STRING = " ".join(STUDENTS)
-
     # def test_no_plugins_option_drops_plugins()
 
     @pytest.mark.parametrize(
@@ -785,21 +865,42 @@ class TestCloneParser:
         [
             (
                 cli.SETUP_PARSER,
-                ["-u", USER, "-s", STUDENTS_STRING, "-mn", *REPO_NAMES],
+                [
+                    "-u",
+                    USER,
+                    "-s",
+                    *STUDENTS_STRING.split(),
+                    "-mn",
+                    *REPO_NAMES,
+                ],
             ),
             (
                 cli.UPDATE_PARSER,
-                ["-u", USER, "-s", STUDENTS_STRING, "-mn", *REPO_NAMES],
+                [
+                    "-u",
+                    USER,
+                    "-s",
+                    *STUDENTS_STRING.split(),
+                    "-mn",
+                    *REPO_NAMES,
+                ],
             ),
             (
                 cli.OPEN_ISSUE_PARSER,
-                ["-s", STUDENTS_STRING, "-mn", *REPO_NAMES, "-i", ISSUE_PATH],
+                [
+                    "-s",
+                    *STUDENTS_STRING.split(),
+                    "-mn",
+                    *REPO_NAMES,
+                    "-i",
+                    ISSUE_PATH,
+                ],
             ),
             (
                 cli.CLOSE_ISSUE_PARSER,
                 [
                     "-s",
-                    STUDENTS_STRING,
+                    *STUDENTS_STRING.split(),
                     "-mn",
                     *REPO_NAMES,
                     "-r",
@@ -853,7 +954,7 @@ class TestCommandDeprecation:
                     "-i",
                     ISSUE_PATH,
                     "-s",
-                    *STUDENTS,
+                    *STUDENTS_STRING.split(),
                     "-n",
                     "3",
                 ],
@@ -861,7 +962,7 @@ class TestCommandDeprecation:
             (
                 cli.PURGE_REVIEW_TEAMS_PARSER_OLD,
                 cli.PURGE_REVIEW_TEAMS_PARSER,
-                [*BASE_ARGS, "-mn", "week-10", "-s", *STUDENTS],
+                [*BASE_ARGS, "-mn", "week-10", "-s", *STUDENTS_STRING.split()],
             ),
             (
                 cli.CHECK_REVIEW_PROGRESS_PARSER_OLD,
@@ -875,7 +976,7 @@ class TestCommandDeprecation:
                     "-n",
                     "3",
                     "-s",
-                    *STUDENTS,
+                    *STUDENTS_STRING.split(),
                 ],
             ),
         ],

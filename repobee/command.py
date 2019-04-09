@@ -41,7 +41,7 @@ MASTER_TEAM = "master_repos"
 
 def setup_student_repos(
     master_repo_urls: Iterable[str],
-    students: Iterable[str],
+    students: Iterable[tuples.Group],
     user: str,
     api: GitHubAPI,
 ) -> None:
@@ -87,7 +87,7 @@ def setup_student_repos(
 
 
 def add_students_to_teams(
-    students: Iterable[str], api: GitHubAPI
+    students: Iterable[tuples.Group], api: GitHubAPI
 ) -> List[Team]:
     """Create one team for each student (with the same name as the student),
     and add the student to the team. If a team already exists, it is not
@@ -102,8 +102,8 @@ def add_students_to_teams(
     """
     util.validate_types(api=(api, GitHubAPI))
     util.validate_non_empty(students=students)
-    # (team_name, member list) mappings, each student gets its own team
-    member_lists = {student: [student] for student in students}
+    # TODO simply pass the group to ensure_teams_and_members instead
+    member_lists = {str(group): group.members for group in students}
     return api.ensure_teams_and_members(member_lists)
 
 
@@ -157,7 +157,7 @@ def _clone_all(urls: Iterable[str], token: str, cwd: str):
 
 def update_student_repos(
     master_repo_urls: Iterable[str],
-    students: Iterable[str],
+    students: Iterable[tuples.Group],
     user: str,
     api: GitHubAPI,
     issue: Optional[tuples.Issue] = None,
@@ -221,7 +221,7 @@ def _open_issue_by_urls(
 
 def list_issues(
     master_repo_names: Iterable[str],
-    students: Iterable[str],
+    students: Iterable[tuples.Group],
     api: GitHubAPI,
     state: str = "open",
     title_regex: str = "",
@@ -336,7 +336,7 @@ def _limit_line_length(s: str, max_line_length: int = 100) -> str:
 def open_issue(
     issue: tuples.Issue,
     master_repo_names: Iterable[str],
-    students: Iterable[str],
+    students: Iterable[tuples.Group],
     api: GitHubAPI,
 ) -> None:
     """Open an issue in student repos.
@@ -360,7 +360,7 @@ def open_issue(
 def close_issue(
     title_regex: str,
     master_repo_names: Iterable[str],
-    students: Iterable[str],
+    students: Iterable[tuples.Group],
     api: GitHubAPI,
 ) -> None:
     """Close issues whose titles match the title_regex in student repos.
@@ -384,7 +384,9 @@ def close_issue(
 
 
 def clone_repos(
-    master_repo_names: Iterable[str], students: Iterable[str], api: GitHubAPI
+    master_repo_names: Iterable[str],
+    students: Iterable[tuples.Group],
+    api: GitHubAPI,
 ) -> None:
     """Clone all student repos related to the provided master repos and students.
 
@@ -478,7 +480,7 @@ def migrate_repos(
 
 def assign_peer_reviews(
     master_repo_names: Iterable[str],
-    students: Iterable[str],
+    students: Iterable[tuples.Group],
     num_reviews: int,
     issue: Optional[tuples.Issue],
     api: GitHubAPI,
@@ -507,10 +509,15 @@ def assign_peer_reviews(
         master_repo_names=master_repo_names, students=students
     )
 
+    # currently only supports single students
+    # TODO support groups
+    assert all(map(lambda g: len(g.members) == 1, students))
+    single_students = [g.members[0] for g in students]
+
     for master_name in master_repo_names:
         allocations = plug.manager.hook.generate_review_allocations(
             master_repo_name=master_name,
-            students=students,
+            students=single_students,
             num_reviews=num_reviews,
             review_team_name_function=util.generate_review_team_name,
         )
@@ -520,14 +527,16 @@ def assign_peer_reviews(
                 util.generate_review_team_name(student, master_name): [
                     util.generate_repo_name(student, master_name)
                 ]
-                for student in students
+                for student in single_students
             },
             issue=issue,
         )
 
 
 def purge_review_teams(
-    master_repo_names: Iterable[str], students: Iterable[str], api: GitHubAPI
+    master_repo_names: Iterable[str],
+    students: Iterable[tuples.Group],
+    api: GitHubAPI,
 ) -> None:
     """Delete all review teams associated with the given master repo names and
     students.
@@ -550,21 +559,27 @@ def purge_review_teams(
 
 def check_peer_review_progress(
     master_repo_names: Iterable[str],
-    students: Iterable[str],
+    students: Iterable[tuples.Group],
     title_regex: str,
     num_reviews: int,
     api: GitHubAPI,
 ) -> None:
+    # TODO support groups
+    assert all(map(lambda g: len(g.members) == 1, students))
+    single_students = [g.members[0] for g in students]
+
     review_team_names = [
         util.generate_review_team_name(student, master_name)
-        for student in students
+        for student in single_students
         for master_name in master_repo_names
     ]
-    reviews = api.get_review_progress(review_team_names, students, title_regex)
+    reviews = api.get_review_progress(
+        review_team_names, single_students, title_regex
+    )
 
     LOGGER.info(
         formatters.format_peer_review_progress_output(
-            reviews, students, num_reviews
+            reviews, single_students, num_reviews
         )
     )
 

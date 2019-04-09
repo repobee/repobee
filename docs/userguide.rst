@@ -14,3 +14,4 @@ RepoBee User Guide
    peer
    plugins
    migrate
+   group_assignments
