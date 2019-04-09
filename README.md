@@ -99,9 +99,21 @@ As of December 17th 2018, RepoBee's CLI is a stable release and adheres to
 of RepoBee _do not_ adhere to this versioning, so using RepoBee as a library
 is not recommended.
 
-The plugin system is still to be considered in the beta phase, as it has seen
-much less live action use than the rest of the CLI. Features are highly
-unlikely to be cut, but hooks may be modified as new use-cases arise.
+The plugin system is considered to be in the alpha phase, as it has seen much
+less live action use than the rest of the CLI. Features are highly unlikely to
+be cut, but hooks may be modified as new use-cases arise as the internals of
+RepoBee need to be altered.
+
+### Upcoming features
+There is still a lot in store for RepoBee. Below is a roadmap for major
+features that are in the works.
+
+| Feature                                   | Status                                                                    |
+| -------                                   | ------                                                                    |
+| Peer review support for group assignments | Work in progress  ([#167](https://github.com/repobee/repobee/issues/167)) |
+| Plugin support for top-level CLI commands | Planning                                                                  |
+| Travis CI plugin                          | Planning ([#165](https://github.com/repobee/repobee/issues/165))          |
+| Cleaner CLI help menus                    | Planning ([#164](https://github.com/repobee/repobee/issues/164))          |
 
 ## License
 This software is licensed under the MIT License. See the [LICENSE](LICENSE)
