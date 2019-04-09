@@ -30,12 +30,17 @@ allowing us to test RepoBee at quite a large scale.
 
 * Generate repositories for students based on master (template) repositories
 * Clone student repositories in batches
+* Peer review features: give students read access to other students'
+  repositories to e.g. code review. Easily revoke read access once reviews are
+  done.
 * Support for group assignments (multiple students per repository)
 * Open, close and list issues for select student repositories.
 * Extend RepoBee with the
   [plugin system](https://repobee.readthedocs.io/en/latest/plugins.html)
 * Support both for GitHub Enterprise and github.com
 * Very little configuration required on the GitHub side
+    - The only requirements is to have an Organization with private repository
+      capabilities!
 * No local configuration required
     - Although [setting a few defaults](https://repobee.readthedocs.io/en/latest/configuration.html#configuration)
       is highly recommended
@@ -55,18 +60,10 @@ and should set you on the right path with little effort.
 
 ## Why RepoBee?
 RepoBee was developed at KTH Royal Technical Institute of Technology to help
-teachers and teaching assistants administrate GitHub repositories. It is
-inspired by the old
-[`teachers_pet` tool](https://github.com/education/teachers_pet), with added
-features and a user experience more to our liking. Features range from creating
-student repositories based on master (template) repos, to opening and closing
-issues in bulk, to assigning peer reviews and cloning repos in bulk. Some parts
-of RepoBee can be customized using a simple but powerful [plugin
-system](https://github.com/repobee/repobee-plug). For example, the
-[`repobee-junit4` plugin](https://github.com/repobee/repobee-junit4) allows for
-automatically running `JUnit4` test classes on production code in student repos.
-Below is the output from running `repobee -h`, giving brief descriptions of
-each of the main features:
+teachers and TAs administrate GitHub repositories. It's a tool for teachers, by
+teachers, and we use it in our everyday work. All of the features in RepoBee
+are of some use to us, and so should also be useful to other teachers. Below is
+a complete list of core functionality as described by the `--help` option.
 
 ```
 $ repobee -h
