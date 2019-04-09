@@ -910,10 +910,13 @@ class TestCheckPeerReviewProgress:
             for student in students
             for master_name in master_names
         ]
+        # TODO change this when groups are supported
+        single_students = [g.members[0] for g in students]
+        
         command.check_peer_review_progress(
             master_names, students, title_regex, 2, api_mock
         )
 
         api_mock.get_review_progress.assert_called_once_with(
-            review_team_names, students, title_regex
+            review_team_names, single_students, title_regex
         )
