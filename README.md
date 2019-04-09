@@ -18,13 +18,27 @@ simple peer review functionality as well as issue management features. There is
 also a [plugin system](https://github.com/repobee/repobee-plug) in place that
 allows Python programmers to expand RepoBee in various ways. The
 [`repobee-junit4` plugin](https://github.com/repobee/repobee-junit4) plugin is
-one such plugins, which JUnit4 test classes on Java code in cloned student
+one such plugin, which JUnit4 test classes on Java code in cloned student
 repos.
 
 RepoBee is currently being used for the introductory courses in computer science at
 [KTH Royal Technical Institute of Technology](https://www.kth.se/en/eecs). The
 courses have roughly 200 students and several thousands of repositories,
 allowing us to test RepoBee at quite a large scale.
+
+### Feature highlights
+
+* Generate repositories for students based on master (template) repositories
+* Clone student repositories in batches
+* Support for group assignments (multiple students per repository)
+* Open, close and list issues for select student repositories.
+* Extend RepoBee with the
+  [plugin system](https://repobee.readthedocs.io/en/latest/plugins.html)
+* Support both for GitHub Enterprise and github.com
+* Very little configuration required on the GitHub side
+* No local configuration required
+    - Although [setting a few defaults](https://repobee.readthedocs.io/en/latest/configuration.html#configuration)
+      is highly recommended
 
 ### Install
 RepoBee is on PyPi, so `python3 -m pip install repobee` should do the trick. See the
