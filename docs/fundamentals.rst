@@ -32,8 +32,8 @@ because RepoBee itself does not keep track of anything, except possibly for the
 aforementioned static data if one chooses to keep it in configuration files.
 All of the complex state state is more or less implicitly stored on GitHub, and
 RepoBee locates student repositories based on strict naming conventions that
-are enforced by all of its commands. This allows RepoBee to be simple to set up
-and use on multiple machines, which is crucial in a course where multiple
+are adhered to by all of its commands. This allows RepoBee to be simple to set
+up and use on multiple machines, which is crucial in a course where multiple
 teachers and TAs are managing the student repositories. There is also the fact
 that nothing need be installed server-side, as RepoBee only uses core GitHub
 features to do its work. For an experienced user, installing RepoBee and
@@ -103,6 +103,35 @@ The following conventions are fundamental to working with RepoBee.
     master repo migrations etc. Straying form the conventions may cause
     RepoBee to behave unexpectedly.
 
+Usage with GitHub Enterprise and github.com
+===========================================
+RepoBee was designed for use with GitHub Enterprise, but also works well with
+the public cloud service at https://github.com. Usage of RepoBee should be
+identical, but there are two differences between the two that one should be
+aware of.
+
+The Organization must have support for private repositories
+-----------------------------------------------------------
+Private repositories are key to keep students from being able to see each
+others' work, and thereby avoid a few avenues for plagiarism.
+
+* **Enterprise:** All Organizations on Enterprise support private repositories.
+* **github.com:** You need a paid Organization (confusingly called a *Team*,
+  but unrelated to the Teams *inside* an Organization). Educators and
+  researchers can get such Organization accounts for free,
+  see `how to get the discount here
+  <https://help.github.com/en/articles/applying-for-an-educator-or-researcher-discount>`_.
+
+Students are added to the target Organization slightly differently
+------------------------------------------------------------------
+During setup, students are added to their respective Teams. Precisely how this
+happens differs slightly.
+
+  * **Enterprise:** Students are automatically added to their Teams in the Organization.
+  * **github.com:** Students are invited to the Organization and added to their Teams upon accepting.
+
+
 .. _teachers_pet: https://github.com/education/teachers_pet
 .. _GitHub Classroom: https://classroom.github.com/
 .. _Organization: https://help.github.com/articles/about-organizations/
+.. _faculty: https://help.github.com/en/articles/applying-for-an-educator-or-researcher-discount
