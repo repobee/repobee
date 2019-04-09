@@ -18,7 +18,7 @@ simple peer review functionality as well as issue management features. There is
 also a [plugin system](https://github.com/repobee/repobee-plug) in place that
 allows Python programmers to expand RepoBee in various ways. The
 [`repobee-junit4` plugin](https://github.com/repobee/repobee-junit4) plugin is
-one such plugin, which JUnit4 test classes on Java code in cloned student
+one such plugin, which runs JUnit4 test classes on Java code in cloned student
 repos.
 
 RepoBee is currently being used for the introductory courses in computer science at
