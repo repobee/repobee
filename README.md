@@ -1,4 +1,4 @@
-# RepoBee
+# RepoBee - A CLI tool for administrating Git repositories on GitHub
 [![Build Status](https://travis-ci.com/repobee/repobee.svg)](https://travis-ci.com/repobee/repobee)
 [![Code Coverage](https://codecov.io/gh/repobee/repobee/branch/master/graph/badge.svg)](https://codecov.io/gh/repobee/repobee)
 [![Documentation Status](https://readthedocs.org/projects/repobee/badge/?version=latest)](http://repobee.readthedocs.io/en/latest/)
