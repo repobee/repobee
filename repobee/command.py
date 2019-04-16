@@ -67,11 +67,6 @@ def setup_student_repos(
         user: Username of the administrator that setting up the repos.
         api: A GitHubAPI instance used to interface with the GitHub instance.
     """
-    util.validate_types(user=(user, str), api=(api, GitHubAPI))
-    util.validate_non_empty(
-        master_repo_urls=master_repo_urls, students=students, user=user
-    )
-
     urls = list(master_repo_urls)  # safe copy
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -100,8 +95,6 @@ def add_students_to_teams(
     Returns:
         all teams associated with the students in the students list.
     """
-    util.validate_types(api=(api, GitHubAPI))
-    util.validate_non_empty(students=students)
     # TODO simply pass the group to ensure_teams_and_members instead
     member_lists = {str(group): group.members for group in students}
     return api.ensure_teams_and_members(member_lists)
@@ -172,14 +165,6 @@ def update_student_repos(
         api: A GitHubAPI instance used to interface with the GitHub instance.
         issue: An optional issue to open in repos to which pushing fails.
     """
-    util.validate_types(
-        user=(user, str),
-        api=(api, GitHubAPI),
-        issue=(issue, (tuples.Issue, type(None))),
-    )
-    util.validate_non_empty(
-        master_repo_urls=master_repo_urls, user=user, students=students
-    )
     urls = list(master_repo_urls)  # safe copy
 
     if len(set(urls)) != len(urls):
@@ -241,11 +226,6 @@ def list_issues(
         default info.
         author: Only show issues by this author.
     """
-    util.validate_types(api=(api, GitHubAPI))
-    util.validate_non_empty(
-        master_repo_names=master_repo_names, students=students
-    )
-
     repo_names = util.generate_repo_names(students, master_repo_names)
     max_repo_name_length = max(map(len, repo_names))
 
@@ -347,13 +327,7 @@ def open_issue(
         issue: An issue to open.
         api: A GitHubAPI instance used to interface with the GitHub instance.
     """
-    util.validate_types(issue=(issue, tuples.Issue), api=(api, GitHubAPI))
-    util.validate_non_empty(
-        master_repo_names=master_repo_names, students=students, issue=issue
-    )
-
     repo_names = util.generate_repo_names(students, master_repo_names)
-
     api.open_issue(issue.title, issue.body, repo_names)
 
 
@@ -371,15 +345,7 @@ def close_issue(
         students: An iterable of student GitHub usernames.
         api: A GitHubAPI instance used to interface with the GitHub instance.
     """
-    util.validate_types(title_regex=(title_regex, str), api=(api, GitHubAPI))
-    util.validate_non_empty(
-        title_regex=title_regex,
-        master_repo_names=master_repo_names,
-        students=students,
-    )
-
     repo_names = util.generate_repo_names(students, master_repo_names)
-
     api.close_issue(title_regex, repo_names)
 
 
@@ -395,11 +361,6 @@ def clone_repos(
         students: Student usernames.
         api: A GitHubAPI instance.
     """
-    util.validate_types(api=(api, GitHubAPI))
-    util.validate_non_empty(
-        master_repo_names=master_repo_names, students=students
-    )
-
     repo_names = util.generate_repo_names(students, master_repo_names)
     repo_urls = api.get_repo_urls(repo_names)
 
@@ -441,9 +402,6 @@ def migrate_repos(
         the username that is used in the push.
         api: A GitHubAPI instance used to interface with the GitHub instance.
     """
-    util.validate_types(user=(user, str), api=(api, GitHubAPI))
-    util.validate_non_empty(master_repo_urls=master_repo_urls, user=user)
-
     master_team, *_ = api.ensure_teams_and_members({MASTER_TEAM: []})
 
     master_names = [util.repo_name(url) for url in master_repo_urls]
@@ -502,13 +460,6 @@ def assign_peer_reviews(
             (consequently, the amount of reviews of each repo)
         api: A GitHubAPI instance used to interface with the GitHub instance.
     """
-    util.validate_types(
-        api=(api, GitHubAPI), issue=(issue, (tuples.Issue, type(None)))
-    )
-    util.validate_non_empty(
-        master_repo_names=master_repo_names, students=students
-    )
-
     # currently only supports single students
     # TODO support groups
     assert all(map(lambda g: len(g.members) == 1, students))
@@ -545,10 +496,6 @@ def purge_review_teams(
         master_repo_names: Names of master repos.
         students: An iterable of student GitHub usernames.
     """
-    util.validate_non_empty(
-        master_repo_names=master_repo_names, students=students
-    )
-
     review_team_names = [
         util.generate_review_team_name(student, master_repo_name)
         for student in students

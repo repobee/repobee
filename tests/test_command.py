@@ -1,6 +1,6 @@
 import os
 import pytest
-from unittest.mock import patch, MagicMock, Mock, call, ANY, PropertyMock
+from unittest.mock import patch, MagicMock, call, ANY, PropertyMock
 
 import repobee
 from repobee import command
@@ -92,33 +92,6 @@ STUDENT_REPO_NAMES = tuple(
 )
 
 raise_ = functions.raise_
-
-
-@pytest.fixture(autouse=True)
-def validate_types_mock(request, mocker):
-    """Mock util.validate_types to only work on non-mock items."""
-    if "novalidatemock" in request.keywords:
-        return
-    util_validate = util.validate_types
-
-    def validate(**kwargs):
-        """Mocked validate that skips Mock objects as types."""
-        remove = set()
-        for param_name, (argument, expected_types) in kwargs.items():
-            if (
-                isinstance(expected_types, (Mock, MagicMock))
-                or isinstance(expected_types, tuple)
-                and any(
-                    isinstance(obj, (Mock, MagicMock))
-                    for obj in expected_types
-                )
-            ):
-                remove.add(param_name)
-        util_validate(
-            **{key: val for key, val in kwargs.items() if key not in remove}
-        )
-
-    return mocker.patch("repobee.util.validate_types", side_effect=validate)
 
 
 @pytest.fixture(autouse=True)
@@ -267,31 +240,6 @@ def assert_raises_on_duplicate_master_urls(function, master_urls, students):
     assert str(exc_info.value) == "master_repo_urls contains duplicates"
 
 
-RAISES_ON_EMPTY_ARGS_PARAMETRIZATION = (
-    "master_urls, students, user, empty_arg",
-    [
-        ([], list(STUDENTS), USER, "master_repo_urls"),
-        (list(MASTER_URLS), [], USER, "students"),
-        (list(MASTER_URLS), list(STUDENTS), "", "user"),
-    ],
-)
-
-RAISES_ON_EMPTY_ARGS_IDS = [
-    "|".join([str(val) for val in line])
-    for line in RAISES_ON_EMPTY_ARGS_PARAMETRIZATION[1]
-]
-
-RAISES_ON_INVALID_TYPE_PARAMETRIZATION = (
-    "user, api, type_error_arg",
-    [(3, API, "user"), ("slarse", 4, "api")],
-)
-
-RAISES_ON_EMPTY_INVALID_TYPE_IDS = [
-    "|".join([str(val) for val in line])
-    for line in RAISES_ON_INVALID_TYPE_PARAMETRIZATION[1]
-]
-
-
 class TestSetupStudentRepos:
     """Tests for setup_student_repos."""
 
@@ -319,29 +267,6 @@ class TestSetupStudentRepos:
         with pytest.raises(ValueError) as exc_info:
             command.setup_student_repos(master_urls, students, USER, api_mock)
         assert str(exc_info.value) == "master_repo_urls contains duplicates"
-
-    @pytest.mark.parametrize(
-        *RAISES_ON_EMPTY_ARGS_PARAMETRIZATION, ids=RAISES_ON_EMPTY_ARGS_IDS
-    )
-    def test_raises_empty_args(
-        self, mocker, api_mock, master_urls, user, students, empty_arg
-    ):
-        """None of the arguments are allowed to be empty."""
-        with pytest.raises(ValueError):
-            command.setup_student_repos(master_urls, students, user, api_mock)
-
-    @pytest.mark.noapimock
-    @pytest.mark.parametrize(
-        *RAISES_ON_INVALID_TYPE_PARAMETRIZATION,
-        ids=RAISES_ON_EMPTY_INVALID_TYPE_IDS
-    )
-    def test_raises_on_invalid_type(
-        self, master_urls, students, user, api, type_error_arg
-    ):
-        """Test that the non-itrable arguments are type checked."""
-        with pytest.raises(TypeError) as exc_info:
-            command.setup_student_repos(master_urls, students, user, api)
-        assert type_error_arg in str(exc_info.value)
 
     def test_happy_path(
         self,
@@ -390,35 +315,6 @@ class TestUpdateStudentRepos:
         with pytest.raises(ValueError) as exc_info:
             command.update_student_repos(master_urls, students, USER, api_mock)
         assert str(exc_info.value) == "master_repo_urls contains duplicates"
-
-    @pytest.mark.parametrize(
-        *RAISES_ON_EMPTY_ARGS_PARAMETRIZATION, ids=RAISES_ON_EMPTY_ARGS_IDS
-    )
-    def test_raises_empty_args(
-        self, mocker, api_mock, master_urls, user, students, empty_arg
-    ):
-        """None of the arguments are allowed to be empty."""
-        with pytest.raises(ValueError) as exc_info:
-            command.update_student_repos(
-                master_repo_urls=master_urls,
-                students=students,
-                user=user,
-                api=api_mock,
-            )
-        assert empty_arg in str(exc_info)
-
-    @pytest.mark.noapimock
-    @pytest.mark.parametrize(
-        *RAISES_ON_INVALID_TYPE_PARAMETRIZATION,
-        ids=RAISES_ON_EMPTY_INVALID_TYPE_IDS
-    )
-    def test_raises_on_invalid_type(
-        self, master_urls, students, user, api, type_error_arg
-    ):
-        """Test that the non-itrable arguments are type checked."""
-        with pytest.raises(TypeError) as exc_info:
-            command.update_student_repos(master_urls, students, user, api)
-        assert type_error_arg in str(exc_info.value)
 
     def test_happy_path(
         self,
@@ -546,22 +442,6 @@ class TestUpdateStudentRepos:
 class TestOpenIssue:
     """Tests for open_issue."""
 
-    # TODO expand to also test org_name and github_api_base_url can probably
-    # use the RAISES_ON_EMPTY_ARGS_PARAMETRIZATION for that, somehow
-    @pytest.mark.parametrize(
-        "master_repo_names, students, empty_arg",
-        [
-            ([], list(STUDENTS), "master_repo_names"),
-            (list(MASTER_NAMES), [], "students"),
-        ],
-    )
-    def test_raises_on_empty_args(
-        self, api_mock, master_repo_names, students, empty_arg
-    ):
-        with pytest.raises(ValueError) as exc_info:
-            command.open_issue(ISSUE, master_repo_names, students, api_mock)
-        assert empty_arg in str(exc_info)
-
     def test_happy_path(self, mocker, api_mock):
         master_names = ["week-1", "week-2"]
         students = list("abc")
@@ -586,36 +466,6 @@ class TestOpenIssue:
 
 class TestCloseIssue:
     """Tests for close_issue."""
-
-    @pytest.mark.parametrize(
-        "master_repo_names, students, empty_arg",
-        [
-            ([], list(STUDENTS), "master_repo_names"),
-            (list(MASTER_NAMES), [], "students"),
-        ],
-    )
-    def test_raises_on_empty_args(
-        self, api_mock, master_repo_names, students, empty_arg
-    ):
-        """only the regex is allowed ot be empty."""
-        with pytest.raises(ValueError) as exc_info:
-            command.close_issue(
-                "someregex", master_repo_names, students, api_mock
-            )
-        assert empty_arg in str(exc_info)
-
-    @pytest.mark.noapimock
-    @pytest.mark.parametrize(
-        "title_regex, api, type_error_arg",
-        [(2, API, "title_regex"), ("someregex", 41, "api")],
-    )
-    def test_raises_on_invalid_type(
-        self, master_names, students, title_regex, api, type_error_arg
-    ):
-        """Test that the non-itrable arguments are type checked."""
-        with pytest.raises(TypeError) as exc_info:
-            command.close_issue(title_regex, master_names, students, api)
-        assert type_error_arg in str(exc_info.value)
 
     def test_happy_path(self, api_mock):
         title_regex = r"some-regex\d\w"
@@ -689,20 +539,6 @@ class TestCloneRepos:
             "repobee.config.get_plugin_names", return_value=PLUGINS
         )
 
-    @pytest.mark.parametrize(
-        "master_repo_names, students, empty_arg",
-        [
-            ([], list(STUDENTS), "master_repo_names"),
-            (list(MASTER_NAMES), [], "students"),
-        ],
-    )
-    def test_raises_on_empty_args(
-        self, api_mock, master_repo_names, students, empty_arg
-    ):
-        with pytest.raises(ValueError) as exc_info:
-            command.clone_repos(master_repo_names, students, api_mock)
-        assert empty_arg in str(exc_info)
-
     def test_happy_path(self, api_mock, git_mock, master_names, students):
         """Tests that the correct calls are made when there are no errors."""
         expected_urls = [
@@ -734,17 +570,6 @@ class TestCloneRepos:
 
 class TestMigrateRepo:
     """Tests for migrate_repo."""
-
-    @pytest.mark.parametrize(
-        "master_repo_urls, user, , empty_arg",
-        [([], USER, "master_repo_urls"), (["https://some_url"], "", "user")],
-    )
-    def test_raises_on_empty_args(
-        self, api_mock, master_repo_urls, user, empty_arg
-    ):
-        with pytest.raises(ValueError) as exc_info:
-            command.migrate_repos(master_repo_urls, user, api_mock)
-        assert empty_arg in str(exc_info)
 
     @pytest.mark.nogitmock
     def test_happy_path(
@@ -912,7 +737,7 @@ class TestCheckPeerReviewProgress:
         ]
         # TODO change this when groups are supported
         single_students = [g.members[0] for g in students]
-        
+
         command.check_peer_review_progress(
             master_names, students, title_regex, 2, api_mock
         )
