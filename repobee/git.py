@@ -12,7 +12,6 @@ import collections
 import daiquiri
 from typing import Iterable, List, Any, Callable
 
-from repobee import util
 from repobee import exception
 
 CONCURRENT_TASKS = 20
@@ -79,13 +78,6 @@ def clone_single(
         cwd: Working directory. Defaults to the current directory.
         token: A GitHub OAUTH token.
     """
-    util.validate_types(
-        repo_url=(repo_url, str),
-        single_branch=(single_branch, bool),
-        branch=(branch, (str, type(None))),
-        cwd=(cwd, (str)),
-    )
-
     if isinstance(branch, str) and not branch:
         raise ValueError("branch must not be empty")
 
@@ -157,9 +149,6 @@ def clone(
         URLs from which cloning failed.
     """
     # TODO valdate repo_urls
-    util.validate_types(single_branch=(single_branch, bool), cwd=(cwd, str))
-    util.validate_non_empty(repo_urls=repo_urls, single_branch=single_branch)
-
     return [
         exc.url
         for exc in _batch_execution(
@@ -177,10 +166,6 @@ async def _push_async(pt: Push, user: str, token: str):
         user: The username to use in the push.
         token: A GitHub OAUTH token.
     """
-    util.validate_types(push_tuple=(pt, Push), user=(user, str))
-
-    util.validate_non_empty(user=user)
-
     command = [
         "git",
         "push",
@@ -225,10 +210,6 @@ def _push_no_retry(
         urls to which pushes failed with exception.PushFailedError. Other
         errors are only logged.
     """
-    # TODO valdate push_tuples
-    util.validate_types(user=(user, str))
-    util.validate_non_empty(push_tuples=push_tuples, user=user)
-
     return [
         exc.url
         for exc in _batch_execution(_push_async, push_tuples, user, token)
@@ -254,7 +235,6 @@ def push(
         urls to which pushes failed with exception.PushFailedError. Other
         errors are only logged.
     """
-    util.validate_types(tries=(tries, int))
     if tries < 1:
         raise ValueError("tries must be larger than 0")
     # confusing, but failed_pts needs an initial value

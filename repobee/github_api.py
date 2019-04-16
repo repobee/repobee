@@ -20,7 +20,6 @@ import github
 
 from repobee import exception
 from repobee import tuples
-from repobee import util
 
 REQUIRED_OAUTH_SCOPES = {"admin:org", "repo"}
 
@@ -612,16 +611,6 @@ class GitHubAPI:
                 msg="token is empty. Check that REPOBEE_OAUTH environment "
                 "variable is properly set, or supply the `--token` option."
             )
-
-        util.validate_types(
-            base_url=(base_url, str),
-            token=(token, str),
-            user=(user, str),
-            org_name=(org_name, str),
-        )
-        util.validate_non_empty(
-            base_url=base_url, token=token, user=user, org_name=org_name
-        )
 
         g = github.Github(login_or_token=token, base_url=base_url)
 

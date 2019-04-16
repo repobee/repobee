@@ -110,23 +110,6 @@ def test_insert_empty_token_raises():
     assert "empty token" in str(exc)
 
 
-@pytest.mark.parametrize(
-    "repo_url, single_branch, branch, cwd, type_error_arg",
-    [
-        (32, True, "master", ".", "repo_url"),
-        ("some_url", 42, "master", ".", "single_branch"),
-        ("some_url", False, 42, ".", "branch"),
-        ("some_url", True, "master", 42, "cwd"),
-    ],
-)
-def test_clone_single_raises_on_type_errors(
-    env_setup, repo_url, single_branch, branch, cwd, type_error_arg
-):
-    with pytest.raises(TypeError) as exc_info:
-        git.clone_single(repo_url, TOKEN, single_branch, branch, cwd)
-    assert type_error_arg in str(exc_info)
-
-
 def test_clone_single_raises_on_empty_branch(env_setup):
     with pytest.raises(ValueError) as exc:
         git.clone_single(URL_TEMPLATE.format(""), TOKEN, branch="")
@@ -223,21 +206,6 @@ class TestPush:
             git.push(push_tuples, USER, TOKEN, tries=tries)
 
         assert "tries must be larger than 0" in str(exc_info)
-
-    def test_raises_on_non_str_user(self, env_setup, push_tuples):
-        with pytest.raises(TypeError) as exc_info:
-            git.push(push_tuples, 32, TOKEN)
-        assert "user" in str(exc_info)
-
-    def test_raises_on_empty_push_tuples(self, env_setup):
-        with pytest.raises(ValueError) as exc_info:
-            git.push([], USER, TOKEN)
-        assert "push_tuples" in str(exc_info)
-
-    def test_raises_on_empty_user(self, env_setup, push_tuples):
-        with pytest.raises(ValueError) as exc_info:
-            git.push(push_tuples, "", TOKEN)
-        assert "user" in str(exc_info)
 
     def test(self, env_setup, push_tuples, aio_subproc):
         """Test that push works as expected when no exceptions are thrown by

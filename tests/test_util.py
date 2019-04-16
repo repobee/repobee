@@ -82,21 +82,6 @@ class TestReadIssue:
 
 
 @pytest.mark.parametrize(
-    "team_name, master_repo_name, empty_arg",
-    [
-        ("", "some-repo-name", "team_name"),
-        ("some-team-name", "", "master_repo_name"),
-    ],
-)
-def test_generate_repo_name_raises_on_empty_arg(
-    team_name, master_repo_name, empty_arg
-):
-    with pytest.raises(ValueError) as exc:
-        util.generate_repo_name(team_name, master_repo_name)
-    assert empty_arg in str(exc.value)
-
-
-@pytest.mark.parametrize(
     "url, expected_name",
     [
         ("https://github.com/slarse/some-repo", "some-repo"),
