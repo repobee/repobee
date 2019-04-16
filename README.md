@@ -125,6 +125,7 @@ features that are in the works.
 | Plugin support for top-level CLI commands | Planning                                                                  |
 | Travis CI plugin                          | Planning ([#165](https://github.com/repobee/repobee/issues/165))          |
 | Cleaner CLI help menus                    | Planning ([#164](https://github.com/repobee/repobee/issues/164))          |
+| GitLab support                            | Work in progress ([#172](https://github.com/repobee/repobee/issues/172))  |
 
 ## License
 This software is licensed under the MIT License. See the [LICENSE](LICENSE)
