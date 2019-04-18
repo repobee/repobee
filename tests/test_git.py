@@ -1,23 +1,37 @@
 import os
 import subprocess
+from subprocess import run
 from unittest.mock import call
 from collections import namedtuple
+import pathlib
 
 import pytest
 
 from repobee import git
 from repobee import exception
+from repobee import util
 
 import constants
 from constants import TOKEN
 
 URL_TEMPLATE = "https://{}github.com/slarse/clanim"
+REPO_NAME = "clanim"
 USER = constants.USER
 
 Env = namedtuple("Env", ("expected_url", "expected_url_with_username"))
 
 RunTuple = namedtuple("RunTuple", ("returncode", "stdout", "stderr"))
 AioSubproc = namedtuple("AioSubproc", ("create_subprocess", "process"))
+
+
+@pytest.fixture(autouse=True)
+def mock_ensure_repo_dir_exists(mocker, request):
+    """Mocked out to not accidentally create directories all over the place."""
+    if "no_ensure_repo_dir_mock" in request.keywords:
+        return
+
+    mocker.patch("pathlib.Path.mkdir", autospec=True)
+    mocker.patch("repobee.git._git_init", autospec=True)
 
 
 @pytest.fixture(scope="function")
@@ -110,15 +124,7 @@ def test_insert_empty_token_raises():
     assert "empty token" in str(exc)
 
 
-def test_clone_single_raises_on_empty_branch(env_setup):
-    with pytest.raises(ValueError) as exc:
-        git.clone_single(URL_TEMPLATE.format(""), TOKEN, branch="")
-    assert "branch must not be empty" in str(exc)
-
-
-def test_clone_single_raises_on_non_zero_exit_from_git_clone(
-    env_setup, mocker
-):
+def test_clone_single_raises_on_non_zero_exit_from_git_pull(env_setup, mocker):
     stderr = b"This is pretty bad!"
     # already patched in env_setup fixture
     subprocess.run.return_value = RunTuple(1, "", stderr)
@@ -129,45 +135,28 @@ def test_clone_single_raises_on_non_zero_exit_from_git_clone(
 
 
 def test_clone_single_issues_correct_command_with_defaults(env_setup):
-    expected_command = "git clone {} --single-branch".format(
-        env_setup.expected_url
-    ).split()
+    expected_command = "git pull {}".format(env_setup.expected_url).split()
 
     git.clone_single(URL_TEMPLATE.format(""), TOKEN)
-    subprocess.run.assert_called_once_with(
+    subprocess.run.assert_any_call(
         expected_command,
-        cwd=".",
+        cwd=str(pathlib.Path(".") / REPO_NAME),
         stderr=subprocess.PIPE,
         stdout=subprocess.PIPE,
     )
 
 
-def test_clone_single_issues_correct_command_without_single_branch(env_setup):
-    expected_command = "git clone {}".format(env_setup.expected_url).split()
-
-    git.clone_single(URL_TEMPLATE.format(""), TOKEN, single_branch=False)
-    subprocess.run.assert_called_once_with(
-        expected_command,
-        cwd=".",
-        stderr=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-    )
-
-
-def test_clone_single_issues_correct_command_with_single_other_branch(
-    env_setup
-):
+def test_clone_single_issues_correct_command_non_default_branch(env_setup):
     branch = "other-branch"
-    expected_command = "git clone {} --single-branch -b {}".format(
+    expected_command = "git pull {} {}".format(
         env_setup.expected_url, branch
     ).split()
 
-    git.clone_single(
-        URL_TEMPLATE.format(""), TOKEN, single_branch=True, branch=branch
-    )
-    subprocess.run.assert_called_once_with(
+    git.clone_single(URL_TEMPLATE.format(""), TOKEN, branch=branch)
+
+    subprocess.run.assert_any_call(
         expected_command,
-        cwd=".",
+        cwd=str(pathlib.Path(".") / REPO_NAME),
         stderr=subprocess.PIPE,
         stdout=subprocess.PIPE,
     )
@@ -176,20 +165,16 @@ def test_clone_single_issues_correct_command_with_single_other_branch(
 def test_clone_single_issues_correct_command_with_cwd(env_setup):
     working_dir = "some/working/dir"
     branch = "other-branch"
-    expected_command = "git clone {} --single-branch -b {}".format(
+    expected_command = "git pull {} {}".format(
         env_setup.expected_url, branch
     ).split()
 
     git.clone_single(
-        URL_TEMPLATE.format(""),
-        TOKEN,
-        single_branch=True,
-        branch=branch,
-        cwd=working_dir,
+        URL_TEMPLATE.format(""), TOKEN, branch=branch, cwd=working_dir
     )
     subprocess.run.assert_called_once_with(
         expected_command,
-        cwd=working_dir,
+        cwd=str(pathlib.Path(working_dir) / REPO_NAME),
         stderr=subprocess.PIPE,
         stdout=subprocess.PIPE,
     )
@@ -309,15 +294,13 @@ class TestClone:
     """Tests for clone."""
 
     @pytest.mark.parametrize("token", (TOKEN, "something-else-entirely"))
-    def test_happy_path(env_setup, push_tuples, aio_subproc, token):
+    def test_happy_path(self, env_setup, push_tuples, aio_subproc, token):
         urls = [pt.repo_url for pt in push_tuples]
         working_dir = "some/working/dir"
         expected_subproc_calls = [
             call(
-                *"git clone {} --single-branch".format(
-                    git._insert_token(url, token)
-                ).split(),
-                cwd=working_dir,
+                *"git pull {}".format(git._insert_token(url, token)).split(),
+                cwd=str(pathlib.Path(working_dir) / util.repo_name(url)),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE
             )
@@ -330,12 +313,12 @@ class TestClone:
         aio_subproc.create_subprocess.assert_has_calls(expected_subproc_calls)
 
     def test_tries_all_calls_despite_exceptions(
-        env_setup, push_tuples, mocker
+        self, env_setup, push_tuples, mocker
     ):
         urls = [pt.repo_url for pt in push_tuples]
         fail_urls = [urls[0], urls[-1]]
 
-        expected_calls = [call(url, TOKEN, True, cwd=".") for url in urls]
+        expected_calls = [call(url, TOKEN, cwd=".") for url in urls]
 
         async def raise_(repo_url, *args, **kwargs):
             if repo_url in fail_urls:
@@ -356,7 +339,7 @@ class TestClone:
         clone_mock.assert_has_calls(expected_calls)
 
     def test_tries_all_calls_despite_exceptions_lower_level(
-        env_setup, push_tuples, mocker, non_zero_aio_subproc
+        self, env_setup, push_tuples, mocker, non_zero_aio_subproc
     ):
         """Same test as test_tries_all_calls_desipite_exception, but
         asyncio.create_subprocess_exec is mocked out instead of
@@ -366,10 +349,8 @@ class TestClone:
 
         expected_calls = [
             call(
-                *"git clone {} --single-branch".format(
-                    git._insert_token(url, TOKEN)
-                ).split(),
-                cwd=".",
+                *"git pull {}".format(git._insert_token(url, TOKEN)).split(),
+                cwd=str(pathlib.Path(".") / util.repo_name(url)),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE
             )
@@ -380,3 +361,39 @@ class TestClone:
         non_zero_aio_subproc.create_subprocess.assert_has_calls(expected_calls)
 
         assert failed_urls == urls
+
+
+class TestEnsureRepoDirExists:
+    @pytest.mark.no_ensure_repo_dir_mock
+    def test_functions_when_dir_does_not_exist(self, tmpdir):
+        expected_git_repo = tmpdir.join(REPO_NAME)
+        assert (
+            not expected_git_repo.check()
+        ), "directory should not exist before test"
+
+        git._ensure_repo_dir_exists(URL_TEMPLATE.format(""), cwd=str(tmpdir))
+
+        assert util.is_git_repo(str(expected_git_repo))
+
+    @pytest.mark.no_ensure_repo_dir_mock
+    def test_functions_when_dir_exists(self, tmpdir):
+        expected_git_repo = tmpdir.join(REPO_NAME).mkdir()
+        assert expected_git_repo.check(
+            dir=1
+        ), "directory should exist before test"
+
+        git._ensure_repo_dir_exists(URL_TEMPLATE.format(""), cwd=str(tmpdir))
+
+        assert util.is_git_repo(str(expected_git_repo))
+
+    @pytest.mark.no_ensure_repo_dir_mock
+    def test_functions_when_git_repo_exists(self, tmpdir):
+        expected_git_repo = tmpdir.join(REPO_NAME).mkdir()
+        run(["git", "init"], cwd=str(expected_git_repo))
+        assert util.is_git_repo(
+            str(expected_git_repo)
+        ), "directory should be a git repo before test"
+
+        git._ensure_repo_dir_exists(URL_TEMPLATE.format(""), cwd=str(tmpdir))
+
+        assert util.is_git_repo(str(expected_git_repo))

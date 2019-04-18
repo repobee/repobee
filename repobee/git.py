@@ -9,16 +9,68 @@ import asyncio
 import os
 import subprocess
 import collections
+import pathlib
 import daiquiri
 from typing import Iterable, List, Any, Callable
 
 from repobee import exception
+from repobee import util
 
 CONCURRENT_TASKS = 20
 
 LOGGER = daiquiri.getLogger(__file__)
 
 Push = collections.namedtuple("Push", ("local_path", "repo_url", "branch"))
+
+
+def _ensure_repo_dir_exists(repo_url: str, cwd: str) -> pathlib.Path:
+    """Checks if a dir for the repo url exists, and if it does not, creates it.
+    Also initializez (or reinitializes, if it alrady exists) as a git repo.
+    """
+    repo_name = util.repo_name(repo_url)
+    dirpath = pathlib.Path(cwd) / repo_name
+    if not dirpath.exists():
+        dirpath.mkdir()
+    _git_init(dirpath)
+    return dirpath
+
+
+def _git_init(dirpath):
+    captured_run(["git", "init"], cwd=str(dirpath))
+
+
+def _pull_clone(repo_url: str, token: str, branch: str = "", cwd: str = "."):
+    """Simulate a clone with a pull to avoid writing the token to disk."""
+    dirpath = _ensure_repo_dir_exists(repo_url, cwd)
+
+    url_with_token = _insert_token(repo_url, token)
+    pull_command = (
+        "git pull {} {}".format(url_with_token, branch).strip().split()
+    )
+
+    rc, _, stderr = captured_run(pull_command, cwd=str(dirpath))
+    return rc, stderr
+
+
+async def _pull_clone_async(
+    repo_url: str, token: str, branch: str = "", cwd: str = "."
+):
+    """Same as _pull_clone, but asynchronously."""
+    dirpath = _ensure_repo_dir_exists(repo_url, cwd)
+
+    url_with_token = _insert_token(repo_url, token)
+    pull_command = (
+        "git pull {} {}".format(url_with_token, branch).strip().split()
+    )
+
+    proc = await asyncio.create_subprocess_exec(
+        *pull_command,
+        cwd=str(dirpath),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    _, stderr = await proc.communicate()
+    return proc.returncode, stderr
 
 
 def _insert_token(url: str, token: str) -> str:
@@ -61,69 +113,38 @@ def captured_run(*args, **kwargs):
     return proc.returncode, proc.stdout, proc.stderr
 
 
-def clone_single(
-    repo_url: str,
-    token: str,
-    single_branch: bool = True,
-    branch: str = None,
-    cwd: str = ".",
-):
+def clone_single(repo_url: str, token: str, branch: str = "", cwd: str = "."):
     """Clone a git repository.
 
     Args:
         repo_url: HTTPS url to repository on the form
             https://<host>/<owner>/<repo>.
-        single_branch: Whether or not to clone a single branch.
         branch: The branch to clone.
         cwd: Working directory. Defaults to the current directory.
         token: A GitHub OAUTH token.
     """
-    if isinstance(branch, str) and not branch:
-        raise ValueError("branch must not be empty")
-
-    options = []
-    if single_branch:
-        options.append("--single-branch")
-    if branch is not None:
-        options += ["-b", branch]
-
-    clone_command = ["git", "clone", _insert_token(repo_url, token), *options]
-    rc, _, stderr = captured_run(clone_command, cwd=cwd)
-
+    rc, stderr = _pull_clone(repo_url, token, branch, cwd)
     if rc != 0:
         raise exception.CloneFailedError(
             "Failed to clone", rc, stderr, repo_url
         )
 
 
-async def _clone_async(
-    repo_url: str,
-    token: str,
-    single_branch: bool = True,
-    branch: str = None,
-    cwd=".",
-):
+async def _clone_async(repo_url: str, token: str, branch: str = "", cwd="."):
     """Clone git repositories asynchronously.
 
     Args:
         repo_url: A url to clone.
-        single_branch: Whether to clone a single branch or not.
         branch: Which branch to clone.
         cwd: Working directory.
         token: A GitHub OAUTH token.
     """
-    command = ["git", "clone", _insert_token(repo_url, token)]
-    if single_branch:
-        command.append("--single-branch")
-    proc = await asyncio.create_subprocess_exec(
-        *command, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-    _, stderr = await proc.communicate()
+    rc, stderr = await _pull_clone_async(repo_url, token, branch, cwd)
 
-    if proc.returncode != 0:
+    if rc != 0:
         raise exception.CloneFailedError(
             "Failed to clone {}".format(repo_url),
-            returncode=proc.returncode,
+            returncode=rc,
             stderr=stderr,
             url=repo_url,
         )
@@ -132,16 +153,12 @@ async def _clone_async(
 
 
 def clone(
-    repo_urls: Iterable[str],
-    token: str,
-    single_branch: bool = True,
-    cwd: str = ".",
+    repo_urls: Iterable[str], token: str, cwd: str = "."
 ) -> List[Exception]:
     """Clone all repos asynchronously.
 
     Args:
         repo_urls: URLs to repos to clone.
-        single_branch: Whether or not to clone only the default branch.
         cwd: Working directory. Defaults to the current directory.
         token: A GitHub OAUTH token.
 
@@ -151,9 +168,7 @@ def clone(
     # TODO valdate repo_urls
     return [
         exc.url
-        for exc in _batch_execution(
-            _clone_async, repo_urls, token, single_branch, cwd=cwd
-        )
+        for exc in _batch_execution(_clone_async, repo_urls, token, cwd=cwd)
         if isinstance(exc, exception.CloneFailedError)
     ]
 
