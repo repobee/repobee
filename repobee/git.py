@@ -23,7 +23,7 @@ LOGGER = daiquiri.getLogger(__file__)
 Push = collections.namedtuple("Push", ("local_path", "repo_url", "branch"))
 
 
-def _ensure_repo_dir_exists(repo_url: str, cwd: str):
+def _ensure_repo_dir_exists(repo_url: str, cwd: str) -> pathlib.Path:
     """Checks if a dir for the repo url exists, and if it does not, creates it.
     Also initializez (or reinitializes, if it alrady exists) as a git repo.
     """

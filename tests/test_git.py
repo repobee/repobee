@@ -1,5 +1,6 @@
 import os
 import subprocess
+from subprocess import run
 from unittest.mock import call
 from collections import namedtuple
 import pathlib
@@ -360,3 +361,39 @@ class TestClone:
         non_zero_aio_subproc.create_subprocess.assert_has_calls(expected_calls)
 
         assert failed_urls == urls
+
+
+class TestEnsureRepoDirExists:
+    @pytest.mark.no_ensure_repo_dir_mock
+    def test_functions_when_dir_does_not_exist(self, tmpdir):
+        expected_git_repo = tmpdir.join(REPO_NAME)
+        assert (
+            not expected_git_repo.check()
+        ), "directory should not exist before test"
+
+        git._ensure_repo_dir_exists(URL_TEMPLATE.format(""), cwd=str(tmpdir))
+
+        assert util.is_git_repo(str(expected_git_repo))
+
+    @pytest.mark.no_ensure_repo_dir_mock
+    def test_functions_when_dir_exists(self, tmpdir):
+        expected_git_repo = tmpdir.join(REPO_NAME).mkdir()
+        assert expected_git_repo.check(
+            dir=1
+        ), "directory should exist before test"
+
+        git._ensure_repo_dir_exists(URL_TEMPLATE.format(""), cwd=str(tmpdir))
+
+        assert util.is_git_repo(str(expected_git_repo))
+
+    @pytest.mark.no_ensure_repo_dir_mock
+    def test_functions_when_git_repo_exists(self, tmpdir):
+        expected_git_repo = tmpdir.join(REPO_NAME).mkdir()
+        run(["git", "init"], cwd=str(expected_git_repo))
+        assert util.is_git_repo(
+            str(expected_git_repo)
+        ), "directory should be a git repo before test"
+
+        git._ensure_repo_dir_exists(URL_TEMPLATE.format(""), cwd=str(tmpdir))
+
+        assert util.is_git_repo(str(expected_git_repo))
