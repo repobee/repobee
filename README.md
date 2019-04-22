@@ -31,15 +31,16 @@ allowing us to test RepoBee at quite a large scale.
 * Generate repositories for students based on master (template) repositories
 * Clone student repositories in batches
 * Peer review features: give students read access to other students'
-  repositories to e.g. code review. Easily revoke read access once reviews are
+  repositories to do code review. Easily revoke read access once reviews are
   done.
 * Support for group assignments (multiple students per repository)
-* Open, close and list issues for select student repositories.
+* Open, close and list issues for select student repositories
 * Extend RepoBee with the
   [plugin system](https://repobee.readthedocs.io/en/latest/plugins.html)
 * Support both for GitHub Enterprise and github.com
+    - **GitLab support in the works**, see [Upcoming features](#upcoming-features)
 * Very little configuration required on the GitHub side
-    - The only requirements is to have an Organization with private repository
+    - The only requirement is to have an Organization with private repository
       capabilities!
 * No local configuration required
     - Although [setting a few defaults](https://repobee.readthedocs.io/en/latest/configuration.html#configuration)
@@ -119,13 +120,13 @@ RepoBee need to be altered.
 There is still a lot in store for RepoBee. Below is a roadmap for major
 features that are in the works.
 
-| Feature                                   | Status                                                                    |
-| -------                                   | ------                                                                    |
-| Peer review support for group assignments | Work in progress  ([#167](https://github.com/repobee/repobee/issues/167)) |
-| Plugin support for top-level CLI commands | Planning                                                                  |
-| Travis CI plugin                          | Planning ([#165](https://github.com/repobee/repobee/issues/165))          |
-| Cleaner CLI help menus                    | Planning ([#164](https://github.com/repobee/repobee/issues/164))          |
-| GitLab support                            | Work in progress ([#172](https://github.com/repobee/repobee/issues/172))  |
+| Feature                                   | Status                                                                    | ETA                       |
+| -------                                   | ------                                                                    | ---                       |
+| GitLab support                            | Work in progress ([#172](https://github.com/repobee/repobee/issues/172))  | Beta release by June 2019 |
+| Peer review support for group assignments | Work in progress  ([#167](https://github.com/repobee/repobee/issues/167)) | June 2019                 |
+| Cleaner CLI help menus                    | Work in progress ([#164](https://github.com/repobee/repobee/issues/164))  | May 2019                  |
+| Plugin support for top-level CLI commands | Planning                                                                  | TBA                       |
+| Travis CI plugin                          | Planning ([#165](https://github.com/repobee/repobee/issues/165))          | TBA                       |
 
 ## License
 This software is licensed under the MIT License. See the [LICENSE](LICENSE)
