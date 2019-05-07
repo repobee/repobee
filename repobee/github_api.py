@@ -101,7 +101,9 @@ class GitHubAPI:
     organization.
     """
 
-    def __init__(self, base_url: str, token: str, org_name: str):
+    def __init__(
+        self, base_url: str, token: str, org_name: str, user: str = None
+    ):
         """Set up the GitHub API object.
 
         Args:
@@ -109,12 +111,14 @@ class GitHubAPI:
             https://api.github.com for GitHub or https://<HOST>/api/v3 for
             Enterprise).
             token: A GitHub OAUTH token.
+            user: Name of the current user of the API.
             org_name: Name of the target organization.
         """
         self._github = github.Github(login_or_token=token, base_url=base_url)
         self._org_name = org_name
         self._base_url = base_url
         self._token = token
+        self._user = user
         with _try_api_request():
             self._org = self._github.get_organization(self._org_name)
 
@@ -320,7 +324,7 @@ class GitHubAPI:
                     "{}/{} already exists".format(self._org_name, info.name)
                 )
 
-        return repo_urls
+        return [self._insert_auth(url) for url in repo_urls]
 
     def get_repo_urls(
         self, repo_names: Iterable[str], org_name: Optional[str] = None
@@ -344,9 +348,35 @@ class GitHubAPI:
                 else self._github.get_organization(org_name)
             )
         return [
-            "{}/{}".format(org.html_url, repo_name)
-            for repo_name in list(repo_names)
+            self._insert_auth(url)
+            for url in (
+                "{}/{}".format(org.html_url, repo_name)
+                for repo_name in list(repo_names)
+            )
         ]
+
+    def _insert_auth(self, repo_url: str):
+        """Insert an authentication token into the url.
+
+        Args:
+            repo_url: A HTTPS url to a repository.
+        Returns:
+            the input url with an authentication token inserted.
+        """
+        if not repo_url.startswith("https://"):
+            raise ValueError(
+                "unsupported protocol in '{}', please use https:// ".format(
+                    repo_url
+                )
+            )
+        # TODO in RepoBee 2.0, user will always be available
+        # user may not always be available
+        auth = (
+            self.token
+            if not self._user
+            else "{}:{}".format(self._user, self.token)
+        )
+        return repo_url.replace("https://", "https://{}@".format(auth))
 
     def get_issues(
         self,

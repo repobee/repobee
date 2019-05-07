@@ -1,7 +1,6 @@
 import os
 import sys
 from repobee import exception
-from repobee import git
 
 import constants
 
@@ -58,8 +57,10 @@ class TestGitError:
         """
         token = "032957238hfibwt8374"  # random garbage token
         returncode = 128
-        repo_url = "{}/some-repo".format(constants.HOST_URL)
-        repo_url_with_token = git._insert_token(repo_url, token)
+        repo_url_template = "https://{}some-host.com/some-repo"
+        repo_url = repo_url_template.format("")
+        # GitHub-style token
+        repo_url_with_token = repo_url_template.format(token + "@")
         fatal = "fatal: repo '{}' could not be found".format(
             repo_url_with_token
         )
@@ -90,9 +91,11 @@ class TestGitError:
         """
         token = "032957238hfibwt8374"  # random garbage token
         returncode = 128
-        repo_url = "{}/some-repo".format(constants.HOST_URL)
-        repo_url_with_user_and_token = git._insert_user_and_token(
-            repo_url, USER, token
+        repo_url_template = "https://{}some-host.com/some-repo"
+        repo_url = repo_url_template.format("")
+        # GitHub-style token
+        repo_url_with_user_and_token = repo_url_template.format(
+            "{}:{}@".format(USER, token)
         )
         fatal = "fatal: repo '{}' could not be found".format(
             repo_url_with_user_and_token

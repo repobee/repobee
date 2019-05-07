@@ -4,7 +4,6 @@ from unittest.mock import patch, MagicMock, call, ANY, PropertyMock
 
 import repobee
 from repobee import command
-from repobee import github_api
 from repobee import git
 from repobee import tuples
 from repobee import util
@@ -18,7 +17,6 @@ import functions
 
 from_magic_mock_issue = functions.from_magic_mock_issue
 to_magic_mock_issue = functions.to_magic_mock_issue
-User = constants.User
 TOKEN = constants.TOKEN
 
 random_date = functions.random_date
@@ -61,10 +59,8 @@ CLOSED_ISSUES = [
     )
 ]
 
-USER = "slarse"
 ORG_NAME = "test-org"
 GITHUB_BASE_URL = "https://some_enterprise_host/api/v3"
-API = github_api.GitHubAPI("bla", "bla", "bla")
 ISSUE = tuples.Issue(
     "Oops, something went wrong!", "This is the body **with some formatting**."
 )
@@ -236,7 +232,7 @@ def assert_raises_on_duplicate_master_urls(function, master_urls, students):
     master_urls.append(master_urls[0])
 
     with pytest.raises(ValueError) as exc_info:
-        function(master_urls, USER, students, ORG_NAME, GITHUB_BASE_URL)
+        function(master_urls, students, ORG_NAME, GITHUB_BASE_URL)
     assert str(exc_info.value) == "master_repo_urls contains duplicates"
 
 
@@ -250,12 +246,12 @@ class TestSetupStudentRepos:
     def test_raises_on_clone_failure(
         self, master_urls, students, git_mock, api_mock
     ):
-        git_mock.clone_single.side_effect = lambda url, tokwn, cwd: raise_(
+        git_mock.clone_single.side_effect = lambda url, cwd: raise_(
             exception.CloneFailedError("clone failed", 128, b"some error", url)
         )()
 
         with pytest.raises(exception.CloneFailedError) as exc_info:
-            command.setup_student_repos(master_urls, students, USER, api_mock)
+            command.setup_student_repos(master_urls, students, api_mock)
 
         assert exc_info.value.url == master_urls[0]
 
@@ -265,7 +261,7 @@ class TestSetupStudentRepos:
         master_urls.append(master_urls[0])
 
         with pytest.raises(ValueError) as exc_info:
-            command.setup_student_repos(master_urls, students, USER, api_mock)
+            command.setup_student_repos(master_urls, students, api_mock)
         assert str(exc_info.value) == "master_repo_urls contains duplicates"
 
     def test_happy_path(
@@ -282,22 +278,20 @@ class TestSetupStudentRepos:
     ):
         """Test that setup_student_repos makes the correct function calls."""
         expected_clone_calls = [
-            call(url, TOKEN, cwd=str(tmpdir)) for url in master_urls
+            call(url, cwd=str(tmpdir)) for url in master_urls
         ]
         expected_ensure_teams_arg = {
             str(student): [str(student)] for student in students
         }
 
-        command.setup_student_repos(master_urls, students, USER, api_mock)
+        command.setup_student_repos(master_urls, students, api_mock)
 
         git_mock.clone_single.assert_has_calls(expected_clone_calls)
         api_mock.ensure_teams_and_members.assert_called_once_with(
             expected_ensure_teams_arg
         )
         api_mock.create_repos.assert_called_once_with(repo_infos)
-        git_mock.push.assert_called_once_with(
-            push_tuples, user=USER, token=TOKEN
-        )
+        git_mock.push.assert_called_once_with(push_tuples)
 
 
 class TestUpdateStudentRepos:
@@ -313,7 +307,7 @@ class TestUpdateStudentRepos:
         master_urls.append(master_urls[0])
 
         with pytest.raises(ValueError) as exc_info:
-            command.update_student_repos(master_urls, students, USER, api_mock)
+            command.update_student_repos(master_urls, students, api_mock)
         assert str(exc_info.value) == "master_repo_urls contains duplicates"
 
     def test_happy_path(
@@ -331,19 +325,17 @@ class TestUpdateStudentRepos:
         NOTE: Ignores the git mock.
         """
         expected_clone_calls = [
-            call(url, TOKEN, cwd=str(tmpdir)) for url in master_urls
+            call(url, cwd=str(tmpdir)) for url in master_urls
         ]
 
         api_mock.get_repo_urls.side_effect = lambda repo_names: list(
             map(generate_repo_url, repo_names)
         )
 
-        command.update_student_repos(master_urls, students, USER, api_mock)
+        command.update_student_repos(master_urls, students, api_mock)
 
         git_mock.clone_single.assert_has_calls(expected_clone_calls)
-        git_mock.push.assert_called_once_with(
-            push_tuples, user=USER, token=TOKEN
-        )
+        git_mock.push.assert_called_once_with(push_tuples)
 
     @pytest.mark.nogitmock
     @pytest.mark.parametrize(
@@ -375,7 +367,7 @@ class TestUpdateStudentRepos:
             self.generate_url(name) for name in repo_names
         ]
 
-        async def raise_specific(pt, user, token):
+        async def raise_specific(pt):
             if pt.repo_url in fail_repo_urls:
                 raise exception.PushFailedError(
                     "Push failed", 128, b"some error", pt.repo_url
@@ -384,9 +376,7 @@ class TestUpdateStudentRepos:
         mocker.patch("repobee.git._push_async", side_effect=raise_specific)
         mocker.patch("repobee.git.clone_single")
 
-        command.update_student_repos(
-            master_urls, students, USER, api_mock, issue
-        )
+        command.update_student_repos(master_urls, students, api_mock, issue)
 
         if issue:  # expect issue to be opened
             call_list = api_mock.open_issue.call_args_list
@@ -425,7 +415,7 @@ class TestUpdateStudentRepos:
             self.generate_url(name) for name in repo_names
         ]
 
-        async def raise_specific(pt, token, branch):
+        async def raise_specific(pt):
             if pt.repo_url in fail_repo_urls:
                 raise exception.PushFailedError(
                     "Push failed", 128, b"some error", pt.repo_url
@@ -434,7 +424,7 @@ class TestUpdateStudentRepos:
         mocker.patch("repobee.git._push_async", side_effect=raise_specific)
         mocker.patch("repobee.git.clone_single")
 
-        command.update_student_repos(master_urls, students, USER, api_mock)
+        command.update_student_repos(master_urls, students, api_mock)
 
         assert not api_mock.open_issue.called
 
@@ -547,7 +537,7 @@ class TestCloneRepos:
         ]
         command.clone_repos(master_names, students, api_mock)
 
-        git_mock.clone.assert_called_once_with(expected_urls, TOKEN)
+        git_mock.clone.assert_called_once_with(expected_urls)
 
     def test_executes_act_hooks(
         self, api_mock, git_mock, master_names, students, act_hook_mocks
@@ -594,7 +584,7 @@ class TestMigrateRepo:
             for name, url in zip(master_names, expected_push_urls)
         ]
         expected_clone_calls = [
-            call(url, TOKEN, cwd=str(tmpdir)) for url in master_urls
+            call(url, cwd=str(tmpdir)) for url in master_urls
         ]
 
         api_mock.create_repos.side_effect = lambda infos: [
@@ -605,16 +595,14 @@ class TestMigrateRepo:
         )
         git_push_mock = mocker.patch("repobee.git.push", autospec=True)
 
-        command.migrate_repos(master_urls, USER, api_mock)
+        command.migrate_repos(master_urls, api_mock)
 
         git_clone_mock.assert_has_calls(expected_clone_calls)
         assert api_mock.create_repos.called
         api_mock.ensure_teams_and_members.assert_called_once_with(
             {command.MASTER_TEAM: []}
         )
-        git_push_mock.assert_called_once_with(
-            expected_pts, user=USER, token=TOKEN
-        )
+        git_push_mock.assert_called_once_with(expected_pts)
 
 
 class TestListIssues:

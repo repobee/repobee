@@ -4,6 +4,7 @@ import pytest
 from unittest.mock import MagicMock, PropertyMock, call
 
 import github
+import repobee
 from repobee import util
 from repobee import exception
 from repobee import github_api
@@ -428,23 +429,47 @@ class TestCreateRepos:
         are validation errors.
         """
         expected_urls = [
-            generate_repo_url(info.name, ORG_NAME) for info in repo_infos
+            api._insert_auth(generate_repo_url(info.name, ORG_NAME))
+            for info in repo_infos
         ]
 
         actual_urls = api.create_repos(repo_infos)
         assert actual_urls == expected_urls
+        for url in actual_urls:
+            assert TOKEN in url
 
 
 class TestGetRepoUrls:
     """Tests for get_repo_urls."""
 
-    def test_all_repos_found(self, repos, api):
+    @pytest.mark.skipif(
+        repobee.__version__ >= "2.0.0",
+        reason="Made obsolete by including user in every CLI command",
+    )
+    def test_with_token_without_user(self, repos, api):
+        """Test getting repo urls when the api has the token, but no user. The
+        token should be in the url anyway.
+        """
+        api._user = None
         repo_names = [repo.name for repo in repos]
-        expected_urls = [repo.html_url for repo in repos]
+        expected_urls = [api._insert_auth(repo.html_url) for repo in repos]
 
         urls = api.get_repo_urls(repo_names)
 
         assert sorted(urls) == sorted(expected_urls)
+        for url in urls:
+            assert TOKEN in url
+
+    def test_with_token_and_user(self, repos, api):
+        repo_names = [repo.name for repo in repos]
+        api._user = USER
+        expected_urls = [api._insert_auth(repo.html_url) for repo in repos]
+
+        urls = api.get_repo_urls(repo_names)
+
+        assert sorted(urls) == sorted(expected_urls)
+        for url in urls:
+            assert "{}:{}".format(USER, TOKEN) in url
 
 
 class TestOpenIssue:

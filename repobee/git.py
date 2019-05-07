@@ -39,29 +39,23 @@ def _git_init(dirpath):
     captured_run(["git", "init"], cwd=str(dirpath))
 
 
-def _pull_clone(repo_url: str, token: str, branch: str = "", cwd: str = "."):
-    """Simulate a clone with a pull to avoid writing the token to disk."""
+def _pull_clone(repo_url: str, branch: str = "", cwd: str = "."):
+    """Simulate a clone with a pull to avoid writing remotes (that could
+    include secure tokens) to disk.
+    """
     dirpath = _ensure_repo_dir_exists(repo_url, cwd)
 
-    url_with_token = _insert_token(repo_url, token)
-    pull_command = (
-        "git pull {} {}".format(url_with_token, branch).strip().split()
-    )
+    pull_command = "git pull {} {}".format(repo_url, branch).strip().split()
 
     rc, _, stderr = captured_run(pull_command, cwd=str(dirpath))
     return rc, stderr
 
 
-async def _pull_clone_async(
-    repo_url: str, token: str, branch: str = "", cwd: str = "."
-):
+async def _pull_clone_async(repo_url: str, branch: str = "", cwd: str = "."):
     """Same as _pull_clone, but asynchronously."""
     dirpath = _ensure_repo_dir_exists(repo_url, cwd)
 
-    url_with_token = _insert_token(repo_url, token)
-    pull_command = (
-        "git pull {} {}".format(url_with_token, branch).strip().split()
-    )
+    pull_command = "git pull {} {}".format(repo_url, branch).strip().split()
 
     proc = await asyncio.create_subprocess_exec(
         *pull_command,
@@ -73,38 +67,6 @@ async def _pull_clone_async(
     return proc.returncode, stderr
 
 
-def _insert_token(url: str, token: str) -> str:
-    """Insert a token into the url as described here:
-        https://blog.github.com/2012-09-21-easier-builds-and-deployments-using-git-over-https-and-oauth/
-
-    Args:
-        url: A url to a git repo.
-        token: A GitHub OAUTH token, with or without username (e.g. on the form
-        `<token>` or `<username>:<token>`)
-
-    Returns:
-        The provided url with the token inserted
-    """
-    if not token:
-        raise ValueError("invalid token, empty token not allowed")
-    return url.replace("https://", "https://{}@".format(token))
-
-
-def _insert_user_and_token(https_url: str, user: str, token: str) -> str:
-    """Insert a username and an oauth token into the https url as described here:
-        https://blog.github.com/2012-09-21-easier-builds-and-deployments-using-git-over-https-and-oauth/
-
-    Args:
-        https_url: A url on the form `https://host.topdomain`
-        user: A GitHub username.
-        token: A GitHub OAUTH token.
-
-    Returns:
-        The provided url with the username and token inserted
-    """
-    return _insert_token(https_url, "{}:{}".format(user, token))
-
-
 def captured_run(*args, **kwargs):
     """Run a subprocess and capture the output."""
     proc = subprocess.run(
@@ -113,7 +75,7 @@ def captured_run(*args, **kwargs):
     return proc.returncode, proc.stdout, proc.stderr
 
 
-def clone_single(repo_url: str, token: str, branch: str = "", cwd: str = "."):
+def clone_single(repo_url: str, branch: str = "", cwd: str = "."):
     """Clone a git repository.
 
     Args:
@@ -121,25 +83,23 @@ def clone_single(repo_url: str, token: str, branch: str = "", cwd: str = "."):
             https://<host>/<owner>/<repo>.
         branch: The branch to clone.
         cwd: Working directory. Defaults to the current directory.
-        token: A GitHub OAUTH token.
     """
-    rc, stderr = _pull_clone(repo_url, token, branch, cwd)
+    rc, stderr = _pull_clone(repo_url, branch, cwd)
     if rc != 0:
         raise exception.CloneFailedError(
             "Failed to clone", rc, stderr, repo_url
         )
 
 
-async def _clone_async(repo_url: str, token: str, branch: str = "", cwd="."):
+async def _clone_async(repo_url: str, branch: str = "", cwd="."):
     """Clone git repositories asynchronously.
 
     Args:
         repo_url: A url to clone.
         branch: Which branch to clone.
         cwd: Working directory.
-        token: A GitHub OAUTH token.
     """
-    rc, stderr = await _pull_clone_async(repo_url, token, branch, cwd)
+    rc, stderr = await _pull_clone_async(repo_url, branch, cwd)
 
     if rc != 0:
         raise exception.CloneFailedError(
@@ -152,15 +112,12 @@ async def _clone_async(repo_url: str, token: str, branch: str = "", cwd="."):
         LOGGER.info("Cloned into {}".format(repo_url))
 
 
-def clone(
-    repo_urls: Iterable[str], token: str, cwd: str = "."
-) -> List[Exception]:
+def clone(repo_urls: Iterable[str], cwd: str = ".") -> List[Exception]:
     """Clone all repos asynchronously.
 
     Args:
         repo_urls: URLs to repos to clone.
         cwd: Working directory. Defaults to the current directory.
-        token: A GitHub OAUTH token.
 
     Returns:
         URLs from which cloning failed.
@@ -168,25 +125,18 @@ def clone(
     # TODO valdate repo_urls
     return [
         exc.url
-        for exc in _batch_execution(_clone_async, repo_urls, token, cwd=cwd)
+        for exc in _batch_execution(_clone_async, repo_urls, cwd=cwd)
         if isinstance(exc, exception.CloneFailedError)
     ]
 
 
-async def _push_async(pt: Push, user: str, token: str):
+async def _push_async(pt: Push):
     """Asynchronous call to git push, pushing directly to the repo_url and branch.
 
     Args:
         pt: A Push namedtuple.
-        user: The username to use in the push.
-        token: A GitHub OAUTH token.
     """
-    command = [
-        "git",
-        "push",
-        _insert_user_and_token(pt.repo_url, user, token),
-        pt.branch,
-    ]
+    command = ["git", "push", pt.repo_url, pt.branch]
     proc = await asyncio.create_subprocess_exec(
         *command,
         cwd=os.path.abspath(pt.local_path),
@@ -208,9 +158,7 @@ async def _push_async(pt: Push, user: str, token: str):
         LOGGER.info("Pushed files to {} {}".format(pt.repo_url, pt.branch))
 
 
-def _push_no_retry(
-    push_tuples: Iterable[Push], user: str, token: str
-) -> List[str]:
+def _push_no_retry(push_tuples: Iterable[Push]) -> List[str]:
     """Push to all repos defined in push_tuples asynchronously. Amount of
     concurrent tasks is limited by CONCURRENT_TASKS.
 
@@ -218,8 +166,6 @@ def _push_no_retry(
 
     Args:
         push_tuples: Push namedtuples defining local and remote repos.
-        user: The username to put in the push.
-        token: A GitHub OAUTH token.
 
     Returns:
         urls to which pushes failed with exception.PushFailedError. Other
@@ -227,14 +173,12 @@ def _push_no_retry(
     """
     return [
         exc.url
-        for exc in _batch_execution(_push_async, push_tuples, user, token)
+        for exc in _batch_execution(_push_async, push_tuples)
         if isinstance(exc, exception.PushFailedError)
     ]
 
 
-def push(
-    push_tuples: Iterable[Push], user: str, token: str, tries: int = 3
-) -> List[str]:
+def push(push_tuples: Iterable[Push], tries: int = 3) -> List[str]:
     """Push to all repos defined in push_tuples asynchronously. Amount of
     concurrent tasks is limited by CONCURRENT_TASKS. Pushing to repos is tried
     a maximum of ``tries`` times (i.e. pushing is _retried_ ``tries - 1``
@@ -242,8 +186,6 @@ def push(
 
     Args:
         push_tuples: Push namedtuples defining local and remote repos.
-        user: The username to put in the push.
-        token: A GitHub OAUTH token.
         tries: Amount of times to try to push (including initial push).
 
     Returns:
@@ -256,7 +198,7 @@ def push(
     failed_pts = list(push_tuples)
     for i in range(tries):
         LOGGER.info("pushing, attempt {}/{}".format(i + 1, tries))
-        failed_urls = set(_push_no_retry(failed_pts, user, token))
+        failed_urls = set(_push_no_retry(failed_pts))
         failed_pts = [pt for pt in push_tuples if pt.repo_url in failed_urls]
         if not failed_pts:
             break

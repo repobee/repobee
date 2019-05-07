@@ -173,7 +173,7 @@ class TestDispatchCommand:
         cli.dispatch_command(args, api_instance_mock)
 
         command_mock.setup_student_repos.assert_called_once_with(
-            args.master_repo_urls, args.students, args.user, api_instance_mock
+            args.master_repo_urls, args.students, api_instance_mock
         )
 
     def test_update_student_repos_called_with_correct_args(
@@ -186,7 +186,6 @@ class TestDispatchCommand:
         command_mock.update_student_repos.assert_called_once_with(
             args.master_repo_urls,
             args.students,
-            args.user,
             api_instance_mock,
             issue=args.issue,
         )
@@ -227,7 +226,7 @@ class TestDispatchCommand:
         cli.dispatch_command(args, api_instance_mock)
 
         command_mock.migrate_repos.assert_called_once_with(
-            args.master_repo_urls, args.user, api_instance_mock
+            args.master_repo_urls, api_instance_mock
         )
 
     def test_clone_repos_called_with_correct_args(
@@ -626,7 +625,7 @@ def assert_base_push_args(parsed_args, api):
     assert parsed_args.master_repo_urls == [
         generate_repo_url(rn, ORG_NAME) for rn in REPO_NAMES
     ]
-    api.assert_called_once_with(GITHUB_BASE_URL, TOKEN, ORG_NAME)
+    api.assert_called_once_with(GITHUB_BASE_URL, TOKEN, ORG_NAME, USER)
 
 
 def assert_config_args(parser, parsed_args):
