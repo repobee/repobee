@@ -4,7 +4,6 @@ from unittest.mock import patch, MagicMock, call, ANY, PropertyMock
 
 import repobee
 from repobee import command
-from repobee import github_api
 from repobee import git
 from repobee import tuples
 from repobee import util
@@ -62,7 +61,6 @@ CLOSED_ISSUES = [
 
 ORG_NAME = "test-org"
 GITHUB_BASE_URL = "https://some_enterprise_host/api/v3"
-API = github_api.GitHubAPI("bla", "bla", "bla")
 ISSUE = tuples.Issue(
     "Oops, something went wrong!", "This is the body **with some formatting**."
 )

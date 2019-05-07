@@ -159,7 +159,12 @@ def parse_args(
         # only if clone is chosen should plugins be able to hook in
         plug.manager.hook.parse_args(args=args)
 
-    api = _connect_to_api(args.github_base_url, token, args.org_name)
+    api = _connect_to_api(
+        args.github_base_url,
+        token,
+        args.org_name,
+        args.user if "user" in args else None,
+    )
 
     if "master_repo_urls" in args and args.master_repo_urls:
         master_urls = args.master_repo_urls
@@ -847,11 +852,11 @@ def _extract_groups(args: argparse.Namespace) -> List[str]:
 
 
 def _connect_to_api(
-    github_base_url: str, token: str, org_name: str
+    github_base_url: str, token: str, org_name: str, user: str
 ) -> github_api.GitHubAPI:
     """Return a GitHubAPI instance connected to the specified API endpoint."""
     try:
-        api = github_api.GitHubAPI(github_base_url, token, org_name)
+        api = github_api.GitHubAPI(github_base_url, token, org_name, user)
     except exception.NotFoundError:
         # more informative message
         raise exception.NotFoundError(

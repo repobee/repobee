@@ -625,7 +625,7 @@ def assert_base_push_args(parsed_args, api):
     assert parsed_args.master_repo_urls == [
         generate_repo_url(rn, ORG_NAME) for rn in REPO_NAMES
     ]
-    api.assert_called_once_with(GITHUB_BASE_URL, TOKEN, ORG_NAME)
+    api.assert_called_once_with(GITHUB_BASE_URL, TOKEN, ORG_NAME, USER)
 
 
 def assert_config_args(parser, parsed_args):
