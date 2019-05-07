@@ -255,16 +255,12 @@ def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
     if args.subparser == SETUP_PARSER:
         with _sys_exit_on_expected_error():
             command.setup_student_repos(
-                args.master_repo_urls, args.students, args.user, api
+                args.master_repo_urls, args.students, api
             )
     elif args.subparser == UPDATE_PARSER:
         with _sys_exit_on_expected_error():
             command.update_student_repos(
-                args.master_repo_urls,
-                args.students,
-                args.user,
-                api,
-                issue=args.issue,
+                args.master_repo_urls, args.students, api, issue=args.issue
             )
     elif args.subparser == OPEN_ISSUE_PARSER:
         with _sys_exit_on_expected_error():
@@ -278,7 +274,7 @@ def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
             )
     elif args.subparser == MIGRATE_PARSER:
         with _sys_exit_on_expected_error():
-            command.migrate_repos(args.master_repo_urls, args.user, api)
+            command.migrate_repos(args.master_repo_urls, api)
     elif args.subparser == CLONE_PARSER:
         with _sys_exit_on_expected_error():
             command.clone_repos(args.master_repo_names, args.students, api)

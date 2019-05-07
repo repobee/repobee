@@ -173,7 +173,7 @@ class TestDispatchCommand:
         cli.dispatch_command(args, api_instance_mock)
 
         command_mock.setup_student_repos.assert_called_once_with(
-            args.master_repo_urls, args.students, args.user, api_instance_mock
+            args.master_repo_urls, args.students, api_instance_mock
         )
 
     def test_update_student_repos_called_with_correct_args(
@@ -186,7 +186,6 @@ class TestDispatchCommand:
         command_mock.update_student_repos.assert_called_once_with(
             args.master_repo_urls,
             args.students,
-            args.user,
             api_instance_mock,
             issue=args.issue,
         )
@@ -227,7 +226,7 @@ class TestDispatchCommand:
         cli.dispatch_command(args, api_instance_mock)
 
         command_mock.migrate_repos.assert_called_once_with(
-            args.master_repo_urls, args.user, api_instance_mock
+            args.master_repo_urls, api_instance_mock
         )
 
     def test_clone_repos_called_with_correct_args(

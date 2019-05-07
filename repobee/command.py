@@ -42,7 +42,6 @@ MASTER_TEAM = "master_repos"
 def setup_student_repos(
     master_repo_urls: Iterable[str],
     students: Iterable[tuples.Group],
-    user: str,
     api: GitHubAPI,
 ) -> None:
     """Setup student repositories based on master repo templates. Performs three
@@ -64,21 +63,20 @@ def setup_student_repos(
         master_repo_urls: URLs to master repos. Must be in the organization
         that the api is set up for.
         students: An iterable of student GitHub usernames.
-        user: Username of the administrator that setting up the repos.
         api: A GitHubAPI instance used to interface with the GitHub instance.
     """
     urls = list(master_repo_urls)  # safe copy
 
     with tempfile.TemporaryDirectory() as tmpdir:
         LOGGER.info("cloning into master repos ...")
-        master_repo_paths = _clone_all(urls, api.token, cwd=tmpdir)
+        master_repo_paths = _clone_all(urls, cwd=tmpdir)
 
         teams = add_students_to_teams(students, api)
         repo_urls = _create_student_repos(urls, teams, api)
 
         push_tuples = _create_push_tuples(master_repo_paths, repo_urls)
         LOGGER.info("pushing files to student repos ...")
-        git.push(push_tuples, user=user, token=api.token)
+        git.push(push_tuples)
 
 
 def add_students_to_teams(
@@ -122,14 +120,13 @@ def _create_student_repos(
     return repo_urls
 
 
-def _clone_all(urls: Iterable[str], token: str, cwd: str):
+def _clone_all(urls: Iterable[str], cwd: str):
     """Attempts to clone all urls. If a repo is already present, it is skipped.
     If any one clone fails (except for fails because the repo is local),
     all cloned repos are removed
 
     Args:
         urls: HTTPS urls to git repositories.
-        token: A GitHub OATH token.
         cwd: Working directory. Use temporary directory for automatic cleanup.
     Returns:
         local paths to the cloned repos.
@@ -139,7 +136,7 @@ def _clone_all(urls: Iterable[str], token: str, cwd: str):
     try:
         for url in urls:
             LOGGER.info("cloning into {}".format(url))
-            git.clone_single(url, token, cwd=cwd)
+            git.clone_single(url, cwd=cwd)
     except exception.CloneFailedError:
         LOGGER.error("error cloning into {}, aborting ...".format(url))
         raise
@@ -151,7 +148,6 @@ def _clone_all(urls: Iterable[str], token: str, cwd: str):
 def update_student_repos(
     master_repo_urls: Iterable[str],
     students: Iterable[tuples.Group],
-    user: str,
     api: GitHubAPI,
     issue: Optional[tuples.Issue] = None,
 ) -> None:
@@ -161,7 +157,6 @@ def update_student_repos(
         master_repo_urls: URLs to master repos. Must be in the organization
             that the api is set up for.
         students: An iterable of student GitHub usernames.
-        user: Username of the administrator that setting up the repos.
         api: A GitHubAPI instance used to interface with the GitHub instance.
         issue: An optional issue to open in repos to which pushing fails.
     """
@@ -177,12 +172,12 @@ def update_student_repos(
 
     with tempfile.TemporaryDirectory() as tmpdir:
         LOGGER.info("cloning into master repos ...")
-        master_repo_paths = _clone_all(urls, api.token, tmpdir)
+        master_repo_paths = _clone_all(urls, tmpdir)
 
         push_tuples = _create_push_tuples(master_repo_paths, repo_urls)
 
         LOGGER.info("pushing files to student repos ...")
-        failed_urls = git.push(push_tuples, user=user, token=api.token)
+        failed_urls = git.push(push_tuples)
 
     if failed_urls and issue:
         LOGGER.info("Opening issue in repos to which push failed")
@@ -365,7 +360,7 @@ def clone_repos(
     repo_urls = api.get_repo_urls(repo_names)
 
     LOGGER.info("cloning into student repos ...")
-    git.clone(repo_urls, api.token)
+    git.clone(repo_urls)
 
     if (
         len(plug.manager.get_plugins()) > 1
@@ -389,16 +384,13 @@ def _execute_post_clone_hooks(repo_names: List[str], api: GitHubAPI):
     LOGGER.info("post clone hooks done")
 
 
-def migrate_repos(
-    master_repo_urls: Iterable[str], user: str, api: GitHubAPI
-) -> None:
+def migrate_repos(master_repo_urls: Iterable[str], api: GitHubAPI) -> None:
     """Migrate a repository from an arbitrary URL to the target organization.
     The new repository is added to the master_repos team, which is created if
     it does not already exist.
 
     Args:
         master_repo_urls: HTTPS URLs to the master repos to migrate.
-        user: username of the administrator performing the migration. This is
         the username that is used in the push.
         api: A GitHubAPI instance used to interface with the GitHub instance.
     """
@@ -417,7 +409,7 @@ def migrate_repos(
     ]
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        _clone_all(master_repo_urls, api.token, cwd=tmpdir)
+        _clone_all(master_repo_urls, cwd=tmpdir)
         repo_urls = api.create_repos(infos)
 
         git.push(
@@ -428,9 +420,7 @@ def migrate_repos(
                     branch="master",
                 )
                 for repo_url, info in zip(repo_urls, infos)
-            ],
-            user=user,
-            token=api.token,
+            ]
         )
 
     LOGGER.info("done!")
