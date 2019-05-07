@@ -12,8 +12,8 @@ import argparse
 import pathlib
 import os
 import sys
+import re
 from contextlib import contextmanager
-from collections import namedtuple
 from typing import List, Iterable, Optional, Tuple
 
 import logging
@@ -47,6 +47,21 @@ daiquiri.setup(
         ),
     ),
 )
+
+
+def _filter_tokens():
+    """Filter out any secure tokens from log output."""
+    old_factory = logging.getLogRecordFactory()
+
+    def record_factory(*args, **kwargs):
+        record = old_factory(*args, **kwargs)
+        record.msg = re.sub("https://.*?@", "https://", record.msg)
+        return record
+
+    logging.setLogRecordFactory(record_factory)
+
+
+_filter_tokens()
 
 LOGGER = daiquiri.getLogger(__file__)
 SUB = "subparser"
