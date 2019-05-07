@@ -11,14 +11,10 @@ from repobee import git
 from repobee import exception
 from repobee import util
 
-import constants
-from constants import TOKEN
-
 URL_TEMPLATE = "https://{}github.com/slarse/clanim"
 REPO_NAME = "clanim"
-USER = constants.USER
 
-Env = namedtuple("Env", ("expected_url", "expected_url_with_username"))
+Env = namedtuple("Env", ("expected_url",))
 
 RunTuple = namedtuple("RunTuple", ("returncode", "stdout", "stderr"))
 AioSubproc = namedtuple("AioSubproc", ("create_subprocess", "process"))
@@ -39,15 +35,7 @@ def env_setup(mocker):
     mocker.patch(
         "subprocess.run", autospec=True, return_value=RunTuple(0, b"", b"")
     )
-    # TOKEN was mocked as the environment token when repobee.git was imported
-    expected_url = URL_TEMPLATE.format(TOKEN + "@")
-    expected_url_with_username = URL_TEMPLATE.format(
-        "{}:{}@".format(USER, TOKEN)
-    )
-    return Env(
-        expected_url=expected_url,
-        expected_url_with_username=expected_url_with_username,
-    )
+    return Env(expected_url=URL_TEMPLATE.format(""))
 
 
 @pytest.fixture(scope="function")
@@ -111,33 +99,20 @@ def push_tuples():
     return tups
 
 
-def test_insert_token():
-    token = "1209487fbfuq324yfqf78b6"
-    assert git._insert_token(
-        URL_TEMPLATE.format(""), token
-    ) == URL_TEMPLATE.format(token + "@")
-
-
-def test_insert_empty_token_raises():
-    with pytest.raises(ValueError) as exc:
-        git._insert_token(URL_TEMPLATE.format(""), "")
-    assert "empty token" in str(exc)
-
-
 def test_clone_single_raises_on_non_zero_exit_from_git_pull(env_setup, mocker):
     stderr = b"This is pretty bad!"
     # already patched in env_setup fixture
     subprocess.run.return_value = RunTuple(1, "", stderr)
 
     with pytest.raises(exception.CloneFailedError) as exc:
-        git.clone_single("{}".format(URL_TEMPLATE.format("")), TOKEN)
+        git.clone_single("{}".format(URL_TEMPLATE.format("")))
     assert "Failed to clone" in str(exc.value)
 
 
 def test_clone_single_issues_correct_command_with_defaults(env_setup):
     expected_command = "git pull {}".format(env_setup.expected_url).split()
 
-    git.clone_single(URL_TEMPLATE.format(""), TOKEN)
+    git.clone_single(URL_TEMPLATE.format(""))
     subprocess.run.assert_any_call(
         expected_command,
         cwd=str(pathlib.Path(".") / REPO_NAME),
@@ -152,7 +127,7 @@ def test_clone_single_issues_correct_command_non_default_branch(env_setup):
         env_setup.expected_url, branch
     ).split()
 
-    git.clone_single(URL_TEMPLATE.format(""), TOKEN, branch=branch)
+    git.clone_single(URL_TEMPLATE.format(""), branch=branch)
 
     subprocess.run.assert_any_call(
         expected_command,
@@ -169,9 +144,7 @@ def test_clone_single_issues_correct_command_with_cwd(env_setup):
         env_setup.expected_url, branch
     ).split()
 
-    git.clone_single(
-        URL_TEMPLATE.format(""), TOKEN, branch=branch, cwd=working_dir
-    )
+    git.clone_single(URL_TEMPLATE.format(""), branch=branch, cwd=working_dir)
     subprocess.run.assert_called_once_with(
         expected_command,
         cwd=str(pathlib.Path(working_dir) / REPO_NAME),
@@ -188,7 +161,7 @@ class TestPush:
         self, env_setup, push_tuples, tries
     ):
         with pytest.raises(ValueError) as exc_info:
-            git.push(push_tuples, USER, TOKEN, tries=tries)
+            git.push(push_tuples, tries=tries)
 
         assert "tries must be larger than 0" in str(exc_info)
 
@@ -198,9 +171,7 @@ class TestPush:
         """
         expected_calls = [
             call(
-                *"git push {} {}".format(
-                    git._insert_user_and_token(url, USER, TOKEN), branch
-                ).split(),
+                *"git push {} {}".format(url, branch).split(),
                 cwd=os.path.abspath(local_repo),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE
@@ -208,7 +179,7 @@ class TestPush:
             for local_repo, url, branch in push_tuples
         ]
 
-        failed_urls = git.push(push_tuples, USER, TOKEN)
+        failed_urls = git.push(push_tuples)
 
         assert not failed_urls
         aio_subproc.create_subprocess.assert_has_calls(expected_calls)
@@ -221,11 +192,10 @@ class TestPush:
         """
         tries = 3
         expected_calls = [
-            call(pt, USER, TOKEN)
-            for pt in sorted(push_tuples, key=lambda pt: pt.repo_url)
+            call(pt) for pt in sorted(push_tuples, key=lambda pt: pt.repo_url)
         ] * tries
 
-        async def raise_(pt, user, token):
+        async def raise_(pt):
             raise exception.PushFailedError(
                 "Push failed", 128, b"some error", pt.repo_url
             )
@@ -233,7 +203,7 @@ class TestPush:
         mocker.patch("repobee.git._push_async", side_effect=raise_)
         expected_failed_urls = [pt.repo_url for pt in push_tuples]
 
-        failed_urls = git.push(push_tuples, USER, TOKEN, tries=tries)
+        failed_urls = git.push(push_tuples, tries=tries)
 
         assert sorted(failed_urls) == sorted(expected_failed_urls)
         git._push_async.assert_has_calls(expected_calls, any_order=True)
@@ -244,7 +214,7 @@ class TestPush:
         tried = False
         fail_pt = push_tuples[1]
 
-        async def raise_once(pt, user, token):
+        async def raise_once(pt):
             nonlocal tried
             if not tried and pt == fail_pt:
                 tried = True
@@ -254,7 +224,7 @@ class TestPush:
 
         expected_num_calls = len(push_tuples) + 1  # one retry
 
-        async def raise_(pt, user, token):
+        async def raise_(pt):
             raise exception.PushFailedError(
                 "Push failed", 128, b"some error", pt.repo_url
             )
@@ -263,7 +233,7 @@ class TestPush:
             "repobee.git._push_async", side_effect=raise_once
         )
 
-        git.push(push_tuples, USER, TOKEN, tries=10)
+        git.push(push_tuples, tries=10)
 
         assert len(async_push_mock.call_args_list) == expected_num_calls
 
@@ -274,9 +244,7 @@ class TestPush:
 
         expected_calls = [
             call(
-                *"git push {}".format(
-                    git._insert_user_and_token(pt.repo_url, USER, TOKEN)
-                ).split(),
+                *"git push {}".format(pt.repo_url).split(),
                 pt.branch,
                 cwd=os.path.abspath(pt.local_path),
                 stdout=subprocess.PIPE,
@@ -285,7 +253,7 @@ class TestPush:
             for pt in push_tuples
         ]
 
-        git.push(push_tuples, USER, TOKEN)
+        git.push(push_tuples)
 
         aio_subproc.create_subprocess.assert_has_calls(expected_calls)
 
@@ -293,13 +261,12 @@ class TestPush:
 class TestClone:
     """Tests for clone."""
 
-    @pytest.mark.parametrize("token", (TOKEN, "something-else-entirely"))
-    def test_happy_path(self, env_setup, push_tuples, aio_subproc, token):
+    def test_happy_path(self, env_setup, push_tuples, aio_subproc):
         urls = [pt.repo_url for pt in push_tuples]
         working_dir = "some/working/dir"
         expected_subproc_calls = [
             call(
-                *"git pull {}".format(git._insert_token(url, token)).split(),
+                *"git pull {}".format(url).split(),
                 cwd=str(pathlib.Path(working_dir) / util.repo_name(url)),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE
@@ -307,7 +274,7 @@ class TestClone:
             for url in urls
         ]
 
-        failed_urls = git.clone(urls, token, cwd=working_dir)
+        failed_urls = git.clone(urls, cwd=working_dir)
 
         assert not failed_urls
         aio_subproc.create_subprocess.assert_has_calls(expected_subproc_calls)
@@ -318,7 +285,7 @@ class TestClone:
         urls = [pt.repo_url for pt in push_tuples]
         fail_urls = [urls[0], urls[-1]]
 
-        expected_calls = [call(url, TOKEN, cwd=".") for url in urls]
+        expected_calls = [call(url, cwd=".") for url in urls]
 
         async def raise_(repo_url, *args, **kwargs):
             if repo_url in fail_urls:
@@ -333,7 +300,7 @@ class TestClone:
             "repobee.git._clone_async", autospec=True, side_effect=raise_
         )
 
-        failed_urls = git.clone(urls, TOKEN)
+        failed_urls = git.clone(urls)
 
         assert failed_urls == fail_urls
         clone_mock.assert_has_calls(expected_calls)
@@ -349,7 +316,7 @@ class TestClone:
 
         expected_calls = [
             call(
-                *"git pull {}".format(git._insert_token(url, TOKEN)).split(),
+                *"git pull {}".format(url).split(),
                 cwd=str(pathlib.Path(".") / util.repo_name(url)),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE
@@ -357,7 +324,7 @@ class TestClone:
             for url in urls
         ]
 
-        failed_urls = git.clone(urls, TOKEN)
+        failed_urls = git.clone(urls)
         non_zero_aio_subproc.create_subprocess.assert_has_calls(expected_calls)
 
         assert failed_urls == urls
