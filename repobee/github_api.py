@@ -20,6 +20,7 @@ import github
 
 from repobee import exception
 from repobee import tuples
+from repobee import util
 
 REQUIRED_OAUTH_SCOPES = {"admin:org", "repo"}
 
@@ -327,16 +328,23 @@ class GitHubAPI:
         return [self._insert_auth(url) for url in repo_urls]
 
     def get_repo_urls(
-        self, repo_names: Iterable[str], org_name: Optional[str] = None
+        self,
+        master_repo_names: Iterable[str],
+        org_name: Optional[str] = None,
+        students: Optional[List[tuples.Group]] = None,
     ) -> List[str]:
-        """Get repo urls for all specified repo names in organization.  Assumes
+        """Get repo urls for all specified repo names in organization. Assumes
         that the repos exist, there is no guarantee that they actually do as
         checking this with the REST API takes too much time.
 
+        If the `students` argument is supplied, student repo urls are
+        computed instead of master repo urls.
+
         Args:
-            repo_names: A list of repository names.
+            master_repo_names: A list of master repository names.
             org_name: Organization in which repos are expected. Defaults to the
                 target organization of the API instance.
+            students: A list of student groups.
 
         Returns:
             a list of urls corresponding to the repo names.
@@ -347,6 +355,11 @@ class GitHubAPI:
                 if not org_name
                 else self._github.get_organization(org_name)
             )
+        repo_names = (
+            master_repo_names
+            if not students
+            else util.generate_repo_names(students, master_repo_names)
+        )
         return [
             self._insert_auth(url)
             for url in (

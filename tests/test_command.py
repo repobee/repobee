@@ -78,6 +78,17 @@ def generate_repo_url(name):
     return generate_team_repo_url(name, "d")[:-2]
 
 
+def get_repo_urls_fake(master_repo_names, org_name=None, students=None):
+    return list(
+        map(
+            generate_repo_url,
+            master_repo_names
+            if not students
+            else util.generate_repo_names(students, master_repo_names),
+        )
+    )
+
+
 MASTER_NAMES = ("week-1", "week-2", "week-3")
 MASTER_URLS = tuple(generate_repo_url(name) for name in MASTER_NAMES)
 
@@ -125,16 +136,15 @@ def _get_issues(repo_names, state="open", title_regex=""):
 def api_mock(request, mocker):
     if "noapimock" in request.keywords:
         return
-    mock = MagicMock(spec=repobee.command.GitHubAPI)
-    api_class = mocker.patch("repobee.command.GitHubAPI", autospec=True)
-    api_class.return_value = mock
 
     def url_from_repo_info(repo_info):
         return generate_repo_url(repo_info.name)
 
-    mock.get_repo_urls.side_effect = lambda repo_names: list(
-        map(generate_repo_url, repo_names)
-    )
+    mock = MagicMock(spec=repobee.command.GitHubAPI)
+    api_class = mocker.patch("repobee.command.GitHubAPI", autospec=True)
+    api_class.return_value = mock
+
+    mock.get_repo_urls.side_effect = get_repo_urls_fake
     mock.create_repos.side_effect = lambda repo_infos: list(
         map(url_from_repo_info, repo_infos)
     )
@@ -328,10 +338,6 @@ class TestUpdateStudentRepos:
             call(url, cwd=str(tmpdir)) for url in master_urls
         ]
 
-        api_mock.get_repo_urls.side_effect = lambda repo_names: list(
-            map(generate_repo_url, repo_names)
-        )
-
         command.update_student_repos(master_urls, students, api_mock)
 
         git_mock.clone_single.assert_has_calls(expected_clone_calls)
@@ -358,14 +364,13 @@ class TestUpdateStudentRepos:
             for name in [master_name, "week-3"]
         ]
 
-        fail_repo_names = [
-            util.generate_repo_name(stud, master_name) for stud in ["a", "c"]
-        ]
-        fail_repo_urls = [self.generate_url(name) for name in fail_repo_names]
-
-        api_mock.get_repo_urls.side_effect = lambda repo_names: [
-            self.generate_url(name) for name in repo_names
-        ]
+        fail_students = ["a", "c"]
+        fail_repo_names = util.generate_repo_names(
+            fail_students, [master_name]
+        )
+        fail_repo_urls = get_repo_urls_fake(
+            [master_name], students=fail_students
+        )
 
         async def raise_specific(pt):
             if pt.repo_url in fail_repo_urls:
@@ -410,10 +415,6 @@ class TestUpdateStudentRepos:
             util.generate_repo_name(stud, master_name) for stud in ["a", "c"]
         ]
         fail_repo_urls = [self.generate_url(name) for name in fail_repo_names]
-
-        api_mock.get_repo_urls.side_effect = lambda repo_names: [
-            self.generate_url(name) for name in repo_names
-        ]
 
         async def raise_specific(pt):
             if pt.repo_url in fail_repo_urls:
