@@ -166,9 +166,8 @@ def update_student_repos(
         raise ValueError("master_repo_urls contains duplicates")
 
     master_repo_names = [util.repo_name(url) for url in urls]
-    student_repo_names = util.generate_repo_names(students, master_repo_names)
 
-    repo_urls = api.get_repo_urls(student_repo_names)
+    repo_urls = api.get_repo_urls(master_repo_names, students=students)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         LOGGER.info("cloning into master repos ...")
@@ -356,8 +355,7 @@ def clone_repos(
         students: Student usernames.
         api: A GitHubAPI instance.
     """
-    repo_names = util.generate_repo_names(students, master_repo_names)
-    repo_urls = api.get_repo_urls(repo_names)
+    repo_urls = api.get_repo_urls(master_repo_names, students=students)
 
     LOGGER.info("cloning into student repos ...")
     git.clone(repo_urls)
@@ -365,6 +363,7 @@ def clone_repos(
     if (
         len(plug.manager.get_plugins()) > 1
     ):  # something else than the default loaded
+        repo_names = util.generate_repo_names(students, master_repo_names)
         _execute_post_clone_hooks(repo_names, api)
 
 

@@ -471,6 +471,24 @@ class TestGetRepoUrls:
         for url in urls:
             assert "{}:{}".format(USER, TOKEN) in url
 
+    def test_with_students(self, repos, api):
+        """Test that supplying students causes student repo names to be
+        generated as the Cartesian product of the supplied repo names and the
+        students.
+        """
+        students = list(constants.STUDENTS)
+        master_repo_names = [repo.name for repo in repos]
+        expected_repo_names = util.generate_repo_names(
+            students, master_repo_names
+        )
+        # assume works correctly when called with just repo names
+        expected_urls = api.get_repo_urls(expected_repo_names)
+
+        actual_urls = api.get_repo_urls(master_repo_names, students=students)
+
+        assert len(actual_urls) == len(students) * len(master_repo_names)
+        assert sorted(expected_urls) == sorted(actual_urls)
+
 
 class TestOpenIssue:
     """Tests for open_issue."""
