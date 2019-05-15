@@ -103,7 +103,7 @@ class GitLabAPI:
     def __init__(self, base_url, token, org_name, user: str = None):
         if user:
             LOGGER.warning("user is ignored when using GitLab")
-        self._user = "ouath2"
+        self._user = "oauth2"
         self._gitlab = gitlab.Gitlab(base_url, private_token=token)
         self._group_name = org_name
         self._group = self.get_organization(self._group_name)
@@ -327,7 +327,7 @@ class GitLabAPI:
                     "{}/{} already exists".format(self._group.name, info.name)
                 )
 
-        return repo_urls
+        return [self._insert_auth(url) for url in repo_urls]
 
     def get_repo_urls(
         self,
@@ -354,12 +354,12 @@ class GitLabAPI:
         group_url = f"{self._base_url}/{self._group_name}"
         repo_urls = (
             [
-                "{}/{}".format(group_url, repo_name)
+                "{}/{}.git".format(group_url, repo_name)
                 for repo_name in master_repo_names
             ]
             if not students
             else [
-                "{}/{}/{}".format(
+                "{}/{}/{}.git".format(
                     group_url,
                     student,
                     util.generate_repo_name(str(student), master_repo_name),
@@ -378,6 +378,7 @@ class GitLabAPI:
         Returns:
             the input url with an authentication token inserted.
         """
+        # TODO remove http hack
         if not repo_url.startswith("https://"):
             raise ValueError(
                 "unsupported protocol in '{}', please use https:// ".format(
