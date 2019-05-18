@@ -823,9 +823,13 @@ def _extract_groups(args: argparse.Namespace) -> List[str]:
 
 def _identify_api(base_url, token):
     gitlab_response = requests.get(
-        "{}/api/v4/projects".format(base_url), headers={"Private-Token": token}
+        "{}/api/v4/users?per_page=1".format(base_url),
+        headers={"Private-Token": token},
     )
     if gitlab_response.status_code == 200:
+        LOGGER.warning(
+            "Using a GitLab API. GitLab support is in alpha and unstable."
+        )
         return gitlab_api.GitLabAPI
     return github_api.GitHubAPI
 

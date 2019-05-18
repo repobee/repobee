@@ -1,52 +1,36 @@
 """GitHub API module.
 
-This module contains the :py:class:`GitHubAPI` class, which is meant to be the
-prime means of interacting with the GitHub API in ``repobee``. The methods of
-GitHubAPI are mostly high-level bulk operations.
+This module contains the :py:class:`GitLabAPI` class, which is meant to be the
+prime means of interacting with the GitLab API in RepoBee. The methods of
+GitLabAPI are mostly high-level bulk operations.
 
-.. module:: github_api
-    :synopsis: Top level interface for interacting with a GitHub instance
+.. module:: gitlab_api
+    :synopsis: Top level interface for interacting with a GitLab instance
         within repobee.
 
 .. moduleauthor:: Simon Larsén
 """
-from typing import List, Iterable, Mapping, Optional, Generator, Tuple
+from typing import List, Iterable, Mapping, Optional
 from socket import gaierror
 import collections
-import daiquiri
 import contextlib
-import github
+
+import daiquiri
 import gitlab
 
 from repobee import exception
 from repobee import tuples
 from repobee import util
 
-REQUIRED_OAUTH_SCOPES = {"admin:org", "repo"}
-
 LOGGER = daiquiri.getLogger(__file__)
-
-# classes used internally in this module
-_Team = github.Team.Team
-_User = github.NamedUser.NamedUser
-_Repo = github.Repository.Repository
-
-DEFAULT_REVIEW_ISSUE = tuples.Issue(
-    title="Peer review",
-    body="You have been assigned to peer review this repo.",
-)
 
 
 @contextlib.contextmanager
 def _convert_404_to_not_found_error(msg):
-    """Catch a github.GithubException with status 404 and convert to
-    exception.NotFoundError with the provided message. If the GithubException
-    does not have status 404, instead raise exception.UnexpectedException.
-    """
     try:
         yield
-    except github.GithubException as exc:
-        if exc.status == 404:
+    except gitlab.exceptions.GitlabError as exc:
+        if exc.response_code == 404:
             raise exception.NotFoundError(msg)
         raise exception.UnexpectedException(
             "An unexpected exception occured. {.__name__}: {}".format(
@@ -61,35 +45,26 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
 
     Args:
         ignore_statuses: One or more status codes to ignore (only
-        applicable if the exception is a github.GithubException).
-
-    Raises:
-        exception.NotFoundError
-        exception.BadCredentials
-        exception.GitHubError
-        exception.ServiceNotFoundError
-        exception.UnexpectedException
+        applicable if the exception is a gitlab.exceptions.GitlabError).
     """
     try:
         yield
-    except gitlab.exceptions.GitlabCreateError:
-        pass
-    except github.GithubException as e:
-        if ignore_statuses and e.status in ignore_statuses:
+    except gitlab.exceptions.GitlabError as e:
+        if ignore_statuses and e.response_code in ignore_statuses:
             return
 
-        if e.status == 404:
+        if e.response_code == 404:
             raise exception.NotFoundError(str(e), status=404)
-        elif e.status == 401:
+        elif e.response_code == 401:
             raise exception.BadCredentials(
                 "credentials rejected, verify that token has correct access.",
                 status=401,
             )
         else:
-            raise exception.GitHubError(str(e), status=e.status)
+            raise exception.GitHubError(str(e), status=e.response_code)
     except gaierror:
         raise exception.ServiceNotFoundError(
-            "GitHub service could not be found, check the url"
+            "GitLab service could not be found, check the url"
         )
     except Exception as e:
         raise exception.UnexpectedException(
@@ -114,9 +89,7 @@ class GitLabAPI:
     def org(self):
         return self._group
 
-    def get_teams_in(
-        self, team_names: Iterable[str]
-    ) -> Generator[github.Team.Team, None, None]:
+    def get_teams_in(self, team_names: Iterable[str]):
         """Get all teams that match any team name in the team_names iterable.
 
         Args:
@@ -177,15 +150,9 @@ class GitLabAPI:
 
         return list(self.get_teams_in(set(member_lists.keys())))
 
-    def _ensure_members_in_team(
-        self, team: github.Team.Team, members: Iterable[str]
-    ):
+    def _ensure_members_in_team(self, team, members: Iterable[str]):
         """Add all of the users in ``members`` to a team. Skips any users that
         don't exist, or are already in the team.
-
-        Args:
-            team: A _Team object to which members should be added.
-            members: An iterable of usernames.
         """
         existing_members = set(
             member.login for member in self.get_members(team)
@@ -221,7 +188,7 @@ class GitLabAPI:
     def get_teams(self):
         return self._gitlab.groups.list(id=self._group.id)
 
-    def add_to_team(self, members: Iterable[str], team: github.Team.Team):
+    def add_to_team(self, members: Iterable[str], team):
         """Add members to a team.
 
         Args:
@@ -469,11 +436,7 @@ class GitLabAPI:
         """
         raise NotImplementedError()
 
-    def add_repos_to_teams(
-        self, team_to_repos: Mapping[str, Iterable[str]]
-    ) -> Generator[
-        Tuple[github.Team.Team, github.Repository.Repository], None, None
-    ]:
+    def add_repos_to_teams(self, team_to_repos: Mapping[str, Iterable[str]]):
         """Add repos to teams and yield each (team, repo) combination _after_
         the repo has been added to the team.
 
@@ -485,9 +448,7 @@ class GitLabAPI:
         """
         raise NotImplementedError()
 
-    def _get_repos_by_name(
-        self, repo_names: Iterable[str]
-    ) -> Generator[_Repo, None, None]:
+    def _get_repos_by_name(self, repo_names: Iterable[str]):
         """Get all repos that match any of the names in repo_names. Unmatched
         names are ignored (in both directions).
 
@@ -527,7 +488,7 @@ class GitLabAPI:
         Args:
             user: The username to try to fetch.
             org_name: Name of an organization.
-            base_url: A base url to a github API.
+            base_url: A base url to a GitLab instance.
             token: A secure OAUTH2 token.
         Returns:
             True if the connection is well formed.
