@@ -621,11 +621,7 @@ def _add_subparsers(parser):
             "Migrate master repositories into the target organization. "
             "The repos must either be local on disk (and specified with "
             "`-mn`), or somewhere in the target GitHub instance (and "
-            "specified with `-mu`). Migrate repos are added to the `{}` "
-            "team. `migrate-repos` can also be used to update already "
-            "migrated repos, by simply running the command again.".format(
-                command.MASTER_TEAM
-            )
+            "specified with `-mu`)."
         ),
         parents=[base_parser, base_user_parser],
     )

@@ -600,9 +600,9 @@ class TestMigrateRepo:
 
         git_clone_mock.assert_has_calls(expected_clone_calls)
         assert api_mock.create_repos.called
-        api_mock.ensure_teams_and_members.assert_called_once_with(
-            {command.MASTER_TEAM: []}
-        )
+        assert (
+            not api_mock.ensure_teams_and_members.called
+        ), "master repos should no longer be added to a team"
         git_push_mock.assert_called_once_with(expected_pts)
 
 
