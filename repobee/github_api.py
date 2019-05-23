@@ -308,13 +308,13 @@ class GitHubAPI:
         for info in repo_infos:
             created = False
             with _try_api_request(ignore_statuses=[422]):
+                kwargs = dict(
+                    description=info.description, private=info.private
+                )
+                if info.team_id:  # using falsy results in an exception
+                    kwargs["team_id"] = info.team_id
                 repo_urls.append(
-                    self._org.create_repo(
-                        info.name,
-                        description=info.description,
-                        private=info.private,
-                        team_id=info.team_id,
-                    ).html_url
+                    self._org.create_repo(info.name, **kwargs).html_url
                 )
                 LOGGER.info("created {}/{}".format(self._org_name, info.name))
                 created = True

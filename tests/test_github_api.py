@@ -438,6 +438,24 @@ class TestCreateRepos:
         for url in actual_urls:
             assert TOKEN in url
 
+    def test_create_repos_without_team_id(self, api):
+        """If there is no team id specified for the repo, then
+        github.Organization.create_repo must be called without the team_id
+        argument (because if it is called with team_id=None, there is a crash).
+        """
+        repo = tuples.Repo(
+            name="repo",
+            description="Some description",
+            private=True,
+            team_id=None,  # this is the important part!
+        )
+
+        api.create_repos([repo])
+
+        api._org.create_repo.assert_called_once_with(
+            repo.name, description=repo.description, private=repo.private
+        )
+
 
 class TestGetRepoUrls:
     """Tests for get_repo_urls."""
