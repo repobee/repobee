@@ -2,20 +2,20 @@
 
 Migrate repositories into the target (or master) organization (``migrate`` command)
 ***********************************************************************************
-Migrating repositories from one organization to another can be useful in a few
-cases. You may have repos that should be accessible to students and need to be
-moved across course rounds, or you might be storing your master repos in the
-target organization and need to migrate them for each new course round. To
-migrate repos into the target organization, they need to be either:
+Migrating repositories into an organization can be useful in a few cases. You
+may have repos that should be accessible to students and need to be moved
+across course rounds, or you might be storing your master repos in the target
+organization and need to migrate them for each new course round. To migrate
+repos into the target organization, they must be local on disc. Assuming we
+have the repos ``master-repo-1`` and ``master-repo-2`` in the current working
+directory (i.e. local repos), all we have to do is this:
 
-* Local in the current working directory, and specified by name.
+.. note::
 
-or
-
-* Somewhere in the target GitHub instance, and specified by URL.
-
-Assuming we have the repos ``master-repo-1`` and ``master-repo-2`` in the
-current working directory (i.e. local repos), all we have to do is this:
+   Prior to v1.4.0, the ``migrate`` command also accepted urls with the
+   ``-mu`` option. This functionality was abruptly removed due to
+   implementation issues, and is unlikely to appear again because of its
+   limited use.
 
 .. code-block:: bash
 
@@ -60,16 +60,3 @@ without changing the local repos yields the following output:
 In fact, all RepoBee commands that deal with pushing to or cloning from
 repos in some way are safe to run over and over. This is mostly because of
 how Git works, and has little to do with RepoBee itself.
-
-.. note::
-
-    The ``migrate`` command can also be used to migrate repos from somewhere
-    on the GitHub instance into the target organization. To do this, use the
-    ``-mu`` option and provide the urls, instead of ``-mn`` with local paths.
-    For example, given a repo at
-    ``https://some-enterprise-host/other-org/master-repo-1``, it can be
-    migrated into ``repobee-demo`` by typing
-
-    .. code-block:: bash
-
-        $ repobee migrate -mu https://some-enterprise-host/other-org/master-repo-1
