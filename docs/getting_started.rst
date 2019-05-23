@@ -16,8 +16,8 @@ workflow can be summarized in the following steps:
 1. Create an organization (the target organization).
 2. Configure RepoBee for the target organization.
 3. Verify settings.
-4. Migrate master repositories into the target organization.
-5. Create one copy of each master repo for each student.
+4. Setting up the master repos.
+5. Setting up the student repos.
 
 There is more to RepoBee, such as opening/closing issues, updating student
 repos and cloning repos in batches, but here we will just look at the bare
@@ -150,9 +150,9 @@ recommend having a separate, persistent organization so that you can work on
 repos across course rounds. If you already have a master organization with your
 master repos set up somewhere, and ``master_org_name`` is specified in the
 config, you're good to go. If you need to migrate repos into the target
-organization (i.e. you are not using a master organization), see the
-:ref:`migrate` section. For all commands but the ``migrate`` command, the way
-you set this up does not matter as RepoBee commands go.
+organization (e.g. if you keep master repos in the target organization), see
+the :ref:`migrate` section. For all commands but the ``migrate`` command, the
+way you set this up does not matter as far as RepoBee commands go.
 
 .. _setup:
 
