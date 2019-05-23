@@ -113,12 +113,6 @@ DEPRECATED_PARSERS = {
     ),
 }
 
-_urls_deprecation = tuples.Deprecation(remove_by="v2.0.0", replacement=None)
-DEPRECATED_ARGS = {
-    "--master-repo-urls": _urls_deprecation,
-    "-mu": _urls_deprecation,
-}
-
 
 def parse_args(
     sys_args: Iterable[str]
@@ -233,22 +227,12 @@ def _handle_deprecation(sys_args: List[str]) -> List[str]:
     """If the first argument on the arglist is a deprecated command, replace it
     with the corresponding current command and issue a warning.
 
-    If any deprecated argument appears in the arg list, issue a warning.
-
     Returns:
         The sys_args list with any deprecated command replaced with the current
         one.
     """
     if not sys_args:
         return []
-
-    for arg in sys_args:
-        if arg in DEPRECATED_ARGS:
-            deprecation = DEPRECATED_ARGS[arg]
-            LOGGER.warning(
-                "use of the '{}' argument has been deprecated and will be "
-                "removed by {}".format(arg, deprecation.remove_by)
-            )
 
     parser_name = sys_args[0]
     if parser_name in DEPRECATED_PARSERS:
