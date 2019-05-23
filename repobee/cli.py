@@ -166,15 +166,11 @@ def parse_args(
         args.user if "user" in args else None,
     )
 
-    if "master_repo_urls" in args and args.master_repo_urls:
-        master_urls = args.master_repo_urls
-        master_names = [util.repo_name(url) for url in master_urls]
-    else:
-        master_org_name = args.org_name
-        if "master_org_name" in args and args.master_org_name is not None:
-            master_org_name = args.master_org_name
-        master_names = args.master_repo_names
-        master_urls = _repo_names_to_urls(master_names, master_org_name, api)
+    master_org_name = args.org_name
+    if "master_org_name" in args and args.master_org_name is not None:
+        master_org_name = args.master_org_name
+    master_names = args.master_repo_names
+    master_urls = _repo_names_to_urls(master_names, master_org_name, api)
     assert master_urls and master_names
 
     groups = _extract_groups(args)
@@ -614,38 +610,15 @@ def _add_subparsers(parser):
         type=str,
     )
 
-    migrate = subparsers.add_parser(
+    subparsers.add_parser(
         MIGRATE_PARSER,
-        help="Migrate master repositories into the target organization.",
+        help="Migrate repositories into the target organization.",
         description=(
-            "Migrate master repositories into the target organization. "
-            "The repos must either be local on disk (and specified with "
-            "`-mn`), or somewhere in the target GitHub instance (and "
-            "specified with `-mu`)."
+            "Migrate repositories into the target organization. "
+            "The repos must be local on disk to be migrated. Note that "
+            "migrated repos will be private."
         ),
-        parents=[base_parser, base_user_parser],
-    )
-    names_or_urls = migrate.add_mutually_exclusive_group(required=True)
-    names_or_urls.add_argument(
-        "-mu",
-        "--master-repo-urls",
-        help=(
-            "One or more URLs to the master repositories. One student repo is "
-            "created for each master repo."
-        ),
-        type=str,
-        nargs="+",
-    )
-    names_or_urls.add_argument(
-        "-mn",
-        "--master-repo-names",
-        help=(
-            "One or more names of master repositories. Assumes that the "
-            "master repos are in the same organization as specified by "
-            "the 'org-name' argument."
-        ),
-        type=str,
-        nargs="+",
+        parents=[repo_name_parser, base_user_parser],
     )
 
     clone = subparsers.add_parser(

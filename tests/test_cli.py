@@ -757,10 +757,6 @@ class TestMigrateParser:
     """Tests for MIGRATE_PARSER."""
 
     NAMES = ["some-repo", "other-repo"]
-    URLS = [
-        "https://someurl.org/{}".format(NAMES[0]),
-        "https://otherurl.com/{}".format(NAMES[1]),
-    ]
     LOCAL_URIS = [
         pathlib.Path(os.path.abspath(name)).as_uri() for name in NAMES
     ]
@@ -771,37 +767,14 @@ class TestMigrateParser:
             "repobee.util.is_git_repo", autospec=True, return_value=True
         )
 
-    def assert_migrate_args(self, parsed_args, *, uses_urls: bool) -> bool:
+    def assert_migrate_args(self, parsed_args) -> bool:
         assert parsed_args.user == USER
         assert parsed_args.org_name == ORG_NAME
         assert parsed_args.github_base_url == GITHUB_BASE_URL
         assert parsed_args.master_repo_names == self.NAMES
-        if uses_urls:
-            assert parsed_args.master_repo_urls == self.URLS
-        else:
-            assert parsed_args.master_repo_urls == self.LOCAL_URIS
+        assert parsed_args.master_repo_urls == self.LOCAL_URIS
 
-    def test_handles_urls_only(self):
-        """Test that the migrate parser handles master repo urls only
-        correctly.
-        """
-        sys_args = [
-            cli.MIGRATE_PARSER,
-            *BASE_ARGS,
-            "-u",
-            USER,
-            "-mu",
-            *self.URLS,
-        ]
-
-        parsed_args, _ = cli.parse_args(sys_args)
-
-        self.assert_migrate_args(parsed_args, uses_urls=True)
-
-    def test_handles_names_only(self):
-        """Test that the migrate parser handles master repo names only
-        correctly.
-        """
+    def test_happy_path(self):
         sys_args = [
             cli.MIGRATE_PARSER,
             *BASE_ARGS,
@@ -813,7 +786,7 @@ class TestMigrateParser:
 
         parsed_args, _ = cli.parse_args(sys_args)
 
-        self.assert_migrate_args(parsed_args, uses_urls=False)
+        self.assert_migrate_args(parsed_args)
 
 
 class TestVerifyParser:
