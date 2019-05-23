@@ -36,8 +36,6 @@ from repobee.git import Push
 
 LOGGER = daiquiri.getLogger(__file__)
 
-MASTER_TEAM = "master_repos"
-
 
 def setup_student_repos(
     master_repo_urls: Iterable[str],
@@ -393,8 +391,6 @@ def migrate_repos(master_repo_urls: Iterable[str], api: GitHubAPI) -> None:
         the username that is used in the push.
         api: A GitHubAPI instance used to interface with the GitHub instance.
     """
-    master_team, *_ = api.ensure_teams_and_members({MASTER_TEAM: []})
-
     master_names = [util.repo_name(url) for url in master_repo_urls]
 
     infos = [
@@ -402,7 +398,6 @@ def migrate_repos(master_repo_urls: Iterable[str], api: GitHubAPI) -> None:
             name=master_name,
             description="Master repository {}".format(master_name),
             private=True,
-            team_id=master_team.id,
         )
         for master_name in master_names
     ]

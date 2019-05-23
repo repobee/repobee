@@ -1,16 +1,18 @@
 .. _migrate:
 
-Migrate master repositories into the target (or master) organization (``migrate`` command)
-******************************************************************************************
-This step sounds complicated, but it's actually very easy, and can be performed
-with a single RepoBee command. There is however a pre-requisite that must
-be fulfilled. You must either
+Migrate repositories into the target (or master) organization (``migrate`` command)
+***********************************************************************************
+Migrating repositories from one organization to another can be useful in a few
+cases. You may have repos that should be accessible to students and need to be
+moved across course rounds, or you might be storing your master repos in the
+target organization and need to migrate them for each new course round. To
+migrate repos into the target organization, they need to be either:
 
-* Have local copies of your master repos.
+* Local in the current working directory, and specified by name.
 
 or
 
-* Have all master repos in the same GitHub instance as your target organization.
+* Somewhere in the target GitHub instance, and specified by URL.
 
 Assuming we have the repos ``master-repo-1`` and ``master-repo-2`` in the
 current working directory (i.e. local repos), all we have to do is this:
@@ -18,7 +20,6 @@ current working directory (i.e. local repos), all we have to do is this:
 .. code-block:: bash
 
     $ repobee migrate -mn master-repo-1 master-repo-2
-    [INFO] created team master_repos
     [INFO] cloning into file:///some/directory/path/master-repo-1
     [INFO] cloning into file:///some/directory/path/master-repo-2
     [INFO] created repobee-demo/master-repo-1
@@ -34,16 +35,15 @@ current working directory (i.e. local repos), all we have to do is this:
     you must specify it with the ``--org-name`` option here (instead of the
     ``--master-org-name``).
 
-There are a few things to note here. First of all, the team ``master_repos`` is
-created. This only happens the first time ``migrate`` is run on a new
-organization. As the name suggests, this team houses all of the master repos.
-Each master repo that is migrated with the ``migrate`` command is added to this
-team, so they can easily be found at a later time. It may also be confusing that
-the local repos are being cloned (into a temporary directory). This is simply
-an implementation detail that does not need much thinking about. Finally, the
-local repos are pushed to the ``master`` branch of the remote repo. This command
-is perfectly safe to run several times, in case you think you missed something.
-Running the same thing again yields the following output:
+What happens here is pretty straightforward, except for the local repos being
+cloned, which is an implementation detail that does not need to be thought
+further of. Note that only the defualt branch is actually migrated, and pushed
+to ``master`` in the new repo. local repos are pushed to the ``master`` branch
+of the remote repo. Migrating several branches is something that we've never
+had a need to do, but if you do, please open an issue on GitHub with a feature
+request. ``migrate`` is perfectly safe to run several times, in case you think
+you missed something, or need to update repos. Running the same thing again
+without changing the local repos yields the following output:
 
 .. code-block:: bash
 
@@ -59,8 +59,7 @@ Running the same thing again yields the following output:
 
 In fact, all RepoBee commands that deal with pushing to or cloning from
 repos in some way are safe to run over and over. This is mostly because of
-how git works, and has little to do with RepoBee itself. Now that
-our master repos are migrated, we can move on to setting up the student repos!
+how Git works, and has little to do with RepoBee itself.
 
 .. note::
 
