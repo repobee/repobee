@@ -338,9 +338,9 @@ class TestEnsureTeamsAndMembers:
     @pytest.mark.parametrize(
         "unexpected_exc",
         [
-            exception.GitHubError("", 404),
-            exception.GitHubError("", 400),
-            exception.GitHubError("", 500),
+            exception.APIError("", 404),
+            exception.APIError("", 400),
+            exception.APIError("", 500),
         ],
     )
     def test_raises_on_non_422_exception(
@@ -421,7 +421,7 @@ class TestCreateRepos:
         side_effect_github_exception = [unexpected_exception] + side_effect[1:]
 
         create_repo_mock.side_effect = side_effect_github_exception
-        with pytest.raises(exception.GitHubError):
+        with pytest.raises(exception.APIError):
             api.create_repos(repo_infos)
 
     def test_returns_all_urls(self, mocker, repos, repo_infos, api):
