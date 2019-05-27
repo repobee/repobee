@@ -668,7 +668,7 @@ class TestGetIssues:
 
 @pytest.fixture
 def team_to_repos(api, no_repos, organization):
-    """Create a team_to_repos mapping for use in add_repos_to_teams, anc create
+    """Create a team_to_repos mapping for use in _add_repos_to_teams, anc create
     each team and repo. Return the team_to_repos mapping.
     """
     num_teams = 10
@@ -718,7 +718,7 @@ class TestAddReposToTeams:
         expected_tups = sorted(team_to_repos.items())
 
         # act
-        result = list(api.add_repos_to_teams(team_to_repos))
+        result = list(api._add_repos_to_teams(team_to_repos))
         result.sort(key=lambda tup: tup[0].name)
 
         # assert

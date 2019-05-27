@@ -21,6 +21,7 @@ import github
 from repobee import exception
 from repobee import tuples
 from repobee import util
+from repobee import apimeta
 
 REQUIRED_OAUTH_SCOPES = {"admin:org", "repo"}
 
@@ -95,7 +96,7 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
         )
 
 
-class GitHubAPI:
+class GitHubAPI(apimeta.API):
     """A highly specialized GitHub API class for repobee. The API is
     affiliated both with an organization, and with the whole GitHub
     instance. Almost all operations take place on the target
@@ -136,7 +137,7 @@ class GitHubAPI:
     def token(self):
         return self._token
 
-    def get_teams_in(
+    def _get_teams_in(
         self, team_names: Iterable[str]
     ) -> Generator[github.Team.Team, None, None]:
         """Get all teams that match any team name in the team_names iterable.
@@ -163,7 +164,7 @@ class GitHubAPI:
             team_names: A list of team names for teams to be deleted.
         """
         deleted = set()  # only for logging
-        for team in self.get_teams_in(team_names):
+        for team in self._get_teams_in(team_names):
             team.delete()
             deleted.add(team.name)
             LOGGER.info("deleted team {}".format(team.name))
@@ -220,7 +221,7 @@ class GitHubAPI:
         for team in [team for team in teams if member_lists[team.name]]:
             self._ensure_members_in_team(team, member_lists[team.name])
 
-        return list(self.get_teams_in(set(member_lists.keys())))
+        return list(self._get_teams_in(set(member_lists.keys())))
 
     def _ensure_teams_exist(
         self, team_names: Iterable[str], permission: str = "push"
@@ -280,9 +281,9 @@ class GitHubAPI:
                     ", ".join(existing_members), team.name
                 )
             )
-        self.add_to_team(missing_members, team)
+        self._add_to_team(missing_members, team)
 
-    def add_to_team(self, members: Iterable[str], team: github.Team.Team):
+    def _add_to_team(self, members: Iterable[str], team: github.Team.Team):
         """Add members to a team.
 
         Args:
@@ -294,18 +295,18 @@ class GitHubAPI:
             for user in users:
                 team.add_membership(user)
 
-    def create_repos(self, repo_infos: Iterable[tuples.Repo]):
+    def create_repos(self, repos: Iterable[tuples.Repo]):
         """Create repositories in the given organization according to the Repos.
         Repos that already exist are skipped.
 
         Args:
-            repo_infos: An iterable of Repo namedtuples.
+            repos: An iterable of Repo namedtuples.
 
         Returns:
             A list of urls to all repos corresponding to the Repos.
         """
         repo_urls = []
-        for info in repo_infos:
+        for info in repos:
             created = False
             with _try_api_request(ignore_statuses=[422]):
                 kwargs = dict(
@@ -489,7 +490,7 @@ class GitHubAPI:
             issue: An an optional Issue tuple to override the default issue.
         """
         issue = issue or DEFAULT_REVIEW_ISSUE
-        for team, repo in self.add_repos_to_teams(team_to_repos):
+        for team, repo in self._add_repos_to_teams(team_to_repos):
             # TODO team.get_members() api request is a bit redundant, it
             # can be solved in a more efficient way by passing in the
             # allocations
@@ -527,7 +528,7 @@ class GitHubAPI:
             assigned_repos is a :py:class:`~repobee.tuples.Review`.
         """
         reviews = collections.defaultdict(list)
-        teams = self.get_teams_in(review_team_names)
+        teams = self._get_teams_in(review_team_names)
         for team in teams:
             with _try_api_request():
                 LOGGER.info("processing {}".format(team.name))
@@ -557,7 +558,7 @@ class GitHubAPI:
 
         return reviews
 
-    def add_repos_to_teams(
+    def _add_repos_to_teams(
         self, team_to_repos: Mapping[str, Iterable[str]]
     ) -> Generator[
         Tuple[github.Team.Team, github.Repository.Repository], None, None
