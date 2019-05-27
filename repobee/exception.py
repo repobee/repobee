@@ -40,7 +40,7 @@ class FileError(RepoBeeException):
     """Raise when reading or writing to a file errors out."""
 
 
-class GitHubError(RepoBeeException):
+class APIError(RepoBeeException):
     """An exception raised when the API responds with an error code."""
 
     def __init__(self, msg="", status=None):
@@ -48,27 +48,21 @@ class GitHubError(RepoBeeException):
         self.status = status
 
 
-class NotFoundError(GitHubError):
+class NotFoundError(APIError):
     """An exception raised when the API responds with a 404."""
 
 
-class ServiceNotFoundError(GitHubError):
+class ServiceNotFoundError(APIError):
     """Raise if the base url can't be located."""
 
 
-class BadCredentials(GitHubError):
+class BadCredentials(APIError):
     """Raise when credentials are rejected."""
 
 
-class UnexpectedException(GitHubError):
+class UnexpectedException(APIError):
     """An exception raised when an API request raises an unexpected
     exception.
-    """
-
-
-class APIError(RepoBeeException):
-    """Raise when something unexpected happens when interacting with the
-    API.
     """
 
 

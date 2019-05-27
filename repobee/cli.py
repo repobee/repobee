@@ -760,7 +760,6 @@ def _create_base_parsers():
 
 @contextmanager
 def _sys_exit_on_expected_error():
-    """Expect either git.GitError or github_api.APIError."""
     try:
         yield
     except exception.PushFailedError as exc:

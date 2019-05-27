@@ -67,7 +67,7 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
     Raises:
         exception.NotFoundError
         exception.BadCredentials
-        exception.GitHubError
+        exception.APIError
         exception.ServiceNotFoundError
         exception.UnexpectedException
     """
@@ -85,7 +85,7 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
                 status=401,
             )
         else:
-            raise exception.GitHubError(str(e), status=e.status)
+            raise exception.APIError(str(e), status=e.status)
     except gaierror:
         raise exception.ServiceNotFoundError(
             "GitHub service could not be found, check the url"
@@ -191,7 +191,7 @@ class GitHubAPI(apimeta.API):
                 existing_users.append(self._github.get_user(name))
             except github.GithubException as exc:
                 if exc.status != 404:
-                    raise exception.GitHubError(
+                    raise exception.APIError(
                         "Got unexpected response code from the GitHub API",
                         status=exc.status,
                     )
