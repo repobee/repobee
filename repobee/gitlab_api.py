@@ -62,7 +62,7 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
                 status=401,
             )
         else:
-            raise exception.GitHubError(str(e), status=e.response_code)
+            raise exception.APIError(str(e), status=e.response_code)
     except gaierror:
         raise exception.ServiceNotFoundError(
             "GitLab service could not be found, check the url"
