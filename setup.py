@@ -24,6 +24,7 @@ required = [
     "pygithub",
     "colored",
     "repobee-plug==0.5.1",
+    "python-gitlab==1.8.0",
 ]
 
 setup(
