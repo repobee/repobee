@@ -1,4 +1,4 @@
-"""GitHub API module.
+"""GitLab API module.
 
 This module contains the :py:class:`GitLabAPI` class, which is meant to be the
 prime means of interacting with the GitLab API in RepoBee. The methods of
@@ -321,7 +321,6 @@ class GitLabAPI(apimeta.API):
         Returns:
             the input url with an authentication token inserted.
         """
-        # TODO remove http hack
         if not repo_url.startswith("https://"):
             raise ValueError(
                 "unsupported protocol in '{}', please use https:// ".format(

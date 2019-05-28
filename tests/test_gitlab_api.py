@@ -9,6 +9,8 @@ import repobee
 
 
 class Group:
+    """Class mimicking a gitlab.Group"""
+
     _Members = namedtuple("_Members", ("create", "list"))
     _Member = namedtuple("_Member", ("id", "access_level", "username"))
 
@@ -42,21 +44,39 @@ class Group:
         return list(self._member_list)
 
 
+class Project:
+    """Class mimicking a gitlab.Project"""
+
+    def __init__(
+        self, id, name, path, description, visibility, namespace_id, http_url
+    ):
+        """The http_url argument does not exist in the real gitlab api, it's
+        only for testing.
+        """
+        self.id = id
+        self.name = name
+        self.path = path
+        self.description = description
+        self.visibility = visibility
+        self.namespace_id = namespace_id
+        self.attributes = dict(http_url_to_repo=http_url)
+
+
 class GitLabMock:
     """Class representing a GitLab instance, with the subset of functionality
     required for RepoBee to work. It may seem counterintuitive to create this
     much logic to test a class, but from experience it became much more
     complicated to try to mock out individual pieces, when those individual
     pieces exhibit interconnected behavior.
+
+    The _groups and _users dictionaries are indexed by id, while the _projects
+    dictionary is indexed by the full path to it.
     """
 
     _Groups = namedtuple("_Groups", ("create", "list", "get"))
     _Users = namedtuple("_Users", ("list"))
     _User = namedtuple("_User", ("id", "username"))
-    _Project = namedtuple(
-        "_Project", "id name path description visibility namespace_id".split()
-    )
-    _Projects = namedtuple("_Projects", "create get attributes".split())
+    _Projects = namedtuple("_Projects", "create get".split())
 
     def __init__(self, url, private_token):
         self._base_url = url
@@ -69,6 +89,13 @@ class GitLabMock:
         }
         self._id = len(self._users)
         self._create_group({"name": TARGET_GROUP, "path": TARGET_GROUP})
+
+        # this is only for testing purposes, does not exist in the real class
+        self._target_group_id = list(self._groups.keys())[0]
+
+    @property
+    def tests_only_target_group_id(self):
+        return self._target_group_id
 
     @property
     def groups(self):
@@ -87,6 +114,70 @@ class GitLabMock:
         return self._Projects(
             get=self._get_project, create=self._create_project
         )
+
+    def _get_project(self, full_path):
+        if full_path not in self._projects:
+            raise gitlab.exceptions.GitlabGetError(
+                response_code=404, error_message="Project Not Found"
+            )
+        return self._projects[full_path]
+
+    def _create_project(self, data):
+        """Note thate the self._projects dict is indexed by full path, as
+        opposed to id!
+        """
+        name = data["name"]
+        path = data["path"]
+        description = data["description"]
+        visibility = data["visibility"]
+        namespace_id = data["namespace_id"]
+
+        # ensure namespace exists
+        try:
+            self._get_group(namespace_id)
+        except gitlab.exceptions.GitlabGetError:
+            raise gitlab.exceptions.GitlabCreateError(
+                response_code=400,
+                error_message="{'namespace': ['is not valid'], "
+                "'limit_reached': []}",
+            )
+
+        # ensure no other project in the namespace has the same path
+        if path in [
+            p.path
+            for p in self._projects.values()
+            if p.namespace_id == namespace_id
+        ]:
+            raise gitlab.exceptions.GitlabCreateError(
+                response_code=400,
+                error_message="Failed to save project "
+                "{:path=>['has already been taken']}",
+            )
+
+        id = self._next_id()
+
+        full_path = "{}/{}".format(self._group_endpoint(namespace_id), path)
+        http_url = "{}/{}.git".format(self._base_url, full_path)
+        self._projects[full_path] = Project(
+            id=id,
+            name=name,
+            path=path,
+            description=description,
+            visibility=visibility,
+            namespace_id=namespace_id,
+            http_url=http_url,
+        )
+        return self._projects[full_path]
+
+    def _group_endpoint(self, group_id):
+        """Build a url endpoint for a given group by recursively iterating
+        through its parents.
+        """
+        group = self._groups[group_id]
+        if group.parent_id:
+            prefix = self._group_endpoint(group.parent_id)
+            return "{}/{}".format(prefix, group.path)
+        return group.path
 
     def _next_id(self):
         cur_id = self._id
@@ -126,8 +217,8 @@ class GitLabMock:
 
     def _get_group(self, id):
         if id not in self._groups:
-            raise gitlab.exceptions.GitlabCreateError(
-                response_code=404, error_message="Group Not found"
+            raise gitlab.exceptions.GitlabGetError(
+                response_code=404, error_message="Group Not Found"
             )
         return self._groups[id]
 
@@ -239,3 +330,62 @@ class TestEnsureTeamsAndMembers:
                 assert group_member_names == [group.name]
             else:
                 assert not group.members.list()
+
+
+class TestCreateRepos:
+    @pytest.fixture
+    def api(self, api_mock):
+        yield repobee.gitlab_api.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
+
+    @pytest.fixture
+    def master_repo_names(self):
+        return ["task-1", "task-2", "task-3"]
+
+    @pytest.fixture
+    def repos(self, api, master_repo_names):
+        """Setup repo tuples along with groups for the repos to be created
+        in.
+        """
+        target_group_id = api._gitlab.tests_only_target_group_id
+        groups = [
+            api._gitlab.groups.create(
+                dict(
+                    name=str(group), path=str(group), parent_id=target_group_id
+                )
+            )
+            for group in constants.STUDENTS
+        ]
+        yield [
+            repobee.tuples.Repo(
+                name=repobee.util.generate_repo_name(group.name, master_name),
+                description="Student repo",
+                private=True,
+                team_id=group.id,
+            )
+            for group in groups
+            for master_name in master_repo_names
+        ]
+
+    def test_run_once_for_valid_repos(self, api, master_repo_names, repos):
+        """Test creating projects directly in the target group, when there are
+        no pre-existing projects. Should just succeed.
+        """
+        expected_urls = api.get_repo_urls(
+            master_repo_names, students=constants.STUDENTS
+        )
+
+        actual_urls = api.create_repos(repos)
+
+        assert sorted(expected_urls) == sorted(actual_urls)
+
+    def test_run_twice_for_valid_repos(self, api, master_repo_names, repos):
+        """Running create_repos twice should have precisely the same effect as
+        runing it once."""
+        expected_urls = api.get_repo_urls(
+            master_repo_names, students=constants.STUDENTS
+        )
+
+        api.create_repos(repos)
+        actual_urls = api.create_repos(repos)
+
+        assert sorted(expected_urls) == sorted(actual_urls)
