@@ -565,6 +565,7 @@ def _create_push_tuples(
             git.Push(local_path=path, repo_url=repo_url, branch="master")
             for repo_url in repo_urls
             if repo_url.endswith(repo_base_name)
+            or repo_url.endswith(repo_base_name + ".git")
         ]
     return push_tuples
 

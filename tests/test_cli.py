@@ -50,6 +50,16 @@ VALID_PARSED_ARGS = dict(
 
 
 @pytest.fixture(autouse=True)
+def identify_api_mock(mocker, api_class_mock):
+    """Mock out identifying the API such that it always returns the GitHub
+    API.
+    """
+    yield mocker.patch(
+        "repobee.cli._identify_api", autospec=True, return_value=api_class_mock
+    )
+
+
+@pytest.fixture(autouse=True)
 def api_instance_mock(mocker):
     instance_mock = MagicMock(spec=repobee.github_api.GitHubAPI)
     instance_mock.get_repo_urls.side_effect = lambda repo_names, org_name: [
