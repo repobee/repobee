@@ -294,7 +294,8 @@ class GitLabAPI(apimeta.API):
         Returns:
             a list of urls corresponding to the repo names.
         """
-        group_url = "{}/{}".format(self._base_url, self._group_name)
+        group_name = org_name if org_name else self._group_name
+        group_url = "{}/{}".format(self._base_url, group_name)
         repo_urls = (
             [
                 "{}/{}.git".format(group_url, repo_name)
