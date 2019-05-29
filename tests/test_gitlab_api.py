@@ -332,14 +332,92 @@ class TestEnsureTeamsAndMembers:
                 assert not group.members.list()
 
 
+@pytest.fixture
+def master_repo_names():
+    return ["task-1", "task-2", "task-3"]
+
+
+class TestGetRepoUrls:
+    def test_get_master_repo_urls(self, master_repo_names):
+        """When supplied with only master_repo_names, get_repo_urls should
+        return urls for those master repos, expecting them to be in the target
+        group.
+        """
+        # arrange
+        api = repobee.gitlab_api.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
+        expected_urls = [
+            api._insert_auth("{}/{}/{}.git".format(BASE_URL, TARGET_GROUP, mn))
+            for mn in master_repo_names
+        ]
+        assert (
+            expected_urls
+        ), "there must be at least some urls for this test to make sense"
+
+        # act
+        actual_urls = api.get_repo_urls(master_repo_names)
+
+        # assert
+        assert sorted(actual_urls) == sorted(expected_urls)
+
+    def test_get_master_repo_urls_in_master_group(self, master_repo_names):
+        """When supplied with master_repo_names and org_name, the urls
+        generated should go to the group named org_name instead of the default
+        target group.
+        """
+        # arrange
+        master_group = "master-" + TARGET_GROUP  # guaranteed != TARGET_GROUP
+        api = repobee.gitlab_api.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
+        expected_urls = [
+            api._insert_auth("{}/{}/{}.git".format(BASE_URL, master_group, mn))
+            for mn in master_repo_names
+        ]
+        assert (
+            expected_urls
+        ), "there must be at least some urls for this test to make sense"
+
+        # act
+        actual_urls = api.get_repo_urls(
+            master_repo_names, org_name=master_group
+        )
+
+        # assert
+        assert sorted(actual_urls) == sorted(expected_urls)
+
+    def test_get_student_repo_urls(self, master_repo_names):
+        """When supplied with the students argument, the generated urls should
+        go to the student repos related to the supplied master repos.
+        """
+        # arrange
+        api = repobee.gitlab_api.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
+        expected_urls = [
+            api._insert_auth(
+                "{}/{}/{}/{}.git".format(
+                    BASE_URL,
+                    TARGET_GROUP,
+                    str(student_group),
+                    repobee.util.generate_repo_name(str(student_group), mn),
+                )
+            )
+            for student_group in constants.STUDENTS
+            for mn in master_repo_names
+        ]
+        assert (
+            expected_urls
+        ), "there must be at least some urls for this test to make sense"
+
+        # act
+        actual_urls = api.get_repo_urls(
+            master_repo_names, students=constants.STUDENTS
+        )
+
+        # assert
+        assert sorted(actual_urls) == sorted(expected_urls)
+
+
 class TestCreateRepos:
     @pytest.fixture
     def api(self, api_mock):
         yield repobee.gitlab_api.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
-
-    @pytest.fixture
-    def master_repo_names(self):
-        return ["task-1", "task-2", "task-3"]
 
     @pytest.fixture
     def repos(self, api, master_repo_names):
