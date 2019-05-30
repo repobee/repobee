@@ -574,7 +574,7 @@ class TestStudentParsing:
             ["cat", "dog", "mouse"],
         )
         expected_groups = sorted(
-            tuples.Group(members=group) for group in groupings
+            apimeta.Team(members=group) for group in groupings
         )
         empty_students_file.write(
             os.linesep.join([" ".join(group) for group in groupings])
@@ -603,7 +603,7 @@ class TestStudentParsing:
         # arrange
         groupings = (
             ["buddy", "shuddy"],
-            ["a" * tuples.Group.MAX_STR_LEN, "b"],
+            ["a" * apimeta.MAX_NAME_LENGTH, "b"],
             ["cat", "dog", "mouse"],
         )
         empty_students_file.write(

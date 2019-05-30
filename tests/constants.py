@@ -4,7 +4,6 @@ import collections
 from datetime import datetime
 from itertools import permutations
 
-from repobee import tuples
 from repobee import apimeta
 
 USER = "slarse"
@@ -15,7 +14,7 @@ GITHUB_BASE_URL = "{}/api/v3".format(HOST_URL)
 
 # 5! = 120 different students
 STUDENTS = tuple(
-    tuples.Group(members=["".join(perm)])
+    apimeta.Team(members=["".join(perm)])
     for perm in permutations(string.ascii_lowercase[:5])
 )
 ISSUE_PATH = "some/issue/path"

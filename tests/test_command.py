@@ -658,12 +658,12 @@ class TestAssignPeerReviewers:
     def test_too_few_students_raises(
         self, master_names, students, api_mock, num_students, num_reviews
     ):
-        students = students[:num_students]
+        teams = students[:num_students]
 
         with pytest.raises(ValueError) as exc_info:
             command.assign_peer_reviews(
                 master_repo_names=master_names,
-                students=students,
+                teams=teams,
                 num_reviews=num_reviews,
                 issue=None,
                 api=api_mock,
@@ -677,7 +677,7 @@ class TestAssignPeerReviewers:
         with pytest.raises(ValueError):
             command.assign_peer_reviews(
                 master_repo_names=master_names,
-                students=students,
+                teams=students,
                 num_reviews=num_reviews,
                 issue=None,
                 api=api_mock,
@@ -702,7 +702,7 @@ class TestAssignPeerReviewers:
 
         command.assign_peer_reviews(
             master_repo_names=master_names,
-            students=students,
+            teams=students,
             num_reviews=num_reviews,
             issue=issue,
             api=api_mock,

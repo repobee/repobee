@@ -30,6 +30,7 @@ from repobee import util
 from repobee import tuples
 from repobee import exception
 from repobee import config
+from repobee import apimeta
 
 daiquiri.setup(
     level=logging.INFO,
@@ -795,7 +796,7 @@ def _extract_groups(args: argparse.Namespace) -> List[str]:
         `students_file` is in the namespace.
     """
     if "students" in args and args.students:
-        students = [tuples.Group([s]) for s in args.students]
+        students = [apimeta.Team(members=[s]) for s in args.students]
     elif "students_file" in args and args.students_file:
         students_file = pathlib.Path(args.students_file)
         try:  # raises FileNotFoundError in 3.5 if no such file exists
@@ -809,7 +810,7 @@ def _extract_groups(args: argparse.Namespace) -> List[str]:
         if not students_file.stat().st_size:
             raise exception.FileError("'{!s}' is empty".format(students_file))
         students = [
-            tuples.Group(members=[s for s in group.strip().split()])
+            apimeta.Team(members=[s for s in group.strip().split()])
             for group in students_file.read_text(
                 encoding=sys.getdefaultencoding()
             ).split(os.linesep)

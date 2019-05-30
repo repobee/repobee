@@ -341,7 +341,7 @@ class GitHubAPI(apimeta.API):
         self,
         master_repo_names: Iterable[str],
         org_name: Optional[str] = None,
-        students: Optional[List[tuples.Group]] = None,
+        students: Optional[List[apimeta.Team]] = None,
     ) -> List[str]:
         """Get repo urls for all specified repo names in organization. Assumes
         that the repos exist, there is no guarantee that they actually do as
