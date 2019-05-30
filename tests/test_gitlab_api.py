@@ -279,7 +279,7 @@ class TestEnsureTeamsAndMembers:
         num_students = len(constants.STUDENTS)
         allocations = {
             str(
-                repobee.tuples.Group(members=g1.members + g2.members)
+                repobee.apimeta.Team(members=g1.members + g2.members)
             ): g1.members
             + g2.members
             for g1, g2 in zip(

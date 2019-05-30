@@ -20,7 +20,6 @@ import gitlab
 
 from repobee import exception
 from repobee import apimeta
-from repobee import tuples
 from repobee import util
 
 LOGGER = daiquiri.getLogger(__file__)
@@ -284,7 +283,7 @@ class GitLabAPI(apimeta.API):
         self,
         master_repo_names: Iterable[str],
         org_name: Optional[str] = None,
-        students: Optional[List[tuples.Group]] = None,
+        students: Optional[List[apimeta.Team]] = None,
     ) -> List[str]:
         """Get repo urls for all specified repo names in organization. Assumes
         that the repos exist, there is no guarantee that they actually do as

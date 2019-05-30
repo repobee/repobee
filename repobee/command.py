@@ -26,7 +26,6 @@ import repobee_plug as plug
 
 from repobee import git
 from repobee import util
-from repobee import tuples
 from repobee import apimeta
 from repobee import exception
 from repobee import config
@@ -39,7 +38,7 @@ LOGGER = daiquiri.getLogger(__file__)
 
 def setup_student_repos(
     master_repo_urls: Iterable[str],
-    students: Iterable[tuples.Group],
+    students: Iterable[apimeta.Team],
     api: GitHubAPI,
 ) -> None:
     """Setup student repositories based on master repo templates. Performs three
@@ -78,7 +77,7 @@ def setup_student_repos(
 
 
 def add_students_to_teams(
-    students: Iterable[tuples.Group], api: GitHubAPI
+    students: Iterable[apimeta.Team], api: GitHubAPI
 ) -> List[apimeta.Team]:
     """Create one team for each student (with the same name as the student),
     and add the student to the team. If a team already exists, it is not
@@ -147,7 +146,7 @@ def _clone_all(urls: Iterable[str], cwd: str):
 
 def update_student_repos(
     master_repo_urls: Iterable[str],
-    students: Iterable[tuples.Group],
+    students: Iterable[apimeta.Team],
     api: GitHubAPI,
     issue: Optional[apimeta.Issue] = None,
 ) -> None:
@@ -200,7 +199,7 @@ def _open_issue_by_urls(
 
 def list_issues(
     master_repo_names: Iterable[str],
-    students: Iterable[tuples.Group],
+    students: Iterable[apimeta.Team],
     api: GitHubAPI,
     state: str = "open",
     title_regex: str = "",
@@ -310,7 +309,7 @@ def _limit_line_length(s: str, max_line_length: int = 100) -> str:
 def open_issue(
     issue: apimeta.Issue,
     master_repo_names: Iterable[str],
-    students: Iterable[tuples.Group],
+    students: Iterable[apimeta.Team],
     api: GitHubAPI,
 ) -> None:
     """Open an issue in student repos.
@@ -328,7 +327,7 @@ def open_issue(
 def close_issue(
     title_regex: str,
     master_repo_names: Iterable[str],
-    students: Iterable[tuples.Group],
+    students: Iterable[apimeta.Team],
     api: GitHubAPI,
 ) -> None:
     """Close issues whose titles match the title_regex in student repos.
@@ -345,7 +344,7 @@ def close_issue(
 
 def clone_repos(
     master_repo_names: Iterable[str],
-    students: Iterable[tuples.Group],
+    students: Iterable[apimeta.Team],
     api: GitHubAPI,
 ) -> None:
     """Clone all student repos related to the provided master repos and students.
@@ -424,7 +423,7 @@ def migrate_repos(master_repo_urls: Iterable[str], api: GitHubAPI) -> None:
 
 def assign_peer_reviews(
     master_repo_names: Iterable[str],
-    students: Iterable[tuples.Group],
+    students: Iterable[apimeta.Team],
     num_reviews: int,
     issue: Optional[apimeta.Issue],
     api: GitHubAPI,
@@ -472,7 +471,7 @@ def assign_peer_reviews(
 
 def purge_review_teams(
     master_repo_names: Iterable[str],
-    students: Iterable[tuples.Group],
+    students: Iterable[apimeta.Team],
     api: GitHubAPI,
 ) -> None:
     """Delete all review teams associated with the given master repo names and
@@ -492,7 +491,7 @@ def purge_review_teams(
 
 def check_peer_review_progress(
     master_repo_names: Iterable[str],
-    students: Iterable[tuples.Group],
+    students: Iterable[apimeta.Team],
     title_regex: str,
     num_reviews: int,
     api: GitHubAPI,

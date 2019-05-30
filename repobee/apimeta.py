@@ -27,6 +27,8 @@ from repobee import exception
 
 LOGGER = daiquiri.getLogger(__file__)
 
+MAX_NAME_LENGTH = 100
+
 
 class APIObject:
     """Base wrapper class for platform API objects."""
@@ -36,17 +38,16 @@ def _check_name_length(name):
     """Check that a Team/Repository name does not exceed the maximum GitHub
     allows (100 characters)
     """
-    max_len = 100
-    if len(name) > max_len:
+    if len(name) > MAX_NAME_LENGTH:
         LOGGER.error("Team/Repository name {} is too long".format(name))
         raise ValueError(
             "generated Team/Repository name is too long, was {} chars, "
-            "max is {} chars".format(len(name), max_len)
+            "max is {} chars".format(len(name), MAX_NAME_LENGTH)
         )
-    elif len(name) > max_len * 0.8:
+    elif len(name) > MAX_NAME_LENGTH * 0.8:
         LOGGER.warning(
             "Team/Repository name {} is {} chars long, close to the max of "
-            "{} chars.".format(name, len(name), max_len)
+            "{} chars.".format(name, len(name), MAX_NAME_LENGTH)
         )
 
 
@@ -84,6 +85,9 @@ class Team(
             name = "-".join(sorted(members))
         _check_name_length(name)
         return super().__new__(cls, name, members, id, implementation)
+
+    def __str__(self):
+        return self.name
 
 
 class Issue(
