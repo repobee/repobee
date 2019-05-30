@@ -24,6 +24,7 @@ from repobee import util
 from repobee import apimeta
 
 REQUIRED_OAUTH_SCOPES = {"admin:org", "repo"}
+ISSUE_GENERATOR = Generator[apimeta.Issue, None, None]
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -32,7 +33,7 @@ _Team = github.Team.Team
 _User = github.NamedUser.NamedUser
 _Repo = github.Repository.Repository
 
-DEFAULT_REVIEW_ISSUE = tuples.Issue(
+DEFAULT_REVIEW_ISSUE = apimeta.Issue(
     title="Peer review",
     body="You have been assigned to peer review this repo.",
 )
@@ -202,7 +203,7 @@ class GitHubAPI(apimeta.API):
         self,
         member_lists: Mapping[str, Iterable[str]],
         permission: str = "push",
-    ) -> List[tuples.Team]:
+    ) -> List[apimeta.Team]:
         """Create teams that do not exist and add members not in their
         specified teams (if they exist as users).
 
@@ -213,19 +214,27 @@ class GitHubAPI(apimeta.API):
             A list of Team namedtuples of the teams corresponding to the keys
             of the member_lists mapping.
         """
-        teams = self._ensure_teams_exist(
+        raw_teams = self._ensure_teams_exist(
             [team_name for team_name in member_lists.keys()],
             permission=permission,
         )
 
-        for team in [team for team in teams if member_lists[team.name]]:
+        for team in [team for team in raw_teams if member_lists[team.name]]:
             self._ensure_members_in_team(team, member_lists[team.name])
 
-        return list(self._get_teams_in(set(member_lists.keys())))
+        return [
+            apimeta.Team(
+                name=t.name,
+                members=member_lists[t.name],
+                id=t.id,
+                implementation=t,
+            )
+            for t in raw_teams
+        ]
 
     def _ensure_teams_exist(
         self, team_names: Iterable[str], permission: str = "push"
-    ) -> List[tuples.Team]:
+    ) -> List[github.Team.Team]:
         """Create any teams that do not yet exist.
 
         Args:
@@ -295,7 +304,7 @@ class GitHubAPI(apimeta.API):
             for user in users:
                 team.add_membership(user)
 
-    def create_repos(self, repos: Iterable[tuples.Repo]):
+    def create_repos(self, repos: Iterable[apimeta.Repo]):
         """Create repositories in the given organization according to the Repos.
         Repos that already exist are skipped.
 
@@ -397,7 +406,7 @@ class GitHubAPI(apimeta.API):
         repo_names: Iterable[str],
         state: str = "open",
         title_regex: str = "",
-    ):
+    ) -> Generator[Tuple[str, ISSUE_GENERATOR], None, None]:
         """Get all issues for the repos in repo_names an return a generator
         that yields (repo_name, issue generator) tuples.
 
@@ -416,7 +425,14 @@ class GitHubAPI(apimeta.API):
                 (
                     repo.name,
                     (
-                        issue
+                        apimeta.Issue(
+                            title=issue.title,
+                            body=issue.body,
+                            number=issue.number,
+                            created_at=issue.created_at,
+                            author=issue.user.login,
+                            implementation=issue,
+                        )
                         for issue in repo.get_issues(state=state)
                         if re.match(title_regex or "", issue.title)
                     ),
@@ -478,7 +494,7 @@ class GitHubAPI(apimeta.API):
     def add_repos_to_review_teams(
         self,
         team_to_repos: Mapping[str, Iterable[str]],
-        issue: Optional[tuples.Issue],
+        issue: Optional[apimeta.Issue],
     ) -> None:
         """Add repos to review teams. For each repo, an issue is opened, and
         every user in the review team is assigned to it. If no issue is

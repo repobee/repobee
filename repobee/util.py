@@ -10,10 +10,11 @@ import os
 import sys
 import pathlib
 from typing import Iterable, Generator, Union
-from repobee import tuples
+
+from repobee import apimeta
 
 
-def read_issue(issue_path: str) -> tuples.Issue:
+def read_issue(issue_path: str) -> apimeta.Issue:
     """Attempt to read an issue from a textfile. The first line of the file
     is interpreted as the issue's title.
 
@@ -23,7 +24,7 @@ def read_issue(issue_path: str) -> tuples.Issue:
     if not os.path.isfile(issue_path):
         raise ValueError("{} is not a file".format(issue_path))
     with open(issue_path, "r", encoding=sys.getdefaultencoding()) as file:
-        return tuples.Issue(file.readline().strip(), file.read())
+        return apimeta.Issue(file.readline().strip(), file.read())
 
 
 def generate_repo_name(team_name: str, master_repo_name: str) -> str:

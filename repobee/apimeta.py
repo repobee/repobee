@@ -19,8 +19,93 @@ NotImplementedError) for any unimplemented API methods.
 .. moduleauthor:: Simon Larsén
 """
 import inspect
+import collections
+
+import daiquiri
 
 from repobee import exception
+
+LOGGER = daiquiri.getLogger(__file__)
+
+
+class APIObject:
+    """Base wrapper class for platform API objects."""
+
+
+def _check_name_length(name):
+    """Check that a Team/Repository name does not exceed the maximum GitHub
+    allows (100 characters)
+    """
+    max_len = 100
+    if len(name) > max_len:
+        LOGGER.error("Team/Repository name {} is too long".format(name))
+        raise ValueError(
+            "generated Team/Repository name is too long, was {} chars, "
+            "max is {} chars".format(len(name), max_len)
+        )
+    elif len(name) > max_len * 0.8:
+        LOGGER.warning(
+            "Team/Repository name {} is {} chars long, close to the max of "
+            "{} chars.".format(name, len(name), max_len)
+        )
+
+
+class Repo(
+    APIObject,
+    collections.namedtuple(
+        "Repo", "name description private team_id url implementation".split()
+    ),
+):
+    """Wrapper class for a Repo API object."""
+
+    def __new__(
+        cls,
+        name,
+        description,
+        private,
+        team_id=None,
+        url=None,
+        implementation=None,
+    ):
+        _check_name_length(name)
+        return super().__new__(
+            cls, name, description, private, team_id, url, implementation
+        )
+
+
+class Team(
+    APIObject,
+    collections.namedtuple("Repo", "name members id implementation".split()),
+):
+    """Wrapper class for a Team API object."""
+
+    def __new__(cls, members, name=None, id=None, implementation=None):
+        if not name:
+            name = "-".join(sorted(members))
+        _check_name_length(name)
+        return super().__new__(cls, name, members, id, implementation)
+
+
+class Issue(
+    APIObject,
+    collections.namedtuple(
+        "Issue", "title body number created_at author implementation".split()
+    ),
+):
+    """Wrapper class for an Issue API object."""
+
+    def __new__(
+        cls,
+        title,
+        body,
+        number=None,
+        created_at=None,
+        author=None,
+        implementation=None,
+    ):
+        return super().__new__(
+            cls, title, body, number, created_at, author, implementation
+        )
 
 
 class APISpec:

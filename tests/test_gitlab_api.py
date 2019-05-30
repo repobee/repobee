@@ -434,7 +434,7 @@ class TestCreateRepos:
             for group in constants.STUDENTS
         ]
         yield [
-            repobee.tuples.Repo(
+            repobee.apimeta.Repo(
                 name=repobee.util.generate_repo_name(group.name, master_name),
                 description="Student repo",
                 private=True,
