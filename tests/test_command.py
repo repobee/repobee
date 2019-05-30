@@ -5,10 +5,10 @@ from unittest.mock import patch, MagicMock, call, ANY, PropertyMock
 import repobee
 from repobee import command
 from repobee import git
-from repobee import tuples
 from repobee import util
 from repobee import exception
 from repobee import plugin
+from repobee import apimeta
 
 from repobee_plug import HookResult, repobee_hook, Status
 
@@ -24,10 +24,10 @@ random_date = functions.random_date
 OPEN_ISSUES = [
     to_magic_mock_issue(issue)
     for issue in (
-        tuples.Issue(
+        apimeta.Issue(
             "close this issue", "This is a body", 3, random_date(), "slarse"
         ),
-        tuples.Issue(
+        apimeta.Issue(
             "Don't close this issue",
             "Another body",
             4,
@@ -40,7 +40,7 @@ OPEN_ISSUES = [
 CLOSED_ISSUES = [
     to_magic_mock_issue(issue)
     for issue in (
-        tuples.Issue(
+        apimeta.Issue(
             "This is a closed issue",
             "With an uninteresting body that has a single very,"
             "very long line that would probably break the implementation "
@@ -49,7 +49,7 @@ CLOSED_ISSUES = [
             random_date(),
             "tmore",
         ),
-        tuples.Issue(
+        apimeta.Issue(
             "Yet another closed issue",
             "Even less interesting body",
             2,
@@ -61,7 +61,7 @@ CLOSED_ISSUES = [
 
 ORG_NAME = "test-org"
 GITHUB_BASE_URL = "https://some_enterprise_host/api/v3"
-ISSUE = tuples.Issue(
+ISSUE = apimeta.Issue(
     "Oops, something went wrong!", "This is the body **with some formatting**."
 )
 PLUGINS = constants.PLUGINS
@@ -163,7 +163,7 @@ def students():
 @pytest.fixture
 def ensure_teams_and_members_mock(api_mock, students):
     api_mock.ensure_teams_and_members.side_effect = lambda member_lists: [
-        tuples.Team(student, [student], id)
+        apimeta.Team(name=str(student), members=[student], id=id)
         for id, student in enumerate(students)
     ]
 
@@ -187,7 +187,7 @@ def repo_infos(master_urls, students):
     for url in master_urls:
         repo_base_name = util.repo_name(url)
         repo_infos += [
-            tuples.Repo(
+            apimeta.Repo(
                 name=util.generate_repo_name(student, repo_base_name),
                 description="{} created for {}".format(
                     repo_base_name, student
@@ -346,7 +346,10 @@ class TestUpdateStudentRepos:
     @pytest.mark.nogitmock
     @pytest.mark.parametrize(
         "issue",
-        [tuples.Issue("Oops", "Sorry, we failed to push to your repo!"), None],
+        [
+            apimeta.Issue("Oops", "Sorry, we failed to push to your repo!"),
+            None,
+        ],
     )
     def test_issues_on_exceptions(
         self, issue, mocker, api_mock, repo_infos, push_tuples, rmtree_mock
@@ -445,7 +448,7 @@ class TestOpenIssue:
             "c-week-2",
         ]
 
-        issue = tuples.Issue(
+        issue = apimeta.Issue(
             "A title", "And a nice **formatted** body\n### With headings!"
         )
         command.open_issue(issue, master_names, students, api_mock)
@@ -683,7 +686,7 @@ class TestAssignPeerReviewers:
         assert "num_reviews must be greater than 0"
 
     def test_happy_path(self, master_names, students, api_mock):
-        issue = tuples.Issue("this is a title", "this is a body")
+        issue = apimeta.Issue("this is a title", "this is a body")
         mappings = [
             {
                 util.generate_review_team_name(student, master_name): [

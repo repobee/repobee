@@ -8,7 +8,7 @@ import repobee
 from repobee import util
 from repobee import exception
 from repobee import github_api
-from repobee import tuples
+from repobee import apimeta
 from repobee.github_api import REQUIRED_OAUTH_SCOPES
 
 import constants
@@ -44,23 +44,23 @@ from_magic_mock_issue = functions.from_magic_mock_issue
 
 User = constants.User
 
-CLOSE_ISSUE = tuples.Issue(
+CLOSE_ISSUE = apimeta.Issue(
     "close this issue", "This is a body", 3, random_date(), "slarse"
 )
-DONT_CLOSE_ISSUE = tuples.Issue(
+DONT_CLOSE_ISSUE = apimeta.Issue(
     "Don't close this issue", "Another body", 4, random_date(), "glassey"
 )
 OPEN_ISSUES = [CLOSE_ISSUE, DONT_CLOSE_ISSUE]
 
 CLOSED_ISSUES = [
-    tuples.Issue(
+    apimeta.Issue(
         "This is a closed issue",
         "With an uninteresting body",
         1,
         random_date(),
         "tmore",
     ),
-    tuples.Issue(
+    apimeta.Issue(
         "Yet another closed issue",
         "Even less interesting body",
         2,
@@ -235,7 +235,7 @@ def repo_infos(teams_and_members, teams):
     descriptions = ["A nice repo for {}".format(team.name) for team in teams]
     repo_names = ["{}-week-2".format(team.name) for team in teams]
     return [
-        tuples.Repo(name, description, True, team.id)
+        apimeta.Repo(name, description, True, team.id)
         for name, description, team in zip(repo_names, descriptions, teams)
     ]
 
@@ -443,7 +443,7 @@ class TestCreateRepos:
         github.Organization.create_repo must be called without the team_id
         argument (because if it is called with team_id=None, there is a crash).
         """
-        repo = tuples.Repo(
+        repo = apimeta.Repo(
             name="repo",
             description="Some description",
             private=True,
@@ -597,6 +597,23 @@ class TestCloseIssue:
 class TestGetIssues:
     """Tests for get_issues."""
 
+    @staticmethod
+    def assert_issues_equal(actual_issues, expected_issues):
+        """The expected issues don't have the mocked implementation, while the
+        actual issues all should have it.
+        """
+        actual_issues, expected_issues = (
+            list(actual_issues),
+            list(expected_issues),
+        )
+        assert len(actual_issues) == len(expected_issues)
+        for act, exp in zip(sorted(actual_issues), sorted(expected_issues)):
+            assert act.implementation
+            for field_name in apimeta.Issue._fields:
+                if field_name == "implementation":
+                    continue
+                assert getattr(act, field_name) == getattr(exp, field_name)
+
     def test_get_all_open_issues(self, repos, issues, api):
         repo_names = [repo.name for repo in repos]
 
@@ -606,8 +623,9 @@ class TestGetIssues:
         for repo_name, issue_gen in name_issues_pairs:
             found_repos.append(repo_name)
 
-            actual_issues = list(map(from_magic_mock_issue, issue_gen))
-            assert actual_issues == OPEN_ISSUES
+            self.assert_issues_equal(
+                actual_issues=issue_gen, expected_issues=OPEN_ISSUES
+            )
 
         assert sorted(found_repos) == sorted(repo_names)
 
@@ -622,8 +640,9 @@ class TestGetIssues:
         for repo_name, issue_gen in name_issues_pairs:
             found_repos.append(repo_name)
 
-            actual_issues = list(map(from_magic_mock_issue, issue_gen))
-            assert actual_issues == CLOSED_ISSUES
+            self.assert_issues_equal(
+                actual_issues=issue_gen, expected_issues=CLOSED_ISSUES
+            )
 
         assert sorted(found_repos) == sorted(repo_names)
 
@@ -640,8 +659,9 @@ class TestGetIssues:
         for repo_name, issue_gen in name_issues_pairs:
             found_repos.append(repo_name)
 
-            actual_issues = list(map(from_magic_mock_issue, issue_gen))
-            assert actual_issues == OPEN_ISSUES
+            self.assert_issues_equal(
+                actual_issues=issue_gen, expected_issues=OPEN_ISSUES
+            )
 
         assert len(found_repos) + 1 == len(repo_names)
         assert set(found_repos) == set(repo_names) - {non_existing}
@@ -660,8 +680,9 @@ class TestGetIssues:
         for repo_name, issue_gen in name_issues_pairs:
             found_repos.append(repo_name)
 
-            actual_issues = list(map(from_magic_mock_issue, issue_gen))
-            assert actual_issues == [sought_issue]
+            self.assert_issues_equal(
+                actual_issues=issue_gen, expected_issues=[sought_issue]
+            )
 
         assert sorted(found_repos) == sorted(repo_names)
 

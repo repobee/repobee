@@ -105,7 +105,7 @@ class GitLabAPI(apimeta.API):
         self,
         member_lists: Mapping[str, Iterable[str]],
         permission: str = "push",
-    ) -> List[tuples.Team]:
+    ) -> List[apimeta.Team]:
         """Create teams that do not exist and add members not in their
         specified teams (if they exist as users).
 
@@ -116,15 +116,23 @@ class GitLabAPI(apimeta.API):
             A list of Team namedtuples of the teams corresponding to the keys
             of the member_lists mapping.
         """
-        teams = self._ensure_teams_exist(
+        raw_teams = self._ensure_teams_exist(
             [str(team_name) for team_name in member_lists.keys()],
             permission=permission,
         )
 
-        for team in [team for team in teams if member_lists[team.name]]:
+        for team in [team for team in raw_teams if member_lists[team.name]]:
             self._ensure_members_in_team(team, member_lists[team.name])
 
-        return list(self._get_teams_in(set(member_lists.keys())))
+        return [
+            apimeta.Team(
+                name=t.name,
+                members=member_lists[t.name],
+                id=t.id,
+                implementation=t,
+            )
+            for t in raw_teams
+        ]
 
     def _ensure_members_in_team(self, team, members: Iterable[str]):
         """Add all of the users in ``members`` to a team. Skips any users that
@@ -192,7 +200,7 @@ class GitLabAPI(apimeta.API):
 
     def _ensure_teams_exist(
         self, team_names: Iterable[str], permission: str = "push"
-    ) -> List[tuples.Team]:
+    ) -> List[apimeta.Team]:
         """Create any teams that do not yet exist.
 
         Args:
@@ -226,12 +234,12 @@ class GitLabAPI(apimeta.API):
                 teams.append(new_team)
         return teams
 
-    def create_repos(self, repos: Iterable[tuples.Repo]):
+    def create_repos(self, repos: Iterable[apimeta.Repo]) -> List[str]:
         """Create repositories in the given organization according to the Repos.
         Repos that already exist are skipped.
 
         Args:
-            repo_infos: An iterable of Repo namedtuples.
+            repos: An iterable of Repo API objects.
 
         Returns:
             A list of urls to all repos corresponding to the Repos.

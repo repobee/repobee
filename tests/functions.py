@@ -2,7 +2,7 @@
 import datetime
 import random
 from unittest.mock import MagicMock
-from repobee import tuples
+from repobee import apimeta
 
 import constants
 
@@ -55,8 +55,8 @@ def to_magic_mock_issue(issue):
 
 
 def from_magic_mock_issue(mock_issue):
-    """Convert a MagicMock issue into a tuples.Issue."""
-    return tuples.Issue(
+    """Convert a MagicMock issue into a apimeta.Issue."""
+    return apimeta.Issue(
         title=mock_issue.title,
         body=mock_issue.body,
         number=mock_issue.number,

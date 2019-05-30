@@ -27,11 +27,11 @@ import repobee_plug as plug
 from repobee import git
 from repobee import util
 from repobee import tuples
+from repobee import apimeta
 from repobee import exception
 from repobee import config
 from repobee import formatters
 from repobee.github_api import GitHubAPI
-from repobee.tuples import Team
 from repobee.git import Push
 
 LOGGER = daiquiri.getLogger(__file__)
@@ -79,7 +79,7 @@ def setup_student_repos(
 
 def add_students_to_teams(
     students: Iterable[tuples.Group], api: GitHubAPI
-) -> List[Team]:
+) -> List[apimeta.Team]:
     """Create one team for each student (with the same name as the student),
     and add the student to the team. If a team already exists, it is not
     created.  If a student is already in his/her team, nothing happens.
@@ -97,7 +97,9 @@ def add_students_to_teams(
 
 
 def _create_student_repos(
-    master_repo_urls: Iterable[str], teams: Iterable[Team], api: GitHubAPI
+    master_repo_urls: Iterable[str],
+    teams: Iterable[apimeta.Team],
+    api: GitHubAPI,
 ) -> List[str]:
     """Create student repos. Each team (usually representing one student) is
     assigned a single repo per master repo. Repos that already exist are not
@@ -147,7 +149,7 @@ def update_student_repos(
     master_repo_urls: Iterable[str],
     students: Iterable[tuples.Group],
     api: GitHubAPI,
-    issue: Optional[tuples.Issue] = None,
+    issue: Optional[apimeta.Issue] = None,
 ) -> None:
     """Attempt to update all student repos related to one of the master repos.
 
@@ -184,7 +186,7 @@ def update_student_repos(
 
 
 def _open_issue_by_urls(
-    repo_urls: Iterable[str], issue: tuples.Issue, api: GitHubAPI
+    repo_urls: Iterable[str], issue: apimeta.Issue, api: GitHubAPI
 ) -> None:
     """Open issues in the repos designated by the repo_urls.
 
@@ -236,7 +238,7 @@ def list_issues(
 
 
 def _log_repo_issues(
-    issues_per_repo: Tuple[str, Generator[tuples.Issue, None, None]],
+    issues_per_repo: Tuple[str, Generator[apimeta.Issue, None, None]],
     show_body: bool,
     title_alignment: int,
 ) -> None:
@@ -306,7 +308,7 @@ def _limit_line_length(s: str, max_line_length: int = 100) -> str:
 
 
 def open_issue(
-    issue: tuples.Issue,
+    issue: apimeta.Issue,
     master_repo_names: Iterable[str],
     students: Iterable[tuples.Group],
     api: GitHubAPI,
@@ -394,7 +396,7 @@ def migrate_repos(master_repo_urls: Iterable[str], api: GitHubAPI) -> None:
     master_names = [util.repo_name(url) for url in master_repo_urls]
 
     infos = [
-        tuples.Repo(
+        apimeta.Repo(
             name=master_name,
             description="Master repository {}".format(master_name),
             private=True,
@@ -424,7 +426,7 @@ def assign_peer_reviews(
     master_repo_names: Iterable[str],
     students: Iterable[tuples.Group],
     num_reviews: int,
-    issue: Optional[tuples.Issue],
+    issue: Optional[apimeta.Issue],
     api: GitHubAPI,
 ) -> None:
     """Assign peer reviewers among the students to each student repo. Each
@@ -516,8 +518,8 @@ def check_peer_review_progress(
 
 
 def _create_repo_infos(
-    urls: Iterable[str], teams: Iterable[Team]
-) -> List[tuples.Repo]:
+    urls: Iterable[str], teams: Iterable[apimeta.Team]
+) -> List[apimeta.Repo]:
     """Create Repo namedtuples for all combinations of url and team.
 
     Args:
@@ -531,7 +533,7 @@ def _create_repo_infos(
     for url in urls:
         repo_base_name = util.repo_name(url)
         repo_infos += [
-            tuples.Repo(
+            apimeta.Repo(
                 name=util.generate_repo_name(team.name, repo_base_name),
                 description="{} created for {}".format(
                     repo_base_name, team.name

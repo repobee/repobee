@@ -8,7 +8,7 @@ import repobee
 from repobee import cli
 from repobee import tuples
 from repobee import exception
-from repobee.tuples import Team
+from repobee import apimeta
 
 import constants
 import functions
@@ -66,7 +66,8 @@ def api_instance_mock(mocker):
         generate_repo_url(rn, org_name) for rn in repo_names
     ]
     instance_mock.ensure_teams_and_members.side_effect = lambda team_dict: [
-        Team(name, members, id=0) for name, members in team_dict.items()
+        apimeta.Team(name=name, members=members, id=0)
+        for name, members in team_dict.items()
     ]
     return instance_mock
 

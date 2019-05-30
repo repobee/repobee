@@ -35,13 +35,6 @@ def _check_name_length(name):
         )
 
 
-class Issue(
-    namedtuple("Issue", ("title", "body", "number", "created_at", "author"))
-):
-    def __new__(cls, title, body, number=None, created_at=None, author=None):
-        return super().__new__(cls, title, body, number, created_at, author)
-
-
 class Group(namedtuple("Group", ("members"))):
     # GitHub allows only 100 characters for repository names
     MAX_STR_LEN = 100
@@ -78,17 +71,6 @@ Args = namedtuple(
     ),
 )
 Args.__new__.__defaults__ = (None,) * len(Args._fields)
-
-Team = namedtuple("Team", ("name", "members", "id"))
-
-
-class Repo(
-    namedtuple("Repo", ("name", "description", "private", "team_id", "url"))
-):
-    def __new__(cls, name, description, private, team_id=None, url=None):
-        _check_name_length(name)
-        return super().__new__(cls, name, description, private, team_id, url)
-
 
 Review = namedtuple("Review", ["repo", "done"])
 
