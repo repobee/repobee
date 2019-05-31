@@ -407,7 +407,7 @@ class TestGetRepoUrls:
 
         # act
         actual_urls = api.get_repo_urls(
-            master_repo_names, students=constants.STUDENTS
+            master_repo_names, teams=constants.STUDENTS
         )
 
         # assert
@@ -449,7 +449,7 @@ class TestCreateRepos:
         no pre-existing projects. Should just succeed.
         """
         expected_urls = api.get_repo_urls(
-            master_repo_names, students=constants.STUDENTS
+            master_repo_names, teams=constants.STUDENTS
         )
 
         actual_urls = api.create_repos(repos)
@@ -460,7 +460,7 @@ class TestCreateRepos:
         """Running create_repos twice should have precisely the same effect as
         runing it once."""
         expected_urls = api.get_repo_urls(
-            master_repo_names, students=constants.STUDENTS
+            master_repo_names, teams=constants.STUDENTS
         )
 
         api.create_repos(repos)

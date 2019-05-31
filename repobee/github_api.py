@@ -341,20 +341,20 @@ class GitHubAPI(apimeta.API):
         self,
         master_repo_names: Iterable[str],
         org_name: Optional[str] = None,
-        students: Optional[List[apimeta.Team]] = None,
+        teams: Optional[List[apimeta.Team]] = None,
     ) -> List[str]:
         """Get repo urls for all specified repo names in organization. Assumes
         that the repos exist, there is no guarantee that they actually do as
         checking this with the REST API takes too much time.
 
-        If the `students` argument is supplied, student repo urls are
+        If the `teams` argument is supplied, student repo urls are
         computed instead of master repo urls.
 
         Args:
             master_repo_names: A list of master repository names.
             org_name: Organization in which repos are expected. Defaults to the
                 target organization of the API instance.
-            students: A list of student groups.
+            teams: A list of teams specifying student groups.
 
         Returns:
             a list of urls corresponding to the repo names.
@@ -367,8 +367,8 @@ class GitHubAPI(apimeta.API):
             )
         repo_names = (
             master_repo_names
-            if not students
-            else util.generate_repo_names(students, master_repo_names)
+            if not teams
+            else util.generate_repo_names(teams, master_repo_names)
         )
         return [
             self._insert_auth(url)
@@ -521,7 +521,7 @@ class GitHubAPI(apimeta.API):
             )
 
     def get_review_progress(
-        self, review_team_names, students, title_regex
+        self, review_team_names, teams, title_regex
     ) -> Mapping[str, List[tuples.Review]]:
         """Get the peer review progress for the specified review teams and
         students. Only issues matching the title regex will be considered peer
@@ -535,8 +535,7 @@ class GitHubAPI(apimeta.API):
 
         Args:
             review_team_names: Names of review teams.
-            students: The reviewing students (supposedly also the ones being
-                reviewed, but not necessarily)
+            teams: A list of teams specifying student groups.
             title_regex: If an issue title matches this regex, the issue is
                 considered a potential peer review issue.
         Returns:
@@ -544,16 +543,16 @@ class GitHubAPI(apimeta.API):
             assigned_repos is a :py:class:`~repobee.tuples.Review`.
         """
         reviews = collections.defaultdict(list)
-        teams = self._get_teams_in(review_team_names)
-        for team in teams:
+        review_teams = self._get_teams_in(review_team_names)
+        for review_team in review_teams:
             with _try_api_request():
-                LOGGER.info("processing {}".format(team.name))
-                reviewers = set(m.login for m in team.get_members())
-                repos = list(team.get_repos())
+                LOGGER.info("processing {}".format(review_team.name))
+                reviewers = set(m.login for m in review_team.get_members())
+                repos = list(review_team.get_repos())
                 if len(repos) != 1:
                     LOGGER.warning(
                         "expected {} to have 1 associated repo, found {}."
-                        "Skipping...".format(team.name, len(repos))
+                        "Skipping...".format(review_team.name, len(repos))
                     )
                     continue
 

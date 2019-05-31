@@ -502,7 +502,7 @@ class TestGetRepoUrls:
         # assume works correctly when called with just repo names
         expected_urls = api.get_repo_urls(expected_repo_names)
 
-        actual_urls = api.get_repo_urls(master_repo_names, students=students)
+        actual_urls = api.get_repo_urls(master_repo_names, teams=students)
 
         assert len(actual_urls) == len(students) * len(master_repo_names)
         assert sorted(expected_urls) == sorted(actual_urls)

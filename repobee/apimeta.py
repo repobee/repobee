@@ -127,7 +127,7 @@ class APISpec:
     def create_repos(self, repos):
         _not_implemented()
 
-    def get_repo_urls(self, master_repo_names, org_name, students):
+    def get_repo_urls(self, master_repo_names, org_name, teams):
         _not_implemented()
 
     def get_issues(self, repo_names, state, title_regex):
@@ -142,7 +142,7 @@ class APISpec:
     def add_repos_to_review_teams(self, team_to_repos, issue):
         _not_implemented()
 
-    def get_review_progress(self, review_team_names, students, title_regex):
+    def get_review_progress(self, review_team_names, teams, title_regex):
         _not_implemented()
 
     def delete_teams(self, team_names):

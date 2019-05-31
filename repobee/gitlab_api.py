@@ -283,20 +283,20 @@ class GitLabAPI(apimeta.API):
         self,
         master_repo_names: Iterable[str],
         org_name: Optional[str] = None,
-        students: Optional[List[apimeta.Team]] = None,
+        teams: Optional[List[apimeta.Team]] = None,
     ) -> List[str]:
         """Get repo urls for all specified repo names in organization. Assumes
         that the repos exist, there is no guarantee that they actually do as
         checking this with the REST API takes too much time.
 
-        If the `students` argument is supplied, student repo urls are
+        If the `teams` argument is supplied, student repo urls are
         computed instead of master repo urls.
 
         Args:
             master_repo_names: A list of master repository names.
             org_name: Organization in which repos are expected. Defaults to the
                 target organization of the API instance.
-            students: A list of student groups.
+            teams: A list of teams specifying student groups.
 
         Returns:
             a list of urls corresponding to the repo names.
@@ -308,14 +308,14 @@ class GitLabAPI(apimeta.API):
                 "{}/{}.git".format(group_url, repo_name)
                 for repo_name in master_repo_names
             ]
-            if not students
+            if not teams
             else [
                 "{}/{}/{}.git".format(
                     group_url,
-                    student,
-                    util.generate_repo_name(str(student), master_repo_name),
+                    team,
+                    util.generate_repo_name(str(team), master_repo_name),
                 )
-                for student in students
+                for team in teams
                 for master_repo_name in master_repo_names
             ]
         )
