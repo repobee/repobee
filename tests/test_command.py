@@ -162,7 +162,7 @@ def students():
 
 @pytest.fixture
 def ensure_teams_and_members_mock(api_mock, students):
-    api_mock.ensure_teams_and_members.side_effect = lambda member_lists: [
+    api_mock.ensure_teams_and_members.side_effect = lambda teams: [
         apimeta.Team(name=str(student), members=[student], id=id)
         for id, student in enumerate(students)
     ]
@@ -290,16 +290,11 @@ class TestSetupStudentRepos:
         expected_clone_calls = [
             call(url, cwd=str(tmpdir)) for url in master_urls
         ]
-        expected_ensure_teams_arg = {
-            str(student): [str(student)] for student in students
-        }
 
         command.setup_student_repos(master_urls, students, api_mock)
 
         git_mock.clone_single.assert_has_calls(expected_clone_calls)
-        api_mock.ensure_teams_and_members.assert_called_once_with(
-            expected_ensure_teams_arg
-        )
+        api_mock.ensure_teams_and_members.assert_called_once_with(students)
         api_mock.create_repos.assert_called_once_with(repo_infos)
         git_mock.push.assert_called_once_with(push_tuples)
 

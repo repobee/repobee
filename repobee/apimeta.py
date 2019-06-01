@@ -118,7 +118,7 @@ class APISpec:
     def __init__(self, base_url, token, org_name, user):
         _not_implemented()
 
-    def ensure_teams_and_members(self, member_lists, permission):
+    def ensure_teams_and_members(self, teams, permission):
         _not_implemented()
 
     def get_teams(self):

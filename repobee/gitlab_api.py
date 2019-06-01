@@ -10,7 +10,7 @@ GitLabAPI are mostly high-level bulk operations.
 
 .. moduleauthor:: Simon Larsén
 """
-from typing import List, Iterable, Mapping, Optional
+from typing import List, Iterable, Optional
 from socket import gaierror
 import collections
 import contextlib
@@ -101,9 +101,7 @@ class GitLabAPI(apimeta.API):
             )
 
     def ensure_teams_and_members(
-        self,
-        member_lists: Mapping[str, Iterable[str]],
-        permission: str = "push",
+        self, teams: Iterable[apimeta.Team], permission: str = "push"
     ) -> List[apimeta.Team]:
         """Create teams that do not exist and add members not in their
         specified teams (if they exist as users).
@@ -115,6 +113,7 @@ class GitLabAPI(apimeta.API):
             A list of Team namedtuples of the teams corresponding to the keys
             of the member_lists mapping.
         """
+        member_lists = {team.name: team.members for team in teams}
         raw_teams = self._ensure_teams_exist(
             [str(team_name) for team_name in member_lists.keys()],
             permission=permission,
@@ -169,7 +168,15 @@ class GitLabAPI(apimeta.API):
         return [self._User(m.id, m.username) for m in group.members.list()]
 
     def get_teams(self):
-        return self._gitlab.groups.list(id=self._group.id)
+        return [
+            apimeta.Team(
+                name=t.name,
+                members=[m.username for m in t.members.list()],
+                id=t.id,
+                implementation=t,
+            )
+            for t in self._gitlab.groups.list(id=self._group.id)
+        ]
 
     def _add_to_team(self, members: Iterable[str], team):
         """Add members to a team.

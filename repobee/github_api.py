@@ -157,6 +157,17 @@ class GitHubAPI(apimeta.API):
                 if team.name in team_names
             )
 
+    def get_teams(self):
+        return [
+            apimeta.Team(
+                name=t.name,
+                members=[m.login for m in t.get_members()],
+                id=t.id,
+                implementation=t,
+            )
+            for t in self._org.get_teams()
+        ]
+
     def delete_teams(self, team_names: Iterable[str]) -> None:
         """Delete all teams that match any of the team names. Skip any team
         name for which no team can be found.
@@ -200,20 +211,19 @@ class GitHubAPI(apimeta.API):
         return existing_users
 
     def ensure_teams_and_members(
-        self,
-        member_lists: Mapping[str, Iterable[str]],
-        permission: str = "push",
+        self, teams: Iterable[apimeta.Team], permission: str = "push"
     ) -> List[apimeta.Team]:
         """Create teams that do not exist and add members not in their
         specified teams (if they exist as users).
 
         Args:
-            member_list: A mapping of (team_name, member_list).
+            teams: A list of teams specifying student groups.
 
         Returns:
             A list of Team namedtuples of the teams corresponding to the keys
             of the member_lists mapping.
         """
+        member_lists = {team.name: team.members for team in teams}
         raw_teams = self._ensure_teams_exist(
             [team_name for team_name in member_lists.keys()],
             permission=permission,
