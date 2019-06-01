@@ -7,6 +7,6 @@ repos:
     rev: v1.2.3
     hooks:
     - id: trailing-whitespace
-      exclude: ^tests/test_formatters.py
+      exclude: ^tests/.*.py
     - id: flake8
     - id: check-yaml
