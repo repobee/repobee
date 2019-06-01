@@ -344,3 +344,7 @@ class TestEnsureTeamsAndMembers:
         expected_teams = list(team_wrappers)
         api.ensure_teams_and_members(expected_teams)
         self.assert_teams_equal(api.get_teams(), expected_teams)
+
+    def test_garbage(self):
+        assert True, "something"
+        assert False, "Something"
