@@ -127,11 +127,10 @@ class APISpec:
 
         Teams that do not exist are created, teams that already exist are
         fetched. Members that are not in their teams are added, members that do
-        not exist or are already in their teams are ignored.
+        not exist or are already in their teams are skipped.
 
         Args:
             teams: A list of teams specifying student groups.
-
         Returns:
             A list of Team API objects of the teams provided to the function,
             both those that were created and those that already existed.
@@ -146,7 +145,16 @@ class APISpec:
         """
         _not_implemented()
 
-    def create_repos(self, repos):
+    def create_repos(self, repos: Iterable[Repo]) -> List[str]:
+        """Create repos in the target organization according the those specced
+        by the ``repos`` argument. Repos that already exist are skipped.
+
+        Args:
+            repos: Repos to be created.
+        Returns:
+            A list of urls to the repos specified by the ``repos`` argument,
+            both those that were created and those that already existed.
+        """
         _not_implemented()
 
     def get_repo_urls(self, master_repo_names, org_name, teams):

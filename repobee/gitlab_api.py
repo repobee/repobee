@@ -233,15 +233,7 @@ class GitLabAPI(apimeta.API):
         return teams
 
     def create_repos(self, repos: Iterable[apimeta.Repo]) -> List[str]:
-        """Create repositories in the given organization according to the Repos.
-        Repos that already exist are skipped.
-
-        Args:
-            repos: An iterable of Repo API objects.
-
-        Returns:
-            A list of urls to all repos corresponding to the Repos.
-        """
+        """See :py:class:`repobee.apimeta.APISpec.create_repos`."""
         repo_urls = []
         for repo in repos:
             created = False

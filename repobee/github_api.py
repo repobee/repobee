@@ -308,15 +308,7 @@ class GitHubAPI(apimeta.API):
                 team.add_membership(user)
 
     def create_repos(self, repos: Iterable[apimeta.Repo]):
-        """Create repositories in the given organization according to the Repos.
-        Repos that already exist are skipped.
-
-        Args:
-            repos: An iterable of Repo namedtuples.
-
-        Returns:
-            A list of urls to all repos corresponding to the Repos.
-        """
+        """See :py:class:`repobee.apimeta.APISpec.create_repos`."""
         repo_urls = []
         for info in repos:
             created = False
