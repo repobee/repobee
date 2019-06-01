@@ -414,13 +414,7 @@ class GitHubAPI(apimeta.API):
     def open_issue(
         self, title: str, body: str, repo_names: Iterable[str]
     ) -> None:
-        """Open the specified issue in all repos with the given names.
-
-        Args:
-            title: Title of the issue.
-            body: Body of the issue.
-            repo_names: Names of repos to open the issue in.
-        """
+        """See :py:func:`repobee.apimeta.APISpec.open_issue`."""
         repo_names_set = set(repo_names)
         repos = list(self._get_repos_by_name(repo_names_set))
         for repo in repos:

@@ -206,7 +206,17 @@ class APISpec:
         """
         _not_implemented()
 
-    def open_issue(self, title, body, repo_names):
+    def open_issue(
+        self, title: str, body: str, repo_names: Iterable[str]
+    ) -> None:
+        """Open the specified issue in all repos with the given names, in the
+        target organization.
+
+        Args:
+            title: Title of the issue.
+            body: Body of the issue.
+            repo_names: Names of repos to open the issue in.
+        """
         _not_implemented()
 
     def close_issue(self, title_regex, repo_names):
