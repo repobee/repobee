@@ -25,12 +25,6 @@ exception
 .. automodule:: repobee.exception
     :members:
 
-github_api
-====================
-
-.. automodule:: repobee.github_api
-    :members:
-
 git
 ====================
 
@@ -48,6 +42,29 @@ util
 
 .. automodule:: repobee.util
     :members:
+
+
+API-related modules
+===================
+
+apimeta
+-------
+
+.. automodule:: repobee.apimeta
+   :members:
+
+github_api
+----------
+
+.. automodule:: repobee.github_api
+    :members:
+
+gitlab_api
+----------
+
+.. automodule:: repobee.gitlab_api
+   :members:
+
 
 Core plugins
 ============
