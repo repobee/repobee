@@ -387,17 +387,7 @@ class GitHubAPI(apimeta.API):
         state: str = "open",
         title_regex: str = "",
     ) -> Generator[Tuple[str, ISSUE_GENERATOR], None, None]:
-        """Get all issues for the repos in repo_names an return a generator
-        that yields (repo_name, issue generator) tuples.
-
-        Args:
-            repo_names: An iterable of repo names.
-            state: Specifying the state of the issue ('open' or 'closed').
-            title_regex: If specified, only issues matching this regex are
-            returned. Defaults to the empty string (which matches anything).
-        Returns:
-            A generator that yields (repo_name, issue generator) tuples.
-        """
+        """See :py:func:`repobee.apimeta.APISpec.get_issues`."""
         repos = self._get_repos_by_name(repo_names)
 
         with _try_api_request():

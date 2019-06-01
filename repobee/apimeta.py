@@ -20,7 +20,7 @@ NotImplementedError) for any unimplemented API methods.
 """
 import inspect
 import collections
-from typing import List, Iterable, Optional
+from typing import List, Iterable, Optional, Generator, Tuple
 
 import daiquiri
 
@@ -185,7 +185,25 @@ class APISpec:
         """
         _not_implemented()
 
-    def get_issues(self, repo_names, state, title_regex):
+    def get_issues(
+        self,
+        repo_names: Iterable[str],
+        state: str = "open",
+        title_regex: str = "",
+    ) -> Generator[Tuple[str, Generator[Issue, None, None]], None, None]:
+        """Get all issues for the repos in repo_names an return a generator
+        that yields (repo_name, issue generator) tuples. Will by default only
+        get open issues.
+
+        Args:
+            repo_names: An iterable of repo names.
+            state: Specifying the state of the issue ('open', 'closed' or
+            'all'). Defaults to 'open'.
+            title_regex: If specified, only issues matching this regex are
+            returned. Defaults to the empty string (which matches anything).
+        Returns:
+            A generator that yields (repo_name, issue_generator) tuples.
+        """
         _not_implemented()
 
     def open_issue(self, title, body, repo_names):
