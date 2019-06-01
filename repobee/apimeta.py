@@ -25,6 +25,7 @@ from typing import List, Iterable, Optional, Generator, Tuple, Mapping
 import daiquiri
 
 from repobee import exception
+from repobee import tuples
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -244,8 +245,32 @@ class APISpec:
             issue: An optional Issue tuple to override the default issue.
         """
 
-    def get_review_progress(self, review_team_names, teams, title_regex):
-        _not_implemented()
+    def get_review_progress(
+        self,
+        review_team_names: Iterable[str],
+        teams: Iterable[Team],
+        title_regex: str,
+    ) -> Mapping[str, List[tuples.Review]]:
+        """Get the peer review progress for the specified review teams and
+        student teams by checking which review team members have opened issues
+        in their assigned repos. Only issues matching the title regex will be
+        considered peer review issues. If a reviewer has opened an issue in the
+        assigned repo with a title matching the regex, the review will be
+        considered done.
+
+        Note that reviews only count if the student is in the review team for
+        that repo. Review teams must only have one associated repo, or the
+        repo is skipped.
+
+        Args:
+            review_team_names: Names of review teams.
+            teams: Team API objects specifying student groups.
+            title_regex: If an issue title matches this regex, the issue is
+                considered a potential peer review issue.
+        Returns:
+            a mapping (reviewer -> assigned_repos), where reviewer is a str and
+            assigned_repos is a :py:class:`repobee.tuples.Review`.
+        """
 
     def delete_teams(self, team_names):
         _not_implemented()

@@ -472,27 +472,12 @@ class GitHubAPI(apimeta.API):
             )
 
     def get_review_progress(
-        self, review_team_names, teams, title_regex
+        self,
+        review_team_names: Iterable[str],
+        teams: Iterable[apimeta.Team],
+        title_regex: str,
     ) -> Mapping[str, List[tuples.Review]]:
-        """Get the peer review progress for the specified review teams and
-        students. Only issues matching the title regex will be considered peer
-        review issues. If a reviewer has opened an issue in the assigned repo
-        with a title matching the regex, the review will be considered done.
-
-        Note that reviews only count if the student is in the review team for
-        that repo. Review teams must only have one associated repo, or the
-        repo is skipped. This could potentially be relaxed if there is reason
-        to, because it is not critical to the functionality of the algorithm.
-
-        Args:
-            review_team_names: Names of review teams.
-            teams: A list of teams specifying student groups.
-            title_regex: If an issue title matches this regex, the issue is
-                considered a potential peer review issue.
-        Returns:
-            a mapping (reviewer -> assigned_repos), where reviewer is a str and
-            assigned_repos is a :py:class:`~repobee.tuples.Review`.
-        """
+        """See :py:func:`repobee.apimeta.APISpec.get_review_progress`."""
         reviews = collections.defaultdict(list)
         review_teams = self._get_teams_in(review_team_names)
         for review_team in review_teams:
