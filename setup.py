@@ -13,7 +13,7 @@ with open("repobee/__version.py", mode="r", encoding="utf-8") as f:
 test_requirements = [
     "appdirs",
     "daiquiri",
-    "pytest==4.5.0",
+    "pytest==4.6.0",
     "pytest-cov>=2.6.1",
     "pytest-mock",
     "codecov",
