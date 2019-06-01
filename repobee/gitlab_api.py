@@ -103,7 +103,7 @@ class GitLabAPI(apimeta.API):
     def ensure_teams_and_members(
         self, teams: Iterable[apimeta.Team], permission: str = "push"
     ) -> List[apimeta.Team]:
-        """See :py:class:`repobee.apimeta.APISpec.ensure_teams_and_members`."""
+        """See :py:func:`repobee.apimeta.APISpec.ensure_teams_and_members`."""
         member_lists = {team.name: team.members for team in teams}
         raw_teams = self._ensure_teams_exist(
             [str(team_name) for team_name in member_lists.keys()],
@@ -159,7 +159,7 @@ class GitLabAPI(apimeta.API):
         return [self._User(m.id, m.username) for m in group.members.list()]
 
     def get_teams(self) -> List[apimeta.Team]:
-        """See :py:class:`repobee.apimeta.Team`."""
+        """See :py:func:`repobee.apimeta.Team`."""
         return [
             apimeta.Team(
                 name=t.name,
@@ -233,7 +233,7 @@ class GitLabAPI(apimeta.API):
         return teams
 
     def create_repos(self, repos: Iterable[apimeta.Repo]) -> List[str]:
-        """See :py:class:`repobee.apimeta.APISpec.create_repos`."""
+        """See :py:func:`repobee.apimeta.APISpec.create_repos`."""
         repo_urls = []
         for repo in repos:
             created = False

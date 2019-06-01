@@ -215,7 +215,7 @@ class GitHubAPI(apimeta.API):
     def ensure_teams_and_members(
         self, teams: Iterable[apimeta.Team], permission: str = "push"
     ) -> List[apimeta.Team]:
-        """See :py:class:`repobee.apimeta.APISpec.ensure_teams_and_members`."""
+        """See :py:func:`repobee.apimeta.APISpec.ensure_teams_and_members`."""
         member_lists = {team.name: team.members for team in teams}
         raw_teams = self._ensure_teams_exist(
             [team_name for team_name in member_lists.keys()],
@@ -308,7 +308,7 @@ class GitHubAPI(apimeta.API):
                 team.add_membership(user)
 
     def create_repos(self, repos: Iterable[apimeta.Repo]):
-        """See :py:class:`repobee.apimeta.APISpec.create_repos`."""
+        """See :py:func:`repobee.apimeta.APISpec.create_repos`."""
         repo_urls = []
         for info in repos:
             created = False
