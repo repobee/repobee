@@ -259,8 +259,8 @@ class APISpec:
         considered done.
 
         Note that reviews only count if the student is in the review team for
-        that repo. Review teams must only have one associated repo, or the
-        repo is skipped.
+        that repo. Review teams must only have one associated repo, or the repo
+        is skipped.
 
         Args:
             review_team_names: Names of review teams.
@@ -272,11 +272,51 @@ class APISpec:
             assigned_repos is a :py:class:`repobee.tuples.Review`.
         """
 
-    def delete_teams(self, team_names):
+    def delete_teams(self, team_names: Iterable[str]) -> None:
+        """Delete all teams in the target organizatoin that exactly match one
+        of the provided ``team_names``. Skip any team name for which no match
+        is found.
+
+        Args:
+            team_names: A list of team names for teams to be deleted.
+        """
         _not_implemented()
 
     @staticmethod
-    def verify_settings(user, org_name, base_url, token, master_org_name):
+    def verify_settings(
+        user: str,
+        org_name: str,
+        base_url: str,
+        token: str,
+        master_org_name: Optional[str] = None,
+    ):
+        """Verify the following (to the extent that is possible and makes sense
+        for the specifi platform):
+
+        1. Base url is correct
+        2. The token has sufficient access privileges
+        3. Target organization (specifiend by ``org_name``) exists
+            - If master_org_name is supplied, this is also checked to
+              exist.
+        4. User is owner in organization (verify by getting
+            - If master_org_name is supplied, user is also checked to be an
+              owner of it.
+        organization member list and checking roles)
+
+        Should raise an appropriate subclass of
+        :py:class:`repobee.exception.APIError` when a problem is encountered.
+
+        Args:
+            user: The username to try to fetch.
+            org_name: Name of the target organization.
+            base_url: A base url to a github API.
+            token: A secure OAUTH2 token.
+            org_name: Name of the master organization.
+        Returns:
+            True if the connection is well formed.
+        Raises:
+            :py:class:`repobee.exception.APIError`
+        """
         _not_implemented()
 
 

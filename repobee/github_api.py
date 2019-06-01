@@ -171,12 +171,7 @@ class GitHubAPI(apimeta.API):
         ]
 
     def delete_teams(self, team_names: Iterable[str]) -> None:
-        """Delete all teams that match any of the team names. Skip any team
-        name for which no team can be found.
-
-        Args:
-            team_names: A list of team names for teams to be deleted.
-        """
+        """See :py:func:`repobee.apimeta.APISpec.delete_teams`."""
         deleted = set()  # only for logging
         for team in self._get_teams_in(team_names):
             team.delete()
@@ -574,32 +569,8 @@ class GitHubAPI(apimeta.API):
         base_url: str,
         token: str,
         master_org_name: Optional[str] = None,
-    ):
-        """Verify the following:
-
-        .. code-block: markdown
-
-            1. Base url is correct (verify by fetching user).
-            2. The token has correct access privileges (verify by getting oauth
-               scopes)
-            3. Organization exists (verify by getting the org)
-                - If master_org_name is supplied, this is also checked to
-                  exist.
-            4. User is owner in organization (verify by getting
-                - If master_org_name is supplied, user is also checked to be an
-                  owner of it.
-            organization member list and checking roles)
-
-            Raises exceptions if something goes wrong.
-
-        Args:
-            user: The username to try to fetch.
-            org_name: Name of an organization.
-            base_url: A base url to a github API.
-            token: A secure OAUTH2 token.
-        Returns:
-            True if the connection is well formed.
-        """
+    ) -> None:
+        """See :py:func:`repobee.apimeta.APISpec.verify_settings`."""
         LOGGER.info("verifying settings ...")
         if not token:
             raise exception.BadCredentials(
