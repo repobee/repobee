@@ -92,8 +92,7 @@ def _add_students_to_teams(
     Returns:
         all teams associated with the students in the students list.
     """
-    member_lists = {str(team): team.members for team in teams}
-    return api.ensure_teams_and_members(member_lists)
+    return api.ensure_teams_and_members(teams)
 
 
 def _create_student_repos(

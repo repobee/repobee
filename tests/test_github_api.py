@@ -312,28 +312,48 @@ def api(happy_github, organization, no_teams):
 
 class TestEnsureTeamsAndMembers:
     @staticmethod
-    def assert_equal_teams(teams_and_members, teams):
-        for team in teams:
-            members = {mem.login for mem in team.get_members()}
-            assert members == set(teams_and_members[team.name])
+    def assert_teams_equal(actual_teams, expected_teams):
+        """Assert that the teams are equal, except for the implementation and
+        id.
+        """
+        assert len(actual_teams) == len(expected_teams)
+        for actual, expected in zip(
+            sorted(actual_teams), sorted(expected_teams)
+        ):
+            assert (actual.name, sorted(actual.members)) == (
+                expected.name,
+                sorted(expected.members),
+            )
 
-    def test_no_previous_teams(self, api, teams_and_members, no_teams):
+    @pytest.fixture
+    def team_wrappers(self, teams_and_members):
+        """Wrap the teams_and_members dictionaries into apimeta.Team classes.
+
+        TODO: Remove this when this test suite is rewritten.
+        """
+        return [
+            apimeta.Team(name=team_name, members=members)
+            for team_name, members in teams_and_members.items()
+        ]
+
+    def test_no_previous_teams(self, api, team_wrappers, no_teams):
         """Test that ensure_teams_and_members works as expected when there are
         no previous teams, and all users exist. This is a massive end-to-end
         test of the function with only the lower level API's mocked out.
         """
-        api.ensure_teams_and_members(teams_and_members)
-        self.assert_equal_teams(teams_and_members, api.org.get_teams())
+        expected_teams = list(team_wrappers)
+        api.ensure_teams_and_members(expected_teams)
+        self.assert_teams_equal(api.get_teams(), expected_teams)
 
     def test_all_teams_exist_but_without_members(
-        self, api, teams_and_members, teams
+        self, api, team_wrappers, teams
     ):
         """Test that ensure_teams_and_members works as expected when all of
         the teams already exist, but have no members in them.
         """
-        api.ensure_teams_and_members(teams_and_members)
-
-        self.assert_equal_teams(teams_and_members, api.org.get_teams())
+        expected_teams = list(team_wrappers)
+        api.ensure_teams_and_members(expected_teams)
+        self.assert_teams_equal(api.get_teams(), expected_teams)
 
     @pytest.mark.parametrize(
         "unexpected_exc",
@@ -344,7 +364,7 @@ class TestEnsureTeamsAndMembers:
         ],
     )
     def test_raises_on_non_422_exception(
-        self, api, organization, teams_and_members, unexpected_exc
+        self, api, organization, team_wrappers, unexpected_exc
     ):
         """Should raise if anything but a 422 http error is raised when
         creating the team.
@@ -356,17 +376,17 @@ class TestEnsureTeamsAndMembers:
         organization.create_team.side_effect = raise_
 
         with pytest.raises(exception.UnexpectedException):
-            api.ensure_teams_and_members(teams_and_members)
+            api.ensure_teams_and_members(team_wrappers)
 
     def test_running_twice_has_no_ill_effects(
-        self, api, no_teams, teams_and_members
+        self, api, no_teams, team_wrappers
     ):
         """Tests that add_to_team is not called if all members are already
         in it."""
-        api.ensure_teams_and_members(teams_and_members)
-        api.ensure_teams_and_members(teams_and_members)
-
-        self.assert_equal_teams(teams_and_members, api.org.get_teams())
+        expected_teams = list(team_wrappers)
+        api.ensure_teams_and_members(expected_teams)
+        api.ensure_teams_and_members(expected_teams)
+        self.assert_teams_equal(api.get_teams(), expected_teams)
 
 
 class TestCreateRepos:
@@ -502,7 +522,7 @@ class TestGetRepoUrls:
         # assume works correctly when called with just repo names
         expected_urls = api.get_repo_urls(expected_repo_names)
 
-        actual_urls = api.get_repo_urls(master_repo_names, students=students)
+        actual_urls = api.get_repo_urls(master_repo_names, teams=students)
 
         assert len(actual_urls) == len(students) * len(master_repo_names)
         assert sorted(expected_urls) == sorted(actual_urls)

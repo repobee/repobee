@@ -246,62 +246,57 @@ def team_names():
 
 
 class TestEnsureTeamsAndMembers:
-    def test_with_no_pre_existing_groups(self, api_mock, team_names):
+    def test_with_no_pre_existing_groups(self, api_mock):
         """Test that all groups are created correctly when the only existing
         group is the target group.
         """
         # arrange
         api = repobee.gitlab_api.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
-        allocations = {tn: [tn] for tn in team_names}
-        expected_group_names = list(allocations.keys())
+        expected_team_names = [team.name for team in constants.STUDENTS]
         assert (
-            expected_group_names
-        ), "pre-test assert, expected group names should be non-empty"
+            expected_team_names
+        ), "pre-test assert, expected team names should be non-empty"
 
         # act
-        api.ensure_teams_and_members(allocations)
+        api.ensure_teams_and_members(constants.STUDENTS)
 
         # assert
-        actual_groups = api.get_teams()
-        assert sorted([g.name for g in actual_groups]) == sorted(
-            expected_group_names
+        actual_teams = api.get_teams()
+        assert sorted([g.name for g in actual_teams]) == sorted(
+            expected_team_names
         )
-        for group in actual_groups:
-            if group.name != TARGET_GROUP:
-                group_member_names = [m.username for m in group.members.list()]
-                assert group_member_names == [group.name]
+        for team in actual_teams:
+            if team.name != TARGET_GROUP:
+                assert team.members == [team.name]
             else:
-                assert not group.members.list()
+                assert not team.members
 
     def test_with_multi_student_groups(self, api_mock):
         # arrange
         api = repobee.gitlab_api.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
         num_students = len(constants.STUDENTS)
-        allocations = {
-            str(
-                repobee.apimeta.Team(members=g1.members + g2.members)
-            ): g1.members
-            + g2.members
+        teams = [
+            repobee.apimeta.Team(members=g1.members + g2.members)
             for g1, g2 in zip(
                 constants.STUDENTS[: num_students // 2],
                 constants.STUDENTS[num_students // 2 :],
             )
-        }
-        expected_groups = dict(allocations)
+        ]
+        expected_teams = list(teams)
 
         # act
-        api.ensure_teams_and_members(allocations)
+        api.ensure_teams_and_members(teams)
 
         # assert
-        actual_groups = api.get_teams()
-        assert len(actual_groups) == len(expected_groups)
-        assert sorted([g.name for g in actual_groups]) == sorted(
-            expected_groups.keys()
+        actual_teams = api.get_teams()
+        assert len(actual_teams) == len(expected_teams)
+        assert sorted([t.name for t in actual_teams]) == sorted(
+            t.name for t in expected_teams
         )
-        for group in actual_groups:
-            member_names = [m.username for m in group.members.list()]
-            expected_member_names = expected_groups[group.name]
-            assert sorted(member_names) == sorted(expected_member_names)
+        for actual_team, expected_team in zip(
+            sorted(actual_teams), sorted(expected_teams)
+        ):
+            assert sorted(actual_team.members) == sorted(expected_team.members)
 
     def test_run_twice(self, team_names):
         """Running the function twice should have the same effect as
@@ -309,27 +304,25 @@ class TestEnsureTeamsAndMembers:
         """
         # arrange
         api = repobee.gitlab_api.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
-        allocations = {tn: [tn] for tn in team_names}
-        expected_group_names = list(allocations.keys())
+        expected_team_names = [t.name for t in constants.STUDENTS]
         assert (
-            expected_group_names
-        ), "pre-test assert, expected group names should be non-empty"
+            expected_team_names
+        ), "pre-test assert, expected team names should be non-empty"
 
         # act
-        api.ensure_teams_and_members(allocations)
-        api.ensure_teams_and_members(allocations)
+        api.ensure_teams_and_members(constants.STUDENTS)
+        api.ensure_teams_and_members(constants.STUDENTS)
 
         # assert
-        actual_groups = api.get_teams()
-        assert sorted([g.name for g in actual_groups]) == sorted(
-            expected_group_names
+        actual_teams = api.get_teams()
+        assert sorted([g.name for g in actual_teams]) == sorted(
+            expected_team_names
         )
-        for group in actual_groups:
-            if group.name != TARGET_GROUP:
-                group_member_names = [m.username for m in group.members.list()]
-                assert group_member_names == [group.name]
+        for team in actual_teams:
+            if team.name != TARGET_GROUP:
+                assert team.members == [team.name]
             else:
-                assert not group.members.list()
+                assert not team.members
 
 
 @pytest.fixture
@@ -407,7 +400,7 @@ class TestGetRepoUrls:
 
         # act
         actual_urls = api.get_repo_urls(
-            master_repo_names, students=constants.STUDENTS
+            master_repo_names, teams=constants.STUDENTS
         )
 
         # assert
@@ -449,7 +442,7 @@ class TestCreateRepos:
         no pre-existing projects. Should just succeed.
         """
         expected_urls = api.get_repo_urls(
-            master_repo_names, students=constants.STUDENTS
+            master_repo_names, teams=constants.STUDENTS
         )
 
         actual_urls = api.create_repos(repos)
@@ -460,7 +453,7 @@ class TestCreateRepos:
         """Running create_repos twice should have precisely the same effect as
         runing it once."""
         expected_urls = api.get_repo_urls(
-            master_repo_names, students=constants.STUDENTS
+            master_repo_names, teams=constants.STUDENTS
         )
 
         api.create_repos(repos)

@@ -10,7 +10,7 @@ GitLabAPI are mostly high-level bulk operations.
 
 .. moduleauthor:: Simon Larsén
 """
-from typing import List, Iterable, Mapping, Optional
+from typing import List, Iterable, Optional
 from socket import gaierror
 import collections
 import contextlib
@@ -101,9 +101,7 @@ class GitLabAPI(apimeta.API):
             )
 
     def ensure_teams_and_members(
-        self,
-        member_lists: Mapping[str, Iterable[str]],
-        permission: str = "push",
+        self, teams: Iterable[apimeta.Team], permission: str = "push"
     ) -> List[apimeta.Team]:
         """Create teams that do not exist and add members not in their
         specified teams (if they exist as users).
@@ -115,6 +113,7 @@ class GitLabAPI(apimeta.API):
             A list of Team namedtuples of the teams corresponding to the keys
             of the member_lists mapping.
         """
+        member_lists = {team.name: team.members for team in teams}
         raw_teams = self._ensure_teams_exist(
             [str(team_name) for team_name in member_lists.keys()],
             permission=permission,
@@ -169,7 +168,15 @@ class GitLabAPI(apimeta.API):
         return [self._User(m.id, m.username) for m in group.members.list()]
 
     def get_teams(self):
-        return self._gitlab.groups.list(id=self._group.id)
+        return [
+            apimeta.Team(
+                name=t.name,
+                members=[m.username for m in t.members.list()],
+                id=t.id,
+                implementation=t,
+            )
+            for t in self._gitlab.groups.list(id=self._group.id)
+        ]
 
     def _add_to_team(self, members: Iterable[str], team):
         """Add members to a team.
@@ -283,20 +290,20 @@ class GitLabAPI(apimeta.API):
         self,
         master_repo_names: Iterable[str],
         org_name: Optional[str] = None,
-        students: Optional[List[apimeta.Team]] = None,
+        teams: Optional[List[apimeta.Team]] = None,
     ) -> List[str]:
         """Get repo urls for all specified repo names in organization. Assumes
         that the repos exist, there is no guarantee that they actually do as
         checking this with the REST API takes too much time.
 
-        If the `students` argument is supplied, student repo urls are
+        If the `teams` argument is supplied, student repo urls are
         computed instead of master repo urls.
 
         Args:
             master_repo_names: A list of master repository names.
             org_name: Organization in which repos are expected. Defaults to the
                 target organization of the API instance.
-            students: A list of student groups.
+            teams: A list of teams specifying student groups.
 
         Returns:
             a list of urls corresponding to the repo names.
@@ -308,14 +315,14 @@ class GitLabAPI(apimeta.API):
                 "{}/{}.git".format(group_url, repo_name)
                 for repo_name in master_repo_names
             ]
-            if not students
+            if not teams
             else [
                 "{}/{}/{}.git".format(
                     group_url,
-                    student,
-                    util.generate_repo_name(str(student), master_repo_name),
+                    team,
+                    util.generate_repo_name(str(team), master_repo_name),
                 )
-                for student in students
+                for team in teams
                 for master_repo_name in master_repo_names
             ]
         )
