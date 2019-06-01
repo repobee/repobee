@@ -14,8 +14,9 @@ import re
 from typing import List, Iterable, Mapping, Optional, Generator, Tuple
 from socket import gaierror
 import collections
-import daiquiri
 import contextlib
+
+import daiquiri
 import github
 
 from repobee import exception
@@ -157,7 +158,8 @@ class GitHubAPI(apimeta.API):
                 if team.name in team_names
             )
 
-    def get_teams(self):
+    def get_teams(self) -> List[apimeta.Team]:
+        """See :py:func:`repobee.apimeta.APISpec.get_teams`."""
         return [
             apimeta.Team(
                 name=t.name,

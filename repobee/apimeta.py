@@ -20,6 +20,7 @@ NotImplementedError) for any unimplemented API methods.
 """
 import inspect
 import collections
+from typing import List
 
 import daiquiri
 
@@ -121,7 +122,12 @@ class APISpec:
     def ensure_teams_and_members(self, teams, permission):
         _not_implemented()
 
-    def get_teams(self):
+    def get_teams(self) -> List[Team]:
+        """Get all teams related to the target organization.
+
+        Returns:
+            A list of Team API object.
+        """
         _not_implemented()
 
     def create_repos(self, repos):

@@ -167,7 +167,8 @@ class GitLabAPI(apimeta.API):
     def _get_members(self, group):
         return [self._User(m.id, m.username) for m in group.members.list()]
 
-    def get_teams(self):
+    def get_teams(self) -> List[apimeta.Team]:
+        """See :py:class:`repobee.apimeta.Team`."""
         return [
             apimeta.Team(
                 name=t.name,
