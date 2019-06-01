@@ -17,7 +17,6 @@ import repobee
 
 from repobee import exception
 
-import repobee_plug as plug
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -113,8 +112,7 @@ def execute_config_hooks(
     config_file = pathlib.Path(config_file)
     if not config_file.is_file():
         return
-    config_parser = _read_config(config_file)
-    plug.manager.hook.config_hook(config_parser=config_parser)
+    _read_config(config_file)
 
 
 def check_config_integrity(

@@ -54,11 +54,6 @@ def mock_getenv(mocker):
 
 
 @pytest.fixture
-def plugin_manager_mock(mocker):
-    return mocker.patch("repobee_plug.manager", autospec=True)
-
-
-@pytest.fixture
 def empty_students_file(mocker, tmpdir):
     """Fixture with an empty temporary file."""
     file = tmpdir.join("students")
