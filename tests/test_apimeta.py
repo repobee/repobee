@@ -9,7 +9,12 @@ def api_methods():
     return methods.items()
 
 
-@pytest.mark.parametrize("method", api_methods())
+def api_method_ids():
+    methods = apimeta.methods(apimeta.APISpec.__dict__)
+    return list(methods.keys())
+
+
+@pytest.mark.parametrize("method", api_methods(), ids=api_method_ids())
 def test_raises_when_unimplemented_method_called(method):
     """Test that get_teams method raises NotImplementedError when called if
     left undefined.

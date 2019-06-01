@@ -103,16 +103,7 @@ class GitLabAPI(apimeta.API):
     def ensure_teams_and_members(
         self, teams: Iterable[apimeta.Team], permission: str = "push"
     ) -> List[apimeta.Team]:
-        """Create teams that do not exist and add members not in their
-        specified teams (if they exist as users).
-
-        Args:
-            member_list: A mapping of (team_name, member_list).
-
-        Returns:
-            A list of Team namedtuples of the teams corresponding to the keys
-            of the member_lists mapping.
-        """
+        """See :py:func:`repobee.apimeta.APISpec.ensure_teams_and_members`."""
         member_lists = {team.name: team.members for team in teams}
         raw_teams = self._ensure_teams_exist(
             [str(team_name) for team_name in member_lists.keys()],
@@ -167,7 +158,8 @@ class GitLabAPI(apimeta.API):
     def _get_members(self, group):
         return [self._User(m.id, m.username) for m in group.members.list()]
 
-    def get_teams(self):
+    def get_teams(self) -> List[apimeta.Team]:
+        """See :py:func:`repobee.apimeta.Team`."""
         return [
             apimeta.Team(
                 name=t.name,
@@ -241,15 +233,7 @@ class GitLabAPI(apimeta.API):
         return teams
 
     def create_repos(self, repos: Iterable[apimeta.Repo]) -> List[str]:
-        """Create repositories in the given organization according to the Repos.
-        Repos that already exist are skipped.
-
-        Args:
-            repos: An iterable of Repo API objects.
-
-        Returns:
-            A list of urls to all repos corresponding to the Repos.
-        """
+        """See :py:func:`repobee.apimeta.APISpec.create_repos`."""
         repo_urls = []
         for repo in repos:
             created = False
@@ -292,22 +276,7 @@ class GitLabAPI(apimeta.API):
         org_name: Optional[str] = None,
         teams: Optional[List[apimeta.Team]] = None,
     ) -> List[str]:
-        """Get repo urls for all specified repo names in organization. Assumes
-        that the repos exist, there is no guarantee that they actually do as
-        checking this with the REST API takes too much time.
-
-        If the `teams` argument is supplied, student repo urls are
-        computed instead of master repo urls.
-
-        Args:
-            master_repo_names: A list of master repository names.
-            org_name: Organization in which repos are expected. Defaults to the
-                target organization of the API instance.
-            teams: A list of teams specifying student groups.
-
-        Returns:
-            a list of urls corresponding to the repo names.
-        """
+        """See :py:func:`repobee.apimeta.APISpec.get_repo_urls`."""
         group_name = org_name if org_name else self._group_name
         group_url = "{}/{}".format(self._base_url, group_name)
         repo_urls = (

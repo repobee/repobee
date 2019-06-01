@@ -20,10 +20,12 @@ NotImplementedError) for any unimplemented API methods.
 """
 import inspect
 import collections
+from typing import List, Iterable, Optional, Generator, Tuple, Mapping
 
 import daiquiri
 
 from repobee import exception
+from repobee import tuples
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -118,38 +120,205 @@ class APISpec:
     def __init__(self, base_url, token, org_name, user):
         _not_implemented()
 
-    def ensure_teams_and_members(self, teams, permission):
+    def ensure_teams_and_members(
+        self, teams: Iterable[Team], permission: str
+    ) -> List[Team]:
+        """Ensure that the teams exist, and that their members are added to the
+        teams.
+
+        Teams that do not exist are created, teams that already exist are
+        fetched. Members that are not in their teams are added, members that do
+        not exist or are already in their teams are skipped.
+
+        Args:
+            teams: A list of teams specifying student groups.
+        Returns:
+            A list of Team API objects of the teams provided to the function,
+            both those that were created and those that already existed.
+        """
         _not_implemented()
 
-    def get_teams(self):
+    def get_teams(self) -> List[Team]:
+        """Get all teams related to the target organization.
+
+        Returns:
+            A list of Team API object.
+        """
         _not_implemented()
 
-    def create_repos(self, repos):
+    def create_repos(self, repos: Iterable[Repo]) -> List[str]:
+        """Create repos in the target organization according the those specced
+        by the ``repos`` argument. Repos that already exist are skipped.
+
+        Args:
+            repos: Repos to be created.
+        Returns:
+            A list of urls to the repos specified by the ``repos`` argument,
+            both those that were created and those that already existed.
+        """
         _not_implemented()
 
-    def get_repo_urls(self, master_repo_names, org_name, teams):
+    def get_repo_urls(
+        self,
+        master_repo_names: Iterable[str],
+        org_name: Optional[str] = None,
+        teams: Optional[List[Team]] = None,
+    ) -> List[str]:
+        """Get repo urls for all specified repo names in the organization. As
+        checking if every single repo actually exists takes a long time with a
+        typical REST API, this function does not in general guarantee that the
+        urls returned actually correspond to existing repos.
+
+        If the ``org_name`` argument is supplied, urls are computed relative to
+        that organization. If it is not supplied, the target organization is
+        used.
+
+        If the `teams` argument is supplied, student repo urls are
+        computed instead of master repo urls.
+
+        Args:
+            master_repo_names: A list of master repository names.
+            org_name: Organization in which repos are expected. Defaults to the
+                target organization of the API instance.
+            teams: A list of teams specifying student groups. Defaults to None.
+        Returns:
+            a list of urls corresponding to the repo names.
+        """
         _not_implemented()
 
-    def get_issues(self, repo_names, state, title_regex):
+    def get_issues(
+        self,
+        repo_names: Iterable[str],
+        state: str = "open",
+        title_regex: str = "",
+    ) -> Generator[Tuple[str, Generator[Issue, None, None]], None, None]:
+        """Get all issues for the repos in repo_names an return a generator
+        that yields (repo_name, issue generator) tuples. Will by default only
+        get open issues.
+
+        Args:
+            repo_names: An iterable of repo names.
+            state: Specifying the state of the issue ('open', 'closed' or
+            'all'). Defaults to 'open'.
+            title_regex: If specified, only issues matching this regex are
+            returned. Defaults to the empty string (which matches anything).
+        Returns:
+            A generator that yields (repo_name, issue_generator) tuples.
+        """
         _not_implemented()
 
-    def open_issue(self, title, body, repo_names):
+    def open_issue(
+        self, title: str, body: str, repo_names: Iterable[str]
+    ) -> None:
+        """Open the specified issue in all repos with the given names, in the
+        target organization.
+
+        Args:
+            title: Title of the issue.
+            body: Body of the issue.
+            repo_names: Names of repos to open the issue in.
+        """
         _not_implemented()
 
-    def close_issue(self, title_regex, repo_names):
+    def close_issue(self, title_regex: str, repo_names: Iterable[str]) -> None:
+        """Close any issues in the given repos in the target organization,
+        whose titles match the title_regex.
+
+        Args:
+            title_regex: A regex to match against issue titles.
+            repo_names: Names of repositories to close issues in.
+        """
         _not_implemented()
 
-    def add_repos_to_review_teams(self, team_to_repos, issue):
+    def add_repos_to_review_teams(
+        self,
+        team_to_repos: Mapping[str, Iterable[str]],
+        issue: Optional[Issue] = None,
+    ) -> None:
+        """Add repos to review teams. For each repo, an issue is opened, and
+        every user in the review team is assigned to it. If no issue is
+        specified, sensible defaults for title and body are used.
+
+        Args:
+            team_to_repos: A mapping from a team name to an iterable of repo
+                names.
+            issue: An optional Issue tuple to override the default issue.
+        """
         _not_implemented()
 
-    def get_review_progress(self, review_team_names, teams, title_regex):
+    def get_review_progress(
+        self,
+        review_team_names: Iterable[str],
+        teams: Iterable[Team],
+        title_regex: str,
+    ) -> Mapping[str, List[tuples.Review]]:
+        """Get the peer review progress for the specified review teams and
+        student teams by checking which review team members have opened issues
+        in their assigned repos. Only issues matching the title regex will be
+        considered peer review issues. If a reviewer has opened an issue in the
+        assigned repo with a title matching the regex, the review will be
+        considered done.
+
+        Note that reviews only count if the student is in the review team for
+        that repo. Review teams must only have one associated repo, or the repo
+        is skipped.
+
+        Args:
+            review_team_names: Names of review teams.
+            teams: Team API objects specifying student groups.
+            title_regex: If an issue title matches this regex, the issue is
+                considered a potential peer review issue.
+        Returns:
+            a mapping (reviewer -> assigned_repos), where reviewer is a str and
+            assigned_repos is a :py:class:`repobee.tuples.Review`.
+        """
         _not_implemented()
 
-    def delete_teams(self, team_names):
+    def delete_teams(self, team_names: Iterable[str]) -> None:
+        """Delete all teams in the target organizatoin that exactly match one
+        of the provided ``team_names``. Skip any team name for which no match
+        is found.
+
+        Args:
+            team_names: A list of team names for teams to be deleted.
+        """
         _not_implemented()
 
     @staticmethod
-    def verify_settings(user, org_name, base_url, token, master_org_name):
+    def verify_settings(
+        user: str,
+        org_name: str,
+        base_url: str,
+        token: str,
+        master_org_name: Optional[str] = None,
+    ):
+        """Verify the following (to the extent that is possible and makes sense
+        for the specifi platform):
+
+        1. Base url is correct
+        2. The token has sufficient access privileges
+        3. Target organization (specifiend by ``org_name``) exists
+            - If master_org_name is supplied, this is also checked to
+              exist.
+        4. User is owner in organization (verify by getting
+            - If master_org_name is supplied, user is also checked to be an
+              owner of it.
+        organization member list and checking roles)
+
+        Should raise an appropriate subclass of
+        :py:class:`repobee.exception.APIError` when a problem is encountered.
+
+        Args:
+            user: The username to try to fetch.
+            org_name: Name of the target organization.
+            base_url: A base url to a github API.
+            token: A secure OAUTH2 token.
+            org_name: Name of the master organization.
+        Returns:
+            True if the connection is well formed.
+        Raises:
+            :py:class:`repobee.exception.APIError`
+        """
         _not_implemented()
 
 
