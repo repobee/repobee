@@ -165,7 +165,7 @@ def update_student_repos(
 
     master_repo_names = [util.repo_name(url) for url in urls]
 
-    repo_urls = api.get_repo_urls(master_repo_names, students=teams)
+    repo_urls = api.get_repo_urls(master_repo_names, teams=teams)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         LOGGER.info("cloning into master repos ...")
@@ -354,7 +354,7 @@ def clone_repos(
         teams: Team objects specifying student groups.
         api: A GitHubAPI instance.
     """
-    repo_urls = api.get_repo_urls(master_repo_names, students=teams)
+    repo_urls = api.get_repo_urls(master_repo_names, teams=teams)
 
     LOGGER.info("cloning into student repos ...")
     git.clone(repo_urls)
