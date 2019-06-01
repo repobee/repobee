@@ -12,8 +12,6 @@ if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
     run_flake8
     tox
 else
-    run_flake8
-
     pip freeze
-    pytest tests --cov=repobee --cov-branch
+    pytest tests/test_github_api.py --cov=repobee.github_api --cov-branch
 fi
