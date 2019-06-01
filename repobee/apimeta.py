@@ -20,7 +20,7 @@ NotImplementedError) for any unimplemented API methods.
 """
 import inspect
 import collections
-from typing import List, Iterable, Optional, Generator, Tuple
+from typing import List, Iterable, Optional, Generator, Tuple, Mapping
 
 import daiquiri
 
@@ -229,8 +229,20 @@ class APISpec:
         """
         _not_implemented()
 
-    def add_repos_to_review_teams(self, team_to_repos, issue):
-        _not_implemented()
+    def add_repos_to_review_teams(
+        self,
+        team_to_repos: Mapping[str, Iterable[str]],
+        issue: Optional[Issue] = None,
+    ) -> None:
+        """Add repos to review teams. For each repo, an issue is opened, and
+        every user in the review team is assigned to it. If no issue is
+        specified, sensible defaults for title and body are used.
+
+        Args:
+            team_to_repos: A mapping from a team name to an iterable of repo
+                names.
+            issue: An optional Issue tuple to override the default issue.
+        """
 
     def get_review_progress(self, review_team_names, teams, title_regex):
         _not_implemented()

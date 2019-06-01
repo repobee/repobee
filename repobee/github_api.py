@@ -453,17 +453,9 @@ class GitHubAPI(apimeta.API):
     def add_repos_to_review_teams(
         self,
         team_to_repos: Mapping[str, Iterable[str]],
-        issue: Optional[apimeta.Issue],
+        issue: Optional[apimeta.Issue] = None,
     ) -> None:
-        """Add repos to review teams. For each repo, an issue is opened, and
-        every user in the review team is assigned to it. If no issue is
-        specified, sensible defaults for title and body are used.
-
-        Args:
-            team_to_repos: A mapping from a team name to a sequence of repo
-                names.
-            issue: An an optional Issue tuple to override the default issue.
-        """
+        """See :py:func:`repobee.apimeta.APISpec.add_repos_to_review_teams`."""
         issue = issue or DEFAULT_REVIEW_ISSUE
         for team, repo in self._add_repos_to_teams(team_to_repos):
             # TODO team.get_members() api request is a bit redundant, it
