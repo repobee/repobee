@@ -103,16 +103,7 @@ class GitLabAPI(apimeta.API):
     def ensure_teams_and_members(
         self, teams: Iterable[apimeta.Team], permission: str = "push"
     ) -> List[apimeta.Team]:
-        """Create teams that do not exist and add members not in their
-        specified teams (if they exist as users).
-
-        Args:
-            member_list: A mapping of (team_name, member_list).
-
-        Returns:
-            A list of Team namedtuples of the teams corresponding to the keys
-            of the member_lists mapping.
-        """
+        """See :py:class:`repobee.apimeta.APISpec.ensure_teams_and_members`."""
         member_lists = {team.name: team.members for team in teams}
         raw_teams = self._ensure_teams_exist(
             [str(team_name) for team_name in member_lists.keys()],

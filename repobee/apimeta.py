@@ -20,7 +20,7 @@ NotImplementedError) for any unimplemented API methods.
 """
 import inspect
 import collections
-from typing import List
+from typing import List, Iterable
 
 import daiquiri
 
@@ -119,7 +119,23 @@ class APISpec:
     def __init__(self, base_url, token, org_name, user):
         _not_implemented()
 
-    def ensure_teams_and_members(self, teams, permission):
+    def ensure_teams_and_members(
+        self, teams: Iterable[Team], permission: str
+    ) -> List[Team]:
+        """Ensure that the teams exist, and that their members are added to the
+        teams.
+
+        Teams that do not exist are created, teams that already exist are
+        fetched. Members that are not in their teams are added, members that do
+        not exist or are already in their teams are ignored.
+
+        Args:
+            teams: A list of teams specifying student groups.
+
+        Returns:
+            A list of Team API objects of the teams provided to the function,
+            both those that were created and those that already existed.
+        """
         _not_implemented()
 
     def get_teams(self) -> List[Team]:
