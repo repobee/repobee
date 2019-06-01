@@ -244,6 +244,7 @@ class APISpec:
                 names.
             issue: An optional Issue tuple to override the default issue.
         """
+        _not_implemented()
 
     def get_review_progress(
         self,
@@ -271,6 +272,7 @@ class APISpec:
             a mapping (reviewer -> assigned_repos), where reviewer is a str and
             assigned_repos is a :py:class:`repobee.tuples.Review`.
         """
+        _not_implemented()
 
     def delete_teams(self, team_names: Iterable[str]) -> None:
         """Delete all teams in the target organizatoin that exactly match one
