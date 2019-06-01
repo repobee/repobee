@@ -20,7 +20,7 @@ NotImplementedError) for any unimplemented API methods.
 """
 import inspect
 import collections
-from typing import List, Iterable
+from typing import List, Iterable, Optional
 
 import daiquiri
 
@@ -157,7 +157,32 @@ class APISpec:
         """
         _not_implemented()
 
-    def get_repo_urls(self, master_repo_names, org_name, teams):
+    def get_repo_urls(
+        self,
+        master_repo_names: Iterable[str],
+        org_name: Optional[str] = None,
+        teams: Optional[List[Team]] = None,
+    ) -> List[str]:
+        """Get repo urls for all specified repo names in the organization. As
+        checking if every single repo actually exists takes a long time with a
+        typical REST API, this function does not in general guarantee that the
+        urls returned actually correspond to existing repos.
+
+        If the ``org_name`` argument is supplied, urls are computed relative to
+        that organization. If it is not supplied, the target organization is
+        used.
+
+        If the `teams` argument is supplied, student repo urls are
+        computed instead of master repo urls.
+
+        Args:
+            master_repo_names: A list of master repository names.
+            org_name: Organization in which repos are expected. Defaults to the
+                target organization of the API instance.
+            teams: A list of teams specifying student groups. Defaults to None.
+        Returns:
+            a list of urls corresponding to the repo names.
+        """
         _not_implemented()
 
     def get_issues(self, repo_names, state, title_regex):

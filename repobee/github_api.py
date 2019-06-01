@@ -338,22 +338,7 @@ class GitHubAPI(apimeta.API):
         org_name: Optional[str] = None,
         teams: Optional[List[apimeta.Team]] = None,
     ) -> List[str]:
-        """Get repo urls for all specified repo names in organization. Assumes
-        that the repos exist, there is no guarantee that they actually do as
-        checking this with the REST API takes too much time.
-
-        If the `teams` argument is supplied, student repo urls are
-        computed instead of master repo urls.
-
-        Args:
-            master_repo_names: A list of master repository names.
-            org_name: Organization in which repos are expected. Defaults to the
-                target organization of the API instance.
-            teams: A list of teams specifying student groups.
-
-        Returns:
-            a list of urls corresponding to the repo names.
-        """
+        """See :py:func:`repobee.apimeta.APISpec.get_repo_urls`."""
         with _try_api_request():
             org = (
                 self._org
