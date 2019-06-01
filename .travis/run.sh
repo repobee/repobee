@@ -13,5 +13,5 @@ if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
     tox
 else
     pip freeze
-    pytest tests/test_github_api.py --cov=repobee.github_api --cov-branch
+    pytest tests/test_github_api.py
 fi
