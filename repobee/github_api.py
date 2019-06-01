@@ -427,12 +427,7 @@ class GitHubAPI(apimeta.API):
             )
 
     def close_issue(self, title_regex: str, repo_names: Iterable[str]) -> None:
-        """Close any issues in the given repos whose titles match the title_regex.
-
-        Args:
-            title_regex: A regex to match against issue titles.
-            repo_names: Names of repositories to close issues in.
-        """
+        """See :py:func:`repobee.apimeta.APISpec.close_issue`."""
         repo_names_set = set(repo_names)
         repos = list(self._get_repos_by_name(repo_names_set))
 

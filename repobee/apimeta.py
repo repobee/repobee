@@ -219,7 +219,14 @@ class APISpec:
         """
         _not_implemented()
 
-    def close_issue(self, title_regex, repo_names):
+    def close_issue(self, title_regex: str, repo_names: Iterable[str]) -> None:
+        """Close any issues in the given repos in the target organization,
+        whose titles match the title_regex.
+
+        Args:
+            title_regex: A regex to match against issue titles.
+            repo_names: Names of repositories to close issues in.
+        """
         _not_implemented()
 
     def add_repos_to_review_teams(self, team_to_repos, issue):
