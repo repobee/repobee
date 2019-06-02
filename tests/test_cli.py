@@ -371,12 +371,15 @@ class TestBaseParsing:
             ]
         )
 
-        assert all(
+        # call all outside of assert, workaround for bug in pytest 4.6.0
+        # https://github.com/pytest-dev/pytest/issues/5358
+        all_urls_contain_master_org = all(
             [
                 "/" + MASTER_ORG_NAME + "/" in url
                 for url in parsed_args.master_repo_urls
             ]
         )
+        assert all_urls_contain_master_org
 
     @pytest.mark.parametrize("parser", [cli.SETUP_PARSER, cli.UPDATE_PARSER])
     def test_master_org_name_defaults_to_org_name(
@@ -386,12 +389,15 @@ class TestBaseParsing:
             [parser, *COMPLETE_PUSH_ARGS, "-sf", str(students_file)]
         )
 
-        assert all(
+        # call all outside of assert, workaround for bug in pytest 4.6.0
+        # https://github.com/pytest-dev/pytest/issues/5358
+        all_urls_contain_org_name = all(
             [
                 "/" + ORG_NAME + "/" in url
                 for url in parsed_args.master_repo_urls
             ]
         )
+        assert all_urls_contain_org_name
 
     @pytest.mark.parametrize("parser", [cli.SETUP_PARSER, cli.UPDATE_PARSER])
     def test_token_env_variable_picked_up(
