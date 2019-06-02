@@ -103,12 +103,17 @@ The following conventions are fundamental to working with RepoBee.
     master repo migrations etc. Straying form the conventions may cause
     RepoBee to behave unexpectedly.
 
-Usage with GitHub Enterprise and github.com
-===========================================
-RepoBee was designed for use with GitHub Enterprise, but also works well with
-the public cloud service at https://github.com. Usage of RepoBee should be
-identical, but there are two differences between the two that one should be
-aware of.
+Usage with different platforms (GitHub, GitHub Enterprise and GitLab)
+=====================================================================
+RepoBee was originally designed for use with GitHub Enterprise, but also works
+well with the public cloud service at https://github.com. Usage of RepoBee
+should be identical, but there are two differences between the two that one
+should be aware of.
+
+.. note:: 
+
+   As of v1.5.0, GitLab is partially supported. Please see :ref:`gitlab` for
+   more information on which commands work, and how to use RepoBee with GitLab.
 
 The Organization must have support for private repositories
 -----------------------------------------------------------
@@ -121,15 +126,17 @@ others' work, and thereby avoid a few avenues for plagiarism.
   researchers can get such Organization accounts for free,
   see `how to get the discount here
   <https://help.github.com/en/articles/applying-for-an-educator-or-researcher-discount>`_.
+* **GitLab:** All GitLab groups (self-hosted and on https://gitlab.com) support
+  private repositories.
 
 Students are added to the target Organization slightly differently
 ------------------------------------------------------------------
 During setup, students are added to their respective Teams. Precisely how this
 happens differs slightly.
 
-  * **Enterprise:** Students are automatically added to their Teams in the Organization.
-  * **github.com:** Students are invited to the Organization and added to their Teams upon accepting.
-
+* **Enterprise:** Students are automatically added to their Teams in the Organization.
+* **github.com:** Students are invited to the Organization and added to their Teams upon accepting.
+* **GitLab:** Students are automatically added, both on self-hosted and https://gitlab.com.
 
 .. _teachers_pet: https://github.com/education/teachers_pet
 .. _GitHub Classroom: https://classroom.github.com/

@@ -38,7 +38,7 @@ allowing us to test RepoBee at quite a large scale.
 * Extend RepoBee with the
   [plugin system](https://repobee.readthedocs.io/en/latest/plugins.html)
 * Support both for GitHub Enterprise and github.com
-    - **GitLab support in the works**, see [Upcoming features](#upcoming-features)
+    - **GitLab support is in alpha**, see [Upcoming features](#upcoming-features)
 * Very little configuration required on the GitHub side
     - The only requirement is to have an Organization with private repository
       capabilities!
@@ -63,7 +63,10 @@ and should set you on the right path with little effort.
 RepoBee was developed at KTH Royal Technical Institute of Technology to help
 teachers and TAs administrate GitHub repositories. It's a tool for teachers, by
 teachers, and we use it in our everyday work. All of the features in RepoBee
-are of some use to us, and so should also be useful to other teachers. Below is
+are of some use to us, and so should also be useful to other teachers. We also
+recognize that lock-in is a problem 
+
+Below is
 a complete list of core functionality as described by the `--help` option.
 
 ```
@@ -120,13 +123,13 @@ RepoBee need to be altered.
 There is still a lot in store for RepoBee. Below is a roadmap for major
 features that are in the works.
 
-| Feature                                   | Status                                                                    | ETA                       |
-| -------                                   | ------                                                                    | ---                       |
-| GitLab support                            | Work in progress ([#172](https://github.com/repobee/repobee/issues/172))  | Beta release by June 2019 |
-| Peer review support for group assignments | Work in progress  ([#167](https://github.com/repobee/repobee/issues/167)) | June 2019                 |
-| Cleaner CLI help menus                    | Work in progress ([#164](https://github.com/repobee/repobee/issues/164))  | May 2019                  |
-| Plugin support for top-level CLI commands | Planning                                                                  | TBA                       |
-| Travis CI plugin                          | Planning ([#165](https://github.com/repobee/repobee/issues/165))          | TBA                       |
+| Feature                                   | Status                                                                          | ETA                     |
+| -------                                   | ------                                                                          | ---                     |
+| GitLab support                            | Work in progress ([Docs](https://repobee.readthedocs.io/en/latest/gitlab.html)) | Alpha release in v1.5.0 |
+| Peer review support for group assignments | Work in progress  ([#167](https://github.com/repobee/repobee/issues/167))       | June 2019               |
+| Cleaner CLI help menus                    | Work in progress ([#164](https://github.com/repobee/repobee/issues/164))        | June 2019               |
+| Plugin support for top-level CLI commands | Planning                                                                        | TBA                     |
+| Travis CI plugin                          | Planning ([#165](https://github.com/repobee/repobee/issues/165))                | TBA                     |
 
 ## License
 This software is licensed under the MIT License. See the [LICENSE](LICENSE)
