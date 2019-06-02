@@ -785,8 +785,11 @@ class TestDeleteTeams:
         team_names = [team.name for team in teams]
 
         api.delete_teams(team_names)
-
-        assert all(map(lambda t: t.delete.called, teams))
+    
+        # call all outside of assert, workaround for bug in pytest 4.6.0
+        # https://github.com/pytest-dev/pytest/issues/5358
+        all_called = all(map(lambda t: t.delete.called, teams))
+        assert all_called
 
 
 @pytest.fixture(params=["get_user", "get_organization"])
