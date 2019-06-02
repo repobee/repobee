@@ -15,3 +15,4 @@ RepoBee User Guide
    plugins
    migrate
    group_assignments
+   gitlab
