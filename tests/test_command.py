@@ -1,6 +1,8 @@
 import os
-import pytest
+from functools import partial
 from unittest.mock import patch, MagicMock, call, ANY, PropertyMock
+
+import pytest
 
 import repobee
 from repobee import command
@@ -78,16 +80,19 @@ def generate_repo_url(name):
     return generate_team_repo_url(name, "d")[:-2]
 
 
-def get_repo_urls_fake(master_repo_names, org_name=None, students=None):
+def get_repo_urls_fake(self, master_repo_names, org_name=None, teams=None):
     return list(
         map(
             generate_repo_url,
             master_repo_names
-            if not students
-            else util.generate_repo_names(students, master_repo_names),
+            if not teams
+            else util.generate_repo_names(teams, master_repo_names),
         )
     )
 
+
+# check that get_repo_urls_fake conforms to APISpec.get_repo_urls
+apimeta.check_signature(apimeta.APISpec.get_repo_urls, get_repo_urls_fake)
 
 MASTER_NAMES = ("week-1", "week-2", "week-3")
 MASTER_URLS = tuple(generate_repo_url(name) for name in MASTER_NAMES)
@@ -144,7 +149,9 @@ def api_mock(request, mocker):
     api_class = mocker.patch("repobee.command.GitHubAPI", autospec=True)
     api_class.return_value = mock
 
-    mock.get_repo_urls.side_effect = get_repo_urls_fake
+    mock.get_repo_urls.side_effect = partial(
+        get_repo_urls_fake, None  # pass None for self arg
+    )
     mock.create_repos.side_effect = lambda repo_infos: list(
         map(url_from_repo_info, repo_infos)
     )
@@ -367,7 +374,10 @@ class TestUpdateStudentRepos:
             fail_students, [master_name]
         )
         fail_repo_urls = get_repo_urls_fake(
-            [master_name], students=fail_students
+            # passing None for self is fine here
+            None,
+            [master_name],
+            teams=fail_students,
         )
 
         async def raise_specific(pt):
