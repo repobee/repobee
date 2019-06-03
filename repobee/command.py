@@ -30,7 +30,6 @@ from repobee import apimeta
 from repobee import exception
 from repobee import config
 from repobee import formatters
-from repobee.github_api import GitHubAPI
 from repobee.git import Push
 
 LOGGER = daiquiri.getLogger(__file__)
@@ -39,17 +38,17 @@ LOGGER = daiquiri.getLogger(__file__)
 def setup_student_repos(
     master_repo_urls: Iterable[str],
     teams: Iterable[apimeta.Team],
-    api: GitHubAPI,
+    api: apimeta.API,
 ) -> None:
     """Setup student repositories based on master repo templates. Performs three
     primary tasks:
 
         1. Create the specified teams on the target platform and add the
-        specifed members to their teams. If a team already exists, it is left
+        specified members to their teams. If a team already exists, it is left
         as-is. If a student is already in a team they are assigned to, nothing
         happens. If no account exists for some specified username, that
         particular student is ignored, but any associated teams are still
-        created.
+        created (even if a missing user is the only member of that team).
 
         2. For each master repository, create one student repo per team and add
         it to the corresponding student team. If a repository already exists,
@@ -58,10 +57,10 @@ def setup_student_repos(
         3. Push files from the master repos to the corresponding student repos.
 
     Args:
-        master_repo_urls: URLs to master repos. Must be in the organization
-        that the api is set up for.
+        master_repo_urls: URLs to master repos.
         teams: An iterable of student teams specifying the teams to be setup.
-        api: A GitHubAPI instance used to interface with the GitHub instance.
+        api: An implementation of :py:class:`apimeta.API` used to interface
+            with the platform (e.g. GitHub or GitLab) instance.
     """
     urls = list(master_repo_urls)  # safe copy
 
@@ -78,7 +77,7 @@ def setup_student_repos(
 
 
 def _add_students_to_teams(
-    teams: Iterable[apimeta.Team], api: GitHubAPI
+    teams: Iterable[apimeta.Team], api: apimeta.API
 ) -> List[apimeta.Team]:
     """Create the specified teams on the target platform,
     and add the specified members to their teams. If a team already exists, it
@@ -87,8 +86,8 @@ def _add_students_to_teams(
 
     Args:
         teams: Team objects specifying student groups.
-        api: A GitHubAPI instance.
-
+        api: An implementation of :py:class:`apimeta.API` used to interface
+            with the platform (e.g. GitHub or GitLab) instance.
     Returns:
         all teams associated with the students in the students list.
     """
@@ -98,7 +97,7 @@ def _add_students_to_teams(
 def _create_student_repos(
     master_repo_urls: Iterable[str],
     teams: Iterable[apimeta.Team],
-    api: GitHubAPI,
+    api: apimeta.API,
 ) -> List[str]:
     """Create student repos. Each team is assigned a single repo per master
     repo. Repos that already exist are not created, but their urls are returned
@@ -106,9 +105,9 @@ def _create_student_repos(
 
     Args:
         master_repo_urls: URLs to master repos.
-        teams: An iterable of namedtuples designating different teams.
-        api: A GitHubAPI instance used to interface with the GitHub instance.
-
+        teams: An iterable of student teams specifying the teams to be setup.
+        api: An implementation of :py:class:`apimeta.API` used to interface
+            with the platform (e.g. GitHub or GitLab) instance.
     Returns:
         a list of urls to the repos
     """
@@ -119,7 +118,7 @@ def _create_student_repos(
 
 
 def _clone_all(urls: Iterable[str], cwd: str):
-    """Attempts to clone all urls. If a repo is already present, it is skipped.
+    """Attempts to clone all urls, sequentially. If a repo is already present, it is skipped.
     If any one clone fails (except for fails because the repo is local),
     all cloned repos are removed
 
@@ -146,7 +145,7 @@ def _clone_all(urls: Iterable[str], cwd: str):
 def update_student_repos(
     master_repo_urls: Iterable[str],
     teams: Iterable[apimeta.Team],
-    api: GitHubAPI,
+    api: apimeta.API,
     issue: Optional[apimeta.Issue] = None,
 ) -> None:
     """Attempt to update all student repos related to one of the master repos.
@@ -154,8 +153,9 @@ def update_student_repos(
     Args:
         master_repo_urls: URLs to master repos. Must be in the organization
             that the api is set up for.
-        teams: Team objects specifying student groups.
-        api: A GitHubAPI instance used to interface with the GitHub instance.
+        teams: An iterable of student teams.
+        api: An implementation of :py:class:`apimeta.API` used to interface
+            with the platform (e.g. GitHub or GitLab) instance.
         issue: An optional issue to open in repos to which pushing fails.
     """
     urls = list(master_repo_urls)  # safe copy
@@ -184,13 +184,15 @@ def update_student_repos(
 
 
 def _open_issue_by_urls(
-    repo_urls: Iterable[str], issue: apimeta.Issue, api: GitHubAPI
+    repo_urls: Iterable[str], issue: apimeta.Issue, api: apimeta.API
 ) -> None:
     """Open issues in the repos designated by the repo_urls.
 
-    repo_urls: URLs to repos in which to open an issue.
-    issue: An issue to open.
-    api: A GitHubAPI to use.
+    Args:
+        repo_urls: URLs to repos in which to open an issue.
+        issue: An issue to open.
+        api: An implementation of :py:class:`apimeta.API` used to interface
+            with the platform (e.g. GitHub or GitLab) instance.
     """
     repo_names = [util.repo_name(url) for url in repo_urls]
     api.open_issue(issue.title, issue.body, repo_names)
@@ -199,7 +201,7 @@ def _open_issue_by_urls(
 def list_issues(
     master_repo_names: Iterable[str],
     teams: Iterable[apimeta.Team],
-    api: GitHubAPI,
+    api: apimeta.API,
     state: str = "open",
     title_regex: str = "",
     show_body: bool = False,
@@ -209,13 +211,14 @@ def list_issues(
 
     Args:
         master_repo_names: Names of master repositories.
-        teams: Team objects specifying student groups.
+        teams: An iterable of student teams.
+        api: An implementation of :py:class:`apimeta.API` used to interface
+            with the platform (e.g. GitHub or GitLab) instance.
         state: state of the repo (open or closed). Defaults to 'open'.
-        api: A GitHubAPI instance used to interface with the GitHub instance.
         title_regex: If specified, only issues with titles matching the regex
-        are displayed. Defaults to the empty string (which matches everything).
+            are displayed. Defaults to the empty string (which matches everything).
         show_body: If True, the body of the issue is displayed along with the
-        default info.
+            default info.
         author: Only show issues by this author.
     """
     repo_names = util.generate_repo_names(teams, master_repo_names)
@@ -246,7 +249,7 @@ def _log_repo_issues(
         issues_per_repo: (repo_name, issue generator) pairs
         show_body: Include the body of the issue in the output.
         title_alignment: Where the issue title should start counting from the
-        start of the line.
+            start of the line.
     """
     even = True
     for repo_name, issues in issues_per_repo:
@@ -309,7 +312,7 @@ def open_issue(
     issue: apimeta.Issue,
     master_repo_names: Iterable[str],
     teams: Iterable[apimeta.Team],
-    api: GitHubAPI,
+    api: apimeta.API,
 ) -> None:
     """Open an issue in student repos.
 
@@ -317,7 +320,8 @@ def open_issue(
         master_repo_names: Names of master repositories.
         teams: Team objects specifying student groups.
         issue: An issue to open.
-        api: A GitHubAPI instance used to interface with the GitHub instance.
+        api: An implementation of :py:class:`apimeta.API` used to interface
+            with the platform (e.g. GitHub or GitLab) instance.
     """
     repo_names = util.generate_repo_names(teams, master_repo_names)
     api.open_issue(issue.title, issue.body, repo_names)
@@ -327,7 +331,7 @@ def close_issue(
     title_regex: str,
     master_repo_names: Iterable[str],
     teams: Iterable[apimeta.Team],
-    api: GitHubAPI,
+    api: apimeta.API,
 ) -> None:
     """Close issues whose titles match the title_regex in student repos.
 
@@ -335,7 +339,8 @@ def close_issue(
         title_regex: A regex to match against issue titles.
         master_repo_names: Names of master repositories.
         teams: Team objects specifying student groups.
-        api: A GitHubAPI instance used to interface with the GitHub instance.
+        api: An implementation of :py:class:`apimeta.API` used to interface
+            with the platform (e.g. GitHub or GitLab) instance.
     """
     repo_names = util.generate_repo_names(teams, master_repo_names)
     api.close_issue(title_regex, repo_names)
@@ -344,15 +349,16 @@ def close_issue(
 def clone_repos(
     master_repo_names: Iterable[str],
     teams: Iterable[apimeta.Team],
-    api: GitHubAPI,
+    api: apimeta.API,
 ) -> None:
     """Clone all student repos related to the provided master repos and student
     teams.
 
     Args:
         master_repo_names: Names of master repos.
-        teams: Team objects specifying student groups.
-        api: A GitHubAPI instance.
+        teams: An iterable of student teams.
+        api: An implementation of :py:class:`apimeta.API` used to interface
+            with the platform (e.g. GitHub or GitLab) instance.
     """
     repo_urls = api.get_repo_urls(master_repo_names, teams=teams)
 
@@ -366,7 +372,7 @@ def clone_repos(
         _execute_post_clone_hooks(repo_names, api)
 
 
-def _execute_post_clone_hooks(repo_names: List[str], api: GitHubAPI):
+def _execute_post_clone_hooks(repo_names: List[str], api: apimeta.API):
     LOGGER.info("executing post clone hooks on repos")
     local_repos = [name for name in os.listdir() if name in repo_names]
 
@@ -382,15 +388,16 @@ def _execute_post_clone_hooks(repo_names: List[str], api: GitHubAPI):
     LOGGER.info("post clone hooks done")
 
 
-def migrate_repos(master_repo_urls: Iterable[str], api: GitHubAPI) -> None:
+def migrate_repos(master_repo_urls: Iterable[str], api: apimeta.API) -> None:
     """Migrate a repository from an arbitrary URL to the target organization.
     The new repository is added to the master_repos team, which is created if
     it does not already exist.
 
     Args:
         master_repo_urls: HTTPS URLs to the master repos to migrate.
-        the username that is used in the push.
-        api: A GitHubAPI instance used to interface with the GitHub instance.
+            the username that is used in the push.
+        api: An implementation of :py:class:`apimeta.API` used to interface
+            with the platform (e.g. GitHub or GitLab) instance.
     """
     master_names = [util.repo_name(url) for url in master_repo_urls]
 
@@ -426,7 +433,7 @@ def assign_peer_reviews(
     teams: Iterable[apimeta.Team],
     num_reviews: int,
     issue: Optional[apimeta.Issue],
-    api: GitHubAPI,
+    api: apimeta.API,
 ) -> None:
     """Assign peer reviewers among the students to each student repo. Each
     student is assigned to review num_reviews repos, and consequently, each
@@ -443,7 +450,10 @@ def assign_peer_reviews(
         teams: Team objects specifying student groups.
         num_reviews: Amount of reviews each student should perform
             (consequently, the amount of reviews of each repo)
-        api: A GitHubAPI instance used to interface with the GitHub instance.
+        issue: An issue with review instructions to be opened in the considered
+            repos.
+        api: An implementation of :py:class:`apimeta.API` used to interface
+            with the platform (e.g. GitHub or GitLab) instance.
     """
     # currently only supports single student teams
     # TODO support groups of students
@@ -472,7 +482,7 @@ def assign_peer_reviews(
 def purge_review_teams(
     master_repo_names: Iterable[str],
     students: Iterable[apimeta.Team],
-    api: GitHubAPI,
+    api: apimeta.API,
 ) -> None:
     """Delete all review teams associated with the given master repo names and
     students.
@@ -480,6 +490,8 @@ def purge_review_teams(
     Args:
         master_repo_names: Names of master repos.
         students: An iterable of student GitHub usernames.
+        api: An implementation of :py:class:`apimeta.API` used to interface
+            with the platform (e.g. GitHub or GitLab) instance.
     """
     review_team_names = [
         util.generate_review_team_name(student, master_repo_name)
@@ -494,8 +506,20 @@ def check_peer_review_progress(
     students: Iterable[apimeta.Team],
     title_regex: str,
     num_reviews: int,
-    api: GitHubAPI,
+    api: apimeta.API,
 ) -> None:
+    """Check which students have opened peer review issues in their allotted
+    review repos
+
+    Args:
+        master_repo_names: Names of master repos.
+        students: An iterable of student GitHub usernames.
+        title_regex: A regex to match against issue titles.
+        num_reviews: Amount of reviews each student is expected to have made.
+        api: An implementation of :py:class:`apimeta.API` used to interface
+            with the platform (e.g. GitHub or GitLab) instance.
+
+    """
     # TODO support groups
     assert all(map(lambda g: len(g.members) == 1, students))
     single_students = [g.members[0] for g in students]
@@ -571,7 +595,7 @@ def _create_push_tuples(
     return push_tuples
 
 
-def show_config():
+def show_config() -> None:
     """Print the configuration file to the log."""
     config.check_config_integrity()
 
