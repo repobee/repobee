@@ -1,7 +1,7 @@
 # RepoBee - A CLI tool for administrating Git repositories on GitHub
 [![Build Status](https://travis-ci.com/repobee/repobee.svg)](https://travis-ci.com/repobee/repobee)
 [![Code Coverage](https://codecov.io/gh/repobee/repobee/branch/master/graph/badge.svg)](https://codecov.io/gh/repobee/repobee)
-[![Documentation Status](https://readthedocs.org/projects/repobee/badge/?version=latest)](http://repobee.readthedocs.io/en/latest/)
+[![Documentation Status](https://readthedocs.org/projects/repobee/badge/?version=stable)](http://repobee.readthedocs.io/en/stable/)
 [![PyPi Version](https://badge.fury.io/py/repobee.svg)](https://badge.fury.io/py/repobee)
 ![Supported Python Versions](https://img.shields.io/badge/python-3.5%2C%203.6%2C%203.7-blue.svg)
 ![Supported Platforms](https://img.shields.io/badge/platforms-Linux%2C%20macOS-blue.svg)
@@ -36,26 +36,26 @@ allowing us to test RepoBee at quite a large scale.
 * Support for group assignments (multiple students per repository)
 * Open, close and list issues for select student repositories
 * Extend RepoBee with the
-  [plugin system](https://repobee.readthedocs.io/en/latest/plugins.html)
+  [plugin system](https://repobee.readthedocs.io/en/stable/plugins.html)
 * Support both for GitHub Enterprise and github.com
     - **GitLab support is in alpha**, see [Upcoming features](#upcoming-features)
 * Very little configuration required on the GitHub side
     - The only requirement is to have an Organization with private repository
       capabilities!
 * No local configuration required
-    - Although [setting a few defaults](https://repobee.readthedocs.io/en/latest/configuration.html#configuration)
+    - Although [setting a few defaults](https://repobee.readthedocs.io/en/stable/configuration.html#configuration)
       is highly recommended
 
 ### Install
 RepoBee is on PyPi, so `python3 -m pip install repobee` should do the trick. See the
-[install instructions](https://repobee.readthedocs.io/en/latest/install.html)
+[install instructions](https://repobee.readthedocs.io/en/stable/install.html)
 for more elaborate instructions.
 
 ### Getting started
 The best way to get started with RepoBee is to head over to the
-[Docs](https://repobee.readthedocs.io/en/latest/), where you (among other
+[Docs](https://repobee.readthedocs.io/en/stable/), where you (among other
 things) will find the
-[user guide](https://repobee.readthedocs.io/en/latest/userguide.html).
+[user guide](https://repobee.readthedocs.io/en/stable/userguide.html).
 It covers the use of RepoBee's varous commands by way of practical example,
 and should set you on the right path with little effort.
 
@@ -64,7 +64,7 @@ RepoBee was developed at KTH Royal Technical Institute of Technology to help
 teachers and TAs administrate GitHub repositories. It's a tool for teachers, by
 teachers, and we use it in our everyday work. All of the features in RepoBee
 are of some use to us, and so should also be useful to other teachers. We also
-recognize that lock-in is a problem 
+recognize that lock-in is a problem
 
 Below is
 a complete list of core functionality as described by the `--help` option.
@@ -125,7 +125,7 @@ features that are in the works.
 
 | Feature                                   | Status                                                                          | ETA                     |
 | -------                                   | ------                                                                          | ---                     |
-| GitLab support                            | Work in progress ([Docs](https://repobee.readthedocs.io/en/latest/gitlab.html)) | Alpha release in v1.5.0 |
+| GitLab support                            | Work in progress ([Docs](https://repobee.readthedocs.io/en/stable/gitlab.html)) | Alpha release in v1.5.0 |
 | Peer review support for group assignments | Work in progress  ([#167](https://github.com/repobee/repobee/issues/167))       | June 2019               |
 | Cleaner CLI help menus                    | Work in progress ([#164](https://github.com/repobee/repobee/issues/164))        | June 2019               |
 | Plugin support for top-level CLI commands | Planning                                                                        | TBA                     |
