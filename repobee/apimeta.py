@@ -115,7 +115,14 @@ class Issue(
 
 
 class APISpec:
-    """Wrapper class for API method stubs."""
+    """Wrapper class for API method stubs.
+
+    .. important::
+
+        This class should not be inherited from directly, it serves only to
+        document the behavior of a platform API. Classes that implement this
+        behavior should inherit from :py:class:`API`.
+    """
 
     def __init__(self, base_url, token, org_name, user):
         _not_implemented()
@@ -132,6 +139,10 @@ class APISpec:
 
         Args:
             teams: A list of teams specifying student groups.
+            permission: The permission these teams (or members of them) should
+                be given in regards to repositories. For example, on GitHub,
+                the permission should be "push", and on GitLab, it should be
+                developer (30).
         Returns:
             A list of Team API objects of the teams provided to the function,
             both those that were created and those that already existed.
@@ -363,11 +374,9 @@ def check_signature(reference, compare):
 class APIMeta(type):
     """Metaclass for an API implementation. All public methods must be a
     specified api method, but all api methods do not need to be implemented.
-    Any unimplemented api method will be replaced with a default implementation
-    that simply raises a NotImplementedError.
     """
 
-    def __new__(cls, name, bases, attrdict):
+    def __new__(mcs, name, bases, attrdict):
         api_methods = methods(APISpec.__dict__)
         implemented_methods = methods(attrdict)
         non_api_methods = set(implemented_methods.keys()) - set(
@@ -380,10 +389,19 @@ class APIMeta(type):
         for method_name, method in api_methods.items():
             if method_name in implemented_methods:
                 check_signature(method, implemented_methods[method_name])
-            else:
-                attrdict[method_name] = method
-        return super().__new__(cls, name, bases, attrdict)
+        return super().__new__(mcs, name, bases, attrdict)
 
 
-class API(metaclass=APIMeta):
-    """API base class that all API implementations should inherit from."""
+class API(APISpec, metaclass=APIMeta):
+    """API base class that all API implementations should inherit from. This
+    class functions similarly to an abstract base class, but with a few key
+    distinctions that affect the inheriting class.
+
+    1. Public methods *must* override one of the public methods of
+       :py:class:`APISpec`. If an inheriting class defines any other public
+       method, an :py:class:`~repobee.exception.APIError` is raised when the
+       class is defined.
+    2. All public methods in :py:class:`APISpec` have a default implementation
+       that simply raise a :py:class:`NotImplementedError`. There is no
+       requirement to implement any of them.
+    """
