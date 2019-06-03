@@ -35,6 +35,25 @@ MAX_NAME_LENGTH = 100
 class APIObject:
     """Base wrapper class for platform API objects."""
 
+    def __getattribute__(self, name: str):
+        """If the sought attr is 'implementation', and that attribute is None,
+        an AttributeError should be raise. This is because there should never
+        be a case where the caller tries to access a None implementation: if
+        it's None the caller should now without checking, as only API objects
+        returned by platform API (i.e. a class deriving from :py:class:`API`)
+        can have a reasonable value for the implementation attribute.
+
+        In all other cases, proceed as usual in getting the attribute. This
+        includes the case when ``name == "implementation"``, and the APIObject
+        does not have that attribute.
+        """
+        attr = object.__getattribute__(self, name)
+        if attr is None and name == "implementation":
+            raise AttributeError(
+                "invalid access to 'implementation': not initialized"
+            )
+        return attr
+
 
 def _check_name_length(name):
     """Check that a Team/Repository name does not exceed the maximum GitHub
