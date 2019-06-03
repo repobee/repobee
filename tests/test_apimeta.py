@@ -51,7 +51,10 @@ def test_accepts_correctly_defined_method():
     expected = 42
 
     class API(apimeta.API):
+        def __init__(self, base_url, token, org_name, user):
+            pass
+
         def get_teams(self):
             return expected
 
-    assert API().get_teams() == expected
+    assert API(None, None, None, None).get_teams() == expected
