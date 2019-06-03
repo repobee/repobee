@@ -61,13 +61,7 @@ class TestGenerateReviewAllocations:
         counts = collections.Counter(peer_reviewers)
 
         assert len(peer_reviewers) == num_reviews * num_students
-
-        # call all outside of assert, workaround for bug in pytest 4.6.0
-        # https://github.com/pytest-dev/pytest/issues/5358
-        all_correct_num_reviews = all(
-            map(lambda freq: freq == num_reviews, counts.values())
-        )
-        assert all_correct_num_reviews
+        assert all(map(lambda freq: freq == num_reviews, counts.values()))
 
     @pytest.mark.parametrize(
         "num_students, num_reviews", [(10, 4), (50, 3), (10, 1)]
