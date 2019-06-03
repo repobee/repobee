@@ -145,8 +145,8 @@ def api_mock(request, mocker):
     def url_from_repo_info(repo_info):
         return generate_repo_url(repo_info.name)
 
-    mock = MagicMock(spec=repobee.command.GitHubAPI)
-    api_class = mocker.patch("repobee.command.GitHubAPI", autospec=True)
+    mock = MagicMock(spec=repobee.github_api.GitHubAPI)
+    api_class = mocker.patch("repobee.github_api.GitHubAPI", autospec=True)
     api_class.return_value = mock
 
     mock.get_repo_urls.side_effect = partial(
