@@ -289,6 +289,30 @@ class TestDispatchCommand:
         )
 
 
+@pytest.mark.parametrize("parser", cli.PARSER_NAMES)
+def test_help_calls_add_arguments(monkeypatch, parser):
+    """Test that the --help command causes _OrderedFormatter.add_arguments to
+    be called. The reason this may not be the case is that
+    HelpFormatter.add_arguments is not technically public, and so it could be
+    removed or changed in future versions of Python.
+    """
+    called = False
+    add_arguments = cli._OrderedFormatter.add_arguments
+
+    def wrapper(self, *args, **kwargs):
+        nonlocal called
+        called = True
+        add_arguments(self, *args, **kwargs)
+
+    monkeypatch.setattr("repobee.cli._OrderedFormatter.add_arguments", wrapper)
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli.parse_args([parser, "--help"])
+
+    assert exc_info.value.code == 0
+    assert called
+
+
 class TestBaseParsing:
     """Test the basic functionality of parsing."""
 
