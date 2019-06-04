@@ -30,17 +30,16 @@ DEFAULT_CONFIG_FILE = CONFIG_DIR / "config.cnf"
 assert DEFAULT_CONFIG_FILE.is_absolute()
 
 # arguments that can be configured via config file
-CONFIGURABLE_ARGS = set(
-    (
-        "user",
-        "org_name",
-        "github_base_url",
-        "students_file",
-        "plugins",
-        "master_org_name",
-        "token",
-    )
+ORDERED_CONFIGURABLE_ARGS = (
+    "user",
+    "org_name",
+    "github_base_url",
+    "students_file",
+    "plugins",
+    "master_org_name",
+    "token",
 )
+CONFIGURABLE_ARGS = set(ORDERED_CONFIGURABLE_ARGS)
 
 
 def get_configured_defaults(

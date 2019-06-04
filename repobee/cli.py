@@ -83,7 +83,6 @@ PURGE_REVIEW_TEAMS_PARSER = "purge-review-teams"
 CHECK_REVIEW_PROGRESS_PARSER = "check-reviews"
 SHOW_CONFIG_PARSER = "show-config"
 
-
 PARSER_NAMES = (
     SETUP_PARSER,
     UPDATE_PARSER,
@@ -348,6 +347,7 @@ def _add_peer_review_parsers(base_parsers, subparsers):
         ),
         help="Randomly assign students to peer review each others' repos.",
         parents=base_parsers,
+        formatter_class=_OrderedFormatter,
     )
     assign_parser.add_argument(
         "-n",
@@ -376,6 +376,7 @@ def _add_peer_review_parsers(base_parsers, subparsers):
         help="Remove all review teams associated with the specified "
         "students and master repos.",
         parents=base_parsers,
+        formatter_class=_OrderedFormatter,
     )
     check_review_progress = subparsers.add_parser(
         CHECK_REVIEW_PROGRESS_PARSER,
@@ -393,6 +394,7 @@ def _add_peer_review_parsers(base_parsers, subparsers):
             "have been opened)."
         ),
         parents=base_parsers,
+        formatter_class=_OrderedFormatter,
     )
     check_review_progress.add_argument(
         "-r",
@@ -429,6 +431,7 @@ def _add_issue_parsers(base_parsers, subparsers):
         ),
         help="Open issues in student repos.",
         parents=base_parsers,
+        formatter_class=_OrderedFormatter,
     )
     open_parser.add_argument(
         "-i",
@@ -448,6 +451,7 @@ def _add_issue_parsers(base_parsers, subparsers):
         ),
         help="Close issues in student repos.",
         parents=base_parsers,
+        formatter_class=_OrderedFormatter,
     )
     close_parser.add_argument(
         "-r",
@@ -465,6 +469,7 @@ def _add_issue_parsers(base_parsers, subparsers):
         description="List issues in student repos.",
         help="List issues in student repos.",
         parents=base_parsers,
+        formatter_class=_OrderedFormatter,
     )
     list_parser.add_argument(
         "-r",
@@ -512,6 +517,51 @@ def _add_issue_parsers(base_parsers, subparsers):
     list_parser.set_defaults(state="open")
 
 
+class _OrderedFormatter(argparse.HelpFormatter):
+    """A formatter class for putting out the help section in a proper order.
+    All of the arguments that are configurable in the configuration file
+    should appear at the bottom (in arbitrary, but always the same, order).
+    Any other arguments should appear in the order they are added.
+
+    The internals of the formatter classes are technically not public,
+    so this class is "unsafe" when it comes to new versions of Python. It may
+    have to be disabled for future versions, but it works for 3.5, 3.6 and 3.7
+    at the time of writing. If this turns troublesome, it may be time to
+    switch to some other CLI library.
+    """
+
+    def add_arguments(self, actions):
+        """Order actions by the name  of the long argument, and then add them
+        as arguments.
+
+        The order is the following:
+
+        [ NON-CONFIGURABLE | CONFIGURABLE | DEBUG ]
+
+        Non-configurable arguments added without modification, which by
+        default is the order they are added to the parser. Configurable
+        arguments are added in the order defined by
+        :py:const:`config.ORDERED_CONFIGURABLE_ARGS`. Finally, debug commands
+        (such as ``--traceback``) are added in arbitrary (but consistent)
+        order.
+        """
+        args_order = tuple(
+            "--" + name.replace("_", "-")
+            for name in config.ORDERED_CONFIGURABLE_ARGS
+        ) + ("--traceback",)
+
+        def key(action):
+            if len(action.option_strings) < 2:
+                return -1
+            long_arg = action.option_strings[1]
+            if long_arg in args_order:
+                return args_order.index(long_arg)
+            return -1
+
+        actions = sorted(actions, key=key)
+        super().add_arguments(actions)
+
+
 def _create_parser():
     """Create the parser."""
 
@@ -522,6 +572,7 @@ def _create_parser():
             "on GitHub instances. See the full documentation at "
             "https://repobee.readthedocs.io"
         ),
+        formatter_class=_OrderedFormatter,
     )
     parser.add_argument(
         "-v",
@@ -570,6 +621,7 @@ def _add_subparsers(parser):
             "file can be found, show the path where repobee expectes to find "
             "it."
         ),
+        formatter_class=_OrderedFormatter,
     )
 
     subparsers.add_parser(
@@ -590,6 +642,7 @@ def _add_subparsers(parser):
             master_org_parser,
             repo_name_parser,
         ],
+        formatter_class=_OrderedFormatter,
     )
 
     update = subparsers.add_parser(
@@ -602,6 +655,7 @@ def _add_subparsers(parser):
             master_org_parser,
             repo_name_parser,
         ],
+        formatter_class=_OrderedFormatter,
     )
     update.add_argument(
         "-i",
@@ -622,6 +676,7 @@ def _add_subparsers(parser):
             "migrated repos will be private."
         ),
         parents=[repo_name_parser, base_user_parser],
+        formatter_class=_OrderedFormatter,
     )
 
     clone = subparsers.add_parser(
@@ -629,6 +684,7 @@ def _add_subparsers(parser):
         help="Clone student repos.",
         description="Clone student repos asynchronously in bulk.",
         parents=[base_student_parser, repo_name_parser],
+        formatter_class=_OrderedFormatter,
     )
 
     plug.manager.hook.clone_parser_hook(clone_parser=clone)
@@ -655,6 +711,7 @@ def _add_subparsers(parser):
             "message is displayed."
         ),
         parents=[base_parser, base_user_parser, master_org_parser],
+        formatter_class=_OrderedFormatter,
     )
 
 
