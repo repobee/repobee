@@ -40,7 +40,7 @@ services:
     networks:
       dev-net:
         aliases:
-          - https://gitlab.integrationtest.local
+          - gitlab.integrationtest.local
 networks:
   dev-net:
     external:
