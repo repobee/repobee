@@ -82,7 +82,7 @@ class TestSetup:
     def test_clean_setup(self):
         """Test a first-time setup with master repos in the master org."""
         command = (
-            "repobee setup " "-u {} -g {} -o {} -mo {} -mn {} -s {} -t {} -tb"
+            "repobee setup -u {} -g {} -o {} -mo {} -mn {} -s {} -t {} -tb"
         ).format(
             OAUTH_USER,
             BASE_URL,
@@ -101,7 +101,7 @@ class TestSetup:
     def test_setup_twice(self):
         """Setting up twice should have the same effect as setting up once."""
         command = (
-            "repobee setup " "-u {} -g {} -o {} -mo {} -mn {} -s {} -t {} -tb"
+            "repobee setup -u {} -g {} -o {} -mo {} -mn {} -s {} -t {} -tb"
         ).format(
             OAUTH_USER,
             BASE_URL,
