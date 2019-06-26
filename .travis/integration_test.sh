@@ -1,5 +1,9 @@
+# build RepoBee docker test container
+sudo docker build -t repobee:test -f Dockerfile.test .
+
+# execute integration tests
 cd tests/integration_tests/
 sudo docker network create development
 ./startup.sh
-sudo docker run --name curl --rm --net development appropriate/curl -fsSl -k -H "Private-Token: $(cat token)" https://gitlab.integrationtest.local/api/v4/projects
+sudo python -m pytest integration_tests.py
 cd -
