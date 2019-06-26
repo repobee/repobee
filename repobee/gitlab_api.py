@@ -10,6 +10,7 @@ GitLabAPI are mostly high-level bulk operations.
 
 .. moduleauthor:: Simon Larsén
 """
+import os
 from typing import List, Iterable, Optional
 from socket import gaierror
 import collections
@@ -78,8 +79,14 @@ class GitLabAPI(apimeta.API):
     def __init__(self, base_url, token, org_name, user: str = None):
         if user:
             LOGGER.warning("user is ignored when using GitLab")
+        # ssl turns off only for
+        ssl_verify = not os.getenv("REPOBEE_NO_VERIFY_SSL") == "true"
+        if not ssl_verify:
+            LOGGER.warning("SSL verification turned off, only for testing")
         self._user = "oauth2"
-        self._gitlab = gitlab.Gitlab(base_url, private_token=token)
+        self._gitlab = gitlab.Gitlab(
+            base_url, private_token=token, ssl_verify=ssl_verify
+        )
         self._group_name = org_name
         self._group = self._get_organization(self._group_name)
         self._token = token

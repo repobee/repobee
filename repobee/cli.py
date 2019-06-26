@@ -880,9 +880,13 @@ def _extract_groups(args: argparse.Namespace) -> List[str]:
 
 
 def _identify_api(base_url, token):
+    ssl_verify = not os.getenv("REPOBEE_NO_VERIFY_SSL") == "true"
+    if not ssl_verify:
+        LOGGER.warning("SSL verification turned off, only for testing")
     gitlab_response = requests.get(
         "{}/api/v4/users?per_page=1".format(base_url),
         headers={"Private-Token": token},
+        verify=ssl_verify,
     )
     if gitlab_response.status_code == 200:
         LOGGER.warning(
