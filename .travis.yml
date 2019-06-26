@@ -6,13 +6,11 @@ branches:
 matrix:
   include:
   - os: linux
-    python: 3.5
-  - os: linux
-    python: 3.6
-  - os: linux
     python: 3.7
     dist: xenial
     sudo: true
+    env:
+        - INTEGRATION_TEST=true
   - os: osx
     language: generic
     sudo: true
