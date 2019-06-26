@@ -1,9 +1,4 @@
 #!/bin/bash
-if [[ $INTEGRATION_TEST == "true" ]]; then
-    # no setup here
-    exit 0
-fi
-
 if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
 
     brew upgrade pyenv
