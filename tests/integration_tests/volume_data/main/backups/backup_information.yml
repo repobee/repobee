@@ -1,0 +1,6 @@
+:db_version: '20190312071108'
+:backup_created_at: 2019-06-25 10:33:13.781275367 +00:00
+:gitlab_version: 11.9.8
+:tar_version: tar (GNU tar) 1.28
+:installation_type: gitlab-docker
+:skipped: 
