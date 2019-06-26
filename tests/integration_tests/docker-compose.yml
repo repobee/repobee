@@ -30,8 +30,8 @@ services:
         nginx['logrotate_delaycompress'] = "delaycompress"
         # Add any other gitlab.rb configuration options if desired
     ports:
-      - '443:443'
-      - '22:22'
+      - '50443:443'
+      - '50022:22'
     volumes:
       - ./volume_data/conf:/etc/gitlab
       - ./volume_data/ssl:/etc/ssl/certs/gitlab
