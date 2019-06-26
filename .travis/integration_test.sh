@@ -1,4 +1,5 @@
-# set the domain
-sudo echo "127.0.2.1       gitlab.integrationtest.local   gitlab" >> /etc/hosts
-./tests/integration_tests/startup.sh
-curl -k https://gitlab.integrationtest.local
+cd tests/integration_tests/
+sudo docker network create development
+./startup.sh
+sudo docker run --name curl --rm --net development appropriate/curl -fsSl -k https://gitlab.integrationtest.local
+cd -
