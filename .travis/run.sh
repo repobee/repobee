@@ -14,7 +14,7 @@ if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
 else
 
     if [[ $INTEGRATION_TEST == true ]]; then
-        ./travis/integration_test.sh
+        ./.travis/integration_test.sh
     else
         run_flake8
         pytest tests/unit_tests --cov=repobee --cov-branch
