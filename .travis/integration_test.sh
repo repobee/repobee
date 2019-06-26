@@ -5,5 +5,5 @@ sudo docker build -t repobee:test -f Dockerfile.test .
 cd tests/integration_tests/
 sudo docker network create development
 ./startup.sh > /dev/null
-pytest integration_tests.py
+pytest integration_tests.py -v
 cd -
