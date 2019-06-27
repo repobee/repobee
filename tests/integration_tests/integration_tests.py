@@ -1,3 +1,4 @@
+import os
 import subprocess
 import pathlib
 
@@ -6,6 +7,12 @@ import gitlab
 
 from repobee import util
 from repobee import apimeta
+from repobee import gitlab_api
+
+
+assert os.getenv(
+    "REPOBEE_NO_VERIFY_SSL"
+), "The env variable REPOBEE_NO_VERIFY_SSL must be set to 'true'"
 
 
 DIR = pathlib.Path(__file__).resolve().parent
@@ -13,8 +20,10 @@ TOKEN = (DIR / "token").read_text(encoding="utf-8").strip()
 RESTORE_SH = DIR / "restore.sh"
 
 OAUTH_USER = "oauth2"
-BASE_URL = "https://gitlab.integrationtest.local"
-LOCAL_BASE_URL = "https://localhost:50443"
+BASE_DOMAIN = "gitlab.integrationtest.local"
+BASE_URL = "https://" + BASE_DOMAIN
+LOCAL_DOMAIN = "localhost:50443"
+LOCAL_BASE_URL = "https://" + LOCAL_DOMAIN
 ORG_NAME = "repobee-testing"
 MASTER_ORG_NAME = "repobee-master"
 ACTUAL_USER = "repobee-user"
@@ -22,6 +31,29 @@ ACTUAL_USER = "repobee-user"
 MASTER_REPO_NAMES = "task-1 task-2 task-3".split()
 STUDENT_TEAMS = [apimeta.Team(members=[s]) for s in "slarse rjglasse".split()]
 STUDENT_TEAM_NAMES = [str(t) for t in STUDENT_TEAMS]
+
+
+def api_instance(org_name=ORG_NAME):
+    """Return a valid instance of the GitLabAPI class."""
+    return gitlab_api.GitLabAPI(LOCAL_BASE_URL, TOKEN, org_name)
+
+
+def gitlab_and_groups():
+    """Return a valid gitlab instance, along with the master group and the
+    target group.
+    """
+    gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
+    master_group = gl.groups.list(search=MASTER_ORG_NAME)[0]
+    target_group = gl.groups.list(search=ORG_NAME)[0]
+    return gl, master_group, target_group
+
+
+def assert_master_repos_exist(master_repo_names, org_name):
+    """Assert that the master repos are in the specified group."""
+    gl, *_ = gitlab_and_groups()
+    group = gl.groups.list(search=org_name)[0]
+    actual_repo_names = [g.name for g in group.projects.list()]
+    assert sorted(actual_repo_names) == sorted(master_repo_names)
 
 
 def assert_repos_exist(student_teams, master_repo_names, org_name=ORG_NAME):
@@ -64,6 +96,9 @@ def assert_groups_exist(student_teams, org_name=ORG_NAME):
 
 @pytest.fixture(autouse=True)
 def restore():
+    """Run the script that restores the GitLab instance to its initial
+    state.
+    """
     subprocess.run(str(RESTORE_SH), shell=True)
 
 
@@ -117,3 +152,31 @@ class TestSetup:
         assert result.returncode == 0
         assert_repos_exist(STUDENT_TEAMS, MASTER_REPO_NAMES)
         assert_groups_exist(STUDENT_TEAMS)
+
+
+@pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
+class TestMigrate:
+    """Integration tests for the migrate command."""
+
+    def test_happy_path(self):
+        """Migrate a few repos from the existing master repo into the target
+        organization.
+        """
+        api = api_instance(MASTER_ORG_NAME)
+        master_repo_urls = [
+            url.replace(LOCAL_DOMAIN, BASE_DOMAIN)
+            for url in api.get_repo_urls(MASTER_REPO_NAMES)
+        ]
+        # clone the master repos to disk first first
+        git_commands = ["git clone {}".format(url) for url in master_repo_urls]
+        repobee_command = (
+            "repobee migrate -u {} -g {} -o {} -mn {} -t {} -tb"
+        ).format(
+            OAUTH_USER, BASE_URL, ORG_NAME, " ".join(MASTER_REPO_NAMES), TOKEN
+        )
+        command = " && ".join(git_commands + [repobee_command])
+
+        result = run_in_docker(command)
+
+        assert result.returncode == 0
+        assert_master_repos_exist(MASTER_REPO_NAMES, ORG_NAME)
