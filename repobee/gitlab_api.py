@@ -323,7 +323,33 @@ class GitLabAPI(apimeta.API):
         auth = "{}:{}".format(self._user, self._token)
         return repo_url.replace("https://", "https://{}@".format(auth))
 
+    def _get_projects_and_names_by_name(self, repo_names):
+        projects = []
+        for name in repo_names:
+            candidates = self._group.projects.list(
+                include_subgroups=True, search=name
+            )
+            for candidate in candidates:
+                if candidate.name == name:
+                    projects.append(candidate.name)
+                    yield self._gitlab.projects.get(
+                        candidate.id
+                    ), candidate.name
+                    break
+
+        missing = set(repo_names) - set(projects)
+        if missing:
+            LOGGER.warning("can't find repos: {}".format(", ".join(missing)))
+
     def open_issue(
         self, title: str, body: str, repo_names: Iterable[str]
     ) -> None:
         """See :py:func:`repobee.apimeta.APISpec.open_issue`."""
+        projects = self._get_projects_and_names_by_name(repo_names)
+        for lazy_project, project_name in projects:
+            issue = lazy_project.issues.create(dict(title=title, body=body))
+            LOGGER.info(
+                "Opened issue {}/#{}-'{}'".format(
+                    project_name, issue.id, issue.title
+                )
+            )
