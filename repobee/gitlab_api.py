@@ -159,7 +159,7 @@ class GitLabAPI(apimeta.API):
         return [
             g
             for g in self._gitlab.groups.list(search=org_name)
-            if g.name == org_name
+            if g.path == org_name
         ][0]
 
     def _get_members(self, group):
@@ -254,7 +254,9 @@ class GitLabAPI(apimeta.API):
                             "visibility": "private"
                             if repo.private
                             else "public",
-                            "namespace_id": repo.team_id,
+                            "namespace_id": repo.team_id
+                            if repo.team_id
+                            else self._group.id,
                         }
                     ).attributes["http_url_to_repo"]
                 )

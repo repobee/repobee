@@ -106,3 +106,6 @@ tags
 
 # manual testing
 tmp
+
+# integration tests
+tests/integration_tests/volume_data
