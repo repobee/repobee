@@ -9,12 +9,12 @@ from repobee import util
 from repobee import apimeta
 from repobee import gitlab_api
 
-
 assert os.getenv(
     "REPOBEE_NO_VERIFY_SSL"
 ), "The env variable REPOBEE_NO_VERIFY_SSL must be set to 'true'"
 
 
+VOLUME_DST = "/workdir"
 DIR = pathlib.Path(__file__).resolve().parent
 TOKEN = (DIR / "token").read_text(encoding="utf-8").strip()
 RESTORE_SH = DIR / "restore.sh"
@@ -58,7 +58,6 @@ def assert_master_repos_exist(master_repo_names, org_name):
 
 def assert_repos_exist(student_teams, master_repo_names, org_name=ORG_NAME):
     """Assert that the associated student repos exist."""
-
     repo_names = util.generate_repo_names(student_teams, master_repo_names)
     gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
     target_group = gl.groups.list(search=ORG_NAME)[0]
@@ -94,19 +93,49 @@ def assert_groups_exist(student_teams, org_name=ORG_NAME):
         assert actual_members == expected_members
 
 
+def assert_issues_exist(student_teams, master_repo_names, issue):
+    """Assert that the expected issue has been opened in each of the student
+    repos.
+    """
+    gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
+    target_group = gl.groups.list(search=ORG_NAME)[0]
+    student_groups = gl.groups.list(id=target_group.id)
+    projects = [
+        gl.projects.get(p.id, lazy=True)
+        for g in student_groups
+        for p in g.projects.list()
+    ]
+
+    for proj in projects:
+        issues = proj.issues.list()
+        assert len(issues) == 1
+        assert issues[0].title == issue.title
+
+
 @pytest.fixture(autouse=True)
 def restore():
     """Run the script that restores the GitLab instance to its initial
     state.
     """
-    subprocess.run(str(RESTORE_SH), shell=True)
+    with open(os.devnull, "w") as devnull:
+        subprocess.run(
+            str(RESTORE_SH), shell=True, stdout=devnull, stderr=devnull
+        )
 
 
-def run_in_docker(command):
+@pytest.fixture
+def tmpdir_volume_arg(tmpdir):
+    """Create a temporary directory and return an argument string that
+    will mount a docker volume to it.
+    """
+    yield "-v {}:{}".format(str(tmpdir), VOLUME_DST)
+
+
+def run_in_docker(command, extra_args=""):
     docker_command = (
-        "docker run --net development --rm --name repobee "
+        "docker run {} --net development --rm --name repobee "
         "repobee:test /bin/sh -c '{}'"
-    ).format(command)
+    ).format(extra_args, command)
     return subprocess.run(docker_command, shell=True)
 
 
@@ -180,3 +209,57 @@ class TestMigrate:
 
         assert result.returncode == 0
         assert_master_repos_exist(MASTER_REPO_NAMES, ORG_NAME)
+
+
+@pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
+class TestOpenIssues:
+    """Tests for the open-issues command."""
+
+    _ISSUE = apimeta.Issue(title="This is a title", body="This is a body")
+
+    @pytest.fixture
+    def with_student_repos(self, restore):
+        """Set up student repos before starting tests.
+
+        Note that explicitly including restore here is necessary to ensure that
+        it runs before this fixture.
+        """
+        command = (
+            "repobee setup -u {} -g {} -o {} -mo {} -mn {} -s {} -t {} -tb"
+        ).format(
+            OAUTH_USER,
+            BASE_URL,
+            ORG_NAME,
+            MASTER_ORG_NAME,
+            " ".join(MASTER_REPO_NAMES),
+            " ".join(STUDENT_TEAM_NAMES),
+            TOKEN,
+        )
+
+        run_in_docker(command)
+
+        # pre-test asserts
+        assert_repos_exist(STUDENT_TEAMS, MASTER_REPO_NAMES)
+        assert_groups_exist(STUDENT_TEAMS)
+
+    def test_happy_path(self, tmpdir_volume_arg, tmpdir, with_student_repos):
+        """Test opening an issue in each student repo."""
+        filename = "issue.md"
+        text = "{}\n{}".format(self._ISSUE.title, self._ISSUE.body)
+        tmpdir.join(filename).write_text(text, encoding="utf-8")
+
+        command = (
+            "repobee open-issues -g {} -o {} -i {} -mn {} -s {} -t {} -tb"
+        ).format(
+            BASE_URL,
+            ORG_NAME,
+            "{}/{}".format(VOLUME_DST, filename),
+            " ".join(MASTER_REPO_NAMES),
+            " ".join(STUDENT_TEAM_NAMES),
+            TOKEN,
+        )
+
+        result = run_in_docker(command, extra_args=tmpdir_volume_arg)
+
+        assert result.returncode == 0
+        assert_issues_exist(STUDENT_TEAMS, MASTER_REPO_NAMES, self._ISSUE)
