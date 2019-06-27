@@ -322,3 +322,8 @@ class GitLabAPI(apimeta.API):
             )
         auth = "{}:{}".format(self._user, self._token)
         return repo_url.replace("https://", "https://{}@".format(auth))
+
+    def open_issue(
+        self, title: str, body: str, repo_names: Iterable[str]
+    ) -> None:
+        """See :py:func:`repobee.apimeta.APISpec.open_issue`."""
