@@ -16,6 +16,8 @@ sys.modules["github"] = MagicMock()
 import repobee  # noqa: F402
 from repobee import config  # noqa: F402
 
+EXPECTED_ENV_VARIABLES = ["REPOBEE_OAUTH", "REPOBEE_NO_VERIFY_SSL"]
+
 
 @contextmanager
 def _students_file(populate: bool = True):
@@ -45,7 +47,7 @@ def _students_file(populate: bool = True):
 @pytest.fixture(autouse=True)
 def mock_getenv(mocker):
     def _side_effect(name):
-        if name != "REPOBEE_OAUTH":
+        if name not in EXPECTED_ENV_VARIABLES:
             raise ValueError("no such environment variable")
         return constants.TOKEN
 

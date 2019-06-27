@@ -1,0 +1,47 @@
+version: '3'
+services:
+  gitlab:
+    image: gitlab/gitlab-ce:12.0.1-ce.0
+    container_name: gitlab
+    restart: always
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'https://gitlab.integrationtest.local'
+        gitlab_rails['time_zone'] = 'Europe/Stockholm'
+        gitlab_rails['gitlab_email_from'] = ''
+        gitlab_rails['gitlab_email_display_name'] = 'GitLab Administrator'
+        gitlab_rails['gitlab_email_reply_to'] = ''
+        unicorn['worker_timeout'] = 60
+        unicorn['worker_processes'] = 3
+        logging['logrotate_frequency'] = "weekly"
+        logging['logrotate_rotate'] = 52
+        logging['logrotate_compress'] = "compress"
+        logging['logrotate_method'] = "copytruncate"
+        logging['logrotate_delaycompress'] = "delaycompress"
+        nginx['listen_port'] = 443
+        nginx['redirect_http_to_https'] = true
+        nginx['ssl_certificate'] = "/etc/ssl/certs/gitlab/server-cert.pem"
+        nginx['ssl_certificate_key'] = "/etc/ssl/certs/gitlab/server-key.pem"
+        nginx['ssl_protocols'] = "TLSv1.1 TLSv1.2"
+        nginx['logrotate_frequency'] = "weekly"
+        nginx['logrotate_rotate'] = 52
+        nginx['logrotate_compress'] = "compress"
+        nginx['logrotate_method'] = "copytruncate"
+        nginx['logrotate_delaycompress'] = "delaycompress"
+        # Add any other gitlab.rb configuration options if desired
+    ports:
+      - '50443:443'
+      - '50022:22'
+    volumes:
+      - ./volume_data/conf:/etc/gitlab
+      - ./volume_data/ssl:/etc/ssl/certs/gitlab
+      - ./volume_data/logs:/var/log/gitlab
+      - ./volume_data/main:/var/opt/gitlab
+    networks:
+      dev-net:
+        aliases:
+          - gitlab.integrationtest.local
+networks:
+  dev-net:
+    external:
+      name: development

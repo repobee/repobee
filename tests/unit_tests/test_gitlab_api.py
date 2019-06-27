@@ -78,7 +78,7 @@ class GitLabMock:
     _User = namedtuple("_User", ("id", "username"))
     _Projects = namedtuple("_Projects", "create get".split())
 
-    def __init__(self, url, private_token):
+    def __init__(self, url, private_token, ssl_verify):
         self._base_url = url
         self._private_token = private_token
         self._groups = {}
