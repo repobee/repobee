@@ -2,10 +2,11 @@ FROM python:3.7.3-stretch
 
 WORKDIR /app
 COPY . /app
+RUN pip install .[TEST]
 
+WORKDIR /workdir
 ENV REPOBEE_NO_VERIFY_SSL=true
 
-RUN pip install .[TEST]
 # the integration test GitLab container has a self-signed certificate,
 # so ssl verification in git must be turned off
 RUN git config --global http.sslVerify false
