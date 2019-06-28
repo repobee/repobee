@@ -93,9 +93,9 @@ def assert_groups_exist(student_teams, org_name=ORG_NAME):
         assert actual_members == expected_members
 
 
-def assert_issues_exist(student_teams, master_repo_names, issue):
-    """Assert that the expected issue has been opened in each of the student
-    repos.
+def _assert_on_projects(student_teams, master_repo_names, assertion):
+    """Execute the specified assertion operation on a project. Assertion should
+    be a callable taking precisely on project as an argument.
     """
     gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
     target_group = gl.groups.list(search=ORG_NAME)[0]
@@ -107,9 +107,36 @@ def assert_issues_exist(student_teams, master_repo_names, issue):
     ]
 
     for proj in projects:
-        issues = proj.issues.list()
-        assert len(issues) == 1
-        assert issues[0].title == issue.title
+        assertion(proj)
+
+
+def assert_issues_exist(
+    student_teams, master_repo_names, expected_issue, expected_state="opened"
+):
+    """Assert that the expected issue has been opened in each of the student
+    repos.
+    """
+
+    def assertion(project):
+        issues = project.issues.list()
+        for actual_issue in issues:
+            if actual_issue.title == expected_issue.title:
+                assert actual_issue.state == expected_state
+                return
+        assert False, "no issue matching the specified title"
+
+    _assert_on_projects(student_teams, master_repo_names, assertion)
+
+
+def assert_num_issues(student_teams, master_repo_names, num_issues):
+    """Assert that there are precisely num_issues issues in each student
+    repo.
+    """
+
+    def assertion(project):
+        assert len(project.issues.list()) == num_issues
+
+    _assert_on_projects(student_teams, master_repo_names, assertion)
 
 
 @pytest.fixture(autouse=True)
@@ -129,6 +156,65 @@ def tmpdir_volume_arg(tmpdir):
     will mount a docker volume to it.
     """
     yield "-v {}:{}".format(str(tmpdir), VOLUME_DST)
+
+
+@pytest.fixture
+def with_student_repos(restore):
+    """Set up student repos before starting tests.
+
+    Note that explicitly including restore here is necessary to ensure that
+    it runs before this fixture.
+    """
+    command = (
+        "repobee setup -u {} -g {} -o {} -mo {} -mn {} -s {} -t {} -tb"
+    ).format(
+        OAUTH_USER,
+        BASE_URL,
+        ORG_NAME,
+        MASTER_ORG_NAME,
+        " ".join(MASTER_REPO_NAMES),
+        " ".join(STUDENT_TEAM_NAMES),
+        TOKEN,
+    )
+
+    run_in_docker(command)
+
+    # pre-test asserts
+    assert_repos_exist(STUDENT_TEAMS, MASTER_REPO_NAMES)
+    assert_groups_exist(STUDENT_TEAMS)
+
+
+@pytest.fixture
+def open_issues(with_student_repos):
+    """Open two issues in each student repo."""
+    task_issue = apimeta.Issue(
+        title="Task", body="The task is to do this, this and that"
+    )
+    correction_issue = apimeta.Issue(
+        title="Correction required", body="You need to fix this, this and that"
+    )
+    issues = [task_issue, correction_issue]
+    gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
+    target_group = gl.groups.list(search=ORG_NAME)[0]
+    projects = (
+        gl.projects.get(p.id)
+        for p in target_group.projects.list(include_subgroups=True)
+    )
+    for project in projects:
+        project.issues.create(
+            dict(title=task_issue.title, body=task_issue.body)
+        )
+        project.issues.create(
+            dict(title=correction_issue.title, body=correction_issue.body)
+        )
+
+    assert_num_issues(STUDENT_TEAM_NAMES, MASTER_REPO_NAMES, len(issues))
+    assert_issues_exist(STUDENT_TEAM_NAMES, MASTER_REPO_NAMES, task_issue)
+    assert_issues_exist(
+        STUDENT_TEAM_NAMES, MASTER_REPO_NAMES, correction_issue
+    )
+
+    return issues
 
 
 def run_in_docker(command, extra_args=""):
@@ -217,31 +303,6 @@ class TestOpenIssues:
 
     _ISSUE = apimeta.Issue(title="This is a title", body="This is a body")
 
-    @pytest.fixture
-    def with_student_repos(self, restore):
-        """Set up student repos before starting tests.
-
-        Note that explicitly including restore here is necessary to ensure that
-        it runs before this fixture.
-        """
-        command = (
-            "repobee setup -u {} -g {} -o {} -mo {} -mn {} -s {} -t {} -tb"
-        ).format(
-            OAUTH_USER,
-            BASE_URL,
-            ORG_NAME,
-            MASTER_ORG_NAME,
-            " ".join(MASTER_REPO_NAMES),
-            " ".join(STUDENT_TEAM_NAMES),
-            TOKEN,
-        )
-
-        run_in_docker(command)
-
-        # pre-test asserts
-        assert_repos_exist(STUDENT_TEAMS, MASTER_REPO_NAMES)
-        assert_groups_exist(STUDENT_TEAMS)
-
     def test_happy_path(self, tmpdir_volume_arg, tmpdir, with_student_repos):
         """Test opening an issue in each student repo."""
         filename = "issue.md"
@@ -262,4 +323,42 @@ class TestOpenIssues:
         result = run_in_docker(command, extra_args=tmpdir_volume_arg)
 
         assert result.returncode == 0
+        assert_num_issues(STUDENT_TEAMS, MASTER_REPO_NAMES, 1)
         assert_issues_exist(STUDENT_TEAMS, MASTER_REPO_NAMES, self._ISSUE)
+
+
+@pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
+class TestCloseIssues:
+    """Tests for the close-issues command."""
+
+    def test_closes_only_matched_issues(self, open_issues):
+        """Test that close-issues respects the regex."""
+        assert len(open_issues) == 2, "expected there to be only 2 open issues"
+        close_issue = open_issues[0]
+        open_issue = open_issues[1]
+        command = (
+            "repobee close-issues -g {} -o {} -mn {} -s {} -t {} -r {} -tb"
+        ).format(
+            BASE_URL,
+            ORG_NAME,
+            " ".join(MASTER_REPO_NAMES),
+            " ".join(STUDENT_TEAM_NAMES),
+            TOKEN,
+            close_issue.title,
+        )
+
+        result = run_in_docker(command)
+
+        assert result.returncode == 0
+        assert_issues_exist(
+            STUDENT_TEAM_NAMES,
+            MASTER_REPO_NAMES,
+            close_issue,
+            expected_state="closed",
+        )
+        assert_issues_exist(
+            STUDENT_TEAM_NAMES,
+            MASTER_REPO_NAMES,
+            open_issue,
+            expected_state="opened",
+        )
