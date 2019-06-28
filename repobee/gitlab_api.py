@@ -11,6 +11,7 @@ GitLabAPI are mostly high-level bulk operations.
 .. moduleauthor:: Simon Larsén
 """
 import os
+import re
 from typing import List, Iterable, Optional
 from socket import gaierror
 import collections
@@ -333,7 +334,7 @@ class GitLabAPI(apimeta.API):
                 if candidate.name == name:
                     projects.append(candidate.name)
                     yield self._gitlab.projects.get(
-                        candidate.id
+                        candidate.id, lazy=True
                     ), candidate.name
                     break
 
@@ -353,3 +354,28 @@ class GitLabAPI(apimeta.API):
                     project_name, issue.id, issue.title
                 )
             )
+
+    def close_issue(self, title_regex: str, repo_names: Iterable[str]) -> None:
+        """See :py:func:`repobee.apimeta.APISpec.close_issue`."""
+        projects = self._get_projects_and_names_by_name(repo_names)
+        issues_and_project_names = (
+            (issue, project_name)
+            for project, project_name in projects
+            for issue in project.issues.list(state="opened")
+            if re.match(title_regex, issue.title)
+        )
+        closed = 0
+        for issue, project_name in issues_and_project_names:
+            issue.state_event = "close"
+            issue.save()
+            LOGGER.info(
+                "closed issue {}/#{}-'{}'".format(
+                    project_name, issue.id, issue.title
+                )
+            )
+            closed += 1
+
+        if closed:
+            LOGGER.info("closed {} issues".format(closed))
+        else:
+            LOGGER.warning("found no issues matching the title regex")
