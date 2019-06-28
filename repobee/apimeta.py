@@ -19,6 +19,7 @@ NotImplementedError) for any unimplemented API methods.
 .. moduleauthor:: Simon Larsén
 """
 import inspect
+import enum
 import collections
 from typing import List, Iterable, Optional, Generator, Tuple, Mapping
 
@@ -53,6 +54,23 @@ class APIObject:
                 "invalid access to 'implementation': not initialized"
             )
         return attr
+
+
+class TeamPermission(enum.Enum):
+    """Enum specifying team permissions on creating teams. On GitHub, for
+    example, this can be e.g. `push` or `pull`.
+    """
+
+    PUSH = enum.auto()
+    PULL = enum.auto()
+
+
+class IssueState(enum.Enum):
+    """Enum specifying a possible issue state."""
+
+    OPEN = enum.auto()
+    CLOSED = enum.auto()
+    ALL = enum.auto()
 
 
 def _check_name_length(name):
@@ -147,7 +165,9 @@ class APISpec:
         _not_implemented()
 
     def ensure_teams_and_members(
-        self, teams: Iterable[Team], permission: str
+        self,
+        teams: Iterable[Team],
+        permission: TeamPermission = TeamPermission.PULL,
     ) -> List[Team]:
         """Ensure that the teams exist, and that their members are added to the
         teams.
@@ -159,9 +179,7 @@ class APISpec:
         Args:
             teams: A list of teams specifying student groups.
             permission: The permission these teams (or members of them) should
-                be given in regards to repositories. For example, on GitHub,
-                the permission should be "push", and on GitLab, it should be
-                developer (30).
+                be given in regards to associated repositories.
         Returns:
             A list of Team API objects of the teams provided to the function,
             both those that were created and those that already existed.
@@ -219,7 +237,7 @@ class APISpec:
     def get_issues(
         self,
         repo_names: Iterable[str],
-        state: str = "open",
+        state: IssueState = IssueState.OPEN,
         title_regex: str = "",
     ) -> Generator[Tuple[str, Generator[Issue, None, None]], None, None]:
         """Get all issues for the repos in repo_names an return a generator
@@ -228,8 +246,7 @@ class APISpec:
 
         Args:
             repo_names: An iterable of repo names.
-            state: Specifying the state of the issue ('open', 'closed' or
-            'all'). Defaults to 'open'.
+            state: Specifies the state of the issue.
             title_regex: If specified, only issues matching this regex are
             returned. Defaults to the empty string (which matches anything).
         Returns:
