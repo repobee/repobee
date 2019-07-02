@@ -637,7 +637,9 @@ class TestGetIssues:
     def test_get_all_open_issues(self, repos, issues, api):
         repo_names = [repo.name for repo in repos]
 
-        name_issues_pairs = api.get_issues(repo_names, state="open")
+        name_issues_pairs = api.get_issues(
+            repo_names, state=apimeta.IssueState.OPEN
+        )
 
         found_repos = []
         for repo_name, issue_gen in name_issues_pairs:
@@ -652,9 +654,9 @@ class TestGetIssues:
     def test_get_all_closed_issues(self, repos, issues, api):
         repo_names = [repo.name for repo in repos]
 
-        print(api.get_issues(repo_names, state="closed"))
-
-        name_issues_pairs = api.get_issues(repo_names, state="closed")
+        name_issues_pairs = api.get_issues(
+            repo_names, state=apimeta.IssueState.CLOSED
+        )
 
         found_repos = []
         for repo_name, issue_gen in name_issues_pairs:
@@ -673,7 +675,9 @@ class TestGetIssues:
         repo_names = [repo.name for repo in repos] + [non_existing]
         random.shuffle(repo_names)
 
-        name_issues_pairs = api.get_issues(repo_names, state="open")
+        name_issues_pairs = api.get_issues(
+            repo_names, state=apimeta.IssueState.OPEN
+        )
 
         found_repos = []
         for repo_name, issue_gen in name_issues_pairs:
@@ -693,7 +697,7 @@ class TestGetIssues:
         regex = "^{}$".format(sought_issue.title)
 
         name_issues_pairs = api.get_issues(
-            repo_names, state="open", title_regex=regex
+            repo_names, state=apimeta.IssueState.OPEN, title_regex=regex
         )
 
         found_repos = []

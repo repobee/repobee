@@ -167,7 +167,7 @@ class APISpec:
     def ensure_teams_and_members(
         self,
         teams: Iterable[Team],
-        permission: TeamPermission = TeamPermission.PULL,
+        permission: TeamPermission = TeamPermission.PUSH,
     ) -> List[Team]:
         """Ensure that the teams exist, and that their members are added to the
         teams.

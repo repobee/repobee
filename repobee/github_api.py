@@ -29,6 +29,17 @@ ISSUE_GENERATOR = Generator[apimeta.Issue, None, None]
 
 LOGGER = daiquiri.getLogger(__file__)
 
+_TEAM_PERMISSION_MAPPING = {
+    apimeta.TeamPermission.PUSH: "push",
+    apimeta.TeamPermission.PULL: "pull",
+}
+_ISSUE_STATE_MAPPING = {
+    apimeta.IssueState.OPEN: "open",
+    apimeta.IssueState.CLOSED: "closed",
+    apimeta.IssueState.ALL: "all",
+}
+
+
 # classes used internally in this module
 _Team = github.Team.Team
 _User = github.NamedUser.NamedUser
@@ -208,13 +219,16 @@ class GitHubAPI(apimeta.API):
         return existing_users
 
     def ensure_teams_and_members(
-        self, teams: Iterable[apimeta.Team], permission: str = "push"
+        self,
+        teams: Iterable[apimeta.Team],
+        permission: apimeta.TeamPermission = apimeta.TeamPermission.PUSH,
     ) -> List[apimeta.Team]:
         """See :py:func:`repobee.apimeta.APISpec.ensure_teams_and_members`."""
+        raw_permission = _TEAM_PERMISSION_MAPPING[permission]
         member_lists = {team.name: team.members for team in teams}
         raw_teams = self._ensure_teams_exist(
             [team_name for team_name in member_lists.keys()],
-            permission=permission,
+            permission=raw_permission,
         )
 
         for team in [team for team in raw_teams if member_lists[team.name]]:
@@ -379,11 +393,12 @@ class GitHubAPI(apimeta.API):
     def get_issues(
         self,
         repo_names: Iterable[str],
-        state: str = "open",
+        state: apimeta.IssueState = apimeta.IssueState.OPEN,
         title_regex: str = "",
     ) -> Generator[Tuple[str, ISSUE_GENERATOR], None, None]:
         """See :py:func:`repobee.apimeta.APISpec.get_issues`."""
         repos = self._get_repos_by_name(repo_names)
+        raw_state = _ISSUE_STATE_MAPPING[state]
 
         with _try_api_request():
             name_issues_pairs = (
@@ -398,7 +413,7 @@ class GitHubAPI(apimeta.API):
                             author=issue.user.login,
                             implementation=issue,
                         )
-                        for issue in repo.get_issues(state=state)
+                        for issue in repo.get_issues(state=raw_state)
                         if re.match(title_regex or "", issue.title)
                     ),
                 )
