@@ -27,7 +27,7 @@ class TestAPI:
             pass
 
         name, impl = method
-        params = apimeta.parameter_names(impl)
+        params = apimeta.parameters(impl)
 
         with pytest.raises(NotImplementedError):
             m = getattr(API, name)
@@ -59,6 +59,33 @@ class TestAPI:
                 return expected
 
         assert API(None, None, None, None).get_teams() == expected
+
+    def test_raises_when_method_has_incorrect_default_arg(self):
+        with pytest.raises(exception.APIImplementationError):
+
+            class API(apimeta.API):
+                def __init__(self, base_url, token, org_name, user):
+                    pass
+
+                def ensure_teams_and_members(self, teams, permission="push"):
+                    pass
+
+    def test_accepts_correct_default_arg(self):
+        expected = 42
+
+        class API(apimeta.API):
+            def __init__(self, base_url, token, org_name, user):
+                pass
+
+            def ensure_teams_and_members(
+                self, teams, permission=apimeta.TeamPermission.PUSH
+            ):
+                return expected
+
+        assert (
+            API(None, None, None, None).ensure_teams_and_members(None, None)
+            == expected
+        )
 
 
 class TestAPIObject:

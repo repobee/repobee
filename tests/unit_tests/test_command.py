@@ -93,7 +93,7 @@ def get_repo_urls_fake(self, master_repo_names, org_name=None, teams=None):
 
 
 # check that get_repo_urls_fake conforms to APISpec.get_repo_urls
-apimeta.check_signature(apimeta.APISpec.get_repo_urls, get_repo_urls_fake)
+apimeta.check_parameters(apimeta.APISpec.get_repo_urls, get_repo_urls_fake)
 
 MASTER_NAMES = ("week-1", "week-2", "week-3")
 MASTER_URLS = tuple(generate_repo_url(name) for name in MASTER_NAMES)
