@@ -664,12 +664,12 @@ class TestAssignPeerReviewers:
                 api=api_mock,
             )
 
-        assert "num_reviews must be less than" in str(exc_info)
+        assert "num_reviews must be less than" in str(exc_info.value)
 
     def test_zero_reviews_raises(self, master_names, students, api_mock):
         num_reviews = 0
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError) as exc_info:
             command.assign_peer_reviews(
                 master_repo_names=master_names,
                 teams=students,
@@ -678,7 +678,7 @@ class TestAssignPeerReviewers:
                 api=api_mock,
             )
 
-        assert "num_reviews must be greater than 0"
+        assert "num_reviews must be greater than 0" in str(exc_info.value)
 
     def test_happy_path(self, master_names, students, api_mock):
         issue = apimeta.Issue("this is a title", "this is a body")
