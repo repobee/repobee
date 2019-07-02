@@ -38,14 +38,14 @@ class TestReadIssue:
             filepath = file.name
         with pytest.raises(ValueError) as exc_info:
             util.read_issue(filepath)
-        assert "is not a file" in str(exc_info)
+        assert "is not a file" in str(exc_info.value)
 
     def test_raises_when_path_points_to_dir(self):
         """Should raise if the path points to a directory."""
         with tempfile.TemporaryDirectory() as tmpdir:
             with pytest.raises(ValueError) as exc_info:
                 util.read_issue(tmpdir)
-            assert "is not a file" in str(exc_info)
+            assert "is not a file" in str(exc_info.value)
 
     def test_empty_title_and_body_if_file_is_empty(self):
         """It's not an error to specify an empty file, should result in empty
