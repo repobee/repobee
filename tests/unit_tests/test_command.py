@@ -24,41 +24,31 @@ TOKEN = constants.TOKEN
 random_date = functions.random_date
 
 OPEN_ISSUES = [
-    to_magic_mock_issue(issue)
-    for issue in (
-        apimeta.Issue(
-            "close this issue", "This is a body", 3, random_date(), "slarse"
-        ),
-        apimeta.Issue(
-            "Don't close this issue",
-            "Another body",
-            4,
-            random_date(),
-            "glassey",
-        ),
-    )
+    apimeta.Issue(
+        "close this issue", "This is a body", 3, random_date(), "slarse"
+    ),
+    apimeta.Issue(
+        "Don't close this issue", "Another body", 4, random_date(), "glassey"
+    ),
 ]
 
 CLOSED_ISSUES = [
-    to_magic_mock_issue(issue)
-    for issue in (
-        apimeta.Issue(
-            "This is a closed issue",
-            "With an uninteresting body that has a single very,"
-            "very long line that would probably break the implementation "
-            "if something was off with the line limit function.",
-            1,
-            random_date(),
-            "tmore",
-        ),
-        apimeta.Issue(
-            "Yet another closed issue",
-            "Even less interesting body",
-            2,
-            random_date(),
-            "viklu",
-        ),
-    )
+    apimeta.Issue(
+        "This is a closed issue",
+        "With an uninteresting body that has a single very,"
+        "very long line that would probably break the implementation "
+        "if something was off with the line limit function.",
+        1,
+        random_date(),
+        "tmore",
+    ),
+    apimeta.Issue(
+        "Yet another closed issue",
+        "Even less interesting body",
+        2,
+        random_date(),
+        "viklu",
+    ),
 ]
 
 ORG_NAME = "test-org"

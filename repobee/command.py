@@ -118,9 +118,9 @@ def _create_student_repos(
 
 
 def _clone_all(urls: Iterable[str], cwd: str):
-    """Attempts to clone all urls, sequentially. If a repo is already present, it is skipped.
-    If any one clone fails (except for fails because the repo is local),
-    all cloned repos are removed
+    """Attempts to clone all urls, sequentially. If a repo is already present,
+    it is skipped.  If any one clone fails (except for fails because the repo
+    is local), all cloned repos are removed
 
     Args:
         urls: HTTPS urls to git repositories.
@@ -216,7 +216,8 @@ def list_issues(
             with the platform (e.g. GitHub or GitLab) instance.
         state: state of the repo (open or closed). Defaults to 'open'.
         title_regex: If specified, only issues with titles matching the regex
-            are displayed. Defaults to the empty string (which matches everything).
+            are displayed. Defaults to the empty string (which matches
+            everything).
         show_body: If True, the body of the issue is displayed along with the
             default info.
         author: Only show issues by this author.
@@ -228,10 +229,7 @@ def list_issues(
 
     if author:
         issues_per_repo = (
-            (
-                repo_name,
-                (issue for issue in issues if issue.user.login == author),
-            )
+            (repo_name, (issue for issue in issues if issue.author == author))
             for repo_name, issues in issues_per_repo
         )
 
@@ -274,7 +272,7 @@ def _log_repo_issues(
                 style.RESET,
                 " ",
                 issue.created_at,
-                issue.user.login,
+                issue.author,
             )
             if show_body:
                 out += os.linesep * 2 + _limit_line_length(issue.body)
