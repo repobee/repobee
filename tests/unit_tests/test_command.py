@@ -5,6 +5,7 @@ from unittest.mock import patch, MagicMock, call, ANY, PropertyMock
 import pytest
 
 import repobee
+import repobee.github_api
 from repobee import command
 from repobee import git
 from repobee import util
@@ -109,18 +110,18 @@ def git_mock(request, mocker):
     return git_mock
 
 
-def _get_issues(repo_names, state="open", title_regex=""):
+def _get_issues(repo_names, state=apimeta.IssueState.OPEN, title_regex=""):
     """Bogus version of GitHubAPI.get_issues"""
     for repo_name in repo_names:
         if repo_name == STUDENT_REPO_NAMES[-2]:
             # repo without issues
             yield repo_name, iter([])
         elif repo_name in STUDENT_REPO_NAMES:
-            if state == "open":
+            if state == apimeta.IssueState.OPEN:
                 issues = iter(OPEN_ISSUES)
-            elif state == "closed":
+            elif state == apimeta.IssueState.CLOSED:
                 issues = iter(CLOSED_ISSUES)
-            elif state == "all":
+            elif state == apimeta.IssueState.ALL:
                 issues = iter(OPEN_ISSUES + CLOSED_ISSUES)
             else:
                 raise ValueError("Unexpected value for 'state': ", state)
@@ -609,7 +610,14 @@ class TestListIssues:
     it is only tested for stability.
     """
 
-    @pytest.mark.parametrize("state", ("open", "closed", "all"))
+    @pytest.mark.parametrize(
+        "state",
+        (
+            apimeta.IssueState.OPEN,
+            apimeta.IssueState.CLOSED,
+            apimeta.IssueState.ALL,
+        ),
+    )
     @pytest.mark.parametrize("regex", ("", r"^.*$"))
     @pytest.mark.parametrize("show_body", (True, False))
     @pytest.mark.parametrize("author", (None, "slarse"))

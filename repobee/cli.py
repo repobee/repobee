@@ -498,23 +498,23 @@ def _add_issue_parsers(base_parsers, subparsers):
         help="List open issues (default).",
         action="store_const",
         dest="state",
-        const="open",
+        const=apimeta.IssueState.OPEN,
     )
     state.add_argument(
         "--closed",
         help="List closed issues.",
         action="store_const",
         dest="state",
-        const="closed",
+        const=apimeta.IssueState.CLOSED,
     )
     state.add_argument(
         "--all",
         help="List all issues (open and closed).",
         action="store_const",
         dest="state",
-        const="all",
+        const=apimeta.IssueState.ALL,
     )
-    list_parser.set_defaults(state="open")
+    list_parser.set_defaults(state=apimeta.IssueState.OPEN)
 
 
 class _OrderedFormatter(argparse.HelpFormatter):

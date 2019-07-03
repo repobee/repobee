@@ -109,7 +109,9 @@ class GitLabAPI(apimeta.API):
             )
 
     def ensure_teams_and_members(
-        self, teams: Iterable[apimeta.Team], permission: str = "push"
+        self,
+        teams: Iterable[apimeta.Team],
+        permission: apimeta.TeamPermission = apimeta.TeamPermission.PUSH,
     ) -> List[apimeta.Team]:
         """See :py:func:`repobee.apimeta.APISpec.ensure_teams_and_members`."""
         member_lists = {team.name: team.members for team in teams}

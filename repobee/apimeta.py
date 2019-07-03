@@ -19,6 +19,7 @@ NotImplementedError) for any unimplemented API methods.
 .. moduleauthor:: Simon Larsén
 """
 import inspect
+import enum
 import collections
 from typing import List, Iterable, Optional, Generator, Tuple, Mapping
 
@@ -53,6 +54,48 @@ class APIObject:
                 "invalid access to 'implementation': not initialized"
             )
         return attr
+
+
+class _EnumAuto(collections.namedtuple("_EnumAuto", "value")):
+    """Simplistic emulation of the enum.auto() feature, as it is not available
+    in Python 3.5. Never create an instance of this class manually, always use
+    the :py:func:`build_auto` function.
+    """
+
+
+def _auto_factory_func():
+    """Return a factory function that builds _EnumAuto instances with
+    increasing values.
+    """
+    cur_value = 0
+
+    def _auto():
+        nonlocal cur_value
+        inst = _EnumAuto(value=cur_value)
+        cur_value += 1
+        return inst
+
+    return _auto
+
+
+build_auto = _auto_factory_func()
+
+
+class TeamPermission(enum.Enum):
+    """Enum specifying team permissions on creating teams. On GitHub, for
+    example, this can be e.g. `push` or `pull`.
+    """
+
+    PUSH = build_auto()
+    PULL = build_auto()
+
+
+class IssueState(enum.Enum):
+    """Enum specifying a possible issue state."""
+
+    OPEN = build_auto()
+    CLOSED = build_auto()
+    ALL = build_auto()
 
 
 def _check_name_length(name):
@@ -147,7 +190,9 @@ class APISpec:
         _not_implemented()
 
     def ensure_teams_and_members(
-        self, teams: Iterable[Team], permission: str
+        self,
+        teams: Iterable[Team],
+        permission: TeamPermission = TeamPermission.PUSH,
     ) -> List[Team]:
         """Ensure that the teams exist, and that their members are added to the
         teams.
@@ -159,9 +204,7 @@ class APISpec:
         Args:
             teams: A list of teams specifying student groups.
             permission: The permission these teams (or members of them) should
-                be given in regards to repositories. For example, on GitHub,
-                the permission should be "push", and on GitLab, it should be
-                developer (30).
+                be given in regards to associated repositories.
         Returns:
             A list of Team API objects of the teams provided to the function,
             both those that were created and those that already existed.
@@ -219,7 +262,7 @@ class APISpec:
     def get_issues(
         self,
         repo_names: Iterable[str],
-        state: str = "open",
+        state: IssueState = IssueState.OPEN,
         title_regex: str = "",
     ) -> Generator[Tuple[str, Generator[Issue, None, None]], None, None]:
         """Get all issues for the repos in repo_names an return a generator
@@ -228,8 +271,7 @@ class APISpec:
 
         Args:
             repo_names: An iterable of repo names.
-            state: Specifying the state of the issue ('open', 'closed' or
-            'all'). Defaults to 'open'.
+            state: Specifies the state of the issue.
             title_regex: If specified, only issues matching this regex are
             returned. Defaults to the empty string (which matches anything).
         Returns:
