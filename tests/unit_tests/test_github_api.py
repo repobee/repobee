@@ -819,7 +819,7 @@ class TestVerifySettings:
                 USER, ORG_NAME, GITHUB_BASE_URL, ""
             )
 
-        assert "token is empty" in str(exc_info)
+        assert "token is empty" in str(exc_info.value)
 
     def test_incorrect_info_raises_not_found_error(self, github_bad_info, api):
         with pytest.raises(exception.NotFoundError):
@@ -834,7 +834,7 @@ class TestVerifySettings:
             github_api.GitHubAPI.verify_settings(
                 USER, ORG_NAME, GITHUB_BASE_URL, TOKEN
             )
-        assert "missing one or more oauth scopes" in str(exc_info)
+        assert "missing one or more oauth scopes" in str(exc_info.value)
 
     def test_not_owner_raises(self, happy_github, organization, api):
         with pytest.raises(exception.BadCredentials) as exc_info:
@@ -842,7 +842,9 @@ class TestVerifySettings:
                 NOT_OWNER, ORG_NAME, GITHUB_BASE_URL, TOKEN
             )
 
-        assert "user {} is not an owner".format(NOT_OWNER) in str(exc_info)
+        assert "user {} is not an owner".format(NOT_OWNER) in str(
+            exc_info.value
+        )
 
     def test_raises_unexpected_exception_on_unexpected_status(
         self, happy_github, api
@@ -863,7 +865,7 @@ class TestVerifySettings:
                 USER, ORG_NAME, GITHUB_BASE_URL, TOKEN
             )
 
-        assert "Possible reasons: bad api url" in str(exc_info)
+        assert "Possible reasons: bad api url" in str(exc_info.value)
 
     def test_mismatching_user_login_raises(
         self, happy_github, organization, api
@@ -888,7 +890,7 @@ class TestVerifySettings:
             )
 
         for msg in expected_messages:
-            assert msg in str(exc_info)
+            assert msg in str(exc_info.value)
 
 
 class TestGetPeerReviewProgress:

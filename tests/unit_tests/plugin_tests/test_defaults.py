@@ -26,7 +26,9 @@ class TestGenerateReviewAllocations:
                 util.generate_review_team_name,
             )
 
-        assert "num_reviews must be less than len(students)" in str(exc_info)
+        assert "num_reviews must be less than len(students)" in str(
+            exc_info.value
+        )
 
     def test_throws_when_too_few_reviews(self):
         with pytest.raises(ValueError) as exc_info:
@@ -36,7 +38,7 @@ class TestGenerateReviewAllocations:
                 0,
                 util.generate_review_team_name,
             )
-        assert "num_reviews must be greater than 0" in str(exc_info)
+        assert "num_reviews must be greater than 0" in str(exc_info.value)
 
     @pytest.mark.parametrize(
         "num_students, num_reviews", [(10, 4), (50, 13), (10, 1)]

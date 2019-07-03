@@ -107,7 +107,7 @@ class TestAPIObject:
             obj.implementation
 
         assert "invalid access to 'implementation': not initialized" in str(
-            exc_info
+            exc_info.value
         )
 
     def test_does_not_raise_when_accessing_initialized_implementation(self):

@@ -156,7 +156,7 @@ class TestDispatchCommand:
         with pytest.raises(exception.ParseError) as exc_info:
             cli.dispatch_command(args, api_instance_mock)
         assert "Illegal value for subparser: {}".format(parser) in str(
-            exc_info
+            exc_info.value
         )
 
     def test_no_crash_on_valid_args(
@@ -337,7 +337,7 @@ class TestBaseParsing:
             )
 
         assert "organization {} could not be found".format(ORG_NAME) in str(
-            exc_info
+            exc_info.value
         )
 
     def test_raises_on_bad_credentials(self, api_class_mock, students_file):
@@ -356,7 +356,7 @@ class TestBaseParsing:
                 ]
             )
 
-        assert "bad credentials" in str(exc_info)
+        assert "bad credentials" in str(exc_info.value)
 
     def test_raises_on_invalid_base_url(self, api_class_mock, students_file):
         def raise_(*args, **kwargs):
@@ -377,7 +377,7 @@ class TestBaseParsing:
             )
 
         assert "GitHub service could not be found, check the url" in str(
-            exc_info
+            exc_info.value
         )
 
     @pytest.mark.parametrize("parser", [cli.SETUP_PARSER, cli.UPDATE_PARSER])
@@ -474,7 +474,7 @@ class TestBaseParsing:
         with pytest.raises(exception.ParseError) as exc_info:
             cli.parse_args(sys_args)
 
-        assert "unsupported protocol in {}".format(url) in str(exc_info)
+        assert "unsupported protocol in {}".format(url) in str(exc_info.value)
 
 
 class TestStudentParsing:
@@ -511,7 +511,7 @@ class TestStudentParsing:
         with pytest.raises(exception.FileError) as exc_info:
             cli.parse_args(sys_args)
 
-        assert not_a_file in str(exc_info)
+        assert not_a_file in str(exc_info.value)
 
     @pytest.mark.parametrize(*STUDENT_PARSING_PARAMS, ids=STUDENT_PARSING_IDS)
     def test_parser_listing_students(
@@ -561,7 +561,7 @@ class TestStudentParsing:
         with pytest.raises(exception.FileError) as exc_info:
             cli.parse_args(sys_args)
 
-        assert "is empty" in str(exc_info)
+        assert "is empty" in str(exc_info.value)
 
     @pytest.mark.parametrize(*STUDENT_PARSING_PARAMS, ids=STUDENT_PARSING_IDS)
     def test_parsers_raise_if_both_file_and_listing(
@@ -646,7 +646,9 @@ class TestStudentParsing:
             cli.parse_args(sys_args)
 
         # assert
-        assert "generated Team/Repository name is too long" in str(exc_info)
+        assert "generated Team/Repository name is too long" in str(
+            exc_info.value
+        )
 
 
 def assert_base_push_args(parsed_args, api):

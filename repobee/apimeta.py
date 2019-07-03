@@ -56,21 +56,46 @@ class APIObject:
         return attr
 
 
+class _EnumAuto(collections.namedtuple("_EnumAuto", "value")):
+    """Simplistic emulation of the enum.auto() feature, as it is not available
+    in Python 3.5. Never create an instance of this class manually, always use
+    the :py:func:`build_auto` function.
+    """
+
+
+def _auto_factory_func():
+    """Return a factory function that builds _EnumAuto instances with
+    increasing values.
+    """
+    cur_value = 0
+
+    def _auto():
+        nonlocal cur_value
+        inst = _EnumAuto(value=cur_value)
+        cur_value += 1
+        return inst
+
+    return _auto
+
+
+build_auto = _auto_factory_func()
+
+
 class TeamPermission(enum.Enum):
     """Enum specifying team permissions on creating teams. On GitHub, for
     example, this can be e.g. `push` or `pull`.
     """
 
-    PUSH = enum.auto()
-    PULL = enum.auto()
+    PUSH = build_auto()
+    PULL = build_auto()
 
 
 class IssueState(enum.Enum):
     """Enum specifying a possible issue state."""
 
-    OPEN = enum.auto()
-    CLOSED = enum.auto()
-    ALL = enum.auto()
+    OPEN = build_auto()
+    CLOSED = build_auto()
+    ALL = build_auto()
 
 
 def _check_name_length(name):
