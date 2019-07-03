@@ -12,6 +12,10 @@ in late 2019. See :ref:`gitlab_roadmap` for details.
    GitLab support is currently in alpha, and may not yet be sufficiently stable
    for production use.
 
+.. important::
+
+   RepoBee requires GitLab 11.11 or later.
+
 .. _gitlab_roadmap:
 
 Roadmap
