@@ -12,7 +12,7 @@ GitLabAPI are mostly high-level bulk operations.
 """
 import os
 import re
-from typing import List, Iterable, Optional
+from typing import List, Iterable, Optional, Generator, Tuple
 from socket import gaierror
 import collections
 import contextlib
@@ -25,6 +25,17 @@ from repobee import apimeta
 from repobee import util
 
 LOGGER = daiquiri.getLogger(__file__)
+
+
+ISSUE_GENERATOR = Generator[apimeta.Issue, None, None]
+
+
+# see https://docs.gitlab.com/ee/api/issues.html for mapping details
+_ISSUE_STATE_MAPPING = {
+    apimeta.IssueState.OPEN: "opened",
+    apimeta.IssueState.CLOSED: "closed",
+    apimeta.IssueState.ALL: "all",
+}
 
 
 @contextlib.contextmanager
@@ -327,6 +338,9 @@ class GitLabAPI(apimeta.API):
         return repo_url.replace("https://", "https://{}@".format(auth))
 
     def _get_projects_and_names_by_name(self, repo_names):
+        """Return lazy projects (minimal amount of info loaded) along with
+        their names.
+        """
         projects = []
         for name in repo_names:
             candidates = self._group.projects.list(
@@ -381,3 +395,33 @@ class GitLabAPI(apimeta.API):
             LOGGER.info("closed {} issues".format(closed))
         else:
             LOGGER.warning("found no issues matching the title regex")
+
+    def get_issues(
+        self,
+        repo_names: Iterable[str],
+        state: apimeta.IssueState = apimeta.IssueState.OPEN,
+        title_regex: str = "",
+    ) -> Generator[Tuple[str, ISSUE_GENERATOR], None, None]:
+        """See :py:func:`repobee.apimeta.APISpec.get_issues`."""
+        projects = self._get_projects_and_names_by_name(repo_names)
+        raw_state = _ISSUE_STATE_MAPPING[state]
+        # TODO figure out how to get the issue body from the GitLab API...
+        name_issues_pairs = (
+            (
+                project_name,
+                (
+                    apimeta.Issue(
+                        title=issue.title,
+                        body="<BODY UNAVAILABLE>",
+                        number=issue.iid,
+                        created_at=issue.created_at,
+                        author=issue.author["username"],
+                        implementation=issue,
+                    )
+                    for issue in project.issues.list(state=raw_state)
+                    if re.match(title_regex, issue.title)
+                ),
+            )
+            for project, project_name in projects
+        )
+        yield from name_issues_pairs

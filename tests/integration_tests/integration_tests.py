@@ -1,6 +1,7 @@
 import os
 import subprocess
 import pathlib
+import re
 
 import pytest
 import gitlab
@@ -222,7 +223,12 @@ def run_in_docker(command, extra_args=""):
         "docker run {} --net development --rm --name repobee "
         "repobee:test /bin/sh -c '{}'"
     ).format(extra_args, command)
-    return subprocess.run(docker_command, shell=True)
+    return subprocess.run(
+        docker_command,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
 
 
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
@@ -362,3 +368,49 @@ class TestCloseIssues:
             open_issue,
             expected_state="opened",
         )
+
+
+@pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
+class TestListIssues:
+    """Tests for the list-issues command."""
+
+    def test_lists_matching_issues(self, open_issues):
+        assert len(open_issues) == 2, "expected there to be only 2 open issues"
+        matched = open_issues[0]
+        unmatched = open_issues[1]
+        repo_names = util.generate_repo_names(STUDENT_TEAMS, MASTER_REPO_NAMES)
+
+        issue_pattern_template = r"^\[INFO\].*{}/#\d:\s+{}.*by {}.?$"
+        expected_issue_output_patterns = [
+            issue_pattern_template.format(
+                repo_name, matched.title, ACTUAL_USER
+            )
+            for repo_name in repo_names
+        ]
+        unexpected_issue_output_patterns = [
+            issue_pattern_template.format(
+                repo_name, unmatched.title, ACTUAL_USER
+            )
+            for repo_name in repo_names
+        ]
+
+        command = (
+            "repobee list-issues -g {} -o {} -mn {} -s {} -t {} -r {} -tb"
+        ).format(
+            BASE_URL,
+            ORG_NAME,
+            " ".join(MASTER_REPO_NAMES),
+            " ".join(STUDENT_TEAM_NAMES),
+            TOKEN,
+            matched.title,
+        )
+
+        result = run_in_docker(command)
+        output = result.stdout.decode("utf-8")
+
+        assert result.returncode == 0
+        search_flags = re.MULTILINE
+        for expected_pattern in expected_issue_output_patterns:
+            assert re.search(expected_pattern, output, search_flags)
+        for unexpected_pattern in unexpected_issue_output_patterns:
+            assert not re.search(unexpected_pattern, output, search_flags)
