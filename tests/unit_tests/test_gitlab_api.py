@@ -24,6 +24,14 @@ class Group:
         )
         self._member_list = []
         self._users_read_only = users_read_only
+        # the group owner is always added to the group with max access level
+        owner_id = [
+            uid
+            for uid, user in users_read_only.items()
+            if user.username == constants.USER
+        ][0]
+        owner_data = {"user_id": owner_id, "access_level": gitlab.OWNER_ACCESS}
+        self._create_member(owner_data)
 
     def _create_member(self, data):
         user_id = data["user_id"]
@@ -79,14 +87,14 @@ class GitLabMock:
     _Projects = namedtuple("_Projects", "create get".split())
 
     def __init__(self, url, private_token, ssl_verify):
+        self._users = {
+            id: self._User(id=id, username=str(grp))
+            for id, grp in enumerate(constants.STUDENTS + (constants.USER,))
+        }
         self._base_url = url
         self._private_token = private_token
         self._groups = {}
         self._projects = {}
-        self._users = {
-            id: self._User(id=id, username=str(grp))
-            for id, grp in enumerate(constants.STUDENTS)
-        }
         self._id = len(self._users)
         self._create_group({"name": TARGET_GROUP, "path": TARGET_GROUP})
 
@@ -267,7 +275,7 @@ class TestEnsureTeamsAndMembers:
         )
         for team in actual_teams:
             if team.name != TARGET_GROUP:
-                assert team.members == [team.name]
+                assert team.members == [constants.USER, team.name]
             else:
                 assert not team.members
 
@@ -282,7 +290,14 @@ class TestEnsureTeamsAndMembers:
                 constants.STUDENTS[num_students // 2 :],
             )
         ]
-        expected_teams = list(teams)
+        expected_teams = [
+            repobee.apimeta.Team(
+                members=[constants.USER] + t.members,
+                # the owner should not be included in the generated name
+                name=repobee.apimeta.Team(members=t.members).name,
+            )
+            for t in teams
+        ]
 
         # act
         api.ensure_teams_and_members(teams)
@@ -320,9 +335,31 @@ class TestEnsureTeamsAndMembers:
         )
         for team in actual_teams:
             if team.name != TARGET_GROUP:
-                assert team.members == [team.name]
+                assert team.members == [constants.USER, team.name]
             else:
                 assert not team.members
+
+    def test_respects_permission(self):
+        """Test that the permission is correctly decoded into a GitLab-specific
+        access level.
+        """
+        api = repobee.gitlab_api.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
+
+        api.ensure_teams_and_members(
+            constants.STUDENTS, permission=repobee.apimeta.TeamPermission.PULL
+        )
+
+        actual_teams = api.get_teams()
+        member_access_levels = [
+            member.access_level
+            for team in actual_teams
+            for member in team.implementation.members.list()
+            if member.username != constants.USER
+        ]
+
+        assert member_access_levels
+        for access_level in member_access_levels:
+            assert access_level == gitlab.GUEST_ACCESS
 
 
 @pytest.fixture
