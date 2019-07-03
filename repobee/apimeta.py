@@ -410,26 +410,27 @@ def methods(attrdict):
     }
 
 
-def parameter_names(function):
-    """Extract parameter names (in order) from a function."""
+def parameters(function):
+    """Extract parameter names and default arguments from a function."""
     return [
-        param.name for param in inspect.signature(function).parameters.values()
+        (param.name, param.default)
+        for param in inspect.signature(function).parameters.values()
     ]
 
 
-def check_signature(reference, compare):
-    """Check if the compared method matches the reference signature. Currently
-    only checks parameter names and order of parameters.
+def check_parameters(reference, compare):
+    """Check if the parameters match, one by one. Stop at the first diff and
+    raise an exception for that parameter.
     """
-    reference_params = parameter_names(reference)
-    compare_params = parameter_names(compare)
-    if reference_params != compare_params:
-        raise exception.APIImplementationError(
-            "expected method '{}' to have parameters '{}', "
-            "found '{}'".format(
-                reference.__name__, reference_params, compare_params
+    reference_params = parameters(reference)
+    compare_params = parameters(compare)
+    for ref, cmp in zip(reference_params, compare_params):
+        if ref != cmp:
+            raise exception.APIImplementationError(
+                "{}: expected parameter '{}', found '{}'".format(
+                    reference.__name__, ref, cmp
+                )
             )
-        )
 
 
 class APIMeta(type):
@@ -449,7 +450,7 @@ class APIMeta(type):
             )
         for method_name, method in api_methods.items():
             if method_name in implemented_methods:
-                check_signature(method, implemented_methods[method_name])
+                check_parameters(method, implemented_methods[method_name])
         return super().__new__(mcs, name, bases, attrdict)
 
 
