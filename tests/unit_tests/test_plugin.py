@@ -97,10 +97,12 @@ class TestLoadPluginModules:
         )
         empty_config_mock.write(config_contents)
 
-        with pytest.raises(exception.PluginError) as exc:
+        with pytest.raises(exception.PluginError) as exc_info:
             plugin.load_plugin_modules(str(empty_config_mock))
 
-        assert "failed to load plugin module " + plugin_name in str(exc)
+        assert "failed to load plugin module " + plugin_name in str(
+            exc_info.value
+        )
 
 
 class TestRegisterPlugins:

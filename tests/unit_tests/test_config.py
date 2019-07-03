@@ -26,7 +26,7 @@ class TestGetConfiguredDefaults:
         with pytest.raises(exception.FileError) as exc_info:
             config.get_configured_defaults()
         assert "does not contain the required [DEFAULTS] header" in str(
-            exc_info
+            exc_info.value
         )
 
     def test_get_configured_defaults_reads_full_config(
@@ -62,8 +62,8 @@ class TestGetConfiguredDefaults:
         with pytest.raises(exception.FileError) as exc_info:
             config.get_configured_defaults()
 
-        assert "invalid default keys" in str(exc_info)
-        assert invalid_key in str(exc_info)
+        assert "invalid default keys" in str(exc_info.value)
+        assert invalid_key in str(exc_info.value)
 
     def test_get_configured_defaults_raises_on_missing_header(
         self, empty_config_mock, students_file
@@ -82,7 +82,7 @@ class TestGetConfiguredDefaults:
             config.get_configured_defaults()
 
         assert "does not contain the required [DEFAULTS] header" in str(
-            exc_info
+            exc_info.value
         )
 
 
@@ -154,7 +154,7 @@ class TestCheckConfigIntegrity:
         with pytest.raises(exception.FileError) as exc_info:
             config.check_config_integrity()
 
-        assert str(config.DEFAULT_CONFIG_FILE) in str(exc_info)
+        assert str(config.DEFAULT_CONFIG_FILE) in str(exc_info.value)
 
     def test_with_invalid_defaults_key_raises(self, empty_config_mock):
         empty_config_mock.write(
@@ -169,9 +169,9 @@ class TestCheckConfigIntegrity:
         with pytest.raises(exception.FileError) as exc_info:
             config.check_config_integrity(str(empty_config_mock))
 
-        assert "config contains invalid default keys" in str(exc_info)
-        assert "option" in str(exc_info)
-        assert "user" not in str(exc_info)
+        assert "config contains invalid default keys" in str(exc_info.value)
+        assert "option" in str(exc_info.value)
+        assert "user" not in str(exc_info.value)
 
     def test_with_valid_but_malformed_default_args_raises(
         self, empty_config_mock
@@ -190,7 +190,7 @@ class TestCheckConfigIntegrity:
         with pytest.raises(exception.FileError) as exc_info:
             config.check_config_integrity(str(empty_config_mock))
 
-        assert "user" not in str(exc_info)
-        assert "org_name" not in str(exc_info)
-        assert "github_base_url" in str(exc_info)
-        assert "plugins" in str(exc_info)
+        assert "user" not in str(exc_info.value)
+        assert "org_name" not in str(exc_info.value)
+        assert "github_base_url" in str(exc_info.value)
+        assert "plugins" in str(exc_info.value)

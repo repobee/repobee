@@ -163,7 +163,7 @@ class TestPush:
         with pytest.raises(ValueError) as exc_info:
             git.push(push_tuples, tries=tries)
 
-        assert "tries must be larger than 0" in str(exc_info)
+        assert "tries must be larger than 0" in str(exc_info.value)
 
     def test(self, env_setup, push_tuples, aio_subproc):
         """Test that push works as expected when no exceptions are thrown by
