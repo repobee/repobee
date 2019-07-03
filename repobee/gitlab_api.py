@@ -36,6 +36,11 @@ _ISSUE_STATE_MAPPING = {
     apimeta.IssueState.CLOSED: "closed",
     apimeta.IssueState.ALL: "all",
 }
+# see https://docs.gitlab.com/ee/user/permissions.html for permission details
+_TEAM_PERMISSION_MAPPING = {
+    apimeta.TeamPermission.PULL: gitlab.GUEST_ACCESS,
+    apimeta.TeamPermission.PUSH: gitlab.DEVELOPER_ACCESS,
+}
 
 
 @contextlib.contextmanager
@@ -126,13 +131,16 @@ class GitLabAPI(apimeta.API):
     ) -> List[apimeta.Team]:
         """See :py:func:`repobee.apimeta.APISpec.ensure_teams_and_members`."""
         member_lists = {team.name: team.members for team in teams}
+        raw_permission = _TEAM_PERMISSION_MAPPING[permission]
         raw_teams = self._ensure_teams_exist(
             [str(team_name) for team_name in member_lists.keys()],
-            permission=permission,
+            permission=raw_permission,
         )
 
         for team in [team for team in raw_teams if member_lists[team.name]]:
-            self._ensure_members_in_team(team, member_lists[team.name])
+            self._ensure_members_in_team(
+                team, member_lists[team.name], raw_permission
+            )
 
         return [
             apimeta.Team(
@@ -144,7 +152,9 @@ class GitLabAPI(apimeta.API):
             for t in raw_teams
         ]
 
-    def _ensure_members_in_team(self, team, members: Iterable[str]):
+    def _ensure_members_in_team(
+        self, team, members: Iterable[str], permission: int
+    ):
         """Add all of the users in ``members`` to a team. Skips any users that
         don't exist, or are already in the team.
         """
@@ -167,7 +177,7 @@ class GitLabAPI(apimeta.API):
                     ", ".join(existing_members), team.name
                 )
             )
-        self._add_to_team(missing_members, team)
+        self._add_to_team(missing_members, team, permission)
 
     def _get_organization(self, org_name):
         return [
@@ -191,7 +201,7 @@ class GitLabAPI(apimeta.API):
             for t in self._gitlab.groups.list(id=self._group.id)
         ]
 
-    def _add_to_team(self, members: Iterable[str], team):
+    def _add_to_team(self, members: Iterable[str], team, permission):
         """Add members to a team.
 
         Args:
@@ -202,10 +212,7 @@ class GitLabAPI(apimeta.API):
             users = self._get_users(members)
             for user in users:
                 team.members.create(
-                    {
-                        "user_id": user.id,
-                        "access_level": gitlab.DEVELOPER_ACCESS,
-                    }
+                    {"user_id": user.id, "access_level": permission}
                 )
 
     def _get_users(self, usernames):
@@ -218,7 +225,7 @@ class GitLabAPI(apimeta.API):
         return users
 
     def _ensure_teams_exist(
-        self, team_names: Iterable[str], permission: str = "push"
+        self, team_names: Iterable[str], permission
     ) -> List[apimeta.Team]:
         """Create any teams that do not yet exist.
 
