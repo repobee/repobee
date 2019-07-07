@@ -8,7 +8,7 @@ import constants
 
 STUDENTS = constants.STUDENTS
 USER = constants.USER
-GITHUB_BASE_URL = constants.GITHUB_BASE_URL
+BASE_URL = constants.BASE_URL
 ORG_NAME = constants.ORG_NAME
 MASTER_ORG_NAME = constants.MASTER_ORG_NAME
 PLUGINS = constants.PLUGINS
@@ -34,7 +34,7 @@ class TestGetConfiguredDefaults:
     ):
         defaults = config.get_configured_defaults()
         assert defaults["user"] == USER
-        assert defaults["base_url"] == GITHUB_BASE_URL
+        assert defaults["base_url"] == BASE_URL
         assert defaults["org_name"] == ORG_NAME
         assert defaults["students_file"] == str(students_file)
         assert defaults["plugins"] == ",".join(PLUGINS)
@@ -48,7 +48,7 @@ class TestGetConfiguredDefaults:
         config_contents = os.linesep.join(
             [
                 "[{}]".format(config.DEFAULTS_SECTION_HDR),
-                "base_url = {}".format(GITHUB_BASE_URL),
+                "base_url = {}".format(BASE_URL),
                 "user = {}".format(USER),
                 "org_name = {}".format(ORG_NAME),
                 "master_org_name = {}".format(MASTER_ORG_NAME),
@@ -70,7 +70,7 @@ class TestGetConfiguredDefaults:
     ):
         config_contents = os.linesep.join(
             [
-                "base_url = {}".format(GITHUB_BASE_URL),
+                "base_url = {}".format(BASE_URL),
                 "user = {}".format(USER),
                 "org_name = {}".format(ORG_NAME),
                 "students_file = {!s}".format(students_file),

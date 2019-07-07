@@ -11,12 +11,12 @@ from repobee import tuples
 import constants
 
 ORG_NAME = constants.ORG_NAME
-GITHUB_BASE_URL = constants.GITHUB_BASE_URL
+BASE_URL = constants.BASE_URL
 USER = constants.USER
 
 VALID_PARSED_ARGS = dict(
     org_name=ORG_NAME,
-    base_url=GITHUB_BASE_URL,
+    base_url=BASE_URL,
     user=USER,
     master_repo_urls="url-1 url-2 url-3".split(),
     master_repo_names="1 2 3".split(),
