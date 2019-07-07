@@ -118,7 +118,7 @@ DEPRECATED_PARSERS = {
 
 def parse_args(
     sys_args: Iterable[str]
-) -> (tuples.Args, Optional[github_api.GitHubAPI]):
+) -> (tuples.Args, Optional[apimeta.API]):
     """Parse the command line arguments and initialize the GitHubAPI.
 
     Args:
@@ -246,7 +246,7 @@ def _handle_deprecation(sys_args: List[str]) -> List[str]:
     return list(sys_args)
 
 
-def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
+def dispatch_command(args: tuples.Args, api: apimeta.API):
     """Handle parsed CLI arguments and dispatch commands to the appropriate
     functions. Expected exceptions are caught and turned into SystemExit
     exceptions, while unexpected exceptions are allowed to propagate.
@@ -899,7 +899,7 @@ def _identify_api(base_url, token):
 
 def _connect_to_api(
     base_url: str, token: str, org_name: str, user: str
-) -> github_api.GitHubAPI:
+) -> apimeta.API:
     """Return a GitHubAPI instance connected to the specified API endpoint."""
     try:
         api = _identify_api(base_url, token)(base_url, token, org_name, user)
@@ -913,7 +913,7 @@ def _connect_to_api(
 
 
 def _repo_names_to_urls(
-    repo_names: Iterable[str], org_name: str, api: github_api.GitHubAPI
+    repo_names: Iterable[str], org_name: str, api: apimeta.API
 ) -> List[str]:
     """Use the repo_names to extract urls to the repos. Look for git
     repos with the correct names in the local directory and create local uris
