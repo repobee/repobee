@@ -119,14 +119,14 @@ DEPRECATED_PARSERS = {
 def parse_args(
     sys_args: Iterable[str]
 ) -> (tuples.Args, Optional[apimeta.API]):
-    """Parse the command line arguments and initialize the GitHubAPI.
+    """Parse the command line arguments and initialize an API.
 
     Args:
         sys_args: A list of command line arguments.
 
     Returns:
         a tuples.Args namedtuple with the arguments, and an initialized
-        GitHubAPI instance (or None of testing connection).
+        apimeta.API instance (or None of testing connection).
     """
     parser = _create_parser()
     args = parser.parse_args(_handle_deprecation(sys_args))
@@ -253,7 +253,7 @@ def dispatch_command(args: tuples.Args, api: apimeta.API):
 
     Args:
         args: A namedtuple containing parsed command line arguments.
-        api: An initialized GitHubAPI instance.
+        api: An initialized apimeta.API instance.
     """
     if args.subparser == SETUP_PARSER:
         with _sys_exit_on_expected_error():
@@ -488,7 +488,7 @@ def _add_issue_parsers(base_parsers, subparsers):
     list_parser.add_argument(
         "-a",
         "--author",
-        help="Only show issues by this author (GitHub username).",
+        help="Only show issues by this author.",
         type=str,
         default=None,
     )
@@ -569,7 +569,7 @@ def _create_parser():
         prog="repobee",
         description=(
             "A CLI tool for administering large amounts of git repositories "
-            "on GitHub instances. See the full documentation at "
+            "on GitHub and GitLab instances. See the full documentation at "
             "https://repobee.readthedocs.io"
         ),
         formatter_class=_OrderedFormatter,
@@ -743,8 +743,9 @@ def _create_base_parsers():
         "-bu",
         "--base-url",
         help=(
-            "Base url to a GitHub v3 API. For enterprise, this is usually "
-            "`https://<HOST>/api/v3`"
+            "Base url to a platform API. Must be HTTPS. For example, with "
+            "github.com, the base url is https://api.github.com, and with "
+            "GitHub enterprise, the url is https://<ENTERPRISE_HOST>/api/v3"
         ),
         type=str,
         required=is_required("base_url"),
@@ -753,7 +754,7 @@ def _create_base_parsers():
     base_parser.add_argument(
         "-t",
         "--token",
-        help="OAUTH token for the GitHub instance. Can also be specified in "
+        help="OAUTH token for the platform instance. Can also be specified in "
         "the `REPOBEE_OAUTH` environment variable.",
         type=str,
         default=default("token"),
@@ -792,10 +793,7 @@ def _create_base_parsers():
     base_user_parser.add_argument(
         "-u",
         "--user",
-        help=(
-            "Your GitHub username. Needed for pushing without CLI "
-            "interaction."
-        ),
+        help=("Your username."),
         type=str,
         required=is_required("user"),
         default=default("user"),
@@ -900,7 +898,7 @@ def _identify_api(base_url, token):
 def _connect_to_api(
     base_url: str, token: str, org_name: str, user: str
 ) -> apimeta.API:
-    """Return a GitHubAPI instance connected to the specified API endpoint."""
+    """Return an API instance connected to the specified API endpoint."""
     try:
         api = _identify_api(base_url, token)(base_url, token, org_name, user)
     except exception.NotFoundError:
@@ -926,7 +924,7 @@ def _repo_names_to_urls(
     Args:
         repo_names: names of repositories.
         org_name: Name of the organization these repos are expected in.
-        api: A GitHubAPI instance.
+        api: An API instance.
 
     Returns:
         a list of urls corresponding to the repo_names.
