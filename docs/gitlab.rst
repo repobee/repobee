@@ -63,16 +63,14 @@ differences and similarities in this `GitLab blog post`_.
 How to use RepoBee with GitLab
 ==============================
 Provide the url to a GitLab instance host (*not* to the api endpoint, just to
-the host) as an argument to ``-g|--github-base-url`` (yes, it's a bit weird as
-it says ``github`` in the option, but that will be changed in v2.0.0), or put
-it in the config file as the value for option ``github_base_url``. Other than
-that, there are a few important differences between GitHub and GitLab that the
-user should be aware of.
+the host) as an argument to ``-bu|--base-url``, or put it in the config file as
+the value for option ``base_url``. Other than that, there are a few important
+differences between GitHub and GitLab that the user should be aware of.
 
 * As noted, the base url should be provided to the host of the GitLab instance,
   and not to any specific endpoint (as is the case when using GitHub). When
   using ``github.com`` for example, the url should be provided as
-  ``github_base_url = https://gitlab.com`` in the config.
+  ``base_url = https://gitlab.com`` in the config.
 * The ``org-name`` and ``master-org-name`` arguments should be given the *path*
   of the respective groups. If you create a group with a long name, GitLab may
   shorten the path automatically. For example, I created the group

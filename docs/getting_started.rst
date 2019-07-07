@@ -69,7 +69,7 @@ should look something like this:
 .. code-block:: bash
 
     [DEFAULTS]
-    github_base_url = https://some-enterprise-host/api/v3
+    base_url = https://some-enterprise-host/api/v3
     user = slarse
     org_name = repobee-demo
     master_org_name = master-repos
@@ -108,7 +108,7 @@ and parsed by running ``show-config`` again:
     [INFO]
     ----------------BEGIN CONFIG FILE-----------------
     [DEFAULTS]
-    github_base_url = https://some-enterprise-host/api/v3
+    base_url = https://some-enterprise-host/api/v3
     user = slarse
     org_name = repobee-demo
     master_org_name = master-repos

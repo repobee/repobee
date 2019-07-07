@@ -130,7 +130,7 @@ def empty_config_mock(mocker, isfile_mock, tmpdir):
 
 
 _config_user = "user = {}".format(constants.USER)
-_config_base = "base_url = {}".format(constants.GITHUB_BASE_URL)
+_config_base = "base_url = {}".format(constants.BASE_URL)
 _config_org = "org_name = {}".format(constants.ORG_NAME)
 _config_master_org = "master_org_name = {}".format(constants.MASTER_ORG_NAME)
 
@@ -162,7 +162,7 @@ def config_mock(empty_config_mock, students_file):
     config_contents = os.linesep.join(
         [
             "[DEFAULTS]",
-            "base_url = {}".format(constants.GITHUB_BASE_URL),
+            "base_url = {}".format(constants.BASE_URL),
             "user = {}".format(constants.USER),
             "org_name = {}".format(constants.ORG_NAME),
             "master_org_name = {}".format(constants.MASTER_ORG_NAME),

@@ -33,7 +33,7 @@ SERVER_ERROR = GithubException(msg=None, status=500)
 USER = constants.USER
 NOT_OWNER = "notanowner"
 ORG_NAME = constants.ORG_NAME
-GITHUB_BASE_URL = constants.GITHUB_BASE_URL
+BASE_URL = constants.BASE_URL
 ISSUE = constants.ISSUE
 TOKEN = constants.TOKEN
 
@@ -307,7 +307,7 @@ def issues(repos):
 def api(happy_github, organization, no_teams):
     from repobee import github_api
 
-    return github_api.GitHubAPI(GITHUB_BASE_URL, TOKEN, ORG_NAME)
+    return github_api.GitHubAPI(BASE_URL, TOKEN, ORG_NAME)
 
 
 class TestEnsureTeamsAndMembers:
@@ -807,24 +807,20 @@ class TestVerifySettings:
 
     def test_happy_path(self, happy_github, organization, api):
         """Tests that no exceptions are raised when all info is correct."""
-        github_api.GitHubAPI.verify_settings(
-            USER, ORG_NAME, GITHUB_BASE_URL, TOKEN
-        )
+        github_api.GitHubAPI.verify_settings(USER, ORG_NAME, BASE_URL, TOKEN)
 
     def test_empty_token_raises_bad_credentials(
         self, happy_github, monkeypatch, api
     ):
         with pytest.raises(exception.BadCredentials) as exc_info:
-            github_api.GitHubAPI.verify_settings(
-                USER, ORG_NAME, GITHUB_BASE_URL, ""
-            )
+            github_api.GitHubAPI.verify_settings(USER, ORG_NAME, BASE_URL, "")
 
         assert "token is empty" in str(exc_info.value)
 
     def test_incorrect_info_raises_not_found_error(self, github_bad_info, api):
         with pytest.raises(exception.NotFoundError):
             github_api.GitHubAPI.verify_settings(
-                USER, ORG_NAME, GITHUB_BASE_URL, TOKEN
+                USER, ORG_NAME, BASE_URL, TOKEN
             )
 
     def test_bad_token_scope_raises(self, happy_github, api):
@@ -832,14 +828,14 @@ class TestVerifySettings:
 
         with pytest.raises(exception.BadCredentials) as exc_info:
             github_api.GitHubAPI.verify_settings(
-                USER, ORG_NAME, GITHUB_BASE_URL, TOKEN
+                USER, ORG_NAME, BASE_URL, TOKEN
             )
         assert "missing one or more oauth scopes" in str(exc_info.value)
 
     def test_not_owner_raises(self, happy_github, organization, api):
         with pytest.raises(exception.BadCredentials) as exc_info:
             github_api.GitHubAPI.verify_settings(
-                NOT_OWNER, ORG_NAME, GITHUB_BASE_URL, TOKEN
+                NOT_OWNER, ORG_NAME, BASE_URL, TOKEN
             )
 
         assert "user {} is not an owner".format(NOT_OWNER) in str(
@@ -851,7 +847,7 @@ class TestVerifySettings:
     ):
         happy_github.get_user.side_effect = SERVER_ERROR
         with pytest.raises(exception.UnexpectedException):
-            api.verify_settings(USER, ORG_NAME, GITHUB_BASE_URL, TOKEN)
+            api.verify_settings(USER, ORG_NAME, BASE_URL, TOKEN)
 
     def test_none_user_raises(self, happy_github, organization, api):
         """If NamedUser.login is None, there should be an exception. Happens if
@@ -862,7 +858,7 @@ class TestVerifySettings:
 
         with pytest.raises(exception.UnexpectedException) as exc_info:
             github_api.GitHubAPI.verify_settings(
-                USER, ORG_NAME, GITHUB_BASE_URL, TOKEN
+                USER, ORG_NAME, BASE_URL, TOKEN
             )
 
         assert "Possible reasons: bad api url" in str(exc_info.value)
@@ -886,7 +882,7 @@ class TestVerifySettings:
 
         with pytest.raises(exception.UnexpectedException) as exc_info:
             github_api.GitHubAPI.verify_settings(
-                USER, ORG_NAME, GITHUB_BASE_URL, TOKEN
+                USER, ORG_NAME, BASE_URL, TOKEN
             )
 
         for msg in expected_messages:

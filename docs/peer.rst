@@ -34,7 +34,7 @@ look at the help message (i.e. run ``repobee assign-reviews -h``):
     $ repobee assign-reviews -h
     usage: repobee assign-reviews [-h]
                                    (-sf STUDENTS_FILE | -s STUDENTS [STUDENTS ...])
-                                   [-o ORG_NAME] [-g GITHUB_BASE_URL] [-t TOKEN]
+                                   [-o ORG_NAME] [-bu BASE_URL] [-t TOKEN]
                                    [-tb] -mn MASTER_REPO_NAMES
                                    [MASTER_REPO_NAMES ...] [-n N] [-i ISSUE]
 
@@ -52,7 +52,7 @@ look at the help message (i.e. run ``repobee assign-reviews -h``):
                             One or more whitespace separated student usernames.
       -o ORG_NAME, --org-name ORG_NAME
                             Name of the target organization
-      -g GITHUB_BASE_URL, --github-base-url GITHUB_BASE_URL
+      -bu BASE_URL, --base-url BASE_URL
                             Base url to a GitHub v3 API. For enterprise, this is
                             usually `https://<HOST>/api/v3`
       -t TOKEN, --token TOKEN
@@ -78,7 +78,7 @@ look at the help message (i.e. run ``repobee assign-reviews -h``):
 Most of this, we've seen before. The only non-standard arguments are
 ``--issue`` and ``--num-reviews``, the former of which we've actually already
 seen in the ``open-issues`` command (see :ref:`open`). I will assume that both
-``--github-base-url`` and ``--org-name`` are already configured in the
+``--base-url`` and ``--org-name`` are already configured in the
 configuration file (if you don't know what this mean, have a look at
 :ref:`config`). Thus, the only things we must specify are
 ``--students/--students-file`` and ``--num-reviews`` (``--issue`` is optional,

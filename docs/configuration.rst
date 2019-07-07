@@ -37,7 +37,7 @@ consequence, a single organization).
 .. code-block:: bash
 
     [DEFAULTS]
-    github_base_url = https://some-api-v3-url
+    base_url = https://some-api-v3-url
     user = YOUR_USERNAME
     org_name = ORGANIZATION_NAME
     master_org_name = MASTER_ORGANIZATION_NAME

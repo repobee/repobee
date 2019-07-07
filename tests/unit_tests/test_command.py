@@ -53,7 +53,7 @@ CLOSED_ISSUES = [
 ]
 
 ORG_NAME = "test-org"
-GITHUB_BASE_URL = "https://some_enterprise_host/api/v3"
+BASE_URL = "https://some_enterprise_host/api/v3"
 ISSUE = apimeta.Issue(
     "Oops, something went wrong!", "This is the body **with some formatting**."
 )
@@ -240,7 +240,7 @@ def assert_raises_on_duplicate_master_urls(function, master_urls, students):
     master_urls.append(master_urls[0])
 
     with pytest.raises(ValueError) as exc_info:
-        function(master_urls, students, ORG_NAME, GITHUB_BASE_URL)
+        function(master_urls, students, ORG_NAME, BASE_URL)
     assert str(exc_info.value) == "master_repo_urls contains duplicates"
 
 
@@ -302,7 +302,7 @@ class TestUpdateStudentRepos:
 
     @staticmethod
     def generate_url(repo_name):
-        return "{}/{}/{}".format(GITHUB_BASE_URL, ORG_NAME, repo_name)
+        return "{}/{}/{}".format(BASE_URL, ORG_NAME, repo_name)
 
     def test_raises_on_duplicate_master_urls(
         self, mocker, master_urls, students, api_mock
