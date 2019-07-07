@@ -118,15 +118,15 @@ DEPRECATED_PARSERS = {
 
 def parse_args(
     sys_args: Iterable[str]
-) -> (tuples.Args, Optional[github_api.GitHubAPI]):
-    """Parse the command line arguments and initialize the GitHubAPI.
+) -> (tuples.Args, Optional[apimeta.API]):
+    """Parse the command line arguments and initialize an API.
 
     Args:
         sys_args: A list of command line arguments.
 
     Returns:
         a tuples.Args namedtuple with the arguments, and an initialized
-        GitHubAPI instance (or None of testing connection).
+        apimeta.API instance (or None of testing connection).
     """
     parser = _create_parser()
     args = parser.parse_args(_handle_deprecation(sys_args))
@@ -246,14 +246,14 @@ def _handle_deprecation(sys_args: List[str]) -> List[str]:
     return list(sys_args)
 
 
-def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
+def dispatch_command(args: tuples.Args, api: apimeta.API):
     """Handle parsed CLI arguments and dispatch commands to the appropriate
     functions. Expected exceptions are caught and turned into SystemExit
     exceptions, while unexpected exceptions are allowed to propagate.
 
     Args:
         args: A namedtuple containing parsed command line arguments.
-        api: An initialized GitHubAPI instance.
+        api: An initialized apimeta.API instance.
     """
     if args.subparser == SETUP_PARSER:
         with _sys_exit_on_expected_error():
@@ -338,14 +338,15 @@ def _add_peer_review_parsers(base_parsers, subparsers):
     assign_parser = subparsers.add_parser(
         ASSIGN_REVIEWS_PARSER,
         description=(
-            "For each student repo, create a review team with pull access "
-            "named <student>-<master_repo_name>-review and randomly assign "
+            "For each student repo, create a review team with read access "
+            "named <student-repo-name>-review and randomly assign "
             "other students to it. All students are assigned to the same "
             "amount of review teams, as specified by `--num-reviews`. Note "
             "that `--num-reviews` must be strictly less than the amount of "
-            "students."
+            "students. Note that review allocation strategy may be altered "
+            "by plugins."
         ),
-        help="Randomly assign students to peer review each others' repos.",
+        help="Assign students to peer review each others' repos.",
         parents=base_parsers,
         formatter_class=_OrderedFormatter,
     )
@@ -372,9 +373,8 @@ def _add_peer_review_parsers(base_parsers, subparsers):
     )
     subparsers.add_parser(
         PURGE_REVIEW_TEAMS_PARSER,
-        description="Remove review teams assigned with `assign-peer-reviews`",
-        help="Remove all review teams associated with the specified "
-        "students and master repos.",
+        description="Delete review teams assigned with `assign-peer-reviews`",
+        help="Delete review teams.",
         parents=base_parsers,
         formatter_class=_OrderedFormatter,
     )
@@ -388,11 +388,7 @@ def _add_peer_review_parsers(base_parsers, subparsers):
             "no way to check if students have been swapped around, so using "
             "this command fow grading purposes is not recommended."
         ),
-        help=(
-            "Fetch all peer review teams for the specified student repos, and "
-            "check which assigned reviews have been done (i.e. which issues "
-            "have been opened)."
-        ),
+        help="Check which students have opened peer review issues.",
         parents=base_parsers,
         formatter_class=_OrderedFormatter,
     )
@@ -488,7 +484,7 @@ def _add_issue_parsers(base_parsers, subparsers):
     list_parser.add_argument(
         "-a",
         "--author",
-        help="Only show issues by this author (GitHub username).",
+        help="Only show issues by this author.",
         type=str,
         default=None,
     )
@@ -569,7 +565,7 @@ def _create_parser():
         prog="repobee",
         description=(
             "A CLI tool for administering large amounts of git repositories "
-            "on GitHub instances. See the full documentation at "
+            "on GitHub and GitLab instances. See the full documentation at "
             "https://repobee.readthedocs.io"
         ),
         formatter_class=_OrderedFormatter,
@@ -614,17 +610,6 @@ def _add_subparsers(parser):
     subparsers.required = True
 
     subparsers.add_parser(
-        SHOW_CONFIG_PARSER,
-        help="Show the configuration file",
-        description=(
-            "Show the contents of the configuration file. If no configuration "
-            "file can be found, show the path where repobee expectes to find "
-            "it."
-        ),
-        formatter_class=_OrderedFormatter,
-    )
-
-    subparsers.add_parser(
         SETUP_PARSER,
         help="Setup student repos.",
         description=(
@@ -648,7 +633,12 @@ def _add_subparsers(parser):
     update = subparsers.add_parser(
         UPDATE_PARSER,
         help="Update existing student repos.",
-        description="Push changes from master repos to student repos.",
+        description=(
+            "Push changes from master repos to student repos. If the "
+            "`--issue` option is provided, the specified issue is opened in "
+            "any repo to which pushes fail (because the students have pushed "
+            "something already)."
+        ),
         parents=[
             base_user_parser,
             base_student_parser,
@@ -661,8 +651,8 @@ def _add_subparsers(parser):
         "-i",
         "--issue",
         help=(
-            "Path to issue to open in repos to which update pushes fail. "
-            "Assumes that the first line is the title."
+            "Path to issue to open in repos to which pushes fail. "
+            "Assumes that the first line is the title of the issue."
         ),
         type=str,
     )
@@ -695,21 +685,20 @@ def _add_subparsers(parser):
     )
 
     subparsers.add_parser(
-        VERIFY_PARSER,
-        help="Verify your settings, such as the base url and the OAUTH token.",
+        SHOW_CONFIG_PARSER,
+        help="Show the configuration file",
         description=(
-            "Verify core settings. Performs the following checks, in order: "
-            "user exists (implicitly verifies base url), oauth scopes "
-            "(premissions of "
-            "the OAUTH token), organization exists, user "
-            "is an owner of the "
-            "organization (for both target org and "
-            "master org if the latter is "
-            "specified). If any one of "
-            "the checks fails, the verification is "
-            "aborted and an error "
-            "message is displayed."
+            "Show the contents of the configuration file. If no configuration "
+            "file can be found, show the path where repobee expectes to find "
+            "it."
         ),
+        formatter_class=_OrderedFormatter,
+    )
+
+    subparsers.add_parser(
+        VERIFY_PARSER,
+        help="Verify core settings.",
+        description="Verify core settings by trying various API requests.",
         parents=[base_parser, base_user_parser, master_org_parser],
         formatter_class=_OrderedFormatter,
     )
@@ -743,8 +732,9 @@ def _create_base_parsers():
         "-bu",
         "--base-url",
         help=(
-            "Base url to a GitHub v3 API. For enterprise, this is usually "
-            "`https://<HOST>/api/v3`"
+            "Base url to a platform API. Must be HTTPS. For example, with "
+            "github.com, the base url is https://api.github.com, and with "
+            "GitHub enterprise, the url is https://<ENTERPRISE_HOST>/api/v3"
         ),
         type=str,
         required=is_required("base_url"),
@@ -753,7 +743,7 @@ def _create_base_parsers():
     base_parser.add_argument(
         "-t",
         "--token",
-        help="OAUTH token for the GitHub instance. Can also be specified in "
+        help="OAUTH token for the platform instance. Can also be specified in "
         "the `REPOBEE_OAUTH` environment variable.",
         type=str,
         default=default("token"),
@@ -792,10 +782,7 @@ def _create_base_parsers():
     base_user_parser.add_argument(
         "-u",
         "--user",
-        help=(
-            "Your GitHub username. Needed for pushing without CLI "
-            "interaction."
-        ),
+        help=("Your username."),
         type=str,
         required=is_required("user"),
         default=default("user"),
@@ -899,8 +886,8 @@ def _identify_api(base_url, token):
 
 def _connect_to_api(
     base_url: str, token: str, org_name: str, user: str
-) -> github_api.GitHubAPI:
-    """Return a GitHubAPI instance connected to the specified API endpoint."""
+) -> apimeta.API:
+    """Return an API instance connected to the specified API endpoint."""
     try:
         api = _identify_api(base_url, token)(base_url, token, org_name, user)
     except exception.NotFoundError:
@@ -913,7 +900,7 @@ def _connect_to_api(
 
 
 def _repo_names_to_urls(
-    repo_names: Iterable[str], org_name: str, api: github_api.GitHubAPI
+    repo_names: Iterable[str], org_name: str, api: apimeta.API
 ) -> List[str]:
     """Use the repo_names to extract urls to the repos. Look for git
     repos with the correct names in the local directory and create local uris
@@ -926,7 +913,7 @@ def _repo_names_to_urls(
     Args:
         repo_names: names of repositories.
         org_name: Name of the organization these repos are expected in.
-        api: A GitHubAPI instance.
+        api: An API instance.
 
     Returns:
         a list of urls corresponding to the repo_names.
