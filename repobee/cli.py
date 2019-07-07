@@ -338,14 +338,15 @@ def _add_peer_review_parsers(base_parsers, subparsers):
     assign_parser = subparsers.add_parser(
         ASSIGN_REVIEWS_PARSER,
         description=(
-            "For each student repo, create a review team with pull access "
-            "named <student>-<master_repo_name>-review and randomly assign "
+            "For each student repo, create a review team with read access "
+            "named <student-repo-name>-review and randomly assign "
             "other students to it. All students are assigned to the same "
             "amount of review teams, as specified by `--num-reviews`. Note "
             "that `--num-reviews` must be strictly less than the amount of "
-            "students."
+            "students. Note that review allocation strategy may be altered "
+            "by plugins."
         ),
-        help="Randomly assign students to peer review each others' repos.",
+        help="Assign students to peer review each others' repos.",
         parents=base_parsers,
         formatter_class=_OrderedFormatter,
     )
@@ -372,9 +373,8 @@ def _add_peer_review_parsers(base_parsers, subparsers):
     )
     subparsers.add_parser(
         PURGE_REVIEW_TEAMS_PARSER,
-        description="Remove review teams assigned with `assign-peer-reviews`",
-        help="Remove all review teams associated with the specified "
-        "students and master repos.",
+        description="Delete review teams assigned with `assign-peer-reviews`",
+        help="Delete review teams.",
         parents=base_parsers,
         formatter_class=_OrderedFormatter,
     )
@@ -388,11 +388,7 @@ def _add_peer_review_parsers(base_parsers, subparsers):
             "no way to check if students have been swapped around, so using "
             "this command fow grading purposes is not recommended."
         ),
-        help=(
-            "Fetch all peer review teams for the specified student repos, and "
-            "check which assigned reviews have been done (i.e. which issues "
-            "have been opened)."
-        ),
+        help="Check which students have opened peer review issues.",
         parents=base_parsers,
         formatter_class=_OrderedFormatter,
     )
@@ -614,17 +610,6 @@ def _add_subparsers(parser):
     subparsers.required = True
 
     subparsers.add_parser(
-        SHOW_CONFIG_PARSER,
-        help="Show the configuration file",
-        description=(
-            "Show the contents of the configuration file. If no configuration "
-            "file can be found, show the path where repobee expectes to find "
-            "it."
-        ),
-        formatter_class=_OrderedFormatter,
-    )
-
-    subparsers.add_parser(
         SETUP_PARSER,
         help="Setup student repos.",
         description=(
@@ -648,7 +633,12 @@ def _add_subparsers(parser):
     update = subparsers.add_parser(
         UPDATE_PARSER,
         help="Update existing student repos.",
-        description="Push changes from master repos to student repos.",
+        description=(
+            "Push changes from master repos to student repos. If the "
+            "`--issue` option is provided, the specified issue is opened in "
+            "any repo to which pushes fail (because the students have pushed "
+            "something already)."
+        ),
         parents=[
             base_user_parser,
             base_student_parser,
@@ -661,8 +651,8 @@ def _add_subparsers(parser):
         "-i",
         "--issue",
         help=(
-            "Path to issue to open in repos to which update pushes fail. "
-            "Assumes that the first line is the title."
+            "Path to issue to open in repos to which pushes fail. "
+            "Assumes that the first line is the title of the issue."
         ),
         type=str,
     )
@@ -695,21 +685,20 @@ def _add_subparsers(parser):
     )
 
     subparsers.add_parser(
-        VERIFY_PARSER,
-        help="Verify your settings, such as the base url and the OAUTH token.",
+        SHOW_CONFIG_PARSER,
+        help="Show the configuration file",
         description=(
-            "Verify core settings. Performs the following checks, in order: "
-            "user exists (implicitly verifies base url), oauth scopes "
-            "(premissions of "
-            "the OAUTH token), organization exists, user "
-            "is an owner of the "
-            "organization (for both target org and "
-            "master org if the latter is "
-            "specified). If any one of "
-            "the checks fails, the verification is "
-            "aborted and an error "
-            "message is displayed."
+            "Show the contents of the configuration file. If no configuration "
+            "file can be found, show the path where repobee expectes to find "
+            "it."
         ),
+        formatter_class=_OrderedFormatter,
+    )
+
+    subparsers.add_parser(
+        VERIFY_PARSER,
+        help="Verify core settings.",
+        description="Verify core settings by trying various API requests.",
         parents=[base_parser, base_user_parser, master_org_parser],
         formatter_class=_OrderedFormatter,
     )
