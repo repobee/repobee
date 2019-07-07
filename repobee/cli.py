@@ -134,7 +134,7 @@ def parse_args(
     if getattr(args, SUB) == SHOW_CONFIG_PARSER:
         return tuples.Args(subparser=SHOW_CONFIG_PARSER), None
 
-    _validate_tls_url(args.github_base_url)
+    _validate_tls_url(args.base_url)
 
     # environment token overrides config
     token = os.getenv("REPOBEE_OAUTH") or (
@@ -147,7 +147,7 @@ def parse_args(
             tuples.Args(
                 subparser=VERIFY_PARSER,
                 org_name=args.org_name,
-                github_base_url=args.github_base_url,
+                base_url=args.base_url,
                 user=args.user,
                 traceback=args.traceback,
                 master_org_name=args.master_org_name
@@ -162,7 +162,7 @@ def parse_args(
         plug.manager.hook.parse_args(args=args)
 
     api = _connect_to_api(
-        args.github_base_url,
+        args.base_url,
         token,
         args.org_name,
         args.user if "user" in args else None,
@@ -192,7 +192,7 @@ def parse_args(
         master_org_name=args.master_org_name
         if "master_org_name" in args
         else None,
-        github_base_url=args.github_base_url,
+        base_url=args.base_url,
         user=args.user if "user" in args else None,
         master_repo_urls=master_urls,
         master_repo_names=master_names,
@@ -286,7 +286,7 @@ def dispatch_command(args: tuples.Args, api: github_api.GitHubAPI):
             github_api.GitHubAPI.verify_settings(
                 args.user,
                 args.org_name,
-                args.github_base_url,
+                args.base_url,
                 args.token,
                 args.master_org_name,
             )
@@ -720,14 +720,15 @@ def _create_base_parsers():
     configured_defaults = config.get_configured_defaults()
     config.execute_config_hooks()
 
-    default = (
-        lambda arg_name: configured_defaults[arg_name]
-        if arg_name in configured_defaults
-        else None
-    )
-    is_required = (
-        lambda arg_name: True if arg_name not in configured_defaults else False
-    )
+    def default(arg_name):
+        return (
+            configured_defaults[arg_name]
+            if arg_name in configured_defaults
+            else None
+        )
+
+    def is_required(arg_name):
+        return arg_name not in configured_defaults
 
     base_parser = argparse.ArgumentParser(add_help=False)
     base_parser.add_argument(
@@ -739,15 +740,15 @@ def _create_base_parsers():
         default=default("org_name"),
     )
     base_parser.add_argument(
-        "-g",
-        "--github-base-url",
+        "-bu",
+        "--base-url",
         help=(
             "Base url to a GitHub v3 API. For enterprise, this is usually "
             "`https://<HOST>/api/v3`"
         ),
         type=str,
-        required=is_required("github_base_url"),
-        default=default("github_base_url"),
+        required=is_required("base_url"),
+        default=default("base_url"),
     )
     base_parser.add_argument(
         "-t",

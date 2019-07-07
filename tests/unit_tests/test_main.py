@@ -16,7 +16,7 @@ USER = constants.USER
 
 VALID_PARSED_ARGS = dict(
     org_name=ORG_NAME,
-    github_base_url=GITHUB_BASE_URL,
+    base_url=GITHUB_BASE_URL,
     user=USER,
     master_repo_urls="url-1 url-2 url-3".split(),
     master_repo_names="1 2 3".split(),

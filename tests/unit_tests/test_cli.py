@@ -27,14 +27,14 @@ TOKEN = constants.TOKEN
 REPO_NAMES = ("week-1", "week-2", "week-3")
 REPO_URLS = tuple(map(lambda rn: generate_repo_url(rn, ORG_NAME), REPO_NAMES))
 
-BASE_ARGS = ["-g", GITHUB_BASE_URL, "-o", ORG_NAME]
+BASE_ARGS = ["-bu", GITHUB_BASE_URL, "-o", ORG_NAME]
 BASE_PUSH_ARGS = ["-u", USER, "-mn", *REPO_NAMES]
 COMPLETE_PUSH_ARGS = [*BASE_ARGS, *BASE_PUSH_ARGS]
 
 # parsed args without subparser
 VALID_PARSED_ARGS = dict(
     org_name=ORG_NAME,
-    github_base_url=GITHUB_BASE_URL,
+    base_url=GITHUB_BASE_URL,
     user=USER,
     master_repo_urls=REPO_URLS,
     master_repo_names=REPO_NAMES,
@@ -257,7 +257,7 @@ class TestDispatchCommand:
         args = tuples.Args(
             cli.VERIFY_PARSER,
             user=USER,
-            github_base_url=GITHUB_BASE_URL,
+            base_url=GITHUB_BASE_URL,
             token=TOKEN,
             org_name=ORG_NAME,
         )
@@ -265,14 +265,14 @@ class TestDispatchCommand:
         cli.dispatch_command(args, None)
 
         api_class_mock.verify_settings.assert_called_once_with(
-            args.user, args.org_name, args.github_base_url, TOKEN, None
+            args.user, args.org_name, args.base_url, TOKEN, None
         )
 
     def test_verify_settings_called_with_master_org_name(self, api_class_mock):
         args = tuples.Args(
             cli.VERIFY_PARSER,
             user=USER,
-            github_base_url=GITHUB_BASE_URL,
+            base_url=GITHUB_BASE_URL,
             org_name=ORG_NAME,
             token=TOKEN,
             master_org_name=MASTER_ORG_NAME,
@@ -281,11 +281,7 @@ class TestDispatchCommand:
         cli.dispatch_command(args, None)
 
         api_class_mock.verify_settings.assert_called_once_with(
-            args.user,
-            args.org_name,
-            args.github_base_url,
-            TOKEN,
-            MASTER_ORG_NAME,
+            args.user, args.org_name, args.base_url, TOKEN, MASTER_ORG_NAME
         )
 
 
@@ -464,7 +460,7 @@ class TestBaseParsing:
             cli.SETUP_PARSER,
             "-o",
             ORG_NAME,
-            "-g",
+            "-bu",
             url,
             *BASE_PUSH_ARGS,
             "-sf",
@@ -656,7 +652,7 @@ def assert_base_push_args(parsed_args, api):
     BASE_PUSH_ARGS.
     """
     assert parsed_args.org_name == ORG_NAME
-    assert parsed_args.github_base_url == GITHUB_BASE_URL
+    assert parsed_args.base_url == GITHUB_BASE_URL
     assert parsed_args.user == USER
     assert parsed_args.master_repo_names == list(REPO_NAMES)
     assert parsed_args.master_repo_urls == [
@@ -667,7 +663,7 @@ def assert_base_push_args(parsed_args, api):
 
 def assert_config_args(parser, parsed_args):
     """Asserts that the configured arguments are correct."""
-    assert parsed_args.github_base_url == GITHUB_BASE_URL
+    assert parsed_args.base_url == GITHUB_BASE_URL
     assert parsed_args.students == list(STUDENTS)
     assert parsed_args.org_name == ORG_NAME
 
@@ -690,7 +686,7 @@ class TestConfig:
         self, config_mock, read_issue_mock, parser, extra_args
     ):
         """Test that a fully configured file works. This means that
-        github_base_url, org_name, user and student list are all
+        base_url, org_name, user and student list are all
         preconfigured.
         """
         sys_args = [parser, *extra_args]
@@ -698,7 +694,7 @@ class TestConfig:
         parsed_args, _ = cli.parse_args(sys_args)
         assert_config_args(parser, parsed_args)
 
-    # TODO test that not having github_base_url, org_name, user or
+    # TODO test that not having base_url, org_name, user or
     # students_file in the config makes them required!
 
     def test_missing_option_is_required(self, config_missing_option):
@@ -724,7 +720,7 @@ class TestConfig:
         """
         if config_missing_option == "-sf":  # must be file
             missing_arg = str(students_file)
-        elif config_missing_option == "-g":  # must be https url
+        elif config_missing_option == "-bu":  # must be https url
             missing_arg = GITHUB_BASE_URL
         else:
             missing_arg = "whatever"
@@ -807,7 +803,7 @@ class TestMigrateParser:
     def assert_migrate_args(self, parsed_args) -> bool:
         assert parsed_args.user == USER
         assert parsed_args.org_name == ORG_NAME
-        assert parsed_args.github_base_url == GITHUB_BASE_URL
+        assert parsed_args.base_url == GITHUB_BASE_URL
         assert parsed_args.master_repo_names == self.NAMES
         assert parsed_args.master_repo_urls == self.LOCAL_URIS
 
@@ -836,7 +832,7 @@ class TestVerifyParser:
 
         assert args.subparser == cli.VERIFY_PARSER
         assert args.org_name == ORG_NAME
-        assert args.github_base_url == GITHUB_BASE_URL
+        assert args.base_url == GITHUB_BASE_URL
         assert args.user == USER
 
 
@@ -857,7 +853,7 @@ class TestCloneParser:
 
         assert args.subparser == cli.CLONE_PARSER
         assert args.org_name == ORG_NAME
-        assert args.github_base_url == GITHUB_BASE_URL
+        assert args.base_url == GITHUB_BASE_URL
         assert args.students == list(STUDENTS)
         # TODO assert with actual value
         plugin_manager_mock.hook.clone_parser_hook.assert_called_once_with(

@@ -33,7 +33,7 @@ assert DEFAULT_CONFIG_FILE.is_absolute()
 ORDERED_CONFIGURABLE_ARGS = (
     "user",
     "org_name",
-    "github_base_url",
+    "base_url",
     "students_file",
     "plugins",
     "master_org_name",
