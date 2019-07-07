@@ -130,17 +130,17 @@ def empty_config_mock(mocker, isfile_mock, tmpdir):
 
 
 _config_user = "user = {}".format(constants.USER)
-_config_base = "github_base_url = {}".format(constants.GITHUB_BASE_URL)
+_config_base = "base_url = {}".format(constants.GITHUB_BASE_URL)
 _config_org = "org_name = {}".format(constants.ORG_NAME)
 _config_master_org = "master_org_name = {}".format(constants.MASTER_ORG_NAME)
 
 
-@pytest.fixture(params=["-g", "-u", "-sf", "-o", "-mo"])
+@pytest.fixture(params=["-bu", "-u", "-sf", "-o", "-mo"])
 def config_missing_option(request, empty_config_mock, students_file):
     missing_option = request.param
 
     config_contents = ["[DEFAULTS]"]
-    if not missing_option == "-g":
+    if not missing_option == "-bu":
         config_contents.append(_config_base)
     if not missing_option == "-o":
         config_contents.append(_config_org)
@@ -162,7 +162,7 @@ def config_mock(empty_config_mock, students_file):
     config_contents = os.linesep.join(
         [
             "[DEFAULTS]",
-            "github_base_url = {}".format(constants.GITHUB_BASE_URL),
+            "base_url = {}".format(constants.GITHUB_BASE_URL),
             "user = {}".format(constants.USER),
             "org_name = {}".format(constants.ORG_NAME),
             "master_org_name = {}".format(constants.MASTER_ORG_NAME),

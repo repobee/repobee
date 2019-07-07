@@ -34,7 +34,7 @@ class TestGetConfiguredDefaults:
     ):
         defaults = config.get_configured_defaults()
         assert defaults["user"] == USER
-        assert defaults["github_base_url"] == GITHUB_BASE_URL
+        assert defaults["base_url"] == GITHUB_BASE_URL
         assert defaults["org_name"] == ORG_NAME
         assert defaults["students_file"] == str(students_file)
         assert defaults["plugins"] == ",".join(PLUGINS)
@@ -48,7 +48,7 @@ class TestGetConfiguredDefaults:
         config_contents = os.linesep.join(
             [
                 "[{}]".format(config.DEFAULTS_SECTION_HDR),
-                "github_base_url = {}".format(GITHUB_BASE_URL),
+                "base_url = {}".format(GITHUB_BASE_URL),
                 "user = {}".format(USER),
                 "org_name = {}".format(ORG_NAME),
                 "master_org_name = {}".format(MASTER_ORG_NAME),
@@ -70,7 +70,7 @@ class TestGetConfiguredDefaults:
     ):
         config_contents = os.linesep.join(
             [
-                "github_base_url = {}".format(GITHUB_BASE_URL),
+                "base_url = {}".format(GITHUB_BASE_URL),
                 "user = {}".format(USER),
                 "org_name = {}".format(ORG_NAME),
                 "students_file = {!s}".format(students_file),
@@ -181,7 +181,7 @@ class TestCheckConfigIntegrity:
                 [
                     "[{}]".format(config.DEFAULTS_SECTION_HDR),
                     "user = someone",
-                    "github_base_url",
+                    "base_url",
                     "org_name = cool",
                     "plugins  ",
                 ]
@@ -192,5 +192,5 @@ class TestCheckConfigIntegrity:
 
         assert "user" not in str(exc_info.value)
         assert "org_name" not in str(exc_info.value)
-        assert "github_base_url" in str(exc_info.value)
+        assert "base_url" in str(exc_info.value)
         assert "plugins" in str(exc_info.value)
