@@ -19,6 +19,8 @@ import contextlib
 import daiquiri
 import github
 
+import repobee_plug as plug
+
 from repobee import exception
 from repobee import tuples
 from repobee import util
@@ -671,3 +673,14 @@ class GitHubAPI(apimeta.API):
                 user, org_name
             )
         )
+
+
+class DefaultAPIHooks(plug.Plugin):
+    def get_api_instance(base_url, token, org_name, user):
+        return GitHubAPI(base_url, token, org_name, user)
+
+    def api_instance_requires(self):
+        return ("base_url", "token", "org_name", "user")
+
+    def get_api_class(self):
+        return GitHubAPI

@@ -20,6 +20,8 @@ import contextlib
 import daiquiri
 import gitlab
 
+from repobee_plug import repobee_hook
+
 from repobee import exception
 from repobee import apimeta
 from repobee import util
@@ -432,3 +434,13 @@ class GitLabAPI(apimeta.API):
             for project, project_name in projects
         )
         yield from name_issues_pairs
+
+
+@repobee_hook
+def get_api_instance(base_url, token, org_name, user):
+    return GitLabAPI(base_url, token, org_name, user)
+
+
+@repobee_hook
+def api_instance_requires():
+    return ("base_url", "token", "org_name")

@@ -28,7 +28,6 @@ from typing import Union, Iterable, Tuple
 import daiquiri
 
 from repobee import util
-from repobee.ext import github_api
 
 from repobee_plug import Plugin, HookResult, Status
 
@@ -46,13 +45,13 @@ class JavacCloneHook(Plugin):
         self._ignore = []
 
     def act_on_cloned_repo(
-        self, path: Union[str, pathlib.Path], api: github_api.GitHubAPI
+        self, path: Union[str, pathlib.Path], api
     ) -> HookResult:
         """Run ``javac`` on all .java files in the repo.
 
         Args:
             path: Path to the repo.
-            api: A :py:class:`~repobee.github_api.GitHubAPI` instance.
+            api: A platform API class instance.
         Returns:
             a HookResult specifying the outcome.
         """

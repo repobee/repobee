@@ -21,8 +21,6 @@ from typing import Tuple, Union, Iterable
 
 import daiquiri
 
-from repobee.ext import github_api
-
 from repobee_plug import repobee_hook, HookResult, Status
 
 LOGGER = daiquiri.getLogger(name=__file__)
@@ -31,14 +29,12 @@ SECTION = "pylint"
 
 
 @repobee_hook
-def act_on_cloned_repo(
-    path: Union[str, pathlib.Path], api: github_api.GitHubAPI
-):
+def act_on_cloned_repo(path: Union[str, pathlib.Path], api):
     """Run pylint on all Python files in a repo.
 
     Args:
         path: Path to the repo.
-        api: A :py:class:`github_api.GitHubAPI` instance.
+        api: A platform API class instance.
     Returns:
         a plug.HookResult specifying the outcome.
     """
