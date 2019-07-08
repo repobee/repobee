@@ -129,6 +129,8 @@ class GitHubAPI(apimeta.API):
             user: Name of the current user of the API.
             org_name: Name of the target organization.
         """
+        if not user:
+            raise TypeError("argument 'user' must not be empty")
         self._github = github.Github(login_or_token=token, base_url=base_url)
         self._org_name = org_name
         self._base_url = base_url
@@ -381,13 +383,7 @@ class GitHubAPI(apimeta.API):
                     repo_url
                 )
             )
-        # TODO in RepoBee 2.0, user will always be available
-        # user may not always be available
-        auth = (
-            self.token
-            if not self._user
-            else "{}:{}".format(self._user, self.token)
-        )
+        auth = "{}:{}".format(self._user, self.token)
         return repo_url.replace("https://", "https://{}@".format(auth))
 
     def get_issues(

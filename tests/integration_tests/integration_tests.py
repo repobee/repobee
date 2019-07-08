@@ -295,7 +295,7 @@ class TestMigrate:
         # clone the master repos to disk first first
         git_commands = ["git clone {}".format(url) for url in master_repo_urls]
         repobee_command = (
-            "repobee -p gitlab " "migrate -u {} -bu {} -o {} -mn {} -t {} -tb"
+            "repobee -p gitlab migrate -u {} -bu {} -o {} -mn {} -t {} -tb"
         ).format(
             OAUTH_USER, BASE_URL, ORG_NAME, " ".join(MASTER_REPO_NAMES), TOKEN
         )
@@ -321,8 +321,9 @@ class TestOpenIssues:
 
         command = (
             "repobee -p gitlab "
-            "open-issues -bu {} -o {} -i {} -mn {} -s {} -t {} -tb"
+            "open-issues -u {} -bu {} -o {} -i {} -mn {} -s {} -t {} -tb"
         ).format(
+            OAUTH_USER,
             BASE_URL,
             ORG_NAME,
             "{}/{}".format(VOLUME_DST, filename),
@@ -349,8 +350,9 @@ class TestCloseIssues:
         open_issue = open_issues[1]
         command = (
             "repobee -p gitlab "
-            "close-issues -bu {} -o {} -mn {} -s {} -t {} -r {} -tb"
+            "close-issues -u {} -bu {} -o {} -mn {} -s {} -t {} -r {} -tb"
         ).format(
+            OAUTH_USER,
             BASE_URL,
             ORG_NAME,
             " ".join(MASTER_REPO_NAMES),
@@ -402,8 +404,9 @@ class TestListIssues:
 
         command = (
             "repobee -p gitlab "
-            "list-issues -bu {} -o {} -mn {} -s {} -t {} -r {} -tb"
+            "list-issues -u {} -bu {} -o {} -mn {} -s {} -t {} -r {} -tb"
         ).format(
+            OAUTH_USER,
             BASE_URL,
             ORG_NAME,
             " ".join(MASTER_REPO_NAMES),
