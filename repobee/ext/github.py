@@ -676,7 +676,7 @@ class GitHubAPI(apimeta.API):
 
 
 class DefaultAPIHooks(plug.Plugin):
-    def api_instance_requires(self):
+    def api_init_requires(self):
         return ("base_url", "token", "org_name", "user")
 
     def get_api_class(self):

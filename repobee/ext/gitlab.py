@@ -437,7 +437,7 @@ class GitLabAPI(apimeta.API):
 
 
 class GitLabAPIHook(plug.Plugin):
-    def api_instance_requires(self):
+    def api_init_requires(self):
         return ("base_url", "token", "org_name")
 
     def get_api_class(self):

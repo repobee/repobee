@@ -868,7 +868,7 @@ def _connect_to_api(
     base_url: str, token: str, org_name: str, user: str
 ) -> apimeta.API:
     """Return an API instance connected to the specified API endpoint."""
-    required_args = plug.manager.hook.api_instance_requires()
+    required_args = plug.manager.hook.api_init_requires()
     kwargs = {}
     if "base_url" in required_args:
         kwargs["base_url"] = base_url
