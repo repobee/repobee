@@ -363,11 +363,11 @@ def clone_repos(
     LOGGER.info("cloning into student repos ...")
     git.clone(repo_urls)
 
-    if (
-        len(plug.manager.get_plugins()) > 1
-    ):  # something else than the default loaded
-        repo_names = util.generate_repo_names(teams, master_repo_names)
-        _execute_post_clone_hooks(repo_names, api)
+    for plugin in plug.manager.get_plugins():
+        if "act_on_cloned_repo" in dir(plugin):
+            repo_names = util.generate_repo_names(teams, master_repo_names)
+            _execute_post_clone_hooks(repo_names, api)
+            break
 
 
 def _execute_post_clone_hooks(repo_names: List[str], api: apimeta.API):

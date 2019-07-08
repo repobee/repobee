@@ -6,9 +6,10 @@ import re
 import pytest
 import gitlab
 
+import repobee.ext
+import repobee.ext.gitlab
 from repobee import util
 from repobee import apimeta
-from repobee import gitlab_api
 
 assert os.getenv(
     "REPOBEE_NO_VERIFY_SSL"
@@ -36,7 +37,7 @@ STUDENT_TEAM_NAMES = [str(t) for t in STUDENT_TEAMS]
 
 def api_instance(org_name=ORG_NAME):
     """Return a valid instance of the GitLabAPI class."""
-    return gitlab_api.GitLabAPI(LOCAL_BASE_URL, TOKEN, org_name)
+    return repobee.ext.gitlab.GitLabAPI(LOCAL_BASE_URL, TOKEN, org_name)
 
 
 def gitlab_and_groups():
@@ -167,7 +168,8 @@ def with_student_repos(restore):
     it runs before this fixture.
     """
     command = (
-        "repobee setup -u {} -bu {} -o {} -mo {} -mn {} -s {} -t {} -tb"
+        "repobee -p gitlab "
+        "setup -u {} -bu {} -o {} -mo {} -mn {} -s {} -t {} -tb"
     ).format(
         OAUTH_USER,
         BASE_URL,
@@ -238,7 +240,8 @@ class TestSetup:
     def test_clean_setup(self):
         """Test a first-time setup with master repos in the master org."""
         command = (
-            "repobee setup -u {} -bu {} -o {} -mo {} -mn {} -s {} -t {} -tb"
+            "repobee -p gitlab "
+            "setup -u {} -bu {} -o {} -mo {} -mn {} -s {} -t {} -tb"
         ).format(
             OAUTH_USER,
             BASE_URL,
@@ -257,7 +260,8 @@ class TestSetup:
     def test_setup_twice(self):
         """Setting up twice should have the same effect as setting up once."""
         command = (
-            "repobee setup -u {} -bu {} -o {} -mo {} -mn {} -s {} -t {} -tb"
+            "repobee -p gitlab "
+            "setup -u {} -bu {} -o {} -mo {} -mn {} -s {} -t {} -tb"
         ).format(
             OAUTH_USER,
             BASE_URL,
@@ -291,7 +295,7 @@ class TestMigrate:
         # clone the master repos to disk first first
         git_commands = ["git clone {}".format(url) for url in master_repo_urls]
         repobee_command = (
-            "repobee migrate -u {} -bu {} -o {} -mn {} -t {} -tb"
+            "repobee -p gitlab " "migrate -u {} -bu {} -o {} -mn {} -t {} -tb"
         ).format(
             OAUTH_USER, BASE_URL, ORG_NAME, " ".join(MASTER_REPO_NAMES), TOKEN
         )
@@ -316,7 +320,8 @@ class TestOpenIssues:
         tmpdir.join(filename).write_text(text, encoding="utf-8")
 
         command = (
-            "repobee open-issues -bu {} -o {} -i {} -mn {} -s {} -t {} -tb"
+            "repobee -p gitlab "
+            "open-issues -bu {} -o {} -i {} -mn {} -s {} -t {} -tb"
         ).format(
             BASE_URL,
             ORG_NAME,
@@ -343,7 +348,8 @@ class TestCloseIssues:
         close_issue = open_issues[0]
         open_issue = open_issues[1]
         command = (
-            "repobee close-issues -bu {} -o {} -mn {} -s {} -t {} -r {} -tb"
+            "repobee -p gitlab "
+            "close-issues -bu {} -o {} -mn {} -s {} -t {} -r {} -tb"
         ).format(
             BASE_URL,
             ORG_NAME,
@@ -395,7 +401,8 @@ class TestListIssues:
         ]
 
         command = (
-            "repobee list-issues -bu {} -o {} -mn {} -s {} -t {} -r {} -tb"
+            "repobee -p gitlab "
+            "list-issues -bu {} -o {} -mn {} -s {} -t {} -r {} -tb"
         ).format(
             BASE_URL,
             ORG_NAME,

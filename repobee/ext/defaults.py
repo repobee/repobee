@@ -22,6 +22,10 @@ import daiquiri
 
 from repobee_plug import repobee_hook
 
+
+# import other default plugins
+from repobee.ext.github import DefaultAPIHooks  # noqa: F401
+
 LOGGER = daiquiri.getLogger(name=__file__)
 
 

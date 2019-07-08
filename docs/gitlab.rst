@@ -62,6 +62,8 @@ differences and similarities in this `GitLab blog post`_.
 
 How to use RepoBee with GitLab
 ==============================
+You must use the ``gitlab`` plugin for RepoBee to be able to interface with
+GitLab. See :ref:`configure_plugs` for instructions on how to use plugins.
 Provide the url to a GitLab instance host (*not* to the api endpoint, just to
 the host) as an argument to ``-bu|--base-url``, or put it in the config file as
 the value for option ``base_url``. Other than that, there are a few important

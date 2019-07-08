@@ -4,7 +4,7 @@ This module contains the :py:class:`GitHubAPI` class, which is meant to be the
 prime means of interacting with the GitHub API in ``repobee``. The methods of
 GitHubAPI are mostly high-level bulk operations.
 
-.. module:: github_api
+.. module:: github
     :synopsis: Top level interface for interacting with a GitHub instance
         within repobee.
 
@@ -18,6 +18,8 @@ import contextlib
 
 import daiquiri
 import github
+
+import repobee_plug as plug
 
 from repobee import exception
 from repobee import tuples
@@ -116,9 +118,7 @@ class GitHubAPI(apimeta.API):
     organization.
     """
 
-    def __init__(
-        self, base_url: str, token: str, org_name: str, user: str = None
-    ):
+    def __init__(self, base_url: str, token: str, org_name: str, user: str):
         """Set up the GitHub API object.
 
         Args:
@@ -671,3 +671,11 @@ class GitHubAPI(apimeta.API):
                 user, org_name
             )
         )
+
+
+class DefaultAPIHooks(plug.Plugin):
+    def api_init_requires(self):
+        return ("base_url", "token", "org_name", "user")
+
+    def get_api_class(self):
+        return GitHubAPI

@@ -9,7 +9,6 @@ This module contains the CLI for repobee.
 """
 
 import argparse
-import requests
 import pathlib
 import os
 import sys
@@ -24,8 +23,6 @@ import repobee_plug as plug
 
 import repobee
 from repobee import command
-from repobee import github_api
-from repobee import gitlab_api
 from repobee import util
 from repobee import tuples
 from repobee import exception
@@ -283,7 +280,7 @@ def dispatch_command(args: tuples.Args, api: apimeta.API):
             command.clone_repos(args.master_repo_names, args.students, api)
     elif args.subparser == VERIFY_PARSER:
         with _sys_exit_on_expected_error():
-            github_api.GitHubAPI.verify_settings(
+            plug.manager.hook.get_api_class().verify_settings(
                 args.user,
                 args.org_name,
                 args.base_url,
@@ -867,36 +864,29 @@ def _extract_groups(args: argparse.Namespace) -> List[str]:
     return students
 
 
-def _identify_api(base_url, token):
-    ssl_verify = not os.getenv("REPOBEE_NO_VERIFY_SSL") == "true"
-    if not ssl_verify:
-        LOGGER.warning("SSL verification turned off, only for testing")
-    gitlab_response = requests.get(
-        "{}/api/v4/users?per_page=1".format(base_url),
-        headers={"Private-Token": token},
-        verify=ssl_verify,
-    )
-    if gitlab_response.status_code == 200:
-        LOGGER.warning(
-            "Using a GitLab API. GitLab support is in alpha and unstable."
-        )
-        return gitlab_api.GitLabAPI
-    return github_api.GitHubAPI
-
-
 def _connect_to_api(
     base_url: str, token: str, org_name: str, user: str
 ) -> apimeta.API:
     """Return an API instance connected to the specified API endpoint."""
+    required_args = plug.manager.hook.api_init_requires()
+    kwargs = {}
+    if "base_url" in required_args:
+        kwargs["base_url"] = base_url
+    if "token" in required_args:
+        kwargs["token"] = token
+    if "org_name" in required_args:
+        kwargs["org_name"] = org_name
+    if "user" in required_args:
+        kwargs["user"] = user
+    api_class = plug.manager.hook.get_api_class()
     try:
-        api = _identify_api(base_url, token)(base_url, token, org_name, user)
+        return api_class(**kwargs)
     except exception.NotFoundError:
         # more informative message
         raise exception.NotFoundError(
             "either organization {} could not be found, "
             "or the base url '{}' is incorrect".format(org_name, base_url)
         )
-    return api
 
 
 def _repo_names_to_urls(

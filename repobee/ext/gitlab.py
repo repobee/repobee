@@ -4,7 +4,7 @@ This module contains the :py:class:`GitLabAPI` class, which is meant to be the
 prime means of interacting with the GitLab API in RepoBee. The methods of
 GitLabAPI are mostly high-level bulk operations.
 
-.. module:: gitlab_api
+.. module:: gitlab
     :synopsis: Top level interface for interacting with a GitLab instance
         within repobee.
 
@@ -19,6 +19,8 @@ import contextlib
 
 import daiquiri
 import gitlab
+
+import repobee_plug as plug
 
 from repobee import exception
 from repobee import apimeta
@@ -93,9 +95,7 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
 class GitLabAPI(apimeta.API):
     _User = collections.namedtuple("_User", ("id", "login"))
 
-    def __init__(self, base_url, token, org_name, user: str = None):
-        if user:
-            LOGGER.warning("user is ignored when using GitLab")
+    def __init__(self, base_url, token, org_name):
         # ssl turns off only for
         ssl_verify = not os.getenv("REPOBEE_NO_VERIFY_SSL") == "true"
         if not ssl_verify:
@@ -432,3 +432,11 @@ class GitLabAPI(apimeta.API):
             for project, project_name in projects
         )
         yield from name_issues_pairs
+
+
+class GitLabAPIHook(plug.Plugin):
+    def api_init_requires(self):
+        return ("base_url", "token", "org_name")
+
+    def get_api_class(self):
+        return GitLabAPI

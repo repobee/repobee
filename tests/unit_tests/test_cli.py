@@ -5,10 +5,13 @@ from unittest import mock
 import pytest
 
 import repobee
+import repobee.ext
+import repobee.ext.github
 from repobee import cli
 from repobee import tuples
 from repobee import exception
 from repobee import apimeta
+from repobee import plugin
 
 import constants
 import functions
@@ -50,18 +53,8 @@ VALID_PARSED_ARGS = dict(
 
 
 @pytest.fixture(autouse=True)
-def identify_api_mock(mocker, api_class_mock):
-    """Mock out identifying the API such that it always returns the GitHub
-    API.
-    """
-    yield mocker.patch(
-        "repobee.cli._identify_api", autospec=True, return_value=api_class_mock
-    )
-
-
-@pytest.fixture(autouse=True)
 def api_instance_mock(mocker):
-    instance_mock = MagicMock(spec=repobee.github_api.GitHubAPI)
+    instance_mock = MagicMock(spec=repobee.ext.github.GitHubAPI)
     instance_mock.get_repo_urls.side_effect = lambda repo_names, org_name: [
         generate_repo_url(rn, org_name) for rn in repo_names
     ]
@@ -74,9 +67,16 @@ def api_instance_mock(mocker):
 
 @pytest.fixture(autouse=True)
 def api_class_mock(mocker, api_instance_mock):
-    class_mock = mocker.patch("repobee.github_api.GitHubAPI", autospec=True)
+    class_mock = mocker.patch("repobee.ext.github.GitHubAPI", autospec=True)
     class_mock.return_value = api_instance_mock
     return class_mock
+
+
+@pytest.fixture(autouse=True)
+def load_default_plugins(api_instance_mock):
+    """Load the default plugins after mocking the GitHubAPI."""
+    loaded = plugin.load_plugin_modules()
+    plugin.register_plugins(loaded)
 
 
 @pytest.fixture
