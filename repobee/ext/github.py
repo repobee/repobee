@@ -118,9 +118,7 @@ class GitHubAPI(apimeta.API):
     organization.
     """
 
-    def __init__(
-        self, base_url: str, token: str, org_name: str, user: str = None
-    ):
+    def __init__(self, base_url: str, token: str, org_name: str, user: str):
         """Set up the GitHub API object.
 
         Args:

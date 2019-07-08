@@ -306,7 +306,7 @@ def issues(repos):
 
 @pytest.fixture(scope="function")
 def api(happy_github, organization, no_teams):
-    return repobee.ext.github.GitHubAPI(BASE_URL, TOKEN, ORG_NAME)
+    return repobee.ext.github.GitHubAPI(BASE_URL, TOKEN, ORG_NAME, USER)
 
 
 class TestEnsureTeamsAndMembers:

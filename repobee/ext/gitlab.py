@@ -95,9 +95,7 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
 class GitLabAPI(apimeta.API):
     _User = collections.namedtuple("_User", ("id", "login"))
 
-    def __init__(self, base_url, token, org_name, user: str = None):
-        if user:
-            LOGGER.warning("user is ignored when using GitLab")
+    def __init__(self, base_url, token, org_name):
         # ssl turns off only for
         ssl_verify = not os.getenv("REPOBEE_NO_VERIFY_SSL") == "true"
         if not ssl_verify:
