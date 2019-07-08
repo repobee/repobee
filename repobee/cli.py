@@ -713,8 +713,11 @@ def _create_base_parsers():
             else None
         )
 
-    def is_required(arg_name):
-        return arg_name not in configured_defaults
+    def configured(arg_name):
+        return arg_name in configured_defaults
+
+    def api_requires(arg_name):
+        return arg_name in plug.manager.hook.api_init_requires()
 
     base_parser = argparse.ArgumentParser(add_help=False)
     base_parser.add_argument(
@@ -722,7 +725,7 @@ def _create_base_parsers():
         "--org-name",
         help="Name of the target organization",
         type=str,
-        required=is_required("org_name"),
+        required=not configured("org_name") and api_requires("org_name"),
         default=default("org_name"),
     )
     base_parser.add_argument(
@@ -734,7 +737,7 @@ def _create_base_parsers():
             "GitHub enterprise, the url is https://<ENTERPRISE_HOST>/api/v3"
         ),
         type=str,
-        required=is_required("base_url"),
+        required=not configured("base_url") and api_requires("base_url"),
         default=default("base_url"),
     )
     base_parser.add_argument(
@@ -755,7 +758,7 @@ def _create_base_parsers():
     # base parser for when student lists are involved
     base_student_parser = argparse.ArgumentParser(add_help=False)
     students = base_student_parser.add_mutually_exclusive_group(
-        required=is_required("students_file")
+        required=not configured("students_file")
     )
     students.add_argument(
         "-sf",
@@ -781,7 +784,7 @@ def _create_base_parsers():
         "--user",
         help=("Your username."),
         type=str,
-        required=is_required("user"),
+        required=not configured("user") and api_requires("user"),
         default=default("user"),
     )
 
