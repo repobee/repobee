@@ -21,6 +21,7 @@ NotImplementedError) for any unimplemented API methods.
 import inspect
 import enum
 import collections
+import itertools
 from typing import List, Iterable, Optional, Generator, Tuple, Mapping
 
 import daiquiri
@@ -406,7 +407,7 @@ def methods(attrdict):
         name: method
         for name, method in attrdict.items()
         if callable(method)
-        and not (name.startswith("_") or name == "__init__")
+        and (not name.startswith("_") or name == "__init__")
     }
 
 
@@ -418,13 +419,31 @@ def parameters(function):
     ]
 
 
+def check_init_params(reference_params, compare_params):
+    """Check that the compare __init__'s parameters are a subset of the
+    reference class's version.
+    """
+    extra = set(compare_params) - set(reference_params)
+    if extra:
+        raise exception.APIImplementationError(
+            "unexpected arguments to __init__: {}".format(extra)
+        )
+
+
 def check_parameters(reference, compare):
     """Check if the parameters match, one by one. Stop at the first diff and
     raise an exception for that parameter.
+
+    An exception is made for __init__, for which the compare may be a subset of
+    the reference in no particular order.
     """
     reference_params = parameters(reference)
     compare_params = parameters(compare)
-    for ref, cmp in zip(reference_params, compare_params):
+    if reference.__name__ == "__init__":
+        check_init_params(reference_params, compare_params)
+        return
+
+    for ref, cmp in itertools.zip_longest(reference_params, compare_params):
         if ref != cmp:
             raise exception.APIImplementationError(
                 "{}: expected parameter '{}', found '{}'".format(

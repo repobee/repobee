@@ -45,6 +45,31 @@ class TestAPI:
                 def get_teams(a):
                     pass
 
+    def test_accepts_init_with_strict_subset_of_args(self):
+        """Test that ``__init__`` can be defined with a strict subset of the
+        args in APISpec.__init__.
+        """
+
+        class API(apimeta.API):
+            def __init__(self, base_url):
+                pass
+
+        api = API("some-url")
+        assert isinstance(api, apimeta.API)
+
+    def test_raises_when_init_has_superset_of_args(self):
+        """Test that ``__init__`` cannot be defined with a superset of the args
+        in APISpec.__init__.
+        """
+
+        with pytest.raises(exception.APIImplementationError) as exc_info:
+
+            class API(apimeta.API):
+                def __init__(self, base_url, token, org_name, user, other):
+                    pass
+
+        assert "other" in str(exc_info.value)
+
     def test_accepts_correctly_defined_method(self):
         """API should accept a correctly defined method, and not alter it in any
         way.
