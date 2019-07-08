@@ -48,9 +48,17 @@ any plugins, you can use the ``--no-plugins``, which disables plugins.
     overhauled in the future, if anyone comes up with a better idea.
 
 Some plugins can be further configured in the configuration file by adding
-new headers. See the documentation of the specific plugins
+new headers. See the documentation of the specific plugins/
 
-.. _built-in _peer review plugins:
+.. _builtins:
+
+Built-in API plugins
+====================
+RepoBee ships with two API plugins, one for GitHub
+(:py:mod:`repobee.ext.github`) and one for GitLab
+(:py:mod:`repobee.ext.gitlab`). The GitHub plugin is loaded by default. If you
+use GitLab, you must specify the ``gitlab`` plugin either on the command line
+or in the configuration file.
 
 Built-in plugins for ``repobee assign-reviews``
 =====================================================
@@ -66,7 +74,6 @@ they are peer reviewing. To use this allocation algorithm, simply specify the
 plugin with ``-p pairwise`` to override the default algorithm. Note that this
 plugin ignores the ``--num-reviews`` argument.
 
-.. _builtins:
 
 Built-in Plugins for ``repobee clone``
 =======================================

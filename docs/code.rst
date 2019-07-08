@@ -53,19 +53,6 @@ apimeta
 .. automodule:: repobee.apimeta
    :members:
 
-github_api
-----------
-
-.. automodule:: repobee.github_api
-    :members:
-
-gitlab_api
-----------
-
-.. automodule:: repobee.gitlab_api
-   :members:
-
-
 Core plugins
 ============
 
@@ -74,6 +61,20 @@ defaults
 
 .. automodule:: repobee.ext.defaults
     :members:
+
+github
+------
+
+.. automodule:: repobee.ext.github
+    :members:
+
+gitlab
+------
+
+.. automodule:: repobee.ext.gitlab
+   :members:
+
+
 
 pairwise
 --------
