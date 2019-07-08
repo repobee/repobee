@@ -233,7 +233,7 @@ def _handle_deprecation(sys_args: List[str]) -> List[str]:
     if parser_name in DEPRECATED_PARSERS:
         deprecation = DEPRECATED_PARSERS[parser_name]
         LOGGER.warning(
-            "use of '{}' has been deprecated and will be removed by {}, "
+            "Use of '{}' has been deprecated and will be removed by {}, "
             "use '{}' instead".format(
                 parser_name, deprecation.remove_by, deprecation.replacement
             )

@@ -60,7 +60,7 @@ def _pylint(python_files: Iterable[Union[pathlib.Path]]) -> Tuple[str, str]:
     """
     linted_files = []
     for py_file in python_files:
-        LOGGER.info("running pylint on {!s}".format(py_file))
+        LOGGER.info("Running pylint on {!s}".format(py_file))
         command = "pylint {!s}".format(py_file).split()
         proc = subprocess.run(
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE

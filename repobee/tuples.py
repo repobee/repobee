@@ -12,10 +12,6 @@ the goal is to collect all container types in this module.
 """
 from collections import namedtuple
 
-import daiquiri
-
-LOGGER = daiquiri.getLogger(__file__)
-
 Args = namedtuple(
     "Args",
     (

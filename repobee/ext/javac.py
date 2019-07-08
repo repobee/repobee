@@ -25,13 +25,9 @@ import configparser
 import pathlib
 from typing import Union, Iterable, Tuple
 
-import daiquiri
-
 from repobee import util
 
 from repobee_plug import Plugin, HookResult, Status
-
-LOGGER = daiquiri.getLogger(name=__file__)
 
 SECTION = "javac"
 
