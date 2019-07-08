@@ -167,7 +167,7 @@ class GitLabAPI(apimeta.API):
 
         if missing_members:
             LOGGER.info(
-                "adding members {} to team {}".format(
+                "Adding members {} to team {}".format(
                     ", ".join(missing_members), team.name
                 )
             )
@@ -256,7 +256,7 @@ class GitLabAPI(apimeta.API):
                         "parent_id": parent_id,
                     }
                 )
-                LOGGER.info("created team {}".format(team_name))
+                LOGGER.info("Created team {}".format(team_name))
                 teams.append(new_team)
         return teams
 
@@ -282,7 +282,7 @@ class GitLabAPI(apimeta.API):
                     ).attributes["http_url_to_repo"]
                 )
                 LOGGER.info(
-                    "created {}/{}".format(self._group.name, repo.name)
+                    "Created {}/{}".format(self._group.name, repo.name)
                 )
                 created = True
 
@@ -363,7 +363,7 @@ class GitLabAPI(apimeta.API):
 
         missing = set(repo_names) - set(projects)
         if missing:
-            LOGGER.warning("can't find repos: {}".format(", ".join(missing)))
+            LOGGER.warning("Can't find repos: {}".format(", ".join(missing)))
 
     def open_issue(
         self, title: str, body: str, repo_names: Iterable[str]
@@ -392,16 +392,16 @@ class GitLabAPI(apimeta.API):
             issue.state_event = "close"
             issue.save()
             LOGGER.info(
-                "closed issue {}/#{}-'{}'".format(
+                "Closed issue {}/#{}-'{}'".format(
                     project_name, issue.id, issue.title
                 )
             )
             closed += 1
 
         if closed:
-            LOGGER.info("closed {} issues".format(closed))
+            LOGGER.info("Closed {} issues".format(closed))
         else:
-            LOGGER.warning("found no issues matching the title regex")
+            LOGGER.warning("Found no issues matching the title regex")
 
     def get_issues(
         self,

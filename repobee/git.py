@@ -197,7 +197,7 @@ def push(push_tuples: Iterable[Push], tries: int = 3) -> List[str]:
     # confusing, but failed_pts needs an initial value
     failed_pts = list(push_tuples)
     for i in range(tries):
-        LOGGER.info("pushing, attempt {}/{}".format(i + 1, tries))
+        LOGGER.info("Pushing, attempt {}/{}".format(i + 1, tries))
         failed_urls = set(_push_no_retry(failed_pts))
         failed_pts = [pt for pt in push_tuples if pt.repo_url in failed_urls]
         if not failed_pts:
