@@ -655,6 +655,11 @@ def test_purge_review_teams(master_names, students, api_mock):
 
 # TODO add more test cases
 class TestAssignPeerReviewers:
+    @pytest.fixture(autouse=True)
+    def load_default_plugins(self):
+        modules = plugin.load_plugin_modules()
+        plugin.register_plugins(modules)
+
     @pytest.mark.parametrize(
         "num_students, num_reviews",
         [(3, 3), (3, 4)],  # equal amount  # more reviews than students

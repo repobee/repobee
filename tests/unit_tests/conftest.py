@@ -7,6 +7,8 @@ import os
 from unittest.mock import MagicMock
 import pytest
 
+from repobee_plug import manager
+
 import constants
 
 # mock the PyGithub github module
@@ -42,6 +44,14 @@ def _students_file(populate: bool = True):
                 )
                 file.flush()
         yield file
+
+
+@pytest.fixture(autouse=True)
+def unregister_plugins():
+    """All plugins should be unregistered after each function."""
+    registered = manager.get_plugins()
+    for plugin in registered:
+        manager.unregister(plugin)
 
 
 @pytest.fixture(autouse=True)
