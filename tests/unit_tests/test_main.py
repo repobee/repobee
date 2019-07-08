@@ -48,7 +48,7 @@ def logger_exception_mock(mocker):
 
 @pytest.fixture
 def api_instance_mock(mocker):
-    return MagicMock(spec="repobee.github_api.GitHubAPI")
+    return MagicMock(spec="repobee.github.GitHubAPI")
 
 
 @pytest.fixture

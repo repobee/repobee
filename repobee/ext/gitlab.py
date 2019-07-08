@@ -4,7 +4,7 @@ This module contains the :py:class:`GitLabAPI` class, which is meant to be the
 prime means of interacting with the GitLab API in RepoBee. The methods of
 GitLabAPI are mostly high-level bulk operations.
 
-.. module:: gitlab_api
+.. module:: gitlab
     :synopsis: Top level interface for interacting with a GitLab instance
         within repobee.
 
@@ -436,11 +436,11 @@ class GitLabAPI(apimeta.API):
         yield from name_issues_pairs
 
 
-@repobee_hook
-def get_api_instance(base_url, token, org_name, user):
-    return GitLabAPI(base_url, token, org_name, user)
+class GitLabAPIHook:
+    @repobee_hook
+    def api_instance_requires(self):
+        return ("base_url", "token", "org_name")
 
-
-@repobee_hook
-def api_instance_requires():
-    return ("base_url", "token", "org_name")
+    @repobee_hook
+    def get_api_class(self):
+        return GitLabAPI

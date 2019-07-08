@@ -6,9 +6,10 @@ import re
 import pytest
 import gitlab
 
+import repobee.ext
+import repobee.ext.gitlab
 from repobee import util
 from repobee import apimeta
-from repobee.ext import gitlab_api
 
 assert os.getenv(
     "REPOBEE_NO_VERIFY_SSL"
@@ -36,7 +37,7 @@ STUDENT_TEAM_NAMES = [str(t) for t in STUDENT_TEAMS]
 
 def api_instance(org_name=ORG_NAME):
     """Return a valid instance of the GitLabAPI class."""
-    return gitlab_api.GitLabAPI(LOCAL_BASE_URL, TOKEN, org_name)
+    return repobee.ext.gitlab.GitLabAPI(LOCAL_BASE_URL, TOKEN, org_name)
 
 
 def gitlab_and_groups():
