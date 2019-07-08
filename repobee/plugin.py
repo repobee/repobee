@@ -68,6 +68,7 @@ def load_plugin_modules(
         # default plugin last so hooks are overridden by user-specified hooks
         DEFAULT_PLUGIN,
     ]
+    LOGGER.info("Loading plugins: " + ", ".join(plugin_names))
     if plugin_names == [DEFAULT_PLUGIN]:
         from .ext import defaults
 

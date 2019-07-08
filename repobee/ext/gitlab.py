@@ -20,7 +20,7 @@ import contextlib
 import daiquiri
 import gitlab
 
-from repobee_plug import repobee_hook
+import repobee_plug as plug
 
 from repobee import exception
 from repobee import apimeta
@@ -436,11 +436,9 @@ class GitLabAPI(apimeta.API):
         yield from name_issues_pairs
 
 
-class GitLabAPIHook:
-    @repobee_hook
+class GitLabAPIHook(plug.Plugin):
     def api_instance_requires(self):
         return ("base_url", "token", "org_name")
 
-    @repobee_hook
     def get_api_class(self):
         return GitLabAPI
