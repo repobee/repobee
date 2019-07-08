@@ -7,9 +7,9 @@ import github
 import repobee
 from repobee import util
 from repobee import exception
-from repobee import github_api
+from repobee.ext import github_api
 from repobee import apimeta
-from repobee.github_api import REQUIRED_OAUTH_SCOPES
+from repobee.ext.github_api import REQUIRED_OAUTH_SCOPES
 
 import constants
 import functions
@@ -305,7 +305,7 @@ def issues(repos):
 
 @pytest.fixture(scope="function")
 def api(happy_github, organization, no_teams):
-    from repobee import github_api
+    from repobee.ext import github_api
 
     return github_api.GitHubAPI(BASE_URL, TOKEN, ORG_NAME)
 

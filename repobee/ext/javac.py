@@ -28,7 +28,7 @@ from typing import Union, Iterable, Tuple
 import daiquiri
 
 from repobee import util
-from repobee import github_api
+from repobee.ext import github_api
 
 from repobee_plug import Plugin, HookResult, Status
 

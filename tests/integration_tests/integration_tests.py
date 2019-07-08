@@ -8,7 +8,7 @@ import gitlab
 
 from repobee import util
 from repobee import apimeta
-from repobee import gitlab_api
+from repobee.ext import gitlab_api
 
 assert os.getenv(
     "REPOBEE_NO_VERIFY_SSL"

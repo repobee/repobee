@@ -24,8 +24,7 @@ import repobee_plug as plug
 
 import repobee
 from repobee import command
-from repobee import github_api
-from repobee import gitlab_api
+from repobee.ext import github_api, gitlab_api
 from repobee import util
 from repobee import tuples
 from repobee import exception

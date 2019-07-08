@@ -61,7 +61,7 @@ def identify_api_mock(mocker, api_class_mock):
 
 @pytest.fixture(autouse=True)
 def api_instance_mock(mocker):
-    instance_mock = MagicMock(spec=repobee.github_api.GitHubAPI)
+    instance_mock = MagicMock(spec=repobee.ext.github_api.GitHubAPI)
     instance_mock.get_repo_urls.side_effect = lambda repo_names, org_name: [
         generate_repo_url(rn, org_name) for rn in repo_names
     ]
@@ -74,7 +74,9 @@ def api_instance_mock(mocker):
 
 @pytest.fixture(autouse=True)
 def api_class_mock(mocker, api_instance_mock):
-    class_mock = mocker.patch("repobee.github_api.GitHubAPI", autospec=True)
+    class_mock = mocker.patch(
+        "repobee.ext.github_api.GitHubAPI", autospec=True
+    )
     class_mock.return_value = api_instance_mock
     return class_mock
 
