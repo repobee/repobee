@@ -305,6 +305,26 @@ class TestClone:
         assert result.returncode == 0
         assert_cloned_repos(STUDENT_REPO_NAMES, tmpdir)
 
+    def test_clone_twice(self, with_student_repos, tmpdir, tmpdir_volume_arg):
+        """Cloning twice in a row should have the same effect as cloning once.
+        """
+        command = " ".join(
+            [
+                REPOBEE_GITLAB,
+                repobee.cli.CLONE_PARSER,
+                *BASE_ARGS,
+                *MASTER_REPOS_ARG,
+                *STUDENTS_ARG,
+            ]
+        )
+
+        first_result = run_in_docker(command, extra_args=tmpdir_volume_arg)
+        second_result = run_in_docker(command, extra_args=tmpdir_volume_arg)
+
+        assert first_result.returncode == 0
+        assert second_result.returncode == 0
+        assert_cloned_repos(STUDENT_REPO_NAMES, tmpdir)
+
 
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
 class TestSetup:
