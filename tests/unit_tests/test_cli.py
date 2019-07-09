@@ -313,12 +313,12 @@ def test_help_calls_add_arguments(monkeypatch, parser):
 class TestBaseParsing:
     """Test the basic functionality of parsing."""
 
-    def test_show_all_args_true_shows_configured_args(
+    def test_show_all_opts_true_shows_configured_args(
         self, config_mock, capsys
     ):
-        """Test that configured args are shown when show_all_args is True."""
+        """Test that configured args are shown when show_all_opts is True."""
         with pytest.raises(SystemExit):
-            cli.parse_args([cli.SETUP_PARSER, "-h"], show_all_args=True)
+            cli.parse_args([cli.SETUP_PARSER, "-h"], show_all_opts=True)
 
         captured = capsys.readouterr()
         assert "--user" in captured.out
@@ -328,12 +328,12 @@ class TestBaseParsing:
         assert "--students-file" in captured.out
         assert "--token" in captured.out
 
-    def test_show_all_args_false_hides_configured_args(
+    def test_show_all_opts_false_hides_configured_args(
         self, config_mock, capsys
     ):
-        """Test that configured args are hidden when show_all_args is False."""
+        """Test that configured args are hidden when show_all_opts is False."""
         with pytest.raises(SystemExit):
-            cli.parse_args([cli.SETUP_PARSER, "-h"], show_all_args=False)
+            cli.parse_args([cli.SETUP_PARSER, "-h"], show_all_opts=False)
 
         captured = capsys.readouterr()
         assert "--user" not in captured.out
