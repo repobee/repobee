@@ -479,24 +479,6 @@ class TestCreateRepos:
 class TestGetRepoUrls:
     """Tests for get_repo_urls."""
 
-    @pytest.mark.skipif(
-        repobee.__version__ >= "2.0.0",
-        reason="Made obsolete by including user in every CLI command",
-    )
-    def test_with_token_without_user(self, repos, api):
-        """Test getting repo urls when the api has the token, but no user. The
-        token should be in the url anyway.
-        """
-        api._user = None
-        repo_names = [repo.name for repo in repos]
-        expected_urls = [api._insert_auth(repo.html_url) for repo in repos]
-
-        urls = api.get_repo_urls(repo_names)
-
-        assert sorted(urls) == sorted(expected_urls)
-        for url in urls:
-            assert TOKEN in url
-
     def test_with_token_and_user(self, repos, api):
         repo_names = [repo.name for repo in repos]
         api._user = USER

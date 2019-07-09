@@ -585,13 +585,11 @@ def _add_subparsers(parser):
     `base_` prefixed parser, of course).
     """
 
-    base_parser, base_student_parser, base_user_parser, master_org_parser = (
+    base_parser, base_student_parser, master_org_parser = (
         _create_base_parsers()
     )
 
-    repo_name_parser = argparse.ArgumentParser(
-        add_help=False, parents=[base_parser]
-    )
+    repo_name_parser = argparse.ArgumentParser(add_help=False)
     repo_name_parser.add_argument(
         "-mn",
         "--master-repo-names",
@@ -619,7 +617,7 @@ def _add_subparsers(parser):
             "will simply be skipped."
         ),
         parents=[
-            base_user_parser,
+            base_parser,
             base_student_parser,
             master_org_parser,
             repo_name_parser,
@@ -637,7 +635,7 @@ def _add_subparsers(parser):
             "something already)."
         ),
         parents=[
-            base_user_parser,
+            base_parser,
             base_student_parser,
             master_org_parser,
             repo_name_parser,
@@ -662,7 +660,7 @@ def _add_subparsers(parser):
             "The repos must be local on disk to be migrated. Note that "
             "migrated repos will be private."
         ),
-        parents=[repo_name_parser, base_user_parser],
+        parents=[repo_name_parser, base_parser],
         formatter_class=_OrderedFormatter,
     )
 
@@ -670,15 +668,17 @@ def _add_subparsers(parser):
         CLONE_PARSER,
         help="Clone student repos.",
         description="Clone student repos asynchronously in bulk.",
-        parents=[base_student_parser, repo_name_parser],
+        parents=[base_parser, base_student_parser, repo_name_parser],
         formatter_class=_OrderedFormatter,
     )
 
     plug.manager.hook.clone_parser_hook(clone_parser=clone)
 
-    _add_issue_parsers([base_student_parser, repo_name_parser], subparsers)
+    _add_issue_parsers(
+        [base_parser, base_student_parser, repo_name_parser], subparsers
+    )
     _add_peer_review_parsers(
-        [base_student_parser, repo_name_parser], subparsers
+        [base_parser, base_student_parser, repo_name_parser], subparsers
     )
 
     subparsers.add_parser(
@@ -696,7 +696,7 @@ def _add_subparsers(parser):
         VERIFY_PARSER,
         help="Verify core settings.",
         description="Verify core settings by trying various API requests.",
-        parents=[base_parser, base_user_parser, master_org_parser],
+        parents=[base_parser, master_org_parser],
         formatter_class=_OrderedFormatter,
     )
 
@@ -720,6 +720,15 @@ def _create_base_parsers():
         return arg_name in plug.manager.hook.api_init_requires()
 
     base_parser = argparse.ArgumentParser(add_help=False)
+    base_parser.add_argument(
+        "-u",
+        "--user",
+        help=("Your username."),
+        type=str,
+        required=not configured("user") and api_requires("user"),
+        default=default("user"),
+    )
+
     base_parser.add_argument(
         "-o",
         "--org-name",
@@ -775,19 +784,6 @@ def _create_base_parsers():
         nargs="+",
     )
 
-    # base parser for when files need to be pushed
-    base_user_parser = argparse.ArgumentParser(add_help=False)
-
-    # the username is required for any pushing
-    base_user_parser.add_argument(
-        "-u",
-        "--user",
-        help=("Your username."),
-        type=str,
-        required=not configured("user") and api_requires("user"),
-        default=default("user"),
-    )
-
     master_org_parser = argparse.ArgumentParser(add_help=False)
     master_org_parser.add_argument(
         "-mo",
@@ -798,12 +794,7 @@ def _create_base_parsers():
         default=default("master_org_name"),
     )
 
-    return (
-        base_parser,
-        base_student_parser,
-        base_user_parser,
-        master_org_parser,
-    )
+    return (base_parser, base_student_parser, master_org_parser)
 
 
 @contextmanager

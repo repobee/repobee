@@ -31,8 +31,8 @@ TOKEN = constants.TOKEN
 REPO_NAMES = ("week-1", "week-2", "week-3")
 REPO_URLS = tuple(map(lambda rn: generate_repo_url(rn, ORG_NAME), REPO_NAMES))
 
-BASE_ARGS = ["-bu", BASE_URL, "-o", ORG_NAME]
-BASE_PUSH_ARGS = ["-u", USER, "-mn", *REPO_NAMES]
+BASE_ARGS = ["-u", USER, "-bu", BASE_URL, "-o", ORG_NAME]
+BASE_PUSH_ARGS = ["-mn", *REPO_NAMES]
 COMPLETE_PUSH_ARGS = [*BASE_ARGS, *BASE_PUSH_ARGS]
 
 # parsed args without subparser
@@ -459,6 +459,8 @@ class TestBaseParsing:
         """
         sys_args = [
             cli.SETUP_PARSER,
+            "-u",
+            USER,
             "-o",
             ORG_NAME,
             "-bu",
@@ -809,14 +811,7 @@ class TestMigrateParser:
         assert parsed_args.master_repo_urls == self.LOCAL_URIS
 
     def test_happy_path(self):
-        sys_args = [
-            cli.MIGRATE_PARSER,
-            *BASE_ARGS,
-            "-u",
-            USER,
-            "-mn",
-            *self.NAMES,
-        ]
+        sys_args = [cli.MIGRATE_PARSER, *BASE_ARGS, "-mn", *self.NAMES]
 
         parsed_args, _ = cli.parse_args(sys_args)
 
@@ -827,7 +822,7 @@ class TestVerifyParser:
     """Tests for the VERIFY_PARSER."""
 
     def test_happy_path(self):
-        sys_args = [cli.VERIFY_PARSER, *BASE_ARGS, "-u", USER]
+        sys_args = [cli.VERIFY_PARSER, *BASE_ARGS]
 
         args, _ = cli.parse_args(sys_args)
 
@@ -871,25 +866,11 @@ class TestCloneParser:
         [
             (
                 cli.SETUP_PARSER,
-                [
-                    "-u",
-                    USER,
-                    "-s",
-                    *STUDENTS_STRING.split(),
-                    "-mn",
-                    *REPO_NAMES,
-                ],
+                ["-s", *STUDENTS_STRING.split(), "-mn", *REPO_NAMES],
             ),
             (
                 cli.UPDATE_PARSER,
-                [
-                    "-u",
-                    USER,
-                    "-s",
-                    *STUDENTS_STRING.split(),
-                    "-mn",
-                    *REPO_NAMES,
-                ],
+                ["-s", *STUDENTS_STRING.split(), "-mn", *REPO_NAMES],
             ),
             (
                 cli.OPEN_ISSUE_PARSER,
@@ -913,8 +894,8 @@ class TestCloneParser:
                     "some-regex",
                 ],
             ),
-            (cli.VERIFY_PARSER, ["-u", USER]),
-            (cli.MIGRATE_PARSER, ["-u", USER, "-mn", *REPO_NAMES]),
+            (cli.VERIFY_PARSER, []),
+            (cli.MIGRATE_PARSER, ["-mn", *REPO_NAMES]),
         ],
     )
     def test_no_other_parser_gets_parse_hook(
