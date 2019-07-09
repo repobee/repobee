@@ -28,20 +28,20 @@ and supply the stack trace below.""".replace(
 
 
 def _separate_args(args: List[str]) -> (List[str], List[str]):
-    """Separate args into plugin args and repobee args."""
-    plugin_args = []
-    if args and (args[0].startswith("-p") or "plug" in args[0]):
+    """Separate args into preparser args and repobee args."""
+    preparser_args = []
+    if args and args[0].startswith("-"):
         cur = 0
         while cur < len(args) and args[cur].startswith("-"):
-            if args[cur].startswith("-p"):
-                plugin_args += args[cur : cur + 2]
+            if args[cur] in cli.PRE_PARSER_PLUG_OPTS:
+                preparser_args += args[cur : cur + 2]
                 cur += 2
-            elif args[cur] == "--no-plugins":
-                plugin_args.append(args[cur])
+            elif args[cur] in cli.PRE_PARSER_FLAGS:
+                preparser_args.append(args[cur])
                 cur += 1
             else:
                 break
-    return plugin_args, args[len(plugin_args) :]
+    return preparser_args, args[len(preparser_args) :]
 
 
 def main(sys_args: List[str]):
@@ -50,17 +50,18 @@ def main(sys_args: List[str]):
     traceback = False
     pre_init = True
     try:
-        plugin_args, app_args = _separate_args(args)
+        preparser_args, app_args = _separate_args(args)
+        parsed_preparser_args = cli.parse_preparser_options(preparser_args)
 
-        if plugin_args:
-            parsed_plugin_args = cli.parse_plugins(plugin_args)
-            if parsed_plugin_args.no_plugins:
-                LOGGER.info("Plugins disabled")
-            else:
-                plugin.initialize_plugins(parsed_plugin_args.plug)
-        else:
+        if parsed_preparser_args.no_plugins:
+            LOGGER.info("Non-default plugins disabled")
             plugin.initialize_plugins()
-        parsed_args, api = cli.parse_args(app_args)
+        else:
+            plugin.initialize_plugins(parsed_preparser_args.plug or [])
+
+        parsed_args, api = cli.parse_args(
+            app_args, show_all_opts=parsed_preparser_args.show_all_opts
+        )
         traceback = parsed_args.traceback
         pre_init = False
         cli.dispatch_command(parsed_args, api)

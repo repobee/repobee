@@ -1,3 +1,4 @@
+import argparse
 from unittest.mock import MagicMock
 from collections import namedtuple
 
@@ -45,10 +46,13 @@ def api_instance_mock(mocker):
 
 @pytest.fixture
 def init_plugins_mock(mocker):
+    def init_plugins(plugs=None):
+        list(map(module, plugs or []))
+
     return mocker.patch(
         "repobee.plugin.initialize_plugins",
         autospec=True,
-        side_effect=lambda plugs: list(map(module, plugs)),
+        side_effect=init_plugins,
     )
 
 
@@ -62,14 +66,8 @@ def parse_args_mock(mocker, api_instance_mock):
 
 
 @pytest.fixture
-def parse_plugins_mock(mocker):
-    return mocker.patch(
-        "repobee.cli.parse_plugins",
-        autospec=True,
-        side_effect=lambda args: [
-            arg for arg in args if not arg.startswith("-")
-        ],
-    )
+def parse_preparser_options_mock(mocker):
+    return mocker.patch("repobee.cli.parse_preparser_options", autospec=True)
 
 
 @pytest.fixture
@@ -85,7 +83,7 @@ def test_happy_path(
 
     main.main(sys_args)
 
-    parse_args_mock.assert_called_once_with(sys_args[1:])
+    parse_args_mock.assert_called_once_with(sys_args[1:], show_all_opts=False)
     dispatch_command_mock.assert_called_once_with(
         PARSED_ARGS, api_instance_mock
     )
@@ -101,7 +99,7 @@ def test_does_not_raise_on_exception_in_parsing(
 
     main.main(sys_args)
 
-    parse_args_mock.assert_called_once_with(sys_args[1:])
+    parse_args_mock.assert_called_once_with(sys_args[1:], show_all_opts=False)
     assert not dispatch_command_mock.called
 
 
@@ -125,18 +123,21 @@ def test_plugins_args(
     main.main(sys_args)
 
     init_plugins_mock.assert_called_once_with(["javac", "pylint"])
-    parse_args_mock.assert_called_once_with(CLONE_ARGS)
+    parse_args_mock.assert_called_once_with(CLONE_ARGS, show_all_opts=False)
 
 
 def test_no_plugins_arg(
     parse_args_mock, dispatch_command_mock, init_plugins_mock
 ):
+    """Default plugins still need to be loaded, so initialize_plugins should be
+    called without arguments.
+    """
     sys_args = ["repobee", "--no-plugins", *CLONE_ARGS]
 
     main.main(sys_args)
 
-    assert not init_plugins_mock.called
-    parse_args_mock.assert_called_once_with(CLONE_ARGS)
+    init_plugins_mock.assert_called_once_with()
+    parse_args_mock.assert_called_once_with(CLONE_ARGS, show_all_opts=False)
 
 
 def test_plugin_with_subparser_name(
@@ -147,7 +148,7 @@ def test_plugin_with_subparser_name(
     main.main(sys_args)
 
     init_plugins_mock.assert_called_once_with(["javac", "clone"])
-    parse_args_mock.assert_called_once_with(CLONE_ARGS)
+    parse_args_mock.assert_called_once_with(CLONE_ARGS, show_all_opts=False)
 
 
 def test_plug_arg_incompatible_with_no_plugins(
@@ -215,4 +216,37 @@ def test_logs_traceback_on_exception_in_dispatch_if_traceback(
     main.main(sys_args)
 
     assert logger_exception_mock.called
-    parse_args_mock.assert_called_once_with([*CLONE_ARGS, "--traceback"])
+    parse_args_mock.assert_called_once_with(
+        [*CLONE_ARGS, "--traceback"], show_all_opts=False
+    )
+
+
+def test_show_all_opts_correctly_separated(
+    parse_args_mock, parse_preparser_options_mock, no_config_mock
+):
+    msg = "expected exit"
+
+    def _raise_sysexit(*args, **kwargs):
+        raise SystemExit(msg)
+
+    parse_preparser_options_mock.return_value = argparse.Namespace(
+        show_all_opts=True, no_plugins=False, plug=None
+    )
+    parse_args_mock.side_effect = _raise_sysexit
+    sys_args = [
+        "repobee",
+        cli.PRE_PARSER_SHOW_ALL_OPTS,
+        cli.SETUP_PARSER,
+        "-h",
+    ]
+
+    with pytest.raises(SystemExit) as exc_info:
+        main.main(sys_args)
+
+    assert msg in str(exc_info.value)
+    parse_args_mock.assert_called_once_with(
+        [cli.SETUP_PARSER, "-h"], show_all_opts=True
+    )
+    parse_preparser_options_mock.assert_called_once_with(
+        [cli.PRE_PARSER_SHOW_ALL_OPTS]
+    )

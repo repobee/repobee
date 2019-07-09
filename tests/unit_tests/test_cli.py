@@ -313,6 +313,36 @@ def test_help_calls_add_arguments(monkeypatch, parser):
 class TestBaseParsing:
     """Test the basic functionality of parsing."""
 
+    def test_show_all_args_true_shows_configured_args(
+        self, config_mock, capsys
+    ):
+        """Test that configured args are shown when show_all_args is True."""
+        with pytest.raises(SystemExit):
+            cli.parse_args([cli.SETUP_PARSER, "-h"], show_all_args=True)
+
+        captured = capsys.readouterr()
+        assert "--user" in captured.out
+        assert "--base-url" in captured.out
+        assert "--org-name" in captured.out
+        assert "--master-org-name" in captured.out
+        assert "--students-file" in captured.out
+        assert "--token" in captured.out
+
+    def test_show_all_args_false_hides_configured_args(
+        self, config_mock, capsys
+    ):
+        """Test that configured args are hidden when show_all_args is False."""
+        with pytest.raises(SystemExit):
+            cli.parse_args([cli.SETUP_PARSER, "-h"], show_all_args=False)
+
+        captured = capsys.readouterr()
+        assert "--user" not in captured.out
+        assert "--base-url" not in captured.out
+        assert "--org-name" not in captured.out
+        assert "--master-org-name" not in captured.out
+        assert "--students-file" not in captured.out
+        assert "--token" not in captured.out
+
     def test_raises_on_invalid_org(self, api_class_mock, students_file):
         """Test that an appropriate error is raised when the organization is
         not found.

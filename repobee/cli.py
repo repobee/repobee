@@ -112,9 +112,17 @@ DEPRECATED_PARSERS = {
     ),
 }
 
+# any pre-parser options go here
+PRE_PARSER_PLUG_OPTS = ["-p", "--plug"]
+PRE_PARSER_NO_PLUGS = "--no-plugins"
+PRE_PARSER_SHOW_ALL_OPTS = "--show-all-opts"
+
+# this list should include all pre-parser flags
+PRE_PARSER_FLAGS = [PRE_PARSER_NO_PLUGS, PRE_PARSER_SHOW_ALL_OPTS]
+
 
 def parse_args(
-    sys_args: Iterable[str]
+    sys_args: Iterable[str], show_all_opts=False
 ) -> (tuples.Args, Optional[apimeta.API]):
     """Parse the command line arguments and initialize an API.
 
@@ -125,7 +133,7 @@ def parse_args(
         a tuples.Args namedtuple with the arguments, and an initialized
         apimeta.API instance (or None of testing connection).
     """
-    parser = _create_parser()
+    parser = _create_parser(show_all_opts)
     args = parser.parse_args(_handle_deprecation(sys_args))
 
     if getattr(args, SUB) == SHOW_CONFIG_PARSER:
@@ -555,7 +563,7 @@ class _OrderedFormatter(argparse.HelpFormatter):
         super().add_arguments(actions)
 
 
-def _create_parser():
+def _create_parser(show_all_opts):
     """Create the parser."""
 
     parser = argparse.ArgumentParser(
@@ -574,19 +582,19 @@ def _create_parser():
         action="version",
         version="{} v{}".format(repobee.__package__, repobee.__version__),
     )
-    _add_subparsers(parser)
+    _add_subparsers(parser, show_all_opts)
     return parser
 
 
-def _add_subparsers(parser):
+def _add_subparsers(parser, show_all_opts):
     """Add all of the subparsers to the parser. Note that the parsers prefixed
     with `base_` do not have any parent parsers, so any parser inheriting from
     them must also inherit from the required `base_parser` (unless it is a
     `base_` prefixed parser, of course).
     """
 
-    base_parser, base_student_parser, master_org_parser = (
-        _create_base_parsers()
+    base_parser, base_student_parser, master_org_parser = _create_base_parsers(
+        show_all_opts
     )
 
     repo_name_parser = argparse.ArgumentParser(add_help=False)
@@ -701,16 +709,18 @@ def _add_subparsers(parser):
     )
 
 
-def _create_base_parsers(show_all_args=False):
+def _create_base_parsers(show_all_opts):
     """Create the base parsers."""
     configured_defaults = config.get_configured_defaults()
     config.execute_config_hooks()
 
-    if not show_all_args and configured_defaults:
+    if not show_all_opts and configured_defaults:
         LOGGER.info(
             "CLI options that are set in the config file are suppressed in "
-            "help sections, run with pre-parser option --show-all-args to "
-            "unsuppress. Example: gitlab --show-all-args setup -h"
+            "help sections, run with pre-parser option {all_opts_arg} to "
+            "unsuppress. Example: gitlab {all_opts_arg} setup -h".format(
+                all_opts_arg=PRE_PARSER_SHOW_ALL_OPTS
+            )
         )
 
     def default(arg_name):
@@ -728,13 +738,13 @@ def _create_base_parsers(show_all_args=False):
 
     def hide_api_arg(arg_name):
         # note that API args that are not required should not be shown even
-        # when show_all_args is True, as they are not relevant.
+        # when show_all_opts is True, as they are not relevant.
         return not api_requires(arg_name) or (
-            not show_all_args and configured(arg_name)
+            not show_all_opts and configured(arg_name)
         )
 
     def hide_configurable_arg(arg_name):
-        return not show_all_args and configured(arg_name)
+        return not show_all_opts and configured(arg_name)
 
     # API args help sections
     user_help = argparse.SUPPRESS if hide_api_arg("user") else "Your username."
@@ -967,8 +977,9 @@ def _repo_names_to_urls(
     return non_local_urls + local_uris
 
 
-def parse_plugins(sys_args: Tuple[str]):
-    """Parse all plugin arguments.
+def parse_preparser_options(sys_args: Tuple[str]):
+    """Parse all arguments that can somehow alter the end-user CLI, such
+    as plugins.
 
     Args:
         sys_args: Command line arguments.
@@ -977,16 +988,21 @@ def parse_plugins(sys_args: Tuple[str]):
         prog="repobee", description="plugin pre-parser for repobee."
     )
 
-    mutex_grp = parser.add_mutually_exclusive_group(required=True)
+    mutex_grp = parser.add_mutually_exclusive_group()
     mutex_grp.add_argument(
-        "-p",
-        "--plug",
+        *PRE_PARSER_PLUG_OPTS,
         help="Specify the name of a plugin to use.",
         type=str,
         action="append",
+        default=None
     )
     mutex_grp.add_argument(
-        "--no-plugins", help="Disable plugins.", action="store_true"
+        PRE_PARSER_NO_PLUGS, help="Disable plugins.", action="store_true"
+    )
+    mutex_grp.add_argument(
+        PRE_PARSER_SHOW_ALL_OPTS,
+        help="Unsuppress all options in help menus",
+        action="store_true",
     )
 
     args = parser.parse_args(sys_args)
