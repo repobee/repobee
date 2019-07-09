@@ -66,7 +66,7 @@ def _format_reviewer(
     elif len(review_list) != num_reviews:
         LOGGER.warning(
             (
-                "expected {} to be assigned to {} review teams, but found {}. "
+                "Expected {} to be assigned to {} review teams, but found {}. "
                 "Review teams may have been tampered with."
             ).format(reviewer, num_reviews, len(review_list))
         )

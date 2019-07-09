@@ -55,7 +55,7 @@ def main(sys_args: List[str]):
         if plugin_args:
             parsed_plugin_args = cli.parse_plugins(plugin_args)
             if parsed_plugin_args.no_plugins:
-                LOGGER.info("plugins disabled")
+                LOGGER.info("Plugins disabled")
             else:
                 plugin.initialize_plugins(parsed_plugin_args.plug)
         else:
@@ -73,7 +73,7 @@ def main(sys_args: List[str]):
             LOGGER.error(str(exc))
             if pre_init:
                 LOGGER.info(_PRE_INIT_ERROR_MESSAGE)
-            LOGGER.exception("critical exception")
+            LOGGER.exception("Critical exception")
         else:
             LOGGER.error("{.__class__.__name__}: {}".format(exc, str(exc)))
 

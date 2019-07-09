@@ -859,7 +859,7 @@ class TestVerifySettings:
             username + "other"
         )
         expected_messages = [
-            "specified login is {}, but the fetched user's login is {}".format(
+            "Specified login is {}, but the fetched user's login is {}".format(
                 USER, wrong_username
             ),
             "Possible reasons: unknown",

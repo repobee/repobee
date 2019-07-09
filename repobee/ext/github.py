@@ -189,13 +189,13 @@ class GitHubAPI(apimeta.API):
         for team in self._get_teams_in(team_names):
             team.delete()
             deleted.add(team.name)
-            LOGGER.info("deleted team {}".format(team.name))
+            LOGGER.info("Deleted team {}".format(team.name))
 
         # only logging
         missing = set(team_names) - deleted
         if missing:
             LOGGER.warning(
-                "could not find teams: {}".format(", ".join(missing))
+                "Could not find teams: {}".format(", ".join(missing))
             )
 
     def _get_users(self, usernames: Iterable[str]) -> List[_User]:
@@ -217,7 +217,7 @@ class GitHubAPI(apimeta.API):
                         "Got unexpected response code from the GitHub API",
                         status=exc.status,
                     )
-                LOGGER.warning("user {} does not exist".format(name))
+                LOGGER.warning("User {} does not exist".format(name))
         return existing_users
 
     def ensure_teams_and_members(
@@ -273,7 +273,7 @@ class GitHubAPI(apimeta.API):
                 new_team = self._org.create_team(
                     team_name, permission=permission
                 )
-                LOGGER.info("created team {}".format(team_name))
+                LOGGER.info("Created team {}".format(team_name))
                 teams.append(new_team)
         return teams
 
@@ -294,7 +294,7 @@ class GitHubAPI(apimeta.API):
 
         if missing_members:
             LOGGER.info(
-                "adding members {} to team {}".format(
+                "Adding members {} to team {}".format(
                     ", ".join(missing_members), team.name
                 )
             )
@@ -332,7 +332,7 @@ class GitHubAPI(apimeta.API):
                 repo_urls.append(
                     self._org.create_repo(info.name, **kwargs).html_url
                 )
-                LOGGER.info("created {}/{}".format(self._org_name, info.name))
+                LOGGER.info("Created {}/{}".format(self._org_name, info.name))
                 created = True
 
             if not created:
@@ -447,7 +447,7 @@ class GitHubAPI(apimeta.API):
         for issue, repo in issue_repo_gen:
             issue.edit(state="closed")
             LOGGER.info(
-                "closed issue {}/#{}-'{}'".format(
+                "Closed issue {}/#{}-'{}'".format(
                     repo.name, issue.number, issue.title
                 )
             )
@@ -472,7 +472,7 @@ class GitHubAPI(apimeta.API):
                 issue.title, body=issue.body, assignees=reviewers
             )
             LOGGER.info(
-                "opened issue {}/#{}-'{}'".format(
+                "Opened issue {}/#{}-'{}'".format(
                     repo.name, created_issue.number, created_issue.title
                 )
             )
@@ -488,12 +488,12 @@ class GitHubAPI(apimeta.API):
         review_teams = self._get_teams_in(review_team_names)
         for review_team in review_teams:
             with _try_api_request():
-                LOGGER.info("processing {}".format(review_team.name))
+                LOGGER.info("Processing {}".format(review_team.name))
                 reviewers = set(m.login for m in review_team.get_members())
                 repos = list(review_team.get_repos())
                 if len(repos) != 1:
                     LOGGER.warning(
-                        "expected {} to have 1 associated repo, found {}."
+                        "Expected {} to have 1 associated repo, found {}."
                         "Skipping...".format(review_team.name, len(repos))
                     )
                     continue
@@ -540,7 +540,7 @@ class GitHubAPI(apimeta.API):
             repos = self._get_repos_by_name(team_to_repos[team.name])
             for repo in repos:
                 LOGGER.info(
-                    "adding team {} to repo {} with '{}' permission".format(
+                    "Adding team {} to repo {} with '{}' permission".format(
                         team.name, repo.name, team.permission
                     )
                 )
@@ -570,7 +570,7 @@ class GitHubAPI(apimeta.API):
         missing_repos = set(repo_names) - repos
         if missing_repos:
             LOGGER.warning(
-                "can't find repos: {}".format(", ".join(missing_repos))
+                "Can't find repos: {}".format(", ".join(missing_repos))
             )
 
     @staticmethod
@@ -582,7 +582,7 @@ class GitHubAPI(apimeta.API):
         master_org_name: Optional[str] = None,
     ) -> None:
         """See :py:func:`repobee.apimeta.APISpec.verify_settings`."""
-        LOGGER.info("verifying settings ...")
+        LOGGER.info("Verifying settings ...")
         if not token:
             raise exception.BadCredentials(
                 msg="token is empty. Check that REPOBEE_OAUTH environment "
@@ -591,7 +591,7 @@ class GitHubAPI(apimeta.API):
 
         g = github.Github(login_or_token=token, base_url=base_url)
 
-        LOGGER.info("trying to fetch user information ...")
+        LOGGER.info("Trying to fetch user information ...")
 
         user_not_found_msg = (
             "user {} could not be found. Possible reasons: "
@@ -600,7 +600,7 @@ class GitHubAPI(apimeta.API):
         with _convert_404_to_not_found_error(user_not_found_msg):
             user_ = g.get_user(user)
             msg = (
-                "specified login is {}, "
+                "Specified login is {}, "
                 "but the fetched user's login is {}.".format(user, user_.login)
             )
             if user_.login is None:
@@ -620,7 +620,7 @@ class GitHubAPI(apimeta.API):
             "user exists and base url looks okay".format(user)
         )
 
-        LOGGER.info("verifying oauth scopes ...")
+        LOGGER.info("Verifying oauth scopes ...")
         scopes = g.oauth_scopes
         if not REQUIRED_OAUTH_SCOPES.issubset(scopes):
             raise exception.BadCredentials(
@@ -633,12 +633,12 @@ class GitHubAPI(apimeta.API):
         if master_org_name:
             GitHubAPI._verify_org(master_org_name, user, g)
 
-        LOGGER.info("GREAT SUCCESS: All settings check out!")
+        LOGGER.info("GREAT SUCCESS: all settings check out!")
 
     @staticmethod
     def _verify_org(org_name: str, user: str, g: github.MainClass.Github):
         """Check that the organization exists and that the user is an owner."""
-        LOGGER.info("trying to fetch organization {} ...".format(org_name))
+        LOGGER.info("Trying to fetch organization {} ...".format(org_name))
         org_not_found_msg = (
             "organization {} could not be found. Possible "
             "reasons: org does not exist, user does not have "
@@ -649,7 +649,7 @@ class GitHubAPI(apimeta.API):
         LOGGER.info("SUCCESS: found organization {}".format(org_name))
 
         LOGGER.info(
-            "verifying that user {} is an owner of organization {}".format(
+            "Verifying that user {} is an owner of organization {}".format(
                 user, org_name
             )
         )

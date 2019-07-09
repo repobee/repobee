@@ -7,6 +7,7 @@ from functions import raise_
 from repobee import cli
 from repobee import main
 from repobee import tuples
+from repobee import plugin
 
 import constants
 
@@ -30,15 +31,6 @@ PARSED_ARGS = tuples.Args(cli.SETUP_PARSER, **VALID_PARSED_ARGS)
 CLONE_ARGS = "clone -mn week-2 -s slarse".split()
 
 module = namedtuple("module", ("name",))
-
-
-@pytest.fixture(autouse=True)
-def register_plugins_mock(mocker):
-    """As initialize_plugins is called multiple times, we need to mock out the
-    register_plugins method. Otherwise, it raises when trying to load the same
-    plugin twice.
-    """
-    return mocker.patch("repobee.plugin.register_plugins", autospec=True)
 
 
 @pytest.fixture
@@ -171,8 +163,16 @@ def test_plug_arg_incompatible_with_no_plugins(
 
 
 def test_invalid_plug_options(dispatch_command_mock, init_plugins_mock):
-    # -f is not a valid option for plugins and should be bumped to the
-    # main parser
+    """-f is not a valid option for plugins and should be bumped to the
+    main parser
+
+    Note that the default plugins must be loaded for this test to work.
+    """
+    # load default plugins
+    loaded = plugin.load_plugin_modules()
+    print(loaded)
+    plugin.register_plugins(loaded)
+
     sys_args = ["repobee", "-p", "javac", "-f", *CLONE_ARGS]
 
     with pytest.raises(SystemExit):

@@ -11,15 +11,12 @@ Contains the code required for pre-configuring user interfaces.
 import pathlib
 import configparser
 from typing import Union, List, Mapping
-import daiquiri
 import appdirs
 import repobee
 
 from repobee import exception
 
 import repobee_plug as plug
-
-LOGGER = daiquiri.getLogger(__file__)
 
 CONFIG_DIR = pathlib.Path(
     appdirs.user_config_dir(appname=__package__, appauthor=repobee.__author__)

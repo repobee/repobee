@@ -65,14 +65,14 @@ def setup_student_repos(
     urls = list(master_repo_urls)  # safe copy
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        LOGGER.info("cloning into master repos ...")
+        LOGGER.info("Cloning into master repos ...")
         master_repo_paths = _clone_all(urls, cwd=tmpdir)
 
         teams = _add_students_to_teams(teams, api)
         repo_urls = _create_student_repos(urls, teams, api)
 
         push_tuples = _create_push_tuples(master_repo_paths, repo_urls)
-        LOGGER.info("pushing files to student repos ...")
+        LOGGER.info("Pushing files to student repos ...")
         git.push(push_tuples)
 
 
@@ -111,7 +111,7 @@ def _create_student_repos(
     Returns:
         a list of urls to the repos
     """
-    LOGGER.info("creating student repos ...")
+    LOGGER.info("Creating student repos ...")
     repo_infos = _create_repo_infos(master_repo_urls, teams)
     repo_urls = api.create_repos(repo_infos)
     return repo_urls
@@ -132,10 +132,10 @@ def _clone_all(urls: Iterable[str], cwd: str):
         raise ValueError("master_repo_urls contains duplicates")
     try:
         for url in urls:
-            LOGGER.info("cloning into {}".format(url))
+            LOGGER.info("Cloning into {}".format(url))
             git.clone_single(url, cwd=cwd)
     except exception.CloneFailedError:
-        LOGGER.error("error cloning into {}, aborting ...".format(url))
+        LOGGER.error("Error cloning into {}, aborting ...".format(url))
         raise
     paths = [os.path.join(cwd, util.repo_name(url)) for url in urls]
     assert all(map(util.is_git_repo, paths)), "all repos must be git repos"
@@ -168,19 +168,19 @@ def update_student_repos(
     repo_urls = api.get_repo_urls(master_repo_names, teams=teams)
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        LOGGER.info("cloning into master repos ...")
+        LOGGER.info("Cloning into master repos ...")
         master_repo_paths = _clone_all(urls, tmpdir)
 
         push_tuples = _create_push_tuples(master_repo_paths, repo_urls)
 
-        LOGGER.info("pushing files to student repos ...")
+        LOGGER.info("Pushing files to student repos ...")
         failed_urls = git.push(push_tuples)
 
     if failed_urls and issue:
         LOGGER.info("Opening issue in repos to which push failed")
         _open_issue_by_urls(failed_urls, issue, api)
 
-    LOGGER.info("done!")
+    LOGGER.info("Done!")
 
 
 def _open_issue_by_urls(
@@ -360,7 +360,7 @@ def clone_repos(
     """
     repo_urls = api.get_repo_urls(master_repo_names, teams=teams)
 
-    LOGGER.info("cloning into student repos ...")
+    LOGGER.info("Cloning into student repos ...")
     git.clone(repo_urls)
 
     for plugin in plug.manager.get_plugins():
@@ -371,19 +371,19 @@ def clone_repos(
 
 
 def _execute_post_clone_hooks(repo_names: List[str], api: apimeta.API):
-    LOGGER.info("executing post clone hooks on repos")
+    LOGGER.info("Executing post clone hooks on repos")
     local_repos = [name for name in os.listdir() if name in repo_names]
 
     results = {}
     for repo_name in local_repos:
-        LOGGER.info("executing post clone hooks on {}".format(repo_name))
+        LOGGER.info("Executing post clone hooks on {}".format(repo_name))
         res = plug.manager.hook.act_on_cloned_repo(
             path=os.path.abspath(repo_name), api=api
         )
         results[repo_name] = res
     LOGGER.info(formatters.format_hook_results_output(results))
 
-    LOGGER.info("post clone hooks done")
+    LOGGER.info("Post clone hooks done")
 
 
 def migrate_repos(master_repo_urls: Iterable[str], api: apimeta.API) -> None:
@@ -423,7 +423,7 @@ def migrate_repos(master_repo_urls: Iterable[str], api: apimeta.API) -> None:
             ]
         )
 
-    LOGGER.info("done!")
+    LOGGER.info("Done!")
 
 
 def assign_peer_reviews(
@@ -598,7 +598,7 @@ def show_config() -> None:
     config.check_config_integrity()
 
     LOGGER.info(
-        "found valid config file at " + str(config.DEFAULT_CONFIG_FILE)
+        "Found valid config file at " + str(config.DEFAULT_CONFIG_FILE)
     )
     with config.DEFAULT_CONFIG_FILE.open(
         encoding=sys.getdefaultencoding()

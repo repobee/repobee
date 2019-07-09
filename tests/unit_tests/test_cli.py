@@ -2,6 +2,7 @@ import os
 import pathlib
 from unittest.mock import MagicMock
 from unittest import mock
+
 import pytest
 
 import repobee
