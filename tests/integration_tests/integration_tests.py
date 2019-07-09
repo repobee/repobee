@@ -34,6 +34,11 @@ MASTER_REPO_NAMES = "task-1 task-2 task-3".split()
 STUDENT_TEAMS = [apimeta.Team(members=[s]) for s in "slarse rjglasse".split()]
 STUDENT_TEAM_NAMES = [str(t) for t in STUDENT_TEAMS]
 
+REPOBEE_GITLAB = "repobee -p gitlab"
+BASE_ARGS = ["-bu", BASE_URL, "-o", ORG_NAME, "-t", TOKEN, "-tb"]
+STUDENTS_ARG = ["-s", " ".join(STUDENT_TEAM_NAMES)]
+MASTER_REPOS_ARG = ["-mn", " ".join(MASTER_REPO_NAMES)]
+
 
 def api_instance(org_name=ORG_NAME):
     """Return a valid instance of the GitLabAPI class."""
@@ -160,6 +165,19 @@ def tmpdir_volume_arg(tmpdir):
     yield "-v {}:{}".format(str(tmpdir), VOLUME_DST)
 
 
+def run_in_docker(command, extra_args=""):
+    docker_command = (
+        "docker run {} --net development --rm --name repobee "
+        "repobee:test /bin/sh -c '{}'"
+    ).format(extra_args, command)
+    return subprocess.run(
+        docker_command,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+
 @pytest.fixture
 def with_student_repos(restore):
     """Set up student repos before starting tests.
@@ -218,19 +236,6 @@ def open_issues(with_student_repos):
     return issues
 
 
-def run_in_docker(command, extra_args=""):
-    docker_command = (
-        "docker run {} --net development --rm --name repobee "
-        "repobee:test /bin/sh -c '{}'"
-    ).format(extra_args, command)
-    return subprocess.run(
-        docker_command,
-        shell=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-
-
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
 class TestSetup:
     """Integration tests for the setup command."""
@@ -279,9 +284,10 @@ class TestSetup:
 class TestMigrate:
     """Integration tests for the migrate command."""
 
-    def test_happy_path(self):
-        """Migrate a few repos from the existing master repo into the target
-        organization.
+    @pytest.fixture
+    def local_master_repos(self, restore, tmpdir_volume_arg):
+        """Clone the master repos to disk. The restore fixture is explicitly
+        included as it must be run before this fixture.
         """
         api = api_instance(MASTER_ORG_NAME)
         master_repo_urls = [
@@ -290,15 +296,25 @@ class TestMigrate:
         ]
         # clone the master repos to disk first first
         git_commands = ["git clone {}".format(url) for url in master_repo_urls]
-        repobee_command = (
-            "repobee -p gitlab migrate -bu {} -o {} -mn {} -t {} -tb"
-        ).format(BASE_URL, ORG_NAME, " ".join(MASTER_REPO_NAMES), TOKEN)
-        command = " && ".join(git_commands + [repobee_command])
-
-        result = run_in_docker(command)
+        result = run_in_docker(
+            " && ".join(git_commands), extra_args=tmpdir_volume_arg
+        )
 
         assert result.returncode == 0
-        assert_master_repos_exist(MASTER_REPO_NAMES, ORG_NAME)
+        return MASTER_REPO_NAMES
+
+    def test_happy_path(self, local_master_repos, tmpdir_volume_arg):
+        """Migrate a few repos from the existing master repo into the target
+        organization.
+        """
+        command = (
+            "repobee -p gitlab migrate -bu {} -o {} -mn {} -t {} -tb"
+        ).format(BASE_URL, ORG_NAME, " ".join(local_master_repos), TOKEN)
+
+        result = run_in_docker(command, extra_args=tmpdir_volume_arg)
+
+        assert result.returncode == 0
+        assert_master_repos_exist(local_master_repos, ORG_NAME)
 
 
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
