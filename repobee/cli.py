@@ -112,9 +112,17 @@ DEPRECATED_PARSERS = {
     ),
 }
 
+# any pre-parser options go here
+PRE_PARSER_PLUG_OPTS = ["-p", "--plug"]
+PRE_PARSER_NO_PLUGS = "--no-plugins"
+PRE_PARSER_SHOW_ALL_OPTS = "--show-all-opts"
+
+# this list should include all pre-parser flags
+PRE_PARSER_FLAGS = [PRE_PARSER_NO_PLUGS, PRE_PARSER_SHOW_ALL_OPTS]
+
 
 def parse_args(
-    sys_args: Iterable[str]
+    sys_args: Iterable[str], show_all_opts=False
 ) -> (tuples.Args, Optional[apimeta.API]):
     """Parse the command line arguments and initialize an API.
 
@@ -125,7 +133,7 @@ def parse_args(
         a tuples.Args namedtuple with the arguments, and an initialized
         apimeta.API instance (or None of testing connection).
     """
-    parser = _create_parser()
+    parser = _create_parser(show_all_opts)
     args = parser.parse_args(_handle_deprecation(sys_args))
 
     if getattr(args, SUB) == SHOW_CONFIG_PARSER:
@@ -555,7 +563,7 @@ class _OrderedFormatter(argparse.HelpFormatter):
         super().add_arguments(actions)
 
 
-def _create_parser():
+def _create_parser(show_all_opts):
     """Create the parser."""
 
     parser = argparse.ArgumentParser(
@@ -574,19 +582,19 @@ def _create_parser():
         action="version",
         version="{} v{}".format(repobee.__package__, repobee.__version__),
     )
-    _add_subparsers(parser)
+    _add_subparsers(parser, show_all_opts)
     return parser
 
 
-def _add_subparsers(parser):
+def _add_subparsers(parser, show_all_opts):
     """Add all of the subparsers to the parser. Note that the parsers prefixed
     with `base_` do not have any parent parsers, so any parser inheriting from
     them must also inherit from the required `base_parser` (unless it is a
     `base_` prefixed parser, of course).
     """
 
-    base_parser, base_student_parser, master_org_parser = (
-        _create_base_parsers()
+    base_parser, base_student_parser, master_org_parser = _create_base_parsers(
+        show_all_opts
     )
 
     repo_name_parser = argparse.ArgumentParser(add_help=False)
@@ -701,10 +709,19 @@ def _add_subparsers(parser):
     )
 
 
-def _create_base_parsers():
+def _create_base_parsers(show_all_opts):
     """Create the base parsers."""
     configured_defaults = config.get_configured_defaults()
     config.execute_config_hooks()
+
+    if not show_all_opts and configured_defaults:
+        LOGGER.info(
+            "CLI options that are set in the config file are suppressed in "
+            "help sections, run with pre-parser option {all_opts_arg} to "
+            "unsuppress. Example: gitlab {all_opts_arg} setup -h".format(
+                all_opts_arg=PRE_PARSER_SHOW_ALL_OPTS
+            )
+        )
 
     def default(arg_name):
         return (
@@ -719,11 +736,67 @@ def _create_base_parsers():
     def api_requires(arg_name):
         return arg_name in plug.manager.hook.api_init_requires()
 
+    def hide_api_arg(arg_name):
+        # note that API args that are not required should not be shown even
+        # when show_all_opts is True, as they are not relevant.
+        return not api_requires(arg_name) or (
+            not show_all_opts and configured(arg_name)
+        )
+
+    def hide_configurable_arg(arg_name):
+        return not show_all_opts and configured(arg_name)
+
+    # API args help sections
+    user_help = argparse.SUPPRESS if hide_api_arg("user") else "Your username."
+    org_name_help = (
+        argparse.SUPPRESS
+        if hide_api_arg("org_name")
+        else "Name of the target organization"
+    )
+    base_url_help = (
+        argparse.SUPPRESS
+        if hide_api_arg("base_url")
+        else (
+            "Base url to a platform API. Must be HTTPS. For example, with "
+            "github.com, the base url is https://api.github.com, and with "
+            "GitHub enterprise, the url is https://<ENTERPRISE_HOST>/api/v3"
+        )
+    )
+    token_help = (
+        argparse.SUPPRESS
+        if hide_api_arg("token")
+        else (
+            "OAUTH token for the platform instance. Can also be specified in "
+            "the `REPOBEE_OAUTH` environment variable."
+        )
+    )
+
+    # other configurable args help sections
+    # these should not be checked against the api_requires function
+    students_file_help = (
+        argparse.SUPPRESS
+        if hide_configurable_arg("students_file")
+        else (
+            "Path to a list of student usernames. Put multiple usernames on "
+            "each line to form groups."
+        )
+    )
+    master_org_help = (
+        argparse.SUPPRESS
+        if hide_configurable_arg("master_org_name")
+        else (
+            "Name of the organization containing the master repos. "
+            "Defaults to the same value as `-o|--org-name` if left "
+            "unspecified. Note that config values take precedence "
+            "over this default."
+        )
+    )
+
     base_parser = argparse.ArgumentParser(add_help=False)
     base_parser.add_argument(
         "-u",
         "--user",
-        help=("Your username."),
+        help=user_help,
         type=str,
         required=not configured("user") and api_requires("user"),
         default=default("user"),
@@ -732,7 +805,7 @@ def _create_base_parsers():
     base_parser.add_argument(
         "-o",
         "--org-name",
-        help="Name of the target organization",
+        help=org_name_help,
         type=str,
         required=not configured("org_name") and api_requires("org_name"),
         default=default("org_name"),
@@ -740,22 +813,13 @@ def _create_base_parsers():
     base_parser.add_argument(
         "-bu",
         "--base-url",
-        help=(
-            "Base url to a platform API. Must be HTTPS. For example, with "
-            "github.com, the base url is https://api.github.com, and with "
-            "GitHub enterprise, the url is https://<ENTERPRISE_HOST>/api/v3"
-        ),
+        help=base_url_help,
         type=str,
         required=not configured("base_url") and api_requires("base_url"),
         default=default("base_url"),
     )
     base_parser.add_argument(
-        "-t",
-        "--token",
-        help="OAUTH token for the platform instance. Can also be specified in "
-        "the `REPOBEE_OAUTH` environment variable.",
-        type=str,
-        default=default("token"),
+        "-t", "--token", help=token_help, type=str, default=default("token")
     )
 
     base_parser.add_argument(
@@ -772,7 +836,7 @@ def _create_base_parsers():
     students.add_argument(
         "-sf",
         "--students-file",
-        help="Path to a list of student usernames.",
+        help=students_file_help,
         type=str,
         default=default("students_file"),
     )
@@ -788,9 +852,7 @@ def _create_base_parsers():
     master_org_parser.add_argument(
         "-mo",
         "--master-org-name",
-        help="Name of the organization containing the master repos. "
-        "Defaults to the same value as `-o|--org-name` if left unspecified. "
-        "Note that config values take precedence over this default.",
+        help=master_org_help,
         default=default("master_org_name"),
     )
 
@@ -915,8 +977,9 @@ def _repo_names_to_urls(
     return non_local_urls + local_uris
 
 
-def parse_plugins(sys_args: Tuple[str]):
-    """Parse all plugin arguments.
+def parse_preparser_options(sys_args: Tuple[str]):
+    """Parse all arguments that can somehow alter the end-user CLI, such
+    as plugins.
 
     Args:
         sys_args: Command line arguments.
@@ -925,16 +988,21 @@ def parse_plugins(sys_args: Tuple[str]):
         prog="repobee", description="plugin pre-parser for repobee."
     )
 
-    mutex_grp = parser.add_mutually_exclusive_group(required=True)
+    mutex_grp = parser.add_mutually_exclusive_group()
     mutex_grp.add_argument(
-        "-p",
-        "--plug",
+        *PRE_PARSER_PLUG_OPTS,
         help="Specify the name of a plugin to use.",
         type=str,
         action="append",
+        default=None
     )
     mutex_grp.add_argument(
-        "--no-plugins", help="Disable plugins.", action="store_true"
+        PRE_PARSER_NO_PLUGS, help="Disable plugins.", action="store_true"
+    )
+    mutex_grp.add_argument(
+        PRE_PARSER_SHOW_ALL_OPTS,
+        help="Unsuppress all options in help menus",
+        action="store_true",
     )
 
     args = parser.parse_args(sys_args)
