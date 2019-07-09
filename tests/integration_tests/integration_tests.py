@@ -168,10 +168,8 @@ def with_student_repos(restore):
     it runs before this fixture.
     """
     command = (
-        "repobee -p gitlab "
-        "setup -u {} -bu {} -o {} -mo {} -mn {} -s {} -t {} -tb"
+        "repobee -p gitlab " "setup -bu {} -o {} -mo {} -mn {} -s {} -t {} -tb"
     ).format(
-        OAUTH_USER,
         BASE_URL,
         ORG_NAME,
         MASTER_ORG_NAME,
@@ -241,9 +239,8 @@ class TestSetup:
         """Test a first-time setup with master repos in the master org."""
         command = (
             "repobee -p gitlab "
-            "setup -u {} -bu {} -o {} -mo {} -mn {} -s {} -t {} -tb"
+            "setup -bu {} -o {} -mo {} -mn {} -s {} -t {} -tb"
         ).format(
-            OAUTH_USER,
             BASE_URL,
             ORG_NAME,
             MASTER_ORG_NAME,
@@ -261,9 +258,8 @@ class TestSetup:
         """Setting up twice should have the same effect as setting up once."""
         command = (
             "repobee -p gitlab "
-            "setup -u {} -bu {} -o {} -mo {} -mn {} -s {} -t {} -tb"
+            "setup -bu {} -o {} -mo {} -mn {} -s {} -t {} -tb"
         ).format(
-            OAUTH_USER,
             BASE_URL,
             ORG_NAME,
             MASTER_ORG_NAME,
@@ -295,10 +291,8 @@ class TestMigrate:
         # clone the master repos to disk first first
         git_commands = ["git clone {}".format(url) for url in master_repo_urls]
         repobee_command = (
-            "repobee -p gitlab " "migrate -u {} -bu {} -o {} -mn {} -t {} -tb"
-        ).format(
-            OAUTH_USER, BASE_URL, ORG_NAME, " ".join(MASTER_REPO_NAMES), TOKEN
-        )
+            "repobee -p gitlab migrate -bu {} -o {} -mn {} -t {} -tb"
+        ).format(BASE_URL, ORG_NAME, " ".join(MASTER_REPO_NAMES), TOKEN)
         command = " && ".join(git_commands + [repobee_command])
 
         result = run_in_docker(command)
