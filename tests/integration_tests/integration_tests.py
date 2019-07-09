@@ -8,6 +8,7 @@ import gitlab
 
 import repobee.ext
 import repobee.ext.gitlab
+import repobee.cli
 from repobee import util
 from repobee import apimeta
 
@@ -33,6 +34,12 @@ ACTUAL_USER = "repobee-user"
 MASTER_REPO_NAMES = "task-1 task-2 task-3".split()
 STUDENT_TEAMS = [apimeta.Team(members=[s]) for s in "slarse rjglasse".split()]
 STUDENT_TEAM_NAMES = [str(t) for t in STUDENT_TEAMS]
+
+REPOBEE_GITLAB = "repobee -p gitlab"
+BASE_ARGS = ["-bu", BASE_URL, "-o", ORG_NAME, "-t", TOKEN, "-tb"]
+STUDENTS_ARG = ["-s", " ".join(STUDENT_TEAM_NAMES)]
+MASTER_REPOS_ARG = ["-mn", " ".join(MASTER_REPO_NAMES)]
+MASTER_ORG_ARG = ["-mo", MASTER_ORG_NAME]
 
 
 def api_instance(org_name=ORG_NAME):
@@ -160,6 +167,19 @@ def tmpdir_volume_arg(tmpdir):
     yield "-v {}:{}".format(str(tmpdir), VOLUME_DST)
 
 
+def run_in_docker(command, extra_args=""):
+    docker_command = (
+        "docker run {} --net development --rm --name repobee "
+        "repobee:test /bin/sh -c '{}'"
+    ).format(extra_args, command)
+    return subprocess.run(
+        docker_command,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+
 @pytest.fixture
 def with_student_repos(restore):
     """Set up student repos before starting tests.
@@ -167,15 +187,15 @@ def with_student_repos(restore):
     Note that explicitly including restore here is necessary to ensure that
     it runs before this fixture.
     """
-    command = (
-        "repobee -p gitlab " "setup -bu {} -o {} -mo {} -mn {} -s {} -t {} -tb"
-    ).format(
-        BASE_URL,
-        ORG_NAME,
-        MASTER_ORG_NAME,
-        " ".join(MASTER_REPO_NAMES),
-        " ".join(STUDENT_TEAM_NAMES),
-        TOKEN,
+    command = " ".join(
+        [
+            REPOBEE_GITLAB,
+            repobee.cli.SETUP_PARSER,
+            *BASE_ARGS,
+            *MASTER_ORG_ARG,
+            *MASTER_REPOS_ARG,
+            *STUDENTS_ARG,
+        ]
     )
 
     run_in_docker(command)
@@ -218,35 +238,21 @@ def open_issues(with_student_repos):
     return issues
 
 
-def run_in_docker(command, extra_args=""):
-    docker_command = (
-        "docker run {} --net development --rm --name repobee "
-        "repobee:test /bin/sh -c '{}'"
-    ).format(extra_args, command)
-    return subprocess.run(
-        docker_command,
-        shell=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-
-
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
 class TestSetup:
     """Integration tests for the setup command."""
 
     def test_clean_setup(self):
         """Test a first-time setup with master repos in the master org."""
-        command = (
-            "repobee -p gitlab "
-            "setup -bu {} -o {} -mo {} -mn {} -s {} -t {} -tb"
-        ).format(
-            BASE_URL,
-            ORG_NAME,
-            MASTER_ORG_NAME,
-            " ".join(MASTER_REPO_NAMES),
-            " ".join(STUDENT_TEAM_NAMES),
-            TOKEN,
+        command = " ".join(
+            [
+                REPOBEE_GITLAB,
+                repobee.cli.SETUP_PARSER,
+                *BASE_ARGS,
+                *MASTER_ORG_ARG,
+                *MASTER_REPOS_ARG,
+                *STUDENTS_ARG,
+            ]
         )
 
         result = run_in_docker(command)
@@ -256,16 +262,15 @@ class TestSetup:
 
     def test_setup_twice(self):
         """Setting up twice should have the same effect as setting up once."""
-        command = (
-            "repobee -p gitlab "
-            "setup -bu {} -o {} -mo {} -mn {} -s {} -t {} -tb"
-        ).format(
-            BASE_URL,
-            ORG_NAME,
-            MASTER_ORG_NAME,
-            " ".join(MASTER_REPO_NAMES),
-            " ".join(STUDENT_TEAM_NAMES),
-            TOKEN,
+        command = " ".join(
+            [
+                REPOBEE_GITLAB,
+                repobee.cli.SETUP_PARSER,
+                *BASE_ARGS,
+                *MASTER_ORG_ARG,
+                *MASTER_REPOS_ARG,
+                *STUDENTS_ARG,
+            ]
         )
 
         result = run_in_docker(command)
@@ -279,9 +284,10 @@ class TestSetup:
 class TestMigrate:
     """Integration tests for the migrate command."""
 
-    def test_happy_path(self):
-        """Migrate a few repos from the existing master repo into the target
-        organization.
+    @pytest.fixture
+    def local_master_repos(self, restore, tmpdir_volume_arg):
+        """Clone the master repos to disk. The restore fixture is explicitly
+        included as it must be run before this fixture.
         """
         api = api_instance(MASTER_ORG_NAME)
         master_repo_urls = [
@@ -290,15 +296,30 @@ class TestMigrate:
         ]
         # clone the master repos to disk first first
         git_commands = ["git clone {}".format(url) for url in master_repo_urls]
-        repobee_command = (
-            "repobee -p gitlab migrate -bu {} -o {} -mn {} -t {} -tb"
-        ).format(BASE_URL, ORG_NAME, " ".join(MASTER_REPO_NAMES), TOKEN)
-        command = " && ".join(git_commands + [repobee_command])
-
-        result = run_in_docker(command)
+        result = run_in_docker(
+            " && ".join(git_commands), extra_args=tmpdir_volume_arg
+        )
 
         assert result.returncode == 0
-        assert_master_repos_exist(MASTER_REPO_NAMES, ORG_NAME)
+        return MASTER_REPO_NAMES
+
+    def test_happy_path(self, local_master_repos, tmpdir_volume_arg):
+        """Migrate a few repos from the existing master repo into the target
+        organization.
+        """
+        command = " ".join(
+            [
+                REPOBEE_GITLAB,
+                repobee.cli.MIGRATE_PARSER,
+                *BASE_ARGS,
+                *MASTER_REPOS_ARG,
+            ]
+        )
+
+        result = run_in_docker(command, extra_args=tmpdir_volume_arg)
+
+        assert result.returncode == 0
+        assert_master_repos_exist(local_master_repos, ORG_NAME)
 
 
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
@@ -313,16 +334,16 @@ class TestOpenIssues:
         text = "{}\n{}".format(self._ISSUE.title, self._ISSUE.body)
         tmpdir.join(filename).write_text(text, encoding="utf-8")
 
-        command = (
-            "repobee -p gitlab "
-            "open-issues -bu {} -o {} -i {} -mn {} -s {} -t {} -tb"
-        ).format(
-            BASE_URL,
-            ORG_NAME,
-            "{}/{}".format(VOLUME_DST, filename),
-            " ".join(MASTER_REPO_NAMES),
-            " ".join(STUDENT_TEAM_NAMES),
-            TOKEN,
+        command = " ".join(
+            [
+                REPOBEE_GITLAB,
+                repobee.cli.OPEN_ISSUE_PARSER,
+                *BASE_ARGS,
+                *MASTER_REPOS_ARG,
+                *STUDENTS_ARG,
+                "-i",
+                "{}/{}".format(VOLUME_DST, filename),
+            ]
         )
 
         result = run_in_docker(command, extra_args=tmpdir_volume_arg)
@@ -341,16 +362,16 @@ class TestCloseIssues:
         assert len(open_issues) == 2, "expected there to be only 2 open issues"
         close_issue = open_issues[0]
         open_issue = open_issues[1]
-        command = (
-            "repobee -p gitlab "
-            "close-issues -bu {} -o {} -mn {} -s {} -t {} -r {} -tb"
-        ).format(
-            BASE_URL,
-            ORG_NAME,
-            " ".join(MASTER_REPO_NAMES),
-            " ".join(STUDENT_TEAM_NAMES),
-            TOKEN,
-            close_issue.title,
+        command = " ".join(
+            [
+                REPOBEE_GITLAB,
+                repobee.cli.CLOSE_ISSUE_PARSER,
+                *BASE_ARGS,
+                *MASTER_REPOS_ARG,
+                *STUDENTS_ARG,
+                "-r",
+                close_issue.title,
+            ]
         )
 
         result = run_in_docker(command)
@@ -394,16 +415,16 @@ class TestListIssues:
             for repo_name in repo_names
         ]
 
-        command = (
-            "repobee -p gitlab "
-            "list-issues -bu {} -o {} -mn {} -s {} -t {} -r {} -tb"
-        ).format(
-            BASE_URL,
-            ORG_NAME,
-            " ".join(MASTER_REPO_NAMES),
-            " ".join(STUDENT_TEAM_NAMES),
-            TOKEN,
-            matched.title,
+        command = " ".join(
+            [
+                REPOBEE_GITLAB,
+                repobee.cli.LIST_ISSUES_PARSER,
+                *BASE_ARGS,
+                *MASTER_REPOS_ARG,
+                *STUDENTS_ARG,
+                "-r",
+                matched.title,
+            ]
         )
 
         result = run_in_docker(command)
