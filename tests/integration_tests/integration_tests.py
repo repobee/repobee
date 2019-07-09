@@ -315,9 +315,8 @@ class TestOpenIssues:
 
         command = (
             "repobee -p gitlab "
-            "open-issues -u {} -bu {} -o {} -i {} -mn {} -s {} -t {} -tb"
+            "open-issues -bu {} -o {} -i {} -mn {} -s {} -t {} -tb"
         ).format(
-            OAUTH_USER,
             BASE_URL,
             ORG_NAME,
             "{}/{}".format(VOLUME_DST, filename),
@@ -344,9 +343,8 @@ class TestCloseIssues:
         open_issue = open_issues[1]
         command = (
             "repobee -p gitlab "
-            "close-issues -u {} -bu {} -o {} -mn {} -s {} -t {} -r {} -tb"
+            "close-issues -bu {} -o {} -mn {} -s {} -t {} -r {} -tb"
         ).format(
-            OAUTH_USER,
             BASE_URL,
             ORG_NAME,
             " ".join(MASTER_REPO_NAMES),
@@ -398,9 +396,8 @@ class TestListIssues:
 
         command = (
             "repobee -p gitlab "
-            "list-issues -u {} -bu {} -o {} -mn {} -s {} -t {} -r {} -tb"
+            "list-issues -bu {} -o {} -mn {} -s {} -t {} -r {} -tb"
         ).format(
-            OAUTH_USER,
             BASE_URL,
             ORG_NAME,
             " ".join(MASTER_REPO_NAMES),
