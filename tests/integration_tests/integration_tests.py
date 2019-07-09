@@ -1,7 +1,9 @@
 import os
+import hashlib
 import subprocess
 import pathlib
 import re
+import itertools
 
 import pytest
 import gitlab
@@ -34,12 +36,23 @@ ACTUAL_USER = "repobee-user"
 MASTER_REPO_NAMES = "task-1 task-2 task-3".split()
 STUDENT_TEAMS = [apimeta.Team(members=[s]) for s in "slarse rjglasse".split()]
 STUDENT_TEAM_NAMES = [str(t) for t in STUDENT_TEAMS]
+STUDENT_REPO_NAMES = repobee.util.generate_repo_names(
+    STUDENT_TEAMS, MASTER_REPO_NAMES
+)
 
 REPOBEE_GITLAB = "repobee -p gitlab"
 BASE_ARGS = ["-bu", BASE_URL, "-o", ORG_NAME, "-t", TOKEN, "-tb"]
 STUDENTS_ARG = ["-s", " ".join(STUDENT_TEAM_NAMES)]
 MASTER_REPOS_ARG = ["-mn", " ".join(MASTER_REPO_NAMES)]
 MASTER_ORG_ARG = ["-mo", MASTER_ORG_NAME]
+
+TASK_CONTENTS_SHAS = {
+    "task-1": (
+        b"\xcc\xd5\xcb\xfd\xfe\xab\xc6g\xc9{\xe4c\xd2\xc7W\xa2\\>\xac\x1a"
+    ),
+    "task-2": b"!o\xb02\x9b~.`\xba=\xf9d\x11\x98\xf0\xedt\x1f\xd0D",
+    "task-3": b"\\\x163RV\r\xb7~n\xea\x14\xf6\xd5\xcb\xab\x82\xf9f1c",
+}
 
 
 def api_instance(org_name=ORG_NAME):
@@ -205,6 +218,37 @@ def with_student_repos(restore):
     assert_groups_exist(STUDENT_TEAMS)
 
 
+def assert_cloned_repos(repo_names, tmpdir):
+    """Check that the cloned repos have the expected contents.
+
+    NOTE: Only checks the contents of the root of the project.
+    """
+    # group by master repo name, all of which have the same length
+    grouped_repo_names = itertools.groupby(
+        sorted(repo_names),
+        key=lambda name: name[len(name) - len(MASTER_REPO_NAMES[0]) :],
+    )
+
+    root = pathlib.Path(tmpdir).resolve()
+
+    for master_repo_name, student_repo_names in grouped_repo_names:
+        expected_sha = TASK_CONTENTS_SHAS[master_repo_name]
+        for repo_name in student_repo_names:
+            sha = hash_directory(root / repo_name)
+            assert sha == expected_sha
+            assert (root / repo_name / ".git").is_dir()
+
+
+def hash_directory(path):
+    shas = []
+    for dirpath, _, filenames in os.walk(str(path)):
+        if ".git" in dirpath:
+            continue
+        files = (pathlib.Path(dirpath) / filename for filename in filenames)
+        shas += (hashlib.sha1(file.read_bytes()).digest() for file in files)
+    return hashlib.sha1(b"".join(shas)).digest()
+
+
 @pytest.fixture
 def open_issues(with_student_repos):
     """Open two issues in each student repo."""
@@ -236,6 +280,30 @@ def open_issues(with_student_repos):
     )
 
     return issues
+
+
+@pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
+class TestClone:
+    """Integration tests for the clone command."""
+
+    def test_clean_clone(self, with_student_repos, tmpdir, tmpdir_volume_arg):
+        """Test cloning student repos when there are no repos in the current
+        working directory.
+        """
+        command = " ".join(
+            [
+                REPOBEE_GITLAB,
+                repobee.cli.CLONE_PARSER,
+                *BASE_ARGS,
+                *MASTER_REPOS_ARG,
+                *STUDENTS_ARG,
+            ]
+        )
+
+        result = run_in_docker(command, extra_args=tmpdir_volume_arg)
+
+        assert result.returncode == 0
+        assert_cloned_repos(STUDENT_REPO_NAMES, tmpdir)
 
 
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
