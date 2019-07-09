@@ -701,10 +701,17 @@ def _add_subparsers(parser):
     )
 
 
-def _create_base_parsers():
+def _create_base_parsers(show_all_args=False):
     """Create the base parsers."""
     configured_defaults = config.get_configured_defaults()
     config.execute_config_hooks()
+
+    if not show_all_args and configured_defaults:
+        LOGGER.info(
+            "CLI options that are set in the config file are suppressed in "
+            "help sections, run with pre-parser option --show-all-args to "
+            "unsuppress. Example: gitlab --show-all-args setup -h"
+        )
 
     def default(arg_name):
         return (
@@ -719,11 +726,67 @@ def _create_base_parsers():
     def api_requires(arg_name):
         return arg_name in plug.manager.hook.api_init_requires()
 
+    def hide_api_arg(arg_name):
+        # note that API args that are not required should not be shown even
+        # when show_all_args is True, as they are not relevant.
+        return not api_requires(arg_name) or (
+            not show_all_args and configured(arg_name)
+        )
+
+    def hide_configurable_arg(arg_name):
+        return not show_all_args and configured(arg_name)
+
+    # API args help sections
+    user_help = argparse.SUPPRESS if hide_api_arg("user") else "Your username."
+    org_name_help = (
+        argparse.SUPPRESS
+        if hide_api_arg("org_name")
+        else "Name of the target organization"
+    )
+    base_url_help = (
+        argparse.SUPPRESS
+        if hide_api_arg("base_url")
+        else (
+            "Base url to a platform API. Must be HTTPS. For example, with "
+            "github.com, the base url is https://api.github.com, and with "
+            "GitHub enterprise, the url is https://<ENTERPRISE_HOST>/api/v3"
+        )
+    )
+    token_help = (
+        argparse.SUPPRESS
+        if hide_api_arg("token")
+        else (
+            "OAUTH token for the platform instance. Can also be specified in "
+            "the `REPOBEE_OAUTH` environment variable."
+        )
+    )
+
+    # other configurable args help sections
+    # these should not be checked against the api_requires function
+    students_file_help = (
+        argparse.SUPPRESS
+        if hide_configurable_arg("students_file")
+        else (
+            "Path to a list of student usernames. Put multiple usernames on "
+            "each line to form groups."
+        )
+    )
+    master_org_help = (
+        argparse.SUPPRESS
+        if hide_configurable_arg("master_org_name")
+        else (
+            "Name of the organization containing the master repos. "
+            "Defaults to the same value as `-o|--org-name` if left "
+            "unspecified. Note that config values take precedence "
+            "over this default."
+        )
+    )
+
     base_parser = argparse.ArgumentParser(add_help=False)
     base_parser.add_argument(
         "-u",
         "--user",
-        help=("Your username."),
+        help=user_help,
         type=str,
         required=not configured("user") and api_requires("user"),
         default=default("user"),
@@ -732,7 +795,7 @@ def _create_base_parsers():
     base_parser.add_argument(
         "-o",
         "--org-name",
-        help="Name of the target organization",
+        help=org_name_help,
         type=str,
         required=not configured("org_name") and api_requires("org_name"),
         default=default("org_name"),
@@ -740,22 +803,13 @@ def _create_base_parsers():
     base_parser.add_argument(
         "-bu",
         "--base-url",
-        help=(
-            "Base url to a platform API. Must be HTTPS. For example, with "
-            "github.com, the base url is https://api.github.com, and with "
-            "GitHub enterprise, the url is https://<ENTERPRISE_HOST>/api/v3"
-        ),
+        help=base_url_help,
         type=str,
         required=not configured("base_url") and api_requires("base_url"),
         default=default("base_url"),
     )
     base_parser.add_argument(
-        "-t",
-        "--token",
-        help="OAUTH token for the platform instance. Can also be specified in "
-        "the `REPOBEE_OAUTH` environment variable.",
-        type=str,
-        default=default("token"),
+        "-t", "--token", help=token_help, type=str, default=default("token")
     )
 
     base_parser.add_argument(
@@ -772,7 +826,7 @@ def _create_base_parsers():
     students.add_argument(
         "-sf",
         "--students-file",
-        help="Path to a list of student usernames.",
+        help=students_file_help,
         type=str,
         default=default("students_file"),
     )
@@ -788,9 +842,7 @@ def _create_base_parsers():
     master_org_parser.add_argument(
         "-mo",
         "--master-org-name",
-        help="Name of the organization containing the master repos. "
-        "Defaults to the same value as `-o|--org-name` if left unspecified. "
-        "Note that config values take precedence over this default.",
+        help=master_org_help,
         default=default("master_org_name"),
     )
 
