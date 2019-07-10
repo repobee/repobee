@@ -3,51 +3,66 @@
 Introduction
 ************
 RepoBee is an opinionated tool for managing anything from a handful to
-thousands of GitHub repositories for higher education courses. It was created as
-the old teachers_pet_ tool was getting long in the tooth, and the new `GitHub
-Classroom`_ wasn't quite what we wanted (we like our command line apps).
-RepoBee is heavily inspired by teachers_pet, but tries to both make for a more
-complete and streamlined experience.
+thousands of Git repositories on the GitHub and GitLab platforms. There were two
+primary reasons for RepoBee's inception. First, the old teachers_pet_ tool that
+we used previously lacked some functionality that we needed and had been
+archived in favor of the new `GitHub Classroom`_. Second, `GitHub Classroom`_
+did not support GitHub Enterprise at the time (and as of this writing, still
+does not, although `efforts have been made to that end
+<https://github.com/education/classroom/pull/1163>`_). RepoBee is heavily
+inspired by teachers_pet_, as we enjoyed the overall workflow, but improves on
+the user experience.
 
 Philosophy and goals
 ====================
-The primary goal of RepoBee is to lower the bar for incorporating
-Git and GitHub into higher education coursework, hopefully opening up
-the wonderful world of version control to teachers who may not be subject
-experts (and to their students). For new users, RepoBee provides both a
-tool and an opinionated workflow to adopt. For the more experienced user,
-there is also opportunity to customize RepoBee using its plugin system,
-which is planned to be expanded even more. RepoBee is primarily geared toward
-teachers looking to generate repos for their students. Many features are
-however highly useful to teaching assistants, such as the ability to clone
-repos in bulk and perform arbitrary tasks on them (tasks can be implemented as
-plugins, see :ref:`plugins`).
+When RepoBee was first created, it's goals were simple: facilitate creation and
+management of student repositories for courses at KTH, using GitHub Enterprise.
+Since then, the scope of the project has grown to incorporate many new features,
+including support for the GitLab platform. For new users of Git/GitHub/GitLab in
+education, RepoBee provides both a tool to make it happen, and an opinionated
+workflow to ease the transition. For the more experienced user, the plugin system
+can be used to extend or modify the behavior of RepoBee. While creating a plugin
+requires some rudimentary skills with Python programming, installing a plugin
+created by someone else is no harder than installing RepoBee itself. The plugin
+system enables RepoBee to both be easy to get up and running *without* any
+required customization, while still *allowing* for a degree of customization to
+those that want it. See :ref:`plugins` for details.
 
 Another key goal is to keep RepoBee simple to use and simple to maintain.
 RepoBee requires a minimal amount of static data to operate (such as a list of
-students, a URL to the GitHub instance and an access token to GitHub), which
-can all be provided in configuration files or on the command line, but it does
-not require any kind of backing database to keep track of repositories. That is
-because RepoBee itself does not keep track of anything, except possibly for the
-aforementioned static data if one chooses to keep it in configuration files.
-All of the complex state state is more or less implicitly stored on GitHub, and
-RepoBee locates student repositories based on strict naming conventions that
-are adhered to by all of its commands. This allows RepoBee to be simple to set
-up and use on multiple machines, which is crucial in a course where multiple
-teachers and TAs are managing the student repositories. There is also the fact
-that nothing need be installed server-side, as RepoBee only uses core GitHub
-features to do its work. For an experienced user, installing RepoBee and
-setting everything up for a new course can literally take minutes. For the
-novice, the :ref:`userguide` will hopefully prove sufficient to get started in
-not too much time.
+students, a URL to the platform instance and an access token to said platform),
+which can all be provided in configuration files or on the command line, but it
+does not require any kind of backing database to keep track of repositories.
+That is because RepoBee itself does not keep track of anything, except possibly
+for the aforementioned static data if one chooses to keep it in configuration
+files. All of the complex state state is more or less implicitly stored on
+the hosting platform, and RepoBee locates student repositories based on strict
+naming conventions that are adhered to by all of its commands. This allows
+RepoBee to be simple to set up and use on multiple machines, which is crucial in
+a course where multiple teachers and TAs are managing the student repositories.
+RepoBee is very intentionally designed *not* to be a service, but an on-demand
+tool that is only in use when explicitly being used. This means that nothing
+needs to be installed server-side for RepoBee to function, which also happens to
+be key to supporting multiple hosting platforms. For an experienced user,
+installing RepoBee and setting everything up for a new course can literally take
+minutes. For the novice, the :ref:`userguide` will hopefully prove sufficient to
+get started within the hour.
 
 Key concepts
 ============
 Some terms occur frequently in RepoBee and are best defined up front.
 Some of the descriptions may not click entirely before reading the
 :ref:`userguide` section, so quickly browsing through these definitions and
-re-visiting them when needed is probably the best course of action.
+re-visiting them when needed is probably the best course of action. As GitHub is
+the default platform, these concepts are based on and often refer to
+GitHub-specific terms. For a mapping to GitLab terms and concepts, please see
+the :ref:`gitlab` section.
 
+* *Platform*: Or *hosting platform*, refers to services such as GitHub and
+  GitLab.
+* *Platform instance:* A specific instance of a hosting platform. For example,
+  https://github.com is one instance, and an arbitrary GitLab Enterprise
+  installation is another.
 * *Target organization*: The GitHub Organization_ related to the current course
   round.
 * *Master repository*: Or *master repo*, is a template repository upon which
@@ -59,8 +74,6 @@ re-visiting them when needed is probably the best course of action.
   master repos are being worked on across course rounds.
 * *Student repository*: Or *student repo*, refers to a *copy* of a master repo
   for some specific student or group of students.
-* *GitHub instance*: A hosted GitHub service. This can be for example
-  *https://github.com* or any Enterprise host.
 
 .. _conventions:
 
@@ -68,7 +81,7 @@ Conventions
 ===========
 The following conventions are fundamental to working with RepoBee.
 
-* For each course and course round, use one target Organization_.
+* For each course and course round, use one target organization.
 * Any user of RepoBee has unrestricted access to the target organization
   (i.e. is an owner). If the user has limited access, some features may work,
   while others may not.
@@ -94,14 +107,13 @@ The following conventions are fundamental to working with RepoBee.
 
 .. note::
 
-    Few of these conventions are actually enforced, and there are ways around
-    almost every single one. However, with the exception of the *one
-    organization per course round* convention, which must be ensured manually,
-    RepoBee will automatically adhere to the other conventions. Although
-    RepoBee does adhere to the conventions, there is no way to stop users
-    from breaking them using e.g. the GitHub web interface, manually performing
-    master repo migrations etc. Straying form the conventions may cause
-    RepoBee to behave unexpectedly.
+   RepoBee has no way of enforcing these conventions, other than itself strictly
+   adhering to them. For example, there are no countermeasures against someone
+   manually changing the names of student repositories or their URLs, and as
+   there are endless variations of things that can be manually changed, there
+   are no safety checks against such things either. If you have a need to
+   manually change something, do keep in mind that straying from RepoBee's
+   conventions may cause it to act unexpectedly.
 
 Usage with different platforms (GitHub, GitHub Enterprise and GitLab)
 =====================================================================
@@ -110,10 +122,11 @@ well with the public cloud service at https://github.com. Usage of RepoBee
 should be identical, but there are two differences between the two that one
 should be aware of.
 
-.. note:: 
+.. note::
 
-   As of v1.5.0, GitLab is partially supported. Please see :ref:`gitlab` for
-   more information on which commands work, and how to use RepoBee with GitLab.
+   As of v1.6.0, GitLab is supported by most features. Please see :ref:`gitlab`
+   for more information on which commands work, and how to use RepoBee with
+   GitLab.
 
 The Organization must have support for private repositories
 -----------------------------------------------------------
