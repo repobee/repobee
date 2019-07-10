@@ -9,19 +9,21 @@ Getting started (the ``show-config``, ``verify-settings`` and ``setup`` commands
     environment.
 
 The basic workflow of RepoBee is best described by example. In this section,
-I will walk you through how to set up an Organization_ with master and student
-repositories by showing every single step I would perform myself. The basic
-workflow can be summarized in the following steps:
+I will walk you through how to set up a target organization with master and
+student repositories by showing every single step I would perform myself. The
+basic workflow can be summarized in the following steps:
 
 1. Create an organization (the target organization).
 2. Configure RepoBee for the target organization.
 3. Verify settings.
-4. Setting up the master repos.
-5. Setting up the student repos.
+4. Set up the master repos.
+5. Set up the student repos.
 
-There is more to RepoBee, such as opening/closing issues, updating student
-repos and cloning repos in batches, but here we will just look at the bare
-minimum to get started. Now, let's delve into these steps in greater detail.
+This should leave you with enough knowledge to use the rudimentary features of
+RepoBee. There is much more to RepoBee, such as opening/closing issues,
+updating student repos and cloning repos in batches. This is covered in later
+sections, but you don't necessarily need to go through the entire guide in one
+go. Now, let's delve into the above steps in greater detail.
 
 Create an organization
 ======================
@@ -143,7 +145,7 @@ If any of the checks fail, you should be provided with a semi-helpful error
 message. When all checks pass and you get ``GREAT SUCCESS``, move on to the
 next section!
 
-Setting up master repos
+Set up master repos
 =======================
 How you do this will depend on where you want to have your master repos. I
 recommend having a separate, persistent organization so that you can work on
@@ -156,8 +158,8 @@ way you set this up does not matter as far as RepoBee commands go.
 
 .. _setup:
 
-Setup student sepositories
-==========================
+Set up student sepositories
+===========================
 Now that the master repos are set up, it's time to create the student repos.
 While student usernames *can* be specified on the command line, it's often
 convenient to have them written down in a file instead. Let's pretend I have
