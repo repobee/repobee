@@ -8,6 +8,11 @@ Getting started (the ``show-config``, ``verify-settings`` and ``setup`` commands
     tech-savvy enough to translate the instructions into some other shell
     environment.
 
+.. important::
+
+   Whenever you see specific mentions of GitHub, refer to the :ref:`gitlab`
+   section for how this translates to use with GitLab.
+
 The basic workflow of RepoBee is best described by example. In this section,
 I will walk you through how to set up a target organization with master and
 student repositories by showing every single step I would perform myself. The
@@ -28,7 +33,7 @@ go. Now, let's delve into the above steps in greater detail.
 Create an organization
 ======================
 This is an absolutely necessary pre-requisite for using RepoBee.
-Create an organization with an appropriate name on the GitHub instance you
+Create an organization with an appropriate name on the platform instance you
 intend to use. You can find the ``New organization`` button by going to
 ``Settings -> Organization``. I will call my *target organization*
 ``repobee-demo``, so whenever you see that, substitute in the name of your
@@ -47,13 +52,13 @@ target organization.
 .. _configure_repobee:
 
 Configure RepoBee for the target organization (``show-config`` and ``verify-settings``)
-========================================================================================
+=======================================================================================
 For the tool to work at all, it needs to be provided with an OAUTH2 token to
-whichever GitHub instance you intend to use. See the `GitHub OAUTH docs`_ for
+whichever platform instance you intend to use. See the `GitHub OAUTH docs`_ for
 how to create a token. The token should have the ``repo`` and ``admin:org``
 scopes. While we can set this token in an environment variable (see
 :ref:`configuration`), it's more convenient to just put it in the configuration
-file, as we will put other default values in there.  We can use the
+file, as we will put other default values in there. We can use the
 ``show-config`` command to figure out where to put the config file.
 
 .. code-block:: bash
@@ -62,11 +67,9 @@ file, as we will put other default values in there.  We can use the
     [ERROR] FileError: no config file found, expected location: /home/USERNAME/.config/repobee/config.cnf
 
 ``show-config`` will check that the configuration file exists and is
-syntactically correct. Well, technically it will try to load the config and fail to do so if it
-doesn't exist or is incorrectly formatted and then display it to the user. Here,
-the error message is telling use that it expected a config file at
-``/home/USERNAME/.config/repobee/config.cnf``, so let's add one there. It
-should look something like this:
+syntactically correct. Here, the error message is telling us that it expected
+a config file at ``/home/USERNAME/.config/repobee/config.cnf``, so let's add
+one there. It should look something like this:
 
 .. code-block:: bash
 
@@ -79,7 +82,7 @@ should look something like this:
 
 Now, you need to substitute in some of your own values in place of mine.
 
-* Enter the correct url for your GitHub instance. There are two options:
+* Enter the correct url for your platform instance. There are two options:
     - If you are working with an enterprise instance, simply replace
       ``some-enterprise-host`` with the appropriate hostname.
     - If you are working with ``github.com``, replace the whole url
@@ -90,15 +93,7 @@ Now, you need to substitute in some of your own values in place of mine.
 * Replace ``master_org_name`` with the name of the organization with your master
   repos.
   - It you keep the master repos in the target organization or locally, **remove
-  this option**.
-
-.. important::
-
-    The rest of this guide assumes the simplest possible setup of _not_ having
-    a separate master organization, but it is good practice to have the master
-    repos separate for the sake of maintainability. If the master organization
-    is configured in the config file, it won't matter for any but the
-    ``migrate`` command (which you don't need then, anyway).
+  this option entirely**.
 
 That's it for configuration, and we can check that the file is correctly found
 and parsed by running ``show-config`` again:
@@ -167,6 +162,7 @@ three students with usernames ``spam``, ``ham`` and ``eggs``. I'll simply create
 a file called ``students.txt`` and type each username on a separate line.
 
 .. code-block:: bash
+   :caption: students.txt
 
     spam
     ham
@@ -188,7 +184,7 @@ a file called ``students.txt`` and type each username on a separate line.
 
 An absolute file path to this file can be added to the config file with the
 ``students_file`` option (see :ref:`config`). Now, I want to create one student
-repo for each student per master repo. The repo names will be on the form
+repo for each student and master repo. The repo names will be on the form
 ``<username>-<master-repo-name>``, guaranteeing their uniqueness. Each student
 will also be added to a team (which bears the same name as the student's user),
 and it is the team that is allowed access to the student's repos, and not the
@@ -198,25 +194,25 @@ simple as issuing a single command with RepoBee.
 .. code-block:: bash
 
     $ repobee setup -mn master-repo-1 master-repo-2 -sf students.txt
-    [INFO] cloning into master repos ...
-    [INFO] cloning into file:///home/slarse/tmp/master-repo-1
-    [INFO] cloning into file:///home/slarse/tmp/master-repo-2
-    [INFO] created team eggs
-    [INFO] created team ham
-    [INFO] created team spam
-    [INFO] adding members eggs to team eggs
+    [INFO] Cloning into master repos ...
+    [INFO] Cloning into file:///home/slarse/tmp/master-repo-1
+    [INFO] Cloning into file:///home/slarse/tmp/master-repo-2
+    [INFO] Created team eggs
+    [INFO] Created team ham
+    [INFO] Created team spam
+    [INFO] Adding members eggs to team eggs
     [WARNING] user eggs does not exist
-    [INFO] adding members ham to team ham
-    [INFO] adding members spam to team spam
-    [INFO] creating student repos ...
-    [INFO] created repobee-demo/eggs-master-repo-1
-    [INFO] created repobee-demo/ham-master-repo-1
-    [INFO] created repobee-demo/spam-master-repo-1
-    [INFO] created repobee-demo/eggs-master-repo-2
-    [INFO] created repobee-demo/ham-master-repo-2
-    [INFO] created repobee-demo/spam-master-repo-2
-    [INFO] pushing files to student repos ...
-    [INFO] pushing, attempt 1/3
+    [INFO] Adding members ham to team ham
+    [INFO] Adding members spam to team spam
+    [INFO] Creating student repos ...
+    [INFO] Created repobee-demo/eggs-master-repo-1
+    [INFO] Created repobee-demo/ham-master-repo-1
+    [INFO] Created repobee-demo/spam-master-repo-1
+    [INFO] Created repobee-demo/eggs-master-repo-2
+    [INFO] Created repobee-demo/ham-master-repo-2
+    [INFO] Created repobee-demo/spam-master-repo-2
+    [INFO] Pushing files to student repos ...
+    [INFO] Pushing, attempt 1/3
     [INFO] Pushed files to https://some-enterprise-host/repobee-demo/ham-master-repo-2 master
     [INFO] Pushed files to https://some-enterprise-host/repobee-demo/ham-master-repo-1 master
     [INFO] Pushed files to https://some-enterprise-host/repobee-demo/spam-master-repo-1 master
