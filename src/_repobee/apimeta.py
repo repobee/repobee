@@ -260,6 +260,16 @@ class APISpec:
         """
         _not_implemented()
 
+    def extract_repo_name(self, repo_url: str) -> str:
+        """Extract a repo name from the provided url.
+
+        Args:
+            repo_url: A URL to a repository.
+        Returns:
+            The name of the repository corresponding to the url.
+        """
+        _not_implemented()
+
     def get_issues(
         self,
         repo_names: Iterable[str],

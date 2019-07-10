@@ -13,7 +13,8 @@ program.
 
 .. moduleauthor:: Simon Larsén
 """
-
+import pathlib
+import shutil
 import os
 import sys
 import tempfile
@@ -359,15 +360,50 @@ def clone_repos(
             with the platform (e.g. GitHub or GitLab) instance.
     """
     repo_urls = api.get_repo_urls(master_repo_names, teams=teams)
+    # the reason we first compute the urls and then extract repo names is that
+    # GitLab needs the team names for namespacing: you can't reliably go from
+    # student repo name to student repo url!
+    repo_names = list(map(api.extract_repo_name, repo_urls))
+    name_conflicts = util.conflicting_files(map(str, repo_names), cwd=".")
+    clone_urls = [
+        url
+        for url in repo_urls
+        if api.extract_repo_name(url) not in name_conflicts
+    ]
+    for repo_name in name_conflicts:
+        LOGGER.warning("{} already exists, skipping".format(repo_name))
 
     LOGGER.info("Cloning into student repos ...")
-    git.clone(repo_urls)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        _clone_repos_no_check(clone_urls, tmpdir, api)
 
     for plugin in plug.manager.get_plugins():
         if "act_on_cloned_repo" in dir(plugin):
             repo_names = util.generate_repo_names(teams, master_repo_names)
             _execute_post_clone_hooks(repo_names, api)
             break
+
+
+def _clone_repos_no_check(repo_urls, dst_dirpath, api):
+    """Clone the specified repo urls into the destination directory without
+    making any sanity checks; they must be done in advance.
+
+    Return a list of names of the successfully cloned repos.
+    """
+    fail_urls = git.clone(repo_urls, cwd=dst_dirpath)
+    fail_repo_names = set(api.extract_repo_name(url) for url in fail_urls)
+    cloned_repos = [
+        path
+        for path in pathlib.Path(dst_dirpath).iterdir()
+        if path.is_dir()
+        and util.is_git_repo(str(path))
+        and path.name not in fail_repo_names
+    ]
+
+    cur_dir = pathlib.Path(".").resolve()
+    for repo in cloned_repos:
+        shutil.copytree(src=str(repo), dst=str(cur_dir / repo.name))
+    return [repo.name for repo in cloned_repos]
 
 
 def _execute_post_clone_hooks(repo_names: List[str], api: apimeta.API):
