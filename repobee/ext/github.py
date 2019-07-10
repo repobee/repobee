@@ -11,6 +11,7 @@ GitHubAPI are mostly high-level bulk operations.
 .. moduleauthor:: Simon Larsén
 """
 import re
+import pathlib
 from typing import List, Iterable, Mapping, Optional, Generator, Tuple
 from socket import gaierror
 import collections
@@ -368,6 +369,10 @@ class GitHubAPI(apimeta.API):
                 for repo_name in list(repo_names)
             )
         ]
+
+    def extract_repo_name(self, repo_url: str) -> str:
+        """See :py:func:`repobee.apimeta.APISpec.extract_repo_names`."""
+        return pathlib.Path(repo_url).stem
 
     def _insert_auth(self, repo_url: str):
         """Insert an authentication token into the url.
