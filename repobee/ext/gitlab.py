@@ -12,10 +12,11 @@ GitLabAPI are mostly high-level bulk operations.
 """
 import os
 import re
-from typing import List, Iterable, Optional, Generator, Tuple
-from socket import gaierror
 import collections
 import contextlib
+import pathlib
+from typing import List, Iterable, Optional, Generator, Tuple
+from socket import gaierror
 
 import daiquiri
 import gitlab
@@ -326,6 +327,10 @@ class GitLabAPI(apimeta.API):
             ]
         )
         return [self._insert_auth(url) for url in repo_urls]
+
+    def extract_repo_name(self, repo_url: str) -> str:
+        """See :py:func:`repobee.apimeta.APISpec.extract_repo_names`."""
+        return pathlib.Path(repo_url).stem
 
     def _insert_auth(self, repo_url: str):
         """Insert an authentication token into the url.

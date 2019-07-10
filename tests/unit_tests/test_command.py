@@ -529,15 +529,20 @@ class TestCloneRepos:
             "repobee.config.get_plugin_names", return_value=PLUGINS
         )
 
-    def test_happy_path(self, api_mock, git_mock, master_names, students):
+    def test_happy_path(
+        self, api_mock, git_mock, master_names, students, tmpdir
+    ):
         """Tests that the correct calls are made when there are no errors."""
         expected_urls = [
             generate_repo_url(name)
             for name in util.generate_repo_names(students, master_names)
         ]
+
         command.clone_repos(master_names, students, api_mock)
 
-        git_mock.clone.assert_called_once_with(expected_urls)
+        # note that the tmpdir_mock fixture sets the return value of
+        # tmpdir.TemporaryDirectory to tmpdir!
+        git_mock.clone.assert_called_once_with(expected_urls, cwd=str(tmpdir))
 
     def test_executes_act_hooks(
         self, api_mock, git_mock, master_names, students, act_hook_mocks
