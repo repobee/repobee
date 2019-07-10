@@ -6,7 +6,7 @@ GitLabAPI are mostly high-level bulk operations.
 
 .. module:: gitlab
     :synopsis: Top level interface for interacting with a GitLab instance
-        within repobee.
+        within _repobee.
 
 .. moduleauthor:: Simon Larsén
 """
@@ -23,9 +23,9 @@ import gitlab
 
 import repobee_plug as plug
 
-from repobee import exception
-from repobee import apimeta
-from repobee import util
+from _repobee import exception
+from _repobee import apimeta
+from _repobee import util
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -130,7 +130,7 @@ class GitLabAPI(apimeta.API):
         teams: Iterable[apimeta.Team],
         permission: apimeta.TeamPermission = apimeta.TeamPermission.PUSH,
     ) -> List[apimeta.Team]:
-        """See :py:func:`repobee.apimeta.APISpec.ensure_teams_and_members`."""
+        """See :py:func:`_repobee.apimeta.APISpec.ensure_teams_and_members`."""
         member_lists = {team.name: team.members for team in teams}
         raw_permission = _TEAM_PERMISSION_MAPPING[permission]
         raw_teams = self._ensure_teams_exist(
@@ -191,7 +191,7 @@ class GitLabAPI(apimeta.API):
         return [self._User(m.id, m.username) for m in group.members.list()]
 
     def get_teams(self) -> List[apimeta.Team]:
-        """See :py:func:`repobee.apimeta.Team`."""
+        """See :py:func:`_repobee.apimeta.Team`."""
         return [
             apimeta.Team(
                 name=t.name,
@@ -262,7 +262,7 @@ class GitLabAPI(apimeta.API):
         return teams
 
     def create_repos(self, repos: Iterable[apimeta.Repo]) -> List[str]:
-        """See :py:func:`repobee.apimeta.APISpec.create_repos`."""
+        """See :py:func:`_repobee.apimeta.APISpec.create_repos`."""
         repo_urls = []
         for repo in repos:
             created = False
@@ -307,7 +307,7 @@ class GitLabAPI(apimeta.API):
         org_name: Optional[str] = None,
         teams: Optional[List[apimeta.Team]] = None,
     ) -> List[str]:
-        """See :py:func:`repobee.apimeta.APISpec.get_repo_urls`."""
+        """See :py:func:`_repobee.apimeta.APISpec.get_repo_urls`."""
         group_name = org_name if org_name else self._group_name
         group_url = "{}/{}".format(self._base_url, group_name)
         repo_urls = (
@@ -373,7 +373,7 @@ class GitLabAPI(apimeta.API):
     def open_issue(
         self, title: str, body: str, repo_names: Iterable[str]
     ) -> None:
-        """See :py:func:`repobee.apimeta.APISpec.open_issue`."""
+        """See :py:func:`_repobee.apimeta.APISpec.open_issue`."""
         projects = self._get_projects_and_names_by_name(repo_names)
         for lazy_project, project_name in projects:
             issue = lazy_project.issues.create(dict(title=title, body=body))
@@ -384,7 +384,7 @@ class GitLabAPI(apimeta.API):
             )
 
     def close_issue(self, title_regex: str, repo_names: Iterable[str]) -> None:
-        """See :py:func:`repobee.apimeta.APISpec.close_issue`."""
+        """See :py:func:`_repobee.apimeta.APISpec.close_issue`."""
         projects = self._get_projects_and_names_by_name(repo_names)
         issues_and_project_names = (
             (issue, project_name)
@@ -414,7 +414,7 @@ class GitLabAPI(apimeta.API):
         state: apimeta.IssueState = apimeta.IssueState.OPEN,
         title_regex: str = "",
     ) -> Generator[Tuple[str, ISSUE_GENERATOR], None, None]:
-        """See :py:func:`repobee.apimeta.APISpec.get_issues`."""
+        """See :py:func:`_repobee.apimeta.APISpec.get_issues`."""
         projects = self._get_projects_and_names_by_name(repo_names)
         raw_state = _ISSUE_STATE_MAPPING[state]
         # TODO figure out how to get the issue body from the GitLab API...

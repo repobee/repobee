@@ -1,9 +1,9 @@
 """CLI module.
 
-This module contains the CLI for repobee.
+This module contains the CLI for _repobee.
 
 .. module:: cli
-    :synopsis: The CLI for repobee.
+    :synopsis: The CLI for _repobee.
 
 .. moduleauthor:: Simon Larsén
 """
@@ -21,13 +21,13 @@ import daiquiri
 
 import repobee_plug as plug
 
-import repobee
-from repobee import command
-from repobee import util
-from repobee import tuples
-from repobee import exception
-from repobee import config
-from repobee import apimeta
+import _repobee
+from _repobee import command
+from _repobee import util
+from _repobee import tuples
+from _repobee import exception
+from _repobee import config
+from _repobee import apimeta
 
 daiquiri.setup(
     level=logging.INFO,
@@ -39,7 +39,7 @@ daiquiri.setup(
             ),
         ),
         daiquiri.output.File(
-            filename="{}.log".format(__package__),
+            filename="{}.log".format(_repobee._external_package_name),
             formatter=daiquiri.formatter.ColorFormatter(
                 fmt="%(asctime)s [PID %(process)d] [%(levelname)s] "
                 "%(name)s -> %(message)s"
@@ -571,7 +571,7 @@ def _create_parser(show_all_opts):
         description=(
             "A CLI tool for administering large amounts of git repositories "
             "on GitHub and GitLab instances. See the full documentation at "
-            "https://repobee.readthedocs.io"
+            "https://_repobee.readthedocs.io"
         ),
         formatter_class=_OrderedFormatter,
     )
@@ -580,7 +580,9 @@ def _create_parser(show_all_opts):
         "--version",
         help="Display version info",
         action="version",
-        version="{} v{}".format(repobee.__package__, repobee.__version__),
+        version="{} v{}".format(
+            _repobee._external_package_name, _repobee.__version__
+        ),
     )
     _add_subparsers(parser, show_all_opts)
     return parser
@@ -985,7 +987,7 @@ def parse_preparser_options(sys_args: Tuple[str]):
         sys_args: Command line arguments.
     """
     parser = argparse.ArgumentParser(
-        prog="repobee", description="plugin pre-parser for repobee."
+        prog="repobee", description="plugin pre-parser for _repobee."
     )
 
     mutex_grp = parser.add_mutually_exclusive_group()

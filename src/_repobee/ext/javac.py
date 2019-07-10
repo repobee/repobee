@@ -25,7 +25,7 @@ import configparser
 import pathlib
 from typing import Union, Iterable, Tuple
 
-from repobee import util
+from _repobee import util
 
 from repobee_plug import Plugin, HookResult, Status
 

@@ -14,7 +14,7 @@ from colored import fg, bg, style
 from repobee_plug import Status
 import daiquiri
 
-from repobee import tuples
+from _repobee import tuples
 
 LOGGER = daiquiri.getLogger(__name__)
 

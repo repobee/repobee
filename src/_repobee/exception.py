@@ -5,7 +5,7 @@ itself extends :py:class:`Exception`. In other words, exceptions raised within
 ``repobee`` can all be caught by catching :py:class:`RepoBeeException`.
 
 .. module:: exception
-    :synopsis: Custom exceptions for repobee.
+    :synopsis: Custom exceptions for _repobee.
 
 .. moduleauthor:: Simon Larsén
 """

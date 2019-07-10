@@ -11,11 +11,11 @@ from unittest.mock import call, MagicMock
 
 import pytest
 
-from repobee import plugin
-from repobee import exception
+from _repobee import plugin
+from _repobee import exception
 
-from repobee.plugin import DEFAULT_PLUGIN
-from repobee.ext import javac, pylint, defaults
+from _repobee.plugin import DEFAULT_PLUGIN
+from _repobee.ext import javac, pylint, defaults
 
 import constants
 
@@ -25,7 +25,7 @@ PLUGINS = constants.PLUGINS
 class TestLoadPluginModules:
     """Tests for load_plugin_modules.
 
-    Note that the default plugin repobee.ext.defaults is always loaded.
+    Note that the default plugin _repobee.ext.defaults is always loaded.
     """
 
     def test_load_all_bundled_plugins(self, config_mock):
@@ -56,7 +56,7 @@ class TestLoadPluginModules:
             pass
 
         load_module_mock = mocker.patch(
-            "repobee.plugin._try_load_module", return_value=module
+            "_repobee.plugin._try_load_module", return_value=module
         )
 
         plugin.load_plugin_modules(
@@ -113,7 +113,7 @@ class TestRegisterPlugins:
         """Return an instance of the clone hook mock"""
         instance_mock = MagicMock()
         mocker.patch(
-            "repobee.ext.javac.JavacCloneHook.__new__",
+            "_repobee.ext.javac.JavacCloneHook.__new__",
             autospec=True,
             return_value=instance_mock,
         )

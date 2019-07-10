@@ -15,8 +15,8 @@ import constants
 sys.modules["github"] = MagicMock()
 
 
-import repobee  # noqa: F402
-from repobee import config  # noqa: F402
+import _repobee  # noqa: F402
+from _repobee import config  # noqa: F402
 
 EXPECTED_ENV_VARIABLES = ["REPOBEE_OAUTH", "REPOBEE_NO_VERIFY_SSL"]
 
@@ -122,14 +122,14 @@ def empty_config_mock(mocker, isfile_mock, tmpdir):
     function."""
     file = tmpdir.join("config.cnf")
     file.ensure()
-    read_config = repobee.config._read_config
+    read_config = _repobee.config._read_config
     mocker.patch(
-        "repobee.config._read_config",
+        "_repobee.config._read_config",
         side_effect=lambda _: read_config(pathlib.Path(str(file))),
     )
-    read_defaults = repobee.config._read_defaults
+    read_defaults = _repobee.config._read_defaults
     mocker.patch(
-        "repobee.config._read_defaults",
+        "_repobee.config._read_defaults",
         side_effect=lambda _: read_defaults(pathlib.Path(str(file))),
     )
     isfile = isfile_mock.side_effect

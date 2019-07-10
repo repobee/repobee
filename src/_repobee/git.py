@@ -13,8 +13,8 @@ import pathlib
 import daiquiri
 from typing import Iterable, List, Any, Callable
 
-from repobee import exception
-from repobee import util
+from _repobee import exception
+from _repobee import util
 
 CONCURRENT_TASKS = 20
 

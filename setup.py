@@ -5,7 +5,7 @@ with open("README.md", mode="r", encoding="utf-8") as f:
     readme = f.read()
 
 # parse the version instead of importing it to avoid dependency-related crashes
-with open("repobee/__version.py", mode="r", encoding="utf-8") as f:
+with open("src/_repobee/__version.py", mode="r", encoding="utf-8") as f:
     line = f.readline()
     __version__ = line.split("=")[1].strip(" '\"\n")
     assert re.match(r"^\d+(\.\d+){2}$", __version__)
@@ -44,7 +44,9 @@ setup(
         )
     ),
     license="MIT",
-    packages=find_packages(exclude=("tests", "docs")),
+    package_dir={"": "src"},
+    packages=find_packages(where="src", exclude=("tests", "docs")),
+    py_modules=["repobee"],
     tests_require=test_requirements,
     install_requires=required,
     extras_require=dict(TEST=test_requirements),

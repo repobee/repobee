@@ -5,7 +5,7 @@ import tempfile
 from contextlib import contextmanager
 import pytest
 
-from repobee import util
+from _repobee import util
 
 
 @contextmanager

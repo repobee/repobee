@@ -1,6 +1,6 @@
 import pytest
-from repobee import apimeta
-from repobee import exception
+from _repobee import apimeta
+from _repobee import exception
 
 import collections
 

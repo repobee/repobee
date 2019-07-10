@@ -6,7 +6,7 @@ GitHubAPI are mostly high-level bulk operations.
 
 .. module:: github
     :synopsis: Top level interface for interacting with a GitHub instance
-        within repobee.
+        within _repobee.
 
 .. moduleauthor:: Simon Larsén
 """
@@ -22,10 +22,10 @@ import github
 
 import repobee_plug as plug
 
-from repobee import exception
-from repobee import tuples
-from repobee import util
-from repobee import apimeta
+from _repobee import exception
+from _repobee import tuples
+from _repobee import util
+from _repobee import apimeta
 
 REQUIRED_OAUTH_SCOPES = {"admin:org", "repo"}
 ISSUE_GENERATOR = Generator[apimeta.Issue, None, None]
@@ -113,7 +113,7 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
 
 
 class GitHubAPI(apimeta.API):
-    """A highly specialized GitHub API class for repobee. The API is
+    """A highly specialized GitHub API class for _repobee. The API is
     affiliated both with an organization, and with the whole GitHub
     instance. Almost all operations take place on the target
     organization.
@@ -173,7 +173,7 @@ class GitHubAPI(apimeta.API):
             )
 
     def get_teams(self) -> List[apimeta.Team]:
-        """See :py:func:`repobee.apimeta.APISpec.get_teams`."""
+        """See :py:func:`_repobee.apimeta.APISpec.get_teams`."""
         return [
             apimeta.Team(
                 name=t.name,
@@ -185,7 +185,7 @@ class GitHubAPI(apimeta.API):
         ]
 
     def delete_teams(self, team_names: Iterable[str]) -> None:
-        """See :py:func:`repobee.apimeta.APISpec.delete_teams`."""
+        """See :py:func:`_repobee.apimeta.APISpec.delete_teams`."""
         deleted = set()  # only for logging
         for team in self._get_teams_in(team_names):
             team.delete()
@@ -226,7 +226,7 @@ class GitHubAPI(apimeta.API):
         teams: Iterable[apimeta.Team],
         permission: apimeta.TeamPermission = apimeta.TeamPermission.PUSH,
     ) -> List[apimeta.Team]:
-        """See :py:func:`repobee.apimeta.APISpec.ensure_teams_and_members`."""
+        """See :py:func:`_repobee.apimeta.APISpec.ensure_teams_and_members`."""
         raw_permission = _TEAM_PERMISSION_MAPPING[permission]
         member_lists = {team.name: team.members for team in teams}
         raw_teams = self._ensure_teams_exist(
@@ -320,7 +320,7 @@ class GitHubAPI(apimeta.API):
                 team.add_membership(user)
 
     def create_repos(self, repos: Iterable[apimeta.Repo]):
-        """See :py:func:`repobee.apimeta.APISpec.create_repos`."""
+        """See :py:func:`_repobee.apimeta.APISpec.create_repos`."""
         repo_urls = []
         for info in repos:
             created = False
@@ -350,7 +350,7 @@ class GitHubAPI(apimeta.API):
         org_name: Optional[str] = None,
         teams: Optional[List[apimeta.Team]] = None,
     ) -> List[str]:
-        """See :py:func:`repobee.apimeta.APISpec.get_repo_urls`."""
+        """See :py:func:`_repobee.apimeta.APISpec.get_repo_urls`."""
         with _try_api_request():
             org = (
                 self._org
@@ -397,7 +397,7 @@ class GitHubAPI(apimeta.API):
         state: apimeta.IssueState = apimeta.IssueState.OPEN,
         title_regex: str = "",
     ) -> Generator[Tuple[str, ISSUE_GENERATOR], None, None]:
-        """See :py:func:`repobee.apimeta.APISpec.get_issues`."""
+        """See :py:func:`_repobee.apimeta.APISpec.get_issues`."""
         repos = self._get_repos_by_name(repo_names)
         raw_state = _ISSUE_STATE_MAPPING[state]
 
@@ -425,7 +425,7 @@ class GitHubAPI(apimeta.API):
     def open_issue(
         self, title: str, body: str, repo_names: Iterable[str]
     ) -> None:
-        """See :py:func:`repobee.apimeta.APISpec.open_issue`."""
+        """See :py:func:`_repobee.apimeta.APISpec.open_issue`."""
         repo_names_set = set(repo_names)
         repos = list(self._get_repos_by_name(repo_names_set))
         for repo in repos:
@@ -438,7 +438,7 @@ class GitHubAPI(apimeta.API):
             )
 
     def close_issue(self, title_regex: str, repo_names: Iterable[str]) -> None:
-        """See :py:func:`repobee.apimeta.APISpec.close_issue`."""
+        """See :py:func:`_repobee.apimeta.APISpec.close_issue`."""
         repo_names_set = set(repo_names)
         repos = list(self._get_repos_by_name(repo_names_set))
 
@@ -466,7 +466,8 @@ class GitHubAPI(apimeta.API):
         team_to_repos: Mapping[str, Iterable[str]],
         issue: Optional[apimeta.Issue] = None,
     ) -> None:
-        """See :py:func:`repobee.apimeta.APISpec.add_repos_to_review_teams`."""
+        """See :py:func:`_repobee.apimeta.APISpec.add_repos_to_review_teams`.
+        """
         issue = issue or DEFAULT_REVIEW_ISSUE
         for team, repo in self._add_repos_to_teams(team_to_repos):
             # TODO team.get_members() api request is a bit redundant, it
@@ -488,7 +489,7 @@ class GitHubAPI(apimeta.API):
         teams: Iterable[apimeta.Team],
         title_regex: str,
     ) -> Mapping[str, List[tuples.Review]]:
-        """See :py:func:`repobee.apimeta.APISpec.get_review_progress`."""
+        """See :py:func:`_repobee.apimeta.APISpec.get_review_progress`."""
         reviews = collections.defaultdict(list)
         review_teams = self._get_teams_in(review_team_names)
         for review_team in review_teams:
@@ -586,7 +587,7 @@ class GitHubAPI(apimeta.API):
         token: str,
         master_org_name: Optional[str] = None,
     ) -> None:
-        """See :py:func:`repobee.apimeta.APISpec.verify_settings`."""
+        """See :py:func:`_repobee.apimeta.APISpec.verify_settings`."""
         LOGGER.info("Verifying settings ...")
         if not token:
             raise exception.BadCredentials(

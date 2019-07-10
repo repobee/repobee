@@ -5,9 +5,9 @@ import collections
 
 import pytest
 
-from repobee import util
-from repobee.plugin import register_plugins
-from repobee.ext import pairwise
+from _repobee import util
+from _repobee.plugin import register_plugins
+from _repobee.ext import pairwise
 
 
 class TestGenerateReviewAllocations:

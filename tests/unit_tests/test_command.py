@@ -4,14 +4,14 @@ from unittest.mock import patch, MagicMock, call, ANY, PropertyMock
 
 import pytest
 
-import repobee
-import repobee.ext.github
-from repobee import command
-from repobee import git
-from repobee import util
-from repobee import exception
-from repobee import plugin
-from repobee import apimeta
+import _repobee
+import _repobee.ext.github
+from _repobee import command
+from _repobee import git
+from _repobee import util
+from _repobee import exception
+from _repobee import plugin
+from _repobee import apimeta
 
 from repobee_plug import HookResult, repobee_hook, Status
 
@@ -104,8 +104,8 @@ def git_mock(request, mocker):
     """
     if "nogitmock" in request.keywords:
         return
-    pt = repobee.git.Push
-    git_mock = mocker.patch("repobee.command.git", autospec=True)
+    pt = _repobee.git.Push
+    git_mock = mocker.patch("_repobee.command.git", autospec=True)
     git_mock.Push = pt
     return git_mock
 
@@ -136,8 +136,8 @@ def api_mock(request, mocker):
     def url_from_repo_info(repo_info):
         return generate_repo_url(repo_info.name)
 
-    mock = MagicMock(spec=repobee.ext.github.GitHubAPI)
-    api_class = mocker.patch("repobee.ext.github.GitHubAPI", autospec=True)
+    mock = MagicMock(spec=_repobee.ext.github.GitHubAPI)
+    api_class = mocker.patch("_repobee.ext.github.GitHubAPI", autospec=True)
     api_class.return_value = mock
 
     mock.get_repo_urls.side_effect = partial(
@@ -147,7 +147,8 @@ def api_mock(request, mocker):
         map(url_from_repo_info, repo_infos)
     )
     mock.get_issues = MagicMock(
-        spec="repobee.ext.github.GitHubAPI.get_issues", side_effect=_get_issues
+        spec="_repobee.ext.github.GitHubAPI.get_issues",
+        side_effect=_get_issues,
     )
     type(mock).token = PropertyMock(return_value=TOKEN)
     return mock
@@ -223,7 +224,7 @@ def rmtree_mock(mocker):
 @pytest.fixture(autouse=True)
 def is_git_repo_mock(mocker):
     return mocker.patch(
-        "repobee.util.is_git_repo", return_value=True, autospec=True
+        "_repobee.util.is_git_repo", return_value=True, autospec=True
     )
 
 
@@ -249,7 +250,7 @@ class TestSetupStudentRepos:
 
     @pytest.fixture(autouse=True)
     def is_git_repo_mock(self, mocker):
-        return mocker.patch("repobee.util.is_git_repo", return_value=True)
+        return mocker.patch("_repobee.util.is_git_repo", return_value=True)
 
     def test_raises_on_clone_failure(
         self, master_urls, students, git_mock, api_mock
@@ -377,8 +378,8 @@ class TestUpdateStudentRepos:
                     "Push failed", 128, b"some error", pt.repo_url
                 )
 
-        mocker.patch("repobee.git._push_async", side_effect=raise_specific)
-        mocker.patch("repobee.git.clone_single")
+        mocker.patch("_repobee.git._push_async", side_effect=raise_specific)
+        mocker.patch("_repobee.git.clone_single")
 
         command.update_student_repos(master_urls, students, api_mock, issue)
 
@@ -421,8 +422,8 @@ class TestUpdateStudentRepos:
                     "Push failed", 128, b"some error", pt.repo_url
                 )
 
-        mocker.patch("repobee.git._push_async", side_effect=raise_specific)
-        mocker.patch("repobee.git.clone_single")
+        mocker.patch("_repobee.git._push_async", side_effect=raise_specific)
+        mocker.patch("_repobee.git.clone_single")
 
         command.update_student_repos(master_urls, students, api_mock)
 
@@ -492,11 +493,11 @@ class TestCloneRepos:
         repobee_plug.repobee_hook decorator to be picked up by pluggy.
         """
         javac_hook = MagicMock(
-            spec="repobee.ext.javac.JavacCloneHook._class.act_on_cloned_repo",
+            spec="_repobee.ext.javac.JavacCloneHook._class.act_on_cloned_repo",
             return_value=HookResult("javac", Status.SUCCESS, "Great success!"),
         )
         pylint_hook = MagicMock(
-            spec="repobee.ext.pylint.act_on_cloned_repo",
+            spec="_repobee.ext.pylint.act_on_cloned_repo",
             return_value=HookResult(
                 "pylint", Status.WARNING, "Minor warning."
             ),
@@ -511,11 +512,11 @@ class TestCloneRepos:
             return javac_hook(self, path)
 
         monkeypatch.setattr(
-            "repobee.ext.javac.JavacCloneHook.act_on_cloned_repo",
+            "_repobee.ext.javac.JavacCloneHook.act_on_cloned_repo",
             act_hook_meth,
         )
         monkeypatch.setattr(
-            "repobee.ext.pylint.act_on_cloned_repo", act_hook_func
+            "_repobee.ext.pylint.act_on_cloned_repo", act_hook_func
         )
 
         modules = plugin.load_plugin_modules(str(config_mock))
@@ -526,7 +527,7 @@ class TestCloneRepos:
     @pytest.fixture
     def get_plugin_names_mock(self, mocker):
         return mocker.patch(
-            "repobee.config.get_plugin_names", return_value=PLUGINS
+            "_repobee.config.get_plugin_names", return_value=PLUGINS
         )
 
     def test_happy_path(
@@ -596,9 +597,9 @@ class TestMigrateRepo:
             generate_repo_url(info.name) for info in infos
         ]
         git_clone_mock = mocker.patch(
-            "repobee.git.clone_single", autospec=True
+            "_repobee.git.clone_single", autospec=True
         )
-        git_push_mock = mocker.patch("repobee.git.push", autospec=True)
+        git_push_mock = mocker.patch("_repobee.git.push", autospec=True)
 
         command.migrate_repos(master_urls, api_mock)
 

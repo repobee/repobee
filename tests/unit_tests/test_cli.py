@@ -5,14 +5,14 @@ from unittest import mock
 
 import pytest
 
-import repobee
-import repobee.ext
-import repobee.ext.github
-from repobee import cli
-from repobee import tuples
-from repobee import exception
-from repobee import apimeta
-from repobee import plugin
+import _repobee
+import _repobee.ext
+import _repobee.ext.github
+from _repobee import cli
+from _repobee import tuples
+from _repobee import exception
+from _repobee import apimeta
+from _repobee import plugin
 
 import constants
 import functions
@@ -55,7 +55,7 @@ VALID_PARSED_ARGS = dict(
 
 @pytest.fixture(autouse=True)
 def api_instance_mock(mocker):
-    instance_mock = MagicMock(spec=repobee.ext.github.GitHubAPI)
+    instance_mock = MagicMock(spec=_repobee.ext.github.GitHubAPI)
     instance_mock.get_repo_urls.side_effect = lambda repo_names, org_name: [
         generate_repo_url(rn, org_name) for rn in repo_names
     ]
@@ -68,7 +68,7 @@ def api_instance_mock(mocker):
 
 @pytest.fixture(autouse=True)
 def api_class_mock(mocker, api_instance_mock):
-    class_mock = mocker.patch("repobee.ext.github.GitHubAPI", autospec=True)
+    class_mock = mocker.patch("_repobee.ext.github.GitHubAPI", autospec=True)
     class_mock.return_value = api_instance_mock
     return class_mock
 
@@ -82,7 +82,7 @@ def load_default_plugins(api_instance_mock):
 
 @pytest.fixture
 def command_mock(mocker):
-    return mocker.patch("repobee.cli.command", autospec=True)
+    return mocker.patch("_repobee.cli.command", autospec=True)
 
 
 @pytest.fixture
@@ -97,13 +97,13 @@ def read_issue_mock(mocker):
         return ISSUE
 
     return mocker.patch(
-        "repobee.util.read_issue", autospec=True, side_effect=read_issue
+        "_repobee.util.read_issue", autospec=True, side_effect=read_issue
     )
 
 
 @pytest.fixture
 def git_mock(mocker):
-    return mocker.patch("repobee.git", autospec=True)
+    return mocker.patch("_repobee.git", autospec=True)
 
 
 @pytest.fixture(scope="function", params=cli.PARSER_NAMES)
@@ -125,7 +125,7 @@ def parsed_args_all_subparsers(request):
     ],
 )
 def command_all_raise_mock(command_mock, api_class_mock, request):
-    """Mock of repobee.command where all functions raise expected exceptions
+    """Mock of _repobee.command where all functions raise expected exceptions
     (i.e. those caught in _sys_exit_on_expected_error)
     """
 
@@ -301,7 +301,9 @@ def test_help_calls_add_arguments(monkeypatch, parser):
         called = True
         add_arguments(self, *args, **kwargs)
 
-    monkeypatch.setattr("repobee.cli._OrderedFormatter.add_arguments", wrapper)
+    monkeypatch.setattr(
+        "_repobee.cli._OrderedFormatter.add_arguments", wrapper
+    )
 
     with pytest.raises(SystemExit) as exc_info:
         cli.parse_args([parser, "--help"])
@@ -793,7 +795,7 @@ class TestSetupAndUpdateParsers:
         """
         local_repo = REPO_NAMES[-1]
         mocker.patch(
-            "repobee.util.is_git_repo",
+            "_repobee.util.is_git_repo",
             side_effect=lambda path: path.endswith(local_repo),
         )
         expected_urls = [
@@ -830,7 +832,7 @@ class TestMigrateParser:
     @pytest.fixture(autouse=True)
     def is_git_repo_mock(self, mocker):
         return mocker.patch(
-            "repobee.util.is_git_repo", autospec=True, return_value=True
+            "_repobee.util.is_git_repo", autospec=True, return_value=True
         )
 
     def assert_migrate_args(self, parsed_args) -> bool:
