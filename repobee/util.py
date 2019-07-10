@@ -9,7 +9,7 @@
 import os
 import sys
 import pathlib
-from typing import Iterable, Generator, Union
+from typing import Iterable, Generator, Union, Set
 
 from repobee import apimeta
 
@@ -35,6 +35,20 @@ def generate_repo_name(team_name: str, master_repo_name: str) -> str:
         master_repo_name: Name of the template repository.
     """
     return "{}-{}".format(team_name, master_repo_name)
+
+
+def conflicting_files(filenames: Iterable[str], cwd: str = ".") -> Set[str]:
+    """Return a list of files (any kind of file, including directories, pipes
+    etc) in cwd that conflict with any of the given repo names.
+
+    Args:
+        repo_names: A list of filenames.
+        cwd: Directory to operate in.
+    Returns:
+        A set of conflicting filenames.
+    """
+    existing_filenames = set(os.listdir(cwd))
+    return set(filenames).intersection(existing_filenames)
 
 
 def generate_repo_names(
