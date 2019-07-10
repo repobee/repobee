@@ -335,7 +335,7 @@ class TestClone:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                repobee.cli.CLONE_PARSER,
+                _repobee.cli.CLONE_PARSER,
                 *BASE_ARGS,
                 *STUDENTS_ARG,
                 "-mn",
@@ -371,7 +371,7 @@ class TestClone:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                repobee.cli.CLONE_PARSER,
+                _repobee.cli.CLONE_PARSER,
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
                 *STUDENTS_ARG,
