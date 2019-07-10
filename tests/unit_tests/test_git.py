@@ -7,9 +7,9 @@ import pathlib
 
 import pytest
 
-from repobee import git
-from repobee import exception
-from repobee import util
+from _repobee import git
+from _repobee import exception
+from _repobee import util
 
 URL_TEMPLATE = "https://{}github.com/slarse/clanim"
 REPO_NAME = "clanim"
@@ -27,7 +27,7 @@ def mock_ensure_repo_dir_exists(mocker, request):
         return
 
     mocker.patch("pathlib.Path.mkdir", autospec=True)
-    mocker.patch("repobee.git._git_init", autospec=True)
+    mocker.patch("_repobee.git._git_init", autospec=True)
 
 
 @pytest.fixture(scope="function")
@@ -200,7 +200,7 @@ class TestPush:
                 "Push failed", 128, b"some error", pt.repo_url
             )
 
-        mocker.patch("repobee.git._push_async", side_effect=raise_)
+        mocker.patch("_repobee.git._push_async", side_effect=raise_)
         expected_failed_urls = [pt.repo_url for pt in push_tuples]
 
         failed_urls = git.push(push_tuples, tries=tries)
@@ -230,7 +230,7 @@ class TestPush:
             )
 
         async_push_mock = mocker.patch(
-            "repobee.git._push_async", side_effect=raise_once
+            "_repobee.git._push_async", side_effect=raise_once
         )
 
         git.push(push_tuples, tries=10)
@@ -297,7 +297,7 @@ class TestClone:
                 )
 
         clone_mock = mocker.patch(
-            "repobee.git._clone_async", autospec=True, side_effect=raise_
+            "_repobee.git._clone_async", autospec=True, side_effect=raise_
         )
 
         failed_urls = git.clone(urls)

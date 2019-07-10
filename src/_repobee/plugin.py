@@ -15,8 +15,9 @@ from typing import Union, List, Optional, Iterable
 
 import daiquiri
 
-from repobee import config
-from repobee import exception
+import _repobee
+from _repobee import config
+from _repobee import exception
 
 import repobee_plug as plug
 
@@ -24,11 +25,13 @@ LOGGER = daiquiri.getLogger(__file__)
 
 
 def _plugin_qualname(plugin_name):
-    return "{}.ext.{}".format(__package__, plugin_name)
+    return "{}.ext.{}".format(_repobee._internal_package_name, plugin_name)
 
 
 def _external_plugin_qualname(plugin_name):
-    return "{}_{}.{}".format(__package__, plugin_name, plugin_name)
+    return "{}_{plugin_name}.{plugin_name}".format(
+        _repobee._external_package_name, plugin_name=plugin_name
+    )
 
 
 DEFAULT_PLUGIN = "defaults"
@@ -43,14 +46,14 @@ def load_plugin_modules(
     they are either run last or overridden by plugins with firstresult=True
     (such as the default_peer_review plugin).
 
-    Try to import first from :py:mod:`repobee.ext`, and then from
+    Try to import first from :py:mod:`_repobee.ext`, and then from
     ``repobee_<plugin>``. For example, if ``javac`` is listed as a plugin, the
     following imports will be attempted:
 
     .. code-block:: python
 
         # import nr 1
-        from repobee.ext import javac
+        from _repobee.ext import javac
 
         # import nr 2
         from repobee_javac import javac

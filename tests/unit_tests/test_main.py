@@ -5,10 +5,10 @@ from collections import namedtuple
 import pytest
 
 from functions import raise_
-from repobee import cli
-from repobee import main
-from repobee import tuples
-from repobee import plugin
+from _repobee import cli
+from _repobee import main
+from _repobee import tuples
+from _repobee import plugin
 
 import constants
 
@@ -36,12 +36,12 @@ module = namedtuple("module", ("name",))
 
 @pytest.fixture
 def logger_exception_mock(mocker):
-    return mocker.patch("repobee.main.LOGGER.exception", autospec=True)
+    return mocker.patch("_repobee.main.LOGGER.exception", autospec=True)
 
 
 @pytest.fixture
 def api_instance_mock(mocker):
-    return MagicMock(spec="repobee.github.GitHubAPI")
+    return MagicMock(spec="_repobee.github.GitHubAPI")
 
 
 @pytest.fixture
@@ -50,7 +50,7 @@ def init_plugins_mock(mocker):
         list(map(module, plugs or []))
 
     return mocker.patch(
-        "repobee.plugin.initialize_plugins",
+        "_repobee.plugin.initialize_plugins",
         autospec=True,
         side_effect=init_plugins,
     )
@@ -59,7 +59,7 @@ def init_plugins_mock(mocker):
 @pytest.fixture
 def parse_args_mock(mocker, api_instance_mock):
     return mocker.patch(
-        "repobee.cli.parse_args",
+        "_repobee.cli.parse_args",
         autospec=True,
         return_value=(PARSED_ARGS, api_instance_mock),
     )
@@ -67,12 +67,12 @@ def parse_args_mock(mocker, api_instance_mock):
 
 @pytest.fixture
 def parse_preparser_options_mock(mocker):
-    return mocker.patch("repobee.cli.parse_preparser_options", autospec=True)
+    return mocker.patch("_repobee.cli.parse_preparser_options", autospec=True)
 
 
 @pytest.fixture
 def dispatch_command_mock(mocker):
-    return mocker.patch("repobee.cli.dispatch_command", autospec=True)
+    return mocker.patch("_repobee.cli.dispatch_command", autospec=True)
 
 
 def test_happy_path(

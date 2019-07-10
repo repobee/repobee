@@ -12,14 +12,16 @@ import pathlib
 import configparser
 from typing import Union, List, Mapping
 import appdirs
-import repobee
+import _repobee
 
-from repobee import exception
+from _repobee import exception
 
 import repobee_plug as plug
 
 CONFIG_DIR = pathlib.Path(
-    appdirs.user_config_dir(appname=__package__, appauthor=repobee.__author__)
+    appdirs.user_config_dir(
+        appname=_repobee._external_package_name, appauthor=_repobee.__author__
+    )
 )
 
 DEFAULTS_SECTION_HDR = "DEFAULTS"

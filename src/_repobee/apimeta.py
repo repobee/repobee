@@ -26,8 +26,8 @@ from typing import List, Iterable, Optional, Generator, Tuple, Mapping
 
 import daiquiri
 
-from repobee import exception
-from repobee import tuples
+from _repobee import exception
+from _repobee import tuples
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -343,7 +343,7 @@ class APISpec:
                 considered a potential peer review issue.
         Returns:
             a mapping (reviewer -> assigned_repos), where reviewer is a str and
-            assigned_repos is a :py:class:`repobee.tuples.Review`.
+            assigned_repos is a :py:class:`_repobee.tuples.Review`.
         """
         _not_implemented()
 
@@ -379,7 +379,7 @@ class APISpec:
         organization member list and checking roles)
 
         Should raise an appropriate subclass of
-        :py:class:`repobee.exception.APIError` when a problem is encountered.
+        :py:class:`_repobee.exception.APIError` when a problem is encountered.
 
         Args:
             user: The username to try to fetch.
@@ -390,7 +390,7 @@ class APISpec:
         Returns:
             True if the connection is well formed.
         Raises:
-            :py:class:`repobee.exception.APIError`
+            :py:class:`_repobee.exception.APIError`
         """
         _not_implemented()
 
@@ -480,7 +480,7 @@ class API(APISpec, metaclass=APIMeta):
 
     1. Public methods *must* override one of the public methods of
        :py:class:`APISpec`. If an inheriting class defines any other public
-       method, an :py:class:`~repobee.exception.APIError` is raised when the
+       method, an :py:class:`~_repobee.exception.APIError` is raised when the
        class is defined.
     2. All public methods in :py:class:`APISpec` have a default implementation
        that simply raise a :py:class:`NotImplementedError`. There is no

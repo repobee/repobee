@@ -2,7 +2,7 @@
 import datetime
 import random
 from unittest.mock import MagicMock
-from repobee import apimeta
+from _repobee import apimeta
 
 import constants
 

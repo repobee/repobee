@@ -11,9 +11,9 @@ from typing import List
 
 import daiquiri
 
-from repobee import cli
-from repobee import plugin
-from repobee import exception
+from _repobee import cli
+from _repobee import plugin
+from _repobee import exception
 
 LOGGER = daiquiri.getLogger(__file__)
 

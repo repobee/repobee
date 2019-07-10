@@ -5,7 +5,7 @@ import gitlab
 
 import constants
 
-import repobee
+import _repobee
 
 
 class Group:
@@ -245,7 +245,7 @@ TARGET_GROUP = "repobee-testing"
 
 @pytest.fixture(autouse=True)
 def api_mock(mocker):
-    mocker.patch("repobee.ext.gitlab.gitlab.Gitlab", side_effect=GitLabMock)
+    mocker.patch("_repobee.ext.gitlab.gitlab.Gitlab", side_effect=GitLabMock)
 
 
 @pytest.fixture
@@ -259,7 +259,7 @@ class TestEnsureTeamsAndMembers:
         group is the target group.
         """
         # arrange
-        api = repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
+        api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
         expected_team_names = [team.name for team in constants.STUDENTS]
         assert (
             expected_team_names
@@ -281,20 +281,20 @@ class TestEnsureTeamsAndMembers:
 
     def test_with_multi_student_groups(self, api_mock):
         # arrange
-        api = repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
+        api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
         num_students = len(constants.STUDENTS)
         teams = [
-            repobee.apimeta.Team(members=g1.members + g2.members)
+            _repobee.apimeta.Team(members=g1.members + g2.members)
             for g1, g2 in zip(
                 constants.STUDENTS[: num_students // 2],
                 constants.STUDENTS[num_students // 2 :],
             )
         ]
         expected_teams = [
-            repobee.apimeta.Team(
+            _repobee.apimeta.Team(
                 members=[constants.USER] + t.members,
                 # the owner should not be included in the generated name
-                name=repobee.apimeta.Team(members=t.members).name,
+                name=_repobee.apimeta.Team(members=t.members).name,
             )
             for t in teams
         ]
@@ -318,7 +318,7 @@ class TestEnsureTeamsAndMembers:
         running it once.
         """
         # arrange
-        api = repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
+        api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
         expected_team_names = [t.name for t in constants.STUDENTS]
         assert (
             expected_team_names
@@ -343,10 +343,10 @@ class TestEnsureTeamsAndMembers:
         """Test that the permission is correctly decoded into a GitLab-specific
         access level.
         """
-        api = repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
+        api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
 
         api.ensure_teams_and_members(
-            constants.STUDENTS, permission=repobee.apimeta.TeamPermission.PULL
+            constants.STUDENTS, permission=_repobee.apimeta.TeamPermission.PULL
         )
 
         actual_teams = api.get_teams()
@@ -374,7 +374,7 @@ class TestGetRepoUrls:
         group.
         """
         # arrange
-        api = repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
+        api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
         expected_urls = [
             api._insert_auth("{}/{}/{}.git".format(BASE_URL, TARGET_GROUP, mn))
             for mn in master_repo_names
@@ -396,7 +396,7 @@ class TestGetRepoUrls:
         """
         # arrange
         master_group = "master-" + TARGET_GROUP  # guaranteed != TARGET_GROUP
-        api = repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
+        api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
         expected_urls = [
             api._insert_auth("{}/{}/{}.git".format(BASE_URL, master_group, mn))
             for mn in master_repo_names
@@ -418,14 +418,14 @@ class TestGetRepoUrls:
         go to the student repos related to the supplied master repos.
         """
         # arrange
-        api = repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
+        api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
         expected_urls = [
             api._insert_auth(
                 "{}/{}/{}/{}.git".format(
                     BASE_URL,
                     TARGET_GROUP,
                     str(student_group),
-                    repobee.util.generate_repo_name(str(student_group), mn),
+                    _repobee.util.generate_repo_name(str(student_group), mn),
                 )
             )
             for student_group in constants.STUDENTS
@@ -447,7 +447,7 @@ class TestGetRepoUrls:
 class TestCreateRepos:
     @pytest.fixture
     def api(self, api_mock):
-        yield repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
+        yield _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
 
     @pytest.fixture
     def repos(self, api, master_repo_names):
@@ -464,8 +464,8 @@ class TestCreateRepos:
             for group in constants.STUDENTS
         ]
         yield [
-            repobee.apimeta.Repo(
-                name=repobee.util.generate_repo_name(group.name, master_name),
+            _repobee.apimeta.Repo(
+                name=_repobee.util.generate_repo_name(group.name, master_name),
                 description="Student repo",
                 private=True,
                 team_id=group.id,

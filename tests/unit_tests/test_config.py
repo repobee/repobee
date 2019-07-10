@@ -1,8 +1,8 @@
 import os
 from unittest import mock
 import pytest
-from repobee import config
-from repobee import exception
+from _repobee import config
+from _repobee import exception
 
 import constants
 

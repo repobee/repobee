@@ -4,7 +4,7 @@ import collections
 from datetime import datetime
 from itertools import permutations
 
-from repobee import apimeta
+from _repobee import apimeta
 
 USER = "slarse"
 ORG_NAME = "test-org"

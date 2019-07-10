@@ -44,6 +44,7 @@ setup(
         )
     ),
     license="MIT",
+    package_dir={"": "src"},
     packages=find_packages(exclude=("tests", "docs")),
     tests_require=test_requirements,
     install_requires=required,

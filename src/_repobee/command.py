@@ -1,4 +1,4 @@
-"""Primary API for repobee.
+"""Primary API for _repobee.
 
 This module contains high level functions for administrating repositories, such
 as creating student repos from some master repo template. All functions follow
@@ -24,13 +24,13 @@ import daiquiri
 
 import repobee_plug as plug
 
-from repobee import git
-from repobee import util
-from repobee import apimeta
-from repobee import exception
-from repobee import config
-from repobee import formatters
-from repobee.git import Push
+from _repobee import git
+from _repobee import util
+from _repobee import apimeta
+from _repobee import exception
+from _repobee import config
+from _repobee import formatters
+from _repobee.git import Push
 
 LOGGER = daiquiri.getLogger(__file__)
 

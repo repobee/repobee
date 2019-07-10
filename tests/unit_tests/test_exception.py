@@ -1,6 +1,6 @@
 import os
 import sys
-from repobee import exception
+from _repobee import exception
 
 import constants
 

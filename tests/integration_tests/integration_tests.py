@@ -8,11 +8,11 @@ import itertools
 import pytest
 import gitlab
 
-import repobee.ext
-import repobee.ext.gitlab
-import repobee.cli
-from repobee import util
-from repobee import apimeta
+import _repobee.ext
+import _repobee.ext.gitlab
+import _repobee.cli
+from _repobee import util
+from _repobee import apimeta
 
 assert os.getenv(
     "REPOBEE_NO_VERIFY_SSL"
@@ -36,7 +36,7 @@ ACTUAL_USER = "repobee-user"
 MASTER_REPO_NAMES = "task-1 task-2 task-3".split()
 STUDENT_TEAMS = [apimeta.Team(members=[s]) for s in "slarse rjglasse".split()]
 STUDENT_TEAM_NAMES = [str(t) for t in STUDENT_TEAMS]
-STUDENT_REPO_NAMES = repobee.util.generate_repo_names(
+STUDENT_REPO_NAMES = _repobee.util.generate_repo_names(
     STUDENT_TEAMS, MASTER_REPO_NAMES
 )
 
@@ -57,7 +57,7 @@ TASK_CONTENTS_SHAS = {
 
 def api_instance(org_name=ORG_NAME):
     """Return a valid instance of the GitLabAPI class."""
-    return repobee.ext.gitlab.GitLabAPI(LOCAL_BASE_URL, TOKEN, org_name)
+    return _repobee.ext.gitlab.GitLabAPI(LOCAL_BASE_URL, TOKEN, org_name)
 
 
 def gitlab_and_groups():
@@ -203,7 +203,7 @@ def with_student_repos(restore):
     command = " ".join(
         [
             REPOBEE_GITLAB,
-            repobee.cli.SETUP_PARSER,
+            _repobee.cli.SETUP_PARSER,
             *BASE_ARGS,
             *MASTER_ORG_ARG,
             *MASTER_REPOS_ARG,
@@ -293,7 +293,7 @@ class TestClone:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                repobee.cli.CLONE_PARSER,
+                _repobee.cli.CLONE_PARSER,
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
                 *STUDENTS_ARG,
@@ -311,7 +311,7 @@ class TestClone:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                repobee.cli.CLONE_PARSER,
+                _repobee.cli.CLONE_PARSER,
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
                 *STUDENTS_ARG,
@@ -335,7 +335,7 @@ class TestSetup:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                repobee.cli.SETUP_PARSER,
+                _repobee.cli.SETUP_PARSER,
                 *BASE_ARGS,
                 *MASTER_ORG_ARG,
                 *MASTER_REPOS_ARG,
@@ -353,7 +353,7 @@ class TestSetup:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                repobee.cli.SETUP_PARSER,
+                _repobee.cli.SETUP_PARSER,
                 *BASE_ARGS,
                 *MASTER_ORG_ARG,
                 *MASTER_REPOS_ARG,
@@ -398,7 +398,7 @@ class TestMigrate:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                repobee.cli.MIGRATE_PARSER,
+                _repobee.cli.MIGRATE_PARSER,
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
             ]
@@ -425,7 +425,7 @@ class TestOpenIssues:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                repobee.cli.OPEN_ISSUE_PARSER,
+                _repobee.cli.OPEN_ISSUE_PARSER,
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
                 *STUDENTS_ARG,
@@ -453,7 +453,7 @@ class TestCloseIssues:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                repobee.cli.CLOSE_ISSUE_PARSER,
+                _repobee.cli.CLOSE_ISSUE_PARSER,
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
                 *STUDENTS_ARG,
@@ -506,7 +506,7 @@ class TestListIssues:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                repobee.cli.LIST_ISSUES_PARSER,
+                _repobee.cli.LIST_ISSUES_PARSER,
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
                 *STUDENTS_ARG,

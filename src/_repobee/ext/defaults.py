@@ -21,7 +21,7 @@ from typing import Callable, Iterable, Mapping, List
 from repobee_plug import repobee_hook
 
 # import other default plugins
-from repobee.ext.github import DefaultAPIHooks  # noqa: F401
+from _repobee.ext.github import DefaultAPIHooks  # noqa: F401
 
 
 @repobee_hook
