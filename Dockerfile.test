@@ -1,10 +1,8 @@
 FROM python:3.7.3-stretch
 
-WORKDIR /app
 COPY . /app
-RUN pip install .[TEST]
-
 WORKDIR /workdir
+RUN pip install /app[TEST]
 ENV REPOBEE_NO_VERIFY_SSL=true
 
 # the integration test GitLab container has a self-signed certificate,
