@@ -1,46 +1,46 @@
-``repobee`` Module Reference
+RepoBee Module Reference
 *****************************
 
 command
 ====================
 
-.. automodule:: repobee.command
+.. automodule:: _repobee.command
     :members:
 
 cli
 ====================
 
-.. automodule:: repobee.cli
+.. automodule:: _repobee.cli
     :members:
 
 config
 ====================
 
-.. automodule:: repobee.config
+.. automodule:: _repobee.config
     :members:
 
 exception
 ====================
 
-.. automodule:: repobee.exception
+.. automodule:: _repobee.exception
     :members:
 
 git
 ====================
 
-.. automodule:: repobee.git
+.. automodule:: _repobee.git
     :members:
 
 tuples
 ====================
 
-.. automodule:: repobee.tuples
+.. automodule:: _repobee.tuples
     :members:
 
 util
 ====================
 
-.. automodule:: repobee.util
+.. automodule:: _repobee.util
     :members:
 
 
@@ -50,7 +50,7 @@ API-related modules
 apimeta
 -------
 
-.. automodule:: repobee.apimeta
+.. automodule:: _repobee.apimeta
    :members:
 
 Core plugins
@@ -59,19 +59,19 @@ Core plugins
 defaults
 --------
 
-.. automodule:: repobee.ext.defaults
+.. automodule:: _repobee.ext.defaults
     :members:
 
 github
 ------
 
-.. automodule:: repobee.ext.github
+.. automodule:: _repobee.ext.github
     :members:
 
 gitlab
 ------
 
-.. automodule:: repobee.ext.gitlab
+.. automodule:: _repobee.ext.gitlab
    :members:
 
 
@@ -79,7 +79,7 @@ gitlab
 pairwise
 --------
 
-.. automodule:: repobee.ext.pairwise
+.. automodule:: _repobee.ext.pairwise
     :members:
 
 
@@ -89,11 +89,11 @@ Extension plugins
 javac
 -----
 
-.. automodule:: repobee.ext.javac
+.. automodule:: _repobee.ext.javac
     :members:
 
 pylint
 ------
 
-.. automodule:: repobee.ext.pylint
+.. automodule:: _repobee.ext.pylint
     :members:
