@@ -2,6 +2,6 @@ CLI documentation
 *****************
 
 .. argparse::
-    :module: repobee.cli
-    :func: _create_parser
+    :module: _repobee.cli
+    :func: create_parser_for_docs
     :prog: repobee

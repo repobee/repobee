@@ -22,6 +22,7 @@ import daiquiri
 import repobee_plug as plug
 
 import _repobee
+from _repobee import plugin
 from _repobee import command
 from _repobee import util
 from _repobee import tuples
@@ -561,6 +562,15 @@ class _OrderedFormatter(argparse.HelpFormatter):
 
         actions = sorted(actions, key=key)
         super().add_arguments(actions)
+
+
+def create_parser_for_docs():
+    """Create a parser showing all options for the default CLI
+    documentation.
+    """
+    # load default plugins
+    plugin.initialize_plugins()
+    return _create_parser(show_all_opts=True)
 
 
 def _create_parser(show_all_opts):
