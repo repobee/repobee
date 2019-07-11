@@ -320,7 +320,9 @@ class TestBaseParsing:
     ):
         """Test that configured args are shown when show_all_opts is True."""
         with pytest.raises(SystemExit):
-            cli.parse_args([cli.SETUP_PARSER, "-h"], show_all_opts=True)
+            cli.parse_args(
+                [cli.SETUP_PARSER, "-h"], show_all_opts=True, ext_commands=[]
+            )
 
         captured = capsys.readouterr()
         assert "--user" in captured.out
@@ -335,7 +337,9 @@ class TestBaseParsing:
     ):
         """Test that configured args are hidden when show_all_opts is False."""
         with pytest.raises(SystemExit):
-            cli.parse_args([cli.SETUP_PARSER, "-h"], show_all_opts=False)
+            cli.parse_args(
+                [cli.SETUP_PARSER, "-h"], show_all_opts=False, ext_commands=[]
+            )
 
         captured = capsys.readouterr()
         assert "--user" not in captured.out

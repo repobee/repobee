@@ -122,12 +122,17 @@ PRE_PARSER_FLAGS = [PRE_PARSER_NO_PLUGS, PRE_PARSER_SHOW_ALL_OPTS]
 
 
 def parse_args(
-    sys_args: Iterable[str], show_all_opts=False
+    sys_args: Iterable[str],
+    show_all_opts: bool = False,
+    ext_commands: Optional[List[plug.ExtensionCommand]] = None,
 ) -> (tuples.Args, Optional[apimeta.API]):
     """Parse the command line arguments and initialize an API.
 
     Args:
         sys_args: A list of command line arguments.
+        show_all_opts: If False, CLI arguments that are configure in the
+            configuration file are not shown in help menus.
+        ext_commands: A list of extension commands.
 
     Returns:
         a tuples.Args namedtuple with the arguments, and an initialized
@@ -135,18 +140,20 @@ def parse_args(
     """
     parser = _create_parser(show_all_opts)
     args = parser.parse_args(_handle_deprecation(sys_args))
+    ext_command_names = [cmd.name for cmd in ext_commands or []]
+    subparser = getattr(args, SUB)
 
-    if getattr(args, SUB) == SHOW_CONFIG_PARSER:
+    if subparser == SHOW_CONFIG_PARSER:
         return tuples.Args(subparser=SHOW_CONFIG_PARSER), None
+    elif ext_commands and subparser in ext_command_names:
+        return _handle_extension_parsing(
+            ext_commands[ext_command_names.index(subparser)], args
+        )
 
     _validate_tls_url(args.base_url)
+    token = _parse_token(args)
 
-    # environment token overrides config
-    token = os.getenv("REPOBEE_OAUTH") or (
-        args.token if "token" in args else ""
-    )
-
-    if getattr(args, SUB) == VERIFY_PARSER:
+    if subparser == VERIFY_PARSER:
         # quick parse for verify connection
         return (
             tuples.Args(
@@ -162,7 +169,7 @@ def parse_args(
             ),
             None,
         )
-    elif getattr(args, SUB) == CLONE_PARSER:
+    elif subparser == CLONE_PARSER:
         # only if clone is chosen should plugins be able to hook in
         plug.manager.hook.parse_args(args=args)
 
@@ -181,7 +188,6 @@ def parse_args(
     assert master_urls and master_names
 
     groups = _extract_groups(args)
-    subparser = getattr(args, SUB)
     if subparser in [
         ASSIGN_REVIEWS_PARSER,
         CHECK_REVIEW_PROGRESS_PARSER,
@@ -215,6 +221,24 @@ def parse_args(
     )
 
     return parsed_args, api
+
+
+def _parse_token(args):
+    """Get the OUATH2 token from the args or an environment variable."""
+    # environment token overrides config
+    return os.getenv("REPOBEE_OAUTH") or (
+        args.token if "token" in args else ""
+    )
+
+
+def _handle_extension_parsing(ext_command, args):
+    """Handle parsing of extension command arguments."""
+    api = None
+    if ext_command.requires_api:
+        token = _parse_token(args)
+        args.token = token
+        api = _connect_to_api(args.base_url, token, args.org_name, args.user)
+    return args, api
 
 
 def _validate_tls_url(url):
@@ -251,7 +275,11 @@ def _handle_deprecation(sys_args: List[str]) -> List[str]:
     return list(sys_args)
 
 
-def dispatch_command(args: tuples.Args, api: apimeta.API):
+def dispatch_command(
+    args: tuples.Args,
+    api: apimeta.API,
+    ext_commands: Optional[List[plug.ExtensionCommand]] = None,
+):
     """Handle parsed CLI arguments and dispatch commands to the appropriate
     functions. Expected exceptions are caught and turned into SystemExit
     exceptions, while unexpected exceptions are allowed to propagate.
@@ -259,8 +287,14 @@ def dispatch_command(args: tuples.Args, api: apimeta.API):
     Args:
         args: A namedtuple containing parsed command line arguments.
         api: An initialized apimeta.API instance.
+        ext_commands: A list of active extension commands.
     """
-    if args.subparser == SETUP_PARSER:
+    ext_command_names = [cmd.name for cmd in ext_commands or []]
+    if ext_command_names and args.subparser in ext_command_names:
+        ext_cmd = ext_commands[ext_command_names.index(args.subparser)]
+        with _sys_exit_on_expected_error():
+            ext_cmd.callback(args, api)
+    elif args.subparser == SETUP_PARSER:
         with _sys_exit_on_expected_error():
             command.setup_student_repos(
                 args.master_repo_urls, args.students, api
@@ -585,7 +619,22 @@ def _create_parser(show_all_opts):
         ),
     )
     _add_subparsers(parser, show_all_opts)
+
     return parser
+
+
+def _add_extension_parsers(subparsers):
+    """Add extension parsers defined by plugins."""
+    ext_commands = plug.manager.hook.create_extension_command()
+    for cmd in ext_commands:
+        subparsers.add_parser(
+            cmd.name,
+            help=cmd.help,
+            description=cmd.description,
+            parents=[cmd.parser],
+        )
+
+    return ext_commands
 
 
 def _add_subparsers(parser, show_all_opts):
@@ -709,6 +758,8 @@ def _add_subparsers(parser, show_all_opts):
         parents=[base_parser, master_org_parser],
         formatter_class=_OrderedFormatter,
     )
+
+    return _add_extension_parsers(subparsers)
 
 
 def _create_base_parsers(show_all_opts):
