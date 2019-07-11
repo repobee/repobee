@@ -8,6 +8,7 @@ from functions import raise_
 from _repobee import cli
 from _repobee import main
 from _repobee import plugin
+from _repobee.ext import configwizard
 
 import constants
 
@@ -34,6 +35,8 @@ PARSED_ARGS = argparse.Namespace(
 CLONE_ARGS = "clone -mn week-2 -s slarse".split()
 
 module = namedtuple("module", ("name",))
+
+DEFAULT_EXT_COMMANDS = [configwizard.create_extension_command()]
 
 
 @pytest.fixture
@@ -86,10 +89,10 @@ def test_happy_path(
     main.main(sys_args)
 
     parse_args_mock.assert_called_once_with(
-        sys_args[1:], show_all_opts=False, ext_commands=[]
+        sys_args[1:], show_all_opts=False, ext_commands=DEFAULT_EXT_COMMANDS
     )
     dispatch_command_mock.assert_called_once_with(
-        PARSED_ARGS, api_instance_mock, []
+        PARSED_ARGS, api_instance_mock, DEFAULT_EXT_COMMANDS
     )
 
 
@@ -104,7 +107,7 @@ def test_does_not_raise_on_exception_in_parsing(
     main.main(sys_args)
 
     parse_args_mock.assert_called_once_with(
-        sys_args[1:], show_all_opts=False, ext_commands=[]
+        sys_args[1:], show_all_opts=False, ext_commands=DEFAULT_EXT_COMMANDS
     )
     assert not dispatch_command_mock.called
 
@@ -231,7 +234,9 @@ def test_logs_traceback_on_exception_in_dispatch_if_traceback(
 
     assert logger_exception_mock.called
     parse_args_mock.assert_called_once_with(
-        [*CLONE_ARGS, "--traceback"], show_all_opts=False, ext_commands=[]
+        [*CLONE_ARGS, "--traceback"],
+        show_all_opts=False,
+        ext_commands=DEFAULT_EXT_COMMANDS,
     )
 
 
@@ -259,7 +264,9 @@ def test_show_all_opts_correctly_separated(
 
     assert msg in str(exc_info.value)
     parse_args_mock.assert_called_once_with(
-        [cli.SETUP_PARSER, "-h"], show_all_opts=True, ext_commands=[]
+        [cli.SETUP_PARSER, "-h"],
+        show_all_opts=True,
+        ext_commands=DEFAULT_EXT_COMMANDS,
     )
     parse_preparser_options_mock.assert_called_once_with(
         [cli.PRE_PARSER_SHOW_ALL_OPTS]
