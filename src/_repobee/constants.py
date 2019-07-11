@@ -24,11 +24,11 @@ assert DEFAULT_CONFIG_FILE.is_absolute()
 # arguments that can be configured via config file
 ORDERED_CONFIGURABLE_ARGS = (
     "user",
-    "org_name",
     "base_url",
-    "students_file",
-    "plugins",
+    "org_name",
     "master_org_name",
     "token",
+    "students_file",
+    "plugins",
 )
 CONFIGURABLE_ARGS = set(ORDERED_CONFIGURABLE_ARGS)
