@@ -123,21 +123,21 @@ PRE_PARSER_FLAGS = [PRE_PARSER_NO_PLUGS, PRE_PARSER_SHOW_ALL_OPTS]
 
 def parse_args(
     sys_args: Iterable[str], show_all_opts=False
-) -> (tuples.Args, Optional[apimeta.API]):
+) -> (argparse.Namespace, Optional[apimeta.API]):
     """Parse the command line arguments and initialize an API.
 
     Args:
         sys_args: A list of command line arguments.
 
     Returns:
-        a tuples.Args namedtuple with the arguments, and an initialized
+        a argparse.Namespace namedtuple with the arguments, and an initialized
         apimeta.API instance (or None of testing connection).
     """
     parser = _create_parser(show_all_opts)
     args = parser.parse_args(_handle_deprecation(sys_args))
 
     if getattr(args, SUB) == SHOW_CONFIG_PARSER:
-        return tuples.Args(subparser=SHOW_CONFIG_PARSER), None
+        return argparse.Namespace(subparser=SHOW_CONFIG_PARSER), None
 
     _validate_tls_url(args.base_url)
 
@@ -149,7 +149,7 @@ def parse_args(
     if getattr(args, SUB) == VERIFY_PARSER:
         # quick parse for verify connection
         return (
-            tuples.Args(
+            argparse.Namespace(
                 subparser=VERIFY_PARSER,
                 org_name=args.org_name,
                 base_url=args.base_url,
@@ -191,30 +191,23 @@ def parse_args(
             "review commands do not currently support groups of students"
         )
 
-    parsed_args = tuples.Args(
-        subparser=subparser,
-        org_name=args.org_name,
-        master_org_name=args.master_org_name
-        if "master_org_name" in args
-        else None,
-        base_url=args.base_url,
-        user=args.user if "user" in args else None,
-        master_repo_urls=master_urls,
-        master_repo_names=master_names,
-        students=_extract_groups(args),
-        issue=util.read_issue(args.issue)
-        if "issue" in args and args.issue
-        else None,
-        title_regex=args.title_regex if "title_regex" in args else None,
-        traceback=args.traceback,
-        state=args.state if "state" in args else None,
-        show_body=args.show_body if "show_body" in args else None,
-        author=args.author if "author" in args else None,
-        num_reviews=args.num_reviews if "num_reviews" in args else None,
-        token=token,
-    )
+    args_dict = vars(args)
+    args_dict.setdefault("master_org_name", None)
+    args_dict.setdefault("title_regex", None)
+    args_dict.setdefault("state", None)
+    args_dict.setdefault("show_body", None)
+    args_dict.setdefault("author", None)
+    args_dict.setdefault("num_reviews", None)
 
-    return parsed_args, api
+    args_dict["issue"] = (
+        util.read_issue(args.issue) if "issue" in args and args.issue else None
+    )
+    args_dict["students"] = _extract_groups(args)
+    args_dict["master_repo_urls"] = master_urls
+    args_dict["master_repo_names"] = master_names
+    args_dict["token"] = token
+
+    return argparse.Namespace(**args_dict), api
 
 
 def _validate_tls_url(url):
@@ -251,13 +244,13 @@ def _handle_deprecation(sys_args: List[str]) -> List[str]:
     return list(sys_args)
 
 
-def dispatch_command(args: tuples.Args, api: apimeta.API):
+def dispatch_command(args: argparse.Namespace, api: apimeta.API):
     """Handle parsed CLI arguments and dispatch commands to the appropriate
     functions. Expected exceptions are caught and turned into SystemExit
     exceptions, while unexpected exceptions are allowed to propagate.
 
     Args:
-        args: A namedtuple containing parsed command line arguments.
+        args: A namespace of parsed command line arguments.
         api: An initialized apimeta.API instance.
     """
     if args.subparser == SETUP_PARSER:
