@@ -1,4 +1,5 @@
 import os
+import argparse
 import pathlib
 from unittest.mock import MagicMock
 from unittest import mock
@@ -9,7 +10,6 @@ import _repobee
 import _repobee.ext
 import _repobee.ext.github
 from _repobee import cli
-from _repobee import tuples
 from _repobee import exception
 from _repobee import apimeta
 from _repobee import plugin
@@ -38,6 +38,7 @@ COMPLETE_PUSH_ARGS = [*BASE_ARGS, *BASE_PUSH_ARGS]
 # parsed args without subparser
 VALID_PARSED_ARGS = dict(
     org_name=ORG_NAME,
+    master_org_name=MASTER_ORG_NAME,
     base_url=BASE_URL,
     user=USER,
     master_repo_urls=REPO_URLS,
@@ -50,6 +51,7 @@ VALID_PARSED_ARGS = dict(
     show_body=True,
     author=None,
     token=TOKEN,
+    num_reviews=1,
 )
 
 
@@ -108,11 +110,11 @@ def git_mock(mocker):
 
 @pytest.fixture(scope="function", params=cli.PARSER_NAMES)
 def parsed_args_all_subparsers(request):
-    """Parametrized fixture which returns a tuples.Args for each of the
+    """Parametrized fixture which returns a namespace for each of the
     subparsers. These arguments are valid for all subparsers, even though
     many will only use some of the arguments.
     """
-    return tuples.Args(subparser=request.param, **VALID_PARSED_ARGS)
+    return argparse.Namespace(subparser=request.param, **VALID_PARSED_ARGS)
 
 
 @pytest.fixture(
@@ -152,7 +154,7 @@ class TestDispatchCommand:
 
     def test_raises_on_invalid_subparser_value(self, api_instance_mock):
         parser = "DOES_NOT_EXIST"
-        args = tuples.Args(parser, **VALID_PARSED_ARGS)
+        args = argparse.Namespace(subparser=parser, **VALID_PARSED_ARGS)
 
         with pytest.raises(exception.ParseError) as exc_info:
             cli.dispatch_command(args, api_instance_mock)
@@ -180,7 +182,9 @@ class TestDispatchCommand:
     def test_setup_student_repos_called_with_correct_args(
         self, command_mock, api_instance_mock
     ):
-        args = tuples.Args(cli.SETUP_PARSER, **VALID_PARSED_ARGS)
+        args = argparse.Namespace(
+            subparser=cli.SETUP_PARSER, **VALID_PARSED_ARGS
+        )
 
         cli.dispatch_command(args, api_instance_mock)
 
@@ -191,7 +195,9 @@ class TestDispatchCommand:
     def test_update_student_repos_called_with_correct_args(
         self, command_mock, api_instance_mock
     ):
-        args = tuples.Args(cli.UPDATE_PARSER, **VALID_PARSED_ARGS)
+        args = argparse.Namespace(
+            subparser=cli.UPDATE_PARSER, **VALID_PARSED_ARGS
+        )
 
         cli.dispatch_command(args, api_instance_mock)
 
@@ -205,7 +211,9 @@ class TestDispatchCommand:
     def test_open_issue_called_with_correct_args(
         self, command_mock, api_instance_mock
     ):
-        args = tuples.Args(cli.OPEN_ISSUE_PARSER, **VALID_PARSED_ARGS)
+        args = argparse.Namespace(
+            subparser=cli.OPEN_ISSUE_PARSER, **VALID_PARSED_ARGS
+        )
 
         cli.dispatch_command(args, api_instance_mock)
 
@@ -219,7 +227,9 @@ class TestDispatchCommand:
     def test_close_issue_called_with_correct_args(
         self, command_mock, api_instance_mock
     ):
-        args = tuples.Args(cli.CLOSE_ISSUE_PARSER, **VALID_PARSED_ARGS)
+        args = argparse.Namespace(
+            subparser=cli.CLOSE_ISSUE_PARSER, **VALID_PARSED_ARGS
+        )
 
         cli.dispatch_command(args, api_instance_mock)
 
@@ -233,7 +243,9 @@ class TestDispatchCommand:
     def test_migrate_repos_called_with_correct_args(
         self, command_mock, api_instance_mock
     ):
-        args = tuples.Args(cli.MIGRATE_PARSER, **VALID_PARSED_ARGS)
+        args = argparse.Namespace(
+            subparser=cli.MIGRATE_PARSER, **VALID_PARSED_ARGS
+        )
 
         cli.dispatch_command(args, api_instance_mock)
 
@@ -244,7 +256,9 @@ class TestDispatchCommand:
     def test_clone_repos_called_with_correct_args(
         self, command_mock, api_instance_mock
     ):
-        args = tuples.Args(cli.CLONE_PARSER, **VALID_PARSED_ARGS)
+        args = argparse.Namespace(
+            subparser=cli.CLONE_PARSER, **VALID_PARSED_ARGS
+        )
 
         cli.dispatch_command(args, api_instance_mock)
 
@@ -255,12 +269,13 @@ class TestDispatchCommand:
     def test_verify_settings_called_with_correct_args(self, api_class_mock):
         # regular mockaing is broken for static methods, it seems, produces
         # non-callable so using monkeypatch instead
-        args = tuples.Args(
-            cli.VERIFY_PARSER,
+        args = argparse.Namespace(
+            subparser=cli.VERIFY_PARSER,
             user=USER,
             base_url=BASE_URL,
             token=TOKEN,
             org_name=ORG_NAME,
+            master_org_name=None,
         )
 
         cli.dispatch_command(args, None)
@@ -270,8 +285,8 @@ class TestDispatchCommand:
         )
 
     def test_verify_settings_called_with_master_org_name(self, api_class_mock):
-        args = tuples.Args(
-            cli.VERIFY_PARSER,
+        args = argparse.Namespace(
+            subparser=cli.VERIFY_PARSER,
             user=USER,
             base_url=BASE_URL,
             org_name=ORG_NAME,
