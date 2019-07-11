@@ -145,7 +145,7 @@ def parse_args(
     subparser = getattr(args, SUB)
 
     if subparser == SHOW_CONFIG_PARSER:
-        return argparse.Namespace(subparser=SHOW_CONFIG_PARSER), None
+        return argparse.Namespace(**vars(args)), None
     elif ext_commands and subparser in ext_command_names:
         return _handle_extension_parsing(
             ext_commands[ext_command_names.index(subparser)], args
@@ -741,7 +741,7 @@ def _add_subparsers(parser, show_all_opts, ext_commands):
         [base_parser, base_student_parser, repo_name_parser], subparsers
     )
 
-    subparsers.add_parser(
+    show_config = subparsers.add_parser(
         SHOW_CONFIG_PARSER,
         help="Show the configuration file",
         description=(
@@ -751,6 +751,7 @@ def _add_subparsers(parser, show_all_opts, ext_commands):
         ),
         formatter_class=_OrderedFormatter,
     )
+    _add_traceback_arg(show_config)
 
     subparsers.add_parser(
         VERIFY_PARSER,
