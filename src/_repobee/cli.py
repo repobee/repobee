@@ -28,6 +28,7 @@ from _repobee import tuples
 from _repobee import exception
 from _repobee import config
 from _repobee import apimeta
+from _repobee import constants
 
 daiquiri.setup(
     level=logging.INFO,
@@ -569,13 +570,13 @@ class _OrderedFormatter(argparse.HelpFormatter):
         Non-configurable arguments added without modification, which by
         default is the order they are added to the parser. Configurable
         arguments are added in the order defined by
-        :py:const:`config.ORDERED_CONFIGURABLE_ARGS`. Finally, debug commands
-        (such as ``--traceback``) are added in arbitrary (but consistent)
-        order.
+        :py:const:`constants.ORDERED_CONFIGURABLE_ARGS`. Finally, debug
+        commands (such as ``--traceback``) are added in arbitrary (but
+        consistent) order.
         """
         args_order = tuple(
             "--" + name.replace("_", "-")
-            for name in config.ORDERED_CONFIGURABLE_ARGS
+            for name in constants.ORDERED_CONFIGURABLE_ARGS
         ) + ("--traceback",)
 
         def key(action):

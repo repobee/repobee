@@ -11,38 +11,15 @@ Contains the code required for pre-configuring user interfaces.
 import pathlib
 import configparser
 from typing import Union, List, Mapping
-import appdirs
-import _repobee
 
 from _repobee import exception
+from _repobee import constants
 
 import repobee_plug as plug
 
-CONFIG_DIR = pathlib.Path(
-    appdirs.user_config_dir(
-        appname=_repobee._external_package_name, appauthor=_repobee.__author__
-    )
-)
-
-DEFAULTS_SECTION_HDR = "DEFAULTS"
-DEFAULT_CONFIG_FILE = CONFIG_DIR / "config.cnf"
-assert DEFAULT_CONFIG_FILE.is_absolute()
-
-# arguments that can be configured via config file
-ORDERED_CONFIGURABLE_ARGS = (
-    "user",
-    "org_name",
-    "base_url",
-    "students_file",
-    "plugins",
-    "master_org_name",
-    "token",
-)
-CONFIGURABLE_ARGS = set(ORDERED_CONFIGURABLE_ARGS)
-
 
 def get_configured_defaults(
-    config_file: Union[str, pathlib.Path] = DEFAULT_CONFIG_FILE
+    config_file: Union[str, pathlib.Path] = constants.DEFAULT_CONFIG_FILE
 ) -> dict:
     """Access the config file and return a ConfigParser instance with
     its contents.
@@ -67,16 +44,18 @@ def check_defaults(defaults: Mapping[str, str]):
         defaults: A dictionary of defaults.
     """
     configured = defaults.keys()
-    if configured - CONFIGURABLE_ARGS:  # there are surpluss arguments
+    if (
+        configured - constants.CONFIGURABLE_ARGS
+    ):  # there are surpluss arguments
         raise exception.FileError(
             "config contains invalid default keys: {}".format(
-                ", ".join(configured - CONFIGURABLE_ARGS)
+                ", ".join(configured - constants.CONFIGURABLE_ARGS)
             )
         )
 
 
 def get_plugin_names(
-    config_file: Union[str, pathlib.Path] = DEFAULT_CONFIG_FILE
+    config_file: Union[str, pathlib.Path] = constants.DEFAULT_CONFIG_FILE
 ) -> List[str]:
     """Return a list of unqualified names of plugins listed in the config. The
     order of the plugins is preserved.
@@ -96,12 +75,14 @@ def get_plugin_names(
     if not config_file.is_file():
         return []
     config = _read_config(config_file)
-    plugin_string = config.get(DEFAULTS_SECTION_HDR, "plugins", fallback="")
+    plugin_string = config.get(
+        constants.DEFAULTS_SECTION_HDR, "plugins", fallback=""
+    )
     return [name.strip() for name in plugin_string.split(",") if name]
 
 
 def execute_config_hooks(
-    config_file: Union[str, pathlib.Path] = DEFAULT_CONFIG_FILE
+    config_file: Union[str, pathlib.Path] = constants.DEFAULT_CONFIG_FILE
 ) -> None:
     """Execute all config hooks.
 
@@ -116,7 +97,7 @@ def execute_config_hooks(
 
 
 def check_config_integrity(
-    config_file: Union[str, pathlib.Path] = DEFAULT_CONFIG_FILE
+    config_file: Union[str, pathlib.Path] = constants.DEFAULT_CONFIG_FILE
 ) -> None:
     """Raise an exception if the configuration file contains syntactical
     errors, or if the defaults are misconfigured. Note that plugin options are
@@ -144,14 +125,16 @@ def check_config_integrity(
     check_defaults(defaults)
 
 
-def _read_defaults(config_file: pathlib.Path = DEFAULT_CONFIG_FILE) -> dict:
+def _read_defaults(
+    config_file: pathlib.Path = constants.DEFAULT_CONFIG_FILE
+) -> dict:
     if not config_file.is_file():
         return {}
-    return dict(_read_config(config_file)[DEFAULTS_SECTION_HDR])
+    return dict(_read_config(config_file)[constants.DEFAULTS_SECTION_HDR])
 
 
 def _read_config(
-    config_file: pathlib.Path = DEFAULT_CONFIG_FILE
+    config_file: pathlib.Path = constants.DEFAULT_CONFIG_FILE
 ) -> configparser.ConfigParser:
     config_parser = configparser.ConfigParser()
     try:
@@ -159,7 +142,7 @@ def _read_config(
     except configparser.MissingSectionHeaderError:
         pass  # handled by the next check
 
-    if DEFAULTS_SECTION_HDR not in config_parser:
+    if constants.DEFAULTS_SECTION_HDR not in config_parser:
         raise exception.FileError(
             "config file at '{!s}' does not contain the required "
             "[DEFAULTS] header".format(config_file)
