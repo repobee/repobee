@@ -7,7 +7,6 @@ import pytest
 from functions import raise_
 from _repobee import cli
 from _repobee import main
-from _repobee import tuples
 from _repobee import plugin
 
 import constants
@@ -25,9 +24,12 @@ VALID_PARSED_ARGS = dict(
     students=constants.STUDENTS,
     issue=constants.ISSUE,
     title_regex="some regex",
+    traceback=False,
 )
 
-PARSED_ARGS = tuples.Args(cli.SETUP_PARSER, **VALID_PARSED_ARGS)
+PARSED_ARGS = argparse.Namespace(
+    subparser=cli.SETUP_PARSER, **VALID_PARSED_ARGS
+)
 
 CLONE_ARGS = "clone -mn week-2 -s slarse".split()
 
@@ -214,7 +216,9 @@ def test_logs_traceback_on_exception_in_dispatch_if_traceback(
     logger_exception_mock,
 ):
     msg = "oh this is bad!!"
-    parsed_args = tuples.Args(**VALID_PARSED_ARGS, traceback=True)
+    args_with_traceback = dict(VALID_PARSED_ARGS)
+    args_with_traceback["traceback"] = True
+    parsed_args = argparse.Namespace(**args_with_traceback)
     parse_args_mock.return_value = parsed_args, api_instance_mock
 
     def raise_():
