@@ -138,7 +138,7 @@ def parse_args(
         a argparse.Namespace namedtuple with the arguments, and an initialized
         apimeta.API instance (or None of testing connection).
     """
-    parser = _create_parser(show_all_opts)
+    parser = _create_parser(show_all_opts, ext_commands)
     args = parser.parse_args(_handle_deprecation(sys_args))
     ext_command_names = [cmd.name for cmd in ext_commands or []]
     subparser = getattr(args, SUB)
@@ -590,7 +590,7 @@ class _OrderedFormatter(argparse.HelpFormatter):
         super().add_arguments(actions)
 
 
-def _create_parser(show_all_opts):
+def _create_parser(show_all_opts, ext_commands):
     """Create the parser."""
 
     parser = argparse.ArgumentParser(
@@ -611,26 +611,33 @@ def _create_parser(show_all_opts):
             _repobee._external_package_name, _repobee.__version__
         ),
     )
-    _add_subparsers(parser, show_all_opts)
+    _add_subparsers(parser, show_all_opts, ext_commands)
 
     return parser
 
 
-def _add_extension_parsers(subparsers):
+def _add_extension_parsers(subparsers, ext_commands, base_parser):
     """Add extension parsers defined by plugins."""
-    ext_commands = plug.manager.hook.create_extension_command()
+    if not ext_commands:
+        return []
     for cmd in ext_commands:
-        subparsers.add_parser(
+        parents = (
+            [base_parser, cmd.parser] if cmd.requires_api else [cmd.parser]
+        )
+        ext_parser = subparsers.add_parser(
             cmd.name,
             help=cmd.help,
             description=cmd.description,
-            parents=[cmd.parser],
+            parents=parents,
+            formatter_class=_OrderedFormatter,
         )
+        if not cmd.requires_api:
+            _add_traceback_arg(ext_parser)
 
     return ext_commands
 
 
-def _add_subparsers(parser, show_all_opts):
+def _add_subparsers(parser, show_all_opts, ext_commands):
     """Add all of the subparsers to the parser. Note that the parsers prefixed
     with `base_` do not have any parent parsers, so any parser inheriting from
     them must also inherit from the required `base_parser` (unless it is a
@@ -752,7 +759,7 @@ def _add_subparsers(parser, show_all_opts):
         formatter_class=_OrderedFormatter,
     )
 
-    return _add_extension_parsers(subparsers)
+    return _add_extension_parsers(subparsers, ext_commands, base_parser)
 
 
 def _create_base_parsers(show_all_opts):
@@ -868,12 +875,7 @@ def _create_base_parsers(show_all_opts):
         "-t", "--token", help=token_help, type=str, default=default("token")
     )
 
-    base_parser.add_argument(
-        "-tb",
-        "--traceback",
-        help="Show the full traceback of critical exceptions.",
-        action="store_true",
-    )
+    _add_traceback_arg(base_parser)
     # base parser for when student lists are involved
     base_student_parser = argparse.ArgumentParser(add_help=False)
     students = base_student_parser.add_mutually_exclusive_group(
@@ -903,6 +905,15 @@ def _create_base_parsers(show_all_opts):
     )
 
     return (base_parser, base_student_parser, master_org_parser)
+
+
+def _add_traceback_arg(parser):
+    parser.add_argument(
+        "-tb",
+        "--traceback",
+        help="Show the full traceback of critical exceptions.",
+        action="store_true",
+    )
 
 
 @contextmanager
