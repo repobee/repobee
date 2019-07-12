@@ -21,6 +21,8 @@ LOGGER = daiquiri.getLogger(__file__)
 
 def callback(args: argparse.Namespace, api: apimeta.API) -> None:
     """Run through a configuration wizard."""
+    parser = configparser.ConfigParser()
+
     if constants.DEFAULT_CONFIG_FILE.exists():
         LOGGER.warning(
             "A configuration file was found at {}".format(
@@ -28,30 +30,38 @@ def callback(args: argparse.Namespace, api: apimeta.API) -> None:
             )
         )
         LOGGER.warning(
-            "Continuing this wizard will OVERWRITE your current file"
+            "Continuing this wizard will OVERWRITE any options you enter "
+            "values for"
         )
         if input("Continue anyway? (yes/no): ") != "yes":
             LOGGER.info("User-prompted exit")
             return
-
-    config = configparser.ConfigParser()
-    config.add_section(constants.DEFAULTS_SECTION_HDR)
+        parser.read(constants.DEFAULT_CONFIG_FILE)
+    else:
+        parser.add_section(constants.DEFAULTS_SECTION_HDR)
 
     LOGGER.info("Welcome to the configuration wizard!")
     LOGGER.info("Type defaults for the options when prompted.")
     LOGGER.info("Press ENTER to end an option.")
-    LOGGER.info("Press ENTER without inputing a value to skip an option.")
-    for arg in constants.ORDERED_CONFIGURABLE_ARGS:
-        default = input("Default for '{}': ".format(arg))
+    LOGGER.info(
+        "Press ENTER without inputing a value to pick existing "
+        "default, or skip if no default exists."
+    )
+    LOGGER.info("Current defaults are shown in brackets [].")
+    for option in constants.ORDERED_CONFIGURABLE_ARGS:
+        prompt = "Enter default for '{}': [{}] ".format(
+            option, parser[constants.DEFAULTS_SECTION_HDR].get(option, "")
+        )
+        default = input(prompt)
         if default:
-            config[constants.DEFAULTS_SECTION_HDR][arg] = default
+            parser[constants.DEFAULTS_SECTION_HDR][option] = default
 
     with open(
         str(constants.DEFAULT_CONFIG_FILE),
         "w",
         encoding=sys.getdefaultencoding(),
     ) as f:
-        config.write(f)
+        parser.write(f)
 
     LOGGER.info(
         "Configuration file written to {}".format(
