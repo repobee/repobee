@@ -62,8 +62,7 @@ def command(args: argparse.Namespace, api: apimeta.API) -> None:
 
 @plug.repobee_hook
 def create_extension_command():
-    parser = plug.RepoBeeExtensionParser()
-    parser.add_argument("-b", "--bb", help="A useless argument")
+    parser = plug.ExtensionParser()
     return plug.ExtensionCommand(
         parser=parser,
         name="config-wizard",

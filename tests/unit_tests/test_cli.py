@@ -547,7 +547,7 @@ class TestExtensionCommands:
         callback.
         """
         return plug.ExtensionCommand(
-            parser=plug.RepoBeeExtensionParser(),
+            parser=plug.ExtensionParser(),
             name="test-command",
             help="help",
             description="description",
