@@ -36,8 +36,9 @@ def callback(args: argparse.Namespace, api: apimeta.API) -> None:
         if input("Continue anyway? (yes/no): ") != "yes":
             LOGGER.info("User-prompted exit")
             return
-        parser.read(constants.DEFAULT_CONFIG_FILE)
-    else:
+        parser.read(str(constants.DEFAULT_CONFIG_FILE))
+
+    if constants.DEFAULTS_SECTION_HDR not in parser:
         parser.add_section(constants.DEFAULTS_SECTION_HDR)
 
     LOGGER.info("Welcome to the configuration wizard!")

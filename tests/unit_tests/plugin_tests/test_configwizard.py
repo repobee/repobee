@@ -1,4 +1,5 @@
 import string
+import sys
 import collections
 import builtins  # noqa: F401
 import configparser
@@ -67,8 +68,9 @@ def test_enters_values_without_continue_prompt_if_no_config_exists(
     """If no config mock can be found (ensured by the nothing_exists fixture),
     then the config wizard chould proceed without prompting for a continue.
     """
-    config_mock.exists = lambda: False
-    with patch("builtins.input", side_effect=list(defaults_options.values())):
+    with patch(
+        "builtins.input", side_effect=list(defaults_options.values())
+    ), patch("pathlib.Path.exists", autospec=True, return_value=False):
         configwizard.callback(None, None)
 
     confparser = configparser.ConfigParser()
@@ -92,8 +94,9 @@ def test_skips_empty_values(empty_config_mock, defaults_options):
     empty_option = list(defaults_options.keys())[3]
     defaults_options[empty_option] = ""
 
-    empty_config_mock.exists = lambda: False
-    with patch("builtins.input", side_effect=list(defaults_options.values())):
+    with patch(
+        "builtins.input", side_effect=list(defaults_options.values())
+    ), patch("pathlib.Path.exists", autospec=True, return_value=False):
         configwizard.callback(None, None)
 
     del defaults_options[empty_option]
@@ -115,7 +118,7 @@ def test_retains_values_that_are_not_specified(config_mock, defaults_options):
     """
     # arrange
     confparser = configparser.ConfigParser()
-    confparser.read(config_mock)
+    confparser.read(str(config_mock))
 
     # add plugin section
     plugin_section = "junit4"
@@ -129,7 +132,9 @@ def test_retains_values_that_are_not_specified(config_mock, defaults_options):
     confparser.add_section(plugin_section)
     for option, value in plugin_options.items():
         confparser[plugin_section][option] = value
-    with open(str(config_mock), "w") as file:
+    with open(
+        str(config_mock), "w", encoding=sys.getdefaultencoding()
+    ) as file:
         confparser.write(file)
 
     # remove an option and save expected retained value
@@ -148,7 +153,7 @@ def test_retains_values_that_are_not_specified(config_mock, defaults_options):
     # assert
     del defaults_options[empty_option]
     parser = configparser.ConfigParser()
-    parser.read(config_mock)
+    parser.read(str(config_mock))
 
     assert (
         parser[_repobee.constants.DEFAULTS_SECTION_HDR][empty_option]

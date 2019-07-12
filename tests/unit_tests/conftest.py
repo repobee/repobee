@@ -139,7 +139,9 @@ def empty_config_mock(mocker, isfile_mock, tmpdir, monkeypatch):
     isfile_mock.side_effect = lambda path: isfile(path) or str(path) == str(
         file
     )
-    monkeypatch.setattr("_repobee.constants.DEFAULT_CONFIG_FILE", file)
+    monkeypatch.setattr(
+        "_repobee.constants.DEFAULT_CONFIG_FILE", pathlib.Path(str(file))
+    )
     yield file
 
 
