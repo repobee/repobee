@@ -120,7 +120,7 @@ def no_config_mock(mocker, isfile_mock, tmpdir):
 
 
 @pytest.fixture
-def empty_config_mock(mocker, isfile_mock, tmpdir):
+def empty_config_mock(mocker, isfile_mock, tmpdir, monkeypatch):
     """Sets up an empty config file which is read by the config._read_config
     function."""
     file = tmpdir.join("config.cnf")
@@ -139,6 +139,7 @@ def empty_config_mock(mocker, isfile_mock, tmpdir):
     isfile_mock.side_effect = lambda path: isfile(path) or str(path) == str(
         file
     )
+    monkeypatch.setattr("_repobee.constants.DEFAULT_CONFIG_FILE", file)
     yield file
 
 

@@ -19,7 +19,7 @@ from _repobee import constants
 LOGGER = daiquiri.getLogger(__file__)
 
 
-def command(args: argparse.Namespace, api: apimeta.API) -> None:
+def callback(args: argparse.Namespace, api: apimeta.API) -> None:
     """Run through a configuration wizard."""
     if constants.DEFAULT_CONFIG_FILE.exists():
         LOGGER.warning(
@@ -66,7 +66,11 @@ def create_extension_command():
     return plug.ExtensionCommand(
         parser=parser,
         name="config-wizard",
-        help="Config wizard",
-        description="Description of config wizard",
-        callback=command,
+        help="Interactive configuration wizard to set up the config file.",
+        description=(
+            "A configuration wizard that sets up the configuration file."
+            "Warns if there already is a configuration file, as it will be "
+            "overwritten."
+        ),
+        callback=callback,
     )
