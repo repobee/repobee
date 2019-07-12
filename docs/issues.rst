@@ -3,10 +3,13 @@ Opening and Closing issues (the ``open-issues`` and ``close-issues`` commands)
 Sometimes, the best way to handle an error in a repo is to simply notify
 affected students about it. This is especially true if the due date for the
 assignment is rapidly approaching, and most students have already started
-modifying their repositories. Therefore, RepoBee provides the
-``open-issues`` command, which can open issues in bulk. When the time is right
-(perhaps after the deadline has passed), issues can be closed with the
-``close-issues`` command.
+modifying their repositories. There can also be cases where you want to make
+general announcements, or communicate some other action item that's best highly
+related to the code that the students are writing. Therefore, RepoBee provides
+the ``open-issues`` command, which can open issues in bulk. When the time is
+right, issues can be closed with the ``close-issues`` command. Finally,
+``list-issues`` provides a way of quickly seeing what issues are open and closed
+in student repositories.
 
 .. _open:
 
@@ -17,14 +20,15 @@ to write a Markdown-formatted issue. Just like with the ``update`` command, the
 **first line of the file is the title**. Here is ``issue.md``:
 
 .. code-block:: none
+   :caption: issue.md
 
-    An important announcement
+   An important announcement
 
-    ### Dear students
-    I have this important announcement to make.
+   ### Dear students
+   I have this important announcement to make.
 
-    Regards,
-    _The Announcer_
+   Regards,
+   _The Announcer_
 
 Awesome, that's an excellent issue. Let's open it in the ``master-repo-2`` repo
 for our dear students ``spam``, ``eggs`` and ``ham``, who are listed in the
@@ -55,9 +59,9 @@ announcement`` is simple: we provide the regex ``\AAn important announcement\Z``
 .. code-block:: bash
 
     $ repobee close-issues -mn master-repo-2 -sf students.txt -r '\AAn important announcement\Z'
-    [INFO] closed issue spam-master-repo-2/#1-'An important announcement'
-    [INFO] closed issue eggs-master-repo-2/#1-'An important announcement'
-    [INFO] closed issue ham-master-repo-2/#1-'An important announcement'
+    [INFO] Closed issue spam-master-repo-2/#1-'An important announcement'
+    [INFO] Closed issue eggs-master-repo-2/#1-'An important announcement'
+    [INFO] Closed issue ham-master-repo-2/#1-'An important announcement'
 
 And there we go, easy as pie!
 
