@@ -1,6 +1,7 @@
 import os
 from unittest import mock
 import pytest
+import _repobee.constants
 from _repobee import config
 from _repobee import exception
 
@@ -47,7 +48,7 @@ class TestGetConfiguredDefaults:
         invalid_key = "not_valid_key"
         config_contents = os.linesep.join(
             [
-                "[{}]".format(config.DEFAULTS_SECTION_HDR),
+                "[{}]".format(_repobee.constants.DEFAULTS_SECTION_HDR),
                 "base_url = {}".format(BASE_URL),
                 "user = {}".format(USER),
                 "org_name = {}".format(ORG_NAME),
@@ -109,7 +110,7 @@ class TestGetPluginNames:
     ):
         contents = os.linesep.join(
             [
-                "[{}]".format(config.DEFAULTS_SECTION_HDR),
+                "[{}]".format(_repobee.constants.DEFAULTS_SECTION_HDR),
                 "plugins = " + plugins_string,
             ]
         )
@@ -154,13 +155,15 @@ class TestCheckConfigIntegrity:
         with pytest.raises(exception.FileError) as exc_info:
             config.check_config_integrity()
 
-        assert str(config.DEFAULT_CONFIG_FILE) in str(exc_info.value)
+        assert str(_repobee.constants.DEFAULT_CONFIG_FILE) in str(
+            exc_info.value
+        )
 
     def test_with_invalid_defaults_key_raises(self, empty_config_mock):
         empty_config_mock.write(
             os.linesep.join(
                 [
-                    "[{}]".format(config.DEFAULTS_SECTION_HDR),
+                    "[{}]".format(_repobee.constants.DEFAULTS_SECTION_HDR),
                     "user = someone",
                     "option = value",
                 ]
@@ -179,7 +182,7 @@ class TestCheckConfigIntegrity:
         empty_config_mock.write(
             os.linesep.join(
                 [
-                    "[{}]".format(config.DEFAULTS_SECTION_HDR),
+                    "[{}]".format(_repobee.constants.DEFAULTS_SECTION_HDR),
                     "user = someone",
                     "base_url",
                     "org_name = cool",

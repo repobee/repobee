@@ -10,6 +10,7 @@ import sys
 from typing import List
 
 import daiquiri
+import repobee_plug as plug
 
 from _repobee import cli
 from _repobee import plugin
@@ -59,12 +60,15 @@ def main(sys_args: List[str]):
         else:
             plugin.initialize_plugins(parsed_preparser_args.plug or [])
 
+        ext_commands = plug.manager.hook.create_extension_command()
         parsed_args, api = cli.parse_args(
-            app_args, show_all_opts=parsed_preparser_args.show_all_opts
+            app_args,
+            show_all_opts=parsed_preparser_args.show_all_opts,
+            ext_commands=ext_commands,
         )
         traceback = parsed_args.traceback
         pre_init = False
-        cli.dispatch_command(parsed_args, api)
+        cli.dispatch_command(parsed_args, api, ext_commands)
     except Exception as exc:
         # FileErrors can occur during pre-init because of reading the config
         # and we don't want tracebacks for those (afaik at this time)

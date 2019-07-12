@@ -6,6 +6,8 @@ from unittest import mock
 
 import pytest
 
+import repobee_plug as plug
+
 import _repobee
 import _repobee.ext
 import _repobee.ext.github
@@ -31,7 +33,7 @@ TOKEN = constants.TOKEN
 REPO_NAMES = ("week-1", "week-2", "week-3")
 REPO_URLS = tuple(map(lambda rn: generate_repo_url(rn, ORG_NAME), REPO_NAMES))
 
-BASE_ARGS = ["-u", USER, "-bu", BASE_URL, "-o", ORG_NAME]
+BASE_ARGS = ["-u", USER, "-bu", BASE_URL, "-o", ORG_NAME, "-t", TOKEN]
 BASE_PUSH_ARGS = ["-mn", *REPO_NAMES]
 COMPLETE_PUSH_ARGS = [*BASE_ARGS, *BASE_PUSH_ARGS]
 
@@ -335,7 +337,9 @@ class TestBaseParsing:
     ):
         """Test that configured args are shown when show_all_opts is True."""
         with pytest.raises(SystemExit):
-            cli.parse_args([cli.SETUP_PARSER, "-h"], show_all_opts=True)
+            cli.parse_args(
+                [cli.SETUP_PARSER, "-h"], show_all_opts=True, ext_commands=[]
+            )
 
         captured = capsys.readouterr()
         assert "--user" in captured.out
@@ -350,7 +354,9 @@ class TestBaseParsing:
     ):
         """Test that configured args are hidden when show_all_opts is False."""
         with pytest.raises(SystemExit):
-            cli.parse_args([cli.SETUP_PARSER, "-h"], show_all_opts=False)
+            cli.parse_args(
+                [cli.SETUP_PARSER, "-h"], show_all_opts=False, ext_commands=[]
+            )
 
         captured = capsys.readouterr()
         assert "--user" not in captured.out
@@ -521,6 +527,153 @@ class TestBaseParsing:
             cli.parse_args(sys_args)
 
         assert "unsupported protocol in {}".format(url) in str(exc_info.value)
+
+
+class TestExtensionCommands:
+    """Parsing and dispatch tests for extension commands."""
+
+    @pytest.fixture
+    def mock_callback(self):
+        """Return a mock callback function for use with an extension
+        command.
+        """
+        yield MagicMock(
+            spec=_repobee.ext.configwizard.create_extension_command
+        )
+
+    @pytest.fixture
+    def ext_command(self, mock_callback):
+        """Return a test extension command with an empty parser and a mocked
+        callback.
+        """
+        return plug.ExtensionCommand(
+            parser=plug.ExtensionParser(),
+            name="test-command",
+            help="help",
+            description="description",
+            callback=mock_callback,
+        )
+
+    @pytest.fixture
+    def parsed_base_args_dict(self):
+        return dict(
+            base_url=BASE_URL,
+            user=USER,
+            org_name=ORG_NAME,
+            token=TOKEN,
+            traceback=False,
+        )
+
+    def test_parse_ext_command_that_does_not_require_api(
+        self, ext_command, api_class_mock
+    ):
+        """If an extension command called does not require the API, then the
+        command should not require the API base arguments, and no API should be
+        created.
+        """
+        option = "--test-option"
+        ext_command.parser.add_argument(
+            option, action="store_true", required=True
+        )
+
+        parsed_args, api = cli.parse_args(
+            [ext_command.name, option], ext_commands=[ext_command]
+        )
+
+        assert api is None
+        assert parsed_args == argparse.Namespace(
+            subparser=ext_command.name, test_option=True, traceback=False
+        )
+
+    def test_parse_ext_command_that_requires_api(
+        self,
+        ext_command,
+        api_class_mock,
+        api_instance_mock,
+        parsed_base_args_dict,
+    ):
+        """If an extension command called requires the API, then the command
+        should automatically get the requisite API arguments added to it
+        """
+        ext_command = plug.ExtensionCommand(
+            *ext_command[: len(ext_command) - 1], requires_api=True
+        )
+        option = "--test-option"
+        ext_command.parser.add_argument(
+            option, action="store_true", required=True
+        )
+
+        parsed_args, api = cli.parse_args(
+            [ext_command.name, *BASE_ARGS, option], ext_commands=[ext_command]
+        )
+
+        assert api is api_instance_mock
+        api_class_mock.assert_called_once_with(BASE_URL, TOKEN, ORG_NAME, USER)
+        assert parsed_args == argparse.Namespace(
+            subparser=ext_command.name,
+            test_option=True,
+            **parsed_base_args_dict
+        )
+
+    def test_dispatch_ext_command_that_does_not_require_api(
+        self, ext_command, mock_callback
+    ):
+        """The callback function should get None for the api argument, as it
+        does not require the API.
+        """
+        option = "--test-option"
+        ext_command.parser.add_argument(
+            option, action="store_true", required=True
+        )
+        parsed_args = argparse.Namespace(
+            subparser=ext_command.name, test_option=True, traceback=False
+        )
+
+        cli.dispatch_command(parsed_args, None, [ext_command])
+
+        # for some reason, this completely sane assertion fails ALWAYS
+        # mock_callback.assert_called_once_with(
+        #   parsed_args, None)
+
+        # this is a workaround
+        assert len(mock_callback.call_args_list) == 1
+        assert mock_callback.call_args_list[0] == mock.call(parsed_args, None)
+
+    def test_dispatch_ext_command_that_requires_api(
+        self,
+        ext_command,
+        mock_callback,
+        api_instance_mock,
+        parsed_base_args_dict,
+    ):
+        """The callback function should get ant api instance for the api
+        argument, as it requires the API.
+        """
+
+        option = "--test-option"
+        ext_command = plug.ExtensionCommand(
+            *ext_command[: len(ext_command) - 1], requires_api=True
+        )
+        ext_command.parser.add_argument(
+            option, action="store_true", required=True
+        )
+        parsed_args = argparse.Namespace(
+            subparser=ext_command.name,
+            test_option=True,
+            **parsed_base_args_dict
+        )
+
+        cli.dispatch_command(parsed_args, api_instance_mock, [ext_command])
+
+        # for some reason, this completely sane assertion fails ALWAYS
+        # mock_callback.assert_called_once_with(
+        #   parsed_args, api_instance_mock)
+
+        # this is a workaround
+        assert len(mock_callback.call_args_list) == 1
+        assert mock_callback.call_args_list[0] == mock.call(
+            parsed_args, api_instance_mock
+        )
 
 
 class TestStudentParsing:

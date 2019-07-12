@@ -30,6 +30,7 @@ from _repobee import util
 from _repobee import apimeta
 from _repobee import exception
 from _repobee import config
+from _repobee import constants
 from _repobee import formatters
 from _repobee.git import Push
 
@@ -634,9 +635,9 @@ def show_config() -> None:
     config.check_config_integrity()
 
     LOGGER.info(
-        "Found valid config file at " + str(config.DEFAULT_CONFIG_FILE)
+        "Found valid config file at " + str(constants.DEFAULT_CONFIG_FILE)
     )
-    with config.DEFAULT_CONFIG_FILE.open(
+    with constants.DEFAULT_CONFIG_FILE.open(
         encoding=sys.getdefaultencoding()
     ) as f:
         config_contents = "".join(f.readlines())
