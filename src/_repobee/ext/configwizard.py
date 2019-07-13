@@ -9,6 +9,7 @@ a short configuration wizard that lets the user set RepoBee's defaults.
 import argparse
 import configparser
 import sys
+import os
 
 import daiquiri
 import repobee_plug as plug
@@ -38,6 +39,9 @@ def callback(args: argparse.Namespace, api: apimeta.API) -> None:
             return
         parser.read(str(constants.DEFAULT_CONFIG_FILE))
 
+    os.makedirs(
+        str(constants.DEFAULT_CONFIG_FILE.parent), mode=0o700, exist_ok=True
+    )
     if constants.DEFAULTS_SECTION_HDR not in parser:
         parser.add_section(constants.DEFAULTS_SECTION_HDR)
 
