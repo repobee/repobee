@@ -175,5 +175,5 @@ def test_creates_directory(config_mock, tmpdir, defaults_options):
         configwizard.callback(None, None)
 
     makedirs_mock.assert_called_once_with(
-        os.path.dirname(str(config_mock)), mode=600, exist_ok=True
+        os.path.dirname(str(config_mock)), mode=0o700, exist_ok=True
     )
