@@ -8,7 +8,7 @@ with open("README.md", mode="r", encoding="utf-8") as f:
 with open("src/_repobee/__version.py", mode="r", encoding="utf-8") as f:
     line = f.readline()
     __version__ = line.split("=")[1].strip(" '\"\n")
-    assert re.match(r"^\d+(\.\d+){2}$", __version__)
+    assert re.match(r"^\d+\.\d+[.ab]\d+$", __version__)
 
 test_requirements = [
     "appdirs",
