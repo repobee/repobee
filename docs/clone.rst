@@ -32,5 +32,7 @@ about it in the :ref:`plugins` section.
    RepoBee doesn't actually use ``git clone`` to clone repositories. Instead,
    RepoBee clones by initializing the repository and running ``git pull``. The
    practical implication is that you can't simply enter a repository that's
-   been cloned with RepoBee and run ``git pull`` to fetch updates, as there
-   will be no remote set. Run ``repobee clone`` again instead.
+   been cloned with RepoBee and run ``git pull`` to fetch updates. You will
+   have to run ``repobee clone`` again in a different directory to fetch any
+   updates students have made, alternatively simply delete to particular
+   repositories you want to clone again and then run ``repobee clone``.
