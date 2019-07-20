@@ -568,6 +568,7 @@ def create_parser_for_docs():
     """Create a parser showing all options for the default CLI
     documentation.
     """
+    daiquiri.setup(level=logging.FATAL)
     # load default plugins
     plugin.initialize_plugins()
     return _create_parser(show_all_opts=True)
