@@ -12,12 +12,12 @@ repos based on ``master-repo-1`` and ``master-repo-2``.
 
     $ repobee clone -mn master-repo-1 master-repo-2 -sf students.txt
     [INFO] cloning into student repos ...
-    [INFO] Cloned into https://some-enterprise-host/repobee-demo/spam-master-repo-1
-    [INFO] Cloned into https://some-enterprise-host/repobee-demo/ham-master-repo-1
-    [INFO] Cloned into https://some-enterprise-host/repobee-demo/ham-master-repo-2
-    [INFO] Cloned into https://some-enterprise-host/repobee-demo/eggs-master-repo-1
-    [INFO] Cloned into https://some-enterprise-host/repobee-demo/spam-master-repo-2
-    [INFO] Cloned into https://some-enterprise-host/repobee-demo/eggs-master-repo-2
+    [INFO] Cloned into https://some-enterprise-host/repobee-demo/slarse-master-repo-1
+    [INFO] Cloned into https://some-enterprise-host/repobee-demo/glassey-master-repo-1
+    [INFO] Cloned into https://some-enterprise-host/repobee-demo/glassey-master-repo-2
+    [INFO] Cloned into https://some-enterprise-host/repobee-demo/glennol-master-repo-1
+    [INFO] Cloned into https://some-enterprise-host/repobee-demo/slarse-master-repo-2
+    [INFO] Cloned into https://some-enterprise-host/repobee-demo/glennol-master-repo-2
 
 Splendid! That's really all there is to the basic functionality, the repos
 should now be in your current working directory. There is also a possibility to

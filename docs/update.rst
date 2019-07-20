@@ -12,28 +12,28 @@ repos.
 
 Scenario 1: Repos are unchanged
 -------------------------------
-Let's say that we've updated ``master-repo-1``, and that users ``spam``,
-``ham`` and ``eggs`` should get the updates. Then, we simply run
+Let's say that we've updated ``master-repo-1``, and that users ``slarse``,
+``glassey`` and ``glennol`` should get the updates. Then, we simply run
 ``update`` like this:
 
 .. code-block:: bash
 
-    $ repobee update -mn master-repo-1 -s spam eggs ham
+    $ repobee update -mn master-repo-1 -s slarse glennol glassey
     [INFO] Cloning into master repos ...
     [INFO] Cloning into https://some-enterprise-host/repobee-demo/master-repo-1
     [INFO] Pushing files to student repos ...
     [INFO] Pushing, attempt 1/3
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/spam-master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/eggs-master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/ham-master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/slarse-master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glennol-master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glassey-master-repo-1 master
     [INFO] Done!
 
-That's all there is to it for this super simple case. But what if ``ham`` had
-started working on ``ham-master-repo-1``?
+That's all there is to it for this super simple case. But what if ``glassey`` had
+started working on ``glassey-master-repo-1``?
 
 .. note::
 
-    Here, ``-s spam eggs ham`` was used to directly specify student usernames on
+    Here, ``-s slarse glennol glassey`` was used to directly specify student usernames on
     the command line, instead of pointing to a students file with ``-sf
     students.txt``. All commands that require you to specify student usernames
     can be used with either the ``-s|--students`` or the ``-sf|--students-file``
@@ -41,8 +41,8 @@ started working on ``ham-master-repo-1``?
 
 Scenario 2: At least 1 repo altered
 -----------------------------------
-Let's assume now that ``ham`` has started working on the repo. Since we do not
-force pushes to the student repos, the push to ``ham-master-repo-1`` will be
+Let's assume now that ``glassey`` has started working on the repo. Since we do not
+force pushes to the student repos, the push to ``glassey-master-repo-1`` will be
 rejected. This is good, we don't want to overwrite a student's progress because
 we messed up with the original repository. There are a number of things one
 *could* do in this situation, but in RepoBee, we opted for a very simple
@@ -75,29 +75,29 @@ students, plain text is more helpful. Now it's just a matter of using
 
 .. code-block:: bash
 
-    $ repobee update -mn master-repo-1 -s spam eggs ham -i issue.md
+    $ repobee update -mn master-repo-1 -s slarse glennol glassey -i issue.md
     [INFO] Cloning into master repos ...
     [INFO] Cloning into https://some-enterprise-host/repobee-demo/master-repo-1
     [INFO] Pushing files to student repos ...
     [INFO] Pushing, attempt 1/3
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/spam-master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/eggs-master-repo-1 master
-    [ERROR] Failed to push to https://some-enterprise-host/repobee-demo/ham-master-repo-1
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/slarse-master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glennol-master-repo-1 master
+    [ERROR] Failed to push to https://some-enterprise-host/repobee-demo/glassey-master-repo-1
     return code: 128
-    fatal: repository 'https://some-enterprise-host/repobee-demo/ham-master-repo-1/' not found
+    fatal: repository 'https://some-enterprise-host/repobee-demo/glassey-master-repo-1/' not found
     [WARNING] 1 pushes failed ...
     [INFO] Pushing, attempt 2/3
-    [ERROR] Failed to push to https://some-enterprise-host/repobee-demo/ham-master-repo-1
+    [ERROR] Failed to push to https://some-enterprise-host/repobee-demo/glassey-master-repo-1
     return code: 128
-    fatal: repository 'https://some-enterprise-host/repobee-demo/ham-master-repo-1/' not found
+    fatal: repository 'https://some-enterprise-host/repobee-demo/glassey-master-repo-1/' not found
     [WARNING] 1 pushes failed ...
     [INFO] Pushing, attempt 3/3
-    [ERROR] Failed to push to https://some-enterprise-host/repobee-demo/ham-master-repo-1
+    [ERROR] Failed to push to https://some-enterprise-host/repobee-demo/glassey-master-repo-1
     return code: 128
-    fatal: repository 'https://some-enterprise-host/repobee-demo/ham-master-repo-1/' not found
+    fatal: repository 'https://some-enterprise-host/repobee-demo/glassey-master-repo-1/' not found
     [WARNING] 1 pushes failed ...
     [INFO] Opening issue in repos to which push failed
-    [INFO] Opened issue ham-master-repo-1/#1-'Nice title'
+    [INFO] Opened issue glassey-master-repo-1/#1-'Nice title'
     [INFO] done!
 
 Note that RepoBee tries to push 3 times before finally giving up and opening an

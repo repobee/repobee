@@ -158,27 +158,27 @@ Set up student sepositories
 Now that the master repos are set up, it's time to create the student repos.
 While student usernames *can* be specified on the command line, it's often
 convenient to have them written down in a file instead. Let's pretend I have
-three students with usernames ``spam``, ``ham`` and ``eggs``. I'll simply create
+three students with usernames ``slarse``, ``glassey`` and ``glennol``. I'll simply create
 a file called ``students.txt`` and type each username on a separate line.
 
 .. code-block:: bash
    :caption: students.txt
 
-    spam
-    ham
-    eggs
+    slarse
+    glassey
+    glennol
 
 .. note::
 
    **Since v1.3.0:** It is now possible to specify groups of students to get
    access to the same repos by putting multiple usernames on the same line,
-   separated by spaces. For example, the following file will put `spam` and
-   `ham` in the same group.
+   separated by spaces. For example, the following file will put `slarse` and
+   `glassey` in the same group.
 
    .. code-block:: bash
 
-      spam ham
-      eggs
+      slarse glassey
+      glennol
 
    See :ref:`groups` for details.
 
@@ -197,30 +197,30 @@ simple as issuing a single command with RepoBee.
     [INFO] Cloning into master repos ...
     [INFO] Cloning into file:///home/slarse/tmp/master-repo-1
     [INFO] Cloning into file:///home/slarse/tmp/master-repo-2
-    [INFO] Created team eggs
-    [INFO] Created team ham
-    [INFO] Created team spam
-    [INFO] Adding members eggs to team eggs
-    [WARNING] user eggs does not exist
-    [INFO] Adding members ham to team ham
-    [INFO] Adding members spam to team spam
+    [INFO] Created team glennol
+    [INFO] Created team glassey
+    [INFO] Created team slarse
+    [INFO] Adding members glennol to team glennol
+    [WARNING] user glennol does not exist
+    [INFO] Adding members glassey to team glassey
+    [INFO] Adding members slarse to team slarse
     [INFO] Creating student repos ...
-    [INFO] Created repobee-demo/eggs-master-repo-1
-    [INFO] Created repobee-demo/ham-master-repo-1
-    [INFO] Created repobee-demo/spam-master-repo-1
-    [INFO] Created repobee-demo/eggs-master-repo-2
-    [INFO] Created repobee-demo/ham-master-repo-2
-    [INFO] Created repobee-demo/spam-master-repo-2
+    [INFO] Created repobee-demo/glennol-master-repo-1
+    [INFO] Created repobee-demo/glassey-master-repo-1
+    [INFO] Created repobee-demo/slarse-master-repo-1
+    [INFO] Created repobee-demo/glennol-master-repo-2
+    [INFO] Created repobee-demo/glassey-master-repo-2
+    [INFO] Created repobee-demo/slarse-master-repo-2
     [INFO] Pushing files to student repos ...
     [INFO] Pushing, attempt 1/3
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/ham-master-repo-2 master
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/ham-master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/spam-master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/eggs-master-repo-2 master
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/eggs-master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/spam-master-repo-2 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glassey-master-repo-2 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glassey-master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/slarse-master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glennol-master-repo-2 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glennol-master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/slarse-master-repo-2 master
 
-Note that there was a ``[WARNING]`` message for the username ``eggs``: the user
+Note that there was a ``[WARNING]`` message for the username ``glennol``: the user
 does not exist. At KTH, this is common, as many (sometimes most) first-time
 students will not have created their GitHub accounts until sometime after the
 course starts.  These students will still have their repos created, but the

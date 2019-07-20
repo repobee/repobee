@@ -36,27 +36,27 @@ the configuration file (if you don't know what this mean, have a look at
 ``--students/--students-file`` and ``--num-reviews`` (``--issue`` is optional,
 more on that later). Let's make a minimal call with the ``assign-reviews``
 command, and then inspect the log output to figure out what happened. Recall
-that ``students.txt`` lists our three favorite students spam, ham and eggs (see
+that ``students.txt`` lists our three favorite students slarse, glassey and glennol (see
 :ref:`setup`).
 
 .. code-block:: bash
 
     $ repobee assign-reviews -mn master-repo-1 -sf students.txt --num-reviews 2
     # step 1
-    [INFO] created team spam-master-repo-1-review
-    [INFO] created team eggs-master-repo-1-review
-    [INFO] created team ham-master-repo-1-review
+    [INFO] created team slarse-master-repo-1-review
+    [INFO] created team glennol-master-repo-1-review
+    [INFO] created team glassey-master-repo-1-review
     # step 2
-    [INFO] adding members eggs, ham to team spam-master-repo-1-review
-    [INFO] adding members ham, spam to team eggs-master-repo-1-review
-    [INFO] adding members spam, eggs to team ham-master-repo-1-review
+    [INFO] adding members glennol, glassey to team slarse-master-repo-1-review
+    [INFO] adding members glassey, slarse to team glennol-master-repo-1-review
+    [INFO] adding members slarse, glennol to team glassey-master-repo-1-review
     # steps 3 and 4, interleaved
-    [INFO] opened issue eggs-master-repo-1/#1-'Peer review'
-    [INFO] adding team eggs-master-repo-1-review to repo eggs-master-repo-1 with 'pull' permission
-    [INFO] opened issue ham-master-repo-1/#2-'Peer review'
-    [INFO] adding team ham-master-repo-1-review to repo ham-master-repo-1 with 'pull' permission
-    [INFO] opened issue spam-master-repo-1/#2-'Peer review'
-    [INFO] adding team spam-master-repo-1-review to repo spam-master-repo-1 with 'pull' permission
+    [INFO] opened issue glennol-master-repo-1/#1-'Peer review'
+    [INFO] adding team glennol-master-repo-1-review to repo glennol-master-repo-1 with 'pull' permission
+    [INFO] opened issue glassey-master-repo-1/#2-'Peer review'
+    [INFO] adding team glassey-master-repo-1-review to repo glassey-master-repo-1 with 'pull' permission
+    [INFO] opened issue slarse-master-repo-1/#2-'Peer review'
+    [INFO] adding team slarse-master-repo-1-review to repo slarse-master-repo-1 with 'pull' permission
 
 The following steps were performed:
 
@@ -124,18 +124,18 @@ specifying the issue like this:
 .. code-block:: bash
 
     $ repobee assign-reviews -mn master-repo-2 -sf students.txt --num-reviews 2 --issue issue.md
-    [INFO] created team spam-master-repo-2-review
-    [INFO] created team eggs-master-repo-2-review
-    [INFO] created team ham-master-repo-2-review
-    [INFO] adding members ham, eggs to team spam-master-repo-2-review
-    [INFO] adding members spam, ham to team eggs-master-repo-2-review
-    [INFO] adding members eggs, spam to team ham-master-repo-2-review
-    [INFO] opened issue eggs-master-repo-2/#2-'Review of master-repo-2'
-    [INFO] adding team eggs-master-repo-2-review to repo eggs-master-repo-2 with 'pull' permission
-    [INFO] opened issue ham-master-repo-2/#2-'Review of master-repo-2'
-    [INFO] adding team ham-master-repo-2-review to repo ham-master-repo-2 with 'pull' permission
-    [INFO] opened issue spam-master-repo-2/#2-'Review of master-repo-2'
-    [INFO] adding team spam-master-repo-2-review to repo spam-master-repo-2 with 'pull' permission
+    [INFO] created team slarse-master-repo-2-review
+    [INFO] created team glennol-master-repo-2-review
+    [INFO] created team glassey-master-repo-2-review
+    [INFO] adding members glassey, glennol to team slarse-master-repo-2-review
+    [INFO] adding members slarse, glassey to team glennol-master-repo-2-review
+    [INFO] adding members glennol, slarse to team glassey-master-repo-2-review
+    [INFO] opened issue glennol-master-repo-2/#2-'Review of master-repo-2'
+    [INFO] adding team glennol-master-repo-2-review to repo glennol-master-repo-2 with 'pull' permission
+    [INFO] opened issue glassey-master-repo-2/#2-'Review of master-repo-2'
+    [INFO] adding team glassey-master-repo-2-review to repo glassey-master-repo-2 with 'pull' permission
+    [INFO] opened issue slarse-master-repo-2/#2-'Review of master-repo-2'
+    [INFO] adding team slarse-master-repo-2-review to repo slarse-master-repo-2 with 'pull' permission
 
 As you can tell from the last few lines, the title is the one specified in the
 issue, and not the default title as it was before. And that's pretty much it for
@@ -157,9 +157,9 @@ It's as simple as:
 .. code-block:: bash
 
     $ repobee purge-review-teams -mn master-repo-1 -sf students.txt
-    [INFO] deleted team eggs-master-repo-1-review
-    [INFO] deleted team ham-master-repo-1-review
-    [INFO] deleted team spam-master-repo-1-review
+    [INFO] deleted team glennol-master-repo-1-review
+    [INFO] deleted team glassey-master-repo-1-review
+    [INFO] deleted team slarse-master-repo-1-review
 
 And that's it, the review teams are gone. If you also want to close the related
 issues, you can simply use the ``close-issues`` command for that (see

@@ -31,15 +31,15 @@ to write a Markdown-formatted issue. Just like with the ``update`` command, the
    _The Announcer_
 
 Awesome, that's an excellent issue. Let's open it in the ``master-repo-2`` repo
-for our dear students ``spam``, ``eggs`` and ``ham``, who are listed in the
+for our dear students ``slarse``, ``glennol`` and ``glassey``, who are listed in the
 ``students.txt`` file (see :ref:`setup`).
 
 .. code-block:: bash
 
     $ repobee open-issues -mn master-repo-2 -sf students.txt -i issue.md
-    [INFO] Opened issue spam-master-repo-2/#1-'An important announcement'
-    [INFO] Opened issue eggs-master-repo-2/#1-'An important announcement'
-    [INFO] Opened issue ham-master-repo-2/#1-'An important announcement'
+    [INFO] Opened issue slarse-master-repo-2/#1-'An important announcement'
+    [INFO] Opened issue glennol-master-repo-2/#1-'An important announcement'
+    [INFO] Opened issue glassey-master-repo-2/#1-'An important announcement'
 
 From the output, we can read that in each of the repos, an issue with the title
 ``An important announcement`` was opened as issue nr 1 (``#1``). The number
@@ -59,9 +59,9 @@ announcement`` is simple: we provide the regex ``\AAn important announcement\Z``
 .. code-block:: bash
 
     $ repobee close-issues -mn master-repo-2 -sf students.txt -r '\AAn important announcement\Z'
-    [INFO] Closed issue spam-master-repo-2/#1-'An important announcement'
-    [INFO] Closed issue eggs-master-repo-2/#1-'An important announcement'
-    [INFO] Closed issue ham-master-repo-2/#1-'An important announcement'
+    [INFO] Closed issue slarse-master-repo-2/#1-'An important announcement'
+    [INFO] Closed issue glennol-master-repo-2/#1-'An important announcement'
+    [INFO] Closed issue glassey-master-repo-2/#1-'An important announcement'
 
 And there we go, easy as pie!
 
@@ -86,9 +86,9 @@ issues like so:
 .. code-block:: bash
 
     $ repobee list-issues -mn master-repo-2 -sf students.txt
-    [INFO] spam-master-repo-2/#1:  Grading Criteria created 2018-09-12 18:20:56 by glassey
-    [INFO] eggs-master-repo-2/#1:  Grading Criteria created 2018-09-12 18:20:56 by glassey
-    [INFO] ham-master-repo-2/#1:   Grading Criteria created 2018-09-12 18:20:56 by glassey
+    [INFO] slarse-master-repo-2/#1:  Grading Criteria created 2018-09-12 18:20:56 by glassey
+    [INFO] glennol-master-repo-2/#1:  Grading Criteria created 2018-09-12 18:20:56 by glassey
+    [INFO] glassey-master-repo-2/#1:   Grading Criteria created 2018-09-12 18:20:56 by glassey
 
 So, just grading critera issues posted by the user ``glassey``. What happened to
 the important announcements? Well, they are closed. If we want to se closed
@@ -97,9 +97,9 @@ issues, we must specifically say so with the ``--closed`` argument.
 .. code-block:: bash
 
     $ repobee list-issues -mn master-repo-2 -sf students.txt --closed
-    [INFO] spam-master-repo-2/#2:  An important announcement created 2018-09-17 17:46:43 by slarse
-    [INFO] eggs-master-repo-2/#2:  An important announcement created 2018-09-17 17:46:43 by slarse
-    [INFO] ham-master-repo-2/#2:   An important announcement created 2018-09-17 17:46:43 by slarse
+    [INFO] slarse-master-repo-2/#2:  An important announcement created 2018-09-17 17:46:43 by slarse
+    [INFO] glennol-master-repo-2/#2:  An important announcement created 2018-09-17 17:46:43 by slarse
+    [INFO] glassey-master-repo-2/#2:   An important announcement created 2018-09-17 17:46:43 by slarse
 
 Other interesting arguments include ``--all`` for both open and closed issues,
 ``--show-body`` for showing the body of each issue, and ``--author <username>``
