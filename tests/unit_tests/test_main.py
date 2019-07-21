@@ -158,6 +158,39 @@ def test_no_plugins_arg(
     )
 
 
+def test_no_plugins_with_configured_plugins(
+    parse_args_mock, dispatch_command_mock, init_plugins_mock, config_mock
+):
+    """Test that --no-plugins causes any plugins listed in the config file to
+    NOT be loaded.
+    """
+    sys_args = ["repobee", "--no-plugins", *CLONE_ARGS]
+
+    main.main(sys_args)
+
+    init_plugins_mock.assert_called_once_with(
+        [_repobee.constants.DEFAULT_PLUGIN]
+    )
+    parse_args_mock.assert_called_once_with(
+        CLONE_ARGS, show_all_opts=False, ext_commands=[]
+    )
+
+
+def test_configured_plugins_are_loaded(
+    parse_args_mock, dispatch_command_mock, init_plugins_mock, config_mock
+):
+    sys_args = ["repobee", *CLONE_ARGS]
+
+    main.main(sys_args)
+
+    init_plugins_mock.assert_called_once_with(
+        [*constants.PLUGINS, _repobee.constants.DEFAULT_PLUGIN]
+    )
+    parse_args_mock.assert_called_once_with(
+        CLONE_ARGS, show_all_opts=False, ext_commands=[]
+    )
+
+
 def test_plugin_with_subparser_name(
     parse_args_mock, dispatch_command_mock, init_plugins_mock
 ):
