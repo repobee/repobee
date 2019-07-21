@@ -482,8 +482,11 @@ class TestCloneRepos:
     """Tests for clone_repos."""
 
     @pytest.fixture
-    def register_default_plugins(self, config_mock):
-        modules = plugin.load_plugin_modules(str(config_mock))
+    def register_default_plugins(self):
+        plugin_names = plugin.resolve_plugin_names(
+            plugin_names=constants.PLUGINS
+        )
+        modules = plugin.load_plugin_modules(plugin_names)
         plugin.register_plugins(modules)
 
     @pytest.fixture
@@ -519,7 +522,10 @@ class TestCloneRepos:
             "_repobee.ext.pylint.act_on_cloned_repo", act_hook_func
         )
 
-        modules = plugin.load_plugin_modules(str(config_mock))
+        plugin_names = plugin.resolve_plugin_names(
+            plugin_names=constants.PLUGINS
+        )
+        modules = plugin.load_plugin_modules(plugin_names)
         plugin.register_plugins(modules)
 
         return javac_hook, pylint_hook
@@ -662,7 +668,9 @@ def test_purge_review_teams(master_names, students, api_mock):
 class TestAssignPeerReviewers:
     @pytest.fixture(autouse=True)
     def load_default_plugins(self):
-        modules = plugin.load_plugin_modules()
+        modules = plugin.load_plugin_modules(
+            [_repobee.constants.DEFAULT_PLUGIN]
+        )
         plugin.register_plugins(modules)
 
     @pytest.mark.parametrize(

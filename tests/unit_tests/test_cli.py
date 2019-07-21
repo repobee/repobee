@@ -11,6 +11,7 @@ import repobee_plug as plug
 import _repobee
 import _repobee.ext
 import _repobee.ext.github
+import _repobee.constants
 from _repobee import cli
 from _repobee import exception
 from _repobee import apimeta
@@ -80,7 +81,7 @@ def api_class_mock(mocker, api_instance_mock):
 @pytest.fixture(autouse=True)
 def load_default_plugins(api_instance_mock):
     """Load the default plugins after mocking the GitHubAPI."""
-    loaded = plugin.load_plugin_modules()
+    loaded = plugin.load_plugin_modules([_repobee.constants.DEFAULT_PLUGIN])
     plugin.register_plugins(loaded)
 
 

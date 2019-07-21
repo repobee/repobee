@@ -5,6 +5,7 @@ from collections import namedtuple
 import pytest
 
 from functions import raise_
+import _repobee.constants
 from _repobee import cli
 from _repobee import main
 from _repobee import plugin
@@ -131,7 +132,9 @@ def test_plugins_args(
 
     main.main(sys_args)
 
-    init_plugins_mock.assert_called_once_with(["javac", "pylint"])
+    init_plugins_mock.assert_called_once_with(
+        ["javac", "pylint", _repobee.constants.DEFAULT_PLUGIN]
+    )
     parse_args_mock.assert_called_once_with(
         CLONE_ARGS, show_all_opts=False, ext_commands=[]
     )
@@ -141,13 +144,15 @@ def test_no_plugins_arg(
     parse_args_mock, dispatch_command_mock, init_plugins_mock
 ):
     """Default plugins still need to be loaded, so initialize_plugins should be
-    called without arguments.
+    called only with the default plugin.
     """
     sys_args = ["repobee", "--no-plugins", *CLONE_ARGS]
 
     main.main(sys_args)
 
-    init_plugins_mock.assert_called_once_with()
+    init_plugins_mock.assert_called_once_with(
+        [_repobee.constants.DEFAULT_PLUGIN]
+    )
     parse_args_mock.assert_called_once_with(
         CLONE_ARGS, show_all_opts=False, ext_commands=[]
     )
@@ -160,7 +165,9 @@ def test_plugin_with_subparser_name(
 
     main.main(sys_args)
 
-    init_plugins_mock.assert_called_once_with(["javac", "clone"])
+    init_plugins_mock.assert_called_once_with(
+        ["javac", "clone", _repobee.constants.DEFAULT_PLUGIN]
+    )
     parse_args_mock.assert_called_once_with(
         CLONE_ARGS, show_all_opts=False, ext_commands=[]
     )
@@ -185,8 +192,7 @@ def test_invalid_plug_options(dispatch_command_mock, init_plugins_mock):
     Note that the default plugins must be loaded for this test to work.
     """
     # load default plugins
-    loaded = plugin.load_plugin_modules()
-    print(loaded)
+    loaded = plugin.load_plugin_modules([_repobee.constants.DEFAULT_PLUGIN])
     plugin.register_plugins(loaded)
 
     sys_args = ["repobee", "-p", "javac", "-f", *CLONE_ARGS]
@@ -194,7 +200,9 @@ def test_invalid_plug_options(dispatch_command_mock, init_plugins_mock):
     with pytest.raises(SystemExit):
         main.main(sys_args)
 
-    init_plugins_mock.assert_called_once_with(["javac"])
+    init_plugins_mock.assert_called_once_with(
+        ["javac", _repobee.constants.DEFAULT_PLUGIN]
+    )
     assert not dispatch_command_mock.called
 
 
