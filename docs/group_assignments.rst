@@ -3,11 +3,6 @@
 Group assignments
 *****************
 
-.. note::
-   
-   **New in v1.3.0!** This feature is in beta phase, please report any bugs you
-   encounter on the GitHub issue tracker!
-
 .. important::
 
    The peer review commands (see :ref:`peer review`) do not currently support
@@ -16,7 +11,7 @@ Group assignments
 RepoBee supports group assignments such that multiple students are assigned to
 the same student repositories. To put students in a group, they need to be
 entered on the same line in the students file, separated by spaces. This is the
-only way to group students, the ``--s`` option on the command line does not
+only way to group students, the ``-s`` option on the command line does not
 support groups. As an example, if ``glassey`` and ``slarse`` should be in one group,
 and ``glennol`` solo, the following students file would work:
 
