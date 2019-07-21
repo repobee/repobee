@@ -6,19 +6,23 @@
 Welcome to RepoBee's documentation!
 ==================================================
 
-If you are new to RepoBee, the :ref:`fundamentals` and
-:ref:`userguide` sections are must-reads. Developers looking to modify
-or utilize the core functionality in ways the CLI does not allow will be best
-served by looking at the :ref:`modindex`.
+If you are new to RepoBee, the :ref:`fundamentals` and :ref:`userguide`
+sections are must-reads. Developers looking to work on RepoBee, or fork it, are
+probably most interested in the :ref:`modindex`. Developers looking to create
+plugins should head over to the documentation for `repobee-plug
+<https://repobee-plug.readthedocs.io/en/stable>`_.
+
+If you use the :ref:`userguide` in any way and feel like skipping
+:ref:`getting_started`, make sure to read :ref:`configure_repobee` anyway!  The
+rest of the guide assumes a configuration as described there.
 
 .. important::
 
-    If you use the :ref:`userguide` in any way and feel like skipping
-    :ref:`getting_started`, make sure to read :ref:`configure_repobee` anyway!
-    The rest of the guide assumes a configuration as described there.
-
-Please open an issue and tag it with the ``docs`` tag for any bugs or missing
-information.
+   Please open an issue over on the `issue tracker
+   <https://github.com/repobee/repobee/issues/new>`_ if you find documentation
+   bugs, have trouble understanding something or think something is missing.
+   Especially when it comes to the userguide, which is intended to be as
+   intuitive as possible, please do provide feedback if you get stuck.
 
 .. toctree::
    :maxdepth: 2

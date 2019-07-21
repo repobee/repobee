@@ -1,20 +1,22 @@
 import os
 import argparse
 import pathlib
+import argparse
 from unittest.mock import MagicMock
 from unittest import mock
 
 import pytest
+import repobee_plug as plug
 
 import repobee_plug as plug
 
 import _repobee
 import _repobee.ext
 import _repobee.ext.github
+import _repobee.plugin
 from _repobee import cli
 from _repobee import exception
 from _repobee import apimeta
-from _repobee import plugin
 
 import constants
 import functions
@@ -80,8 +82,15 @@ def api_class_mock(mocker, api_instance_mock):
 @pytest.fixture(autouse=True)
 def load_default_plugins(api_instance_mock):
     """Load the default plugins after mocking the GitHubAPI."""
-    loaded = plugin.load_plugin_modules()
-    plugin.register_plugins(loaded)
+    loaded = _repobee.plugin.load_plugin_modules()
+    _repobee.plugin.register_plugins(loaded)
+
+
+@pytest.fixture
+def no_plugins(load_default_plugins):
+    """Unregister any registered plugins."""
+    for plugin in plug.manager.get_plugins():
+        plug.manager.unregister(plugin=plugin)
 
 
 @pytest.fixture
@@ -327,6 +336,13 @@ def test_help_calls_add_arguments(monkeypatch, parser):
 
     assert exc_info.value.code == 0
     assert called
+
+
+def test_create_parser_for_docs(no_plugins):
+    """Test that the docs parser initializes correctly."""
+    parser = cli.create_parser_for_docs()
+
+    assert isinstance(parser, argparse.ArgumentParser)
 
 
 class TestBaseParsing:

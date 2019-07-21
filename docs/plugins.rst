@@ -5,10 +5,7 @@ Plugins for ``repobee``
 RepoBee defines a fairly simple but powerful plugin system that allows
 programmers to hook into certain execution points. To read more about the
 details of these hooks (and how to write your own plugins), see the
-`repobee-plug docs`_. Currently, plugins can hook into the ``clone`` command
-to perform arbitrary tasks on the cloned repos (such as running test classes),
-and the ``assign-reviews`` command, to change the way reviews are
-assigned.
+`repobee-plug docs`_.
 
 .. _configure_plugs:
 
@@ -17,19 +14,19 @@ Using Existing Plugins
 You can specify which plugins you want to use either by adding them to the
 configuration file, or by specifying them on the command line. Personally,
 I find it most convenient to specify plugins on the command line. To do this,
-we can use the ``-p|--plug`` option *before* any other options. The reson the
-plugins must go before any other options is that some plugins add command line
-arguments, and must therefore be parsed separately. As an example, we can
-activate the builtins_ ``javac`` and ``pylint`` like this:
+use ``-p|--plug`` option *before* any other options. The reson the plugins must
+go before any other options is that some plugins alter the command line
+interface of RepoBee, and must therefore be parsed separately. As an example,
+you can activate the builtins_ ``javac`` and ``pylint`` like this:
 
 .. code-block:: bash
 
-    $ repobee -p pylint -p javac clone -mn master-repo-1 -sf students.txt
+    $ repobee -p pylint -p javac clone -mn task-1 -sf students.txt
 
-This will clone the repos, and the run the plugins on the repos. We can also
-specify the default plugins we'd like to use in the configuration file by adding
-the ``plugins`` option under the ``[DEFAULT]`` section. Here is an example of
-using the builtins_ ``javac`` and ``pylint``.
+This will clone the repos, and the run the plugins on the repos. You can also
+specify the default plugins you would like to use in the configuration file by
+adding the ``plugins`` option under the ``[DEFAULT]`` section. Here is an
+example of using the builtins_ ``javac`` and ``pylint``.
 
 .. code-block:: bash
 
@@ -38,17 +35,17 @@ using the builtins_ ``javac`` and ``pylint``.
 
 Like with all other configuration values, they are only used if no command line
 options are specified. If you have defaults specified, but want to run without
-any plugins, you can use the ``--no-plugins``, which disables plugins.
+any plugins, you can use the ``--no-plugins`` argument, which disables plugins.
 
 .. important::
 
-    The order plugins are specified in is significant and implies the execution
+    The order plugins are specified in is significant and defines the execution
     order of the plugins. This is useful for plugins that rely on the results
     of other plugins. This system for deciding execution order may be
     overhauled in the future, if anyone comes up with a better idea.
 
-Some plugins can be further configured in the configuration file by adding
-new headers. See the documentation of the specific plugins/
+Some plugins can be further configured in the configuration file by adding new
+headers. See the documentation of the specific plugins for details on that.
 
 .. _builtins:
 
@@ -60,12 +57,18 @@ RepoBee ships with two API plugins, one for GitHub
 use GitLab, you must specify the ``gitlab`` plugin either on the command line
 or in the configuration file.
 
+Built-in subcommand plugins
+===========================
+The ``config-wizard`` command is actually a plugin, which loads by default.
+It's mostly implemented as a plugin for demonstrational purposes, showing how
+to add a command to RepoBee. See :py:mod:`repobee.ext.configwizard` for the
+source code.
+
 Built-in plugins for ``repobee assign-reviews``
 =====================================================
 RepoBee ships with two plugins for the ``assign-reviews`` command.  The
-first of these is the :py:mod:`~repobee.ext.defaults` plugin, which provides
-the default allocation algorithm. As the name suggests, this plugin is loaded
-by default, without the user specifying anything. The second plugin is the
+first of these is located in the :py:mod:`~repobee.ext.defaults` plugin, and
+just randomly allocates student to review each other. The second plugin is the
 :py:mod:`~repobee.ext.pairwise` plugin. This plugin will divide ``N`` students
 into ``N/2`` groups of 2 students (and possibly one with 3 students, if ``N``
 is odd), and have them peer review the other person in the group. The intention
@@ -161,7 +164,7 @@ define some defaults:
 
 .. important::
 
-    If the configuration file exeists, it *must* contain the ``[DEFAULTS]``
+    If the configuration file exists, it *must* contain the ``[DEFAULTS]``
     header, even if you don't put anything in that section. This is to minimize
     the risk of subtle misconfiguration errors by novice users. If you only
     want to configure plugins, just add the ``[DEFAULTS]`` header by itself,

@@ -22,6 +22,7 @@ import daiquiri
 import repobee_plug as plug
 
 import _repobee
+from _repobee import plugin
 from _repobee import command
 from _repobee import util
 from _repobee import tuples
@@ -591,15 +592,26 @@ class _OrderedFormatter(argparse.HelpFormatter):
         super().add_arguments(actions)
 
 
+def create_parser_for_docs():
+    """Create a parser showing all options for the default CLI
+    documentation.
+    """
+    daiquiri.setup(level=logging.FATAL)
+    # load default plugins
+    plugin.initialize_plugins()
+    ext_commands = plug.manager.hook.create_extension_command()
+    return _create_parser(show_all_opts=True, ext_commands=ext_commands)
+
+
 def _create_parser(show_all_opts, ext_commands):
     """Create the parser."""
 
     parser = argparse.ArgumentParser(
         prog="repobee",
         description=(
-            "A CLI tool for administering large amounts of git repositories "
+            "A CLI tool for administrating large amounts of git repositories "
             "on GitHub and GitLab instances. See the full documentation at "
-            "https://_repobee.readthedocs.io"
+            "https://repobee.readthedocs.io"
         ),
         formatter_class=_OrderedFormatter,
     )

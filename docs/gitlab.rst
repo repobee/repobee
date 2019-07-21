@@ -2,7 +2,7 @@
 
 RepoBee and GitLab
 ******************
-As of v1.5.0, RepoBee has alpha support for GitLab. Both gitlab.com and
+As of v1.5.0, RepoBee has alpha support for GitLab. Both https://gitlab.com and
 self-hosted GitLab are supported, but currently, some commands (including all
 peer review commands) do not work. GitLab is planned to be fully supported by
 in late 2019. See :ref:`gitlab_roadmap` for details.
@@ -10,7 +10,8 @@ in late 2019. See :ref:`gitlab_roadmap` for details.
 .. note::
 
    GitLab support is currently in alpha, and may not yet be sufficiently stable
-   for production use.
+   for production use. Please report any issues on the `issue tracker
+   <https://github.com/repobee/repobee/issues/new>`_
 
 .. important::
 

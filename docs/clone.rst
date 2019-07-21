@@ -6,18 +6,18 @@ a deadline, as timestamps in a ``git`` commit can easily be altered (and are
 therefore not particularly trustworthy). Whatever your reason may be, it's
 very simple using the ``clone`` command. Again, assume that we have the
 ``students.txt`` file from :ref:`setup`, and that we want to clone all student
-repos based on ``master-repo-1`` and ``master-repo-2``.
+repos based on ``task-1`` and ``task-2``.
 
 .. code-block:: bash
 
-    $ repobee clone -mn master-repo-1 master-repo-2 -sf students.txt
+    $ repobee clone -mn task-1 task-2 -sf students.txt
     [INFO] cloning into student repos ...
-    [INFO] Cloned into https://some-enterprise-host/repobee-demo/spam-master-repo-1
-    [INFO] Cloned into https://some-enterprise-host/repobee-demo/ham-master-repo-1
-    [INFO] Cloned into https://some-enterprise-host/repobee-demo/ham-master-repo-2
-    [INFO] Cloned into https://some-enterprise-host/repobee-demo/eggs-master-repo-1
-    [INFO] Cloned into https://some-enterprise-host/repobee-demo/spam-master-repo-2
-    [INFO] Cloned into https://some-enterprise-host/repobee-demo/eggs-master-repo-2
+    [INFO] Cloned into https://some-enterprise-host/repobee-demo/slarse-task-1
+    [INFO] Cloned into https://some-enterprise-host/repobee-demo/glassey-task-1
+    [INFO] Cloned into https://some-enterprise-host/repobee-demo/glassey-task-2
+    [INFO] Cloned into https://some-enterprise-host/repobee-demo/glennol-task-1
+    [INFO] Cloned into https://some-enterprise-host/repobee-demo/slarse-task-2
+    [INFO] Cloned into https://some-enterprise-host/repobee-demo/glennol-task-2
 
 Splendid! That's really all there is to the basic functionality, the repos
 should now be in your current working directory. There is also a possibility to
@@ -32,5 +32,7 @@ about it in the :ref:`plugins` section.
    RepoBee doesn't actually use ``git clone`` to clone repositories. Instead,
    RepoBee clones by initializing the repository and running ``git pull``. The
    practical implication is that you can't simply enter a repository that's
-   been cloned with RepoBee and run ``git pull`` to fetch updates, as there
-   will be no remote set. Run ``repobee clone`` again instead.
+   been cloned with RepoBee and run ``git pull`` to fetch updates. You will
+   have to run ``repobee clone`` again in a different directory to fetch any
+   updates students have made, alternatively simply delete to particular
+   repositories you want to clone again and then run ``repobee clone``.
