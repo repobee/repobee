@@ -3,11 +3,6 @@
 Group assignments
 *****************
 
-.. note::
-   
-   **New in v1.3.0!** This feature is in beta phase, please report any bugs you
-   encounter on the GitHub issue tracker!
-
 .. important::
 
    The peer review commands (see :ref:`peer review`) do not currently support
@@ -16,14 +11,14 @@ Group assignments
 RepoBee supports group assignments such that multiple students are assigned to
 the same student repositories. To put students in a group, they need to be
 entered on the same line in the students file, separated by spaces. This is the
-only way to group students, the ``--s`` option on the command line does not
-support groups. As an example, if ``ham`` and ``spam`` should be in one group,
-and ``eggs`` solo, the following students file would work:
+only way to group students, the ``-s`` option on the command line does not
+support groups. As an example, if ``glassey`` and ``slarse`` should be in one group,
+and ``glennol`` solo, the following students file would work:
 
 .. code-block:: bash
 
-   ham spam
-   eggs
+   glassey slarse
+   glennol
 
 There is no difference in using RepoBee with student groups in the student
 file. For example, running the setup command from :ref:`setup` would then have
@@ -31,26 +26,26 @@ the following result:
 
 .. code-block:: bash
 
-    $ repobee setup -mn master-repo-1 master-repo-2 -sf students.txt
+    $ repobee setup -mn task-1 task-2 -sf students.txt
     [INFO] cloning into master repos ...
-    [INFO] cloning into file:///home/slarse/tmp/master-repo-1
-    [INFO] cloning into file:///home/slarse/tmp/master-repo-2
-    [INFO] created team eggs
-    [INFO] created team ham-spam
-    [INFO] adding members eggs to team eggs
-    [WARNING] user eggs does not exist
-    [INFO] adding members ham, spam to team ham-spam
+    [INFO] cloning into file:///home/slarse/tmp/task-1
+    [INFO] cloning into file:///home/slarse/tmp/task-2
+    [INFO] created team glennol
+    [INFO] created team glassey-slarse
+    [INFO] adding members glennol to team glennol
+    [WARNING] user glennol does not exist
+    [INFO] adding members glassey, slarse to team glassey-slarse
     [INFO] creating student repos ...
-    [INFO] created repobee-demo/eggs-master-repo-1
-    [INFO] created repobee-demo/ham-spam-master-repo-1
-    [INFO] created repobee-demo/eggs-master-repo-2
-    [INFO] created repobee-demo/ham-spam-master-repo-2
+    [INFO] created repobee-demo/glennol-task-1
+    [INFO] created repobee-demo/glassey-slarse-task-1
+    [INFO] created repobee-demo/glennol-task-2
+    [INFO] created repobee-demo/glassey-slarse-task-2
     [INFO] pushing files to student repos ...
     [INFO] pushing, attempt 1/3
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/ham-spam-master-repo-2 master
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/ham-spam-master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/eggs-master-repo-2 master
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/eggs-master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glassey-slarse-task-2 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glassey-slarse-task-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glennol-task-2 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glennol-task-1 master
 
 Note the naming convention for group repos:
 ``<student-1>-<student-2>-[...]-<master-repo-name>``. The associated teams
