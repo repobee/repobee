@@ -89,10 +89,9 @@ value. Here are some pointers regarding the different values:
 * Replace ``slarse`` with your GitHub username.
 * Replace ``repobee-demo`` with whatever you named your target organization.
 * Replace ``SUPER_SECRET_TOKEN`` with your OAUTH token.
-* Replace ``master_org_name`` with the name of the organization with your master
-  repos.
-  - It you keep the master repos in the target organization or locally, **skip
-    this option**.
+* Replace ``master_org_name`` with the name of the organization with your master repos.
+    - It you keep the master repos in the target organization or locally, **skip
+      this option**.
 * **If you are using GitLab**:
     - The ``base_url`` should be to the host, not to the API endpoint. I.e. if
       you are using https://gitlab.com, then the ``base_url`` option should
