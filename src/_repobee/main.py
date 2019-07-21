@@ -60,7 +60,7 @@ def main(sys_args: List[str]):
             plugin.initialize_plugins([constants.DEFAULT_PLUGIN])
         else:
             plugin_names = plugin.resolve_plugin_names(
-                parsed_preparser_args.plug
+                parsed_preparser_args.plug, constants.DEFAULT_CONFIG_FILE
             )
             # IMPORTANT: the default plugin MUST be loaded last to ensure that
             # any user-defined plugins override the firstresult hooks
