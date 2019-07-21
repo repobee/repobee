@@ -25,7 +25,6 @@ import _repobee
 from _repobee import plugin
 from _repobee import command
 from _repobee import util
-from _repobee import tuples
 from _repobee import exception
 from _repobee import config
 from _repobee import apimeta
@@ -97,22 +96,13 @@ PARSER_NAMES = (
     CHECK_REVIEW_PROGRESS_PARSER,
 )
 
-# TODO Remove support for these deprecated parsers in 2.0
-ASSIGN_REVIEWS_PARSER_OLD = "assign-peer-reviews"
-PURGE_REVIEW_TEAMS_PARSER_OLD = "purge-peer-review-teams"
-CHECK_REVIEW_PROGRESS_PARSER_OLD = "check-peer-review-progress"
 
-DEPRECATED_PARSERS = {
-    ASSIGN_REVIEWS_PARSER_OLD: tuples.Deprecation(
-        replacement=ASSIGN_REVIEWS_PARSER, remove_by="v2.0.0"
-    ),
-    PURGE_REVIEW_TEAMS_PARSER_OLD: tuples.Deprecation(
-        replacement=PURGE_REVIEW_TEAMS_PARSER, remove_by="v2.0.0"
-    ),
-    CHECK_REVIEW_PROGRESS_PARSER_OLD: tuples.Deprecation(
-        replacement=CHECK_REVIEW_PROGRESS_PARSER, remove_by="v2.0.0"
-    ),
-}
+# add any diprecated parsers to this dict on the following form:
+#
+# ASSIGN_REVIEWS_PARSER_OLD: tuples.Deprecation(
+#     replacement=ASSIGN_REVIEWS_PARSER, remove_by="v2.0.0"
+# ),
+DEPRECATED_PARSERS = dict()
 
 # any pre-parser options go here
 PRE_PARSER_PLUG_OPTS = ["-p", "--plug"]

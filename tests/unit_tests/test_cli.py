@@ -16,6 +16,7 @@ import _repobee.plugin
 from _repobee import cli
 from _repobee import exception
 from _repobee import apimeta
+from _repobee import tuples
 
 import constants
 import functions
@@ -1144,6 +1145,22 @@ class TestShowConfigParser:
         assert args.subparser == cli.SHOW_CONFIG_PARSER
 
 
+ASSIGN_REVIEWS_PARSER_OLD = "assign-peer-reviews"
+PURGE_REVIEW_TEAMS_PARSER_OLD = "purge-peer-review-teams"
+CHECK_REVIEW_PROGRESS_PARSER_OLD = "check-peer-review-progress"
+DEPRECATED_PARSERS = {
+    ASSIGN_REVIEWS_PARSER_OLD: tuples.Deprecation(
+        replacement=cli.ASSIGN_REVIEWS_PARSER, remove_by="v2.0.0"
+    ),
+    PURGE_REVIEW_TEAMS_PARSER_OLD: tuples.Deprecation(
+        replacement=cli.PURGE_REVIEW_TEAMS_PARSER, remove_by="v2.0.0"
+    ),
+    CHECK_REVIEW_PROGRESS_PARSER_OLD: tuples.Deprecation(
+        replacement=cli.CHECK_REVIEW_PROGRESS_PARSER, remove_by="v2.0.0"
+    ),
+}
+
+
 class TestCommandDeprecation:
     """Tests for deprecated commands, making sure they still work and have the
     same effect as the replacement commands.
@@ -1152,11 +1169,17 @@ class TestCommandDeprecation:
     still work, but it should be parsed to the new command.
     """
 
+    @pytest.fixture(autouse=True)
+    def patch_deprecated_parsers(self, monkeypatch):
+        monkeypatch.setattr(
+            "_repobee.cli.DEPRECATED_PARSERS", DEPRECATED_PARSERS
+        )
+
     @pytest.mark.parametrize(
         "deprecated_parser, current_parser, sys_args",
         [
             (
-                cli.ASSIGN_REVIEWS_PARSER_OLD,
+                ASSIGN_REVIEWS_PARSER_OLD,
                 cli.ASSIGN_REVIEWS_PARSER,
                 [
                     *BASE_ARGS,
@@ -1171,7 +1194,7 @@ class TestCommandDeprecation:
                 ],
             ),
             (
-                cli.PURGE_REVIEW_TEAMS_PARSER_OLD,
+                PURGE_REVIEW_TEAMS_PARSER_OLD,
                 cli.PURGE_REVIEW_TEAMS_PARSER,
                 [
                     *BASE_ARGS,
@@ -1182,7 +1205,7 @@ class TestCommandDeprecation:
                 ],
             ),
             (
-                cli.CHECK_REVIEW_PROGRESS_PARSER_OLD,
+                CHECK_REVIEW_PROGRESS_PARSER_OLD,
                 cli.CHECK_REVIEW_PROGRESS_PARSER,
                 [
                     *BASE_ARGS,
