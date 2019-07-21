@@ -41,10 +41,10 @@ STUDENT_REPO_NAMES = _repobee.util.generate_repo_names(
 )
 
 REPOBEE_GITLAB = "repobee -p gitlab"
-BASE_ARGS = ["-bu", BASE_URL, "-o", ORG_NAME, "-t", TOKEN, "-tb"]
+BASE_ARGS = ["--bu", BASE_URL, "-o", ORG_NAME, "-t", TOKEN, "--tb"]
 STUDENTS_ARG = ["-s", " ".join(STUDENT_TEAM_NAMES)]
-MASTER_REPOS_ARG = ["-mn", " ".join(MASTER_REPO_NAMES)]
-MASTER_ORG_ARG = ["-mo", MASTER_ORG_NAME]
+MASTER_REPOS_ARG = ["--mn", " ".join(MASTER_REPO_NAMES)]
+MASTER_ORG_ARG = ["--mo", MASTER_ORG_NAME]
 
 TASK_CONTENTS_SHAS = {
     "task-1": (
@@ -338,7 +338,7 @@ class TestClone:
                 _repobee.cli.CLONE_PARSER,
                 *BASE_ARGS,
                 *STUDENTS_ARG,
-                "-mn",
+                "--mn",
                 " ".join(non_existing_master_repo_names),
             ]
         )

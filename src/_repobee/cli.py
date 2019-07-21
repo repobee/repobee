@@ -663,7 +663,7 @@ def _add_subparsers(parser, show_all_opts, ext_commands):
 
     repo_name_parser = argparse.ArgumentParser(add_help=False)
     repo_name_parser.add_argument(
-        "-mn",
+        "--mn",
         "--master-repo-names",
         help="One or more names of master repositories. Names must either "
         "refer to local directories, or to master repositories in the "
@@ -671,6 +671,7 @@ def _add_subparsers(parser, show_all_opts, ext_commands):
         type=str,
         required=True,
         nargs="+",
+        dest="master_repo_names",
     )
 
     subparsers = parser.add_subparsers(dest=SUB)
@@ -878,12 +879,13 @@ def _create_base_parsers(show_all_opts):
         default=default("org_name"),
     )
     base_parser.add_argument(
-        "-bu",
+        "--bu",
         "--base-url",
         help=base_url_help,
         type=str,
         required=not configured("base_url") and api_requires("base_url"),
         default=default("base_url"),
+        dest="base_url",
     )
     base_parser.add_argument(
         "-t", "--token", help=token_help, type=str, default=default("token")
@@ -896,11 +898,12 @@ def _create_base_parsers(show_all_opts):
         required=not configured("students_file")
     )
     students.add_argument(
-        "-sf",
+        "--sf",
         "--students-file",
         help=students_file_help,
         type=str,
         default=default("students_file"),
+        dest="students_file",
     )
     students.add_argument(
         "-s",
@@ -912,10 +915,11 @@ def _create_base_parsers(show_all_opts):
 
     master_org_parser = argparse.ArgumentParser(add_help=False)
     master_org_parser.add_argument(
-        "-mo",
+        "--mo",
         "--master-org-name",
         help=master_org_help,
         default=default("master_org_name"),
+        dest="master_org_name",
     )
 
     return (base_parser, base_student_parser, master_org_parser)
@@ -923,10 +927,11 @@ def _create_base_parsers(show_all_opts):
 
 def _add_traceback_arg(parser):
     parser.add_argument(
-        "-tb",
+        "--tb",
         "--traceback",
         help="Show the full traceback of critical exceptions.",
         action="store_true",
+        dest="traceback",
     )
 
 

@@ -34,8 +34,8 @@ TOKEN = constants.TOKEN
 REPO_NAMES = ("week-1", "week-2", "week-3")
 REPO_URLS = tuple(map(lambda rn: generate_repo_url(rn, ORG_NAME), REPO_NAMES))
 
-BASE_ARGS = ["-u", USER, "-bu", BASE_URL, "-o", ORG_NAME, "-t", TOKEN]
-BASE_PUSH_ARGS = ["-mn", *REPO_NAMES]
+BASE_ARGS = ["-u", USER, "--bu", BASE_URL, "-o", ORG_NAME, "-t", TOKEN]
+BASE_PUSH_ARGS = ["--mn", *REPO_NAMES]
 COMPLETE_PUSH_ARGS = [*BASE_ARGS, *BASE_PUSH_ARGS]
 
 # parsed args without subparser
@@ -398,7 +398,7 @@ class TestBaseParsing:
                 [
                     cli.SETUP_PARSER,
                     *COMPLETE_PUSH_ARGS,
-                    "-sf",
+                    "--sf",
                     str(students_file),
                 ]
             )
@@ -418,7 +418,7 @@ class TestBaseParsing:
                 [
                     cli.SETUP_PARSER,
                     *COMPLETE_PUSH_ARGS,
-                    "-sf",
+                    "--sf",
                     str(students_file),
                 ]
             )
@@ -438,7 +438,7 @@ class TestBaseParsing:
                 [
                     cli.SETUP_PARSER,
                     *COMPLETE_PUSH_ARGS,
-                    "-sf",
+                    "--sf",
                     str(students_file),
                 ]
             )
@@ -455,9 +455,9 @@ class TestBaseParsing:
             [
                 cli.SETUP_PARSER,
                 *COMPLETE_PUSH_ARGS,
-                "-sf",
+                "--sf",
                 str(students_file),
-                "-mo",
+                "--mo",
                 MASTER_ORG_NAME,
             ]
         )
@@ -474,7 +474,7 @@ class TestBaseParsing:
         self, api_instance_mock, students_file, parser
     ):
         parsed_args, _ = cli.parse_args(
-            [parser, *COMPLETE_PUSH_ARGS, "-sf", str(students_file)]
+            [parser, *COMPLETE_PUSH_ARGS, "--sf", str(students_file)]
         )
 
         assert all(
@@ -489,7 +489,7 @@ class TestBaseParsing:
         self, api_instance_mock, students_file, parser
     ):
         parsed_args, _ = cli.parse_args(
-            [parser, *COMPLETE_PUSH_ARGS, "-sf", str(students_file)]
+            [parser, *COMPLETE_PUSH_ARGS, "--sf", str(students_file)]
         )
 
         assert parsed_args.token == TOKEN
@@ -504,7 +504,7 @@ class TestBaseParsing:
             [
                 parser,
                 *COMPLETE_PUSH_ARGS,
-                "-sf",
+                "--sf",
                 str(students_file),
                 "-t",
                 token,
@@ -533,10 +533,10 @@ class TestBaseParsing:
             USER,
             "-o",
             ORG_NAME,
-            "-bu",
+            "--bu",
             url,
             *BASE_PUSH_ARGS,
-            "-sf",
+            "--sf",
             str(students_file),
         ]
 
@@ -710,8 +710,11 @@ class TestStudentParsing:
         [
             (cli.SETUP_PARSER, BASE_PUSH_ARGS),
             (cli.UPDATE_PARSER, BASE_PUSH_ARGS),
-            (cli.CLOSE_ISSUE_PARSER, ["-mn", *REPO_NAMES, "-r", "some-regex"]),
-            (cli.OPEN_ISSUE_PARSER, ["-mn", *REPO_NAMES, "-i", ISSUE_PATH]),
+            (
+                cli.CLOSE_ISSUE_PARSER,
+                ["--mn", *REPO_NAMES, "-r", "some-regex"],
+            ),
+            (cli.OPEN_ISSUE_PARSER, ["--mn", *REPO_NAMES, "-i", ISSUE_PATH]),
         ],
     )
     STUDENT_PARSING_IDS = [
@@ -722,7 +725,7 @@ class TestStudentParsing:
     @pytest.mark.parametrize(*STUDENT_PARSING_PARAMS, ids=STUDENT_PARSING_IDS)
     def test_raises_if_students_file_is_not_a_file(self, parser, extra_args):
         not_a_file = "this-is-not-a-file"
-        sys_args = [parser, *BASE_ARGS, "-sf", not_a_file, *extra_args]
+        sys_args = [parser, *BASE_ARGS, "--sf", not_a_file, *extra_args]
 
         with pytest.raises(exception.FileError) as exc_info:
             cli.parse_args(sys_args)
@@ -755,7 +758,13 @@ class TestStudentParsing:
         """Test that the different subparsers read students correctly from
         file.
         """
-        sys_args = [parser, *BASE_ARGS, "-sf", str(students_file), *extra_args]
+        sys_args = [
+            parser,
+            *BASE_ARGS,
+            "--sf",
+            str(students_file),
+            *extra_args,
+        ]
 
         parsed_args, _ = cli.parse_args(sys_args)
 
@@ -769,7 +778,7 @@ class TestStudentParsing:
         sys_args = [
             parser,
             *BASE_ARGS,
-            "-sf",
+            "--sf",
             str(empty_students_file),
             *extra_args,
         ]
@@ -789,7 +798,7 @@ class TestStudentParsing:
         sys_args = [
             parser,
             *BASE_ARGS,
-            "-sf",
+            "--sf",
             str(students_file),
             "-s",
             *STUDENTS_STRING.split(),
@@ -822,7 +831,7 @@ class TestStudentParsing:
         sys_args = [
             parser,
             *BASE_ARGS,
-            "-sf",
+            "--sf",
             str(empty_students_file),
             *extra_args,
         ]
@@ -852,7 +861,7 @@ class TestStudentParsing:
         sys_args = [
             parser,
             *BASE_ARGS,
-            "-sf",
+            "--sf",
             str(empty_students_file),
             *extra_args,
         ]
@@ -897,9 +906,9 @@ class TestConfig:
     @pytest.mark.parametrize(
         "parser, extra_args",
         [
-            (cli.SETUP_PARSER, ["-mn", *REPO_NAMES]),
-            (cli.UPDATE_PARSER, ["-mn", *REPO_NAMES]),
-            (cli.OPEN_ISSUE_PARSER, ["-mn", *REPO_NAMES, "-i", ISSUE_PATH]),
+            (cli.SETUP_PARSER, ["--mn", *REPO_NAMES]),
+            (cli.UPDATE_PARSER, ["--mn", *REPO_NAMES]),
+            (cli.OPEN_ISSUE_PARSER, ["--mn", *REPO_NAMES, "-i", ISSUE_PATH]),
         ],
     )
     def test_full_config(
@@ -921,11 +930,11 @@ class TestConfig:
         """Test that a config that is missing one option (that is not
         specified on the command line) causes a SystemExit on parsing.
         """
-        # -mo is not required
-        if config_missing_option == "-mo":
+        # --mo is not required
+        if config_missing_option == "--mo":
             return
 
-        sys_args = [cli.SETUP_PARSER, "-mn", *REPO_NAMES]
+        sys_args = [cli.SETUP_PARSER, "--mn", *REPO_NAMES]
 
         with pytest.raises(SystemExit):
             parsed_args, _ = cli.parse_args(sys_args)
@@ -938,16 +947,16 @@ class TestConfig:
         line. Does not assert that the options are parsed correctly, only that
         there's no crash.
         """
-        if config_missing_option == "-sf":  # must be file
+        if config_missing_option == "--sf":  # must be file
             missing_arg = str(students_file)
-        elif config_missing_option == "-bu":  # must be https url
+        elif config_missing_option == "--bu":  # must be https url
             missing_arg = BASE_URL
         else:
             missing_arg = "whatever"
 
         sys_args = [
             cli.SETUP_PARSER,
-            "-mn",
+            "--mn",
             *REPO_NAMES,
             config_missing_option,
             missing_arg,
@@ -1028,7 +1037,7 @@ class TestMigrateParser:
         assert parsed_args.master_repo_urls == self.LOCAL_URIS
 
     def test_happy_path(self):
-        sys_args = [cli.MIGRATE_PARSER, *BASE_ARGS, "-mn", *self.NAMES]
+        sys_args = [cli.MIGRATE_PARSER, *BASE_ARGS, "--mn", *self.NAMES]
 
         parsed_args, _ = cli.parse_args(sys_args)
 
@@ -1056,9 +1065,9 @@ class TestCloneParser:
         sys_args = [
             cli.CLONE_PARSER,
             *BASE_ARGS,
-            "-mn",
+            "--mn",
             *REPO_NAMES,
-            "-sf",
+            "--sf",
             str(students_file),
         ]
 
@@ -1081,18 +1090,18 @@ class TestCloneParser:
         [
             (
                 cli.SETUP_PARSER,
-                ["-s", *STUDENTS_STRING.split(), "-mn", *REPO_NAMES],
+                ["-s", *STUDENTS_STRING.split(), "--mn", *REPO_NAMES],
             ),
             (
                 cli.UPDATE_PARSER,
-                ["-s", *STUDENTS_STRING.split(), "-mn", *REPO_NAMES],
+                ["-s", *STUDENTS_STRING.split(), "--mn", *REPO_NAMES],
             ),
             (
                 cli.OPEN_ISSUE_PARSER,
                 [
                     "-s",
                     *STUDENTS_STRING.split(),
-                    "-mn",
+                    "--mn",
                     *REPO_NAMES,
                     "-i",
                     ISSUE_PATH,
@@ -1103,14 +1112,14 @@ class TestCloneParser:
                 [
                     "-s",
                     *STUDENTS_STRING.split(),
-                    "-mn",
+                    "--mn",
                     *REPO_NAMES,
                     "-r",
                     "some-regex",
                 ],
             ),
             (cli.VERIFY_PARSER, []),
-            (cli.MIGRATE_PARSER, ["-mn", *REPO_NAMES]),
+            (cli.MIGRATE_PARSER, ["--mn", *REPO_NAMES]),
         ],
     )
     def test_no_other_parser_gets_parse_hook(
@@ -1151,7 +1160,7 @@ class TestCommandDeprecation:
                 cli.ASSIGN_REVIEWS_PARSER,
                 [
                     *BASE_ARGS,
-                    "-mn",
+                    "--mn",
                     "week-10",
                     "-i",
                     ISSUE_PATH,
@@ -1164,14 +1173,20 @@ class TestCommandDeprecation:
             (
                 cli.PURGE_REVIEW_TEAMS_PARSER_OLD,
                 cli.PURGE_REVIEW_TEAMS_PARSER,
-                [*BASE_ARGS, "-mn", "week-10", "-s", *STUDENTS_STRING.split()],
+                [
+                    *BASE_ARGS,
+                    "--mn",
+                    "week-10",
+                    "-s",
+                    *STUDENTS_STRING.split(),
+                ],
             ),
             (
                 cli.CHECK_REVIEW_PROGRESS_PARSER_OLD,
                 cli.CHECK_REVIEW_PROGRESS_PARSER,
                 [
                     *BASE_ARGS,
-                    "-mn",
+                    "--mn",
                     "week-10",
                     "-r",
                     "someregex",
