@@ -33,7 +33,7 @@ PARSED_ARGS = argparse.Namespace(
     subparser=cli.SETUP_PARSER, **VALID_PARSED_ARGS
 )
 
-CLONE_ARGS = "clone -mn week-2 -s slarse".split()
+CLONE_ARGS = "clone --mn week-2 -s slarse".split()
 
 module = namedtuple("module", ("name",))
 

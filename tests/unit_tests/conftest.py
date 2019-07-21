@@ -151,20 +151,20 @@ _config_org = "org_name = {}".format(constants.ORG_NAME)
 _config_master_org = "master_org_name = {}".format(constants.MASTER_ORG_NAME)
 
 
-@pytest.fixture(params=["-bu", "-u", "-sf", "-o", "-mo"])
+@pytest.fixture(params=["--bu", "-u", "--sf", "-o", "--mo"])
 def config_missing_option(request, empty_config_mock, students_file):
     missing_option = request.param
 
     config_contents = ["[DEFAULTS]"]
-    if not missing_option == "-bu":
+    if not missing_option == "--bu":
         config_contents.append(_config_base)
     if not missing_option == "-o":
         config_contents.append(_config_org)
-    if not missing_option == "-sf":
+    if not missing_option == "--sf":
         config_contents.append("students_file = {!s}".format(students_file))
     if not missing_option == "-u":
         config_contents.append(_config_user)
-    if not missing_option == "-mo":
+    if not missing_option == "--mo":
         config_contents.append(_config_master_org)
 
     empty_config_mock.write(os.linesep.join(config_contents))
