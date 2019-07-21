@@ -15,6 +15,7 @@ import repobee_plug as plug
 from _repobee import cli
 from _repobee import plugin
 from _repobee import exception
+from _repobee import config
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -58,7 +59,10 @@ def main(sys_args: List[str]):
             LOGGER.info("Non-default plugins disabled")
             plugin.initialize_plugins()
         else:
-            plugin.initialize_plugins(parsed_preparser_args.plug or [])
+            plugin_names = plugin.resolve_plugin_names(
+                parsed_preparser_args.plug
+            )
+            plugin.initialize_plugins(plugin_names)
 
         ext_commands = plug.manager.hook.create_extension_command()
         parsed_args, api = cli.parse_args(

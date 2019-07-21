@@ -39,7 +39,6 @@ DEFAULT_PLUGIN = "defaults"
 
 
 def load_plugin_modules(
-    config_file: Union[str, pathlib.Path] = constants.DEFAULT_CONFIG_FILE,
     plugin_names: Iterable[str] = None,
 ) -> List[ModuleType]:
     """Load plugins that are specified in the config, as well as default
@@ -60,25 +59,20 @@ def load_plugin_modules(
         from repobee_javac import javac
 
     Args:
-        config_file: Path to the configuration file.
         plugin_names: A list of plugin names. Overrides the config file.
 
     Returns:
         a list of loaded modules.
     """
     loaded_modules = []
-    plugin_names = [
-        *(plugin_names or config.get_plugin_names(config_file) or []),
-        # default plugin last so hooks are overridden by user-specified hooks
-        DEFAULT_PLUGIN,
-    ]
-    LOGGER.info("Loading plugins: " + ", ".join(plugin_names))
-    if plugin_names == [DEFAULT_PLUGIN]:
+    plugin_names_with_defaults = (plugin_names or []) + [DEFAULT_PLUGIN]
+    LOGGER.info("Loading plugins: " + ", ".join(plugin_names_with_defaults))
+    if plugin_names_with_defaults == [DEFAULT_PLUGIN]:
         from .ext import defaults
 
         return [defaults]
 
-    for name in plugin_names:
+    for name in plugin_names_with_defaults:
         plug_mod = _try_load_module(
             _plugin_qualname(name)
         ) or _try_load_module(_external_plugin_qualname(name))
@@ -135,3 +129,19 @@ def initialize_plugins(plugin_names: List[str] = None):
     """
     plug_modules = load_plugin_modules(plugin_names=plugin_names)
     register_plugins(plug_modules)
+
+
+def resolve_plugin_names(
+    plugin_names: Optional[List[str]] = None,
+    config_file: pathlib.Path = constants.DEFAULT_CONFIG_FILE,
+) -> List[str]:
+    """Return a list of plugin names to load into RepoBee given a list of
+    externally specified plugin names, and a path to a configuration file.
+    
+    Args:
+        plugin_names: A list of names of plugins.
+        config_file: A configuration file.
+    Returns:
+        A list of plugin names that should be loaded.
+    """
+    return [*(plugin_names or config.get_plugin_names(config_file) or [])]
