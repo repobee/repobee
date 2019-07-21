@@ -18,7 +18,7 @@ Let's say that we've updated ``task-1``, and that users ``slarse``,
 
 .. code-block:: bash
 
-    $ repobee update -mn task-1 -s slarse glennol glassey
+    $ repobee update --mn task-1 -s slarse glennol glassey
     [INFO] Cloning into master repos ...
     [INFO] Cloning into https://some-enterprise-host/repobee-demo/task-1
     [INFO] Pushing files to student repos ...
@@ -34,9 +34,9 @@ started working on ``glassey-task-1``?
 .. note::
 
     Here, ``-s slarse glennol glassey`` was used to directly specify student usernames on
-    the command line, instead of pointing to a students file with ``-sf
+    the command line, instead of pointing to a students file with ``--sf
     students.txt``. All commands that require you to specify student usernames
-    can be used with either the ``-s|--students`` or the ``-sf|--students-file``
+    can be used with either the ``-s|--students`` or the ``--sf|--students-file``
     options.
 
 Scenario 2: At least 1 repo altered
@@ -75,7 +75,7 @@ students, plain text is more helpful. Now it's just a matter of using
 
 .. code-block:: bash
 
-    $ repobee update -mn task-1 -s slarse glennol glassey -i issue.md
+    $ repobee update --mn task-1 -s slarse glennol glassey -i issue.md
     [INFO] Cloning into master repos ...
     [INFO] Cloning into https://some-enterprise-host/repobee-demo/task-1
     [INFO] Pushing files to student repos ...

@@ -10,7 +10,7 @@ repos based on ``task-1`` and ``task-2``.
 
 .. code-block:: bash
 
-    $ repobee clone -mn task-1 task-2 -sf students.txt
+    $ repobee clone --mn task-1 task-2 --sf students.txt
     [INFO] cloning into student repos ...
     [INFO] Cloned into https://some-enterprise-host/repobee-demo/slarse-task-1
     [INFO] Cloned into https://some-enterprise-host/repobee-demo/glassey-task-1

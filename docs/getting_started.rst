@@ -121,7 +121,7 @@ If you ever want to re-configure some of the options, simply run the
 Verify settings
 ===============
 
-.. important:: 
+.. important::
 
    ``verify-settings`` is not yet supported by the ``gitlab`` plugin.
 
@@ -214,7 +214,7 @@ simple as issuing a single command with RepoBee.
 
 .. code-block:: bash
 
-    $ repobee setup -mn task-1 task-2 -sf students.txt
+    $ repobee setup --mn task-1 task-2 --sf students.txt
     [INFO] Cloning into master repos ...
     [INFO] Cloning into file:///home/slarse/tmp/task-1
     [INFO] Cloning into file:///home/slarse/tmp/task-2
@@ -244,10 +244,10 @@ simple as issuing a single command with RepoBee.
 .. note::
 
    If you have specified the ``students_file`` option in the config file, then
-   you don't need to specify ``-sf students.txt`` on the command line. Remember
+   you don't need to specify ``--sf students.txt`` on the command line. Remember
    also that options specified on the command line always take precedence over
    those in the configuration file, so you can override the default students
-   file if you wish by specifying ``-sf``..
+   file if you wish by specifying ``--sf``..
 
 Note that there was a ``[WARNING]`` message for the username ``glennol``: the
 user does not exist. At KTH, this is common, as many (sometimes most) first-time

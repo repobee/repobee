@@ -36,7 +36,7 @@ for our dear students ``slarse``, ``glennol`` and ``glassey``, who are listed in
 
 .. code-block:: bash
 
-    $ repobee open-issues -mn task-2 -sf students.txt -i issue.md
+    $ repobee open-issues --mn task-2 --sf students.txt -i issue.md
     [INFO] Opened issue slarse-task-2/#1-'An important announcement'
     [INFO] Opened issue glennol-task-2/#1-'An important announcement'
     [INFO] Opened issue glassey-task-2/#1-'An important announcement'
@@ -58,7 +58,7 @@ announcement`` is simple: we provide the regex ``\AAn important announcement\Z``
 
 .. code-block:: bash
 
-    $ repobee close-issues -mn task-2 -sf students.txt -r '\AAn important announcement\Z'
+    $ repobee close-issues --mn task-2 --sf students.txt -r '\AAn important announcement\Z'
     [INFO] Closed issue slarse-task-2/#1-'An important announcement'
     [INFO] Closed issue glennol-task-2/#1-'An important announcement'
     [INFO] Closed issue glassey-task-2/#1-'An important announcement'
@@ -85,7 +85,7 @@ issues like so:
 
 .. code-block:: bash
 
-    $ repobee list-issues -mn task-2 -sf students.txt
+    $ repobee list-issues --mn task-2 --sf students.txt
     [INFO] slarse-task-2/#1:  Grading Criteria created 2018-09-12 18:20:56 by glassey
     [INFO] glennol-task-2/#1:  Grading Criteria created 2018-09-12 18:20:56 by glassey
     [INFO] glassey-task-2/#1:   Grading Criteria created 2018-09-12 18:20:56 by glassey
@@ -96,7 +96,7 @@ issues, we must specifically say so with the ``--closed`` argument.
 
 .. code-block:: bash
 
-    $ repobee list-issues -mn task-2 -sf students.txt --closed
+    $ repobee list-issues --mn task-2 --sf students.txt --closed
     [INFO] slarse-task-2/#2:  An important announcement created 2018-09-17 17:46:43 by slarse
     [INFO] glennol-task-2/#2:  An important announcement created 2018-09-17 17:46:43 by slarse
     [INFO] glassey-task-2/#2:   An important announcement created 2018-09-17 17:46:43 by slarse
