@@ -29,6 +29,7 @@ from _repobee import tuples
 from _repobee import exception
 from _repobee import config
 from _repobee import apimeta
+from _repobee import constants
 
 daiquiri.setup(
     level=logging.INFO,
@@ -123,34 +124,41 @@ PRE_PARSER_FLAGS = [PRE_PARSER_NO_PLUGS, PRE_PARSER_SHOW_ALL_OPTS]
 
 
 def parse_args(
-    sys_args: Iterable[str], show_all_opts=False
-) -> (tuples.Args, Optional[apimeta.API]):
+    sys_args: Iterable[str],
+    show_all_opts: bool = False,
+    ext_commands: Optional[List[plug.ExtensionCommand]] = None,
+) -> (argparse.Namespace, Optional[apimeta.API]):
     """Parse the command line arguments and initialize an API.
 
     Args:
         sys_args: A list of command line arguments.
+        show_all_opts: If False, CLI arguments that are configure in the
+            configuration file are not shown in help menus.
+        ext_commands: A list of extension commands.
 
     Returns:
-        a tuples.Args namedtuple with the arguments, and an initialized
+        a argparse.Namespace namedtuple with the arguments, and an initialized
         apimeta.API instance (or None of testing connection).
     """
-    parser = _create_parser(show_all_opts)
+    parser = _create_parser(show_all_opts, ext_commands)
     args = parser.parse_args(_handle_deprecation(sys_args))
+    ext_command_names = [cmd.name for cmd in ext_commands or []]
+    subparser = getattr(args, SUB)
 
-    if getattr(args, SUB) == SHOW_CONFIG_PARSER:
-        return tuples.Args(subparser=SHOW_CONFIG_PARSER), None
+    if subparser == SHOW_CONFIG_PARSER:
+        return argparse.Namespace(**vars(args)), None
+    elif ext_commands and subparser in ext_command_names:
+        return _handle_extension_parsing(
+            ext_commands[ext_command_names.index(subparser)], args
+        )
 
     _validate_tls_url(args.base_url)
+    token = _parse_token(args)
 
-    # environment token overrides config
-    token = os.getenv("REPOBEE_OAUTH") or (
-        args.token if "token" in args else ""
-    )
-
-    if getattr(args, SUB) == VERIFY_PARSER:
+    if subparser == VERIFY_PARSER:
         # quick parse for verify connection
         return (
-            tuples.Args(
+            argparse.Namespace(
                 subparser=VERIFY_PARSER,
                 org_name=args.org_name,
                 base_url=args.base_url,
@@ -163,7 +171,7 @@ def parse_args(
             ),
             None,
         )
-    elif getattr(args, SUB) == CLONE_PARSER:
+    elif subparser == CLONE_PARSER:
         # only if clone is chosen should plugins be able to hook in
         plug.manager.hook.parse_args(args=args)
 
@@ -182,7 +190,6 @@ def parse_args(
     assert master_urls and master_names
 
     groups = _extract_groups(args)
-    subparser = getattr(args, SUB)
     if subparser in [
         ASSIGN_REVIEWS_PARSER,
         CHECK_REVIEW_PROGRESS_PARSER,
@@ -192,30 +199,41 @@ def parse_args(
             "review commands do not currently support groups of students"
         )
 
-    parsed_args = tuples.Args(
-        subparser=subparser,
-        org_name=args.org_name,
-        master_org_name=args.master_org_name
-        if "master_org_name" in args
-        else None,
-        base_url=args.base_url,
-        user=args.user if "user" in args else None,
-        master_repo_urls=master_urls,
-        master_repo_names=master_names,
-        students=_extract_groups(args),
-        issue=util.read_issue(args.issue)
-        if "issue" in args and args.issue
-        else None,
-        title_regex=args.title_regex if "title_regex" in args else None,
-        traceback=args.traceback,
-        state=args.state if "state" in args else None,
-        show_body=args.show_body if "show_body" in args else None,
-        author=args.author if "author" in args else None,
-        num_reviews=args.num_reviews if "num_reviews" in args else None,
-        token=token,
+    args_dict = vars(args)
+    args_dict.setdefault("master_org_name", None)
+    args_dict.setdefault("title_regex", None)
+    args_dict.setdefault("state", None)
+    args_dict.setdefault("show_body", None)
+    args_dict.setdefault("author", None)
+    args_dict.setdefault("num_reviews", None)
+
+    args_dict["issue"] = (
+        util.read_issue(args.issue) if "issue" in args and args.issue else None
+    )
+    args_dict["students"] = _extract_groups(args)
+    args_dict["master_repo_urls"] = master_urls
+    args_dict["master_repo_names"] = master_names
+    args_dict["token"] = token
+
+    return argparse.Namespace(**args_dict), api
+
+
+def _parse_token(args):
+    """Get the OUATH2 token from the args or an environment variable."""
+    # environment token overrides config
+    return os.getenv("REPOBEE_OAUTH") or (
+        args.token if "token" in args else ""
     )
 
-    return parsed_args, api
+
+def _handle_extension_parsing(ext_command, args):
+    """Handle parsing of extension command arguments."""
+    api = None
+    if ext_command.requires_api:
+        token = _parse_token(args)
+        args.token = token
+        api = _connect_to_api(args.base_url, token, args.org_name, args.user)
+    return args, api
 
 
 def _validate_tls_url(url):
@@ -252,16 +270,26 @@ def _handle_deprecation(sys_args: List[str]) -> List[str]:
     return list(sys_args)
 
 
-def dispatch_command(args: tuples.Args, api: apimeta.API):
+def dispatch_command(
+    args: argparse.Namespace,
+    api: apimeta.API,
+    ext_commands: Optional[List[plug.ExtensionCommand]] = None,
+):
     """Handle parsed CLI arguments and dispatch commands to the appropriate
     functions. Expected exceptions are caught and turned into SystemExit
     exceptions, while unexpected exceptions are allowed to propagate.
 
     Args:
-        args: A namedtuple containing parsed command line arguments.
+        args: A namespace of parsed command line arguments.
         api: An initialized apimeta.API instance.
+        ext_commands: A list of active extension commands.
     """
-    if args.subparser == SETUP_PARSER:
+    ext_command_names = [cmd.name for cmd in ext_commands or []]
+    if ext_command_names and args.subparser in ext_command_names:
+        ext_cmd = ext_commands[ext_command_names.index(args.subparser)]
+        with _sys_exit_on_expected_error():
+            ext_cmd.callback(args, api)
+    elif args.subparser == SETUP_PARSER:
         with _sys_exit_on_expected_error():
             command.setup_student_repos(
                 args.master_repo_urls, args.students, api
@@ -543,13 +571,13 @@ class _OrderedFormatter(argparse.HelpFormatter):
         Non-configurable arguments added without modification, which by
         default is the order they are added to the parser. Configurable
         arguments are added in the order defined by
-        :py:const:`config.ORDERED_CONFIGURABLE_ARGS`. Finally, debug commands
-        (such as ``--traceback``) are added in arbitrary (but consistent)
-        order.
+        :py:const:`constants.ORDERED_CONFIGURABLE_ARGS`. Finally, debug
+        commands (such as ``--traceback``) are added in arbitrary (but
+        consistent) order.
         """
         args_order = tuple(
             "--" + name.replace("_", "-")
-            for name in config.ORDERED_CONFIGURABLE_ARGS
+            for name in constants.ORDERED_CONFIGURABLE_ARGS
         ) + ("--traceback",)
 
         def key(action):
@@ -571,18 +599,19 @@ def create_parser_for_docs():
     daiquiri.setup(level=logging.FATAL)
     # load default plugins
     plugin.initialize_plugins()
-    return _create_parser(show_all_opts=True)
+    ext_commands = plug.manager.hook.create_extension_command()
+    return _create_parser(show_all_opts=True, ext_commands=ext_commands)
 
 
-def _create_parser(show_all_opts):
+def _create_parser(show_all_opts, ext_commands):
     """Create the parser."""
 
     parser = argparse.ArgumentParser(
         prog="repobee",
         description=(
-            "A CLI tool for administering large amounts of git repositories "
+            "A CLI tool for administrating large amounts of git repositories "
             "on GitHub and GitLab instances. See the full documentation at "
-            "https://_repobee.readthedocs.io"
+            "https://repobee.readthedocs.io"
         ),
         formatter_class=_OrderedFormatter,
     )
@@ -595,11 +624,33 @@ def _create_parser(show_all_opts):
             _repobee._external_package_name, _repobee.__version__
         ),
     )
-    _add_subparsers(parser, show_all_opts)
+    _add_subparsers(parser, show_all_opts, ext_commands)
+
     return parser
 
 
-def _add_subparsers(parser, show_all_opts):
+def _add_extension_parsers(subparsers, ext_commands, base_parser):
+    """Add extension parsers defined by plugins."""
+    if not ext_commands:
+        return []
+    for cmd in ext_commands:
+        parents = (
+            [base_parser, cmd.parser] if cmd.requires_api else [cmd.parser]
+        )
+        ext_parser = subparsers.add_parser(
+            cmd.name,
+            help=cmd.help,
+            description=cmd.description,
+            parents=parents,
+            formatter_class=_OrderedFormatter,
+        )
+        if not cmd.requires_api:
+            _add_traceback_arg(ext_parser)
+
+    return ext_commands
+
+
+def _add_subparsers(parser, show_all_opts, ext_commands):
     """Add all of the subparsers to the parser. Note that the parsers prefixed
     with `base_` do not have any parent parsers, so any parser inheriting from
     them must also inherit from the required `base_parser` (unless it is a
@@ -702,7 +753,7 @@ def _add_subparsers(parser, show_all_opts):
         [base_parser, base_student_parser, repo_name_parser], subparsers
     )
 
-    subparsers.add_parser(
+    show_config = subparsers.add_parser(
         SHOW_CONFIG_PARSER,
         help="Show the configuration file",
         description=(
@@ -712,6 +763,7 @@ def _add_subparsers(parser, show_all_opts):
         ),
         formatter_class=_OrderedFormatter,
     )
+    _add_traceback_arg(show_config)
 
     subparsers.add_parser(
         VERIFY_PARSER,
@@ -720,6 +772,8 @@ def _add_subparsers(parser, show_all_opts):
         parents=[base_parser, master_org_parser],
         formatter_class=_OrderedFormatter,
     )
+
+    return _add_extension_parsers(subparsers, ext_commands, base_parser)
 
 
 def _create_base_parsers(show_all_opts):
@@ -835,12 +889,7 @@ def _create_base_parsers(show_all_opts):
         "-t", "--token", help=token_help, type=str, default=default("token")
     )
 
-    base_parser.add_argument(
-        "-tb",
-        "--traceback",
-        help="Show the full traceback of critical exceptions.",
-        action="store_true",
-    )
+    _add_traceback_arg(base_parser)
     # base parser for when student lists are involved
     base_student_parser = argparse.ArgumentParser(add_help=False)
     students = base_student_parser.add_mutually_exclusive_group(
@@ -870,6 +919,15 @@ def _create_base_parsers(show_all_opts):
     )
 
     return (base_parser, base_student_parser, master_org_parser)
+
+
+def _add_traceback_arg(parser):
+    parser.add_argument(
+        "-tb",
+        "--traceback",
+        help="Show the full traceback of critical exceptions.",
+        action="store_true",
+    )
 
 
 @contextmanager

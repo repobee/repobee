@@ -9,6 +9,9 @@ import pytest
 
 from repobee_plug import manager
 
+import _repobee.constants
+import _repobee.config
+
 import constants
 
 # mock the PyGithub github module
@@ -16,7 +19,6 @@ sys.modules["github"] = MagicMock()
 
 
 import _repobee  # noqa: F402
-from _repobee import config  # noqa: F402
 
 EXPECTED_ENV_VARIABLES = ["REPOBEE_OAUTH", "REPOBEE_NO_VERIFY_SSL"]
 
@@ -98,9 +100,9 @@ def isfile_mock(request, mocker):
         return
 
     def isfile(path):
-        return str(path) != str(config.DEFAULT_CONFIG_FILE) and os.path.isfile(
-            str(path)
-        )
+        return str(path) != str(
+            _repobee.constants.DEFAULT_CONFIG_FILE
+        ) and os.path.isfile(str(path))
 
     return mocker.patch(
         "pathlib.Path.is_file", autospec=True, side_effect=isfile
@@ -112,12 +114,13 @@ def no_config_mock(mocker, isfile_mock, tmpdir):
     """Mock which ensures that no config file is found."""
     isfile = isfile_mock.side_effect
     isfile_mock.side_effect = (
-        lambda path: path != config.DEFAULT_CONFIG_FILE and isfile(path)
+        lambda path: path != _repobee.constants.DEFAULT_CONFIG_FILE
+        and isfile(path)
     )
 
 
 @pytest.fixture
-def empty_config_mock(mocker, isfile_mock, tmpdir):
+def empty_config_mock(mocker, isfile_mock, tmpdir, monkeypatch):
     """Sets up an empty config file which is read by the config._read_config
     function."""
     file = tmpdir.join("config.cnf")
@@ -135,6 +138,9 @@ def empty_config_mock(mocker, isfile_mock, tmpdir):
     isfile = isfile_mock.side_effect
     isfile_mock.side_effect = lambda path: isfile(path) or str(path) == str(
         file
+    )
+    monkeypatch.setattr(
+        "_repobee.constants.DEFAULT_CONFIG_FILE", pathlib.Path(str(file))
     )
     yield file
 

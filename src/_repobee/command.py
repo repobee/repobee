@@ -30,6 +30,7 @@ from _repobee import util
 from _repobee import apimeta
 from _repobee import exception
 from _repobee import config
+from _repobee import constants
 from _repobee import formatters
 from _repobee.git import Push
 
@@ -495,13 +496,21 @@ def assign_peer_reviews(
     single_students = [t.members[0] for t in teams]
 
     for master_name in master_repo_names:
+        # TODO the returned allocations should be apimeta.Team instances
+        # but it can't be fixed until apimeta is moved to repobee_plug.
         allocations = plug.manager.hook.generate_review_allocations(
             master_repo_name=master_name,
             students=single_students,
             num_reviews=num_reviews,
             review_team_name_function=util.generate_review_team_name,
         )
-        api.ensure_teams_and_members(allocations, permission="pull")
+        review_teams = [
+            apimeta.Team(name=team_name, members=members)
+            for team_name, members in allocations.items()
+        ]
+        api.ensure_teams_and_members(
+            review_teams, permission=apimeta.TeamPermission.PULL
+        )
         api.add_repos_to_review_teams(
             {
                 util.generate_review_team_name(student, master_name): [
@@ -634,9 +643,9 @@ def show_config() -> None:
     config.check_config_integrity()
 
     LOGGER.info(
-        "Found valid config file at " + str(config.DEFAULT_CONFIG_FILE)
+        "Found valid config file at " + str(constants.DEFAULT_CONFIG_FILE)
     )
-    with config.DEFAULT_CONFIG_FILE.open(
+    with constants.DEFAULT_CONFIG_FILE.open(
         encoding=sys.getdefaultencoding()
     ) as f:
         config_contents = "".join(f.readlines())

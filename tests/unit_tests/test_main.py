@@ -7,8 +7,8 @@ import pytest
 from functions import raise_
 from _repobee import cli
 from _repobee import main
-from _repobee import tuples
 from _repobee import plugin
+from _repobee.ext import configwizard
 
 import constants
 
@@ -25,13 +25,18 @@ VALID_PARSED_ARGS = dict(
     students=constants.STUDENTS,
     issue=constants.ISSUE,
     title_regex="some regex",
+    traceback=False,
 )
 
-PARSED_ARGS = tuples.Args(cli.SETUP_PARSER, **VALID_PARSED_ARGS)
+PARSED_ARGS = argparse.Namespace(
+    subparser=cli.SETUP_PARSER, **VALID_PARSED_ARGS
+)
 
 CLONE_ARGS = "clone -mn week-2 -s slarse".split()
 
 module = namedtuple("module", ("name",))
+
+DEFAULT_EXT_COMMANDS = [configwizard.create_extension_command()]
 
 
 @pytest.fixture
@@ -83,9 +88,11 @@ def test_happy_path(
 
     main.main(sys_args)
 
-    parse_args_mock.assert_called_once_with(sys_args[1:], show_all_opts=False)
+    parse_args_mock.assert_called_once_with(
+        sys_args[1:], show_all_opts=False, ext_commands=DEFAULT_EXT_COMMANDS
+    )
     dispatch_command_mock.assert_called_once_with(
-        PARSED_ARGS, api_instance_mock
+        PARSED_ARGS, api_instance_mock, DEFAULT_EXT_COMMANDS
     )
 
 
@@ -99,7 +106,9 @@ def test_does_not_raise_on_exception_in_parsing(
 
     main.main(sys_args)
 
-    parse_args_mock.assert_called_once_with(sys_args[1:], show_all_opts=False)
+    parse_args_mock.assert_called_once_with(
+        sys_args[1:], show_all_opts=False, ext_commands=DEFAULT_EXT_COMMANDS
+    )
     assert not dispatch_command_mock.called
 
 
@@ -123,7 +132,9 @@ def test_plugins_args(
     main.main(sys_args)
 
     init_plugins_mock.assert_called_once_with(["javac", "pylint"])
-    parse_args_mock.assert_called_once_with(CLONE_ARGS, show_all_opts=False)
+    parse_args_mock.assert_called_once_with(
+        CLONE_ARGS, show_all_opts=False, ext_commands=[]
+    )
 
 
 def test_no_plugins_arg(
@@ -137,7 +148,9 @@ def test_no_plugins_arg(
     main.main(sys_args)
 
     init_plugins_mock.assert_called_once_with()
-    parse_args_mock.assert_called_once_with(CLONE_ARGS, show_all_opts=False)
+    parse_args_mock.assert_called_once_with(
+        CLONE_ARGS, show_all_opts=False, ext_commands=[]
+    )
 
 
 def test_plugin_with_subparser_name(
@@ -148,7 +161,9 @@ def test_plugin_with_subparser_name(
     main.main(sys_args)
 
     init_plugins_mock.assert_called_once_with(["javac", "clone"])
-    parse_args_mock.assert_called_once_with(CLONE_ARGS, show_all_opts=False)
+    parse_args_mock.assert_called_once_with(
+        CLONE_ARGS, show_all_opts=False, ext_commands=[]
+    )
 
 
 def test_plug_arg_incompatible_with_no_plugins(
@@ -204,7 +219,9 @@ def test_logs_traceback_on_exception_in_dispatch_if_traceback(
     logger_exception_mock,
 ):
     msg = "oh this is bad!!"
-    parsed_args = tuples.Args(**VALID_PARSED_ARGS, traceback=True)
+    args_with_traceback = dict(VALID_PARSED_ARGS)
+    args_with_traceback["traceback"] = True
+    parsed_args = argparse.Namespace(**args_with_traceback)
     parse_args_mock.return_value = parsed_args, api_instance_mock
 
     def raise_():
@@ -217,7 +234,9 @@ def test_logs_traceback_on_exception_in_dispatch_if_traceback(
 
     assert logger_exception_mock.called
     parse_args_mock.assert_called_once_with(
-        [*CLONE_ARGS, "--traceback"], show_all_opts=False
+        [*CLONE_ARGS, "--traceback"],
+        show_all_opts=False,
+        ext_commands=DEFAULT_EXT_COMMANDS,
     )
 
 
@@ -245,7 +264,9 @@ def test_show_all_opts_correctly_separated(
 
     assert msg in str(exc_info.value)
     parse_args_mock.assert_called_once_with(
-        [cli.SETUP_PARSER, "-h"], show_all_opts=True
+        [cli.SETUP_PARSER, "-h"],
+        show_all_opts=True,
+        ext_commands=DEFAULT_EXT_COMMANDS,
     )
     parse_preparser_options_mock.assert_called_once_with(
         [cli.PRE_PARSER_SHOW_ALL_OPTS]

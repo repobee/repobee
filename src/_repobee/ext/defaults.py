@@ -22,6 +22,7 @@ from repobee_plug import repobee_hook
 
 # import other default plugins
 from _repobee.ext.github import DefaultAPIHooks  # noqa: F401
+from _repobee.ext.configwizard import create_extension_command  # noqa: F401
 
 
 @repobee_hook

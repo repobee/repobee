@@ -1,0 +1,34 @@
+"""Module for constants used throughout RepoBee.
+
+
+.. module:: constants
+    :synopsis: Constants used throughout RepoBee.
+
+.. moduleauthor:: Simon Larsén
+"""
+import pathlib
+
+import appdirs
+
+import _repobee
+
+CONFIG_DIR = pathlib.Path(
+    appdirs.user_config_dir(
+        appname=_repobee._external_package_name, appauthor=_repobee.__author__
+    )
+)
+DEFAULTS_SECTION_HDR = "DEFAULTS"
+DEFAULT_CONFIG_FILE = CONFIG_DIR / "config.cnf"
+assert DEFAULT_CONFIG_FILE.is_absolute()
+
+# arguments that can be configured via config file
+ORDERED_CONFIGURABLE_ARGS = (
+    "user",
+    "base_url",
+    "org_name",
+    "master_org_name",
+    "token",
+    "students_file",
+    "plugins",
+)
+CONFIGURABLE_ARGS = set(ORDERED_CONFIGURABLE_ARGS)

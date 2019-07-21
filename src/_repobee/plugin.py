@@ -18,6 +18,7 @@ import daiquiri
 import _repobee
 from _repobee import config
 from _repobee import exception
+from _repobee import constants
 
 import repobee_plug as plug
 
@@ -38,7 +39,7 @@ DEFAULT_PLUGIN = "defaults"
 
 
 def load_plugin_modules(
-    config_file: Union[str, pathlib.Path] = config.DEFAULT_CONFIG_FILE,
+    config_file: Union[str, pathlib.Path] = constants.DEFAULT_CONFIG_FILE,
     plugin_names: Iterable[str] = None,
 ) -> List[ModuleType]:
     """Load plugins that are specified in the config, as well as default
