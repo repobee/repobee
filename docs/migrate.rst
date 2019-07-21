@@ -38,12 +38,13 @@ directory (i.e. local repos), all we have to do is this:
 What happens here is pretty straightforward, except for the local repos being
 cloned, which is an implementation detail that does not need to be thought
 further of. Note that only the defualt branch is actually migrated, and pushed
-to ``master`` in the new repo. local repos are pushed to the ``master`` branch
+to ``master`` in the new repo. Local repos are pushed to the ``master`` branch
 of the remote repo. Migrating several branches is something that we've never
-had a need to do, but if you do, please open an issue on GitHub with a feature
-request. ``migrate`` is perfectly safe to run several times, in case you think
-you missed something, or need to update repos. Running the same thing again
-without changing the local repos yields the following output:
+had a need to do, but if you do, please `open an issue on GitHub
+<https://github.com/repobee/repobee/issues/new>`_ with a feature request.
+``migrate`` is perfectly safe to run several times, in case you think you
+missed something, or need to update repos. Running the same thing again without
+changing the local repos yields the following output:
 
 .. code-block:: bash
 
