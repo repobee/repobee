@@ -31,26 +31,26 @@ the following result:
 
 .. code-block:: bash
 
-    $ repobee setup -mn master-repo-1 master-repo-2 -sf students.txt
+    $ repobee setup -mn task-1 task-2 -sf students.txt
     [INFO] cloning into master repos ...
-    [INFO] cloning into file:///home/slarse/tmp/master-repo-1
-    [INFO] cloning into file:///home/slarse/tmp/master-repo-2
+    [INFO] cloning into file:///home/slarse/tmp/task-1
+    [INFO] cloning into file:///home/slarse/tmp/task-2
     [INFO] created team glennol
     [INFO] created team glassey-slarse
     [INFO] adding members glennol to team glennol
     [WARNING] user glennol does not exist
     [INFO] adding members glassey, slarse to team glassey-slarse
     [INFO] creating student repos ...
-    [INFO] created repobee-demo/glennol-master-repo-1
-    [INFO] created repobee-demo/glassey-slarse-master-repo-1
-    [INFO] created repobee-demo/glennol-master-repo-2
-    [INFO] created repobee-demo/glassey-slarse-master-repo-2
+    [INFO] created repobee-demo/glennol-task-1
+    [INFO] created repobee-demo/glassey-slarse-task-1
+    [INFO] created repobee-demo/glennol-task-2
+    [INFO] created repobee-demo/glassey-slarse-task-2
     [INFO] pushing files to student repos ...
     [INFO] pushing, attempt 1/3
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glassey-slarse-master-repo-2 master
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glassey-slarse-master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glennol-master-repo-2 master
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glennol-master-repo-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glassey-slarse-task-2 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glassey-slarse-task-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glennol-task-2 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glennol-task-1 master
 
 Note the naming convention for group repos:
 ``<student-1>-<student-2>-[...]-<master-repo-name>``. The associated teams

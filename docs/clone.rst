@@ -6,18 +6,18 @@ a deadline, as timestamps in a ``git`` commit can easily be altered (and are
 therefore not particularly trustworthy). Whatever your reason may be, it's
 very simple using the ``clone`` command. Again, assume that we have the
 ``students.txt`` file from :ref:`setup`, and that we want to clone all student
-repos based on ``master-repo-1`` and ``master-repo-2``.
+repos based on ``task-1`` and ``task-2``.
 
 .. code-block:: bash
 
-    $ repobee clone -mn master-repo-1 master-repo-2 -sf students.txt
+    $ repobee clone -mn task-1 task-2 -sf students.txt
     [INFO] cloning into student repos ...
-    [INFO] Cloned into https://some-enterprise-host/repobee-demo/slarse-master-repo-1
-    [INFO] Cloned into https://some-enterprise-host/repobee-demo/glassey-master-repo-1
-    [INFO] Cloned into https://some-enterprise-host/repobee-demo/glassey-master-repo-2
-    [INFO] Cloned into https://some-enterprise-host/repobee-demo/glennol-master-repo-1
-    [INFO] Cloned into https://some-enterprise-host/repobee-demo/slarse-master-repo-2
-    [INFO] Cloned into https://some-enterprise-host/repobee-demo/glennol-master-repo-2
+    [INFO] Cloned into https://some-enterprise-host/repobee-demo/slarse-task-1
+    [INFO] Cloned into https://some-enterprise-host/repobee-demo/glassey-task-1
+    [INFO] Cloned into https://some-enterprise-host/repobee-demo/glassey-task-2
+    [INFO] Cloned into https://some-enterprise-host/repobee-demo/glennol-task-1
+    [INFO] Cloned into https://some-enterprise-host/repobee-demo/slarse-task-2
+    [INFO] Cloned into https://some-enterprise-host/repobee-demo/glennol-task-2
 
 Splendid! That's really all there is to the basic functionality, the repos
 should now be in your current working directory. There is also a possibility to

@@ -41,26 +41,26 @@ that ``students.txt`` lists our three favorite students slarse, glassey and glen
 
 .. code-block:: bash
 
-    $ repobee assign-reviews -mn master-repo-1 -sf students.txt --num-reviews 2
+    $ repobee assign-reviews -mn task-1 -sf students.txt --num-reviews 2
     # step 1
-    [INFO] created team slarse-master-repo-1-review
-    [INFO] created team glennol-master-repo-1-review
-    [INFO] created team glassey-master-repo-1-review
+    [INFO] created team slarse-task-1-review
+    [INFO] created team glennol-task-1-review
+    [INFO] created team glassey-task-1-review
     # step 2
-    [INFO] adding members glennol, glassey to team slarse-master-repo-1-review
-    [INFO] adding members glassey, slarse to team glennol-master-repo-1-review
-    [INFO] adding members slarse, glennol to team glassey-master-repo-1-review
+    [INFO] adding members glennol, glassey to team slarse-task-1-review
+    [INFO] adding members glassey, slarse to team glennol-task-1-review
+    [INFO] adding members slarse, glennol to team glassey-task-1-review
     # steps 3 and 4, interleaved
-    [INFO] opened issue glennol-master-repo-1/#1-'Peer review'
-    [INFO] adding team glennol-master-repo-1-review to repo glennol-master-repo-1 with 'pull' permission
-    [INFO] opened issue glassey-master-repo-1/#2-'Peer review'
-    [INFO] adding team glassey-master-repo-1-review to repo glassey-master-repo-1 with 'pull' permission
-    [INFO] opened issue slarse-master-repo-1/#2-'Peer review'
-    [INFO] adding team slarse-master-repo-1-review to repo slarse-master-repo-1 with 'pull' permission
+    [INFO] opened issue glennol-task-1/#1-'Peer review'
+    [INFO] adding team glennol-task-1-review to repo glennol-task-1 with 'pull' permission
+    [INFO] opened issue glassey-task-1/#2-'Peer review'
+    [INFO] adding team glassey-task-1-review to repo glassey-task-1 with 'pull' permission
+    [INFO] opened issue slarse-task-1/#2-'Peer review'
+    [INFO] adding team slarse-task-1-review to repo slarse-task-1 with 'pull' permission
 
 The following steps were performed:
 
-1. One review team per repo was created (``<student>-master-repo-1-review``).
+1. One review team per repo was created (``<student>-task-1-review``).
 2. Two students were added to each review team. Note that these allocations are
    _random_. For obvious resons, there can be at most ``num_students-1`` peer
    reviews per repo. So, in this case, we are at the maximum.
@@ -92,7 +92,7 @@ Specifying a custom issue
 -------------------------
 The default issue is really meant to be replaced with something more specific to
 the course and assignment. For example, say that there were five tasks in the
-``master-repo-2`` repo, and the students should review tasks 2 and 3 based on
+``task-2`` repo, and the students should review tasks 2 and 3 based on
 some criteria. It would then be beneficial to specify this in the peer review
 issue, so we'll write up our own little issue to replace the default one.
 Remember that the first line is taken to be the title, in exactly the same way
@@ -100,7 +100,7 @@ as issue files are treated in :ref:`open`.
 
 .. code-block:: none
 
-    Review of master-repo-2
+    Review of task-2
 
     Hello! The students assigned to this issue have been tasked to review this
     repo. Each of you should open _one_ issue with the title `Peer review` and
@@ -123,19 +123,19 @@ specifying the issue like this:
 
 .. code-block:: bash
 
-    $ repobee assign-reviews -mn master-repo-2 -sf students.txt --num-reviews 2 --issue issue.md
-    [INFO] created team slarse-master-repo-2-review
-    [INFO] created team glennol-master-repo-2-review
-    [INFO] created team glassey-master-repo-2-review
-    [INFO] adding members glassey, glennol to team slarse-master-repo-2-review
-    [INFO] adding members slarse, glassey to team glennol-master-repo-2-review
-    [INFO] adding members glennol, slarse to team glassey-master-repo-2-review
-    [INFO] opened issue glennol-master-repo-2/#2-'Review of master-repo-2'
-    [INFO] adding team glennol-master-repo-2-review to repo glennol-master-repo-2 with 'pull' permission
-    [INFO] opened issue glassey-master-repo-2/#2-'Review of master-repo-2'
-    [INFO] adding team glassey-master-repo-2-review to repo glassey-master-repo-2 with 'pull' permission
-    [INFO] opened issue slarse-master-repo-2/#2-'Review of master-repo-2'
-    [INFO] adding team slarse-master-repo-2-review to repo slarse-master-repo-2 with 'pull' permission
+    $ repobee assign-reviews -mn task-2 -sf students.txt --num-reviews 2 --issue issue.md
+    [INFO] created team slarse-task-2-review
+    [INFO] created team glennol-task-2-review
+    [INFO] created team glassey-task-2-review
+    [INFO] adding members glassey, glennol to team slarse-task-2-review
+    [INFO] adding members slarse, glassey to team glennol-task-2-review
+    [INFO] adding members glennol, slarse to team glassey-task-2-review
+    [INFO] opened issue glennol-task-2/#2-'Review of task-2'
+    [INFO] adding team glennol-task-2-review to repo glennol-task-2 with 'pull' permission
+    [INFO] opened issue glassey-task-2/#2-'Review of task-2'
+    [INFO] adding team glassey-task-2-review to repo glassey-task-2 with 'pull' permission
+    [INFO] opened issue slarse-task-2/#2-'Review of task-2'
+    [INFO] adding team slarse-task-2-review to repo slarse-task-2 with 'pull' permission
 
 As you can tell from the last few lines, the title is the one specified in the
 issue, and not the default title as it was before. And that's pretty much it for
@@ -151,15 +151,15 @@ organization with a ton of teams. Once the deadline has passed and all peer
 reviews are done, there is little reason to keep them (in my mind). Therefore,
 the ``purge-review-teams`` command can be used to remove all peer review
 teams for a given set of student repos. Let's say that we're completely done
-with the peer reviews of ``master-repo-1``, and want to remove the review teams.
+with the peer reviews of ``task-1``, and want to remove the review teams.
 It's as simple as:
 
 .. code-block:: bash
 
-    $ repobee purge-review-teams -mn master-repo-1 -sf students.txt
-    [INFO] deleted team glennol-master-repo-1-review
-    [INFO] deleted team glassey-master-repo-1-review
-    [INFO] deleted team slarse-master-repo-1-review
+    $ repobee purge-review-teams -mn task-1 -sf students.txt
+    [INFO] deleted team glennol-task-1-review
+    [INFO] deleted team glassey-task-1-review
+    [INFO] deleted team slarse-task-1-review
 
 And that's it, the review teams are gone. If you also want to close the related
 issues, you can simply use the ``close-issues`` command for that (see
@@ -172,30 +172,30 @@ Messing up and getting back on track
 Let's say you messed something up with allocating the peer reviews. For example,
 if you left out a student, there is no easy way to rectify the allocations such
 that that student is included. Let's say we did just that, and forgot to include
-the student ``cabbage`` in the reviews for ``master-repo-2`` back at
+the student ``cabbage`` in the reviews for ``task-2`` back at
 :ref:`assign reviews`. We then do the following:
 
 1. Check if any reviews have already been posted. This can easily be performed
-   with ``repobee list-issues -mn master-repo-2 -sf students.txt -r '^Peer
+   with ``repobee list-issues -mn task-2 -sf students.txt -r '^Peer
    review$'`` (assuming the naming conventions were followed!). Take appropriate
    action if you find any reviews already posted (appropriate being anything you
    see fit to alleviate the situation of affected students possibly being
    assigned new repos to review).
-2. Purge the review teams with ``repobee purge-review-teams -mn master-repo-2
+2. Purge the review teams with ``repobee purge-review-teams -mn task-2
    -sf students.txt``
-3. Close all review issues with ``repobee close-issues -mn master-repo-2 -sf
-   students.txt -r '^Review of master-repo-2$'``
+3. Close all review issues with ``repobee close-issues -mn task-2 -sf
+   students.txt -r '^Review of task-2$'``
 4. Create a new ``issue.md`` file apologetically explaining that you messed up:
 
 .. code-block:: none
 
-    Review of master-repo-2 (for real this time!)
+    Review of task-2 (for real this time!)
 
     Sorry, I messed up with the allocations previously. Disregard the previous
     allocations (repo access has been revoked anyway).
 
 5. Assign peer reviews again, with the new issue, with ``repobee
-   assign-reviews -mn master-repo-2 -sf students.txt --num-reviews 2
+   assign-reviews -mn task-2 -sf students.txt --num-reviews 2
    --issue issue.md``
 
 And that's it! Disaster averted.
@@ -218,7 +218,7 @@ scheme, you add ``-p pairwise`` in front of the command.
 
 .. code-block:: bash
 
-    $ repobee -p pairwise assign-reviews -mn master-repo-1 -sf students.txt
+    $ repobee -p pairwise assign-reviews -mn task-1 -sf students.txt
 
 Note that the pairwise algorithm ignores the ``--num-reviews`` argument, and
 will issue a warning if this is set (to anything but 1, but you should just not

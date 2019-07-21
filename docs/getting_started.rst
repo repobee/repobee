@@ -215,10 +215,10 @@ simple as issuing a single command with RepoBee.
 
 .. code-block:: bash
 
-    $ repobee setup -mn master-repo-1 master-repo-2 -sf students.txt
+    $ repobee setup -mn task-1 task-2 -sf students.txt
     [INFO] Cloning into master repos ...
-    [INFO] Cloning into file:///home/slarse/tmp/master-repo-1
-    [INFO] Cloning into file:///home/slarse/tmp/master-repo-2
+    [INFO] Cloning into file:///home/slarse/tmp/task-1
+    [INFO] Cloning into file:///home/slarse/tmp/task-2
     [INFO] Created team glennol
     [INFO] Created team glassey
     [INFO] Created team slarse
@@ -227,20 +227,20 @@ simple as issuing a single command with RepoBee.
     [INFO] Adding members glassey to team glassey
     [INFO] Adding members slarse to team slarse
     [INFO] Creating student repos ...
-    [INFO] Created repobee-demo/glennol-master-repo-1
-    [INFO] Created repobee-demo/glassey-master-repo-1
-    [INFO] Created repobee-demo/slarse-master-repo-1
-    [INFO] Created repobee-demo/glennol-master-repo-2
-    [INFO] Created repobee-demo/glassey-master-repo-2
-    [INFO] Created repobee-demo/slarse-master-repo-2
+    [INFO] Created repobee-demo/glennol-task-1
+    [INFO] Created repobee-demo/glassey-task-1
+    [INFO] Created repobee-demo/slarse-task-1
+    [INFO] Created repobee-demo/glennol-task-2
+    [INFO] Created repobee-demo/glassey-task-2
+    [INFO] Created repobee-demo/slarse-task-2
     [INFO] Pushing files to student repos ...
     [INFO] Pushing, attempt 1/3
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glassey-master-repo-2 master
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glassey-master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/slarse-master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glennol-master-repo-2 master
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glennol-master-repo-1 master
-    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/slarse-master-repo-2 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glassey-task-2 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glassey-task-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/slarse-task-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glennol-task-2 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/glennol-task-1 master
+    [INFO] Pushed files to https://some-enterprise-host/repobee-demo/slarse-task-2 master
 
 .. note::
 

@@ -21,7 +21,7 @@ you can activate the builtins_ ``javac`` and ``pylint`` like this:
 
 .. code-block:: bash
 
-    $ repobee -p pylint -p javac clone -mn master-repo-1 -sf students.txt
+    $ repobee -p pylint -p javac clone -mn task-1 -sf students.txt
 
 This will clone the repos, and the run the plugins on the repos. You can also
 specify the default plugins you would like to use in the configuration file by
