@@ -50,7 +50,7 @@ solution: open an issue in the student's repo that explains the situation.
 
 .. important::
 
-    If we don't specify an issue to ``repobee update``, rejected pushes will
+    If you don't specify an issue to ``repobee update``, rejected pushes will
     simply be ignored.
 
 So, let's first create that issue. It should be a Markdown-formatted file, and
@@ -98,12 +98,11 @@ students, plain text is more helpful. Now it's just a matter of using
     [WARNING] 1 pushes failed ...
     [INFO] Opening issue in repos to which push failed
     [INFO] Opened issue glassey-task-1/#1-'Nice title'
-    [INFO] done!
+    [INFO] Done!
 
 Note that RepoBee tries to push 3 times before finally giving up and opening an
 issue, as a failed push could be due to any number of reasons, such as
-connection issues or misaligned planets. This is because pushes can fail for
-other reasons than rejections, such as timeouts and other network errors.
+connection issues and misaligned planets.
 
 .. note::
 
