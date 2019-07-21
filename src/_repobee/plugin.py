@@ -11,7 +11,7 @@ Module containing plugin system utility functions and classes.
 import pathlib
 import importlib
 from types import ModuleType
-from typing import Union, List, Optional, Iterable
+from typing import List, Optional, Iterable
 
 import daiquiri
 
@@ -35,21 +35,13 @@ def _external_plugin_qualname(plugin_name):
     )
 
 
-DEFAULT_PLUGIN = "defaults"
+def load_plugin_modules(plugin_names: Iterable[str]) -> List[ModuleType]:
+    """Load the given plugins. Plugins are loaded such that they are executed
+    in the same order that they are specified in the plugin_names list.
 
-
-def load_plugin_modules(
-    config_file: Union[str, pathlib.Path] = constants.DEFAULT_CONFIG_FILE,
-    plugin_names: Iterable[str] = None,
-) -> List[ModuleType]:
-    """Load plugins that are specified in the config, as well as default
-    plugins. Note that default plugins are always loaded first, such that
-    they are either run last or overridden by plugins with firstresult=True
-    (such as the default_peer_review plugin).
-
-    Try to import first from :py:mod:`_repobee.ext`, and then from
-    ``repobee_<plugin>``. For example, if ``javac`` is listed as a plugin, the
-    following imports will be attempted:
+    When loading a plugin, tries to import first from :py:mod:`_repobee.ext`,
+    and then from ``repobee_<plugin>``. For example, if ``javac`` is listed as
+    a plugin, the following imports will be attempted:
 
     .. code-block:: python
 
@@ -60,23 +52,13 @@ def load_plugin_modules(
         from repobee_javac import javac
 
     Args:
-        config_file: Path to the configuration file.
         plugin_names: A list of plugin names. Overrides the config file.
 
     Returns:
         a list of loaded modules.
     """
     loaded_modules = []
-    plugin_names = [
-        *(plugin_names or config.get_plugin_names(config_file) or []),
-        # default plugin last so hooks are overridden by user-specified hooks
-        DEFAULT_PLUGIN,
-    ]
     LOGGER.info("Loading plugins: " + ", ".join(plugin_names))
-    if plugin_names == [DEFAULT_PLUGIN]:
-        from .ext import defaults
-
-        return [defaults]
 
     for name in plugin_names:
         plug_mod = _try_load_module(
@@ -135,3 +117,19 @@ def initialize_plugins(plugin_names: List[str] = None):
     """
     plug_modules = load_plugin_modules(plugin_names=plugin_names)
     register_plugins(plug_modules)
+
+
+def resolve_plugin_names(
+    plugin_names: Optional[List[str]] = None,
+    config_file: pathlib.Path = constants.DEFAULT_CONFIG_FILE,
+) -> List[str]:
+    """Return a list of plugin names to load into RepoBee given a list of
+    externally specified plugin names, and a path to a configuration file.
+
+    Args:
+        plugin_names: A list of names of plugins.
+        config_file: A configuration file.
+    Returns:
+        A list of plugin names that should be loaded.
+    """
+    return [*(plugin_names or config.get_plugin_names(config_file) or [])]

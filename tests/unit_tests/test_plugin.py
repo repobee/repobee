@@ -6,99 +6,66 @@
         installed any other plugins, tests in here may fail unexpectedly
         without anything actually being wrong.
 """
-import os
 from unittest.mock import call, MagicMock
 
 import pytest
 
+import _repobee.constants
 from _repobee import plugin
 from _repobee import exception
 
-from _repobee.plugin import DEFAULT_PLUGIN
-from _repobee.ext import javac, pylint, defaults
+from _repobee.ext import javac, pylint
 
 import constants
 
 PLUGINS = constants.PLUGINS
 
 
-class TestLoadPluginModules:
-    """Tests for load_plugin_modules.
-
-    Note that the default plugin _repobee.ext.defaults is always loaded.
-    """
-
-    def test_load_all_bundled_plugins(self, config_mock):
-        """Test load the bundled plugins, i.e. the ones listed in
-        constants.PLUGINS.
-        """
-        expected_names = list(
-            map(plugin._plugin_qualname, [*PLUGINS, DEFAULT_PLUGIN])
-        )
-
-        modules = plugin.load_plugin_modules(str(config_mock))
-        module_names = [mod.__name__ for mod in modules]
-
-        assert module_names == expected_names
+class TestResolvePluginNames:
+    """Tests for resolve_plugin_names."""
 
     def test_plugin_names_override_config_file(self, config_mock, mocker):
         """Test that the plugin_names argument override the configuration
         file."""
         plugin_names = ["awesome", "the_slarse_plugin", "ric_easter_egg"]
-        expected_calls = [
-            call(plug)
-            for plug in map(
-                plugin._plugin_qualname, plugin_names + [DEFAULT_PLUGIN]
-            )
-        ]
 
-        class module:
-            pass
-
-        load_module_mock = mocker.patch(
-            "_repobee.plugin._try_load_module", return_value=module
-        )
-
-        plugin.load_plugin_modules(
+        actual_plugin_names = plugin.resolve_plugin_names(
             config_file=str(config_mock), plugin_names=plugin_names
         )
 
-        load_module_mock.assert_has_calls(expected_calls)
+        assert actual_plugin_names == plugin_names
+
+
+class TestLoadPluginModules:
+    """Tests for load_plugin_modules."""
+
+    def test_load_all_bundled_plugins(self):
+        """Test load the bundled plugins, i.e. the ones listed in
+        constants.PLUGINS.
+        """
+        plugin_names = [*PLUGINS, _repobee.constants.DEFAULT_PLUGIN]
+        plugin_qualnames = list(map(plugin._plugin_qualname, plugin_names))
+
+        modules = plugin.load_plugin_modules(plugin_names)
+        module_names = [mod.__name__ for mod in modules]
+
+        assert module_names == plugin_qualnames
 
     def test_load_no_plugins(self, no_config_mock):
         """Test calling load plugins when no plugins are specified results in
-        only the default being loaded.
-        """
-        modules = plugin.load_plugin_modules()
+        no plugins being loaded."""
+        modules = plugin.load_plugin_modules([])
 
-        assert modules == [defaults]
-
-    def test_specify_single_plugin(self, empty_config_mock):
-        plugin_name = "javac"
-        config_contents = os.linesep.join(
-            ["[DEFAULTS]", "plugins = {}".format(plugin_name)]
-        )
-        empty_config_mock.write(config_contents)
-
-        modules = plugin.load_plugin_modules(str(empty_config_mock))
-        module_names = [mod.__name__ for mod in modules]
-
-        assert module_names == list(
-            map(plugin._plugin_qualname, [plugin_name, DEFAULT_PLUGIN])
-        )
+        assert modules == []
 
     def test_raises_when_loading_invalid_module(self, empty_config_mock):
         """Test that PluginError is raised when when the plugin specified
         does not exist.
         """
         plugin_name = "this_plugin_does_not_exist"
-        config_contents = os.linesep.join(
-            ["[DEFAULTS]", "plugins = {}".format(plugin_name)]
-        )
-        empty_config_mock.write(config_contents)
 
         with pytest.raises(exception.PluginError) as exc_info:
-            plugin.load_plugin_modules(str(empty_config_mock))
+            plugin.load_plugin_modules([plugin_name])
 
         assert "failed to load plugin module " + plugin_name in str(
             exc_info.value

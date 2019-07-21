@@ -598,7 +598,7 @@ def create_parser_for_docs():
     """
     daiquiri.setup(level=logging.FATAL)
     # load default plugins
-    plugin.initialize_plugins()
+    plugin.initialize_plugins([_repobee.constants.DEFAULT_PLUGIN])
     ext_commands = plug.manager.hook.create_extension_command()
     return _create_parser(show_all_opts=True, ext_commands=ext_commands)
 

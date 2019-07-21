@@ -1,18 +1,17 @@
 import os
-import argparse
 import pathlib
 import argparse
 from unittest.mock import MagicMock
 from unittest import mock
 
 import pytest
-import repobee_plug as plug
 
 import repobee_plug as plug
 
 import _repobee
 import _repobee.ext
 import _repobee.ext.github
+import _repobee.constants
 import _repobee.plugin
 from _repobee import cli
 from _repobee import exception
@@ -82,7 +81,9 @@ def api_class_mock(mocker, api_instance_mock):
 @pytest.fixture(autouse=True)
 def load_default_plugins(api_instance_mock):
     """Load the default plugins after mocking the GitHubAPI."""
-    loaded = _repobee.plugin.load_plugin_modules()
+    loaded = _repobee.plugin.load_plugin_modules(
+        [_repobee.constants.DEFAULT_PLUGIN]
+    )
     _repobee.plugin.register_plugins(loaded)
 
 
@@ -1074,8 +1075,6 @@ class TestCloneParser:
         plugin_manager_mock.hook.parse_args.assert_called_once_with(
             args=mock.ANY
         )
-
-    # def test_no_plugins_option_drops_plugins()
 
     @pytest.mark.parametrize(
         "parser, extra_args",
