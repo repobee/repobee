@@ -489,28 +489,37 @@ def assign_peer_reviews(
 
     for master_name in master_repo_names:
         allocations = plug.manager.hook.generate_review_allocations(
-            students=teams, num_reviews=num_reviews
+            teams=teams, num_reviews=num_reviews
         )
         # adjust names of review teams
-        review_teams = [
-            plug.Team(
-                members=alloc.review_team,
-                name=util.generate_review_team_name(
-                    str(alloc.reviewed_team), master_name
-                ),
+        review_teams, reviewed_teams = list(
+            zip(
+                *[
+                    (
+                        plug.Team(
+                            members=alloc.review_team.members,
+                            name=util.generate_review_team_name(
+                                str(alloc.reviewed_team), master_name
+                            ),
+                        ),
+                        alloc.reviewed_team,
+                    )
+                    for alloc in allocations
+                ]
             )
-            for alloc in allocations
-        ]
+        )
         api.ensure_teams_and_members(
             review_teams, permission=plug.TeamPermission.PULL
         )
         # TODO finish up here, this is entirely broken!
         api.add_repos_to_review_teams(
             {
-                util.generate_review_team_name(
-                    str(alloc.reviewed_team), master_name
-                ): [util.generate_repo_name("student", master_name)]
-                for alloc in allocations
+                review_team.name: [
+                    util.generate_repo_name(reviewed_team, master_name)
+                ]
+                for review_team, reviewed_team in zip(
+                    review_teams, reviewed_teams
+                )
             },
             issue=issue,
         )
