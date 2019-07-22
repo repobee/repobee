@@ -1,13 +1,16 @@
 """Tests for the pairwise plugin."""
-import string
 import itertools
 import collections
 
 import pytest
 
-from _repobee import util
+import repobee_plug as plug
+
 from _repobee.plugin import register_plugins
 from _repobee.ext import pairwise
+
+
+import constants
 
 
 class TestGenerateReviewAllocations:
@@ -26,17 +29,14 @@ class TestGenerateReviewAllocations:
         """All students should have to review precisely 1 repo.
         num_reviews should be ignored.
         """
-        students = list(string.ascii_letters[:num_students])
-        assert len(students) == num_students, "pre-test assert"
+        teams = list(constants.STUDENTS[:num_students])
 
-        allocations = pairwise.generate_review_allocations(
-            "week-2", students, util.generate_review_team_name, num_reviews
-        )
+        allocations = pairwise.generate_review_allocations(teams, num_reviews)
 
         # flatten the peer review lists
         peer_reviewers = list(
             itertools.chain.from_iterable(
-                reviewers for reviewers in allocations.values()
+                alloc.review_team.members for alloc in allocations
             )
         )
         counts = collections.Counter(peer_reviewers)
@@ -50,74 +50,42 @@ class TestGenerateReviewAllocations:
     )
     def test_all_students_get_reviewed(self, num_students, num_reviews):
         """All students should get a review team."""
-        students = string.ascii_letters[:num_students]
-        master_repo_name = "week-5"
-        assert len(students) == num_students, "pre-test assert"
+        teams = list(constants.STUDENTS[:num_students])
+        expected_reviewed_teams = list(teams)
 
-        expected_review_teams = [
-            util.generate_review_team_name(student, master_repo_name)
-            for student in students
-        ]
+        allocations = pairwise.generate_review_allocations(teams, num_reviews)
 
-        allocations = pairwise.generate_review_allocations(
-            master_repo_name,
-            students,
-            util.generate_review_team_name,
-            num_reviews,
+        assert sorted(expected_reviewed_teams) == sorted(
+            [alloc.reviewed_team for alloc in allocations]
         )
-
-        assert set(expected_review_teams) == set(allocations.keys())
 
     @pytest.mark.parametrize(
         "num_students, num_reviews",
         [(10, 4), (50, 13), (10, 1), (13, 2), (27, 1)],
     )
     def test_students_dont_review_themselves(self, num_students, num_reviews):
-        """All students should get a review team."""
-        students = string.ascii_letters[:num_students]
-        master_repo_name = "week-5"
-        assert len(students) == num_students, "pre-test assert"
+        teams = list(constants.STUDENTS[:num_students])
 
-        expected_review_teams = [
-            util.generate_review_team_name(student, master_repo_name)
-            for student in students
-        ]
+        allocations = pairwise.generate_review_allocations(teams, num_reviews)
 
-        allocations = pairwise.generate_review_allocations(
-            master_repo_name,
-            students,
-            util.generate_review_team_name,
-            num_reviews,
-        )
-
-        assert set(expected_review_teams) == set(allocations.keys())
-        for review_team, (reviewer, *_) in allocations.items():
-            # exploit that students are single letters
-            # TODO make more robust
-            reviewed_student = review_team[0]
-            assert reviewed_student != reviewer
+        for review_team, reviewed_team in allocations:
+            assert not set(review_team.members).intersection(
+                reviewed_team.members
+            )
 
     @pytest.mark.parametrize("num_students", [4, 10, 32, 50])
-    def test_all_groups_size_2_with_even_amount_of_students(
+    def test_all_students_paired_up_with_even_amount_of_students(
         self, num_students
     ):
-        students = string.ascii_letters[:num_students]
-        master_repo_name = "week-5"
-        assert len(students) == num_students, "pre-test assert"
+        teams = constants.STUDENTS[:num_students]
 
         allocations = pairwise.generate_review_allocations(
-            master_repo_name,
-            students,
-            num_reviews=1,
-            review_team_name_function=util.generate_review_team_name,
+            teams, num_reviews=1
         )
 
-        # exploit that each student is represented by a single letter
-        # TODO make more robust
-        for review_team, (reviewer, *_) in allocations.items():
-            reviewed_student = review_team[0]
-            expected_counter_team = util.generate_review_team_name(
-                reviewer, master_repo_name
-            )
-            assert allocations[expected_counter_team][0] == reviewed_student
         assert len(allocations) == num_students
+        for review_team, reviewed_team in allocations:
+            expected_counter_review = plug.ReviewAllocation(
+                review_team=reviewed_team, reviewed_team=review_team
+            )
+            assert allocations.index(expected_counter_review) >= 0

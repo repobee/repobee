@@ -11,9 +11,8 @@ from _repobee import git
 from _repobee import util
 from _repobee import exception
 from _repobee import plugin
-from repobee_plug import apimeta
 
-from repobee_plug import HookResult, repobee_hook, Status
+import repobee_plug as plug
 
 import constants
 import functions
@@ -25,16 +24,16 @@ TOKEN = constants.TOKEN
 random_date = functions.random_date
 
 OPEN_ISSUES = [
-    apimeta.Issue(
+    plug.apimeta.Issue(
         "close this issue", "This is a body", 3, random_date(), "slarse"
     ),
-    apimeta.Issue(
+    plug.apimeta.Issue(
         "Don't close this issue", "Another body", 4, random_date(), "glassey"
     ),
 ]
 
 CLOSED_ISSUES = [
-    apimeta.Issue(
+    plug.apimeta.Issue(
         "This is a closed issue",
         "With an uninteresting body that has a single very,"
         "very long line that would probably break the implementation "
@@ -43,7 +42,7 @@ CLOSED_ISSUES = [
         random_date(),
         "tmore",
     ),
-    apimeta.Issue(
+    plug.apimeta.Issue(
         "Yet another closed issue",
         "Even less interesting body",
         2,
@@ -54,7 +53,7 @@ CLOSED_ISSUES = [
 
 ORG_NAME = "test-org"
 BASE_URL = "https://some_enterprise_host/api/v3"
-ISSUE = apimeta.Issue(
+ISSUE = plug.apimeta.Issue(
     "Oops, something went wrong!", "This is the body **with some formatting**."
 )
 PLUGINS = constants.PLUGINS
@@ -83,7 +82,9 @@ def get_repo_urls_fake(self, master_repo_names, org_name=None, teams=None):
 
 
 # check that get_repo_urls_fake conforms to APISpec.get_repo_urls
-apimeta.check_parameters(apimeta.APISpec.get_repo_urls, get_repo_urls_fake)
+plug.apimeta.check_parameters(
+    plug.apimeta.APISpec.get_repo_urls, get_repo_urls_fake
+)
 
 MASTER_NAMES = ("week-1", "week-2", "week-3")
 MASTER_URLS = tuple(generate_repo_url(name) for name in MASTER_NAMES)
@@ -110,18 +111,20 @@ def git_mock(request, mocker):
     return git_mock
 
 
-def _get_issues(repo_names, state=apimeta.IssueState.OPEN, title_regex=""):
+def _get_issues(
+    repo_names, state=plug.apimeta.IssueState.OPEN, title_regex=""
+):
     """Bogus version of GitHubAPI.get_issues"""
     for repo_name in repo_names:
         if repo_name == STUDENT_REPO_NAMES[-2]:
             # repo without issues
             yield repo_name, iter([])
         elif repo_name in STUDENT_REPO_NAMES:
-            if state == apimeta.IssueState.OPEN:
+            if state == plug.apimeta.IssueState.OPEN:
                 issues = iter(OPEN_ISSUES)
-            elif state == apimeta.IssueState.CLOSED:
+            elif state == plug.apimeta.IssueState.CLOSED:
                 issues = iter(CLOSED_ISSUES)
-            elif state == apimeta.IssueState.ALL:
+            elif state == plug.apimeta.IssueState.ALL:
                 issues = iter(OPEN_ISSUES + CLOSED_ISSUES)
             else:
                 raise ValueError("Unexpected value for 'state': ", state)
@@ -162,7 +165,7 @@ def students():
 @pytest.fixture
 def ensure_teams_and_members_mock(api_mock, students):
     api_mock.ensure_teams_and_members.side_effect = lambda teams: [
-        apimeta.Team(name=str(student), members=[student], id=id)
+        plug.apimeta.Team(name=str(student), members=[student], id=id)
         for id, student in enumerate(students)
     ]
 
@@ -186,7 +189,7 @@ def repo_infos(master_urls, students):
     for url in master_urls:
         repo_base_name = util.repo_name(url)
         repo_infos += [
-            apimeta.Repo(
+            plug.apimeta.Repo(
                 name=util.generate_repo_name(student, repo_base_name),
                 description="{} created for {}".format(
                     repo_base_name, student
@@ -341,7 +344,9 @@ class TestUpdateStudentRepos:
     @pytest.mark.parametrize(
         "issue",
         [
-            apimeta.Issue("Oops", "Sorry, we failed to push to your repo!"),
+            plug.apimeta.Issue(
+                "Oops", "Sorry, we failed to push to your repo!"
+            ),
             None,
         ],
     )
@@ -445,7 +450,7 @@ class TestOpenIssue:
             "c-week-2",
         ]
 
-        issue = apimeta.Issue(
+        issue = plug.apimeta.Issue(
             "A title", "And a nice **formatted** body\n### With headings!"
         )
         command.open_issue(issue, master_names, students, api_mock)
@@ -497,20 +502,22 @@ class TestCloneRepos:
         """
         javac_hook = MagicMock(
             spec="_repobee.ext.javac.JavacCloneHook._class.act_on_cloned_repo",
-            return_value=HookResult("javac", Status.SUCCESS, "Great success!"),
+            return_value=plug.HookResult(
+                "javac", plug.Status.SUCCESS, "Great success!"
+            ),
         )
         pylint_hook = MagicMock(
             spec="_repobee.ext.pylint.act_on_cloned_repo",
-            return_value=HookResult(
-                "pylint", Status.WARNING, "Minor warning."
+            return_value=plug.HookResult(
+                "pylint", plug.Status.WARNING, "Minor warning."
             ),
         )
 
-        @repobee_hook
+        @plug.repobee_hook
         def act_hook_func(path):
             return pylint_hook(path)
 
-        @repobee_hook
+        @plug.repobee_hook
         def act_hook_meth(self, path):
             return javac_hook(self, path)
 
@@ -625,9 +632,9 @@ class TestListIssues:
     @pytest.mark.parametrize(
         "state",
         (
-            apimeta.IssueState.OPEN,
-            apimeta.IssueState.CLOSED,
-            apimeta.IssueState.ALL,
+            plug.apimeta.IssueState.OPEN,
+            plug.apimeta.IssueState.CLOSED,
+            plug.apimeta.IssueState.ALL,
         ),
     )
     @pytest.mark.parametrize("regex", ("", r"^.*$"))
@@ -708,7 +715,7 @@ class TestAssignPeerReviewers:
         assert "num_reviews must be greater than 0" in str(exc_info.value)
 
     def test_happy_path(self, master_names, students, api_mock):
-        issue = apimeta.Issue("this is a title", "this is a body")
+        issue = plug.apimeta.Issue("this is a title", "this is a body")
         mappings = [
             {
                 util.generate_review_team_name(student, master_name): [

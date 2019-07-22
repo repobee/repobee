@@ -27,7 +27,6 @@ import repobee_plug as plug
 
 from _repobee import git
 from _repobee import util
-from repobee_plug import apimeta
 from _repobee import exception
 from _repobee import config
 from _repobee import constants
@@ -38,9 +37,7 @@ LOGGER = daiquiri.getLogger(__file__)
 
 
 def setup_student_repos(
-    master_repo_urls: Iterable[str],
-    teams: Iterable[apimeta.Team],
-    api: apimeta.API,
+    master_repo_urls: Iterable[str], teams: Iterable[plug.Team], api: plug.API
 ) -> None:
     """Setup student repositories based on master repo templates. Performs three
     primary tasks:
@@ -61,7 +58,7 @@ def setup_student_repos(
     Args:
         master_repo_urls: URLs to master repos.
         teams: An iterable of student teams specifying the teams to be setup.
-        api: An implementation of :py:class:`apimeta.API` used to interface
+        api: An implementation of :py:class:`plug.API` used to interface
             with the platform (e.g. GitHub or GitLab) instance.
     """
     urls = list(master_repo_urls)  # safe copy
@@ -79,8 +76,8 @@ def setup_student_repos(
 
 
 def _add_students_to_teams(
-    teams: Iterable[apimeta.Team], api: apimeta.API
-) -> List[apimeta.Team]:
+    teams: Iterable[plug.Team], api: plug.API
+) -> List[plug.Team]:
     """Create the specified teams on the target platform,
     and add the specified members to their teams. If a team already exists, it
     is not created. If a student is already in his/her team, that student is
@@ -97,9 +94,7 @@ def _add_students_to_teams(
 
 
 def _create_student_repos(
-    master_repo_urls: Iterable[str],
-    teams: Iterable[apimeta.Team],
-    api: apimeta.API,
+    master_repo_urls: Iterable[str], teams: Iterable[plug.Team], api: plug.API
 ) -> List[str]:
     """Create student repos. Each team is assigned a single repo per master
     repo. Repos that already exist are not created, but their urls are returned
@@ -108,7 +103,7 @@ def _create_student_repos(
     Args:
         master_repo_urls: URLs to master repos.
         teams: An iterable of student teams specifying the teams to be setup.
-        api: An implementation of :py:class:`apimeta.API` used to interface
+        api: An implementation of :py:class:`plug.API` used to interface
             with the platform (e.g. GitHub or GitLab) instance.
     Returns:
         a list of urls to the repos
@@ -146,9 +141,9 @@ def _clone_all(urls: Iterable[str], cwd: str):
 
 def update_student_repos(
     master_repo_urls: Iterable[str],
-    teams: Iterable[apimeta.Team],
-    api: apimeta.API,
-    issue: Optional[apimeta.Issue] = None,
+    teams: Iterable[plug.Team],
+    api: plug.API,
+    issue: Optional[plug.Issue] = None,
 ) -> None:
     """Attempt to update all student repos related to one of the master repos.
 
@@ -186,7 +181,7 @@ def update_student_repos(
 
 
 def _open_issue_by_urls(
-    repo_urls: Iterable[str], issue: apimeta.Issue, api: apimeta.API
+    repo_urls: Iterable[str], issue: plug.Issue, api: plug.API
 ) -> None:
     """Open issues in the repos designated by the repo_urls.
 
@@ -202,8 +197,8 @@ def _open_issue_by_urls(
 
 def list_issues(
     master_repo_names: Iterable[str],
-    teams: Iterable[apimeta.Team],
-    api: apimeta.API,
+    teams: Iterable[plug.Team],
+    api: plug.API,
     state: str = "open",
     title_regex: str = "",
     show_body: bool = False,
@@ -239,7 +234,7 @@ def list_issues(
 
 
 def _log_repo_issues(
-    issues_per_repo: Tuple[str, Generator[apimeta.Issue, None, None]],
+    issues_per_repo: Tuple[str, Generator[plug.Issue, None, None]],
     show_body: bool,
     title_alignment: int,
 ) -> None:
@@ -309,10 +304,10 @@ def _limit_line_length(s: str, max_line_length: int = 100) -> str:
 
 
 def open_issue(
-    issue: apimeta.Issue,
+    issue: plug.Issue,
     master_repo_names: Iterable[str],
-    teams: Iterable[apimeta.Team],
-    api: apimeta.API,
+    teams: Iterable[plug.Team],
+    api: plug.API,
 ) -> None:
     """Open an issue in student repos.
 
@@ -330,8 +325,8 @@ def open_issue(
 def close_issue(
     title_regex: str,
     master_repo_names: Iterable[str],
-    teams: Iterable[apimeta.Team],
-    api: apimeta.API,
+    teams: Iterable[plug.Team],
+    api: plug.API,
 ) -> None:
     """Close issues whose titles match the title_regex in student repos.
 
@@ -347,9 +342,7 @@ def close_issue(
 
 
 def clone_repos(
-    master_repo_names: Iterable[str],
-    teams: Iterable[apimeta.Team],
-    api: apimeta.API,
+    master_repo_names: Iterable[str], teams: Iterable[plug.Team], api: plug.API
 ) -> None:
     """Clone all student repos related to the provided master repos and student
     teams.
@@ -407,7 +400,7 @@ def _clone_repos_no_check(repo_urls, dst_dirpath, api):
     return [repo.name for repo in cloned_repos]
 
 
-def _execute_post_clone_hooks(repo_names: List[str], api: apimeta.API):
+def _execute_post_clone_hooks(repo_names: List[str], api: plug.API):
     LOGGER.info("Executing post clone hooks on repos")
     local_repos = [name for name in os.listdir() if name in repo_names]
 
@@ -423,7 +416,7 @@ def _execute_post_clone_hooks(repo_names: List[str], api: apimeta.API):
     LOGGER.info("Post clone hooks done")
 
 
-def migrate_repos(master_repo_urls: Iterable[str], api: apimeta.API) -> None:
+def migrate_repos(master_repo_urls: Iterable[str], api: plug.API) -> None:
     """Migrate a repository from an arbitrary URL to the target organization.
     The new repository is added to the master_repos team, which is created if
     it does not already exist.
@@ -437,7 +430,7 @@ def migrate_repos(master_repo_urls: Iterable[str], api: apimeta.API) -> None:
     master_names = [util.repo_name(url) for url in master_repo_urls]
 
     infos = [
-        apimeta.Repo(
+        plug.Repo(
             name=master_name,
             description="Master repository {}".format(master_name),
             private=True,
@@ -465,10 +458,10 @@ def migrate_repos(master_repo_urls: Iterable[str], api: apimeta.API) -> None:
 
 def assign_peer_reviews(
     master_repo_names: Iterable[str],
-    teams: Iterable[apimeta.Team],
+    teams: Iterable[plug.Team],
     num_reviews: int,
-    issue: Optional[apimeta.Issue],
-    api: apimeta.API,
+    issue: Optional[plug.Issue],
+    api: plug.API,
 ) -> None:
     """Assign peer reviewers among the students to each student repo. Each
     student is assigned to review num_reviews repos, and consequently, each
@@ -493,30 +486,40 @@ def assign_peer_reviews(
     # currently only supports single student teams
     # TODO support groups of students
     assert all(map(lambda g: len(g.members) == 1, teams))
-    single_students = [t.members[0] for t in teams]
 
     for master_name in master_repo_names:
-        # TODO the returned allocations should be apimeta.Team instances
-        # but it can't be fixed until apimeta is moved to repobee_plug.
         allocations = plug.manager.hook.generate_review_allocations(
-            master_repo_name=master_name,
-            students=single_students,
-            num_reviews=num_reviews,
-            review_team_name_function=util.generate_review_team_name,
+            teams=teams, num_reviews=num_reviews
         )
-        review_teams = [
-            apimeta.Team(name=team_name, members=members)
-            for team_name, members in allocations.items()
-        ]
+        # adjust names of review teams
+        review_teams, reviewed_teams = list(
+            zip(
+                *[
+                    (
+                        plug.Team(
+                            members=alloc.review_team.members,
+                            name=util.generate_review_team_name(
+                                str(alloc.reviewed_team), master_name
+                            ),
+                        ),
+                        alloc.reviewed_team,
+                    )
+                    for alloc in allocations
+                ]
+            )
+        )
         api.ensure_teams_and_members(
-            review_teams, permission=apimeta.TeamPermission.PULL
+            review_teams, permission=plug.TeamPermission.PULL
         )
+        # TODO finish up here, this is entirely broken!
         api.add_repos_to_review_teams(
             {
-                util.generate_review_team_name(student, master_name): [
-                    util.generate_repo_name(student, master_name)
+                review_team.name: [
+                    util.generate_repo_name(reviewed_team, master_name)
                 ]
-                for student in single_students
+                for review_team, reviewed_team in zip(
+                    review_teams, reviewed_teams
+                )
             },
             issue=issue,
         )
@@ -524,8 +527,8 @@ def assign_peer_reviews(
 
 def purge_review_teams(
     master_repo_names: Iterable[str],
-    students: Iterable[apimeta.Team],
-    api: apimeta.API,
+    students: Iterable[plug.Team],
+    api: plug.API,
 ) -> None:
     """Delete all review teams associated with the given master repo names and
     students.
@@ -546,10 +549,10 @@ def purge_review_teams(
 
 def check_peer_review_progress(
     master_repo_names: Iterable[str],
-    students: Iterable[apimeta.Team],
+    students: Iterable[plug.Team],
     title_regex: str,
     num_reviews: int,
-    api: apimeta.API,
+    api: plug.API,
 ) -> None:
     """Check which students have opened peer review issues in their allotted
     review repos
@@ -584,8 +587,8 @@ def check_peer_review_progress(
 
 
 def _create_repo_infos(
-    urls: Iterable[str], teams: Iterable[apimeta.Team]
-) -> List[apimeta.Repo]:
+    urls: Iterable[str], teams: Iterable[plug.Team]
+) -> List[plug.Repo]:
     """Create Repo namedtuples for all combinations of url and team.
 
     Args:
@@ -599,7 +602,7 @@ def _create_repo_infos(
     for url in urls:
         repo_base_name = util.repo_name(url)
         repo_infos += [
-            apimeta.Repo(
+            plug.Repo(
                 name=util.generate_repo_name(team.name, repo_base_name),
                 description="{} created for {}".format(
                     repo_base_name, team.name
