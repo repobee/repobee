@@ -27,7 +27,7 @@ from _repobee import command
 from _repobee import util
 from _repobee import exception
 from _repobee import config
-from _repobee import apimeta
+from repobee_plug import apimeta
 from _repobee import constants
 
 daiquiri.setup(

@@ -24,7 +24,7 @@ import gitlab
 import repobee_plug as plug
 
 from _repobee import exception
-from _repobee import apimeta
+from repobee_plug import apimeta
 from _repobee import util
 
 LOGGER = daiquiri.getLogger(__file__)

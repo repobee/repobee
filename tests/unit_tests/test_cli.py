@@ -15,7 +15,7 @@ import _repobee.constants
 import _repobee.plugin
 from _repobee import cli
 from _repobee import exception
-from _repobee import apimeta
+from repobee_plug import apimeta
 from _repobee import tuples
 
 import constants

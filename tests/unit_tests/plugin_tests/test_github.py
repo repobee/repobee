@@ -9,7 +9,7 @@ import _repobee.ext
 import _repobee.ext.github
 from _repobee import util
 from _repobee import exception
-from _repobee import apimeta
+from repobee_plug import apimeta
 from _repobee.ext.github import REQUIRED_OAUTH_SCOPES
 
 import constants

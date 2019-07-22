@@ -2,10 +2,11 @@ from collections import namedtuple
 
 import pytest
 import gitlab
-
-import constants
+import repobee_plug
 
 import _repobee
+
+import constants
 
 
 class Group:
@@ -284,17 +285,17 @@ class TestEnsureTeamsAndMembers:
         api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
         num_students = len(constants.STUDENTS)
         teams = [
-            _repobee.apimeta.Team(members=g1.members + g2.members)
+            repobee_plug.apimeta.Team(members=g1.members + g2.members)
             for g1, g2 in zip(
                 constants.STUDENTS[: num_students // 2],
                 constants.STUDENTS[num_students // 2 :],
             )
         ]
         expected_teams = [
-            _repobee.apimeta.Team(
+            repobee_plug.apimeta.Team(
                 members=[constants.USER] + t.members,
                 # the owner should not be included in the generated name
-                name=_repobee.apimeta.Team(members=t.members).name,
+                name=repobee_plug.apimeta.Team(members=t.members).name,
             )
             for t in teams
         ]
@@ -346,7 +347,8 @@ class TestEnsureTeamsAndMembers:
         api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
 
         api.ensure_teams_and_members(
-            constants.STUDENTS, permission=_repobee.apimeta.TeamPermission.PULL
+            constants.STUDENTS,
+            permission=repobee_plug.apimeta.TeamPermission.PULL,
         )
 
         actual_teams = api.get_teams()
@@ -464,7 +466,7 @@ class TestCreateRepos:
             for group in constants.STUDENTS
         ]
         yield [
-            _repobee.apimeta.Repo(
+            repobee_plug.apimeta.Repo(
                 name=_repobee.util.generate_repo_name(group.name, master_name),
                 description="Student repo",
                 private=True,

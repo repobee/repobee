@@ -28,10 +28,6 @@ class RepoBeeException(Exception):
         return "<{}(msg='{}')>".format(type(self).__name__, str(self.msg))
 
 
-class APIImplementationError(RepoBeeException):
-    """Raise when an API is defined incorrectly."""
-
-
 class ParseError(RepoBeeException):
     """Raise when something goes wrong in parsing."""
 

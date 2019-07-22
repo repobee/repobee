@@ -11,7 +11,7 @@ import sys
 import pathlib
 from typing import Iterable, Generator, Union, Set
 
-from _repobee import apimeta
+from repobee_plug import apimeta
 
 
 def read_issue(issue_path: str) -> apimeta.Issue:
