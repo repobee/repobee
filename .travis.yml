@@ -2,7 +2,7 @@ language: python
 branches:
   only:
   - master
-  - "/^v\\d+\\.\\d+[.ab]\\d+$/"
+  - "/^v\\d+\\.\\d+\\.\\d+(-(alpha|beta|rc)(\\.\\d+)?)?$/"
 matrix:
   include:
   - os: linux
