@@ -13,63 +13,55 @@ If N is odd, the students are split into (N-1)/2 groups, in which one group has
 .. moduleauthor:: Simon Larsén
 """
 import random
-from typing import Callable, Iterable, Mapping, List
+from typing import List
 
 import daiquiri
 
-from repobee_plug import repobee_hook
+import repobee_plug as plug
 
 LOGGER = daiquiri.getLogger(name=__file__)
 
 
-@repobee_hook
+@plug.repobee_hook
 def generate_review_allocations(
-    master_repo_name: str,
-    students: Iterable[str],
-    review_team_name_function: Callable[[str, str], str],
-    num_reviews: int = 1,
-) -> Mapping[str, List[str]]:
-    """Generate a (peer_review_team -> reviewers) mapping for each student
-    repository (i.e. <student>-<master_repo_name>), where len(reviewers) =
-    1 or 2.
+    teams: List[plug.Team], num_reviews: int = 1
+) -> List[plug.ReviewAllocation]:
+    """Generate peer review allocations such that if team_a reviews team_b,
+    then team_b reviews team_a, and no others!
 
     The ``num_reviews`` argument is ignored by this plugin.
 
     Args:
-        master_repo_name: Name of a master repository.
-        students: Students for which to generate peer review allocations.
-        review_team_name_function: A function that takes a master repo name
-            as its first argument, and a student username as its second, and
-            returns a review team name.
+        teams: Student teams for which to allocate reviews.
         num_reviews: Ignored by this plugin.
     Returns:
-        a (peer_review_team -> reviewers) mapping for each student repository.
+        A list of allocations that
     """
-    students = list(students)
+    teams = list(teams)
     if num_reviews != 1:
         LOGGER.warning(
             "num_reviews specified to {}, but in pairwise assignment "
             "num_reviews is ignored".format(num_reviews)
         )
-    if len(students) < 2:
+    if len(teams) < 2:
         raise ValueError(
-            "there must be at least 2 students for peer review, "
-            "but {} were provided".format(len(students))
+            "there must be at least 2 teams for peer review, "
+            "but {} were provided".format(len(teams))
         )
 
-    random.shuffle(students)
+    random.shuffle(teams)
 
-    groups = [
-        (students[i - 1], students[i]) for i in range(1, len(students), 2)
-    ]
-    if len(students) % 2:
-        groups[-1] = (*groups[-1], students[-1])
+    groups = [(teams[i - 1], teams[i]) for i in range(1, len(teams), 2)]
+    if len(teams) % 2:
+        groups[-1] = (*groups[-1], teams[-1])
 
-    allocations = {}
+    allocations = []
     for group in groups:
-        for i, reviewer in enumerate(group):
-            student = group[(i + 1) % len(group)]
-            allocations[
-                review_team_name_function(student, master_repo_name)
-            ] = [reviewer]
+        for i, review_team in enumerate(group):
+            reviewed_team = group[(i + 1) % len(group)]
+            allocations.append(
+                plug.ReviewAllocation(
+                    review_team=review_team, reviewed_team=reviewed_team
+                )
+            )
     return allocations

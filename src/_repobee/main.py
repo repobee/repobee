@@ -77,7 +77,7 @@ def main(sys_args: List[str]):
         traceback = parsed_args.traceback
         pre_init = False
         cli.dispatch_command(parsed_args, api, ext_commands)
-    except (Exception, SystemExit) as exc:
+    except Exception as exc:
         # FileErrors can occur during pre-init because of reading the config
         # and we don't want tracebacks for those (afaik at this time)
         if traceback or (
