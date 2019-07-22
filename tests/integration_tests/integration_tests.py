@@ -8,11 +8,12 @@ import itertools
 import pytest
 import gitlab
 
+from repobee_plug import apimeta
+
 import _repobee.ext
 import _repobee.ext.gitlab
 import _repobee.cli
 from _repobee import util
-from _repobee import apimeta
 
 assert os.getenv(
     "REPOBEE_NO_VERIFY_SSL"
@@ -211,9 +212,10 @@ def with_student_repos(restore):
         ]
     )
 
-    run_in_docker(command)
+    result = run_in_docker(command)
 
     # pre-test asserts
+    assert result.returncode == 0
     assert_repos_exist(STUDENT_TEAMS, MASTER_REPO_NAMES)
     assert_groups_exist(STUDENT_TEAMS)
 
@@ -302,6 +304,7 @@ class TestClone:
 
         result = run_in_docker(command, extra_args=tmpdir_volume_arg)
 
+        print(result)
         assert result.returncode == 0
         assert_cloned_repos(STUDENT_REPO_NAMES, tmpdir)
 

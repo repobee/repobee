@@ -25,7 +25,7 @@ import repobee_plug as plug
 from _repobee import exception
 from _repobee import tuples
 from _repobee import util
-from _repobee import apimeta
+from repobee_plug import apimeta
 
 REQUIRED_OAUTH_SCOPES = {"admin:org", "repo"}
 ISSUE_GENERATOR = Generator[apimeta.Issue, None, None]

@@ -14,7 +14,7 @@ import os
 import daiquiri
 import repobee_plug as plug
 
-from _repobee import apimeta
+from repobee_plug import apimeta
 from _repobee import constants
 
 LOGGER = daiquiri.getLogger(__file__)

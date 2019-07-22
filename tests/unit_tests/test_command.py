@@ -11,7 +11,7 @@ from _repobee import git
 from _repobee import util
 from _repobee import exception
 from _repobee import plugin
-from _repobee import apimeta
+from repobee_plug import apimeta
 
 from repobee_plug import HookResult, repobee_hook, Status
 
