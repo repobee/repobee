@@ -179,16 +179,6 @@ def parse_args(
     master_urls = _repo_names_to_urls(master_names, master_org_name, api)
     assert master_urls and master_names
 
-    groups = _extract_groups(args)
-    if subparser in [
-        ASSIGN_REVIEWS_PARSER,
-        CHECK_REVIEW_PROGRESS_PARSER,
-        ASSIGN_REVIEWS_PARSER,
-    ] and any([len(g.members) > 1 for g in groups]):
-        raise exception.ParseError(
-            "review commands do not currently support groups of students"
-        )
-
     args_dict = vars(args)
     args_dict.setdefault("master_org_name", None)
     args_dict.setdefault("title_regex", None)
@@ -196,11 +186,10 @@ def parse_args(
     args_dict.setdefault("show_body", None)
     args_dict.setdefault("author", None)
     args_dict.setdefault("num_reviews", None)
-
+    args_dict["students"] = _extract_groups(args)
     args_dict["issue"] = (
         util.read_issue(args.issue) if "issue" in args and args.issue else None
     )
-    args_dict["students"] = _extract_groups(args)
     args_dict["master_repo_urls"] = master_urls
     args_dict["master_repo_names"] = master_names
     args_dict["token"] = token

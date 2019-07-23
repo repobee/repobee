@@ -491,16 +491,19 @@ class GitHubAPI(apimeta.API):
     ) -> Mapping[str, List[tuples.Review]]:
         """See :py:func:`_repobee.apimeta.APISpec.get_review_progress`."""
         reviews = collections.defaultdict(list)
-        review_teams = self._get_teams_in(review_team_names)
-        for review_team in review_teams:
+        review_team_impls = self._get_teams_in(review_team_names)
+        for review_team_impl in review_team_impls:
             with _try_api_request():
-                LOGGER.info("Processing {}".format(review_team.name))
-                reviewers = set(m.login for m in review_team.get_members())
-                repos = list(review_team.get_repos())
+                LOGGER.info("Processing {}".format(review_team_impl.name))
+                reviewers = set(
+                    m.login for m in review_team_impl.get_members()
+                )
+                review_teams = self._extract_review_teams(teams, reviewers)
+                repos = list(review_team_impl.get_repos())
                 if len(repos) != 1:
                     LOGGER.warning(
                         "Expected {} to have 1 associated repo, found {}."
-                        "Skipping...".format(review_team.name, len(repos))
+                        "Skipping...".format(review_team_impl.name, len(repos))
                     )
                     continue
 
@@ -511,15 +514,28 @@ class GitHubAPI(apimeta.API):
                     if re.match(title_regex, issue.title)
                 }
 
-                for reviewer in reviewers:
-                    reviews[reviewer].append(
+                for team in review_teams:
+                    reviews[str(team)].append(
                         tuples.Review(
                             repo=repo.name,
-                            done=reviewer in review_issue_authors,
+                            done=any(
+                                map(
+                                    review_issue_authors.__contains__,
+                                    team.members,
+                                )
+                            ),
                         )
                     )
 
         return reviews
+
+    def _extract_review_teams(self, teams, reviewers):
+        review_teams = []
+        for team in teams:
+            if any(map(team.members.__contains__, reviewers)):
+                review_teams.append(team)
+        print(teams, reviewers, review_teams)
+        return review_teams
 
     def _add_repos_to_teams(
         self, team_to_repos: Mapping[str, Iterable[str]]
