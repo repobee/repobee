@@ -535,7 +535,6 @@ class GitHubAPI(plug.API):
         for team in teams:
             if any(map(team.members.__contains__, reviewers)):
                 review_teams.append(team)
-        print(teams, reviewers, review_teams)
         return review_teams
 
     def _add_repos_to_teams(

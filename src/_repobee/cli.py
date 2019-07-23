@@ -23,6 +23,7 @@ import repobee_plug as plug
 
 import _repobee
 from _repobee import plugin
+from _repobee import tuples
 from _repobee import command
 from _repobee import util
 from _repobee import exception
@@ -76,7 +77,7 @@ CLOSE_ISSUE_PARSER = "close-issues"
 LIST_ISSUES_PARSER = "list-issues"
 VERIFY_PARSER = "verify-settings"
 ASSIGN_REVIEWS_PARSER = "assign-reviews"
-PURGE_REVIEW_TEAMS_PARSER = "purge-review-teams"
+PURGE_REVIEW_TEAMS_PARSER = "end-reviews"
 CHECK_REVIEW_PROGRESS_PARSER = "check-reviews"
 SHOW_CONFIG_PARSER = "show-config"
 
@@ -101,7 +102,11 @@ PARSER_NAMES = (
 # ASSIGN_REVIEWS_PARSER_OLD: tuples.Deprecation(
 #     replacement=ASSIGN_REVIEWS_PARSER, remove_by="v2.0.0"
 # ),
-DEPRECATED_PARSERS = dict()
+DEPRECATED_PARSERS = {
+    "purge-review-teams": tuples.Deprecation(
+        replacement=PURGE_REVIEW_TEAMS_PARSER, remove_by="v2.2.0"
+    )
+}
 
 # any pre-parser options go here
 PRE_PARSER_PLUG_OPTS = ["-p", "--plug"]
@@ -385,8 +390,22 @@ def _add_peer_review_parsers(base_parsers, subparsers):
     )
     subparsers.add_parser(
         PURGE_REVIEW_TEAMS_PARSER,
-        description="Delete review teams assigned with `assign-peer-reviews`",
-        help="Delete review teams.",
+        description=(
+            "Delete review allocations assigned with `assign-reviews`. "
+            "This is a destructive action, as the allocations for reviews "
+            "are irreversibly deleted. The purpose of this command is to "
+            "revoke the reviewers' read access to reviewed repos, and to "
+            "clean up the allocations (i.e. deleting the review teams when "
+            "using GitHub, or groups when using GitLab). It will however not "
+            "do anything with the review issues. You can NOT run "
+            "`check-reviews` after `end-reviews`, as the former "
+            "needs the allocations to function properly. Use this command "
+            "only when reviews are done."
+        ),
+        help=(
+            "Delete review allocations created by `assign-reviews`. "
+            "DESTRUCTIVE ACTION: read help section before using."
+        ),
         parents=base_parsers,
         formatter_class=_OrderedFormatter,
     )
@@ -764,7 +783,7 @@ def _create_base_parsers(show_all_opts):
         LOGGER.info(
             "CLI options that are set in the config file are suppressed in "
             "help sections, run with pre-parser option {all_opts_arg} to "
-            "unsuppress. Example: gitlab {all_opts_arg} setup -h".format(
+            "unsuppress. Example: repobee {all_opts_arg} setup -h".format(
                 all_opts_arg=PRE_PARSER_SHOW_ALL_OPTS
             )
         )

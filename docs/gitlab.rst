@@ -36,7 +36,7 @@ open-issues          Done           v1.6.0
 close-issues         Done           v1.6.0
 list-issues          Done           v1.6.0
 assign-reviews       Not started    Late 2019
-purge-review-teams   Not started    Late 2019
+end-reviews          Not started    Late 2019
 check-reviews        Not started    Late 2019
 verify-settings      Not started    August 2019
 ===================  =============  ============
