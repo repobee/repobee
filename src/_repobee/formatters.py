@@ -34,7 +34,6 @@ def format_peer_review_progress_output(
         ),
     ]
     even = False
-    print(reviews)
     for review_team in teams:
         even = not even
         review_list = reviews[str(review_team)]
