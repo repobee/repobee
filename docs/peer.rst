@@ -1,7 +1,7 @@
 .. _peer review:
 
-Peer review (``assign-reviews`` and ``end-reviews`` commands)
-**********************************************************************************************
+Peer review (``assign-reviews``, ``check-reviews`` and ``end-reviews`` commands)
+********************************************************************************
 Peer reviewing is an important part of a programming curriculum, so of course
 RepoBee facilitates this! The relevant commands are ``assign-reviews`` and
 ``end-reviews``.  Like much of the other functionality in RepoBee, the peer
@@ -73,12 +73,10 @@ The following steps were performed:
    open issues, but they can't push to (and therefore can't modify) the repo.
 
 That's it for the basic functionality. The intent is that students should open
-an issue in every repo they are to peer review, with a specific title. The title
-can then be regexed in the upcoming ``check-review-progress`` to see which
-students assigned to the different peer review teams have created their review
-issue. Of course, other schemes can be cooked up, but that is my current vision
-of how I myself will use it. Now, let's talk a bit about that ``--issue``
-argument.
+an issue in every repo they are to peer review, with a specific title. The issues
+can then be searched by title, and the ``check-reviews`` command can find which
+students have opened issues in the repositories they've been assigned to review.
+Now, let's talk a bit about that ``--issue`` argument.
 
 .. important::
 
@@ -123,23 +121,54 @@ specifying the issue like this:
 
 .. code-block:: bash
 
-    $ repobee assign-reviews --mn task-2 --sf students.txt --num-reviews 2 --issue issue.md
-    [INFO] Created team slarse-task-2-review
-    [INFO] Created team glennol-task-2-review
-    [INFO] Created team glassey-task-2-review
-    [INFO] Adding members glassey, glennol to team slarse-task-2-review
-    [INFO] Adding members slarse, glassey to team glennol-task-2-review
-    [INFO] Adding members glennol, slarse to team glassey-task-2-review
-    [INFO] Opened issue glennol-task-2/#2-'Review of task-2'
-    [INFO] Adding team glennol-task-2-review to repo glennol-task-2 with 'pull' permission
-    [INFO] Opened issue glassey-task-2/#2-'Review of task-2'
-    [INFO] Adding team glassey-task-2-review to repo glassey-task-2 with 'pull' permission
-    [INFO] Opened issue slarse-task-2/#2-'Review of task-2'
-    [INFO] Adding team slarse-task-2-review to repo slarse-task-2 with 'pull' permission
+   $ repobee assign-reviews --mn task-2 --sf students.txt --num-reviews 2 --issue issue.md
+   [INFO] Created team slarse-task-2-review
+   [INFO] Created team glennol-task-2-review
+   [INFO] Created team glassey-task-2-review
+   [INFO] Adding members glennol, glassey to team slarse-task-2-review
+   [INFO] Adding members glassey, slarse to team glennol-task-2-review
+   [INFO] Adding members slarse, glennol to team glassey-task-2-review
+   [INFO] Adding team glassey-task-2-review to repo glassey-task-2 with 'pull' permission
+   [INFO] Opened issue glassey-task-2/#8-'Review of task-2'
+   [INFO] Adding team glennol-task-2-review to repo glennol-task-2 with 'pull' permission
+   [INFO] Opened issue glennol-task-2/#8-'Review of task-2'
+   [INFO] Adding team slarse-task-2-review to repo slarse-task-2 with 'pull' permission
+   [INFO] Opened issue slarse-task-2/#9-'Review of task-2'
 
 As you can tell from the last few lines, the title is the one specified in the
 issue, and not the default title as it was before. And that's pretty much it for
 setting up the peer review repos.
+
+Checking review progress with ``check-reviews``
+===============================================
+The ``check-reviews`` command provides a quick and easy way of checking which
+students have performed their reviews. You provide it with the same information
+that you do for ``assign-reviews``, but additionally also provide a regex to
+match against issue titles. The command then finds all of the associated review
+teams, and checks which students have opened issues with matching titles in their
+alloted repositories. Of course, this says *nothing* about the content of those
+issues: it purely checks that the issues have been opened at all.
+``--num-reviews`` is also required here, as it is used as an expected value for
+how many reviews each student *should* be assigned to review. It is a simple
+but fairly effective way of detecting if students have simply left their review
+teams. Here's an example call:
+
+.. code-block:: bash
+
+   $ repobee check-reviews --mn task-2 --sf students.txt --num-reviews 2 --title-regex '\APeer review\Z'
+   [INFO] Processing glassey-task-2-review
+   [INFO] Processing glennol-task-2-review
+   [INFO] Processing slarse-task-2-review
+   reviewer        num done        num remaining   repos remaining
+   glennol         0               2               glassey-task-2,slarse-task-2
+   slarse          2               0
+   glassey         0               2               glennol-task-2,slarse-task-2
+
+The output is color-coded in the terminal, making it easier to parse. I find
+this higly useful when doing peer reviews in a classroom settings, as I can
+check which students are done without having to ask them out loud every five
+minutes. The next command lets you clean up review teams and thereby revoke
+reviewers' read access once reviews are over and done with.
 
 .. _purge peer review teams:
 
