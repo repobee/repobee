@@ -388,27 +388,6 @@ def _add_peer_review_parsers(base_parsers, subparsers):
         ),
         type=str,
     )
-    subparsers.add_parser(
-        PURGE_REVIEW_TEAMS_PARSER,
-        description=(
-            "Delete review allocations assigned with `assign-reviews`. "
-            "This is a destructive action, as the allocations for reviews "
-            "are irreversibly deleted. The purpose of this command is to "
-            "revoke the reviewers' read access to reviewed repos, and to "
-            "clean up the allocations (i.e. deleting the review teams when "
-            "using GitHub, or groups when using GitLab). It will however not "
-            "do anything with the review issues. You can NOT run "
-            "`check-reviews` after `end-reviews`, as the former "
-            "needs the allocations to function properly. Use this command "
-            "only when reviews are done."
-        ),
-        help=(
-            "Delete review allocations created by `assign-reviews`. "
-            "DESTRUCTIVE ACTION: read help section before using."
-        ),
-        parents=base_parsers,
-        formatter_class=_OrderedFormatter,
-    )
     check_review_progress = subparsers.add_parser(
         CHECK_REVIEW_PROGRESS_PARSER,
         description=(
@@ -443,6 +422,27 @@ def _add_peer_review_parsers(base_parsers, subparsers):
         ),
         type=int,
         required=True,
+    )
+    subparsers.add_parser(
+        PURGE_REVIEW_TEAMS_PARSER,
+        description=(
+            "Delete review allocations assigned with `assign-reviews`. "
+            "This is a destructive action, as the allocations for reviews "
+            "are irreversibly deleted. The purpose of this command is to "
+            "revoke the reviewers' read access to reviewed repos, and to "
+            "clean up the allocations (i.e. deleting the review teams when "
+            "using GitHub, or groups when using GitLab). It will however not "
+            "do anything with the review issues. You can NOT run "
+            "`check-reviews` after `end-reviews`, as the former "
+            "needs the allocations to function properly. Use this command "
+            "only when reviews are done."
+        ),
+        help=(
+            "Delete review allocations created by `assign-reviews`. "
+            "DESTRUCTIVE ACTION: read help section before using."
+        ),
+        parents=base_parsers,
+        formatter_class=_OrderedFormatter,
     )
 
 
@@ -722,6 +722,16 @@ def _add_subparsers(parser, show_all_opts, ext_commands):
         type=str,
     )
 
+    clone = subparsers.add_parser(
+        CLONE_PARSER,
+        help="Clone student repos.",
+        description="Clone student repos asynchronously in bulk.",
+        parents=[base_parser, base_student_parser, repo_name_parser],
+        formatter_class=_OrderedFormatter,
+    )
+
+    plug.manager.hook.clone_parser_hook(clone_parser=clone)
+
     subparsers.add_parser(
         MIGRATE_PARSER,
         help="Migrate repositories into the target organization.",
@@ -733,16 +743,6 @@ def _add_subparsers(parser, show_all_opts, ext_commands):
         parents=[repo_name_parser, base_parser],
         formatter_class=_OrderedFormatter,
     )
-
-    clone = subparsers.add_parser(
-        CLONE_PARSER,
-        help="Clone student repos.",
-        description="Clone student repos asynchronously in bulk.",
-        parents=[base_parser, base_student_parser, repo_name_parser],
-        formatter_class=_OrderedFormatter,
-    )
-
-    plug.manager.hook.clone_parser_hook(clone_parser=clone)
 
     _add_issue_parsers(
         [base_parser, base_student_parser, repo_name_parser], subparsers
