@@ -58,8 +58,8 @@ def setup_student_repos(
     Args:
         master_repo_urls: URLs to master repos.
         teams: An iterable of student teams specifying the teams to be setup.
-        api: An implementation of :py:class:`plug.API` used to interface
-            with the platform (e.g. GitHub or GitLab) instance.
+        api: An implementation of :py:class:`repobee_plug.API` used to
+            interface with the platform (e.g. GitHub or GitLab) instance.
     """
     urls = list(master_repo_urls)  # safe copy
 
@@ -85,8 +85,8 @@ def _add_students_to_teams(
 
     Args:
         teams: Team objects specifying student groups.
-        api: An implementation of :py:class:`apimeta.API` used to interface
-            with the platform (e.g. GitHub or GitLab) instance.
+        api: An implementation of :py:class:`repobee_plug.API` used to
+            interface with the platform (e.g. GitHub or GitLab) instance.
     Returns:
         all teams associated with the students in the students list.
     """
@@ -151,8 +151,8 @@ def update_student_repos(
         master_repo_urls: URLs to master repos. Must be in the organization
             that the api is set up for.
         teams: An iterable of student teams.
-        api: An implementation of :py:class:`apimeta.API` used to interface
-            with the platform (e.g. GitHub or GitLab) instance.
+        api: An implementation of :py:class:`repobee_plug.API` used to
+            interface with the platform (e.g. GitHub or GitLab) instance.
         issue: An optional issue to open in repos to which pushing fails.
     """
     urls = list(master_repo_urls)  # safe copy
@@ -188,8 +188,8 @@ def _open_issue_by_urls(
     Args:
         repo_urls: URLs to repos in which to open an issue.
         issue: An issue to open.
-        api: An implementation of :py:class:`apimeta.API` used to interface
-            with the platform (e.g. GitHub or GitLab) instance.
+        api: An implementation of :py:class:`repobee_plug.API` used to
+            interface with the platform (e.g. GitHub or GitLab) instance.
     """
     repo_names = [util.repo_name(url) for url in repo_urls]
     api.open_issue(issue.title, issue.body, repo_names)
@@ -209,8 +209,8 @@ def list_issues(
     Args:
         master_repo_names: Names of master repositories.
         teams: An iterable of student teams.
-        api: An implementation of :py:class:`apimeta.API` used to interface
-            with the platform (e.g. GitHub or GitLab) instance.
+        api: An implementation of :py:class:`repobee_plug.API` used to
+            interface with the platform (e.g. GitHub or GitLab) instance.
         state: state of the repo (open or closed). Defaults to 'open'.
         title_regex: If specified, only issues with titles matching the regex
             are displayed. Defaults to the empty string (which matches
@@ -315,8 +315,8 @@ def open_issue(
         master_repo_names: Names of master repositories.
         teams: Team objects specifying student groups.
         issue: An issue to open.
-        api: An implementation of :py:class:`apimeta.API` used to interface
-            with the platform (e.g. GitHub or GitLab) instance.
+        api: An implementation of :py:class:`repobee_plug.API` used to
+            interface with the platform (e.g. GitHub or GitLab) instance.
     """
     repo_names = util.generate_repo_names(teams, master_repo_names)
     api.open_issue(issue.title, issue.body, repo_names)
@@ -334,8 +334,8 @@ def close_issue(
         title_regex: A regex to match against issue titles.
         master_repo_names: Names of master repositories.
         teams: Team objects specifying student groups.
-        api: An implementation of :py:class:`apimeta.API` used to interface
-            with the platform (e.g. GitHub or GitLab) instance.
+        api: An implementation of :py:class:`repobee_plug.API` used to
+            interface with the platform (e.g. GitHub or GitLab) instance.
     """
     repo_names = util.generate_repo_names(teams, master_repo_names)
     api.close_issue(title_regex, repo_names)
@@ -350,8 +350,8 @@ def clone_repos(
     Args:
         master_repo_names: Names of master repos.
         teams: An iterable of student teams.
-        api: An implementation of :py:class:`apimeta.API` used to interface
-            with the platform (e.g. GitHub or GitLab) instance.
+        api: An implementation of :py:class:`repobee_plug.API` used to
+            interface with the platform (e.g. GitHub or GitLab) instance.
     """
     repo_urls = api.get_repo_urls(master_repo_names, teams=teams)
     # the reason we first compute the urls and then extract repo names is that
@@ -424,8 +424,8 @@ def migrate_repos(master_repo_urls: Iterable[str], api: plug.API) -> None:
     Args:
         master_repo_urls: HTTPS URLs to the master repos to migrate.
             the username that is used in the push.
-        api: An implementation of :py:class:`apimeta.API` used to interface
-            with the platform (e.g. GitHub or GitLab) instance.
+        api: An implementation of :py:class:`repobee_plug.API` used to
+            interface with the platform (e.g. GitHub or GitLab) instance.
     """
     master_names = [util.repo_name(url) for url in master_repo_urls]
 
@@ -458,7 +458,7 @@ def migrate_repos(master_repo_urls: Iterable[str], api: plug.API) -> None:
 
 def assign_peer_reviews(
     master_repo_names: Iterable[str],
-    teams: Iterable[plug.Team],
+    teams: Iterable[plug.Status],
     num_reviews: int,
     issue: Optional[plug.Issue],
     api: plug.API,
@@ -480,8 +480,8 @@ def assign_peer_reviews(
             (consequently, the amount of reviews of each repo)
         issue: An issue with review instructions to be opened in the considered
             repos.
-        api: An implementation of :py:class:`apimeta.API` used to interface
-            with the platform (e.g. GitHub or GitLab) instance.
+        api: An implementation of :py:class:`repobee_plug.API` used to
+            interface with the platform (e.g. GitHub or GitLab) instance.
     """
     for master_name in master_repo_names:
         allocations = plug.manager.hook.generate_review_allocations(
@@ -531,8 +531,8 @@ def purge_review_teams(
     Args:
         master_repo_names: Names of master repos.
         students: An iterble of student teams.
-        api: An implementation of :py:class:`apimeta.API` used to interface
-            with the platform (e.g. GitHub or GitLab) instance.
+        api: An implementation of :py:class:`repobee_plug.API` used to
+            interface with the platform (e.g. GitHub or GitLab) instance.
     """
     review_team_names = [
         util.generate_review_team_name(student, master_repo_name)
@@ -557,8 +557,8 @@ def check_peer_review_progress(
         teams: An iterable of student teams.
         title_regex: A regex to match against issue titles.
         num_reviews: Amount of reviews each student is expected to have made.
-        api: An implementation of :py:class:`apimeta.API` used to interface
-            with the platform (e.g. GitHub or GitLab) instance.
+        api: An implementation of :py:class:`repobee_plug.API` used to
+            interface with the platform (e.g. GitHub or GitLab) instance.
 
     """
     review_team_names = [
