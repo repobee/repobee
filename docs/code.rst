@@ -44,15 +44,6 @@ util
     :members:
 
 
-API-related modules
-===================
-
-apimeta
--------
-
-.. automodule:: _repobee.apimeta
-   :members:
-
 Core plugins
 ============
 
@@ -97,3 +88,9 @@ pylint
 
 .. automodule:: _repobee.ext.pylint
     :members:
+
+config-wizard
+-------------
+
+.. automodule:: _repobee.ext.configwizard
+   :members:
