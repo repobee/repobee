@@ -1,17 +1,17 @@
 .. _peer review:
 
-Peer review (``assign-reviews`` and ``purge-review-teams`` commands)
+Peer review (``assign-reviews`` and ``end-reviews`` commands)
 **********************************************************************************************
 Peer reviewing is an important part of a programming curriculum, so of course
-RepoBee facilitates this! The relevant commands are
-``assign-reviews`` and ``purge-review-teams``.
-Like much of the other functionality in RepoBee, the peer review
-functionality is built around teams and limited access privileges. In short,
-every student repo up for review gets an associated peer review team generated,
-which has ``pull`` access to the repo. Each student then gets added to ``0 < N
-< num_students`` peer review teams, and are to open a peer review issue in the
-associated repos. This is at least the the default. See :ref:`review allocation
-algorithm` for other available review allocation schemes.
+RepoBee facilitates this! The relevant commands are ``assign-reviews`` and
+``end-reviews``.  Like much of the other functionality in RepoBee, the peer
+review functionality is built around indirect access through teams with limited
+access privileges. In short, every student repo up for review gets an
+associated peer review team generated, which has ``pull`` access to the repo.
+Each student then gets added to ``0 < N < num_students`` peer review teams, and
+are to open a peer review issue in the associated repos. This is at least the
+the default. See :ref:`review allocation algorithm` for other available review
+allocation schemes.
 
 .. important::
 
@@ -43,20 +43,20 @@ that ``students.txt`` lists our three favorite students slarse, glassey and glen
 
     $ repobee assign-reviews --mn task-1 --sf students.txt --num-reviews 2
     # step 1
-    [INFO] created team slarse-task-1-review
-    [INFO] created team glennol-task-1-review
-    [INFO] created team glassey-task-1-review
+    [INFO] Created team slarse-task-1-review
+    [INFO] Created team glennol-task-1-review
+    [INFO] Created team glassey-task-1-review
     # step 2
-    [INFO] adding members glennol, glassey to team slarse-task-1-review
-    [INFO] adding members glassey, slarse to team glennol-task-1-review
-    [INFO] adding members slarse, glennol to team glassey-task-1-review
+    [INFO] Adding members glennol, glassey to team slarse-task-1-review
+    [INFO] Adding members glassey, slarse to team glennol-task-1-review
+    [INFO] Adding members slarse, glennol to team glassey-task-1-review
     # steps 3 and 4, interleaved
-    [INFO] opened issue glennol-task-1/#1-'Peer review'
-    [INFO] adding team glennol-task-1-review to repo glennol-task-1 with 'pull' permission
-    [INFO] opened issue glassey-task-1/#2-'Peer review'
-    [INFO] adding team glassey-task-1-review to repo glassey-task-1 with 'pull' permission
-    [INFO] opened issue slarse-task-1/#2-'Peer review'
-    [INFO] adding team slarse-task-1-review to repo slarse-task-1 with 'pull' permission
+    [INFO] Opened issue glennol-task-1/#1-'Peer review'
+    [INFO] Adding team glennol-task-1-review to repo glennol-task-1 with 'pull' permission
+    [INFO] Opened issue glassey-task-1/#2-'Peer review'
+    [INFO] Adding team glassey-task-1-review to repo glassey-task-1 with 'pull' permission
+    [INFO] Opened issue slarse-task-1/#2-'Peer review'
+    [INFO] Adding team slarse-task-1-review to repo slarse-task-1 with 'pull' permission
 
 The following steps were performed:
 
@@ -124,46 +124,59 @@ specifying the issue like this:
 .. code-block:: bash
 
     $ repobee assign-reviews --mn task-2 --sf students.txt --num-reviews 2 --issue issue.md
-    [INFO] created team slarse-task-2-review
-    [INFO] created team glennol-task-2-review
-    [INFO] created team glassey-task-2-review
-    [INFO] adding members glassey, glennol to team slarse-task-2-review
-    [INFO] adding members slarse, glassey to team glennol-task-2-review
-    [INFO] adding members glennol, slarse to team glassey-task-2-review
-    [INFO] opened issue glennol-task-2/#2-'Review of task-2'
-    [INFO] adding team glennol-task-2-review to repo glennol-task-2 with 'pull' permission
-    [INFO] opened issue glassey-task-2/#2-'Review of task-2'
-    [INFO] adding team glassey-task-2-review to repo glassey-task-2 with 'pull' permission
-    [INFO] opened issue slarse-task-2/#2-'Review of task-2'
-    [INFO] adding team slarse-task-2-review to repo slarse-task-2 with 'pull' permission
+    [INFO] Created team slarse-task-2-review
+    [INFO] Created team glennol-task-2-review
+    [INFO] Created team glassey-task-2-review
+    [INFO] Adding members glassey, glennol to team slarse-task-2-review
+    [INFO] Adding members slarse, glassey to team glennol-task-2-review
+    [INFO] Adding members glennol, slarse to team glassey-task-2-review
+    [INFO] Opened issue glennol-task-2/#2-'Review of task-2'
+    [INFO] Adding team glennol-task-2-review to repo glennol-task-2 with 'pull' permission
+    [INFO] Opened issue glassey-task-2/#2-'Review of task-2'
+    [INFO] Adding team glassey-task-2-review to repo glassey-task-2 with 'pull' permission
+    [INFO] Opened issue slarse-task-2/#2-'Review of task-2'
+    [INFO] Adding team slarse-task-2-review to repo slarse-task-2 with 'pull' permission
 
 As you can tell from the last few lines, the title is the one specified in the
 issue, and not the default title as it was before. And that's pretty much it for
 setting up the peer review repos.
 
-
 .. _purge peer review teams:
 
-Cleaning with ``purge-review-teams``
-=========================================
+Cleaning up with ``end-reviews``
+================================
 The one downside of using teams for access privileges is that we bloat the
 organization with a ton of teams. Once the deadline has passed and all peer
-reviews are done, there is little reason to keep them (in my mind). Therefore,
-the ``purge-review-teams`` command can be used to remove all peer review
-teams for a given set of student repos. Let's say that we're completely done
-with the peer reviews of ``task-1``, and want to remove the review teams.
-It's as simple as:
+reviews are done, there is little reason to keep them (in my mind). It can also
+often be a good idea to revoke the reviewers' access to reviewed repos if you
+yourself plan to provide feedback on the issue tracker, so as not to let the
+reviewers see it. Therefore, the ``end-reviews`` command can be used to remove
+all peer review teams for a given set of student repos, both cleaning up the
+organization and revoking reviewers' read access. Let's say that we're
+completely done with the peer reviews of ``task-1``, and want to remove the
+review teams. It's as simple as:
 
 .. code-block:: bash
 
-    $ repobee purge-review-teams --mn task-1 --sf students.txt
-    [INFO] deleted team glennol-task-1-review
-    [INFO] deleted team glassey-task-1-review
-    [INFO] deleted team slarse-task-1-review
+    $ repobee end-reviews --mn task-1 --sf students.txt
+    [INFO] Deleted team glennol-task-1-review
+    [INFO] Deleted team glassey-task-1-review
+    [INFO] Deleted team slarse-task-1-review
+
+.. warning::
+
+   ``end-reviews`` *deletes* review allocations created by ``assign-reviews``.
+   This is an irreversible action. You cannot run ``check-reviews`` after
+   running ``end-reviews`` for any given set of student repos, and there is
+   no functionality for retrieving deleted review allocations. Only use
+   ``end-reviews`` when reviews are truly done, **and** you have collected what
+   results you need. If being able to backup and restore review allocations is
+   something you need, please open an issue with a feature request `on the
+   issue tracker <https://github.com/repobee/repobee/issues/new>`_.
 
 And that's it, the review teams are gone. If you also want to close the related
 issues, you can simply use the ``close-issues`` command for that (see
-:ref:`close`). ``purge-review-teams`` plays one more important role:
+:ref:`close`). ``end-reviews`` plays one more important role:
 if you mess something up when assigning the peer reviews. The next section
 details how you can deal with such a scenario.
 
@@ -181,7 +194,7 @@ the student ``cabbage`` in the reviews for ``task-2`` back at
    action if you find any reviews already posted (appropriate being anything you
    see fit to alleviate the situation of affected students possibly being
    assigned new repos to review).
-2. Purge the review teams with ``repobee purge-review-teams --mn task-2
+2. Purge the review teams with ``repobee end-reviews --mn task-2
    --sf students.txt``
 3. Close all review issues with ``repobee close-issues --mn task-2 --sf
    students.txt -r '^Review of task-2$'``
