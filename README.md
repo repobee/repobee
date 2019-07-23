@@ -86,34 +86,29 @@ $ repobee -h
 usage: repobee [-h] [-v]
                 {show-config,setup,update,migrate,clone,open-issues,
                  close-issues,list-issues,assign-reviews,
-                 purge-review-teams,check-reviews,verify-settings}
+                 end-reviews,check-reviews,verify-settings}
                 ...
 
-A CLI tool for administering large amounts of git repositories on GitHub
-instances. See the full documentation at https://repobee.readthedocs.io
+A CLI tool for administrating large amounts of git repositories on GitHub and
+GitLab instances. See the full documentation at https://repobee.readthedocs.io
 
 positional arguments:
-  {show-config,setup,update,migrate,clone,open-issues,
-   close-issues,list-issues,assign-reviews,
-   purge-review-teams,check-reviews,verify-settings}
-    show-config         Show the configuration file
+  {setup,update,migrate,clone,open-issues,close-issues,list-issues,assign-reviews,end-reviews,check-reviews,show-config,verify-settings,config-wizard}
     setup               Setup student repos.
     update              Update existing student repos.
-    migrate             Migrate master repositories into the target
-                        organization.
+    migrate             Migrate repositories into the target organization.
     clone               Clone student repos.
     open-issues         Open issues in student repos.
     close-issues        Close issues in student repos.
     list-issues         List issues in student repos.
-    assign-reviews      Randomly assign students to peer review each others'
-                        repos.
-    purge-review-teams  Remove all review teams associated with the specified
-                        students and master repos.
-    check-reviews       Fetch all peer review teams for the specified student
-                        repos, and check which assigned reviews have been done
-                        (i.e. which issues have been opened).
-    verify-settings     Verify your settings, such as the base url and the
-                        OAUTH token.
+    assign-reviews      Assign students to peer review each others' repos.
+    check-reviews       Check which students have opened peer review issues.
+    end-reviews         Delete review allocations created by `assign-reviews`.
+                        DESTRUCTIVE ACTION: read help section before using.
+    show-config         Show the configuration file
+    verify-settings     Verify core settings.
+    config-wizard       Interactive configuration wizard to set up the config
+                        file.
 
 optional arguments:
   -h, --help            show this help message and exit
