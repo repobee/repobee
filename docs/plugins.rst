@@ -1,7 +1,7 @@
 .. _plugins:
 
-Plugins for ``repobee``
-************************
+Plugins for RepoBee
+*******************
 RepoBee defines a fairly simple but powerful plugin system that allows
 programmers to hook into certain execution points. To read more about the
 details of these hooks (and how to write your own plugins), see the
@@ -52,8 +52,8 @@ headers. See the documentation of the specific plugins for details on that.
 Built-in API plugins
 ====================
 RepoBee ships with two API plugins, one for GitHub
-(:py:mod:`repobee.ext.github`) and one for GitLab
-(:py:mod:`repobee.ext.gitlab`). The GitHub plugin is loaded by default. If you
+(:py:mod:`_repobee.ext.github`) and one for GitLab
+(:py:mod:`_repobee.ext.gitlab`). The GitHub plugin is loaded by default. If you
 use GitLab, you must specify the ``gitlab`` plugin either on the command line
 or in the configuration file.
 
@@ -61,15 +61,15 @@ Built-in subcommand plugins
 ===========================
 The ``config-wizard`` command is actually a plugin, which loads by default.
 It's mostly implemented as a plugin for demonstrational purposes, showing how
-to add a command to RepoBee. See :py:mod:`repobee.ext.configwizard` for the
+to add a command to RepoBee. See :py:mod:`_repobee.ext.configwizard` for the
 source code.
 
 Built-in plugins for ``repobee assign-reviews``
 =====================================================
 RepoBee ships with two plugins for the ``assign-reviews`` command.  The
-first of these is located in the :py:mod:`~repobee.ext.defaults` plugin, and
+first of these is located in the :py:mod:`~_repobee.ext.defaults` plugin, and
 just randomly allocates student to review each other. The second plugin is the
-:py:mod:`~repobee.ext.pairwise` plugin. This plugin will divide ``N`` students
+:py:mod:`~_repobee.ext.pairwise` plugin. This plugin will divide ``N`` students
 into ``N/2`` groups of 2 students (and possibly one with 3 students, if ``N``
 is odd), and have them peer review the other person in the group. The intention
 is to let students sit together and be able to ask questions regarding the repo
@@ -81,7 +81,7 @@ plugin ignores the ``--num-reviews`` argument.
 Built-in Plugins for ``repobee clone``
 =======================================
 RepoBee currently ships with two built-in plugins:
-:py:mod:`~repobee.ext.javac` and :py:mod:`~repobee.ext.pylint`. The former
+:py:mod:`~_repobee.ext.javac` and :py:mod:`~_repobee.ext.pylint`. The former
 attempts to compile all ``.java`` files in each cloned repo, while the latter
 runs pylint_ on every ``.py`` file in each cloned repo. These plugins are
 mostly meant to serve as demonstarations of how to implement simple plugins in
@@ -89,11 +89,11 @@ the ``repobee`` package itself.
 
 ``pylint``
 ----------
-The :py:mod:`~repobee.ext.pylint` plugin is fairly simple: it finds all
+The :py:mod:`~_repobee.ext.pylint` plugin is fairly simple: it finds all
 ``.py`` files in the repo, and runs ``pylint`` on them individually.
 For each file ``somefile.py``, it stores the output in the file
 ``somefile.py.lint`` in the same directory. That's it, the
-:py:mod:`~repobee.ext.pylint` plugin has no other features, it just does its
+:py:mod:`~_repobee.ext.pylint` plugin has no other features, it just does its
 thing.
 
 .. important::
@@ -103,19 +103,19 @@ thing.
 
 ``javac``
 ---------
-The :py:mod:`~repobee.ext.javac` plugin runs the Java compiler program
+The :py:mod:`~_repobee.ext.javac` plugin runs the Java compiler program
 ``javac`` on all ``.java`` files in the repo. Note that it tries to compile
 *all* files at the same time.
 
 CLI Option
 ++++++++++
-:py:mod:`~repobee.ext.javac` adds a command line option ``-i|--ignore`` to
+:py:mod:`~_repobee.ext.javac` adds a command line option ``-i|--ignore`` to
 ``repobee clone``, which takes a space-separated list of files to ignore when
 compiling.
 
 Configuration
 +++++++++++++
-:py:mod:`~repobee.ext.javac` also adds a configuration file option
+:py:mod:`~_repobee.ext.javac` also adds a configuration file option
 ``ignore`` taking a comma-separated list of files, which must be added under
 the ``[javac]`` section. Example:
 
@@ -129,7 +129,7 @@ the ``[javac]`` section. Example:
 
 .. important::
 
-    The :py:mod:`~repobee.ext.javac` plugin requires ``javac`` to be installed
+    The :py:mod:`~_repobee.ext.javac` plugin requires ``javac`` to be installed
     and accessible from the command line. All ``JDK`` distributions come with
     ``javac``, but you must also ensure that it is on the PATH variable.
 

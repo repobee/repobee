@@ -25,21 +25,20 @@ import repobee_plug as plug
 from _repobee import exception
 from _repobee import tuples
 from _repobee import util
-from repobee_plug import apimeta
 
 REQUIRED_OAUTH_SCOPES = {"admin:org", "repo"}
-ISSUE_GENERATOR = Generator[apimeta.Issue, None, None]
+ISSUE_GENERATOR = Generator[plug.Issue, None, None]
 
 LOGGER = daiquiri.getLogger(__file__)
 
 _TEAM_PERMISSION_MAPPING = {
-    apimeta.TeamPermission.PUSH: "push",
-    apimeta.TeamPermission.PULL: "pull",
+    plug.TeamPermission.PUSH: "push",
+    plug.TeamPermission.PULL: "pull",
 }
 _ISSUE_STATE_MAPPING = {
-    apimeta.IssueState.OPEN: "open",
-    apimeta.IssueState.CLOSED: "closed",
-    apimeta.IssueState.ALL: "all",
+    plug.IssueState.OPEN: "open",
+    plug.IssueState.CLOSED: "closed",
+    plug.IssueState.ALL: "all",
 }
 
 
@@ -48,7 +47,7 @@ _Team = github.Team.Team
 _User = github.NamedUser.NamedUser
 _Repo = github.Repository.Repository
 
-DEFAULT_REVIEW_ISSUE = apimeta.Issue(
+DEFAULT_REVIEW_ISSUE = plug.Issue(
     title="Peer review",
     body="You have been assigned to peer review this repo.",
 )
@@ -112,7 +111,7 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
         )
 
 
-class GitHubAPI(apimeta.API):
+class GitHubAPI(plug.API):
     """A highly specialized GitHub API class for _repobee. The API is
     affiliated both with an organization, and with the whole GitHub
     instance. Almost all operations take place on the target
@@ -172,10 +171,10 @@ class GitHubAPI(apimeta.API):
                 if team.name in team_names
             )
 
-    def get_teams(self) -> List[apimeta.Team]:
-        """See :py:func:`_repobee.apimeta.APISpec.get_teams`."""
+    def get_teams(self) -> List[plug.Team]:
+        """See :py:meth:`repobee_plug.apimeta.APISpec.get_teams`."""
         return [
-            apimeta.Team(
+            plug.Team(
                 name=t.name,
                 members=[m.login for m in t.get_members()],
                 id=t.id,
@@ -185,7 +184,7 @@ class GitHubAPI(apimeta.API):
         ]
 
     def delete_teams(self, team_names: Iterable[str]) -> None:
-        """See :py:func:`_repobee.apimeta.APISpec.delete_teams`."""
+        """See :py:meth:`repobee_plug.apimeta.APISpec.delete_teams`."""
         deleted = set()  # only for logging
         for team in self._get_teams_in(team_names):
             team.delete()
@@ -223,10 +222,12 @@ class GitHubAPI(apimeta.API):
 
     def ensure_teams_and_members(
         self,
-        teams: Iterable[apimeta.Team],
-        permission: apimeta.TeamPermission = apimeta.TeamPermission.PUSH,
-    ) -> List[apimeta.Team]:
-        """See :py:func:`_repobee.apimeta.APISpec.ensure_teams_and_members`."""
+        teams: Iterable[plug.Team],
+        permission: plug.TeamPermission = plug.TeamPermission.PUSH,
+    ) -> List[plug.Team]:
+        """See
+        :py:meth:`repobee_plug.apimeta.APISpec.ensure_teams_and_members`.
+        """
         raw_permission = _TEAM_PERMISSION_MAPPING[permission]
         member_lists = {team.name: team.members for team in teams}
         raw_teams = self._ensure_teams_exist(
@@ -238,7 +239,7 @@ class GitHubAPI(apimeta.API):
             self._ensure_members_in_team(team, member_lists[team.name])
 
         return [
-            apimeta.Team(
+            plug.Team(
                 name=t.name,
                 members=member_lists[t.name],
                 id=t.id,
@@ -319,8 +320,8 @@ class GitHubAPI(apimeta.API):
             for user in users:
                 team.add_membership(user)
 
-    def create_repos(self, repos: Iterable[apimeta.Repo]):
-        """See :py:func:`_repobee.apimeta.APISpec.create_repos`."""
+    def create_repos(self, repos: Iterable[plug.Repo]):
+        """See :py:meth:`repobee_plug.apimeta.APISpec.create_repos`."""
         repo_urls = []
         for info in repos:
             created = False
@@ -348,9 +349,9 @@ class GitHubAPI(apimeta.API):
         self,
         master_repo_names: Iterable[str],
         org_name: Optional[str] = None,
-        teams: Optional[List[apimeta.Team]] = None,
+        teams: Optional[List[plug.Team]] = None,
     ) -> List[str]:
-        """See :py:func:`_repobee.apimeta.APISpec.get_repo_urls`."""
+        """See :py:meth:`repobee_plug.apimeta.APISpec.get_repo_urls`."""
         with _try_api_request():
             org = (
                 self._org
@@ -371,7 +372,7 @@ class GitHubAPI(apimeta.API):
         ]
 
     def extract_repo_name(self, repo_url: str) -> str:
-        """See :py:func:`repobee.apimeta.APISpec.extract_repo_names`."""
+        """See :py:meth:`repobee_plug.apimeta.APISpec.extract_repo_name`."""
         return pathlib.Path(repo_url).stem
 
     def _insert_auth(self, repo_url: str):
@@ -394,10 +395,10 @@ class GitHubAPI(apimeta.API):
     def get_issues(
         self,
         repo_names: Iterable[str],
-        state: apimeta.IssueState = apimeta.IssueState.OPEN,
+        state: plug.IssueState = plug.IssueState.OPEN,
         title_regex: str = "",
     ) -> Generator[Tuple[str, ISSUE_GENERATOR], None, None]:
-        """See :py:func:`_repobee.apimeta.APISpec.get_issues`."""
+        """See :py:meth:`repobee_plug.apimeta.APISpec.get_issues`."""
         repos = self._get_repos_by_name(repo_names)
         raw_state = _ISSUE_STATE_MAPPING[state]
 
@@ -406,7 +407,7 @@ class GitHubAPI(apimeta.API):
                 (
                     repo.name,
                     (
-                        apimeta.Issue(
+                        plug.Issue(
                             title=issue.title,
                             body=issue.body,
                             number=issue.number,
@@ -425,7 +426,7 @@ class GitHubAPI(apimeta.API):
     def open_issue(
         self, title: str, body: str, repo_names: Iterable[str]
     ) -> None:
-        """See :py:func:`_repobee.apimeta.APISpec.open_issue`."""
+        """See :py:meth:`repobee_plug.apimeta.APISpec.open_issue`."""
         repo_names_set = set(repo_names)
         repos = list(self._get_repos_by_name(repo_names_set))
         for repo in repos:
@@ -438,7 +439,7 @@ class GitHubAPI(apimeta.API):
             )
 
     def close_issue(self, title_regex: str, repo_names: Iterable[str]) -> None:
-        """See :py:func:`_repobee.apimeta.APISpec.close_issue`."""
+        """See :py:meth:`repobee_plug.apimeta.APISpec.close_issue`."""
         repo_names_set = set(repo_names)
         repos = list(self._get_repos_by_name(repo_names_set))
 
@@ -464,9 +465,9 @@ class GitHubAPI(apimeta.API):
     def add_repos_to_review_teams(
         self,
         team_to_repos: Mapping[str, Iterable[str]],
-        issue: Optional[apimeta.Issue] = None,
+        issue: Optional[plug.Issue] = None,
     ) -> None:
-        """See :py:func:`_repobee.apimeta.APISpec.add_repos_to_review_teams`.
+        """See :py:meth:`repobee_plug.apimeta.APISpec.add_repos_to_review_teams`.
         """
         issue = issue or DEFAULT_REVIEW_ISSUE
         for team, repo in self._add_repos_to_teams(team_to_repos):
@@ -486,10 +487,10 @@ class GitHubAPI(apimeta.API):
     def get_review_progress(
         self,
         review_team_names: Iterable[str],
-        teams: Iterable[apimeta.Team],
+        teams: Iterable[plug.Team],
         title_regex: str,
     ) -> Mapping[str, List[tuples.Review]]:
-        """See :py:func:`_repobee.apimeta.APISpec.get_review_progress`."""
+        """See :py:meth:`repobee_plug.apimeta.APISpec.get_review_progress`."""
         reviews = collections.defaultdict(list)
         review_team_impls = self._get_teams_in(review_team_names)
         for review_team_impl in review_team_impls:
@@ -603,7 +604,7 @@ class GitHubAPI(apimeta.API):
         token: str,
         master_org_name: Optional[str] = None,
     ) -> None:
-        """See :py:func:`_repobee.apimeta.APISpec.verify_settings`."""
+        """See :py:meth:`repobee_plug.apimeta.APISpec.verify_settings`."""
         LOGGER.info("Verifying settings ...")
         if not token:
             raise exception.BadCredentials(

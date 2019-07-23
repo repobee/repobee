@@ -27,7 +27,6 @@ from _repobee import command
 from _repobee import util
 from _repobee import exception
 from _repobee import config
-from repobee_plug import apimeta
 from _repobee import constants
 
 daiquiri.setup(
@@ -117,7 +116,7 @@ def parse_args(
     sys_args: Iterable[str],
     show_all_opts: bool = False,
     ext_commands: Optional[List[plug.ExtensionCommand]] = None,
-) -> (argparse.Namespace, Optional[apimeta.API]):
+) -> Tuple[None, Optional[plug.API]]:
     """Parse the command line arguments and initialize an API.
 
     Args:
@@ -128,7 +127,7 @@ def parse_args(
 
     Returns:
         a argparse.Namespace namedtuple with the arguments, and an initialized
-        apimeta.API instance (or None of testing connection).
+        plug.API instance (or None of testing connection).
     """
     parser = _create_parser(show_all_opts, ext_commands)
     args = parser.parse_args(_handle_deprecation(sys_args))
@@ -251,7 +250,7 @@ def _handle_deprecation(sys_args: List[str]) -> List[str]:
 
 def dispatch_command(
     args: argparse.Namespace,
-    api: apimeta.API,
+    api: plug.API,
     ext_commands: Optional[List[plug.ExtensionCommand]] = None,
 ):
     """Handle parsed CLI arguments and dispatch commands to the appropriate
@@ -260,7 +259,7 @@ def dispatch_command(
 
     Args:
         args: A namespace of parsed command line arguments.
-        api: An initialized apimeta.API instance.
+        api: An initialized plug.API instance.
         ext_commands: A list of active extension commands.
     """
     ext_command_names = [cmd.name for cmd in ext_commands or []]
@@ -507,23 +506,23 @@ def _add_issue_parsers(base_parsers, subparsers):
         help="List open issues (default).",
         action="store_const",
         dest="state",
-        const=apimeta.IssueState.OPEN,
+        const=plug.IssueState.OPEN,
     )
     state.add_argument(
         "--closed",
         help="List closed issues.",
         action="store_const",
         dest="state",
-        const=apimeta.IssueState.CLOSED,
+        const=plug.IssueState.CLOSED,
     )
     state.add_argument(
         "--all",
         help="List all issues (open and closed).",
         action="store_const",
         dest="state",
-        const=apimeta.IssueState.ALL,
+        const=plug.IssueState.ALL,
     )
-    list_parser.set_defaults(state=apimeta.IssueState.OPEN)
+    list_parser.set_defaults(state=plug.IssueState.OPEN)
 
 
 class _OrderedFormatter(argparse.HelpFormatter):
@@ -949,7 +948,7 @@ def _extract_groups(args: argparse.Namespace) -> List[str]:
         `students_file` is in the namespace.
     """
     if "students" in args and args.students:
-        students = [apimeta.Team(members=[s]) for s in args.students]
+        students = [plug.Team(members=[s]) for s in args.students]
     elif "students_file" in args and args.students_file:
         students_file = pathlib.Path(args.students_file)
         try:  # raises FileNotFoundError in 3.5 if no such file exists
@@ -963,7 +962,7 @@ def _extract_groups(args: argparse.Namespace) -> List[str]:
         if not students_file.stat().st_size:
             raise exception.FileError("'{!s}' is empty".format(students_file))
         students = [
-            apimeta.Team(members=[s for s in group.strip().split()])
+            plug.Team(members=[s for s in group.strip().split()])
             for group in students_file.read_text(
                 encoding=sys.getdefaultencoding()
             ).split(os.linesep)
@@ -977,7 +976,7 @@ def _extract_groups(args: argparse.Namespace) -> List[str]:
 
 def _connect_to_api(
     base_url: str, token: str, org_name: str, user: str
-) -> apimeta.API:
+) -> plug.API:
     """Return an API instance connected to the specified API endpoint."""
     required_args = plug.manager.hook.api_init_requires()
     kwargs = {}
@@ -1001,7 +1000,7 @@ def _connect_to_api(
 
 
 def _repo_names_to_urls(
-    repo_names: Iterable[str], org_name: str, api: apimeta.API
+    repo_names: Iterable[str], org_name: str, api: plug.API
 ) -> List[str]:
     """Use the repo_names to extract urls to the repos. Look for git
     repos with the correct names in the local directory and create local uris
@@ -1032,7 +1031,7 @@ def _repo_names_to_urls(
     return non_local_urls + local_uris
 
 
-def parse_preparser_options(sys_args: Tuple[str]):
+def parse_preparser_options(sys_args: List[str]):
     """Parse all arguments that can somehow alter the end-user CLI, such
     as plugins.
 
