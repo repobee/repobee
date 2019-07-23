@@ -4,12 +4,14 @@ import pytest
 from unittest.mock import MagicMock, PropertyMock, call
 
 import github
+
+import repobee_plug as plug
+
 import _repobee
 import _repobee.ext
 import _repobee.ext.github
 from _repobee import util
 from _repobee import exception
-from repobee_plug import apimeta
 from _repobee.ext.github import REQUIRED_OAUTH_SCOPES
 
 import constants
@@ -45,23 +47,23 @@ from_magic_mock_issue = functions.from_magic_mock_issue
 
 User = constants.User
 
-CLOSE_ISSUE = apimeta.Issue(
+CLOSE_ISSUE = plug.Issue(
     "close this issue", "This is a body", 3, random_date(), "slarse"
 )
-DONT_CLOSE_ISSUE = apimeta.Issue(
+DONT_CLOSE_ISSUE = plug.Issue(
     "Don't close this issue", "Another body", 4, random_date(), "glassey"
 )
 OPEN_ISSUES = [CLOSE_ISSUE, DONT_CLOSE_ISSUE]
 
 CLOSED_ISSUES = [
-    apimeta.Issue(
+    plug.Issue(
         "This is a closed issue",
         "With an uninteresting body",
         1,
         random_date(),
         "tmore",
     ),
-    apimeta.Issue(
+    plug.Issue(
         "Yet another closed issue",
         "Even less interesting body",
         2,
@@ -84,17 +86,24 @@ def raise_401(*args, **kwargs):
 
 
 @pytest.fixture
-def review_students():
-    return ["ham", "spam", "bacon", "eggs"]
+def review_student_teams():
+    return [
+        plug.Team(members=[student])
+        for student in ("ham", "spam", "bacon", "eggs")
+    ]
 
 
 @pytest.fixture
-def review_teams(review_students):
+def review_teams(review_student_teams):
     master_repo = "week-1"
     review_teams = {}
-    for i, student in enumerate(review_students):
-        review_teams[util.generate_review_team_name(student, master_repo)] = (
-            review_students[:i] + review_students[i + 1 :]
+    for i, student_team in enumerate(review_student_teams):
+        review_teams[
+            util.generate_review_team_name(student_team, master_repo)
+        ] = itertools.chain.from_iterable(
+            team.members
+            for team in review_student_teams[:i]
+            + review_student_teams[i + 1 :]
         )
     return review_teams
 
@@ -236,7 +245,7 @@ def repo_infos(teams_and_members, teams):
     descriptions = ["A nice repo for {}".format(team.name) for team in teams]
     repo_names = ["{}-week-2".format(team.name) for team in teams]
     return [
-        apimeta.Repo(name, description, True, team.id)
+        plug.Repo(name, description, True, team.id)
         for name, description, team in zip(repo_names, descriptions, teams)
     ]
 
@@ -326,12 +335,12 @@ class TestEnsureTeamsAndMembers:
 
     @pytest.fixture
     def team_wrappers(self, teams_and_members):
-        """Wrap the teams_and_members dictionaries into apimeta.Team classes.
+        """Wrap the teams_and_members dictionaries into plug.Team classes.
 
         TODO: Remove this when this test suite is rewritten.
         """
         return [
-            apimeta.Team(name=team_name, members=members)
+            plug.Team(name=team_name, members=members)
             for team_name, members in teams_and_members.items()
         ]
 
@@ -462,7 +471,7 @@ class TestCreateRepos:
         github.Organization.create_repo must be called without the team_id
         argument (because if it is called with team_id=None, there is a crash).
         """
-        repo = apimeta.Repo(
+        repo = plug.Repo(
             name="repo",
             description="Some description",
             private=True,
@@ -610,7 +619,7 @@ class TestGetIssues:
         assert len(actual_issues) == len(expected_issues)
         for act, exp in zip(sorted(actual_issues), sorted(expected_issues)):
             assert act.implementation
-            for field_name in apimeta.Issue._fields:
+            for field_name in plug.Issue._fields:
                 if field_name == "implementation":
                     continue
                 assert getattr(act, field_name) == getattr(exp, field_name)
@@ -619,7 +628,7 @@ class TestGetIssues:
         repo_names = [repo.name for repo in repos]
 
         name_issues_pairs = api.get_issues(
-            repo_names, state=apimeta.IssueState.OPEN
+            repo_names, state=plug.IssueState.OPEN
         )
 
         found_repos = []
@@ -636,7 +645,7 @@ class TestGetIssues:
         repo_names = [repo.name for repo in repos]
 
         name_issues_pairs = api.get_issues(
-            repo_names, state=apimeta.IssueState.CLOSED
+            repo_names, state=plug.IssueState.CLOSED
         )
 
         found_repos = []
@@ -657,7 +666,7 @@ class TestGetIssues:
         random.shuffle(repo_names)
 
         name_issues_pairs = api.get_issues(
-            repo_names, state=apimeta.IssueState.OPEN
+            repo_names, state=plug.IssueState.OPEN
         )
 
         found_repos = []
@@ -678,7 +687,7 @@ class TestGetIssues:
         regex = "^{}$".format(sought_issue.title)
 
         name_issues_pairs = api.get_issues(
-            repo_names, state=apimeta.IssueState.OPEN, title_regex=regex
+            repo_names, state=plug.IssueState.OPEN, title_regex=regex
         )
 
         found_repos = []
@@ -880,15 +889,19 @@ class TestGetPeerReviewProgress:
     TODO: These tests need to be expanded. A lot.
     """
 
-    def test_nothing_returns(self, review_students, review_teams, api):
+    def test_nothing_returns(self, review_student_teams, review_teams, api):
         """Test calling the function when none of the functions return
         iterables.
         """
         review_team_names = list(review_teams.keys())
-        api.get_review_progress(review_team_names, review_students, "peer")
+        api.get_review_progress(
+            review_team_names, review_student_teams, "peer"
+        )
 
     def test_with_review_teams_but_no_repos(
-        self, review_students, review_teams, teams, api
+        self, review_student_teams, review_teams, teams, api
     ):
         review_team_names = list(review_teams.keys())
-        api.get_review_progress(review_team_names, review_students, "peer")
+        api.get_review_progress(
+            review_team_names, review_student_teams, "peer"
+        )

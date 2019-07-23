@@ -483,10 +483,6 @@ def assign_peer_reviews(
         api: An implementation of :py:class:`apimeta.API` used to interface
             with the platform (e.g. GitHub or GitLab) instance.
     """
-    # currently only supports single student teams
-    # TODO support groups of students
-    assert all(map(lambda g: len(g.members) == 1, teams))
-
     for master_name in master_repo_names:
         allocations = plug.manager.hook.generate_review_allocations(
             teams=teams, num_reviews=num_reviews
@@ -511,7 +507,6 @@ def assign_peer_reviews(
         api.ensure_teams_and_members(
             review_teams, permission=plug.TeamPermission.PULL
         )
-        # TODO finish up here, this is entirely broken!
         api.add_repos_to_review_teams(
             {
                 review_team.name: [
@@ -535,7 +530,7 @@ def purge_review_teams(
 
     Args:
         master_repo_names: Names of master repos.
-        students: An iterable of student GitHub usernames.
+        students: An iterble of student teams.
         api: An implementation of :py:class:`apimeta.API` used to interface
             with the platform (e.g. GitHub or GitLab) instance.
     """
@@ -549,39 +544,33 @@ def purge_review_teams(
 
 def check_peer_review_progress(
     master_repo_names: Iterable[str],
-    students: Iterable[plug.Team],
+    teams: Iterable[plug.Team],
     title_regex: str,
     num_reviews: int,
     api: plug.API,
 ) -> None:
-    """Check which students have opened peer review issues in their allotted
+    """Check which teams have opened peer review issues in their allotted
     review repos
 
     Args:
         master_repo_names: Names of master repos.
-        students: An iterable of student GitHub usernames.
+        teams: An iterable of student teams.
         title_regex: A regex to match against issue titles.
         num_reviews: Amount of reviews each student is expected to have made.
         api: An implementation of :py:class:`apimeta.API` used to interface
             with the platform (e.g. GitHub or GitLab) instance.
 
     """
-    # TODO support groups
-    assert all(map(lambda g: len(g.members) == 1, students))
-    single_students = [g.members[0] for g in students]
-
     review_team_names = [
-        util.generate_review_team_name(student, master_name)
-        for student in single_students
+        util.generate_review_team_name(team, master_name)
+        for team in teams
         for master_name in master_repo_names
     ]
-    reviews = api.get_review_progress(
-        review_team_names, single_students, title_regex
-    )
+    reviews = api.get_review_progress(review_team_names, teams, title_regex)
 
     LOGGER.info(
         formatters.format_peer_review_progress_output(
-            reviews, single_students, num_reviews
+            reviews, teams, num_reviews
         )
     )
 

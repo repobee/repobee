@@ -21,7 +21,7 @@ LOGGER = daiquiri.getLogger(__name__)
 
 def format_peer_review_progress_output(
     reviews: Mapping[str, List[tuples.Review]],
-    students: List[str],
+    teams: List[str],
     num_reviews: int,
 ):
     # can't use tabs for spacing as they are not background colored in output
@@ -34,13 +34,12 @@ def format_peer_review_progress_output(
         ),
     ]
     even = False
-    for reviewer in students:
+    print(reviews)
+    for review_team in teams:
         even = not even
-        review_list = reviews[reviewer]
+        review_list = reviews[str(review_team)]
         output.append(
-            _format_reviewer(
-                reviewer, review_list, students, num_reviews, even
-            )
+            _format_reviewer(review_team, review_list, num_reviews, even)
         )
     return os.linesep.join(output)
 
@@ -53,7 +52,6 @@ def _format_row(items: List[str]) -> str:
 def _format_reviewer(
     reviewer: str,
     review_list: List[tuples.Review],
-    students: List[str],
     num_reviews: bool,
     even: bool,
 ):
