@@ -783,7 +783,7 @@ def _create_base_parsers(show_all_opts):
         LOGGER.info(
             "CLI options that are set in the config file are suppressed in "
             "help sections, run with pre-parser option {all_opts_arg} to "
-            "unsuppress. Example: gitlab {all_opts_arg} setup -h".format(
+            "unsuppress. Example: repobee {all_opts_arg} setup -h".format(
                 all_opts_arg=PRE_PARSER_SHOW_ALL_OPTS
             )
         )
