@@ -172,7 +172,7 @@ class GitHubAPI(plug.API):
             )
 
     def get_teams(self) -> List[plug.Team]:
-        """See :py:meth:`repobee_plug.APISpec.get_teams`."""
+        """See :py:meth:`repobee_plug.apimeta.APISpec.get_teams`."""
         return [
             plug.Team(
                 name=t.name,
@@ -184,7 +184,7 @@ class GitHubAPI(plug.API):
         ]
 
     def delete_teams(self, team_names: Iterable[str]) -> None:
-        """See :py:func:`repobee_plug.APISpec.delete_teams`."""
+        """See :py:meth:`repobee_plug.apimeta.APISpec.delete_teams`."""
         deleted = set()  # only for logging
         for team in self._get_teams_in(team_names):
             team.delete()
@@ -225,7 +225,9 @@ class GitHubAPI(plug.API):
         teams: Iterable[plug.Team],
         permission: plug.TeamPermission = plug.TeamPermission.PUSH,
     ) -> List[plug.Team]:
-        """See :py:func:`repobee_plug.APISpec.ensure_teams_and_members`."""
+        """See
+        :py:meth:`repobee_plug.apimeta.APISpec.ensure_teams_and_members`.
+        """
         raw_permission = _TEAM_PERMISSION_MAPPING[permission]
         member_lists = {team.name: team.members for team in teams}
         raw_teams = self._ensure_teams_exist(
@@ -319,7 +321,7 @@ class GitHubAPI(plug.API):
                 team.add_membership(user)
 
     def create_repos(self, repos: Iterable[plug.Repo]):
-        """See :py:func:`repobee_plug.APISpec.create_repos`."""
+        """See :py:meth:`repobee_plug.apimeta.APISpec.create_repos`."""
         repo_urls = []
         for info in repos:
             created = False
@@ -349,7 +351,7 @@ class GitHubAPI(plug.API):
         org_name: Optional[str] = None,
         teams: Optional[List[plug.Team]] = None,
     ) -> List[str]:
-        """See :py:func:`repobee_plug.APISpec.get_repo_urls`."""
+        """See :py:meth:`repobee_plug.apimeta.APISpec.get_repo_urls`."""
         with _try_api_request():
             org = (
                 self._org
@@ -370,7 +372,7 @@ class GitHubAPI(plug.API):
         ]
 
     def extract_repo_name(self, repo_url: str) -> str:
-        """See :py:func:`plug.APISpec.extract_repo_names`."""
+        """See :py:meth:`repobee_plug.apimeta.APISpec.extract_repo_name`."""
         return pathlib.Path(repo_url).stem
 
     def _insert_auth(self, repo_url: str):
@@ -396,7 +398,7 @@ class GitHubAPI(plug.API):
         state: plug.IssueState = plug.IssueState.OPEN,
         title_regex: str = "",
     ) -> Generator[Tuple[str, ISSUE_GENERATOR], None, None]:
-        """See :py:func:`repobee_plug.APISpec.get_issues`."""
+        """See :py:meth:`repobee_plug.apimeta.APISpec.get_issues`."""
         repos = self._get_repos_by_name(repo_names)
         raw_state = _ISSUE_STATE_MAPPING[state]
 
@@ -424,7 +426,7 @@ class GitHubAPI(plug.API):
     def open_issue(
         self, title: str, body: str, repo_names: Iterable[str]
     ) -> None:
-        """See :py:func:`repobee_plug.APISpec.open_issue`."""
+        """See :py:meth:`repobee_plug.apimeta.APISpec.open_issue`."""
         repo_names_set = set(repo_names)
         repos = list(self._get_repos_by_name(repo_names_set))
         for repo in repos:
@@ -437,7 +439,7 @@ class GitHubAPI(plug.API):
             )
 
     def close_issue(self, title_regex: str, repo_names: Iterable[str]) -> None:
-        """See :py:func:`repobee_plug.APISpec.close_issue`."""
+        """See :py:meth:`repobee_plug.apimeta.APISpec.close_issue`."""
         repo_names_set = set(repo_names)
         repos = list(self._get_repos_by_name(repo_names_set))
 
@@ -465,7 +467,7 @@ class GitHubAPI(plug.API):
         team_to_repos: Mapping[str, Iterable[str]],
         issue: Optional[plug.Issue] = None,
     ) -> None:
-        """See :py:func:`repobee_plug.APISpec.add_repos_to_review_teams`.
+        """See :py:meth:`repobee_plug.apimeta.APISpec.add_repos_to_review_teams`.
         """
         issue = issue or DEFAULT_REVIEW_ISSUE
         for team, repo in self._add_repos_to_teams(team_to_repos):
@@ -488,7 +490,7 @@ class GitHubAPI(plug.API):
         teams: Iterable[plug.Team],
         title_regex: str,
     ) -> Mapping[str, List[tuples.Review]]:
-        """See :py:func:`repobee_plug.APISpec.get_review_progress`."""
+        """See :py:meth:`repobee_plug.apimeta.APISpec.get_review_progress`."""
         reviews = collections.defaultdict(list)
         review_team_impls = self._get_teams_in(review_team_names)
         for review_team_impl in review_team_impls:
@@ -602,7 +604,7 @@ class GitHubAPI(plug.API):
         token: str,
         master_org_name: Optional[str] = None,
     ) -> None:
-        """See :py:func:`repobee_plug.APISpec.verify_settings`."""
+        """See :py:meth:`repobee_plug.apimeta.APISpec.verify_settings`."""
         LOGGER.info("Verifying settings ...")
         if not token:
             raise exception.BadCredentials(
