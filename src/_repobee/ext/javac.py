@@ -110,7 +110,7 @@ class JavacCloneHook(Plugin):
 
         Args:
             args: The full namespace returned by
-                :py:func:`argparse.ArgumentParser.parse_args`
+                :py:meth:`argparse.ArgumentParser.parse_args`
         """
         if args.ignore:
             self._ignore = args.ignore

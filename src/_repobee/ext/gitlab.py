@@ -330,7 +330,7 @@ class GitLabAPI(plug.API):
         return [self._insert_auth(url) for url in repo_urls]
 
     def extract_repo_name(self, repo_url: str) -> str:
-        """See :py:meth:`repobee.apimeta.APISpec.extract_repo_name`."""
+        """See :py:meth:`repobee_plug.apimeta.APISpec.extract_repo_name`."""
         return pathlib.Path(repo_url).stem
 
     def _insert_auth(self, repo_url: str):
