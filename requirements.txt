@@ -4,4 +4,4 @@ daiquiri
 pluggy>=0.8.0
 pygithub
 python-gitlab==1.8.0
-repobee-plug==0.8.0a1
+repobee-plug==0.8.0
