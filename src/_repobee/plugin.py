@@ -58,7 +58,7 @@ def load_plugin_modules(plugin_names: Iterable[str]) -> List[ModuleType]:
         a list of loaded modules.
     """
     loaded_modules = []
-    LOGGER.info("Loading plugins: " + ", ".join(plugin_names))
+    LOGGER.debug("Loading plugins: " + ", ".join(plugin_names))
 
     for name in plugin_names:
         plug_mod = _try_load_module(

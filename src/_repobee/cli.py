@@ -8,6 +8,7 @@ This module contains the CLI for _repobee.
 .. moduleauthor:: Simon Larsén
 """
 
+import types
 import argparse
 import pathlib
 import os
@@ -602,15 +603,34 @@ def create_parser_for_docs():
 
 def _create_parser(show_all_opts, ext_commands):
     """Create the parser."""
+    loaded_plugins = ", ".join(
+        [
+            p.__name__.split(".")[-1]
+            for p in plug.manager.get_plugins()
+            if isinstance(p, types.ModuleType)
+        ]
+    )
+
+    program_description = (
+        "A CLI tool for administrating large amounts of git repositories "
+        "on GitHub and\nGitLab instances. Read the docs at: "
+        "https://repobee.readthedocs.io\n\n"
+    )
+
+    if not show_all_opts and config.get_configured_defaults():
+        program_description += (
+            "CLI options that are set in the config file are suppressed in "
+            "help sections,\nrun with pre-parser option {all_opts_arg} to "
+            "unsuppress.\nExample: repobee {all_opts_arg} setup -h\n\n".format(
+                all_opts_arg=PRE_PARSER_SHOW_ALL_OPTS
+            )
+        )
+    program_description += "Loaded plugins: " + loaded_plugins
 
     parser = argparse.ArgumentParser(
         prog="repobee",
-        description=(
-            "A CLI tool for administrating large amounts of git repositories "
-            "on GitHub and GitLab instances. See the full documentation at "
-            "https://repobee.readthedocs.io"
-        ),
-        formatter_class=_OrderedFormatter,
+        description=program_description,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
         "-v",
@@ -778,15 +798,6 @@ def _create_base_parsers(show_all_opts):
     """Create the base parsers."""
     configured_defaults = config.get_configured_defaults()
     config.execute_config_hooks()
-
-    if not show_all_opts and configured_defaults:
-        LOGGER.info(
-            "CLI options that are set in the config file are suppressed in "
-            "help sections, run with pre-parser option {all_opts_arg} to "
-            "unsuppress. Example: repobee {all_opts_arg} setup -h".format(
-                all_opts_arg=PRE_PARSER_SHOW_ALL_OPTS
-            )
-        )
 
     def default(arg_name):
         return (
