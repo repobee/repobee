@@ -8,8 +8,10 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
-> **Important:** RepoBee v2.0.0 is coming up, please see the [Roadmap](#roadmap)
-> for details.
+> **Important:** RepoBee v2.0.0 is out now! There are some breaking changes,
+> see the
+> [release notes](https://github.com/repobee/repobee/releases/tag/v2.0.0)
+> for details
 
 ## Overview
 RepoBee is a command line interface (CLI) tool for administrating large amounts
@@ -128,26 +130,15 @@ RepoBee need to be altered. **If you develop a plugin, please get in touch so
 that can be taken into consideration if breaking changes are introduced to the
 plugin system**.
 
-### Support of older versions
-As this project is being supported by a single person at the moment, only the
-latest major version of RepoBee will be updated. Although I make every attempt
-to not introduce breaking changes in the CLI that would prompt a new major
-version, sometimes it cannot be helped.
-
-Version 2.0.0 is around the corner and introduces a few minor breaking changes
-in the CLI. The release notes will clarify which these changes are once the
-update goes live.
-
 ### Upcoming features
 There is still a lot in store for RepoBee. Below is a roadmap for major
 features that are in the works.
 
-| Feature                                   | Status                                                                          | ETA                     |
-| -------                                   | ------                                                                          | ---                     |
-| Cleaner CLI help menus                    | Work in progress ([#164](https://github.com/repobee/repobee/issues/164))        | July 2019               |
-| Peer review support for group assignments | Work in progress  ([#167](https://github.com/repobee/repobee/issues/167))       | August 2019             |
-| Plugin support for top-level CLI commands | Planning                                                                        | TBA                     |
-| Travis CI plugin                          | Planning ([#165](https://github.com/repobee/repobee/issues/165))                | TBA                     |
+| Feature                 | Status                                                                                      | ETA         |
+| -------                 | ------                                                                                      | ---         |
+| Full support for GitLab | Work in progress ([See docs](https://repobee.readthedocs.io/en/latest/gitlab.html#roadmap)) | Late 2019   |
+| Video tutorials         | Planning                                                                                    | August 2019 |
+| GUI                     | Planning                                                                                    | Late 2019   |
 
 ## License
 This software is licensed under the MIT License. See the [LICENSE](LICENSE)
