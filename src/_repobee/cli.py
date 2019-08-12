@@ -57,7 +57,10 @@ def _filter_tokens():
 
     def record_factory(*args, **kwargs):
         record = old_factory(*args, **kwargs)
+        # from URLS (e.g. git error messages)
         record.msg = re.sub("https://.*?@", "https://", record.msg)
+        # from show-config output
+        record.msg = re.sub(r"token\s*=\s*.*", "token = xxxxxxxxx", record.msg)
         return record
 
     logging.setLogRecordFactory(record_factory)
