@@ -32,7 +32,7 @@ from _repobee import config
 from _repobee import constants
 
 try:
-    os.makedirs(constants.LOG_DIR, exist_ok=True)
+    os.makedirs(str(constants.LOG_DIR), exist_ok=True)
 except Exception as exc:
     raise exception.FileError(
         "can't create log directory at {}".format(constants.LOG_DIR)
@@ -48,8 +48,10 @@ daiquiri.setup(
             ),
         ),
         daiquiri.output.File(
-            filename=constants.LOG_DIR
-            / "{}.log".format(_repobee._external_package_name),
+            filename=str(
+                constants.LOG_DIR
+                / "{}.log".format(_repobee._external_package_name)
+            ),
             formatter=daiquiri.formatter.ColorFormatter(
                 fmt="%(asctime)s [PID %(process)d] [%(levelname)s] "
                 "%(name)s -> %(message)s"

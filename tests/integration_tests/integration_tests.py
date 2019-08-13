@@ -349,7 +349,7 @@ class TestClone:
         result = run_in_docker(command, extra_args=tmpdir_volume_arg)
 
         assert result.returncode == 0
-        assert os.listdir(str(tmpdir)) == ["repobee.log"]
+        assert os.listdir(str(tmpdir)) == []
 
     def test_clone_does_not_alter_existing_dirs(
         self, with_student_repos, tmpdir, tmpdir_volume_arg
