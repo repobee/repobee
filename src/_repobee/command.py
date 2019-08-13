@@ -400,7 +400,9 @@ def _clone_repos_no_check(repo_urls, dst_dirpath, api):
     return [repo.name for repo in cloned_repos]
 
 
-def _execute_post_clone_hooks(repo_names: List[str], api: plug.API):
+def _execute_post_clone_hooks(
+    repo_names: List[str], api: plug.API, to_json=True
+):
     LOGGER.info("Executing post clone hooks on repos")
     local_repos = [name for name in os.listdir() if name in repo_names]
 
@@ -412,8 +414,11 @@ def _execute_post_clone_hooks(repo_names: List[str], api: plug.API):
         )
         results[repo_name] = res
     LOGGER.info(formatters.format_hook_results_output(results))
-
     LOGGER.info("Post clone hooks done")
+
+    if to_json:
+        output_file = pathlib.Path(".").resolve() / "repobee_hook_results.json"
+        util.atomic_write(formatters.to_json(results), output_file)
 
 
 def migrate_repos(master_repo_urls: Iterable[str], api: plug.API) -> None:

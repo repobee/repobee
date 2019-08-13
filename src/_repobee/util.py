@@ -9,6 +9,8 @@
 import os
 import sys
 import pathlib
+import shutil
+import tempfile
 from typing import Iterable, Generator, Union, Set
 
 from repobee_plug import apimeta
@@ -135,3 +137,21 @@ def find_files_by_extension(
         for file in files:
             if _ends_with_ext(file, extensions):
                 yield pathlib.Path(cwd) / file
+
+
+def atomic_write(content: str, dst: pathlib.Path) -> None:
+    """Write the given contents to the destination "atomically". Achieved by
+    writin in a temporary directory and then moving the file to the
+    destination.
+
+    Args:
+        content: The content to write to the new file.
+        dst: Path to the file.
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        with tempfile.NamedTemporaryFile(
+            delete=False, dir=tmpdir, mode="w"
+        ) as file:
+            file.write(content)
+
+        shutil.move(file.name, str(dst))
