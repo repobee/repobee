@@ -17,6 +17,11 @@ CONFIG_DIR = pathlib.Path(
         appname=_repobee._external_package_name, appauthor=_repobee.__author__
     )
 )
+LOG_DIR = pathlib.Path(
+    appdirs.user_log_dir(
+        appname=_repobee._external_package_name, appauthor=_repobee.__author__
+    )
+)
 DEFAULTS_SECTION_HDR = "DEFAULTS"
 DEFAULT_CONFIG_FILE = CONFIG_DIR / "config.cnf"
 assert DEFAULT_CONFIG_FILE.is_absolute()
