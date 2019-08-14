@@ -367,10 +367,15 @@ def dispatch_command(
 def _handle_hook_results(hook_results, filepath):
     LOGGER.info(formatters.format_hook_results_output(hook_results))
     if filepath:
+        LOGGER.warning(
+            "Storing hook results to file is a beta feature, the file format "
+            "is not final"
+        )
         output_file = pathlib.Path(filepath)
         util.atomic_write(
             plug.result_mapping_to_json(hook_results), output_file
         )
+        LOGGER.info("Hook results stored to {}".format(filepath))
 
 
 def _add_peer_review_parsers(base_parsers, subparsers):
