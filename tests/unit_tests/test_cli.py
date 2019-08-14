@@ -56,6 +56,7 @@ VALID_PARSED_ARGS = dict(
     author=None,
     token=TOKEN,
     num_reviews=1,
+    hook_results_file=None,
 )
 
 
@@ -205,6 +206,8 @@ class TestDispatchCommand:
     ):
         expected_filepath = pathlib.Path(".").resolve() / "results.json"
         expected_json = plug.result_mapping_to_json(hook_result_mapping)
+        args_dict = dict(VALID_PARSED_ARGS)
+        args_dict["hook_results_file"] = str(expected_filepath)
         with mock.patch(
             "_repobee.util.atomic_write", autospec=True
         ) as write, mock.patch(
@@ -212,11 +215,7 @@ class TestDispatchCommand:
             autospec=True,
             return_value=hook_result_mapping,
         ):
-            args = argparse.Namespace(
-                subparser=cli.CLONE_PARSER,
-                **VALID_PARSED_ARGS,
-                hook_results_file=str(expected_filepath)
-            )
+            args = argparse.Namespace(subparser=cli.CLONE_PARSER, **args_dict)
             cli.dispatch_command(args, api_instance_mock)
 
         write.assert_called_once_with(expected_json, expected_filepath)
@@ -228,16 +227,14 @@ class TestDispatchCommand:
         --hook-results-file is specified.
         """
         expected_filepath = pathlib.Path(".").resolve() / "results.json"
+        args_dict = dict(VALID_PARSED_ARGS)
+        args_dict["hook_results_file"] = str(expected_filepath)
         with mock.patch(
             "_repobee.util.atomic_write", autospec=True
         ) as write, mock.patch(
             "_repobee.command.clone_repos", autospec=True, return_value={}
         ):
-            args = argparse.Namespace(
-                subparser=cli.CLONE_PARSER,
-                **VALID_PARSED_ARGS,
-                hook_results_file=expected_filepath
-            )
+            args = argparse.Namespace(subparser=cli.CLONE_PARSER, **args_dict)
             cli.dispatch_command(args, api_instance_mock)
 
         assert not write.called
