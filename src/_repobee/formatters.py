@@ -8,14 +8,11 @@ This module contains functions for pretty formatting of command line output.
 .. moduleauthor:: Simon Larsén
 """
 import os
-import json
 from typing import Mapping, List
 
 from colored import fg, bg, style
 from repobee_plug import Status
 import daiquiri
-
-import repobee_plug as plug
 
 from _repobee import tuples
 
@@ -130,27 +127,3 @@ def format_hook_results_output(result_mapping):
         out += os.linesep * 2
 
     return out
-
-
-def to_json(result_mapping):
-    hook_results_as_dicts = {
-        repo_name: {
-            h.hook: {"status": h.status.value, "msg": h.msg}
-            for h in hook_results
-        }
-        for repo_name, hook_results in result_mapping.items()
-    }
-    return json.dumps(hook_results_as_dicts, indent=4, ensure_ascii=False)
-
-
-def from_json(json_string):
-    json_dict = json.loads(json_string)
-    return {
-        repo_name: [
-            plug.HookResult(
-                hook=hook, status=plug.Status(val["status"]), msg=val["msg"]
-            )
-            for hook, val in hook_dicts.items()
-        ]
-        for repo_name, hook_dicts in json_dict.items()
-    }
