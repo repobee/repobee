@@ -1,7 +1,7 @@
 import os
 import pathlib
 import argparse
-from unittest.mock import MagicMock
+import collections
 from unittest import mock
 
 import pytest
@@ -61,7 +61,7 @@ VALID_PARSED_ARGS = dict(
 
 @pytest.fixture(autouse=True)
 def api_instance_mock(mocker):
-    instance_mock = MagicMock(spec=_repobee.ext.github.GitHubAPI)
+    instance_mock = mock.MagicMock(spec=_repobee.ext.github.GitHubAPI)
     instance_mock.get_repo_urls.side_effect = lambda repo_names, org_name: [
         generate_repo_url(rn, org_name) for rn in repo_names
     ]
@@ -162,8 +162,85 @@ def command_all_raise_mock(command_mock, api_class_mock, request):
     return command_mock
 
 
+@pytest.fixture
+def hook_result_mapping():
+    """A hook result mapping for use as a mocked return value to commands that
+    return hook results (e.g. command.clone_repos).
+    """
+    hook_results = collections.defaultdict(list)
+    for repo_name, hook_name, status, msg, data in [
+        (
+            "slarse-task-1",
+            "junit4",
+            plug.Status.SUCCESS,
+            "All tests passed",
+            {"extra": "data", "arbitrary": {"nesting": "here"}},
+        ),
+        (
+            "slarse-task-1",
+            "javac",
+            plug.Status.ERROR,
+            "Some stuff failed",
+            None,
+        ),
+        (
+            "glassey-task-2",
+            "pylint",
+            plug.Status.WARNING,
+            "-10/10 code quality",
+            None,
+        ),
+    ]:
+        hook_results[repo_name].append(
+            plug.HookResult(hook=hook_name, status=status, msg=msg, data=data)
+        )
+    return dict(hook_results)
+
+
 class TestDispatchCommand:
     """Test the handling of parsed arguments."""
+
+    def test_writes_hook_results_correctly(
+        self, tmpdir, hook_result_mapping, api_instance_mock
+    ):
+        expected_filepath = pathlib.Path(".").resolve() / "results.json"
+        expected_json = plug.result_mapping_to_json(hook_result_mapping)
+        with mock.patch(
+            "_repobee.util.atomic_write", autospec=True
+        ) as write, mock.patch(
+            "_repobee.command.clone_repos",
+            autospec=True,
+            return_value=hook_result_mapping,
+        ):
+            args = argparse.Namespace(
+                subparser=cli.CLONE_PARSER,
+                **VALID_PARSED_ARGS,
+                hook_results_file=str(expected_filepath)
+            )
+            cli.dispatch_command(args, api_instance_mock)
+
+        write.assert_called_once_with(expected_json, expected_filepath)
+
+    def test_does_not_write_hook_results_if_there_are_none(
+        self, tmpdir, api_instance_mock
+    ):
+        """Test that no file is created if there are no hook results, even if
+        --hook-results-file is specified.
+        """
+        expected_filepath = pathlib.Path(".").resolve() / "results.json"
+        with mock.patch(
+            "_repobee.util.atomic_write", autospec=True
+        ) as write, mock.patch(
+            "_repobee.command.clone_repos", autospec=True, return_value={}
+        ):
+            args = argparse.Namespace(
+                subparser=cli.CLONE_PARSER,
+                **VALID_PARSED_ARGS,
+                hook_results_file=expected_filepath
+            )
+            cli.dispatch_command(args, api_instance_mock)
+
+        assert not write.called
 
     def test_raises_on_invalid_subparser_value(self, api_instance_mock):
         parser = "DOES_NOT_EXIST"
@@ -555,7 +632,7 @@ class TestExtensionCommands:
         """Return a mock callback function for use with an extension
         command.
         """
-        yield MagicMock(
+        yield mock.MagicMock(
             spec=_repobee.ext.configwizard.create_extension_command
         )
 
