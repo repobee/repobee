@@ -18,7 +18,7 @@ import shutil
 import os
 import sys
 import tempfile
-from typing import Iterable, List, Optional, Tuple, Generator
+from typing import Iterable, List, Optional, Tuple, Generator, Mapping
 from colored import bg, fg, style
 
 import daiquiri
@@ -343,7 +343,7 @@ def close_issue(
 
 def clone_repos(
     master_repo_names: Iterable[str], teams: Iterable[plug.Team], api: plug.API
-) -> None:
+) -> Mapping[str, List[plug.HookResult]]:
     """Clone all student repos related to the provided master repos and student
     teams.
 
@@ -352,6 +352,8 @@ def clone_repos(
         teams: An iterable of student teams.
         api: An implementation of :py:class:`repobee_plug.API` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
+    Returns:
+        A mapping from repo name to a list of hook results.
     """
     repo_urls = api.get_repo_urls(master_repo_names, teams=teams)
     # the reason we first compute the urls and then extract repo names is that
@@ -374,8 +376,8 @@ def clone_repos(
     for plugin in plug.manager.get_plugins():
         if "act_on_cloned_repo" in dir(plugin):
             repo_names = util.generate_repo_names(teams, master_repo_names)
-            _execute_post_clone_hooks(repo_names, api)
-            break
+            return _execute_post_clone_hooks(repo_names, api)
+    return {}
 
 
 def _clone_repos_no_check(repo_urls, dst_dirpath, api):
@@ -400,7 +402,9 @@ def _clone_repos_no_check(repo_urls, dst_dirpath, api):
     return [repo.name for repo in cloned_repos]
 
 
-def _execute_post_clone_hooks(repo_names: List[str], api: plug.API):
+def _execute_post_clone_hooks(
+    repo_names: List[str], api: plug.API
+) -> Mapping[str, List[plug.HookResult]]:
     LOGGER.info("Executing post clone hooks on repos")
     local_repos = [name for name in os.listdir() if name in repo_names]
 
@@ -411,9 +415,8 @@ def _execute_post_clone_hooks(repo_names: List[str], api: plug.API):
             path=os.path.abspath(repo_name), api=api
         )
         results[repo_name] = res
-    LOGGER.info(formatters.format_hook_results_output(results))
 
-    LOGGER.info("Post clone hooks done")
+    return results
 
 
 def migrate_repos(master_repo_urls: Iterable[str], api: plug.API) -> None:

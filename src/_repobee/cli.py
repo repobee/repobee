@@ -30,6 +30,7 @@ from _repobee import util
 from _repobee import exception
 from _repobee import config
 from _repobee import constants
+from _repobee import formatters
 
 try:
     os.makedirs(str(constants.LOG_DIR), exist_ok=True)
@@ -282,6 +283,7 @@ def dispatch_command(
         ext_commands: A list of active extension commands.
     """
     ext_command_names = [cmd.name for cmd in ext_commands or []]
+    hook_results = {}
     if ext_command_names and args.subparser in ext_command_names:
         ext_cmd = ext_commands[ext_command_names.index(args.subparser)]
         with _sys_exit_on_expected_error():
@@ -311,7 +313,9 @@ def dispatch_command(
             command.migrate_repos(args.master_repo_urls, api)
     elif args.subparser == CLONE_PARSER:
         with _sys_exit_on_expected_error():
-            command.clone_repos(args.master_repo_names, args.students, api)
+            hook_results = command.clone_repos(
+                args.master_repo_names, args.students, api
+            )
     elif args.subparser == VERIFY_PARSER:
         with _sys_exit_on_expected_error():
             plug.manager.hook.get_api_class().verify_settings(
@@ -363,6 +367,25 @@ def dispatch_command(
             "Illegal value for subparser: {}. "
             "This is a bug, please open an issue.".format(args.subparser)
         )
+
+    if hook_results:
+        _handle_hook_results(
+            hook_results=hook_results, filepath=args.hook_results_file
+        )
+
+
+def _handle_hook_results(hook_results, filepath):
+    LOGGER.info(formatters.format_hook_results_output(hook_results))
+    if filepath:
+        LOGGER.warning(
+            "Storing hook results to file is a beta feature, the file format "
+            "is not final"
+        )
+        output_file = pathlib.Path(filepath)
+        util.atomic_write(
+            plug.result_mapping_to_json(hook_results), output_file
+        )
+        LOGGER.info("Hook results stored to {}".format(filepath))
 
 
 def _add_peer_review_parsers(base_parsers, subparsers):
@@ -761,6 +784,13 @@ def _add_subparsers(parser, show_all_opts, ext_commands):
         description="Clone student repos asynchronously in bulk.",
         parents=[base_parser, base_student_parser, repo_name_parser],
         formatter_class=_OrderedFormatter,
+    )
+    clone.add_argument(
+        "--hook-results-file",
+        help="Path to a file to store results from plugin hooks in. The "
+        "results are stored as JSON, regardless of file extension.",
+        type=str,
+        default=None,
     )
 
     plug.manager.hook.clone_parser_hook(clone_parser=clone)
