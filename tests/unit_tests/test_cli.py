@@ -201,8 +201,20 @@ def hook_result_mapping():
 class TestDispatchCommand:
     """Test the handling of parsed arguments."""
 
+    @pytest.mark.parametrize(
+        "parser, command_func",
+        [
+            (cli.CLONE_PARSER, "_repobee.command.clone_repos"),
+            (cli.LIST_ISSUES_PARSER, "_repobee.command.list_issues"),
+        ],
+    )
     def test_writes_hook_results_correctly(
-        self, tmpdir, hook_result_mapping, api_instance_mock
+        self,
+        tmpdir,
+        hook_result_mapping,
+        api_instance_mock,
+        parser,
+        command_func,
     ):
         expected_filepath = pathlib.Path(".").resolve() / "results.json"
         expected_json = plug.result_mapping_to_json(hook_result_mapping)
@@ -211,11 +223,9 @@ class TestDispatchCommand:
         with mock.patch(
             "_repobee.util.atomic_write", autospec=True
         ) as write, mock.patch(
-            "_repobee.command.clone_repos",
-            autospec=True,
-            return_value=hook_result_mapping,
+            command_func, autospec=True, return_value=hook_result_mapping
         ):
-            args = argparse.Namespace(subparser=cli.CLONE_PARSER, **args_dict)
+            args = argparse.Namespace(subparser=parser, **args_dict)
             cli.dispatch_command(args, api_instance_mock)
 
         write.assert_called_once_with(expected_json, expected_filepath)

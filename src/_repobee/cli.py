@@ -111,6 +111,15 @@ PARSER_NAMES = (
     CHECK_REVIEW_PROGRESS_PARSER,
 )
 
+HOOK_RESULTS_PARSER = argparse.ArgumentParser(add_help=False)
+HOOK_RESULTS_PARSER.add_argument(
+    "--hook-results-file",
+    help="Path to a file to store results from plugin hooks in. The "
+    "results are stored as JSON, regardless of file extension.",
+    type=str,
+    default=None,
+)
+
 
 # add any diprecated parsers to this dict on the following form:
 #
@@ -316,6 +325,7 @@ def dispatch_command(
             hook_results = command.clone_repos(
                 args.master_repo_names, args.students, api
             )
+            LOGGER.info(formatters.format_hook_results_output(hook_results))
     elif args.subparser == VERIFY_PARSER:
         with _sys_exit_on_expected_error():
             plug.manager.hook.get_api_class().verify_settings(
@@ -327,7 +337,7 @@ def dispatch_command(
             )
     elif args.subparser == LIST_ISSUES_PARSER:
         with _sys_exit_on_expected_error():
-            command.list_issues(
+            hook_results = command.list_issues(
                 args.master_repo_names,
                 args.students,
                 api,
@@ -368,24 +378,20 @@ def dispatch_command(
             "This is a bug, please open an issue.".format(args.subparser)
         )
 
-    if hook_results:
+    if hook_results and args.hook_results_file:
         _handle_hook_results(
             hook_results=hook_results, filepath=args.hook_results_file
         )
 
 
 def _handle_hook_results(hook_results, filepath):
-    LOGGER.info(formatters.format_hook_results_output(hook_results))
-    if filepath:
-        LOGGER.warning(
-            "Storing hook results to file is a beta feature, the file format "
-            "is not final"
-        )
-        output_file = pathlib.Path(filepath)
-        util.atomic_write(
-            plug.result_mapping_to_json(hook_results), output_file
-        )
-        LOGGER.info("Hook results stored to {}".format(filepath))
+    LOGGER.warning(
+        "Storing hook results to file is an alpha feature, the file format "
+        "is not final"
+    )
+    output_file = pathlib.Path(filepath)
+    util.atomic_write(plug.result_mapping_to_json(hook_results), output_file)
+    LOGGER.info("Hook results stored to {}".format(filepath))
 
 
 def _add_peer_review_parsers(base_parsers, subparsers):
@@ -532,7 +538,7 @@ def _add_issue_parsers(base_parsers, subparsers):
         LIST_ISSUES_PARSER,
         description="List issues in student repos.",
         help="List issues in student repos.",
-        parents=base_parsers,
+        parents=[*base_parsers, HOOK_RESULTS_PARSER],
         formatter_class=_OrderedFormatter,
     )
     list_parser.add_argument(
@@ -782,15 +788,13 @@ def _add_subparsers(parser, show_all_opts, ext_commands):
         CLONE_PARSER,
         help="Clone student repos.",
         description="Clone student repos asynchronously in bulk.",
-        parents=[base_parser, base_student_parser, repo_name_parser],
+        parents=[
+            base_parser,
+            base_student_parser,
+            repo_name_parser,
+            HOOK_RESULTS_PARSER,
+        ],
         formatter_class=_OrderedFormatter,
-    )
-    clone.add_argument(
-        "--hook-results-file",
-        help="Path to a file to store results from plugin hooks in. The "
-        "results are stored as JSON, regardless of file extension.",
-        type=str,
-        default=None,
     )
 
     plug.manager.hook.clone_parser_hook(clone_parser=clone)
