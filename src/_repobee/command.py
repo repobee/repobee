@@ -249,6 +249,15 @@ def list_issues(
         ]
         for repo_name, issues in pers_issues_per_repo
     }
+    # meta hook result
+    hook_result_mapping["list-issues"] = [
+        plug.HookResult(
+            hook="meta",
+            status=plug.Status.SUCCESS,
+            msg="Meta info about the list-issues hook results",
+            data={"state": state.value},
+        )
+    ]
     return hook_result_mapping
 
 
