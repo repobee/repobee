@@ -240,6 +240,8 @@ def _handle_extension_parsing(ext_command, args):
         token = _parse_token(args)
         args.token = token
         api = _connect_to_api(args.base_url, token, args.org_name, args.user)
+    if "students" in args or "students_file" in args:
+        args.students = _extract_groups(args)
     return args, api
 
 
@@ -688,14 +690,31 @@ def _create_parser(show_all_opts, ext_commands):
     return parser
 
 
-def _add_extension_parsers(subparsers, ext_commands, base_parser):
+def _add_extension_parsers(
+    subparsers,
+    ext_commands,
+    base_parser,
+    base_student_parser,
+    master_org_parser,
+    repo_name_parser,
+):
     """Add extension parsers defined by plugins."""
     if not ext_commands:
         return []
     for cmd in ext_commands:
-        parents = (
-            [base_parser, cmd.parser] if cmd.requires_api else [cmd.parser]
-        )
+        parents = []
+        bp = plug.BaseParser
+        req_parsers = cmd.requires_base_parsers or []
+        if cmd.requires_api or bp.BASE in req_parsers:
+            parents.append(base_parser)
+        if bp.STUDENTS in req_parsers:
+            parents.append(base_student_parser)
+        if bp.REPO_NAMES in req_parsers:
+            parents.append(repo_name_parser)
+        if bp.MASTER_ORG in req_parsers:
+            parents.append(master_org_parser)
+        parents.append(cmd.parser)
+
         ext_parser = subparsers.add_parser(
             cmd.name,
             help=cmd.help,
@@ -703,8 +722,11 @@ def _add_extension_parsers(subparsers, ext_commands, base_parser):
             parents=parents,
             formatter_class=_OrderedFormatter,
         )
-        if not cmd.requires_api:
+        try:
             _add_traceback_arg(ext_parser)
+        except argparse.ArgumentError:
+            # already added
+            pass
 
     return ext_commands
 
@@ -838,7 +860,14 @@ def _add_subparsers(parser, show_all_opts, ext_commands):
         formatter_class=_OrderedFormatter,
     )
 
-    return _add_extension_parsers(subparsers, ext_commands, base_parser)
+    return _add_extension_parsers(
+        subparsers,
+        ext_commands,
+        base_parser,
+        base_student_parser,
+        master_org_parser,
+        repo_name_parser,
+    )
 
 
 def _create_base_parsers(show_all_opts):
