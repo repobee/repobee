@@ -873,7 +873,6 @@ def _add_subparsers(parser, show_all_opts, ext_commands):
 def _create_base_parsers(show_all_opts):
     """Create the base parsers."""
     configured_defaults = config.get_configured_defaults()
-    config.execute_config_hooks()
 
     def default(arg_name):
         return (

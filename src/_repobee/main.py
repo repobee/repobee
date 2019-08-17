@@ -16,6 +16,7 @@ from _repobee import cli
 from _repobee import plugin
 from _repobee import exception
 from _repobee import constants
+from _repobee import config
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -68,6 +69,7 @@ def main(sys_args: List[str]):
                 plugin_names + [constants.DEFAULT_PLUGIN]
             )
 
+        config.execute_config_hooks()
         ext_commands = plug.manager.hook.create_extension_command()
         parsed_args, api = cli.parse_args(
             app_args,
