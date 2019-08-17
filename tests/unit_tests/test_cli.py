@@ -698,7 +698,7 @@ class TestExtensionCommands:
         should automatically get the requisite API arguments added to it
         """
         ext_command = plug.ExtensionCommand(
-            *ext_command[: len(ext_command) - 1], requires_api=True
+            *ext_command[: len(ext_command) - 2], requires_api=True
         )
         option = "--test-option"
         ext_command.parser.add_argument(
@@ -754,7 +754,7 @@ class TestExtensionCommands:
 
         option = "--test-option"
         ext_command = plug.ExtensionCommand(
-            *ext_command[: len(ext_command) - 1], requires_api=True
+            *ext_command[: len(ext_command) - 2], requires_api=True
         )
         ext_command.parser.add_argument(
             option, action="store_true", required=True
