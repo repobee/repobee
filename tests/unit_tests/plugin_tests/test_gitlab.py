@@ -2,7 +2,7 @@ from collections import namedtuple
 
 import pytest
 import gitlab
-import repobee_plug
+import repobee_plug as plug
 
 import _repobee
 
@@ -285,17 +285,17 @@ class TestEnsureTeamsAndMembers:
         api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
         num_students = len(constants.STUDENTS)
         teams = [
-            repobee_plug.apimeta.Team(members=g1.members + g2.members)
+            plug.apimeta.Team(members=g1.members + g2.members)
             for g1, g2 in zip(
                 constants.STUDENTS[: num_students // 2],
                 constants.STUDENTS[num_students // 2 :],
             )
         ]
         expected_teams = [
-            repobee_plug.apimeta.Team(
+            plug.apimeta.Team(
                 members=[constants.USER] + t.members,
                 # the owner should not be included in the generated name
-                name=repobee_plug.apimeta.Team(members=t.members).name,
+                name=plug.apimeta.Team(members=t.members).name,
             )
             for t in teams
         ]
@@ -347,8 +347,7 @@ class TestEnsureTeamsAndMembers:
         api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
 
         api.ensure_teams_and_members(
-            constants.STUDENTS,
-            permission=repobee_plug.apimeta.TeamPermission.PULL,
+            constants.STUDENTS, permission=plug.apimeta.TeamPermission.PULL
         )
 
         actual_teams = api.get_teams()
@@ -427,7 +426,7 @@ class TestGetRepoUrls:
                     BASE_URL,
                     TARGET_GROUP,
                     str(student_group),
-                    _repobee.util.generate_repo_name(str(student_group), mn),
+                    plug.generate_repo_name(str(student_group), mn),
                 )
             )
             for student_group in constants.STUDENTS
@@ -466,8 +465,8 @@ class TestCreateRepos:
             for group in constants.STUDENTS
         ]
         yield [
-            repobee_plug.apimeta.Repo(
-                name=_repobee.util.generate_repo_name(group.name, master_name),
+            plug.apimeta.Repo(
+                name=plug.generate_repo_name(group.name, master_name),
                 description="Student repo",
                 private=True,
                 team_id=group.id,

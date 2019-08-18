@@ -23,7 +23,7 @@ required = [
     "daiquiri",
     "pygithub",
     "colored",
-    "repobee-plug==0.10.0-alpha.2",
+    "repobee-plug==0.10.0-alpha.3",
     "python-gitlab==1.8.0",
 ]
 

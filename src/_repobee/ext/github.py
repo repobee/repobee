@@ -24,7 +24,6 @@ import repobee_plug as plug
 
 from _repobee import exception
 from _repobee import tuples
-from _repobee import util
 
 REQUIRED_OAUTH_SCOPES = {"admin:org", "repo"}
 ISSUE_GENERATOR = Generator[plug.Issue, None, None]
@@ -361,7 +360,7 @@ class GitHubAPI(plug.API):
         repo_names = (
             master_repo_names
             if not teams
-            else util.generate_repo_names(teams, master_repo_names)
+            else plug.generate_repo_names(teams, master_repo_names)
         )
         return [
             self._insert_auth(url)

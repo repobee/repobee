@@ -219,7 +219,7 @@ def list_issues(
             default info.
         author: Only show issues by this author.
     """
-    repo_names = util.generate_repo_names(teams, master_repo_names)
+    repo_names = plug.generate_repo_names(teams, master_repo_names)
     max_repo_name_length = max(map(len, repo_names))
     issues_per_repo = _get_issue_generator(
         repo_names=repo_names,
@@ -373,7 +373,7 @@ def open_issue(
         api: An implementation of :py:class:`repobee_plug.API` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
-    repo_names = util.generate_repo_names(teams, master_repo_names)
+    repo_names = plug.generate_repo_names(teams, master_repo_names)
     api.open_issue(issue.title, issue.body, repo_names)
 
 
@@ -392,7 +392,7 @@ def close_issue(
         api: An implementation of :py:class:`repobee_plug.API` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
-    repo_names = util.generate_repo_names(teams, master_repo_names)
+    repo_names = plug.generate_repo_names(teams, master_repo_names)
     api.close_issue(title_regex, repo_names)
 
 
@@ -430,7 +430,7 @@ def clone_repos(
 
     for plugin in plug.manager.get_plugins():
         if "act_on_cloned_repo" in dir(plugin):
-            repo_names = util.generate_repo_names(teams, master_repo_names)
+            repo_names = plug.generate_repo_names(teams, master_repo_names)
             return _execute_post_clone_hooks(repo_names, api)
     return {}
 
@@ -552,7 +552,7 @@ def assign_peer_reviews(
                     (
                         plug.Team(
                             members=alloc.review_team.members,
-                            name=util.generate_review_team_name(
+                            name=plug.generate_review_team_name(
                                 str(alloc.reviewed_team), master_name
                             ),
                         ),
@@ -568,7 +568,7 @@ def assign_peer_reviews(
         api.add_repos_to_review_teams(
             {
                 review_team.name: [
-                    util.generate_repo_name(reviewed_team, master_name)
+                    plug.generate_repo_name(reviewed_team, master_name)
                 ]
                 for review_team, reviewed_team in zip(
                     review_teams, reviewed_teams
@@ -593,7 +593,7 @@ def purge_review_teams(
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     review_team_names = [
-        util.generate_review_team_name(student, master_repo_name)
+        plug.generate_review_team_name(student, master_repo_name)
         for student in students
         for master_repo_name in master_repo_names
     ]
@@ -620,7 +620,7 @@ def check_peer_review_progress(
 
     """
     review_team_names = [
-        util.generate_review_team_name(team, master_name)
+        plug.generate_review_team_name(team, master_name)
         for team in teams
         for master_name in master_repo_names
     ]
@@ -650,7 +650,7 @@ def _create_repo_infos(
         repo_base_name = util.repo_name(url)
         repo_infos += [
             plug.Repo(
-                name=util.generate_repo_name(team.name, repo_base_name),
+                name=plug.generate_repo_name(team.name, repo_base_name),
                 description="{} created for {}".format(
                     repo_base_name, team.name
                 ),
