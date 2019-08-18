@@ -10,7 +10,6 @@ import repobee_plug as plug
 import _repobee
 import _repobee.ext
 import _repobee.ext.github
-from _repobee import util
 from _repobee import exception
 from _repobee.ext.github import REQUIRED_OAUTH_SCOPES
 
@@ -99,7 +98,7 @@ def review_teams(review_student_teams):
     review_teams = {}
     for i, student_team in enumerate(review_student_teams):
         review_teams[
-            util.generate_review_team_name(student_team, master_repo)
+            plug.generate_review_team_name(student_team, master_repo)
         ] = itertools.chain.from_iterable(
             team.members
             for team in review_student_teams[:i]
@@ -506,7 +505,7 @@ class TestGetRepoUrls:
         """
         students = list(constants.STUDENTS)
         master_repo_names = [repo.name for repo in repos]
-        expected_repo_names = util.generate_repo_names(
+        expected_repo_names = plug.generate_repo_names(
             students, master_repo_names
         )
         # assume works correctly when called with just repo names

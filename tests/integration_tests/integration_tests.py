@@ -8,12 +8,12 @@ import itertools
 import pytest
 import gitlab
 
+import repobee_plug as plug
 from repobee_plug import apimeta
 
 import _repobee.ext
 import _repobee.ext.gitlab
 import _repobee.cli
-from _repobee import util
 
 assert os.getenv(
     "REPOBEE_NO_VERIFY_SSL"
@@ -37,9 +37,7 @@ ACTUAL_USER = "repobee-user"
 MASTER_REPO_NAMES = "task-1 task-2 task-3".split()
 STUDENT_TEAMS = [apimeta.Team(members=[s]) for s in "slarse rjglasse".split()]
 STUDENT_TEAM_NAMES = [str(t) for t in STUDENT_TEAMS]
-STUDENT_REPO_NAMES = _repobee.util.generate_repo_names(
-    STUDENT_TEAMS, MASTER_REPO_NAMES
-)
+STUDENT_REPO_NAMES = plug.generate_repo_names(STUDENT_TEAMS, MASTER_REPO_NAMES)
 
 REPOBEE_GITLAB = "repobee -p gitlab"
 BASE_ARGS = ["--bu", BASE_URL, "-o", ORG_NAME, "-t", TOKEN, "--tb"]
@@ -81,7 +79,7 @@ def assert_master_repos_exist(master_repo_names, org_name):
 
 def assert_repos_exist(student_teams, master_repo_names, org_name=ORG_NAME):
     """Assert that the associated student repos exist."""
-    repo_names = util.generate_repo_names(student_teams, master_repo_names)
+    repo_names = plug.generate_repo_names(student_teams, master_repo_names)
     gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
     target_group = gl.groups.list(search=ORG_NAME)[0]
     student_groups = gl.groups.list(id=target_group.id)
@@ -357,10 +355,10 @@ class TestClone:
         """Test that clone does not clobber existing directories."""
         team_with_local_repos = STUDENT_TEAMS[0]
         teams_without_local_repos = STUDENT_TEAMS[1:]
-        pre_existing_dirnames = util.generate_repo_names(
+        pre_existing_dirnames = plug.generate_repo_names(
             [team_with_local_repos], MASTER_REPO_NAMES
         )
-        non_pre_existing_dirnames = util.generate_repo_names(
+        non_pre_existing_dirnames = plug.generate_repo_names(
             teams_without_local_repos, MASTER_REPO_NAMES
         )
 
@@ -551,7 +549,7 @@ class TestListIssues:
         assert len(open_issues) == 2, "expected there to be only 2 open issues"
         matched = open_issues[0]
         unmatched = open_issues[1]
-        repo_names = util.generate_repo_names(STUDENT_TEAMS, MASTER_REPO_NAMES)
+        repo_names = plug.generate_repo_names(STUDENT_TEAMS, MASTER_REPO_NAMES)
 
         issue_pattern_template = r"^\[INFO\].*{}/#\d:\s+{}.*by {}.?$"
         expected_issue_output_patterns = [

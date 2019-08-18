@@ -62,7 +62,7 @@ STUDENTS = constants.STUDENTS
 
 def generate_team_repo_url(student, base_name):
     return "https://slarse.se/repos/{}".format(
-        util.generate_repo_name(student, base_name)
+        plug.generate_repo_name(student, base_name)
     )
 
 
@@ -76,7 +76,7 @@ def get_repo_urls_fake(self, master_repo_names, org_name=None, teams=None):
             generate_repo_url,
             master_repo_names
             if not teams
-            else util.generate_repo_names(teams, master_repo_names),
+            else plug.generate_repo_names(teams, master_repo_names),
         )
     )
 
@@ -90,7 +90,7 @@ MASTER_NAMES = ("week-1", "week-2", "week-3")
 MASTER_URLS = tuple(generate_repo_url(name) for name in MASTER_NAMES)
 
 STUDENT_REPO_NAMES = tuple(
-    util.generate_repo_name(student, master_name)
+    plug.generate_repo_name(student, master_name)
     for master_name in MASTER_NAMES
     for student in STUDENTS
 )
@@ -190,7 +190,7 @@ def repo_infos(master_urls, students):
         repo_base_name = util.repo_name(url)
         repo_infos += [
             plug.apimeta.Repo(
-                name=util.generate_repo_name(student, repo_base_name),
+                name=plug.generate_repo_name(student, repo_base_name),
                 description="{} created for {}".format(
                     repo_base_name, student
                 ),
@@ -212,7 +212,7 @@ def push_tuples(master_urls, students, tmpdir):
             branch="master",
         )
         # note that the order here is significant, must correspond with
-        # util.generate_repo_names
+        # plug.generate_repo_names
         for url in master_urls
         for student in students
     ]
@@ -367,7 +367,7 @@ class TestUpdateStudentRepos:
         ]
 
         fail_students = ["a", "c"]
-        fail_repo_names = util.generate_repo_names(
+        fail_repo_names = plug.generate_repo_names(
             fail_students, [master_name]
         )
         fail_repo_urls = get_repo_urls_fake(
@@ -417,7 +417,7 @@ class TestUpdateStudentRepos:
         ]
 
         fail_repo_names = [
-            util.generate_repo_name(stud, master_name) for stud in ["a", "c"]
+            plug.generate_repo_name(stud, master_name) for stud in ["a", "c"]
         ]
         fail_repo_urls = [self.generate_url(name) for name in fail_repo_names]
 
@@ -549,7 +549,7 @@ class TestCloneRepos:
         """Tests that the correct calls are made when there are no errors."""
         expected_urls = [
             generate_repo_url(name)
-            for name in util.generate_repo_names(students, master_names)
+            for name in plug.generate_repo_names(students, master_names)
         ]
 
         command.clone_repos(master_names, students, api_mock)
@@ -562,7 +562,7 @@ class TestCloneRepos:
         self, api_mock, git_mock, master_names, students, act_hook_mocks
     ):
         javac_hook, pylint_hook = act_hook_mocks
-        repo_names = util.generate_repo_names(students, master_names)
+        repo_names = plug.generate_repo_names(students, master_names)
         expected_pylint_calls = [
             call(os.path.abspath(repo_name)) for repo_name in repo_names
         ]
@@ -661,7 +661,7 @@ class TestListIssues:
 # TODO add more test cases
 def test_purge_review_teams(master_names, students, api_mock):
     expected_review_teams = [
-        util.generate_review_team_name(s, mn)
+        plug.generate_review_team_name(s, mn)
         for s in students
         for mn in master_names
     ]
@@ -718,8 +718,8 @@ class TestAssignPeerReviewers:
         issue = plug.apimeta.Issue("this is a title", "this is a body")
         mappings = [
             {
-                util.generate_review_team_name(student, master_name): [
-                    util.generate_repo_name(student, master_name)
+                plug.generate_review_team_name(student, master_name): [
+                    plug.generate_repo_name(student, master_name)
                 ]
                 for student in students
             }
@@ -752,7 +752,7 @@ class TestCheckPeerReviewProgress:
         """
         title_regex = "Peer"
         review_team_names = [
-            util.generate_review_team_name(student, master_name)
+            plug.generate_review_team_name(student, master_name)
             for student in students
             for master_name in master_names
         ]

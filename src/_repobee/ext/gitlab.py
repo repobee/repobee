@@ -24,7 +24,6 @@ import gitlab
 import repobee_plug as plug
 
 from _repobee import exception
-from _repobee import util
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -321,7 +320,7 @@ class GitLabAPI(plug.API):
                 "{}/{}/{}.git".format(
                     group_url,
                     team,
-                    util.generate_repo_name(str(team), master_repo_name),
+                    plug.generate_repo_name(str(team), master_repo_name),
                 )
                 for team in teams
                 for master_repo_name in master_repo_names
