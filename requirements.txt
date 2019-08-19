@@ -3,5 +3,5 @@ colored
 daiquiri
 pluggy>=0.8.0
 pygithub
-python-gitlab==1.8.0
-repobee-plug==0.10.0-alpha.4
+python-gitlab==1.9.0
+repobee-plug==0.10.0
