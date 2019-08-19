@@ -36,7 +36,7 @@ courses have roughly 200 students and several thousands of repositories,
 allowing us to test RepoBee at quite a large scale.
 
 ### Citing RepoBee in an academic context
-If want to reference RepoBee in a paper, please cite the following paper:
+If you want to reference RepoBee in a paper, please cite the following paper:
 
 > Simon Larsén and Richard Glassey. 2019. RepoBee: Developing Tool Support for
 > Courses using Git/GitHub. In Proceedings of the 2019 ACM Conference on
