@@ -11,6 +11,7 @@ import repobee_plug as plug
 import _repobee
 import _repobee.ext
 import _repobee.ext.github
+import _repobee.ext.query
 import _repobee.constants
 import _repobee.plugin
 from _repobee import cli
@@ -776,6 +777,25 @@ class TestExtensionCommands:
         assert mock_callback.call_args_list[0] == mock.call(
             parsed_args, api_instance_mock
         )
+
+    def test_parse_ext_command_that_requires_base_parsers(self):
+        """The query command requires the students and repo names parsers."""
+        query_command = _repobee.ext.query.create_extension_command()
+        args = [
+            query_command.name,
+            "--hook-results-file",
+            "some/results/file.json",
+            "--mn",
+            *REPO_NAMES,
+            "-s",
+            *STUDENTS_STRING.split(),
+        ]
+
+        parsed_args, api = cli.parse_args(args, ext_commands=[query_command])
+
+        assert api is None
+        assert parsed_args.master_repo_names == list(REPO_NAMES)
+        assert sorted(parsed_args.students) == sorted(STUDENTS)
 
 
 class TestStudentParsing:
