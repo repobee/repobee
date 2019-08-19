@@ -4,6 +4,7 @@ import subprocess
 import pathlib
 import re
 import itertools
+import tempfile
 
 import pytest
 import gitlab
@@ -90,6 +91,29 @@ def assert_repos_exist(student_teams, master_repo_names, org_name=ORG_NAME):
     assert set(project_names) == set(repo_names)
 
 
+def assert_repos_contain(
+    student_teams, master_repo_names, filename, text, org=ORG_NAME
+):
+    """Assert that each of the student repos contain the given file."""
+    repo_names = plug.generate_repo_names(student_teams, master_repo_names)
+    gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
+    target_group = gl.groups.list(search=ORG_NAME)[0]
+    student_groups = gl.groups.list(id=target_group.id)
+
+    projects = [
+        gl.projects.get(p.id)
+        for g in student_groups
+        for p in g.projects.list()
+        if p.name in repo_names
+    ]
+    assert len(projects) == len(repo_names)
+    for project in projects:
+        assert (
+            project.files.get(filename, "master").decode().decode("utf8")
+            == text
+        )
+
+
 def assert_groups_exist(student_teams, org_name=ORG_NAME):
     """Assert that the expected student groups exist and that the expected
     members are in them.
@@ -119,12 +143,14 @@ def _assert_on_projects(student_teams, master_repo_names, assertion):
     be a callable taking precisely on project as an argument.
     """
     gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
+    repo_names = plug.generate_repo_names(student_teams, master_repo_names)
     target_group = gl.groups.list(search=ORG_NAME)[0]
     student_groups = gl.groups.list(id=target_group.id)
     projects = [
-        gl.projects.get(p.id, lazy=True)
+        gl.projects.get(p.id)
         for g in student_groups
         for p in g.projects.list()
+        if p.name in repo_names
     ]
 
     for proj in projects:
@@ -190,6 +216,53 @@ def run_in_docker(command, extra_args=""):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
+
+
+def update_repo(repo_name, filename, text):
+    """Add a file with the given filename and text to the repo."""
+    gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
+    proj, *_ = [
+        p for p in gl.projects.list(search=repo_name) if p.name == repo_name
+    ]
+    env = os.environ.copy()
+    env["GIT_SSL_NO_VERIFY"] = "true"
+    env["GIT_AUTHOR_EMAIL"] = "slarse@kth.se"
+    env["GIT_AUTHOR_NAME"] = "Simon"
+    env["GIT_COMMITTER_EMAIL"] = env["GIT_AUTHOR_EMAIL"]
+    env["GIT_COMMITTER_NAME"] = env["GIT_AUTHOR_NAME"]
+    with tempfile.TemporaryDirectory() as tmpdir:
+        url_with_token = (
+            proj.web_url.replace(
+                "https://", "https://oauth2:{}@".format(TOKEN)
+            )
+            + ".git"
+        )
+        clone_proc = subprocess.run(
+            "git clone {}".format(url_with_token).split(), cwd=tmpdir, env=env
+        )
+        assert clone_proc.returncode == 0
+
+        repo_dir = pathlib.Path(tmpdir) / proj.name
+        new_file = repo_dir / filename
+        new_file.touch()
+        new_file.write_text(text)
+
+        add_proc = subprocess.run(
+            "git add {}".format(filename).split(), cwd=str(repo_dir), env=env
+        )
+        assert add_proc.returncode == 0
+
+        commit_proc = subprocess.run(
+            "git commit -am newfile".split(), cwd=str(repo_dir), env=env
+        )
+        assert commit_proc.returncode == 0
+
+        push_proc = subprocess.run(
+            "git push".split(), cwd=str(repo_dir), env=env
+        )
+        assert push_proc.returncode == 0
+
+    assert proj.files.get(filename, "master").decode().decode("utf8") == text
 
 
 @pytest.fixture
@@ -302,7 +375,6 @@ class TestClone:
 
         result = run_in_docker(command, extra_args=tmpdir_volume_arg)
 
-        print(result)
         assert result.returncode == 0
         assert_cloned_repos(STUDENT_REPO_NAMES, tmpdir)
 
@@ -428,6 +500,69 @@ class TestSetup:
         assert result.returncode == 0
         assert_repos_exist(STUDENT_TEAMS, MASTER_REPO_NAMES)
         assert_groups_exist(STUDENT_TEAMS)
+
+
+@pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
+class TestUpdate:
+    """Integration tests for the update command."""
+
+    def test_happy_path(self, with_student_repos):
+        master_repo = MASTER_REPO_NAMES[0]
+        filename = "superfile.super"
+        text = "some epic content\nfor this file!"
+        update_repo(master_repo, filename, text)
+
+        command = " ".join(
+            [
+                REPOBEE_GITLAB,
+                _repobee.cli.UPDATE_PARSER,
+                *MASTER_ORG_ARG,
+                *BASE_ARGS,
+                "--mn",
+                master_repo,
+                *STUDENTS_ARG,
+            ]
+        )
+
+        result = run_in_docker(command)
+        assert result.returncode == 0
+        assert_repos_contain(STUDENT_TEAMS, [master_repo], filename, text)
+
+    def test_opens_issue_if_update_rejected(
+        self, tmpdir, with_student_repos, tmpdir_volume_arg
+    ):
+        master_repo = MASTER_REPO_NAMES[0]
+        conflict_repo = plug.generate_repo_name(STUDENT_TEAMS[0], master_repo)
+        filename = "superfile.super"
+        text = "some epic content\nfor this file!"
+        # update the master repo
+        update_repo(master_repo, filename, text)
+        # conflicting update in the student repo
+        update_repo(conflict_repo, "somefile.txt", "some other content")
+
+        issue = plug.Issue(title="Oops, push was rejected!", body="")
+        issue_file = pathlib.Path(str(tmpdir)) / "issue.md"
+        issue_file.write_text(issue.title)
+
+        command = " ".join(
+            [
+                REPOBEE_GITLAB,
+                _repobee.cli.UPDATE_PARSER,
+                *MASTER_ORG_ARG,
+                *BASE_ARGS,
+                "--mn",
+                master_repo,
+                *STUDENTS_ARG,
+                "--issue",
+                issue_file.name,
+            ]
+        )
+
+        result = run_in_docker(command, extra_args=tmpdir_volume_arg)
+
+        assert result.returncode == 0
+        assert_repos_contain(STUDENT_TEAMS[1:], [master_repo], filename, text)
+        assert_issues_exist(STUDENT_TEAMS[0:1], [master_repo], issue)
 
 
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
