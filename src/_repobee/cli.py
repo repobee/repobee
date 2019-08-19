@@ -171,7 +171,6 @@ def parse_args(
         )
 
     _validate_tls_url(args.base_url)
-    token = _parse_token(args)
 
     if subparser == VERIFY_PARSER:
         # quick parse for verify connection
@@ -185,7 +184,7 @@ def parse_args(
                 master_org_name=args.master_org_name
                 if "master_org_name" in args
                 else None,
-                token=token,
+                token=args.token,
             ),
             None,
         )
@@ -195,7 +194,7 @@ def parse_args(
 
     api = _connect_to_api(
         args.base_url,
-        token,
+        args.token,
         args.org_name,
         args.user if "user" in args else None,
     )
@@ -220,26 +219,17 @@ def parse_args(
     )
     args_dict["master_repo_urls"] = master_urls
     args_dict["master_repo_names"] = master_names
-    args_dict["token"] = token
 
     return argparse.Namespace(**args_dict), api
-
-
-def _parse_token(args):
-    """Get the OUATH2 token from the args or an environment variable."""
-    # environment token overrides config
-    return os.getenv("REPOBEE_OAUTH") or (
-        args.token if "token" in args else ""
-    )
 
 
 def _handle_extension_parsing(ext_command, args):
     """Handle parsing of extension command arguments."""
     api = None
     if ext_command.requires_api:
-        token = _parse_token(args)
-        args.token = token
-        api = _connect_to_api(args.base_url, token, args.org_name, args.user)
+        api = _connect_to_api(
+            args.base_url, args.token, args.org_name, args.user
+        )
     if "students" in args or "students_file" in args:
         args.students = _extract_groups(args)
     return args, api
@@ -971,7 +961,12 @@ def _create_base_parsers(show_all_opts):
         dest="base_url",
     )
     base_parser.add_argument(
-        "-t", "--token", help=token_help, type=str, default=default("token")
+        "-t",
+        "--token",
+        help=token_help,
+        type=str,
+        required=not configured("token") and api_requires("token"),
+        default=default("token"),
     )
 
     _add_traceback_arg(base_parser)
