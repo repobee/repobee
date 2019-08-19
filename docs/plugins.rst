@@ -7,6 +7,75 @@ programmers to hook into certain execution points. To read more about the
 details of these hooks (and how to write your own plugins), see the
 `repobee-plug docs`_.
 
+.. _list of plugins:
+
+List of Plugins
+===============
+This is a list of curated plugins that are safe to use. If you find a plugin
+for RepoBee not on this list, please get in touch and it may be added.
+
+Internal (ship with RepoBee)
+****************************
+Plugins marked with ``*`` belong to the default plugins and are loaded
+automatically. These plugins can be used for reference on how to implement
+plugins, you can find the source code for them in the
+`ext directory of the GitHub repo <https://github.com/repobee/repobee/tree/master/src/_repobee/ext>`_.
+
+* ``github*``
+
+  - Allows for interfacing with GitHub instances.
+
+* ``configwizard*``
+
+  - Adds the ``config-wizard`` command for editing the configuration file.
+
+* ``gitlab``
+
+  - Allows for interfacing with GitLab instances (see :ref:`gitlab`).
+
+* ``javac``
+
+  - Hooks into the ``clone`` command and runs ``javac`` on all Java code in
+    every cloned student repository.
+
+* ``pylint``
+
+  - Hooks into the ``clone`` command and runs ``pylint`` on all Python code in
+    every cloned repository.
+
+* ``pairwise``
+
+  - Hooks into the ``assign-reviews`` command and allocates students into pairs
+    that internally review each other.
+
+* ``query`` (EXPERIMENTAL!)
+
+  - Adds the ``query`` command to RepoBee allowing the user to query hook
+    results files for information.
+
+External plugins (install separately)
+*************************************
+External plugins that need to be installed separately from RepoBee. These are
+external either because they are complicated, or because their use cases are too
+specific for the core application.
+
+* `junit4 <https://github.com/repobee/repobee-junit4>`_
+
+  - Hooks into the ``clone`` command and runs JUnit4 test classes on students'
+    Java code.
+
+* `csvgrades <https://github.com/slarse/repobee-csvgrades>`_
+
+  - Finds issues matching user-specified conditions and reports them as grades
+    into a CSV file. Useful for teachers who (themselves or via TAs) provide
+    grading feedback in issues and need a way to automatically compose the
+    results.
+
+* `gofmt <https://github.com/slarse/repobee-gofmt>`_
+
+  - Simple plugin that runs ``gofmt`` on student's Go source code and reports
+    whether or not it thinks the student code needs formatting or not.
+
 .. _configure_plugs:
 
 Using Existing Plugins
