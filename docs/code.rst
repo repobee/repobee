@@ -94,3 +94,9 @@ config-wizard
 
 .. automodule:: _repobee.ext.configwizard
    :members:
+
+query
+-----
+
+.. automodule:: _repobee.ext.query
+   :members:
