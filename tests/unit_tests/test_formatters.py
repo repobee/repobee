@@ -1,10 +1,12 @@
 import pytest
+
+import repobee_plug as plug
+
 from _repobee import formatters
-from _repobee import tuples
 
 
 def strs_to_reviews(*repo_names, done=True):
-    return [tuples.Review(repo, done) for repo in repo_names]
+    return [plug.Review(repo, done) for repo in repo_names]
 
 
 @pytest.fixture
@@ -97,8 +99,8 @@ Color coding: grey: not done, green: done, red: num done + num remaining != num_
         reviews = {
             "ham": strs_to_reviews("spam-week-1", "bacon-week-1", done=False),
             "spam": [
-                tuples.Review("bacon-week-1", False),
-                tuples.Review("eggs-week-1", False),
+                plug.Review("bacon-week-1", False),
+                plug.Review("eggs-week-1", False),
             ],
             "bacon": strs_to_reviews("eggs-week-1", done=False),
             "eggs": strs_to_reviews(

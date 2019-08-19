@@ -12,7 +12,4 @@ the goal is to collect all container types in this module.
 """
 from collections import namedtuple
 
-
-Review = namedtuple("Review", ["repo", "done"])
-
 Deprecation = namedtuple("Deprecation", ["replacement", "remove_by"])

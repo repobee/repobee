@@ -11,16 +11,15 @@ import os
 from typing import Mapping, List
 
 from colored import fg, bg, style
-from repobee_plug import Status
 import daiquiri
 
-from _repobee import tuples
+import repobee_plug as plug
 
 LOGGER = daiquiri.getLogger(__name__)
 
 
 def format_peer_review_progress_output(
-    reviews: Mapping[str, List[tuples.Review]],
+    reviews: Mapping[str, List[plug.Review]],
     teams: List[str],
     num_reviews: int,
 ):
@@ -50,7 +49,7 @@ def _format_row(items: List[str]) -> str:
 
 def _format_reviewer(
     reviewer: str,
-    review_list: List[tuples.Review],
+    review_list: List[plug.Review],
     num_reviews: bool,
     even: bool,
 ):
@@ -85,11 +84,11 @@ def _format_reviewer(
 
 
 def format_hook_result(hook_result):
-    if hook_result.status == Status.ERROR:
+    if hook_result.status == plug.Status.ERROR:
         out = bg("red")
-    elif hook_result.status == Status.WARNING:
+    elif hook_result.status == plug.Status.WARNING:
         out = bg("yellow")
-    elif hook_result.status == Status.SUCCESS:
+    elif hook_result.status == plug.Status.SUCCESS:
         out = bg("dark_green")
     else:
         raise ValueError(

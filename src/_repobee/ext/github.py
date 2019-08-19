@@ -23,7 +23,6 @@ import github
 import repobee_plug as plug
 
 from _repobee import exception
-from _repobee import tuples
 
 REQUIRED_OAUTH_SCOPES = {"admin:org", "repo"}
 ISSUE_GENERATOR = Generator[plug.Issue, None, None]
@@ -488,7 +487,7 @@ class GitHubAPI(plug.API):
         review_team_names: Iterable[str],
         teams: Iterable[plug.Team],
         title_regex: str,
-    ) -> Mapping[str, List[tuples.Review]]:
+    ) -> Mapping[str, List[plug.Review]]:
         """See :py:meth:`repobee_plug.apimeta.APISpec.get_review_progress`."""
         reviews = collections.defaultdict(list)
         review_team_impls = self._get_teams_in(review_team_names)
@@ -516,7 +515,7 @@ class GitHubAPI(plug.API):
 
                 for team in review_teams:
                     reviews[str(team)].append(
-                        tuples.Review(
+                        plug.Review(
                             repo=repo.name,
                             done=any(
                                 map(
