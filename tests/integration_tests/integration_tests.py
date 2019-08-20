@@ -234,7 +234,7 @@ def update_repo(repo_name, filename, text):
         url_with_token = (
             proj.web_url.replace(
                 "https://", "https://oauth2:{}@".format(TOKEN)
-            )
+            ).replace(BASE_DOMAIN, LOCAL_DOMAIN)
             + ".git"
         )
         clone_proc = subprocess.run(
