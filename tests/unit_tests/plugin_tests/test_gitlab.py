@@ -5,6 +5,7 @@ import gitlab
 import repobee_plug as plug
 
 import _repobee
+from _repobee import exception
 
 import constants
 
@@ -246,7 +247,9 @@ TARGET_GROUP = "repobee-testing"
 
 @pytest.fixture(autouse=True)
 def api_mock(mocker):
-    mocker.patch("_repobee.ext.gitlab.gitlab.Gitlab", side_effect=GitLabMock)
+    return mocker.patch(
+        "_repobee.ext.gitlab.gitlab.Gitlab", side_effect=GitLabMock
+    )
 
 
 @pytest.fixture
@@ -254,7 +257,41 @@ def team_names():
     return [str(s) for s in constants.STUDENTS]
 
 
+def raise_(error):
+    def inner(*args, **kwargs):
+        raise error
+
+    return inner
+
+
 class TestEnsureTeamsAndMembers:
+    @pytest.mark.parametrize(
+        "raised_error,expected_error",
+        [
+            (
+                gitlab.exceptions.GitlabAuthenticationError(response_code=401),
+                exception.BadCredentials,
+            ),
+            (
+                gitlab.exceptions.GitlabGetError(response_code=404),
+                exception.NotFoundError,
+            ),
+            (
+                gitlab.exceptions.GitlabError(response_code=500),
+                exception.APIError,
+            ),
+        ],
+    )
+    def test_converts_gitlab_errors_to_repobee_errors(
+        self, api_mock, raised_error, expected_error, monkeypatch
+    ):
+        api_mock.groups.list.side_effect = raise_(raised_error)
+        api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
+
+        monkeypatch.setattr(GitLabMock, "_list_groups", raise_(raised_error))
+        with pytest.raises(expected_error):
+            api.ensure_teams_and_members(constants.STUDENTS)
+
     def test_with_no_pre_existing_groups(self, api_mock):
         """Test that all groups are created correctly when the only existing
         group is the target group.
