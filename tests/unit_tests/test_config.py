@@ -21,7 +21,7 @@ class TestGetConfiguredDefaults:
 
     def test_get_configured_defaults_no_config_file(self, isfile_mock):
         defaults = config.get_configured_defaults()
-        assert not defaults
+        assert defaults == dict(token=constants.TOKEN)
 
     def test_get_configured_defaults_empty_file(self, empty_config_mock):
         with pytest.raises(exception.FileError) as exc_info:
@@ -31,9 +31,12 @@ class TestGetConfiguredDefaults:
         )
 
     def test_get_configured_defaults_reads_full_config(
-        self, config_mock, students_file
+        self, config_mock, students_file, mock_getenv
     ):
+        mock_getenv.side_effect = lambda name: None
+
         defaults = config.get_configured_defaults()
+
         assert defaults["user"] == USER
         assert defaults["base_url"] == BASE_URL
         assert defaults["org_name"] == ORG_NAME
@@ -41,6 +44,12 @@ class TestGetConfiguredDefaults:
         assert defaults["plugins"] == ",".join(PLUGINS)
         assert defaults["master_org_name"] == MASTER_ORG_NAME
         assert defaults["token"] == CONFIG_TOKEN
+
+    def test_token_in_env_variable_overrides_configuration_file(
+        self, config_mock
+    ):
+        defaults = config.get_configured_defaults()
+        assert defaults["token"] == constants.TOKEN
 
     def test_get_configured_defaults_raises_on_invalid_keys(
         self, empty_config_mock, students_file

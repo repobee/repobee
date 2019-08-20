@@ -8,6 +8,7 @@ Contains the code required for pre-configuring user interfaces.
 
 .. moduleauthor:: Simon Larsén
 """
+import os
 import pathlib
 import configparser
 from typing import Union, List, Mapping
@@ -128,9 +129,13 @@ def check_config_integrity(
 def _read_defaults(
     config_file: pathlib.Path = constants.DEFAULT_CONFIG_FILE
 ) -> dict:
+    token = os.getenv("REPOBEE_OAUTH")
     if not config_file.is_file():
-        return {}
-    return dict(_read_config(config_file)[constants.DEFAULTS_SECTION_HDR])
+        return {} if not token else dict(token=token)
+    defaults = dict(_read_config(config_file)[constants.DEFAULTS_SECTION_HDR])
+    if token:
+        defaults["token"] = token
+    return defaults
 
 
 def _read_config(
