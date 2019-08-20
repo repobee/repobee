@@ -16,7 +16,6 @@ import collections
 import contextlib
 import pathlib
 from typing import List, Iterable, Optional, Generator, Tuple
-from socket import gaierror
 
 import daiquiri
 import gitlab
@@ -73,22 +72,18 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
             return
 
         if e.response_code == 404:
-            raise exception.NotFoundError(str(e), status=404)
+            raise exception.NotFoundError(str(e), status=404) from e
         elif e.response_code == 401:
             raise exception.BadCredentials(
                 "credentials rejected, verify that token has correct access.",
                 status=401,
-            )
+            ) from e
         else:
-            raise exception.APIError(str(e), status=e.response_code)
-    except gaierror:
-        raise exception.ServiceNotFoundError(
-            "GitLab service could not be found, check the url"
-        )
+            raise exception.APIError(str(e), status=e.response_code) from e
     except Exception as e:
         raise exception.UnexpectedException(
             "a {} occured unexpectedly: {}".format(type(e).__name__, str(e))
-        )
+        ) from e
 
 
 class GitLabAPI(plug.API):
@@ -104,9 +99,11 @@ class GitLabAPI(plug.API):
             base_url, private_token=token, ssl_verify=ssl_verify
         )
         self._group_name = org_name
-        self._group = self._get_organization(self._group_name)
         self._token = token
         self._base_url = base_url
+
+        with _try_api_request():
+            self._group = self._get_organization(self._group_name)
 
     def _get_teams_in(self, team_names: Iterable[str]):
         """Get all teams that match any team name in the team_names iterable.
@@ -131,27 +128,30 @@ class GitLabAPI(plug.API):
         """See
         :py:meth:`repobee_plug.apimeta.APISpec.ensure_teams_and_members`.
         """
-        member_lists = {team.name: team.members for team in teams}
-        raw_permission = _TEAM_PERMISSION_MAPPING[permission]
-        raw_teams = self._ensure_teams_exist(
-            [str(team_name) for team_name in member_lists.keys()],
-            permission=raw_permission,
-        )
-
-        for team in [team for team in raw_teams if member_lists[team.name]]:
-            self._ensure_members_in_team(
-                team, member_lists[team.name], raw_permission
+        with _try_api_request():
+            member_lists = {team.name: team.members for team in teams}
+            raw_permission = _TEAM_PERMISSION_MAPPING[permission]
+            raw_teams = self._ensure_teams_exist(
+                [str(team_name) for team_name in member_lists.keys()],
+                permission=raw_permission,
             )
 
-        return [
-            plug.Team(
-                name=t.name,
-                members=member_lists[t.name],
-                id=t.id,
-                implementation=t,
-            )
-            for t in raw_teams
-        ]
+            for team in [
+                team for team in raw_teams if member_lists[team.name]
+            ]:
+                self._ensure_members_in_team(
+                    team, member_lists[team.name], raw_permission
+                )
+
+            return [
+                plug.Team(
+                    name=t.name,
+                    members=member_lists[t.name],
+                    id=t.id,
+                    implementation=t,
+                )
+                for t in raw_teams
+            ]
 
     def _ensure_members_in_team(
         self, team, members: Iterable[str], permission: int
@@ -192,15 +192,16 @@ class GitLabAPI(plug.API):
 
     def get_teams(self) -> List[plug.Team]:
         """See :py:meth:`repobee_plug.apimeta.APISpec.get_teams`."""
-        return [
-            plug.Team(
-                name=t.name,
-                members=[m.username for m in t.members.list()],
-                id=t.id,
-                implementation=t,
-            )
-            for t in self._gitlab.groups.list(id=self._group.id)
-        ]
+        with _try_api_request():
+            return [
+                plug.Team(
+                    name=t.name,
+                    members=[m.username for m in t.members.list()],
+                    id=t.id,
+                    implementation=t,
+                )
+                for t in self._gitlab.groups.list(id=self._group.id)
+            ]
 
     def _add_to_team(self, members: Iterable[str], team, permission):
         """Add members to a team.
@@ -288,16 +289,19 @@ class GitLabAPI(plug.API):
                 created = True
 
             if not created:
-                # TODO optimize, this team get is redundant
-                team_name = self._gitlab.groups.get(repo.team_id).path
-                repo_urls.append(
-                    self._gitlab.projects.get(
-                        "/".join([self._group.path, team_name, repo.name])
-                    ).attributes["http_url_to_repo"]
-                )
-                LOGGER.info(
-                    "{}/{} already exists".format(self._group.name, repo.name)
-                )
+                with _try_api_request():
+                    # TODO optimize, this team get is redundant
+                    team_name = self._gitlab.groups.get(repo.team_id).path
+                    repo_urls.append(
+                        self._gitlab.projects.get(
+                            "/".join([self._group.path, team_name, repo.name])
+                        ).attributes["http_url_to_repo"]
+                    )
+                    LOGGER.info(
+                        "{}/{} already exists".format(
+                            self._group.name, repo.name
+                        )
+                    )
 
         return [self._insert_auth(url) for url in repo_urls]
 
@@ -374,34 +378,38 @@ class GitLabAPI(plug.API):
         self, title: str, body: str, repo_names: Iterable[str]
     ) -> None:
         """See :py:meth:`repobee_plug.apimeta.APISpec.open_issue`."""
-        projects = self._get_projects_and_names_by_name(repo_names)
-        for lazy_project, project_name in projects:
-            issue = lazy_project.issues.create(dict(title=title, body=body))
-            LOGGER.info(
-                "Opened issue {}/#{}-'{}'".format(
-                    project_name, issue.id, issue.title
+        with _try_api_request():
+            projects = self._get_projects_and_names_by_name(repo_names)
+            for lazy_project, project_name in projects:
+                issue = lazy_project.issues.create(
+                    dict(title=title, body=body)
                 )
-            )
+                LOGGER.info(
+                    "Opened issue {}/#{}-'{}'".format(
+                        project_name, issue.id, issue.title
+                    )
+                )
 
     def close_issue(self, title_regex: str, repo_names: Iterable[str]) -> None:
         """See :py:meth:`repobee_plug.apimeta.APISpec.close_issue`."""
-        projects = self._get_projects_and_names_by_name(repo_names)
-        issues_and_project_names = (
-            (issue, project_name)
-            for project, project_name in projects
-            for issue in project.issues.list(state="opened")
-            if re.match(title_regex, issue.title)
-        )
         closed = 0
-        for issue, project_name in issues_and_project_names:
-            issue.state_event = "close"
-            issue.save()
-            LOGGER.info(
-                "Closed issue {}/#{}-'{}'".format(
-                    project_name, issue.id, issue.title
-                )
+        with _try_api_request():
+            projects = self._get_projects_and_names_by_name(repo_names)
+            issues_and_project_names = (
+                (issue, project_name)
+                for project, project_name in projects
+                for issue in project.issues.list(state="opened")
+                if re.match(title_regex, issue.title)
             )
-            closed += 1
+            for issue, project_name in issues_and_project_names:
+                issue.state_event = "close"
+                issue.save()
+                LOGGER.info(
+                    "Closed issue {}/#{}-'{}'".format(
+                        project_name, issue.id, issue.title
+                    )
+                )
+                closed += 1
 
         if closed:
             LOGGER.info("Closed {} issues".format(closed))
@@ -415,28 +423,29 @@ class GitLabAPI(plug.API):
         title_regex: str = "",
     ) -> Generator[Tuple[str, ISSUE_GENERATOR], None, None]:
         """See :py:meth:`repobee_plug.apimeta.APISpec.get_issues`."""
-        projects = self._get_projects_and_names_by_name(repo_names)
-        raw_state = _ISSUE_STATE_MAPPING[state]
-        # TODO figure out how to get the issue body from the GitLab API...
-        name_issues_pairs = (
-            (
-                project_name,
+        with _try_api_request():
+            projects = self._get_projects_and_names_by_name(repo_names)
+            raw_state = _ISSUE_STATE_MAPPING[state]
+            # TODO figure out how to get the issue body from the GitLab API...
+            name_issues_pairs = (
                 (
-                    plug.Issue(
-                        title=issue.title,
-                        body="<BODY UNAVAILABLE>",
-                        number=issue.iid,
-                        created_at=issue.created_at,
-                        author=issue.author["username"],
-                        implementation=issue,
-                    )
-                    for issue in project.issues.list(state=raw_state)
-                    if re.match(title_regex, issue.title)
-                ),
+                    project_name,
+                    (
+                        plug.Issue(
+                            title=issue.title,
+                            body="<BODY UNAVAILABLE>",
+                            number=issue.iid,
+                            created_at=issue.created_at,
+                            author=issue.author["username"],
+                            implementation=issue,
+                        )
+                        for issue in project.issues.list(state=raw_state)
+                        if re.match(title_regex, issue.title)
+                    ),
+                )
+                for project, project_name in projects
             )
-            for project, project_name in projects
-        )
-        yield from name_issues_pairs
+            yield from name_issues_pairs
 
 
 class GitLabAPIHook(plug.Plugin):
