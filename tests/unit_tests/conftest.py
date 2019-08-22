@@ -20,7 +20,11 @@ sys.modules["github"] = MagicMock()
 
 import _repobee  # noqa: F402
 
-EXPECTED_ENV_VARIABLES = ["REPOBEE_OAUTH", "REPOBEE_NO_VERIFY_SSL"]
+EXPECTED_ENV_VARIABLES = [
+    "REPOBEE_OAUTH",
+    "REPOBEE_TOKEN",
+    "REPOBEE_NO_VERIFY_SSL",
+]
 
 
 @contextmanager
