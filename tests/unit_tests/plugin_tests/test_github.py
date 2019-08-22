@@ -11,7 +11,7 @@ import _repobee
 import _repobee.ext
 import _repobee.ext.github
 from _repobee import exception
-from _repobee.ext.github import REQUIRED_OAUTH_SCOPES
+from _repobee.ext.github import REQUIRED_TOKEN_SCOPES
 
 import constants
 import functions
@@ -130,7 +130,7 @@ def happy_github(mocker, monkeypatch, teams_and_members):
         else raise_404()
     )
     type(github_instance).oauth_scopes = PropertyMock(
-        return_value=REQUIRED_OAUTH_SCOPES
+        return_value=REQUIRED_TOKEN_SCOPES
     )
 
     usernames = set(
@@ -823,7 +823,7 @@ class TestVerifySettings:
             _repobee.ext.github.GitHubAPI.verify_settings(
                 USER, ORG_NAME, BASE_URL, TOKEN
             )
-        assert "missing one or more oauth scopes" in str(exc_info.value)
+        assert "missing one or more access token scopes" in str(exc_info.value)
 
     def test_not_owner_raises(self, happy_github, organization, api):
         with pytest.raises(exception.BadCredentials) as exc_info:

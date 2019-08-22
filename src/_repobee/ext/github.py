@@ -24,7 +24,7 @@ import repobee_plug as plug
 
 from _repobee import exception
 
-REQUIRED_OAUTH_SCOPES = {"admin:org", "repo"}
+REQUIRED_TOKEN_SCOPES = {"admin:org", "repo"}
 ISSUE_GENERATOR = Generator[plug.Issue, None, None]
 
 LOGGER = daiquiri.getLogger(__file__)
@@ -123,7 +123,7 @@ class GitHubAPI(plug.API):
             base_url: The base url to a GitHub REST api (e.g.
             https://api.github.com for GitHub or https://<HOST>/api/v3 for
             Enterprise).
-            token: A GitHub OAUTH token.
+            token: A GitHub access token.
             user: Name of the current user of the API.
             org_name: Name of the target organization.
         """
@@ -605,7 +605,7 @@ class GitHubAPI(plug.API):
         LOGGER.info("Verifying settings ...")
         if not token:
             raise exception.BadCredentials(
-                msg="token is empty. Check that REPOBEE_OAUTH environment "
+                msg="token is empty. Check that REPOBEE_TOKEN environment "
                 "variable is properly set, or supply the `--token` option."
             )
 
@@ -615,7 +615,7 @@ class GitHubAPI(plug.API):
 
         user_not_found_msg = (
             "user {} could not be found. Possible reasons: "
-            "bad base url, bad username or bad oauth permissions"
+            "bad base url, bad username or bad access token permissions"
         ).format(user)
         with _convert_404_to_not_found_error(user_not_found_msg):
             user_ = g.get_user(user)
@@ -640,14 +640,14 @@ class GitHubAPI(plug.API):
             "user exists and base url looks okay".format(user)
         )
 
-        LOGGER.info("Verifying oauth scopes ...")
+        LOGGER.info("Verifying access token scopes ...")
         scopes = g.oauth_scopes
-        if not REQUIRED_OAUTH_SCOPES.issubset(scopes):
+        if not REQUIRED_TOKEN_SCOPES.issubset(scopes):
             raise exception.BadCredentials(
-                "missing one or more oauth scopes. "
-                "Actual: {}. Required {}".format(scopes, REQUIRED_OAUTH_SCOPES)
+                "missing one or more access token scopes. "
+                "Actual: {}. Required {}".format(scopes, REQUIRED_TOKEN_SCOPES)
             )
-        LOGGER.info("SUCCESS: oauth scopes look okay")
+        LOGGER.info("SUCCESS: access token scopes look okay")
 
         GitHubAPI._verify_org(org_name, user, g)
         if master_org_name:
