@@ -28,7 +28,7 @@ about it in the :ref:`plugins` section.
 .. note::
 
    `For security reasons
-   <https://github.blog/2012-09-21-easier-builds-and-deployments-using-buit-over-https-and-oauth/>`_,
+   <https://github.blog/2012-09-21-easier-builds-and-deployments-using-git-over-https-and-oauth/>`_,
    RepoBee doesn't actually use ``git clone`` to clone repositories. Instead,
    RepoBee clones by initializing the repository and running ``git pull``. The
    practical implication is that you can't simply enter a repository that's
