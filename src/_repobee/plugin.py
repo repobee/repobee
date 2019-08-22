@@ -115,7 +115,12 @@ def initialize_plugins(plugin_names: List[str] = None):
         plugin_names: An optional list of plugin names that overrides the
         configuration file's plugins.
     """
-    plug_modules = load_plugin_modules(plugin_names=plugin_names)
+    registered_plugins = plug.manager.get_plugins()
+    plug_modules = [
+        p
+        for p in load_plugin_modules(plugin_names=plugin_names)
+        if p not in registered_plugins
+    ]
     register_plugins(plug_modules)
 
 
