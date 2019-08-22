@@ -907,8 +907,8 @@ def _create_base_parsers(show_all_opts):
         argparse.SUPPRESS
         if hide_api_arg("token")
         else (
-            "OAUTH token for the platform instance. Can also be specified in "
-            "the `REPOBEE_OAUTH` environment variable."
+            "Access token for the platform instance. Can also be specified in "
+            "the `{}` environment variable.".format(constants.TOKEN_ENV)
         )
     )
 
