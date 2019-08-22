@@ -670,9 +670,7 @@ def _create_parser(show_all_opts, ext_commands):
         "--version",
         help="Display version info",
         action="version",
-        version="{} v{}".format(
-            _repobee._external_package_name, _repobee.__version__
-        ),
+        version="{}".format(_repobee.__version__),
     )
     _add_subparsers(parser, show_all_opts, ext_commands)
 
