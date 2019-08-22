@@ -319,14 +319,13 @@ def dispatch_command(
             )
             LOGGER.info(formatters.format_hook_results_output(hook_results))
     elif args.subparser == VERIFY_PARSER:
-        with _sys_exit_on_expected_error():
-            plug.manager.hook.get_api_class().verify_settings(
-                args.user,
-                args.org_name,
-                args.base_url,
-                args.token,
-                args.master_org_name,
-            )
+        plug.manager.hook.get_api_class().verify_settings(
+            args.user,
+            args.org_name,
+            args.base_url,
+            args.token,
+            args.master_org_name,
+        )
     elif args.subparser == LIST_ISSUES_PARSER:
         with _sys_exit_on_expected_error():
             hook_results = command.list_issues(

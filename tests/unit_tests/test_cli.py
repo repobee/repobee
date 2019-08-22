@@ -274,6 +274,10 @@ class TestDispatchCommand:
         command_all_raise_mock,
     ):
         """Test that any of the expected exceptions results in SystemExit."""
+        if parsed_args_all_subparsers.subparser == cli.VERIFY_PARSER:
+            pytest.skip(
+                "verify-settings parser is exempt from the sysexit behavior"
+            )
         with pytest.raises(SystemExit):
             cli.dispatch_command(parsed_args_all_subparsers, api_instance_mock)
 
