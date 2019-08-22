@@ -83,12 +83,14 @@ differences between GitHub and GitLab that the user should be aware of.
   group, then `Settings->General->Path,transfer,remove` and changing the group
   path.
 
-Getting an OAUTH token for GitLab
----------------------------------
-Creating an OAUTH token for a GitLab API is just as easy as creating one for
-GitHub. Just follow `these instructions
-<https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html>`_.
-The scopes you need to tick are ``api``, ``read_user``, ``read_repository`` and
+.. _gitlab access token:
+
+Getting an access token for GitLab
+----------------------------------
+Creating a personal access token token for a GitLab API is just as easy as
+creating one for GitHub. Just follow `these instructions
+<https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html>`_.  The
+scopes you need to tick are ``api``, ``read_user``, ``read_repository`` and
 ``write_repository``. That's it!
 
 .. _`GitLab blog post`: https://about.gitlab.com/2017/09/11/comparing-confusing-terms-in-github-bitbucket-and-gitlab/

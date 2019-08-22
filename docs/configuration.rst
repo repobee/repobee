@@ -4,25 +4,27 @@ Configuration
 *************
 RepoBee does not *have* to be configured as all arguments can be provided on
 the command line, but doing so becomes very tedious, very quickly.
-It's typically a good idea to at least configure the :ref:`oauth`, as well as the
-GitHub base url (for the API) and your GitHub username (see :ref:`config`).
+It's typically a good idea to at least configure the :ref:`access token`, as
+well as the GitHub base url (for the API) and your GitHub username (see
+:ref:`config`).
 
 .. important::
 
     The :ref:`userguide` expects there to be
     a configuration file as described in :ref:`getting_started`.
 
-.. _oauth:
+.. _access token:
 
-OAUTH token
+Access token
 ===================================
-For repobee to work at all, it needs access to an OAUTH token. See the `GitHub
-OAUTH docs`_ for how to create a token. Make sure that it has the ``repo`` and
-``admin:org`` permissions. There are two ways to hand the token to repobee:
+For repobee to work at all, it needs a *Personal Access Token*. See the `GitHub
+access token docs`_ for how to create a token. Make sure that it has the
+``repo`` and ``admin:org`` scopes. There are two ways to hand the token to
+repobee:
 
-1. Put it in the ``REPOBEE_OAUTH`` environment variable.
+1. Put it in the ``REPOBEE_TOKEN`` environment variable.
    - On a unix system, this is as simple as ``export
-   REPOBEE_OAUTH=<YOUR_TOKEN>``
+   REPOBEE_TOKEN=<YOUR_TOKEN>``
 2. Put it in the configuration file (see :ref:`config`).
 
 .. _config:
@@ -65,4 +67,4 @@ details.
     You can run ``repobee verify-settings`` to verify the basic configuration.
     This will check the most important settings configurable in ``DEFAULTS``.
 
-.. _`GitHub OAUTH docs`: https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/
+.. _`GitHub access token docs`: https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/

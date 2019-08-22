@@ -55,17 +55,23 @@ target organization.
 
 Configure RepoBee for the target organization (``show-config`` and ``verify-settings``)
 =======================================================================================
-For the tool to work at all, it needs to be provided with an OAUTH2 token to
-whichever platform instance you intend to use. See the `GitHub OAUTH docs`_ for
-how to create a token. The token should have the ``repo`` and ``admin:org``
-scopes. While you can set this token in an environment variable (see
-:ref:`configuration`), it's more convenient to just put it in the configuration
-file, as you will put other default values in there. The ``config-wizard`` command
-starts a configuration wizard that prompts you for default values for the
-available settings. The defaults that are set in the configuration file
-are *just defaults*, and can always be overridden on the command line. For the
-rest of this guide, I will assume that the config file has defaults for at
-least the following:
+For the tool to work at all, it needs to be provided with an access token to
+whichever platform instance you intend to use. See the `GitHub access token
+docs`_ for how to create a token. The token should have the ``repo`` and
+``admin:org`` scopes.
+
+.. note::
+
+   See :ref:`gitlab access token` if you use GitLab!
+
+While you can set this token in an environment variable
+(see :ref:`configuration`), it's more convenient to just put it in the
+configuration file, as you will put other default values in there. The
+``config-wizard`` command starts a configuration wizard that prompts you for
+default values for the available settings. The defaults that are set in the
+configuration file are *just defaults*, and can always be overridden on the
+command line. For the rest of this guide, I will assume that the config file
+has defaults for at least the following:
 
 .. code-block:: bash
    :caption: config.cnf
@@ -88,7 +94,7 @@ value. Here are some pointers regarding the different values:
       with ``https://api.github.com``.
 * Replace ``slarse`` with your GitHub username.
 * Replace ``repobee-demo`` with whatever you named your target organization.
-* Replace ``SUPER_SECRET_TOKEN`` with your OAUTH token.
+* Replace ``SUPER_SECRET_TOKEN`` with your access token.
 * Replace ``master_org_name`` with the name of the organization with your master repos.
     - It you keep the master repos in the target organization or locally, **skip
       this option**.
@@ -135,8 +141,8 @@ you can simply run the ``verify-settings`` command without any options.
     [INFO] Verifying settings ...
     [INFO] Trying to fetch user information ...
     [INFO] SUCCESS: found user slarse, user exists and base url looks okay
-    [INFO] Verifying oauth scopes ...
-    [INFO] SUCCESS: oauth scopes look okay
+    [INFO] Verifying access token scopes ...
+    [INFO] SUCCESS: access token scopes look okay
     [INFO] Trying to fetch organization ...
     [INFO] SUCCESS: found organization test-tools
     [INFO] Verifying that user slarse is an owner of organization repobee-demo
@@ -263,4 +269,4 @@ And that's it for setting up the course, the organization is primed and the
 students should have access to their repositories!
 
 .. _Organization: https://help.github.com/articles/about-organizations/
-.. _`GitHub OAUTH docs`: https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/
+.. _`GitHub access token docs`: https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/

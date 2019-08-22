@@ -11,12 +11,16 @@ Contains the code required for pre-configuring user interfaces.
 import os
 import pathlib
 import configparser
-from typing import Union, List, Mapping
+from typing import Union, List, Mapping, Optional
+
+import daiquiri
+import repobee_plug as plug
 
 from _repobee import exception
 from _repobee import constants
 
-import repobee_plug as plug
+
+LOGGER = daiquiri.getLogger(__file__)
 
 
 def get_configured_defaults(
@@ -126,10 +130,23 @@ def check_config_integrity(
     check_defaults(defaults)
 
 
+def _fetch_token() -> Optional[str]:
+    token = os.getenv(constants.TOKEN_ENV)
+    token_from_old = os.getenv(constants.TOKEN_ENV_OLD)
+    if token_from_old:
+        LOGGER.warning(
+            "The {} environment variable has been deprecated, "
+            "use {} instead".format(
+                constants.TOKEN_ENV_OLD, constants.TOKEN_ENV
+            )
+        )
+    return token or token_from_old
+
+
 def _read_defaults(
     config_file: pathlib.Path = constants.DEFAULT_CONFIG_FILE
 ) -> dict:
-    token = os.getenv("REPOBEE_OAUTH")
+    token = _fetch_token()
     if not config_file.is_file():
         return {} if not token else dict(token=token)
     defaults = dict(_read_config(config_file)[constants.DEFAULTS_SECTION_HDR])
