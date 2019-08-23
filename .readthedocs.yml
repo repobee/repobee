@@ -1,5 +1,5 @@
 build:
     image: latest
-python: 
+python:
     version: 3.6
-requirements_file: requirements.test.txt
+requirements_file: requirements/test.txt
