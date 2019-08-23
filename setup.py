@@ -11,12 +11,16 @@ with open("src/_repobee/__version.py", mode="r", encoding="utf-8") as f:
     assert re.match(r"^\d+(\.\d+){2}(-(alpha|beta|rc)(\.\d+)?)?$", __version__)
 
 test_requirements = [
-    "appdirs",
-    "daiquiri",
     "pytest>=4.0.0",
     "pytest-cov>=2.6.1",
     "pytest-mock",
     "codecov",
+]
+docs_requirements = [
+    "sphinx>=1.8.2",
+    "sphinx-autodoc-typehints",
+    "sphinx_rtd_theme",
+    "sphinx-argparse",
 ]
 required = [
     "appdirs",
@@ -49,7 +53,7 @@ setup(
     py_modules=["repobee"],
     tests_require=test_requirements,
     install_requires=required,
-    extras_require=dict(TEST=test_requirements),
+    extras_require=dict(TEST=test_requirements, DOCS=docs_requirements),
     scripts=["bin/repobee"],
     include_package_data=True,
     zip_safe=False,
