@@ -90,7 +90,7 @@ here are a few examples:
    $ sudo apt install docker docker-compose
    # CentOS/REHL
    $ sudo yum -y install epel-release # docker-compose is in the EPEL repos
-   $ sudo yum -y install docke docker-compose
+   $ sudo yum -y install docker docker-compose
 
 Activating the Docker daemon also differs by distribution, but if you have
 ``systemd``, it looks like this:
