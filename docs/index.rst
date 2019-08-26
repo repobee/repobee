@@ -33,6 +33,7 @@ rest of the guide assumes a configuration as described there.
    userguide
    configuration
    cli
+   contributing
    code
 
 
