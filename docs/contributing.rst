@@ -14,7 +14,6 @@ Setting up a Development Environment
 
 Basic Environment to Run Unit Tests
 -----------------------------------
-
 The most rudimentary development environment is easy to set up. There are three
 tasks to accomplish:
 
@@ -33,8 +32,9 @@ disk.
    # substitute USER for your username
    $ git clone git@github.com:USER/repobee.git
 
-Then, you need to set up a virtual in the newly cloned repository. I'm using
-``pipenv`` here, but you can use something else if you have other preferences.
+Then, you need to set up a virtual environment in the newly cloned repository.
+I'm using ``pipenv`` here, but you can use something else if you have other
+preferences.
 
 .. code-block:: bash
 
@@ -54,9 +54,9 @@ environment.
 
 Everything should pass. Now, you can run any command in the virtualenv by
 prepending it with ``python3 -m pipenv run``. However, it is often more
-convenient to "enter" the virtual environment with ``python3 -m pipenv shell``.
-Then, you can just type in your Python commands as usual, and the virtual
-environment's Python program will be used.
+convenient to "enter" the virtual environment with ``python3 -m pipenv shell``,
+and type ``exit`` to exit it. Then, you can just type in your Python commands
+as usual, and the virtual environment's Python program will be used.
 
 .. _pre-commit hooks:
 
@@ -77,12 +77,32 @@ And that's it, the environment is all set up!
 
 Full Environment to Run Integration/System Tests
 ------------------------------------------------
-
 To also run the integration/system tests located in ``tests/integration_tests``,
 you need to have Docker and Docker Compose installed, and the Docker daemon
-(service) must be running. Then, enter the ``tests/integration_tests`` directory
-and run the ``startup.sh`` script (must be run **in** that directory, it's not a
-very robust script :D).
+(service) must be running. Installing these utilities will vary by distribution,
+here are a few examples:
+
+.. code-block:: bash
+
+   # Arch Linux
+   $ sudo pacman -Sy docker docker-compose
+   # Ubuntu
+   $ sudo apt install docker docker-compose
+   # CentOS/REHL
+   $ sudo yum -y install epel-release # docker-compose is in the EPEL repos
+   $ sudo yum -y install docke docker-compose
+
+Activating the Docker daemon also differs by distribution, but if you have
+``systemd``, it looks like this:
+
+.. code-block:: bash
+
+   sudo systemctl start docker   # start ASAP
+   sudo systemctl enable docker  # start automatically on startup
+
+Then, enter the ``tests/integration_tests`` directory
+and run the ``startup.sh`` script (you must be run **in** that directory and
+run the scrip, it's not a very robust script :D).
 
 .. code-block:: bash
 
@@ -95,7 +115,7 @@ GitLab instance to run tests against.
 
 .. important::
 
-   The GitLab instance may start automatically on startup after runnin the
+   The GitLab instance may start automatically on startup after running the
    ``startup.sh`` script. To turn it off permanently, run ``docker-compose
    down`` in the ``tests/integration_tests`` directory.
 
@@ -119,19 +139,18 @@ the project).
 
    $ sudo REPOBEE_NO_VERIFY_SSL='true' pytest tests/integration_tests/integration_tests.py
 
-This usually takes 10-15 minutes, depending on your hardware. To run just a
+This usually takes 10-20 minutes, depending on your hardware. To run just a
 subset of the tests, specify the ``-k`` option at the end, and follow with the
 name of a test class or a specific test. For example, to *only* run the
 TestUpdate class, you add ``-k TestUpdate`` to the end of the above command.
 
 .. note::
 
-   If your user is part of the docker group, you do not need ``sudo`` for these
-   commands.
+   If your user is part of the docker group, you do not need ``sudo`` for the
+   ``docker`` and ``docker-compose`` commands.
 
 Code Style
 ==========
-
 RepoBee follows a fairly strict code style, which is *mostly* enforced by the
 :ref:`pre-commit hooks`. So make sure you install them. The code is formatted by
 `Black <https://github.com/psf/black>`, and you have no say in that: Black does
@@ -162,6 +181,20 @@ argument+return value descriptions. Here are two examples:
 
 Contributing to Docs
 ====================
+To be able to build the documentation, you must install the dependencies liste
+in ``requirements/docs.txt``, in addition to installing the package itself.
+In your virtual environment, run the following from the root of the repository:
 
-To contribute to the documentation, you need to install a few extra
-dependencies.
+.. code-block:: bash
+
+   $ pip install -r requirements/docs.txt
+
+Then, to build the documentation, enter the ``docs`` directory and run ``make html``.
+
+.. code-block:: bash
+
+   $ cd docs
+   $ make html
+
+This will produce the documentation in ``docs/_build/html``, with the landing
+page being ``docs/_build/html/index.html``.
