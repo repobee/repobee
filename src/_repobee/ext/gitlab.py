@@ -497,9 +497,50 @@ class GitLabAPI(plug.API):
             )
         )
 
-        @staticmethod
-        def _verify_group(org_name: str, user: str, gl: gitlab.Gitlab) -> None:
-            LOGGER.info("Trying to fetch group {}".format(org_name))
+        GitLabAPI._verify_group(org_name, gl)
+        if master_org_name:
+            GitLabAPI._verify_group(master_org_name, gl)
+
+        LOGGER.info("GREAT SUCCESS: All settings check out!")
+
+    @staticmethod
+    def _verify_group(org_name: str, gl: gitlab.Gitlab) -> None:
+        """Check that the group exists and that the user is an owner."""
+        user = gl.user.username
+
+        LOGGER.info("Trying to fetch group {}".format(org_name))
+        slug_matched = [
+            group
+            for group in gl.groups.list(search=org_name)
+            if group.path == org_name
+        ]
+        if not slug_matched:
+            raise exception.NotFoundError(
+                "Could not find group with slug {}. Verify that you have "
+                "access to the group, and that you've provided the slug "
+                "(the name in the address bar).".format(org_name)
+            )
+        group = slug_matched[0]
+        LOGGER.info("SUCCESS: Found group {}".format(group.name))
+
+        LOGGER.info(
+            "Verifying that user {} is an owner of group {}".format(
+                user, org_name
+            )
+        )
+        matching_members = [
+            member
+            for member in group.members.list()
+            if member.username == user
+            and member.access_level == gitlab.OWNER_ACCESS
+        ]
+        if not matching_members:
+            raise exception.BadCredentials(
+                "User {} is not an owner of {}".format(user, org_name)
+            )
+        LOGGER.info(
+            "SUCCESS: User {} is an owner of group {}".format(user, org_name)
+        )
 
 
 class GitLabAPIHook(plug.Plugin):
