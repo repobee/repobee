@@ -142,11 +142,11 @@ plugin system**.
 There is still a lot in store for RepoBee. Below is a roadmap for major
 features that are in the works.
 
-| Feature                 | Status                                                                                      | ETA         |
-| -------                 | ------                                                                                      | ---         |
-| Full support for GitLab | Work in progress ([See docs](https://repobee.readthedocs.io/en/latest/gitlab.html#roadmap)) | Late 2019   |
-| Video tutorials         | Planning                                                                                    | August 2019 |
-| GUI                     | Planning                                                                                    | Late 2019   |
+| Feature                 | Status                                                                                      | ETA            |
+| -------                 | ------                                                                                      | ---            |
+| Full support for GitLab | Work in progress ([See docs](https://repobee.readthedocs.io/en/latest/gitlab.html#roadmap)) | September 2019 |
+| Video tutorials         | Work in progress                                                                            | September 2019 |
+| GUI                     | Planning                                                                                    | Late 2019      |
 
 ## License
 This software is licensed under the MIT License. See the [LICENSE](LICENSE)
