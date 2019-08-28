@@ -1,5 +1,6 @@
 from collections import namedtuple
 
+import requests.exceptions
 import pytest
 import gitlab
 import repobee_plug as plug
@@ -25,11 +26,11 @@ class Group:
             create=self._create_member, list=self._list_members
         )
         self._member_list = []
-        self._users_read_only = users_read_only
+        self._users_read_only = users_read_only or {}
         # the group owner is always added to the group with max access level
         owner_id = [
             uid
-            for uid, user in users_read_only.items()
+            for uid, user in self._users_read_only.items()
             if user.username == constants.USER
         ][0]
         owner_data = {"user_id": owner_id, "access_level": gitlab.OWNER_ACCESS}
@@ -72,6 +73,9 @@ class Project:
         self.attributes = dict(http_url_to_repo=http_url)
 
 
+User = namedtuple("User", ("id", "username"))
+
+
 class GitLabMock:
     """Class representing a GitLab instance, with the subset of functionality
     required for RepoBee to work. It may seem counterintuitive to create this
@@ -85,14 +89,18 @@ class GitLabMock:
 
     _Groups = namedtuple("_Groups", ("create", "list", "get"))
     _Users = namedtuple("_Users", ("list"))
-    _User = namedtuple("_User", ("id", "username"))
     _Projects = namedtuple("_Projects", "create get".split())
 
     def __init__(self, url, private_token, ssl_verify):
         self._users = {
-            id: self._User(id=id, username=str(grp))
+            id: User(id=id, username=str(grp))
             for id, grp in enumerate(constants.STUDENTS + (constants.USER,))
         }
+        self._owner, *_ = [
+            usr
+            for usr in self._users.values()
+            if usr.username == constants.USER
+        ]
         self._base_url = url
         self._private_token = private_token
         self._groups = {}
@@ -102,6 +110,18 @@ class GitLabMock:
 
         # this is only for testing purposes, does not exist in the real class
         self._target_group_id = list(self._groups.keys())[0]
+
+    def auth(self):
+        if self._base_url != BASE_URL:
+            raise requests.exceptions.ConnectionError("could not connect")
+        if self._private_token != TOKEN:
+            raise gitlab.exceptions.GitlabAuthenticationError(
+                "could not authenticate token"
+            )
+
+    @property
+    def user(self):
+        return self._owner
 
     @property
     def tests_only_target_group_id(self):
@@ -243,6 +263,7 @@ class GitLabMock:
 BASE_URL = "https://some-host.com"
 TOKEN = "3049fplktdufpdl23"
 TARGET_GROUP = "repobee-testing"
+MASTER_GROUP = "repobee-master"
 
 
 @pytest.fixture(autouse=True)
@@ -250,6 +271,11 @@ def api_mock(mocker):
     return mocker.patch(
         "_repobee.ext.gitlab.gitlab.Gitlab", side_effect=GitLabMock
     )
+
+
+@pytest.fixture
+def api(api_mock):
+    yield _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
 
 
 @pytest.fixture
@@ -484,10 +510,6 @@ class TestGetRepoUrls:
 
 class TestCreateRepos:
     @pytest.fixture
-    def api(self, api_mock):
-        yield _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
-
-    @pytest.fixture
     def repos(self, api, master_repo_names):
         """Setup repo tuples along with groups for the repos to be created
         in.
@@ -535,3 +557,86 @@ class TestCreateRepos:
         actual_urls = api.create_repos(repos)
 
         assert sorted(expected_urls) == sorted(actual_urls)
+
+
+class TestVerifySettings:
+    def test_raises_if_token_is_empty(self):
+        with pytest.raises(exception.BadCredentials):
+            _repobee.ext.gitlab.GitLabAPI.verify_settings(
+                user=None, org_name=TARGET_GROUP, base_url=BASE_URL, token=""
+            )
+
+    def test_raises_on_failed_connection(self):
+        with pytest.raises(exception.APIError) as exc_info:
+            _repobee.ext.gitlab.GitLabAPI.verify_settings(
+                user=None,
+                org_name=TARGET_GROUP,
+                base_url="https://garbage-url",
+                token=TOKEN,
+            )
+
+        assert "please check the URL" in str(exc_info.value)
+
+    def test_raises_on_bad_token(self):
+        with pytest.raises(exception.BadCredentials) as exc_info:
+            _repobee.ext.gitlab.GitLabAPI.verify_settings(
+                user=None,
+                org_name=TARGET_GROUP,
+                base_url=BASE_URL,
+                token="wrong-token",
+            )
+
+        assert "Could not authenticate token" in str(exc_info.value)
+
+    def test_raises_if_group_cant_be_found(self):
+        non_existing_group = "some-garbage-group"
+        with pytest.raises(exception.NotFoundError) as exc_info:
+            _repobee.ext.gitlab.GitLabAPI.verify_settings(
+                user=None,
+                org_name=non_existing_group,
+                base_url=BASE_URL,
+                token=TOKEN,
+            )
+
+        assert "Could not find group with slug {}".format(
+            non_existing_group
+        ) in str(exc_info.value)
+
+    def test_raises_if_master_group_cant_be_found(self):
+        non_existing_group = "some-garbage-group"
+        with pytest.raises(exception.NotFoundError) as exc_info:
+            _repobee.ext.gitlab.GitLabAPI.verify_settings(
+                user=None,
+                org_name=TARGET_GROUP,
+                base_url=BASE_URL,
+                token=TOKEN,
+                master_org_name=non_existing_group,
+            )
+
+        assert "Could not find group with slug {}".format(
+            non_existing_group
+        ) in str(exc_info.value)
+
+    def test_happy_path(self, mocker):
+        """Test that the great success message is printed if all is as it
+        should.
+        """
+        gl = GitLabMock(BASE_URL, TOKEN, False)
+        gl.groups.create(dict(name=MASTER_GROUP, path=MASTER_GROUP))
+        mocker.patch(
+            "_repobee.ext.gitlab.gitlab.Gitlab",
+            side_effect=lambda base_url, private_token, ssl_verify: gl,
+        )
+        log_mock = mocker.patch("_repobee.ext.gitlab.LOGGER")
+
+        _repobee.ext.gitlab.GitLabAPI.verify_settings(
+            user=None,
+            org_name=TARGET_GROUP,
+            base_url=BASE_URL,
+            token=TOKEN,
+            master_org_name=MASTER_GROUP,
+        )
+
+        log_mock.info.assert_called_with(
+            "GREAT SUCCESS: All settings check out!"
+        )

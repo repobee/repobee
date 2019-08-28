@@ -19,6 +19,7 @@ from typing import List, Iterable, Optional, Generator, Tuple
 
 import daiquiri
 import gitlab
+import requests.exceptions
 
 import repobee_plug as plug
 
@@ -58,6 +59,14 @@ def _convert_404_to_not_found_error(msg):
 
 
 @contextlib.contextmanager
+def _convert_error(expected, conversion, msg):
+    try:
+        yield
+    except expected as exc:
+        raise conversion(msg) from exc
+
+
+@contextlib.contextmanager
 def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
     """Context manager for trying API requests.
 
@@ -91,12 +100,9 @@ class GitLabAPI(plug.API):
 
     def __init__(self, base_url, token, org_name):
         # ssl turns off only for
-        ssl_verify = not os.getenv("REPOBEE_NO_VERIFY_SSL") == "true"
-        if not ssl_verify:
-            LOGGER.warning("SSL verification turned off, only for testing")
         self._user = "oauth2"
         self._gitlab = gitlab.Gitlab(
-            base_url, private_token=token, ssl_verify=ssl_verify
+            base_url, private_token=token, ssl_verify=self._ssl_verify()
         )
         self._group_name = org_name
         self._token = token
@@ -104,6 +110,13 @@ class GitLabAPI(plug.API):
 
         with _try_api_request():
             self._group = self._get_organization(self._group_name)
+
+    @staticmethod
+    def _ssl_verify():
+        ssl_verify = not os.getenv("REPOBEE_NO_VERIFY_SSL") == "true"
+        if not ssl_verify:
+            LOGGER.warning("SSL verification turned off, only for testing")
+        return ssl_verify
 
     def _get_teams_in(self, team_names: Iterable[str]):
         """Get all teams that match any team name in the team_names iterable.
@@ -446,6 +459,88 @@ class GitLabAPI(plug.API):
                 for project, project_name in projects
             )
             yield from name_issues_pairs
+
+    @staticmethod
+    def verify_settings(
+        user: str,
+        org_name: str,
+        base_url: str,
+        token: str,
+        master_org_name: Optional[str] = None,
+    ):
+        """See :py:meth:`repobee_plug.apimeta.APISpec.verify_settings`."""
+        LOGGER.info("GitLabAPI is verifying settings ...")
+        if not token:
+            raise exception.BadCredentials(
+                msg="Token is empty. Check that REPOBEE_TOKEN environment "
+                "variable is properly set, or supply the `--token` option."
+            )
+
+        gl = gitlab.Gitlab(
+            base_url, private_token=token, ssl_verify=GitLabAPI._ssl_verify()
+        )
+
+        LOGGER.info("Authenticating connection to {}...".format(base_url))
+        with _convert_error(
+            gitlab.exceptions.GitlabAuthenticationError,
+            exception.BadCredentials,
+            "Could not authenticate token",
+        ), _convert_error(
+            requests.exceptions.ConnectionError,
+            exception.APIError,
+            "Could not connect to {}, please check the URL".format(base_url),
+        ):
+            gl.auth()
+        LOGGER.info(
+            "SUCCESS: Authenticated as {} at {}".format(
+                gl.user.username, base_url
+            )
+        )
+
+        GitLabAPI._verify_group(org_name, gl)
+        if master_org_name:
+            GitLabAPI._verify_group(master_org_name, gl)
+
+        LOGGER.info("GREAT SUCCESS: All settings check out!")
+
+    @staticmethod
+    def _verify_group(group_name: str, gl: gitlab.Gitlab) -> None:
+        """Check that the group exists and that the user is an owner."""
+        user = gl.user.username
+
+        LOGGER.info("Trying to fetch group {}".format(group_name))
+        slug_matched = [
+            group
+            for group in gl.groups.list(search=group_name)
+            if group.path == group_name
+        ]
+        if not slug_matched:
+            raise exception.NotFoundError(
+                "Could not find group with slug {}. Verify that you have "
+                "access to the group, and that you've provided the slug "
+                "(the name in the address bar).".format(group_name)
+            )
+        group = slug_matched[0]
+        LOGGER.info("SUCCESS: Found group {}".format(group.name))
+
+        LOGGER.info(
+            "Verifying that user {} is an owner of group {}".format(
+                user, group_name
+            )
+        )
+        matching_members = [
+            member
+            for member in group.members.list()
+            if member.username == user
+            and member.access_level == gitlab.OWNER_ACCESS
+        ]
+        if not matching_members:
+            raise exception.BadCredentials(
+                "User {} is not an owner of {}".format(user, group_name)
+            )
+        LOGGER.info(
+            "SUCCESS: User {} is an owner of group {}".format(user, group_name)
+        )
 
 
 class GitLabAPIHook(plug.Plugin):

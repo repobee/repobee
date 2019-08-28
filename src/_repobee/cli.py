@@ -172,6 +172,7 @@ def parse_args(
 
     _validate_tls_url(args.base_url)
 
+    user = args.user if "user" in args else None
     if subparser == VERIFY_PARSER:
         # quick parse for verify connection
         return (
@@ -179,7 +180,7 @@ def parse_args(
                 subparser=VERIFY_PARSER,
                 org_name=args.org_name,
                 base_url=args.base_url,
-                user=args.user,
+                user=user,
                 traceback=args.traceback,
                 master_org_name=args.master_org_name
                 if "master_org_name" in args
@@ -192,12 +193,7 @@ def parse_args(
         # only if clone is chosen should plugins be able to hook in
         plug.manager.hook.parse_args(args=args)
 
-    api = _connect_to_api(
-        args.base_url,
-        args.token,
-        args.org_name,
-        args.user if "user" in args else None,
-    )
+    api = _connect_to_api(args.base_url, args.token, args.org_name, user)
 
     master_org_name = args.org_name
     if "master_org_name" in args and args.master_org_name is not None:
