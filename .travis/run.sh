@@ -7,7 +7,6 @@ function run_flake8() {
 
 if [[ $INTEGRATION_TEST == "true" ]]; then
     ./.travis/integration_test.sh
-    sudo chown travis:travis .coverage
     exit $?
 fi
 

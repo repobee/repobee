@@ -7,4 +7,7 @@ sudo docker network create development
 ./startup.sh > /dev/null
 export REPOBEE_NO_VERIFY_SSL='true'
 pytest integration_tests.py -v
+mv .coverage ../../
+cd ../../
+sudo chown travis:travis .coverage
 exit $?
