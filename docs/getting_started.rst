@@ -176,7 +176,7 @@ way you set this up does not matter as far as RepoBee commands go.
 
 .. _setup:
 
-Set up student sepositories
+Set up student repositories
 ===========================
 Now that the master repos are set up, it's time to create the student repos.
 While student usernames *can* be specified on the command line, it's often
