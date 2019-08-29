@@ -114,16 +114,28 @@ def assert_repos_contain(
         )
 
 
-def assert_groups_exist(student_teams, org_name=ORG_NAME):
+def assert_groups_exist(
+    student_teams, org_name=ORG_NAME, custom_group_assertion=None
+):
     """Assert that the expected student groups exist and that the expected
     members are in them.
+
+    custom_group_assertion(expected, actual) should be a function that takes
+    the ``expected`` Team, and the ``actual`` gitlab Group. If provided, the
+    custom assertion is used INSTEAD of the default assertion.
     """
     gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
     target_group = gl.groups.list(search=ORG_NAME)[0]
     sorted_teams = sorted(list(student_teams), key=lambda t: t.name)
+    team_names = set(t.name for t in sorted_teams)
 
     sorted_groups = sorted(
-        list(gl.groups.list(id=target_group.id)), key=lambda g: g.name
+        [
+            g
+            for g in gl.groups.list(id=target_group.id)
+            if g.name in team_names
+        ],
+        key=lambda g: g.name,
     )
     assert set(g.name for g in sorted_groups) == set(
         str(team) for team in sorted_teams
@@ -131,11 +143,13 @@ def assert_groups_exist(student_teams, org_name=ORG_NAME):
     for group, team in zip(sorted_groups, sorted_teams):
         # the user who owns the OAUTH token is always listed as a member
         # of groups he/she creates
-        expected_members = sorted(team.members + [ACTUAL_USER])
-        actual_members = sorted(m.username for m in group.members.list())
-
-        assert group.name == team.name
-        assert actual_members == expected_members
+        if custom_group_assertion is None:
+            expected_members = sorted(team.members + [ACTUAL_USER])
+            actual_members = sorted(m.username for m in group.members.list())
+            assert group.name == team.name
+            assert actual_members == expected_members
+        else:
+            custom_group_assertion(expected=team, actual=group)
 
 
 def _assert_on_projects(student_teams, master_repo_names, assertion):
@@ -721,3 +735,63 @@ class TestListIssues:
             assert re.search(expected_pattern, output, search_flags)
         for unexpected_pattern in unexpected_issue_output_patterns:
             assert not re.search(unexpected_pattern, output, search_flags)
+
+
+@pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
+class TestAssignReviews:
+    """Tests for the assign-reviews command."""
+
+    @staticmethod
+    def create_group_assertion(expected_num_members):
+        def group_assertion(expected, actual):
+            assert expected.name == actual.name
+            # +1 member for the group owner
+            assert len(actual.members.list()) == expected_num_members + 1
+            assert len(actual.projects.list()) == 1
+            project_name = actual.projects.list()[0].name
+            assert actual.name.startswith(project_name)
+            for member in actual.members.list():
+                if member.username == ACTUAL_USER:
+                    continue
+                assert member.username not in project_name
+                assert member.access_level == gitlab.REPORTER_ACCESS
+
+        return group_assertion
+
+    def test_assign_one_review(self, with_student_repos):
+        master_repo_name = MASTER_REPO_NAMES[1]
+        expected_review_teams = [
+            plug.Team(
+                members=[],
+                name=plug.generate_review_team_name(
+                    student_team_name, master_repo_name
+                ),
+            )
+            for student_team_name in STUDENT_TEAM_NAMES
+        ]
+        command = " ".join(
+            [
+                REPOBEE_GITLAB,
+                _repobee.cli.ASSIGN_REVIEWS_PARSER,
+                *BASE_ARGS,
+                "--mn",
+                master_repo_name,
+                *STUDENTS_ARG,
+                "-n",
+                "1",
+            ]
+        )
+        group_assertion = self.create_group_assertion(expected_num_members=1)
+
+        result = run_in_docker(command)
+
+        assert result.returncode == 0
+        assert_groups_exist(
+            expected_review_teams, custom_group_assertion=group_assertion
+        )
+        assert_num_issues(STUDENT_TEAMS, [master_repo_name], 1)
+        assert_issues_exist(
+            STUDENT_TEAMS,
+            [master_repo_name],
+            _repobee.ext.gitlab.DEFAULT_REVIEW_ISSUE,
+        )
