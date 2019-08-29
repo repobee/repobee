@@ -1,5 +1,4 @@
 import os
-import shutil
 import hashlib
 import subprocess
 import pathlib
@@ -208,15 +207,13 @@ def tmpdir_volume_arg(tmpdir):
 
 
 @pytest.fixture(scope="module", autouse=True)
-def coverage_volume(tmp_path_factory):
+def coverage_volume(tmp_path_factory, extra_args):
     covdir = tmp_path_factory.mktemp("coverage_files")
     yield "-v {}:{}".format(str(covdir), COVERAGE_VOLUME_DST)
 
     covfile = covdir / ".coverage"
     assert covfile.is_file()
-    cwd = pathlib.Path(".").resolve()
-    shutil.copy(str(covfile), str(cwd / ".coverage"))
-    shutil.move(str(covfile), str(cwd / ".coverage"))
+    run_in_docker("codecove", extra_args=extra_args)
 
 
 @pytest.fixture(autouse=True)
