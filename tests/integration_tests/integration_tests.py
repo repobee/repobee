@@ -207,7 +207,7 @@ def tmpdir_volume_arg(tmpdir):
     yield "-v {}:{}".format(str(tmpdir), VOLUME_DST)
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="module", autouse=True)
 def coverage_volume(tmp_path_factory):
     covdir = tmp_path_factory.mktemp("coverage_files")
     yield "-v {}:{}".format(str(covdir), COVERAGE_VOLUME_DST)
@@ -630,7 +630,7 @@ class TestMigrate:
         ]
         # clone the master repos to disk first first
         git_commands = ["git clone {}".format(url) for url in master_repo_urls]
-        result = run_in_docker_with_coverage(
+        result = run_in_docker(
             " && ".join(git_commands), extra_args=extra_args
         )
 
