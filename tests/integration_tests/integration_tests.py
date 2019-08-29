@@ -230,7 +230,7 @@ def handle_coverage_file(extra_args):
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def extra_args(tmpdir_volume_arg, coverage_volume):
     """Extra arguments to pass to run_in_docker when executing a test."""
     return [tmpdir_volume_arg, coverage_volume]
