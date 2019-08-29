@@ -207,13 +207,14 @@ def tmpdir_volume_arg(tmpdir):
 
 
 @pytest.fixture(scope="module", autouse=True)
-def coverage_volume(tmp_path_factory, extra_args):
+def coverage_volume(tmp_path_factory):
     covdir = tmp_path_factory.mktemp("coverage_files")
-    yield "-v {}:{}".format(str(covdir), COVERAGE_VOLUME_DST)
+    cov_vol = "-v {}:{}".format(str(covdir), COVERAGE_VOLUME_DST)
+    yield cov_vol
 
     covfile = covdir / ".coverage"
     assert covfile.is_file()
-    run_in_docker("codecove", extra_args=extra_args)
+    run_in_docker("codecove", extra_args=cov_vol)
 
 
 @pytest.fixture(autouse=True)
@@ -230,7 +231,7 @@ def handle_coverage_file(extra_args):
     )
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def extra_args(tmpdir_volume_arg, coverage_volume):
     """Extra arguments to pass to run_in_docker when executing a test."""
     return [tmpdir_volume_arg, coverage_volume]
