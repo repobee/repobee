@@ -214,7 +214,12 @@ def coverage_volume(tmp_path_factory):
 
     covfile = covdir / ".coverage"
     assert covfile.is_file()
-    run_in_docker("codecove", extra_args=cov_vol)
+    run_in_docker(
+        "codecov",
+        extra_args="{} {}".format(
+            cov_vol, "$(bash <(curl -s https://codecov.io/env))"
+        ),
+    )
 
 
 @pytest.fixture(autouse=True)
