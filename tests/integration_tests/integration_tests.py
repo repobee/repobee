@@ -466,7 +466,9 @@ class TestClone:
         result = run_in_docker_with_coverage(command, extra_args=extra_args)
 
         assert result.returncode == 0
-        assert os.listdir(str(tmpdir)) == []
+        assert [
+            dir for dir in os.listdir(str(tmpdir)) if os.path.isdir(dir)
+        ] == []
 
     def test_clone_does_not_alter_existing_dirs(
         self, with_student_repos, tmpdir, extra_args
