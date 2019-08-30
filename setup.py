@@ -29,6 +29,7 @@ required = [
     "colored",
     "repobee-plug==0.10.0",
     "python-gitlab==1.9.0",
+    "maya>=0.6.1",
 ]
 
 setup(
