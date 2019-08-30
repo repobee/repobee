@@ -35,6 +35,7 @@ class Group:
         ][0]
         owner_data = {"user_id": owner_id, "access_level": gitlab.OWNER_ACCESS}
         self._create_member(owner_data)
+        self._deleted = False
 
     def _create_member(self, data):
         user_id = data["user_id"]
@@ -53,6 +54,13 @@ class Group:
 
     def _list_members(self):
         return list(self._member_list)
+
+    def delete(self):
+        self._deleted = True
+
+    @property
+    def tests_only_deleted(self):
+        return self._deleted
 
 
 class Project:
@@ -640,3 +648,54 @@ class TestVerifySettings:
         log_mock.info.assert_called_with(
             "GREAT SUCCESS: All settings check out!"
         )
+
+
+class TestDeleteTeams:
+    @pytest.fixture
+    def groups(self, api):
+        api.ensure_teams_and_members(constants.STUDENTS)
+        return [g for g in api._gitlab.groups.list() if g.name != TARGET_GROUP]
+
+    def test_delete_teams_that_dont_exist(self, api, groups):
+        """It should have no effect."""
+
+        api.delete_teams(["some", "non-existing", "teams"])
+
+        num_deleted = 0
+        for group in groups:
+            assert not group.tests_only_deleted
+            num_deleted += 1
+        assert num_deleted == len(groups)
+
+    def test_delete_all_existing_teams(self, api, groups):
+        team_names = [g.name for g in groups]
+
+        api.delete_teams(team_names)
+
+        for group in groups:
+            assert group.tests_only_deleted
+
+    def test_delete_some_existing_teams(self, api, groups):
+        team_names = [
+            g.name for g in groups[len(groups) // 3 : len(groups) // 2]
+        ]
+        expected_num_deleted = len(team_names)
+        # +1 for the target group
+        expected_num_not_deleted = len(constants.STUDENTS) - len(team_names)
+
+        api.delete_teams(team_names)
+
+        deleted = 0
+        not_deleted = 0
+        for group in groups:
+            if group.name == TARGET_GROUP:
+                continue
+            elif group.name in team_names:
+                assert group.tests_only_deleted
+                deleted += 1
+            else:
+                assert not group.tests_only_deleted
+                not_deleted += 1
+
+        assert deleted == expected_num_deleted
+        assert not_deleted == expected_num_not_deleted

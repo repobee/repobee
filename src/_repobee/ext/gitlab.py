@@ -208,7 +208,7 @@ class GitLabAPI(plug.API):
     def get_teams(self) -> List[plug.Team]:
         """See :py:meth:`repobee_plug.apimeta.APISpec.get_teams`."""
         with _try_api_request():
-            return [
+            teams = [
                 plug.Team(
                     name=t.name,
                     members=[m.username for m in t.members.list()],
@@ -217,6 +217,7 @@ class GitLabAPI(plug.API):
                 )
                 for t in self._gitlab.groups.list(id=self._group.id)
             ]
+            return teams
 
     def _add_to_team(self, members: Iterable[str], team, permission):
         """Add members to a team.
@@ -388,6 +389,22 @@ class GitLabAPI(plug.API):
         missing = set(repo_names) - set(projects)
         if missing:
             LOGGER.warning("Can't find repos: {}".format(", ".join(missing)))
+
+    def delete_teams(self, team_names: Iterable[str]) -> None:
+        """See :py:meth:`repobee_plug.apimeta.APISpec.delete_teams`."""
+        deleted = set()  # only for logging
+        team_names = set(team_names)
+        for team in self._get_teams_in(team_names):
+            team.implementation.delete()
+            deleted.add(team.name)
+            LOGGER.info("Deleted team {}".format(team.name))
+
+        # only logging
+        missing = set(team_names) - deleted
+        if missing:
+            LOGGER.warning(
+                "Could not find teams: {}".format(", ".join(missing))
+            )
 
     def open_issue(
         self, title: str, body: str, repo_names: Iterable[str]
