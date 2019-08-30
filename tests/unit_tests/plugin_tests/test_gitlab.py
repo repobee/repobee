@@ -423,7 +423,7 @@ class TestEnsureTeamsAndMembers:
 
         assert member_access_levels
         for access_level in member_access_levels:
-            assert access_level == gitlab.GUEST_ACCESS
+            assert access_level == gitlab.REPORTER_ACCESS
 
 
 @pytest.fixture

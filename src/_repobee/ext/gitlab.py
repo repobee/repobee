@@ -15,7 +15,8 @@ import re
 import collections
 import contextlib
 import pathlib
-from typing import List, Iterable, Optional, Generator, Tuple
+import itertools
+from typing import List, Iterable, Optional, Generator, Tuple, Mapping
 
 import daiquiri
 import gitlab
@@ -24,6 +25,7 @@ import requests.exceptions
 import repobee_plug as plug
 
 from _repobee import exception
+from _repobee.ext.github import DEFAULT_REVIEW_ISSUE
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -39,7 +41,7 @@ _ISSUE_STATE_MAPPING = {
 }
 # see https://docs.gitlab.com/ee/user/permissions.html for permission details
 _TEAM_PERMISSION_MAPPING = {
-    plug.TeamPermission.PULL: gitlab.GUEST_ACCESS,
+    plug.TeamPermission.PULL: gitlab.REPORTER_ACCESS,
     plug.TeamPermission.PUSH: gitlab.DEVELOPER_ACCESS,
 }
 
@@ -394,14 +396,19 @@ class GitLabAPI(plug.API):
         with _try_api_request():
             projects = self._get_projects_and_names_by_name(repo_names)
             for lazy_project, project_name in projects:
-                issue = lazy_project.issues.create(
-                    dict(title=title, body=body)
+                self._create_issue(
+                    lazy_project, dict(title=title, body=body), project_name
                 )
-                LOGGER.info(
-                    "Opened issue {}/#{}-'{}'".format(
-                        project_name, issue.id, issue.title
-                    )
-                )
+
+    @staticmethod
+    def _create_issue(project, issue_dict, project_name=None):
+        project_name = project_name or project.name
+        issue = project.issues.create(issue_dict)
+        LOGGER.info(
+            "Opened issue {}/#{}-'{}'".format(
+                project_name, issue.id, issue.title
+            )
+        )
 
     def close_issue(self, title_regex: str, repo_names: Iterable[str]) -> None:
         """See :py:meth:`repobee_plug.apimeta.APISpec.close_issue`."""
@@ -459,6 +466,49 @@ class GitLabAPI(plug.API):
                 for project, project_name in projects
             )
             yield from name_issues_pairs
+
+    def add_repos_to_review_teams(
+        self,
+        team_to_repos: Mapping[str, Iterable[str]],
+        issue: Optional[plug.Issue] = None,
+    ) -> None:
+        """See :py:meth:`repobee_plug.apimeta.APISpec.add_repos_to_review_teams`.
+        """
+        issue = issue or DEFAULT_REVIEW_ISSUE
+        raw_teams = [
+            team.implementation
+            for team in self._get_teams_in(team_to_repos.keys())
+        ]
+        project_names = set(
+            itertools.chain.from_iterable(team_to_repos.values())
+        )
+        projects = {
+            name: project
+            for project, name in self._get_projects_and_names_by_name(
+                project_names
+            )
+        }
+        for team in raw_teams:
+            member_ids = [member.id for member in team.members.list()]
+            for proj_name in team_to_repos[team.name]:
+                lazy_project = projects[proj_name]
+                with _try_api_request(ignore_statuses=[409]):
+                    # 409 if project is already shared
+                    lazy_project.share(
+                        team.id,
+                        group_access=_TEAM_PERMISSION_MAPPING[
+                            plug.TeamPermission.PULL
+                        ],
+                    )
+                self._create_issue(
+                    lazy_project,
+                    dict(
+                        title=issue.title,
+                        body=issue.body,
+                        assignee_ids=member_ids,
+                    ),
+                    proj_name,
+                )
 
     @staticmethod
     def verify_settings(
