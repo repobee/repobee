@@ -724,7 +724,9 @@ class TestListIssues:
                 repo_name, unmatched.title, ACTUAL_USER
             )
             for repo_name in repo_names
-        ]
+        ] + [
+            r"\[ERROR\]"
+        ]  # any kind of error is bad
 
         command = " ".join(
             [
