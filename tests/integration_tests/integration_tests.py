@@ -194,6 +194,7 @@ def assert_issues_exist(
         for actual_issue in issues:
             if actual_issue.title == expected_issue.title:
                 assert actual_issue.state == expected_state
+                assert actual_issue.description == expected_issue.body
                 return
         assert False, "no issue matching the specified title"
 
