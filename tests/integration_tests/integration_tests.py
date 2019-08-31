@@ -194,6 +194,7 @@ def assert_issues_exist(
         for actual_issue in issues:
             if actual_issue.title == expected_issue.title:
                 assert actual_issue.state == expected_state
+                assert actual_issue.description == expected_issue.body
                 return
         assert False, "no issue matching the specified title"
 
@@ -365,10 +366,12 @@ def open_issues(with_student_repos):
     )
     for project in projects:
         project.issues.create(
-            dict(title=task_issue.title, body=task_issue.body)
+            dict(title=task_issue.title, description=task_issue.body)
         )
         project.issues.create(
-            dict(title=correction_issue.title, body=correction_issue.body)
+            dict(
+                title=correction_issue.title, description=correction_issue.body
+            )
         )
 
     assert_num_issues(STUDENT_TEAM_NAMES, MASTER_REPO_NAMES, len(issues))

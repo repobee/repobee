@@ -415,7 +415,9 @@ class GitLabAPI(plug.API):
             projects = self._get_projects_and_names_by_name(repo_names)
             for lazy_project, project_name in projects:
                 self._create_issue(
-                    lazy_project, dict(title=title, body=body), project_name
+                    lazy_project,
+                    dict(title=title, description=body),
+                    project_name,
                 )
 
     @staticmethod
@@ -464,14 +466,13 @@ class GitLabAPI(plug.API):
         with _try_api_request():
             projects = self._get_projects_and_names_by_name(repo_names)
             raw_state = _ISSUE_STATE_MAPPING[state]
-            # TODO figure out how to get the issue body from the GitLab API...
             name_issues_pairs = (
                 (
                     project_name,
                     (
                         plug.Issue(
                             title=issue.title,
-                            body="<BODY UNAVAILABLE>",
+                            body=issue.description,
                             number=issue.iid,
                             created_at=maya.parse(issue.created_at).datetime(
                                 naive=True
@@ -524,7 +525,7 @@ class GitLabAPI(plug.API):
                     lazy_project,
                     dict(
                         title=issue.title,
-                        body=issue.body,
+                        description=issue.body,
                         assignee_ids=member_ids,
                     ),
                     proj_name,
