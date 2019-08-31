@@ -815,42 +815,43 @@ class TestAssignReviews:
         )
 
 
+@pytest.fixture
+def with_reviews(with_student_repos):
+    master_repo_name = MASTER_REPO_NAMES[1]
+    expected_review_teams = [
+        plug.Team(
+            members=[],
+            name=plug.generate_review_team_name(
+                student_team_name, master_repo_name
+            ),
+        )
+        for student_team_name in STUDENT_TEAM_NAMES
+    ]
+    command = " ".join(
+        [
+            REPOBEE_GITLAB,
+            _repobee.cli.ASSIGN_REVIEWS_PARSER,
+            *BASE_ARGS,
+            "--mn",
+            master_repo_name,
+            *STUDENTS_ARG,
+            "-n",
+            "1",
+        ]
+    )
+
+    result = run_in_docker(command)
+
+    assert result.returncode == 0
+    assert_on_groups(
+        expected_review_teams,
+        single_group_assertion=expected_num_members_group_assertion(1),
+    )
+    return (master_repo_name, expected_review_teams)
+
+
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
 class TestEndReviews:
-    @pytest.fixture
-    def with_reviews(self, with_student_repos):
-        master_repo_name = MASTER_REPO_NAMES[1]
-        expected_review_teams = [
-            plug.Team(
-                members=[],
-                name=plug.generate_review_team_name(
-                    student_team_name, master_repo_name
-                ),
-            )
-            for student_team_name in STUDENT_TEAM_NAMES
-        ]
-        command = " ".join(
-            [
-                REPOBEE_GITLAB,
-                _repobee.cli.ASSIGN_REVIEWS_PARSER,
-                *BASE_ARGS,
-                "--mn",
-                master_repo_name,
-                *STUDENTS_ARG,
-                "-n",
-                "1",
-            ]
-        )
-
-        result = run_in_docker(command)
-
-        assert result.returncode == 0
-        assert_on_groups(
-            expected_review_teams,
-            single_group_assertion=expected_num_members_group_assertion(1),
-        )
-        return (master_repo_name, expected_review_teams)
-
     def test_end_all_reviews(self, with_reviews):
         master_repo_name, review_teams = with_reviews
         command = " ".join(
@@ -899,3 +900,106 @@ class TestEndReviews:
             review_teams,
             single_group_assertion=expected_num_members_group_assertion(1),
         )
+
+
+class TestCheckReviews:
+    """Tests for check-reviews command."""
+
+    def test_no_reviews_opened(self, with_reviews):
+        master_repo_name, _ = with_reviews
+        num_reviews = 0
+        num_expected_reviews = 1
+        master_repo_name = MASTER_REPO_NAMES[1]
+        pattern_template = r"{}.*{}.*{}.*\w+-{}.*"
+        expected_output_patterns = [
+            pattern_template.format(
+                team_name,
+                str(num_reviews),
+                str(num_expected_reviews - num_reviews),
+                master_repo_name,
+            )
+            for team_name in STUDENT_TEAM_NAMES
+        ]
+        unexpected_output_patterns = [r"\[ERROR\]"]
+
+        command = " ".join(
+            [
+                REPOBEE_GITLAB,
+                _repobee.cli.CHECK_REVIEW_PROGRESS_PARSER,
+                *BASE_ARGS,
+                "--mn",
+                master_repo_name,
+                *STUDENTS_ARG,
+                "--num-reviews",
+                str(num_expected_reviews),
+                "--title-regex",
+                "Review",
+            ]
+        )
+
+        result = run_in_docker(command)
+        output = result.stdout.decode("utf-8")
+
+        assert result.returncode == 0
+        search_flags = re.MULTILINE
+        for expected_pattern in expected_output_patterns:
+            assert re.search(expected_pattern, output, search_flags)
+        for unexpected_pattern in unexpected_output_patterns:
+            assert not re.search(unexpected_pattern, output, search_flags)
+
+    def test_expect_too_many_reviews(self, with_reviews):
+        """Test that warnings are printed if a student is assigned to fewer
+        review teams than expected.
+        """
+        master_repo_name, _ = with_reviews
+        num_reviews = 0
+        actual_assigned_reviews = 1
+        num_expected_reviews = 2
+        master_repo_name = MASTER_REPO_NAMES[1]
+        warning_template = (
+            r"^\[WARNING\] Expected {} to be assigned to {} review teams, but "
+            "found {}. Review teams may have been tampered with."
+        )
+        pattern_template = r"{}.*{}.*{}.*\w+-{}.*"
+        expected_output_patterns = [
+            pattern_template.format(
+                team_name,
+                str(num_reviews),
+                str(actual_assigned_reviews - num_reviews),
+                master_repo_name,
+            )
+            for team_name in STUDENT_TEAM_NAMES
+        ] + [
+            warning_template.format(
+                team_name,
+                str(num_expected_reviews),
+                str(actual_assigned_reviews),
+            )
+            for team_name in STUDENT_TEAM_NAMES
+        ]
+        unexpected_output_patterns = [r"\[ERROR\]"]
+
+        command = " ".join(
+            [
+                REPOBEE_GITLAB,
+                _repobee.cli.CHECK_REVIEW_PROGRESS_PARSER,
+                *BASE_ARGS,
+                "--mn",
+                master_repo_name,
+                *STUDENTS_ARG,
+                "--num-reviews",
+                str(num_expected_reviews),
+                "--title-regex",
+                "Review",
+            ]
+        )
+
+        result = run_in_docker(command)
+        output = result.stdout.decode("utf-8")
+
+        assert result.returncode == 0
+        search_flags = re.MULTILINE
+        for expected_pattern in expected_output_patterns:
+            assert re.search(expected_pattern, output, search_flags)
+        for unexpected_pattern in unexpected_output_patterns:
+            assert not re.search(unexpected_pattern, output, search_flags)

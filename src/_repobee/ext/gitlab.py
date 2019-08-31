@@ -531,6 +531,59 @@ class GitLabAPI(plug.API):
                     proj_name,
                 )
 
+    def get_review_progress(
+        self,
+        review_team_names: Iterable[str],
+        teams: Iterable[plug.Team],
+        title_regex: str,
+    ) -> Mapping[str, List[plug.Review]]:
+        """See :py:meth:`repobee_plug.apimeta.APISpec.get_review_progress`."""
+        reviews = collections.defaultdict(list)
+        raw_review_teams = [
+            team.implementation
+            for team in self._get_teams_in(review_team_names)
+        ]
+        for raw_team in raw_review_teams:
+            with _try_api_request():
+                LOGGER.info("Processing {}".format(raw_team.name))
+                reviewers = set(m.username for m in raw_team.members.list())
+                review_teams = self._extract_review_teams(teams, reviewers)
+                projects = raw_team.projects.list()
+                if len(projects) != 1:
+                    LOGGER.warning(
+                        "Expected {} to have 1 associated projects, found {}."
+                        "Skipping...".format(raw_team.name, len(projects))
+                    )
+                    continue
+
+                proj = self._gitlab.projects.get(projects[0].id)
+                review_issue_authors = {
+                    issue.author["username"]
+                    for issue in proj.issues.list()
+                    if re.match(title_regex, issue.title)
+                }
+
+                for team in review_teams:
+                    reviews[str(team)].append(
+                        plug.Review(
+                            repo=proj.path,
+                            done=any(
+                                map(
+                                    review_issue_authors.__contains__,
+                                    team.members,
+                                )
+                            ),
+                        )
+                    )
+        return reviews
+
+    def _extract_review_teams(self, teams, reviewers):
+        review_teams = []
+        for team in teams:
+            if any(map(team.members.__contains__, reviewers)):
+                review_teams.append(team)
+        return review_teams
+
     @staticmethod
     def verify_settings(
         user: str,
