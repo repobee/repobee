@@ -14,7 +14,6 @@ import pathlib
 import os
 import sys
 import re
-from contextlib import contextmanager
 from typing import List, Iterable, Optional, Tuple
 
 import logging
@@ -283,37 +282,28 @@ def dispatch_command(
     hook_results = {}
     if ext_command_names and args.subparser in ext_command_names:
         ext_cmd = ext_commands[ext_command_names.index(args.subparser)]
-        with _sys_exit_on_expected_error():
-            ext_cmd.callback(args, api)
+        ext_cmd.callback(args, api)
     elif args.subparser == SETUP_PARSER:
-        with _sys_exit_on_expected_error():
-            command.setup_student_repos(
-                args.master_repo_urls, args.students, api
-            )
+        command.setup_student_repos(args.master_repo_urls, args.students, api)
     elif args.subparser == UPDATE_PARSER:
-        with _sys_exit_on_expected_error():
-            command.update_student_repos(
-                args.master_repo_urls, args.students, api, issue=args.issue
-            )
+        command.update_student_repos(
+            args.master_repo_urls, args.students, api, issue=args.issue
+        )
     elif args.subparser == OPEN_ISSUE_PARSER:
-        with _sys_exit_on_expected_error():
-            command.open_issue(
-                args.issue, args.master_repo_names, args.students, api
-            )
+        command.open_issue(
+            args.issue, args.master_repo_names, args.students, api
+        )
     elif args.subparser == CLOSE_ISSUE_PARSER:
-        with _sys_exit_on_expected_error():
-            command.close_issue(
-                args.title_regex, args.master_repo_names, args.students, api
-            )
+        command.close_issue(
+            args.title_regex, args.master_repo_names, args.students, api
+        )
     elif args.subparser == MIGRATE_PARSER:
-        with _sys_exit_on_expected_error():
-            command.migrate_repos(args.master_repo_urls, api)
+        command.migrate_repos(args.master_repo_urls, api)
     elif args.subparser == CLONE_PARSER:
-        with _sys_exit_on_expected_error():
-            hook_results = command.clone_repos(
-                args.master_repo_names, args.students, api
-            )
-            LOGGER.info(formatters.format_hook_results_output(hook_results))
+        hook_results = command.clone_repos(
+            args.master_repo_names, args.students, api
+        )
+        LOGGER.info(formatters.format_hook_results_output(hook_results))
     elif args.subparser == VERIFY_PARSER:
         plug.manager.hook.get_api_class().verify_settings(
             args.user,
@@ -323,42 +313,35 @@ def dispatch_command(
             args.master_org_name,
         )
     elif args.subparser == LIST_ISSUES_PARSER:
-        with _sys_exit_on_expected_error():
-            hook_results = command.list_issues(
-                args.master_repo_names,
-                args.students,
-                api,
-                state=args.state,
-                title_regex=args.title_regex or "",
-                show_body=args.show_body,
-                author=args.author,
-            )
+        hook_results = command.list_issues(
+            args.master_repo_names,
+            args.students,
+            api,
+            state=args.state,
+            title_regex=args.title_regex or "",
+            show_body=args.show_body,
+            author=args.author,
+        )
     elif args.subparser == ASSIGN_REVIEWS_PARSER:
-        with _sys_exit_on_expected_error():
-            command.assign_peer_reviews(
-                args.master_repo_names,
-                args.students,
-                args.num_reviews,
-                args.issue,
-                api,
-            )
+        command.assign_peer_reviews(
+            args.master_repo_names,
+            args.students,
+            args.num_reviews,
+            args.issue,
+            api,
+        )
     elif args.subparser == PURGE_REVIEW_TEAMS_PARSER:
-        with _sys_exit_on_expected_error():
-            command.purge_review_teams(
-                args.master_repo_names, args.students, api
-            )
+        command.purge_review_teams(args.master_repo_names, args.students, api)
     elif args.subparser == SHOW_CONFIG_PARSER:
-        with _sys_exit_on_expected_error():
-            command.show_config()
+        command.show_config()
     elif args.subparser == CHECK_REVIEW_PROGRESS_PARSER:
-        with _sys_exit_on_expected_error():
-            command.check_peer_review_progress(
-                args.master_repo_names,
-                args.students,
-                args.title_regex,
-                args.num_reviews,
-                api,
-            )
+        command.check_peer_review_progress(
+            args.master_repo_names,
+            args.students,
+            args.title_regex,
+            args.num_reviews,
+            api,
+        )
     else:
         raise exception.ParseError(
             "Illegal value for subparser: {}. "
@@ -1004,30 +987,6 @@ def _add_traceback_arg(parser):
         action="store_true",
         dest="traceback",
     )
-
-
-@contextmanager
-def _sys_exit_on_expected_error():
-    try:
-        yield
-    except exception.PushFailedError as exc:
-        LOGGER.error(
-            "There was an error pushing to {}. "
-            "Verify that your token has adequate access.".format(exc.url)
-        )
-        sys.exit(1)
-    except exception.CloneFailedError as exc:
-        LOGGER.error(
-            "There was an error cloning from {}. "
-            "Does the repo really exist?".format(exc.url)
-        )
-        sys.exit(1)
-    except exception.GitError:
-        LOGGER.error("Something went wrong with git. See the logs for info.")
-        sys.exit(1)
-    except exception.APIError as exc:
-        LOGGER.error("Exiting beacuse of {.__class__.__name__}".format(exc))
-        sys.exit(1)
 
 
 def _extract_groups(args: argparse.Namespace) -> List[str]:
