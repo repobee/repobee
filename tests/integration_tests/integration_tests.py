@@ -183,7 +183,11 @@ def _assert_on_projects(student_teams, master_repo_names, assertion):
 
 
 def assert_issues_exist(
-    student_teams, master_repo_names, expected_issue, expected_state="opened"
+    student_teams,
+    master_repo_names,
+    expected_issue,
+    expected_state="opened",
+    expected_num_asignees=0,
 ):
     """Assert that the expected issue has been opened in each of the student
     repos.
@@ -195,6 +199,11 @@ def assert_issues_exist(
             if actual_issue.title == expected_issue.title:
                 assert actual_issue.state == expected_state
                 assert actual_issue.description == expected_issue.body
+                assert len(actual_issue.assignees) == expected_num_asignees
+                assert ACTUAL_USER not in [
+                    asignee["username"] for asignee in actual_issue.assignees
+                ]
+
                 return
         assert False, "no issue matching the specified title"
 
@@ -812,6 +821,7 @@ class TestAssignReviews:
             STUDENT_TEAMS,
             [master_repo_name],
             _repobee.ext.gitlab.DEFAULT_REVIEW_ISSUE,
+            expected_num_asignees=1,
         )
 
 

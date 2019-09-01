@@ -112,6 +112,8 @@ class GitLabAPI(plug.API):
         self._base_url = base_url
 
         with _try_api_request():
+            self._gitlab.auth()
+            self._actual_user = self._gitlab.user.username
             self._group = self._get_organization(self._group_name)
 
     @staticmethod
@@ -510,7 +512,11 @@ class GitLabAPI(plug.API):
             )
         }
         for team in raw_teams:
-            member_ids = [member.id for member in team.members.list()]
+            member_ids = [
+                member.id
+                for member in team.members.list()
+                if member.username != self._actual_user
+            ]
             for proj_name in team_to_repos[team.name]:
                 lazy_project = projects[proj_name]
                 with _try_api_request(ignore_statuses=[409]):
