@@ -267,20 +267,6 @@ class TestDispatchCommand:
         that there are no crashes, does not validate any other behavior!"""
         cli.dispatch_command(parsed_args_all_subparsers, api_instance_mock)
 
-    def test_expected_exception_results_in_system_exit(
-        self,
-        parsed_args_all_subparsers,
-        api_instance_mock,
-        command_all_raise_mock,
-    ):
-        """Test that any of the expected exceptions results in SystemExit."""
-        if parsed_args_all_subparsers.subparser == cli.VERIFY_PARSER:
-            pytest.skip(
-                "verify-settings parser is exempt from the sysexit behavior"
-            )
-        with pytest.raises(SystemExit):
-            cli.dispatch_command(parsed_args_all_subparsers, api_instance_mock)
-
     def test_setup_student_repos_called_with_correct_args(
         self, command_mock, api_instance_mock
     ):
