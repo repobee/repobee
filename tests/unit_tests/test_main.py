@@ -97,23 +97,24 @@ def test_happy_path(
     )
 
 
-def test_does_not_raise_on_exception_in_parsing(
+def test_exit_status_1_on_exception_in_parsing(
     api_instance_mock, parse_args_mock, dispatch_command_mock, no_config_mock
 ):
-    """should just log, but not raise."""
     msg = "some nice error message"
     parse_args_mock.side_effect = raise_(Exception(msg))
     sys_args = ["just some made up arguments".split()]
 
-    main.main(sys_args)
+    with pytest.raises(SystemExit) as exc_info:
+        main.main(sys_args)
 
+    assert exc_info.value.code == 1
     parse_args_mock.assert_called_once_with(
         sys_args[1:], show_all_opts=False, ext_commands=DEFAULT_EXT_COMMANDS
     )
     assert not dispatch_command_mock.called
 
 
-def test_does_not_raise_on_exception_in_handling_parsed_args(
+def test_exit_status_1_on_exception_in_handling_parsed_args(
     api_instance_mock, parse_args_mock, dispatch_command_mock
 ):
     """should just log, but not raise."""
@@ -121,7 +122,13 @@ def test_does_not_raise_on_exception_in_handling_parsed_args(
     dispatch_command_mock.side_effect = raise_(Exception(msg))
     sys_args = ["just some made up arguments".split()]
 
-    main.main(sys_args)
+    with pytest.raises(SystemExit) as exc_info:
+        main.main(sys_args)
+
+    assert exc_info.value.code == 1
+    parse_args_mock.assert_called_once_with(
+        sys_args[1:], show_all_opts=False, ext_commands=DEFAULT_EXT_COMMANDS
+    )
 
 
 def test_plugins_args(
@@ -271,8 +278,10 @@ def test_logs_traceback_on_exception_in_dispatch_if_traceback(
     sys_args = ["repobee", *CLONE_ARGS, "--traceback"]
     dispatch_command_mock.side_effect = lambda *args, **kwargs: raise_()
 
-    main.main(sys_args)
+    with pytest.raises(SystemExit) as exc_info:
+        main.main(sys_args)
 
+    assert exc_info.value.code == 1
     assert logger_exception_mock.called
     parse_args_mock.assert_called_once_with(
         [*CLONE_ARGS, "--traceback"],
@@ -312,3 +321,19 @@ def test_show_all_opts_correctly_separated(
     parse_preparser_options_mock.assert_called_once_with(
         [cli.PRE_PARSER_SHOW_ALL_OPTS]
     )
+
+
+def test_non_zero_exit_status_on_exception(
+    parse_args_mock, parse_preparser_options_mock, no_config_mock
+):
+    def raise_(*args, **kwargs):
+        raise ValueError()
+
+    parse_args_mock.side_effect = raise_
+
+    sys_args = ["repobee", *CLONE_ARGS]
+
+    with pytest.raises(SystemExit) as exc_info:
+        main.main(sys_args)
+
+    assert exc_info.value.code == 1

@@ -91,6 +91,7 @@ def main(sys_args: List[str]):
             LOGGER.exception("Critical exception")
         else:
             LOGGER.error("{.__class__.__name__}: {}".format(exc, str(exc)))
+        sys.exit(1)
 
 
 if __name__ == "__main__":
