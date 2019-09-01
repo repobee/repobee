@@ -41,7 +41,8 @@ STUDENT_TEAM_NAMES = [str(t) for t in STUDENT_TEAMS]
 STUDENT_REPO_NAMES = plug.generate_repo_names(STUDENT_TEAMS, MASTER_REPO_NAMES)
 
 REPOBEE_GITLAB = "repobee -p gitlab"
-BASE_ARGS = ["--bu", BASE_URL, "-o", ORG_NAME, "-t", TOKEN, "--tb"]
+BASE_ARGS_NO_TB = ["--bu", BASE_URL, "-o", ORG_NAME, "-t", TOKEN]
+BASE_ARGS = [*BASE_ARGS_NO_TB, "--tb"]
 STUDENTS_ARG = ["-s", " ".join(STUDENT_TEAM_NAMES)]
 MASTER_REPOS_ARG = ["--mn", " ".join(MASTER_REPO_NAMES)]
 MASTER_ORG_ARG = ["--mo", MASTER_ORG_NAME]
@@ -813,6 +814,40 @@ class TestAssignReviews:
             [master_repo_name],
             _repobee.ext.gitlab.DEFAULT_REVIEW_ISSUE,
         )
+
+    def test_assign_to_nonexisting_students(self, with_student_repos):
+        """If you try to assign reviews where one or more of the allocated
+        student repos don't exist, there should be an error.
+        """
+        master_repo_name = MASTER_REPO_NAMES[1]
+        non_existing_group = "non-existing-group"
+        student_team_names = STUDENT_TEAM_NAMES + [non_existing_group]
+
+        command = " ".join(
+            [
+                REPOBEE_GITLAB,
+                _repobee.cli.ASSIGN_REVIEWS_PARSER,
+                *BASE_ARGS_NO_TB,
+                "--mn",
+                master_repo_name,
+                "-s",
+                *student_team_names,
+                "-n",
+                "1",
+            ]
+        )
+
+        result = run_in_docker(command)
+        output = result.stdout.decode("utf-8")
+
+        assert (
+            "[ERROR] NotFoundError: Can't find repos: {}".format(
+                plug.generate_repo_name(non_existing_group, master_repo_name)
+            )
+            in output
+        )
+        assert result.returncode == 1
+        assert_num_issues(STUDENT_TEAMS, [master_repo_name], 0)
 
 
 @pytest.fixture

@@ -370,9 +370,12 @@ class GitLabAPI(plug.API):
         auth = "{}:{}".format(self._user, self._token)
         return repo_url.replace("https://", "https://{}@".format(auth))
 
-    def _get_projects_and_names_by_name(self, repo_names):
+    def _get_projects_and_names_by_name(self, repo_names, strict=False):
         """Return lazy projects (minimal amount of info loaded) along with
         their names.
+
+        If strict is True, raise an exception if any of the repos are not
+        found.
         """
         projects = []
         for name in repo_names:
@@ -389,7 +392,10 @@ class GitLabAPI(plug.API):
 
         missing = set(repo_names) - set(projects)
         if missing:
-            LOGGER.warning("Can't find repos: {}".format(", ".join(missing)))
+            msg = "Can't find repos: {}".format(", ".join(missing))
+            if strict:
+                raise exception.NotFoundError(msg)
+            LOGGER.warning(msg)
 
     def delete_teams(self, team_names: Iterable[str]) -> None:
         """See :py:meth:`repobee_plug.apimeta.APISpec.delete_teams`."""
@@ -506,7 +512,7 @@ class GitLabAPI(plug.API):
         projects = {
             name: project
             for project, name in self._get_projects_and_names_by_name(
-                project_names
+                project_names, strict=True
             )
         }
         for team in raw_teams:
