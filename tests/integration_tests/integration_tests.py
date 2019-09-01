@@ -207,10 +207,9 @@ def tmpdir_volume_arg(tmpdir):
 
 
 @pytest.fixture(scope="module", autouse=True)
-def coverage_volume(extra_args):
+def coverage_volume():
     covdir = pathlib.Path(".").resolve() / ".coverage_files"
     yield "-v {}:{}".format(str(covdir), COVERAGE_VOLUME_DST)
-
     covfile = covdir / ".coverage"
     assert covfile.is_file()
 
