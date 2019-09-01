@@ -207,13 +207,12 @@ def tmpdir_volume_arg(tmpdir):
 
 
 @pytest.fixture(scope="module", autouse=True)
-def coverage_volume(tmp_path_factory, extra_args):
-    covdir = tmp_path_factory.mktemp("coverage_files")
+def coverage_volume(extra_args):
+    covdir = pathlib.Path(".").resolve() / ".coverage_files"
     yield "-v {}:{}".format(str(covdir), COVERAGE_VOLUME_DST)
 
     covfile = covdir / ".coverage"
     assert covfile.is_file()
-    run_in_docker("codecove", extra_args=extra_args)
 
 
 @pytest.fixture(autouse=True)
