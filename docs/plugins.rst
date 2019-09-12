@@ -15,7 +15,7 @@ This is a list of curated plugins that are safe to use. If you find a plugin
 for RepoBee not on this list, please get in touch and it may be added.
 
 Internal (ship with RepoBee)
-****************************
+----------------------------
 Plugins marked with ``*`` belong to the default plugins and are loaded
 automatically. These plugins can be used for reference on how to implement
 plugins, you can find the source code for them in the
@@ -54,7 +54,7 @@ plugins, you can find the source code for them in the
     results files for information.
 
 External plugins (install separately)
-*************************************
+-------------------------------------
 External plugins that need to be installed separately from RepoBee. These are
 external either because they are complicated, or because their use cases are too
 specific for the core application.
@@ -70,6 +70,12 @@ specific for the core application.
     into a CSV file. Useful for teachers who (themselves or via TAs) provide
     grading feedback in issues and need a way to automatically compose the
     results.
+
+* `feedback <https://github.com/repobee/repobee-feedback>`_
+
+   - Looks for local issue files following the naming convention
+     ``<STUDENT_REPO_NAME>.md`` and opens them as issues in the respective
+     student repos.
 
 * `gofmt <https://github.com/slarse/repobee-gofmt>`_
 
