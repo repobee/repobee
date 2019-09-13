@@ -317,6 +317,32 @@ def api(happy_github, organization, no_teams):
     return _repobee.ext.github.GitHubAPI(BASE_URL, TOKEN, ORG_NAME, USER)
 
 
+class TestInit:
+    def test_raises_on_empty_user_arg(self):
+        with pytest.raises(TypeError) as exc_info:
+            _repobee.ext.github.GitHubAPI(BASE_URL, TOKEN, ORG_NAME, "")
+
+        assert "argument 'user' must not be empty" in str(exc_info.value)
+
+    @pytest.mark.parametrize("url", ["https://github.com", constants.HOST_URL])
+    def test_raises_when_url_is_bad(self, url):
+        with pytest.raises(plug.PlugError) as exc_info:
+            _repobee.ext.github.GitHubAPI(url, TOKEN, ORG_NAME, USER)
+
+        assert (
+            "invalid base url, should either be https://api.github.com or "
+            "end with '/api/v3'" in str(exc_info.value)
+        )
+
+    @pytest.mark.parametrize(
+        "url", ["https://api.github.com", constants.BASE_URL]
+    )
+    def test_accepts_valid_urls(self, url):
+        api = _repobee.ext.github.GitHubAPI(url, TOKEN, ORG_NAME, USER)
+
+        assert isinstance(api, plug.API)
+
+
 class TestEnsureTeamsAndMembers:
     @staticmethod
     def assert_teams_equal(actual_teams, expected_teams):
