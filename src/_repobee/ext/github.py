@@ -129,6 +129,17 @@ class GitHubAPI(plug.API):
         """
         if not user:
             raise TypeError("argument 'user' must not be empty")
+        if not (
+            base_url == "https://api.github.com"
+            or base_url.endswith("/api/v3")
+        ):
+            raise plug.PlugError(
+                "invalid base url, should either be https://api.github.com or "
+                "end with '/api/v3'. See the docs: "
+                "https://repobee.readthedocs.io/en/stable/"
+                "getting_started.html#configure-repobee-for-the-target"
+                "-organization-show-config-and-verify-settings"
+            )
         self._github = github.Github(login_or_token=token, base_url=base_url)
         self._org_name = org_name
         self._base_url = base_url
