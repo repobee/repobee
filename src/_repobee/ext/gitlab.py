@@ -18,7 +18,6 @@ import pathlib
 import itertools
 from typing import List, Iterable, Optional, Generator, Tuple, Mapping
 
-import maya
 import daiquiri
 import gitlab
 import requests.exceptions
@@ -482,9 +481,7 @@ class GitLabAPI(plug.API):
                             title=issue.title,
                             body=issue.description,
                             number=issue.iid,
-                            created_at=maya.parse(issue.created_at).datetime(
-                                naive=True
-                            ),
+                            created_at=issue.created_at,
                             author=issue.author["username"],
                             implementation=issue,
                         )
