@@ -409,7 +409,7 @@ class GitHubAPI(plug.API):
                             title=issue.title,
                             body=issue.body,
                             number=issue.number,
-                            created_at=issue.created_at,
+                            created_at=issue.created_at.isoformat(),
                             author=issue.user.login,
                             implementation=issue,
                         )

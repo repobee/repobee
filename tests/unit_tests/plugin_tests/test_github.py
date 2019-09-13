@@ -613,7 +613,14 @@ class TestGetIssues:
         """
         actual_issues, expected_issues = (
             list(actual_issues),
-            list(expected_issues),
+            [
+                plug.Issue(
+                    title, body, number, created_at.isoformat(), author, impl
+                )
+                for title, body, number, created_at, author, impl in iter(
+                    expected_issues
+                )
+            ],
         )
         assert len(actual_issues) == len(expected_issues)
         for act, exp in zip(sorted(actual_issues), sorted(expected_issues)):
