@@ -25,7 +25,7 @@ class TestGetConfiguredDefaults:
 
     def test_get_configured_defaults_empty_file(self, empty_config_mock):
         with pytest.raises(exception.FileError) as exc_info:
-            config.get_configured_defaults(empty_config_mock)
+            config.get_configured_defaults(str(empty_config_mock))
         assert "does not contain the required [DEFAULTS] header" in str(
             exc_info.value
         )
@@ -35,7 +35,7 @@ class TestGetConfiguredDefaults:
     ):
         mock_getenv.side_effect = lambda name: None
 
-        defaults = config.get_configured_defaults(config_mock)
+        defaults = config.get_configured_defaults(str(config_mock))
 
         assert defaults["user"] == USER
         assert defaults["base_url"] == BASE_URL
@@ -48,7 +48,7 @@ class TestGetConfiguredDefaults:
     def test_token_in_env_variable_overrides_configuration_file(
         self, config_mock
     ):
-        defaults = config.get_configured_defaults(config_mock)
+        defaults = config.get_configured_defaults(str(config_mock))
         assert defaults["token"] == constants.TOKEN
 
     @pytest.mark.skipif(
@@ -65,7 +65,7 @@ class TestGetConfiguredDefaults:
 
         mock_getenv.side_effect = _env
 
-        defaults = config.get_configured_defaults(config_mock)
+        defaults = config.get_configured_defaults(str(config_mock))
         assert defaults["token"] == token
 
     def test_get_configured_defaults_raises_on_invalid_keys(
@@ -87,7 +87,7 @@ class TestGetConfiguredDefaults:
         empty_config_mock.write(config_contents)
 
         with pytest.raises(exception.FileError) as exc_info:
-            config.get_configured_defaults(empty_config_mock)
+            config.get_configured_defaults(str(empty_config_mock))
 
         assert "config file at {} contains invalid default keys".format(
             empty_config_mock
@@ -109,7 +109,7 @@ class TestGetConfiguredDefaults:
         empty_config_mock.write(config_contents)
 
         with pytest.raises(exception.FileError) as exc_info:
-            config.get_configured_defaults(empty_config_mock)
+            config.get_configured_defaults(str(empty_config_mock))
 
         assert "does not contain the required [DEFAULTS] header" in str(
             exc_info.value
