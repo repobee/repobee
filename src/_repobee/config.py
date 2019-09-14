@@ -37,24 +37,28 @@ def get_configured_defaults(
     """
     config_file = pathlib.Path(config_file)
     defaults = _read_defaults(config_file)
-    check_defaults(defaults)
+    check_defaults(defaults, config_file)
     return defaults
 
 
-def check_defaults(defaults: Mapping[str, str]):
+def check_defaults(
+    defaults: Mapping[str, str], config_file: Union[str, pathlib.Path]
+):
     """Raise an exception if defaults contain keys that are not configurable
     arguments.
 
     Args:
         defaults: A dictionary of defaults.
+        config_file: Path to the config file.
     """
     configured = defaults.keys()
     if (
         configured - constants.CONFIGURABLE_ARGS
     ):  # there are surpluss arguments
         raise exception.FileError(
-            "config contains invalid default keys: {}".format(
-                ", ".join(configured - constants.CONFIGURABLE_ARGS)
+            "config file at {} contains invalid default keys: {}".format(
+                config_file,
+                ", ".join(configured - constants.CONFIGURABLE_ARGS),
             )
         )
 
@@ -125,9 +129,11 @@ def check_config_integrity(
             for line_nr, line in exc.errors
         )
         raise exception.FileError(
-            msg="config file contains syntax errors: " + errors
+            msg="config file at {} contains syntax errors: {}".format(
+                config_file, errors
+            )
         )
-    check_defaults(defaults)
+    check_defaults(defaults, config_file)
 
 
 def _fetch_token() -> Optional[str]:
