@@ -5,27 +5,29 @@ Install
 
 Requirements
 ------------
-RepoBee requires Python 3.5+ and a somewhat up-to-date version of git.
-Officially supported operating systems are Ubuntu 17.04+ and macOS, but
-RepoBee should run fine on any Linux distribution and also on WSL_ on
-Windows 10. Please report any issues with operating systems and/or git
+RepoBee requires Python 3.5+ and a somewhat up-to-date version of Git (2.0+ to
+be on the safe side). Officially supported operating systems are Ubuntu 17.04+
+and macOS, but RepoBee should run fine on any Linux distribution and also on
+WSL_ on Windows 10. Please report any issues with operating systems and/or Git
 versions on the `issue tracker`_.
 
 .. _pypi:
 
 Check your Python version
 -------------------------
-For RepoBee to run, you need to have Python 3.5 or later. On many
-operating systems, python is an alias for Python 2.7, and python3 is an
-alias for the latest version of Python 3 that is installed. For this install
-guide, python3 is assumed to be a Python version 3.5 or higher. You can
-check the version yourself with:
+For RepoBee to run, you need to have Python 3.5 or later. On many operating
+systems, ``python`` is an alias for Python 2.7, and ``python3`` is an alias for
+the latest version of Python 3 that is installed. For this install guide,
+python3 is assumed to be a Python version 3.5 or higher. You can check the
+version yourself with:
 
 .. code-block:: bash
 
     $ python3 --version
     # or
     $ python --version
+
+Then, just use whichever of those Pythons claim to be 3.5 or higher.
 
 Option 1: Install from PyPi with `pip`
 --------------------------------------
@@ -37,8 +39,8 @@ can be done like this:
 1. Execute ``python3 -m pip install --user --upgrade repobee`` to install the package.
 2. Run ``repobee -h`` to verify that you can find the script.
     - If that doesn't work, the ``repobee`` script can't be found on your PATH
-      variable. Try ``python3 -m repobee -h`` to run the main module of RepoBee
-      (which is all the ``repobee`` script does anyway).
+      variable. Try ``python3 -m repobee -h`` to run the main module of
+      RepoBee, which is equivalent to ``repobee -h``.
 
 This same install command should also be good for upgrading RepoBee to a new
 version.

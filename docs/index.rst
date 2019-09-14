@@ -13,7 +13,7 @@ plugins should head over to the documentation for `repobee-plug
 <https://repobee-plug.readthedocs.io/en/stable>`_.
 
 If you use the :ref:`userguide` in any way and feel like skipping
-:ref:`getting_started`, make sure to read :ref:`configure_repobee` anyway!  The
+:ref:`getting_started`, make sure to read :ref:`configure_repobee` anyway! The
 rest of the guide assumes a configuration as described there.
 
 .. important::

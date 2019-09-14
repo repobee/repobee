@@ -86,12 +86,13 @@ The following conventions are fundamental to working with RepoBee.
   (i.e. is an owner). If the user has limited access, some features may work,
   while others may not.
 * Master repos should be available as private repos in one of three places:
+
   - The master organization (recommended if the master repos are being
-  maintained and improved across course rounds).
+    maintained and improved across course rounds).
   - The target organization. If you are doing a trial run or for some reason
-  can't have multiple organizations, this may be a good option.
+    can't have multiple organizations, this may be a good option.
   - Locally in the current working directory. If your master repos are trivial
-  (e.g. empty), this may be a good option.
+    (e.g. empty), this may be a good option.
 * Student repositories are copies of the default branches of the master
   repositories (i.e. ``--single-branch`` cloning is used by default). That is,
   until students make modifications.
