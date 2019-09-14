@@ -8,9 +8,10 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
-> **Important:** RepoBee v2.0.0 is out now! There are some breaking changes,
-> see the
-> [release notes](https://github.com/repobee/repobee/releases/tag/v2.0.0)
+> **Important:** RepoBee v2.3.0 is out now. The main attraction is full support
+> for GitLab, but it also includes various stability fixes and a few features
+> on the GitHub side of things. See the
+> [release notes](https://github.com/repobee/repobee/releases/tag/v2.3.0)
 > for details
 
 ## Overview
@@ -142,11 +143,10 @@ plugin system**.
 There is still a lot in store for RepoBee. Below is a roadmap for major
 features that are in the works.
 
-| Feature                 | Status                                                                                      | ETA            |
-| -------                 | ------                                                                                      | ---            |
-| Full support for GitLab | Work in progress ([See docs](https://repobee.readthedocs.io/en/latest/gitlab.html#roadmap)) | September 2019 |
-| Video tutorials         | Work in progress                                                                            | September 2019 |
-| GUI                     | Planning                                                                                    | Late 2019      |
+| Feature         | Status           | ETA            |
+| -------         | ------           | ---            |
+| Video tutorials | Work in progress | September 2019 |
+| GUI             | Planning         | Late 2019      |
 
 ## License
 This software is licensed under the MIT License. See the [LICENSE](LICENSE)

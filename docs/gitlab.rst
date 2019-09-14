@@ -2,10 +2,12 @@
 
 RepoBee and GitLab
 ******************
-As of v1.5.0, RepoBee has alpha support for GitLab. Both https://gitlab.com and
-self-hosted GitLab are supported, but currently, some commands (including all
-peer review commands) do not work. GitLab is planned to be fully supported by
-in late 2019. See :ref:`gitlab_roadmap` for details.
+As of v2.3.0, RepoBee fully supports GitLab for all commands, both on
+https://gitlab.com and on self-hosted GitLab instances. The functionality is
+new, so please report any bugs you find on the
+`issue tracker <https://github.com/repobee/repobee/issues/new>`. All of
+RepoBee's system tests run against a GitLab instances, so I have every intention
+of continuing to improve the GitLab experience.
 
 .. note::
 
@@ -15,31 +17,9 @@ in late 2019. See :ref:`gitlab_roadmap` for details.
 
 .. important::
 
-   RepoBee requires GitLab 11.11 or later.
+   RepoBee requires GitLab 11.11 or later. This is only relevant if you have
+   a self-hosted GitLab instance.
 
-.. _gitlab_roadmap:
-
-Roadmap
-=======
-The roadmap for GitLab support is listed below. For the most up-to-date
-activity, see the `GitLab support Kanban board`_.
-
-===================  =============  ============
-Command              Status         ETA/Added in
-===================  =============  ============
-show-config          Done           N/A (not platform dependent)
-setup                Done           v1.5.0
-update               Done           v1.5.0
-clone                Done           v1.5.0
-migrate              Done           v1.6.0
-open-issues          Done           v1.6.0
-close-issues         Done           v1.6.0
-list-issues          Done           v1.6.0
-assign-reviews       Not started    Late 2019
-end-reviews          Not started    Late 2019
-check-reviews        Not started    Late 2019
-verify-settings      Not started    v2.3.0
-===================  =============  ============
 
 GitLab terminology
 ==================
@@ -93,5 +73,29 @@ creating one for GitHub. Just follow `these instructions
 scopes you need to tick are ``api``, ``read_user``, ``read_repository`` and
 ``write_repository``. That's it!
 
+.. _gitlab_roadmap:
+
+Roadmap
+=======
+The roadmap for GitLab support is listed below. As GitLab is now fully
+supported, this serves only as a record of history (and to not break links I may
+have put elsewhere and then forgotten about :) ).
+
+===================  =============  ============
+Command              Status         ETA/Added in
+===================  =============  ============
+show-config          Done           N/A (not platform dependent)
+setup                Done           v1.5.0
+update               Done           v1.5.0
+clone                Done           v1.5.0
+migrate              Done           v1.6.0
+open-issues          Done           v1.6.0
+close-issues         Done           v1.6.0
+list-issues          Done           v1.6.0
+assign-reviews       Done           v2.3.0
+end-reviews          Done           v2.3.0
+check-reviews        Done           v2.3.0
+verify-settings      Done           v2.3.0
+===================  =============  ============
+
 .. _`GitLab blog post`: https://about.gitlab.com/2017/09/11/comparing-confusing-terms-in-github-bitbucket-and-gitlab/
-.. _`GitLab support Kanban board`: https://github.com/repobee/repobee/projects/7
