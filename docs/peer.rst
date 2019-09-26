@@ -13,15 +13,6 @@ are to open a peer review issue in the associated repos. This is at least the
 the default. See :ref:`review allocation algorithm` for other available review
 allocation schemes.
 
-.. important::
-
-   Peer review functionality has yet to be implemented for:
-
-   1. The ``gitlab`` plugin.
-   2. Student groups.
-
-   Both of these are planned features, but have no current ETA.
-
 .. _assign reviews:
 
 Getting started with peer reviews using ``assign-reviews``
