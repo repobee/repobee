@@ -157,6 +157,11 @@ def _read_defaults(
         return {} if not token else dict(token=token)
     defaults = dict(_read_config(config_file)[constants.DEFAULTS_SECTION_HDR])
     if token:
+        if defaults.get("token"):
+            LOGGER.warning(
+                "REPOBEE_TOKEN environment variable overrides token in "
+                "config file"
+            )
         defaults["token"] = token
     return defaults
 

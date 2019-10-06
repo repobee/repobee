@@ -629,7 +629,7 @@ def _create_parser(show_all_opts, ext_commands):
         "https://repobee.readthedocs.io\n\n"
     )
 
-    if not show_all_opts and config.get_configured_defaults():
+    if not show_all_opts and constants.DEFAULT_CONFIG_FILE.is_file():
         program_description += (
             "CLI options that are set in the config file are suppressed in "
             "help sections,\nrun with pre-parser option {all_opts_arg} to "
