@@ -66,7 +66,7 @@ def load_plugin_modules(plugin_names: Iterable[str]) -> List[ModuleType]:
         ) or _try_load_module(_external_plugin_qualname(name))
         if not plug_mod:
             msg = "failed to load plugin module " + name
-            raise exception.PluginError(msg)
+            raise exception.PluginLoadError(msg)
         loaded_modules.append(plug_mod)
     return loaded_modules
 

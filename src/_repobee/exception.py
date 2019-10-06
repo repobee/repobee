@@ -100,7 +100,7 @@ class PushFailedError(GitError):
         super().__init__(msg, returncode, stderr)
 
 
-class PluginError(RepoBeeException):
+class PluginLoadError(RepoBeeException):
     """Generic error to raise when something goes wrong with loading
     plugins.
     """

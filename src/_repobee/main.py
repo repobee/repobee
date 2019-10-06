@@ -79,6 +79,14 @@ def main(sys_args: List[str]):
         traceback = parsed_args.traceback
         pre_init = False
         cli.dispatch_command(parsed_args, api, ext_commands)
+    except exception.PluginLoadError as exc:
+        LOGGER.error("{.__class__.__name__}: {}".format(exc, str(exc)))
+        LOGGER.error(
+            "The plugin may not be installed, or it may not exist. If the "
+            "plugin is defined in the config file, try running `repobee "
+            "--no-plugins config-wizard` to remove any offending plugins."
+        )
+        sys.exit(1)
     except Exception as exc:
         # FileErrors can occur during pre-init because of reading the config
         # and we don't want tracebacks for those (afaik at this time)

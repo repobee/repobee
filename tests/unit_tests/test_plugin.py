@@ -59,12 +59,12 @@ class TestLoadPluginModules:
         assert modules == []
 
     def test_raises_when_loading_invalid_module(self, empty_config_mock):
-        """Test that PluginError is raised when when the plugin specified
+        """Test that PluginLoadError is raised when when the plugin specified
         does not exist.
         """
         plugin_name = "this_plugin_does_not_exist"
 
-        with pytest.raises(exception.PluginError) as exc_info:
+        with pytest.raises(exception.PluginLoadError) as exc_info:
             plugin.load_plugin_modules([plugin_name])
 
         assert "failed to load plugin module " + plugin_name in str(
