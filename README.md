@@ -1,6 +1,5 @@
 ![RepoBee Logo](docs/images/RepoBee_large-black.png)
 
-# RepoBee - Tooling for administrating Git repositories on GitHub and GitLab
 [![Build Status](https://travis-ci.com/repobee/repobee.svg)](https://travis-ci.com/repobee/repobee)
 [![Code Coverage](https://codecov.io/gh/repobee/repobee/branch/master/graph/badge.svg)](https://codecov.io/gh/repobee/repobee)
 [![Documentation Status](https://readthedocs.org/projects/repobee/badge/?version=stable)](http://repobee.readthedocs.io/en/stable/)
@@ -9,12 +8,6 @@
 ![Supported Platforms](https://img.shields.io/badge/platforms-Linux%2C%20macOS-blue.svg)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
-
-> **Important:** RepoBee v2.3.0 is out now. The main attraction is full support
-> for GitLab, but it also includes various stability fixes and a few features
-> on the GitHub side of things. See the
-> [release notes](https://github.com/repobee/repobee/releases/tag/v2.3.0)
-> for details
 
 ## Overview
 RepoBee is a command line tool that allows teachers and teaching assistants
