@@ -17,20 +17,21 @@
 > for details
 
 ## Overview
-RepoBee is a command line interface (CLI) tool for administrating large amounts
-of Git repositories on the GitHub and GitLab platforms, both cloud and
-self-hosted. The most basic use case is to automate generation of student
-repositories based on _master_ (i.e. template) repositories, that can contain
-for example instructions and skeleton code. Given one or more master
-repositories, generating copies of these for students or groups is a single
-command away! That is however just scratching the surface: RepoBee also has
-functionality for updating student repos (maybe you forgot something?), batch
-cloning of student repos (convenient when correcting tasks), giving students
-read-only access to other students' repos for peer review, and more at that!
-There is also a [plugin system](https://github.com/repobee/repobee-plug) in
-place that allows Python programmers to expand RepoBee in various ways, and end
-users can simply install plugins created by others. An example of such a plugin
-is [`repobee-junit4`](https://github.com/repobee/repobee-junit4), which runs
+RepoBee is a command line tool that allows teachers and teaching assistants
+to administrate large amounts of Git repositories on the GitHub and GitLab
+platforms (cloud and self-hosted). The most basic use case is to automate
+generation of student repositories based on _master_ (i.e. template)
+repositories, that can contain for example instructions and skeleton code. Given
+one or more master repositories, generating copies of these for students or
+groups is a single command away! That is however just scratching the surface:
+RepoBee also has functionality for updating student repos (maybe you forgot
+something?), batch cloning of student repos (convenient when correcting tasks),
+giving students read-only access to other students' repos for peer review, and
+more at that! There is also a [plugin
+system](https://github.com/repobee/repobee-plug) in place that allows Python
+programmers to expand RepoBee in various ways, and end users can simply install
+plugins created by others. An example of such a plugin is
+[`repobee-junit4`](https://github.com/repobee/repobee-junit4), which runs
 teacher-defined JUnit4 test classes on Java code in cloned student repos.
 
 RepoBee is currently being used for the introductory courses in computer science at
