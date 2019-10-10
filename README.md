@@ -1,3 +1,5 @@
+![RepoBee Logo](docs/images/RepoBee_large-black.png)
+
 # RepoBee - Tooling for administrating Git repositories on GitHub and GitLab
 [![Build Status](https://travis-ci.com/repobee/repobee.svg)](https://travis-ci.com/repobee/repobee)
 [![Code Coverage](https://codecov.io/gh/repobee/repobee/branch/master/graph/badge.svg)](https://codecov.io/gh/repobee/repobee)
