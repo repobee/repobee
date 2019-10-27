@@ -8,6 +8,7 @@ Module containing plugin system utility functions and classes.
 .. moduleauthor:: Simon Larsén
 """
 
+import types
 import pathlib
 import importlib
 from types import ModuleType
@@ -97,7 +98,7 @@ def register_plugins(modules: List[ModuleType]) -> None:
         modules: A list of modules.
     """
     assert all([isinstance(mod, ModuleType) for mod in modules])
-    for module in reversed(modules):  # reverse because plugins are run FIFO
+    for module in reversed(modules):  # reverse because plugins are run LIFO
         plug.manager.register(module)
         for value in module.__dict__.values():
             if (
@@ -138,3 +139,14 @@ def resolve_plugin_names(
         A list of plugin names that should be loaded.
     """
     return [*(plugin_names or config.get_plugin_names(config_file) or [])]
+
+
+def resolve_plugin_version(plugin_module: types.ModuleType,) -> Optional[str]:
+    """Return the version of the top-level package containing the plugin, or
+    None if it is not defined.
+    """
+    pkg_name = plugin_module.__package__.split(".")[0]
+    pkg_module = _try_load_module(pkg_name)
+    return (
+        pkg_module.__version__ if hasattr(pkg_module, "__version__") else None
+    )

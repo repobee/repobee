@@ -615,9 +615,16 @@ def create_parser_for_docs():
 
 def _create_parser(show_all_opts, ext_commands):
     """Create the parser."""
+
+    def _versioned_plugin_name(plugin_module: types.ModuleType) -> str:
+        """Return the name of the plugin, with version if available."""
+        name = plugin_module.__name__.split(".")[-1]
+        ver = plugin.resolve_plugin_version(plugin_module)
+        return "{}-{}".format(name, ver) if ver else name
+
     loaded_plugins = ", ".join(
         [
-            p.__name__.split(".")[-1]
+            _versioned_plugin_name(p)
             for p in plug.manager.get_plugins()
             if isinstance(p, types.ModuleType)
         ]
