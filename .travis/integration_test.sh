@@ -6,7 +6,7 @@ cd tests/integration_tests/
 sudo docker network create development
 ./startup.sh > /dev/null
 export REPOBEE_NO_VERIFY_SSL='true'
-pytest integration_tests.py -v -k AssignReviews
+pytest integration_tests.py -v -k OpenIssues
 if [ $? != 0 ];
 then
     exit $?;
