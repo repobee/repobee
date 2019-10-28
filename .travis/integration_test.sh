@@ -15,4 +15,4 @@ fi
 cat .coverage_files/report.txt
 rm -f .coverage_files/.coverage
 
-codecov
+codecov --file .coverage_files/coverage.xml
