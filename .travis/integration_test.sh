@@ -13,10 +13,6 @@ then
 fi
 
 cat .coverage_files/report.txt
+rm .coverage_files/.coverage
 
-ci_env=`bash <(curl -s https://codecov.io/env)`
-docker run $ci_env \
-    -v "$PWD/.coverage_files":/coverage \
-    --net development --rm \
-    --name repobee \
-    repobee:test /bin/sh -c 'cd /coverage && codecov'
+codecov

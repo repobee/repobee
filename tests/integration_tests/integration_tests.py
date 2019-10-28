@@ -254,7 +254,12 @@ def coverage_volume():
 def generate_coverage_report(coverage_volume):
     """Generate a coverage report after all tests have run."""
     yield
-    # tests complete
+    # xml report for Codecov
+    run_in_docker(
+        "cd {} && coverage xml".format(COVERAGE_VOLUME_DST),
+        extra_args=[coverage_volume],
+    )
+    # txt report for manual inspection
     run_in_docker(
         "cd {} && coverage report > report.txt".format(COVERAGE_VOLUME_DST),
         extra_args=[coverage_volume],
