@@ -13,6 +13,6 @@ then
 fi
 
 cat .coverage_files/report.txt
-rm .coverage_files/.coverage
+rm -f .coverage_files/.coverage
 
 codecov
