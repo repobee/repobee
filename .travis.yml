@@ -10,7 +10,7 @@ matrix:
 install: ".travis/install.sh"
 script: ".travis/run.sh"
 after_success:
-- codecov
+- ".travis/upload_coverage.sh"
 notifications:
   email: false
   slack:
