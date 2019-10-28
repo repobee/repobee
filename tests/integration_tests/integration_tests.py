@@ -214,6 +214,17 @@ def coverage_volume():
     assert covfile.is_file()
 
 
+@pytest.fixture(scope="module", autouse=True)
+def generate_coverage_report(coverage_volume):
+    """Generate a coverage report after all tests have run."""
+    yield
+    # tests complete
+    run_in_docker(
+        "cd {} && coverage report > report.txt".format(COVERAGE_VOLUME_DST),
+        extra_args=[coverage_volume],
+    )
+
+
 @pytest.fixture(autouse=True)
 def handle_coverage_file(extra_args):
     """Copy the coverage file back and forth."""

@@ -12,9 +12,11 @@ then
     exit $?;
 fi
 
+cat .coverage_files/report.txt
+
 ci_env=`bash <(curl -s https://codecov.io/env)`
-sudo docker run $ci_env \
+docker run $ci_env \
     -v .coverage_files:/coverage \
     --net development --rm \
     --name repobee \
-    repobee:test /bin/sh -c 'codecov'
+    repobee:test /bin/sh -c 'cd /coverage && codecov'
