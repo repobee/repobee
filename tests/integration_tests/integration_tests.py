@@ -844,7 +844,7 @@ def expected_num_members_group_assertion(expected_num_members):
 class TestAssignReviews:
     """Tests for the assign-reviews command."""
 
-    def test_assign_one_review(self, with_student_repos):
+    def test_assign_one_review(self, with_student_repos, extra_args):
         master_repo_name = MASTER_REPO_NAMES[1]
         expected_review_teams = [
             plug.Team(
@@ -871,7 +871,7 @@ class TestAssignReviews:
             expected_num_members=1
         )
 
-        result = run_in_docker(command)
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
 
         assert result.returncode == 0
         assert_on_groups(
@@ -885,7 +885,9 @@ class TestAssignReviews:
             expected_num_asignees=1,
         )
 
-    def test_assign_to_nonexisting_students(self, with_student_repos):
+    def test_assign_to_nonexisting_students(
+        self, with_student_repos, extra_args
+    ):
         """If you try to assign reviews where one or more of the allocated
         student repos don't exist, there should be an error.
         """
@@ -907,7 +909,7 @@ class TestAssignReviews:
             ]
         )
 
-        result = run_in_docker(command)
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
         output = result.stdout.decode("utf-8")
 
         assert (
@@ -957,7 +959,7 @@ def with_reviews(with_student_repos):
 
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
 class TestEndReviews:
-    def test_end_all_reviews(self, with_reviews):
+    def test_end_all_reviews(self, with_reviews, extra_args):
         master_repo_name, review_teams = with_reviews
         command = " ".join(
             [
@@ -970,7 +972,7 @@ class TestEndReviews:
             ]
         )
 
-        result = run_in_docker(command)
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
 
         def assert_no_actual_groups(expected, actual):
             assert not actual
@@ -983,7 +985,7 @@ class TestEndReviews:
             review_teams, all_groups_assertion=assert_no_actual_groups
         )
 
-    def test_end_non_existing_reviews(self, with_reviews):
+    def test_end_non_existing_reviews(self, with_reviews, extra_args):
         _, review_teams = with_reviews
         master_repo_name = MASTER_REPO_NAMES[0]
         command = " ".join(
@@ -997,7 +999,7 @@ class TestEndReviews:
             ]
         )
 
-        result = run_in_docker(command)
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
 
         assert result.returncode == 0
         assert_on_groups(STUDENT_TEAMS)
@@ -1010,7 +1012,7 @@ class TestEndReviews:
 class TestCheckReviews:
     """Tests for check-reviews command."""
 
-    def test_no_reviews_opened(self, with_reviews):
+    def test_no_reviews_opened(self, with_reviews, extra_args):
         master_repo_name, _ = with_reviews
         num_reviews = 0
         num_expected_reviews = 1
@@ -1042,7 +1044,7 @@ class TestCheckReviews:
             ]
         )
 
-        result = run_in_docker(command)
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
         output = result.stdout.decode("utf-8")
 
         assert result.returncode == 0
@@ -1052,7 +1054,7 @@ class TestCheckReviews:
         for unexpected_pattern in unexpected_output_patterns:
             assert not re.search(unexpected_pattern, output, search_flags)
 
-    def test_expect_too_many_reviews(self, with_reviews):
+    def test_expect_too_many_reviews(self, with_reviews, extra_args):
         """Test that warnings are printed if a student is assigned to fewer
         review teams than expected.
         """
@@ -1099,7 +1101,7 @@ class TestCheckReviews:
             ]
         )
 
-        result = run_in_docker(command)
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
         output = result.stdout.decode("utf-8")
 
         assert result.returncode == 0
