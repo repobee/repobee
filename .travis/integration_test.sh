@@ -11,3 +11,5 @@ if [ $? != 0 ]
 then
     exit $?
 fi
+
+cat .coverage_files/report.txt
