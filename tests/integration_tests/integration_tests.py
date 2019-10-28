@@ -22,6 +22,7 @@ assert os.getenv(
 
 
 VOLUME_DST = "/workdir"
+COVERAGE_VOLUME_DST = "/coverage"
 DIR = pathlib.Path(__file__).resolve().parent
 TOKEN = (DIR / "token").read_text(encoding="utf-8").strip()
 RESTORE_SH = DIR / "restore.sh"
@@ -241,7 +242,55 @@ def tmpdir_volume_arg(tmpdir):
     yield "-v {}:{}".format(str(tmpdir), VOLUME_DST)
 
 
-def run_in_docker(command, extra_args=""):
+@pytest.fixture(scope="module", autouse=True)
+def coverage_volume():
+    covdir = pathlib.Path(".").resolve() / ".coverage_files"
+    yield "-v {}:{}".format(str(covdir), COVERAGE_VOLUME_DST)
+    covfile = covdir / ".coverage"
+    assert covfile.is_file()
+
+
+@pytest.fixture(scope="module", autouse=True)
+def generate_coverage_report(coverage_volume):
+    """Generate a coverage report after all tests have run."""
+    yield
+    # tests complete
+    run_in_docker(
+        "cd {} && coverage report > report.txt".format(COVERAGE_VOLUME_DST),
+        extra_args=[coverage_volume],
+    )
+
+
+@pytest.fixture(autouse=True)
+def handle_coverage_file(extra_args):
+    """Copy the coverage file back and forth."""
+    # copy the previous .coverage file into the workdir
+    run_in_docker(
+        "cp {}/.coverage .".format(COVERAGE_VOLUME_DST), extra_args=extra_args
+    )
+    yield
+    # copy the appended .coverage file into the coverage volume
+    run_in_docker(
+        "cp .coverage {}".format(COVERAGE_VOLUME_DST), extra_args=extra_args
+    )
+
+
+@pytest.fixture
+def extra_args(tmpdir_volume_arg, coverage_volume):
+    """Extra arguments to pass to run_in_docker when executing a test."""
+    return [tmpdir_volume_arg, coverage_volume]
+
+
+def run_in_docker_with_coverage(command, extra_args=None):
+    assert extra_args, "extra volume args are required to run with coverage"
+    coverage_command = (
+        "coverage run --branch --append --source _repobee -m " + command
+    )
+    return run_in_docker(coverage_command, extra_args=extra_args)
+
+
+def run_in_docker(command, extra_args=None):
+    extra_args = " ".join(extra_args) if extra_args else ""
     docker_command = (
         "docker run {} --net development --rm --name repobee "
         "repobee:test /bin/sh -c '{}'"
@@ -397,7 +446,7 @@ def open_issues(with_student_repos):
 class TestClone:
     """Integration tests for the clone command."""
 
-    def test_clean_clone(self, with_student_repos, tmpdir, tmpdir_volume_arg):
+    def test_clean_clone(self, with_student_repos, tmpdir, extra_args):
         """Test cloning student repos when there are no repos in the current
         working directory.
         """
@@ -411,12 +460,12 @@ class TestClone:
             ]
         )
 
-        result = run_in_docker(command, extra_args=tmpdir_volume_arg)
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
 
         assert result.returncode == 0
         assert_cloned_repos(STUDENT_REPO_NAMES, tmpdir)
 
-    def test_clone_twice(self, with_student_repos, tmpdir, tmpdir_volume_arg):
+    def test_clone_twice(self, with_student_repos, tmpdir, extra_args):
         """Cloning twice in a row should have the same effect as cloning once.
         """
         command = " ".join(
@@ -429,15 +478,19 @@ class TestClone:
             ]
         )
 
-        first_result = run_in_docker(command, extra_args=tmpdir_volume_arg)
-        second_result = run_in_docker(command, extra_args=tmpdir_volume_arg)
+        first_result = run_in_docker_with_coverage(
+            command, extra_args=extra_args
+        )
+        second_result = run_in_docker_with_coverage(
+            command, extra_args=extra_args
+        )
 
         assert first_result.returncode == 0
         assert second_result.returncode == 0
         assert_cloned_repos(STUDENT_REPO_NAMES, tmpdir)
 
     def test_clone_does_not_create_dirs_on_fail(
-        self, with_student_repos, tmpdir, tmpdir_volume_arg
+        self, with_student_repos, tmpdir, extra_args
     ):
         """Test that no local directories are created for repos that RepoBee
         fails to pull.
@@ -454,13 +507,15 @@ class TestClone:
             ]
         )
 
-        result = run_in_docker(command, extra_args=tmpdir_volume_arg)
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
 
         assert result.returncode == 0
-        assert os.listdir(str(tmpdir)) == []
+        assert [
+            dir for dir in os.listdir(str(tmpdir)) if os.path.isdir(dir)
+        ] == []
 
     def test_clone_does_not_alter_existing_dirs(
-        self, with_student_repos, tmpdir, tmpdir_volume_arg
+        self, with_student_repos, tmpdir, extra_args
     ):
         """Test that clone does not clobber existing directories."""
         team_with_local_repos = STUDENT_TEAMS[0]
@@ -489,7 +544,7 @@ class TestClone:
             ]
         )
 
-        result = run_in_docker(command, extra_args=tmpdir_volume_arg)
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
 
         assert result.returncode == 0
         assert_cloned_repos(non_pre_existing_dirnames, tmpdir)
@@ -502,7 +557,7 @@ class TestClone:
 class TestSetup:
     """Integration tests for the setup command."""
 
-    def test_clean_setup(self):
+    def test_clean_setup(self, extra_args):
         """Test a first-time setup with master repos in the master org."""
         command = " ".join(
             [
@@ -515,12 +570,12 @@ class TestSetup:
             ]
         )
 
-        result = run_in_docker(command)
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
         assert result.returncode == 0
         assert_repos_exist(STUDENT_TEAMS, MASTER_REPO_NAMES)
         assert_on_groups(STUDENT_TEAMS)
 
-    def test_setup_twice(self):
+    def test_setup_twice(self, extra_args):
         """Setting up twice should have the same effect as setting up once."""
         command = " ".join(
             [
@@ -533,8 +588,8 @@ class TestSetup:
             ]
         )
 
-        result = run_in_docker(command)
-        result = run_in_docker(command)
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
         assert result.returncode == 0
         assert_repos_exist(STUDENT_TEAMS, MASTER_REPO_NAMES)
         assert_on_groups(STUDENT_TEAMS)
@@ -544,7 +599,7 @@ class TestSetup:
 class TestUpdate:
     """Integration tests for the update command."""
 
-    def test_happy_path(self, with_student_repos):
+    def test_happy_path(self, with_student_repos, extra_args):
         master_repo = MASTER_REPO_NAMES[0]
         filename = "superfile.super"
         text = "some epic content\nfor this file!"
@@ -562,12 +617,12 @@ class TestUpdate:
             ]
         )
 
-        result = run_in_docker(command)
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
         assert result.returncode == 0
         assert_repos_contain(STUDENT_TEAMS, [master_repo], filename, text)
 
     def test_opens_issue_if_update_rejected(
-        self, tmpdir, with_student_repos, tmpdir_volume_arg
+        self, tmpdir, with_student_repos, extra_args
     ):
         master_repo = MASTER_REPO_NAMES[0]
         conflict_repo = plug.generate_repo_name(STUDENT_TEAMS[0], master_repo)
@@ -596,7 +651,7 @@ class TestUpdate:
             ]
         )
 
-        result = run_in_docker(command, extra_args=tmpdir_volume_arg)
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
 
         assert result.returncode == 0
         assert_repos_contain(STUDENT_TEAMS[1:], [master_repo], filename, text)
@@ -608,7 +663,7 @@ class TestMigrate:
     """Integration tests for the migrate command."""
 
     @pytest.fixture
-    def local_master_repos(self, restore, tmpdir_volume_arg):
+    def local_master_repos(self, restore, extra_args):
         """Clone the master repos to disk. The restore fixture is explicitly
         included as it must be run before this fixture.
         """
@@ -620,13 +675,13 @@ class TestMigrate:
         # clone the master repos to disk first first
         git_commands = ["git clone {}".format(url) for url in master_repo_urls]
         result = run_in_docker(
-            " && ".join(git_commands), extra_args=tmpdir_volume_arg
+            " && ".join(git_commands), extra_args=extra_args
         )
 
         assert result.returncode == 0
         return MASTER_REPO_NAMES
 
-    def test_happy_path(self, local_master_repos, tmpdir_volume_arg):
+    def test_happy_path(self, local_master_repos, extra_args):
         """Migrate a few repos from the existing master repo into the target
         organization.
         """
@@ -639,7 +694,7 @@ class TestMigrate:
             ]
         )
 
-        result = run_in_docker(command, extra_args=tmpdir_volume_arg)
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
 
         assert result.returncode == 0
         assert_master_repos_exist(local_master_repos, ORG_NAME)
@@ -651,7 +706,7 @@ class TestOpenIssues:
 
     _ISSUE = apimeta.Issue(title="This is a title", body="This is a body")
 
-    def test_happy_path(self, tmpdir_volume_arg, tmpdir, with_student_repos):
+    def test_happy_path(self, tmpdir_volume_arg, tmpdir, extra_args):
         """Test opening an issue in each student repo."""
         filename = "issue.md"
         text = "{}\n{}".format(self._ISSUE.title, self._ISSUE.body)
@@ -669,7 +724,7 @@ class TestOpenIssues:
             ]
         )
 
-        result = run_in_docker(command, extra_args=tmpdir_volume_arg)
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
 
         assert result.returncode == 0
         assert_num_issues(STUDENT_TEAMS, MASTER_REPO_NAMES, 1)
@@ -680,7 +735,7 @@ class TestOpenIssues:
 class TestCloseIssues:
     """Tests for the close-issues command."""
 
-    def test_closes_only_matched_issues(self, open_issues):
+    def test_closes_only_matched_issues(self, open_issues, extra_args):
         """Test that close-issues respects the regex."""
         assert len(open_issues) == 2, "expected there to be only 2 open issues"
         close_issue = open_issues[0]
@@ -697,7 +752,7 @@ class TestCloseIssues:
             ]
         )
 
-        result = run_in_docker(command)
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
 
         assert result.returncode == 0
         assert_issues_exist(
@@ -718,7 +773,7 @@ class TestCloseIssues:
 class TestListIssues:
     """Tests for the list-issues command."""
 
-    def test_lists_matching_issues(self, open_issues):
+    def test_lists_matching_issues(self, open_issues, extra_args):
         assert len(open_issues) == 2, "expected there to be only 2 open issues"
         matched = open_issues[0]
         unmatched = open_issues[1]
@@ -752,7 +807,7 @@ class TestListIssues:
             ]
         )
 
-        result = run_in_docker(command)
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
         output = result.stdout.decode("utf-8")
 
         assert result.returncode == 0
