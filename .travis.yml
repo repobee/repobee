@@ -4,6 +4,23 @@ branches:
   - master
   - "/^v\\d+\\.\\d+\\.\\d+(-(alpha|beta|rc)(\\.\\d+)?)?$/"
 matrix:
+  include:
+  - os: linux
+    python: 3.7
+    dist: xenial
+    sudo: true
+    env:
+      - INTEGRATION_TEST=true
+  - os: linux
+    python: 3.5
+  - os: linux
+    python: 3.6
+  - os: linux
+    python: 3.7
+    dist: xenial
+    sudo: true
+  - os: linux
+    python: 3.8
   - os: osx
     language: generic
     sudo: true
@@ -12,7 +29,7 @@ matrix:
     cache:
       directories:
       - "$HOME/Library/Caches/Homebrew"
-        #- "/Users/travis/.pyenv/versions"
+      - "/Users/travis/.pyenv/versions"
 install: ".travis/install.sh"
 script: ".travis/run.sh"
 after_success:
