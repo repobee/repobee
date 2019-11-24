@@ -29,7 +29,6 @@ matrix:
     cache:
       directories:
       - "$HOME/Library/Caches/Homebrew"
-      - "/Users/travis/.pyenv/versions"
 install: ".travis/install.sh"
 script: ".travis/run.sh"
 after_success:
