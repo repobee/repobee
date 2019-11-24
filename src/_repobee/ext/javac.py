@@ -101,7 +101,10 @@ class JavacCloneHook(Plugin):
             clone_parser: The ``clone`` subparser.
         """
         clone_parser.add_argument(
-            "-i", "--ignore", help="File names to ignore.", nargs="+"
+            "--javac-ignore",
+            help="File names to ignore.",
+            dest="ignore",
+            nargs="+",
         )
 
     def parse_args(self, args: argparse.Namespace) -> None:
