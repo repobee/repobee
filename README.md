@@ -139,10 +139,13 @@ plugin system**.
 There is still a lot in store for RepoBee. Below is a roadmap for major
 features that are in the works.
 
-| Feature         | Status           | ETA            |
-| -------         | ------           | ---            |
-| Video tutorials | Work in progress | September 2019 |
-| GUI             | Planning         | Late 2019      |
+| Feature                                           | Status                                                          | ETA           |
+| -------                                           | ------                                                          | ---           |
+| Automatic discovery of student repos              | WIP ([see #390](https://github.com/repobee/repobee/issues/390)) | December 2019 |
+| Plugin system revamp                              | WIP                                                             | December 2019 |
+| Setup of shared read-only repos                   | WIP ([see #391](https://github.com/repobee/repobee/issues/391)) | January 2020  |
+| Pre-processing of master repos in `setup` command | Planning                                                        | December 2019 |
+| Video tutorials                                   | Work in progress                                                | Early 2020    |
 
 ## License
 This software is licensed under the MIT License. See the [LICENSE](LICENSE)
