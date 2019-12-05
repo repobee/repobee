@@ -9,6 +9,11 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
+> **Important:** Massive changes are being made to the plugin system during
+> December. If you maintain a plugin or plan to create one, please see [this
+> milestone](https://github.com/repobee/repobee-plug/milestone/1) for all
+> planned changes.
+
 ## Overview
 RepoBee is a command line tool that allows teachers and teaching assistants
 to administrate large amounts of Git repositories on the GitHub and GitLab
