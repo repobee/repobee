@@ -18,6 +18,9 @@ import shutil
 import os
 import sys
 import tempfile
+import contextlib
+import itertools
+import collections
 from typing import Iterable, List, Optional, Tuple, Generator, Mapping
 from colored import bg, fg, style
 
@@ -38,7 +41,7 @@ LOGGER = daiquiri.getLogger(__file__)
 
 def setup_student_repos(
     master_repo_urls: Iterable[str], teams: Iterable[plug.Team], api: plug.API
-) -> None:
+) -> Mapping[str, plug.HookResult]:
     """Setup student repositories based on master repo templates. Performs three
     primary tasks:
 
@@ -66,6 +69,7 @@ def setup_student_repos(
     with tempfile.TemporaryDirectory() as tmpdir:
         LOGGER.info("Cloning into master repos ...")
         master_repo_paths = _clone_all(urls, cwd=tmpdir)
+        hook_results = _execute_setup_tasks(master_repo_paths, api)
 
         teams = _add_students_to_teams(teams, api)
         repo_urls = _create_student_repos(urls, teams, api)
@@ -73,6 +77,8 @@ def setup_student_repos(
         push_tuples = _create_push_tuples(master_repo_paths, repo_urls)
         LOGGER.info("Pushing files to student repos ...")
         git.push(push_tuples)
+
+    return hook_results
 
 
 def _add_students_to_teams(
@@ -144,7 +150,7 @@ def update_student_repos(
     teams: Iterable[plug.Team],
     api: plug.API,
     issue: Optional[plug.Issue] = None,
-) -> None:
+) -> Mapping[str, List[plug.HookResult]]:
     """Attempt to update all student repos related to one of the master repos.
 
     Args:
@@ -167,6 +173,7 @@ def update_student_repos(
     with tempfile.TemporaryDirectory() as tmpdir:
         LOGGER.info("Cloning into master repos ...")
         master_repo_paths = _clone_all(urls, tmpdir)
+        hook_results = _execute_setup_tasks(master_repo_paths, api)
 
         push_tuples = _create_push_tuples(master_repo_paths, repo_urls)
 
@@ -178,6 +185,7 @@ def update_student_repos(
         _open_issue_by_urls(failed_urls, issue, api)
 
     LOGGER.info("Done!")
+    return hook_results
 
 
 def _open_issue_by_urls(
@@ -709,3 +717,53 @@ def show_config() -> None:
     )
 
     LOGGER.info(output)
+
+
+def _execute_setup_tasks(
+    master_repo_paths, api
+) -> Mapping[str, List[plug.HookResult]]:
+    """Execute setup_task implementations, if there are any, and return the
+    results.
+    """
+    if "setup_task" in itertools.chain.from_iterable(
+        map(dir, plug.manager.get_plugins())
+    ):
+        paths = list(map(pathlib.Path, master_repo_paths))
+        tasks = plug.manager.hook.setup_task()
+        return _execute_tasks(paths, tasks, api)
+    return {}
+
+
+def _execute_tasks(
+    repo_paths: List[pathlib.Path], tasks: Iterable[plug.Task], api: plug.API
+) -> Mapping[str, List[plug.HookResult]]:
+    """Execute plugin tasks on the provided repos."""
+    LOGGER.info("Executing tasks ...")
+    results = collections.defaultdict(list)
+    for path in repo_paths:
+        LOGGER.info("Processing {}".format(path.name))
+
+        for task in tasks:
+            with _convert_task_exceptions(task):
+                res = task.callback(path, api)
+            if res:
+                results[path.name].append(res)
+    return results
+
+
+@contextlib.contextmanager
+def _convert_task_exceptions(task):
+    """Catch task exceptions and re-raise or convert into something more
+    appropriate for the user. Only plug.PlugErrors will be let through without
+    modification.
+    """
+    try:
+        yield
+    except plug.PlugError:
+        raise
+    except Exception as exc:
+        raise plug.PlugError(
+            "A task from the module '{}' crashed unexpectedly. "
+            "This is a bug, please report it to the plugin "
+            "author.".format(task.callback.__module__)
+        ) from exc

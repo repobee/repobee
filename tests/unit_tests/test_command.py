@@ -764,3 +764,34 @@ class TestCheckPeerReviewProgress:
         api_mock.get_review_progress.assert_called_once_with(
             review_team_names, students, title_regex
         )
+
+
+class TestSetupTask:
+    """Tests for the setup and update commands when it comes to the setup_task
+    hook.
+    """
+
+    @pytest.mark.parametrize(
+        "cmd", [command.setup_student_repos, command.update_student_repos]
+    )
+    def test_executes_setup_hooks(self, master_urls, students, api_mock, cmd):
+        """Test that the setup hooks are executed."""
+        mod_name = "preflight"
+        modules = plugin.load_plugin_modules([mod_name])
+        plugin.register_plugins(modules)
+
+        hook_results = cmd(master_urls, students, api_mock)
+
+        assert len(hook_results) == len(
+            master_urls
+        ), "expected as many hook results as master repos"
+        for master_repo_name in MASTER_NAMES:
+            assert (
+                master_repo_name in hook_results
+            ), "expected hook result for master repo {}".format(
+                master_repo_name
+            )
+            results = hook_results[master_repo_name]
+            assert len(results) == 1, "expected only a single hook result"
+            res = results[0]
+            assert res.status == plug.Status.SUCCESS

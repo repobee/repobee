@@ -284,7 +284,9 @@ def dispatch_command(
         ext_cmd = ext_commands[ext_command_names.index(args.subparser)]
         ext_cmd.callback(args, api)
     elif args.subparser == SETUP_PARSER:
-        command.setup_student_repos(args.master_repo_urls, args.students, api)
+        hook_results = command.setup_student_repos(
+            args.master_repo_urls, args.students, api
+        )
     elif args.subparser == UPDATE_PARSER:
         command.update_student_repos(
             args.master_repo_urls, args.students, api, issue=args.issue
@@ -303,7 +305,6 @@ def dispatch_command(
         hook_results = command.clone_repos(
             args.master_repo_names, args.students, api
         )
-        LOGGER.info(formatters.format_hook_results_output(hook_results))
     elif args.subparser == VERIFY_PARSER:
         plug.manager.hook.get_api_class().verify_settings(
             args.user,
@@ -348,6 +349,7 @@ def dispatch_command(
             "This is a bug, please open an issue.".format(args.subparser)
         )
 
+    LOGGER.info(formatters.format_hook_results_output(hook_results))
     if hook_results and args.hook_results_file:
         _handle_hook_results(
             hook_results=hook_results, filepath=args.hook_results_file
@@ -748,6 +750,7 @@ def _add_subparsers(parser, show_all_opts, ext_commands):
             base_student_parser,
             master_org_parser,
             repo_name_parser,
+            HOOK_RESULTS_PARSER,
         ],
         formatter_class=_OrderedFormatter,
     )
