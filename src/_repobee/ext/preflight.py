@@ -1,7 +1,7 @@
 """This is a test plugin for the setup_task hook. It serves no real purpose.
 
-.. module:: javac
-    :synopsis: Plugin that tries to compile all .java files in a repo.
+.. module:: preflight
+    :synopsis: Test plugin for the setup_task hook.
 
 .. moduleauthor:: Simon Larsén
 """

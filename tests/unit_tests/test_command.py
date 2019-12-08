@@ -1,6 +1,6 @@
 import os
 from functools import partial
-from unittest.mock import patch, MagicMock, call, ANY, PropertyMock
+from unittest.mock import patch, MagicMock, call, PropertyMock
 
 import pytest
 
@@ -514,11 +514,11 @@ class TestCloneRepos:
         )
 
         @plug.repobee_hook
-        def act_hook_func(path):
+        def act_hook_func(path, api):
             return pylint_hook(path)
 
         @plug.repobee_hook
-        def act_hook_meth(self, path):
+        def act_hook_meth(self, path, api):
             return javac_hook(self, path)
 
         monkeypatch.setattr(
@@ -563,18 +563,43 @@ class TestCloneRepos:
     ):
         javac_hook, pylint_hook = act_hook_mocks
         repo_names = plug.generate_repo_names(students, master_names)
-        expected_pylint_calls = [
-            call(os.path.abspath(repo_name)) for repo_name in repo_names
-        ]
-        expected_javac_calls = [
-            call(ANY, os.path.abspath(repo_name)) for repo_name in repo_names
-        ]
 
         with patch("os.listdir", return_value=repo_names):
-            command.clone_repos(master_names, students, api_mock)
+            hook_results = command.clone_repos(
+                master_names, students, api_mock
+            )
 
-        javac_hook.assert_has_calls(expected_javac_calls, any_order=True)
-        pylint_hook.assert_has_calls(expected_pylint_calls)
+        assert len(hook_results) == len(repo_names)
+        for repo_name in repo_names:
+            assert repo_name in hook_results
+            results = sorted(hook_results[repo_name])
+            assert len(results) == 2
+            assert results[0].hook == "javac"
+            assert results[1].hook == "pylint"
+
+    def test_executes_clone_tasks(
+        self, master_names, students, api_mock, git_mock
+    ):
+        plug_name = "postflight"
+        modules = plugin.load_plugin_modules([plug_name])
+        plugin.register_plugins(modules)
+        repo_names = plug.generate_repo_names(students, master_names)
+        for p in plug.manager.get_plugins():
+            print(dir(p))
+
+        with patch("os.listdir", return_value=repo_names):
+            hook_results = command.clone_repos(
+                master_names, students, api_mock
+            )
+
+        assert len(hook_results) == len(repo_names)
+        for repo_name in repo_names:
+            assert repo_name in hook_results
+            results = hook_results[repo_name]
+            assert len(results) == 1
+            res = results[0]
+            assert res.status == plug.Status.SUCCESS
+            assert res.hook == plug_name
 
 
 class TestMigrateRepo:
@@ -776,8 +801,8 @@ class TestSetupTask:
     )
     def test_executes_setup_hooks(self, master_urls, students, api_mock, cmd):
         """Test that the setup hooks are executed."""
-        mod_name = "preflight"
-        modules = plugin.load_plugin_modules([mod_name])
+        plug_name = "preflight"
+        modules = plugin.load_plugin_modules([plug_name])
         plugin.register_plugins(modules)
 
         hook_results = cmd(master_urls, students, api_mock)

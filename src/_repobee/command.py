@@ -437,9 +437,9 @@ def clone_repos(
         _clone_repos_no_check(clone_urls, tmpdir, api)
 
     for plugin in plug.manager.get_plugins():
-        if "act_on_cloned_repo" in dir(plugin):
+        if "act_on_cloned_repo" in dir(plugin) or "clone_task" in dir(plugin):
             repo_names = plug.generate_repo_names(teams, master_repo_names)
-            return _execute_post_clone_hooks(repo_names, api)
+            return _execute_clone_tasks(repo_names, api)
     return {}
 
 
@@ -463,23 +463,6 @@ def _clone_repos_no_check(repo_urls, dst_dirpath, api):
     for repo in cloned_repos:
         shutil.copytree(src=str(repo), dst=str(cur_dir / repo.name))
     return [repo.name for repo in cloned_repos]
-
-
-def _execute_post_clone_hooks(
-    repo_names: List[str], api: plug.API
-) -> Mapping[str, List[plug.HookResult]]:
-    LOGGER.info("Executing post clone hooks on repos")
-    local_repos = [name for name in os.listdir() if name in repo_names]
-
-    results = {}
-    for repo_name in local_repos:
-        LOGGER.info("Executing post clone hooks on {}".format(repo_name))
-        res = plug.manager.hook.act_on_cloned_repo(
-            path=os.path.abspath(repo_name), api=api
-        )
-        results[repo_name] = res
-
-    return results
 
 
 def migrate_repos(master_repo_urls: Iterable[str], api: plug.API) -> None:
@@ -717,6 +700,35 @@ def show_config() -> None:
     )
 
     LOGGER.info(output)
+
+
+def _wrap_act_on_cloned_repo():
+    """Wrap act_on_cloned_repo hook implementations in RepoBee Tasks."""
+    tasks = []
+    for p in plug.manager.get_plugins():
+        if "act_on_cloned_repo" in dir(p):
+            plugin_name = (
+                p.__module__ if "__module__" in dir(p) else p.__name__
+            ).split(".")[-1]
+            LOGGER.warning(
+                "Plugin '{}' uses the deprecated 'act_on_cloned_repo' hook. "
+                "This hook has been replaced by the 'clone_task' hook and "
+                "will be removed in a future version."
+                "".format(plugin_name)
+            )
+            task = plug.Task(callback=p.act_on_cloned_repo)
+            tasks.append(task)
+    return tasks
+
+
+def _execute_clone_tasks(
+    repo_names: List[str], api: plug.API
+) -> Mapping[str, List[plug.HookResult]]:
+    LOGGER.info("Executing post clone hooks on repos")
+    local_repos = [name for name in os.listdir() if name in repo_names]
+    tasks = plug.manager.hook.clone_task() + _wrap_act_on_cloned_repo()
+    paths = [pathlib.Path(name).absolute() for name in local_repos]
+    return _execute_tasks(paths, tasks, api)
 
 
 def _execute_setup_tasks(
