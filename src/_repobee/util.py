@@ -11,9 +11,11 @@ import sys
 import pathlib
 import shutil
 import tempfile
-from typing import Iterable, Generator, Union, Set
+from typing import Iterable, Generator, Union, Set, Callable, TypeVar
 
 from repobee_plug import apimeta
+
+T = TypeVar("T")
 
 
 def read_issue(issue_path: str) -> apimeta.Issue:
@@ -108,3 +110,18 @@ def atomic_write(content: str, dst: pathlib.Path) -> None:
             file.write(content)
 
         shutil.move(file.name, str(dst))
+
+
+def call_if_defined(func: Callable[..., T], *args, **kwargs) -> T:
+    """Call the function with the provided args and kwargs if it is defined
+    (i.e. not None). This is mostly useful for plugin data structures that have
+    optional functions.
+
+    Args:
+        func: A function to call.
+        args: Positional arguments.
+        kwargs: Keyword arguments.
+    Returns:
+        What ``func`` returns, or ``None`` if ``func`` is ``None``.
+    """
+    return None if func is None else func(*args, **kwargs)

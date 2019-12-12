@@ -102,5 +102,20 @@ def main(sys_args: List[str]):
         sys.exit(1)
 
 
+def _hook_deprecation_warning():
+    # TODO fix this
+    for p in plug.manager.get_plugins():
+        if any(name for name in dir(p) if name in plug.DEPRECATED_HOOKS):
+            plugin_name = (
+                p.__module__ if "__module__" in dir(p) else p.__name__
+            ).split(".")[-1]
+            LOGGER.warning(
+                "Plugin '{}' uses the deprecated 'act_on_cloned_repo' hook. "
+                "This hook has been replaced by the 'clone_task' hook and "
+                "will be removed in a future version."
+                "".format(plugin_name)
+            )
+
+
 if __name__ == "__main__":
     main(sys.argv)

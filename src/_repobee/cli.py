@@ -191,6 +191,11 @@ def parse_args(
     elif subparser == CLONE_PARSER:
         # only if clone is chosen should plugins be able to hook in
         plug.manager.hook.parse_args(args=args)
+        for task in plug.manager.hook.clone_task():
+            util.call_if_defined(task.handle_args, args)
+    elif subparser == SETUP_PARSER:
+        for task in plug.manager.hook.setup_task():
+            util.call_if_defined(task.handle_args, args)
 
     api = _connect_to_api(args.base_url, args.token, args.org_name, user)
 
@@ -794,6 +799,9 @@ def _add_subparsers(parser, show_all_opts, ext_commands):
         ],
         formatter_class=_OrderedFormatter,
     )
+
+    for task in plug.manager.hook.clone_task():
+        util.call_if_defined(task.add_option, clone)
 
     plug.manager.hook.clone_parser_hook(clone_parser=clone)
 

@@ -707,16 +707,7 @@ def _wrap_act_on_cloned_repo():
     tasks = []
     for p in plug.manager.get_plugins():
         if "act_on_cloned_repo" in dir(p):
-            plugin_name = (
-                p.__module__ if "__module__" in dir(p) else p.__name__
-            ).split(".")[-1]
-            LOGGER.warning(
-                "Plugin '{}' uses the deprecated 'act_on_cloned_repo' hook. "
-                "This hook has been replaced by the 'clone_task' hook and "
-                "will be removed in a future version."
-                "".format(plugin_name)
-            )
-            task = plug.Task(callback=p.act_on_cloned_repo)
+            task = plug.Task(act=p.act_on_cloned_repo)
             tasks.append(task)
     return tasks
 
@@ -757,7 +748,7 @@ def _execute_tasks(
 
         for task in tasks:
             with _convert_task_exceptions(task):
-                res = task.callback(path, api)
+                res = task.act(path, api)
             if res:
                 results[path.name].append(res)
     return results
@@ -771,11 +762,15 @@ def _convert_task_exceptions(task):
     """
     try:
         yield
-    except plug.PlugError:
-        raise
+    except plug.PlugError as exc:
+        raise plug.PlugError(
+            "A task from the module '{}' crashed: {}".format(
+                task.act.__module__, str(exc)
+            )
+        )
     except Exception as exc:
         raise plug.PlugError(
             "A task from the module '{}' crashed unexpectedly. "
             "This is a bug, please report it to the plugin "
-            "author.".format(task.callback.__module__)
+            "author.".format(task.act.__module__)
         ) from exc

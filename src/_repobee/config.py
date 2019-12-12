@@ -18,6 +18,7 @@ import repobee_plug as plug
 
 from _repobee import exception
 from _repobee import constants
+from _repobee import util
 
 
 LOGGER = daiquiri.getLogger(__file__)
@@ -103,6 +104,8 @@ def execute_config_hooks(
         return
     config_parser = _read_config(config_file)
     plug.manager.hook.config_hook(config_parser=config_parser)
+    for task in get_all_tasks():
+        util.call_if_defined(task.handle_config, config_parser)
 
 
 def check_config_integrity(
@@ -136,6 +139,15 @@ def check_config_integrity(
     check_defaults(defaults, config_file)
 
 
+def get_all_tasks() -> List[plug.Task]:
+    """Return all plugin tasks, regardless of which command they are intended for.
+
+    Returns:
+        All plugin tasks.
+    """
+    return plug.manager.hook.setup_task() + plug.manager.hook.clone_task()
+
+
 def _fetch_token() -> Optional[str]:
     token = os.getenv(constants.TOKEN_ENV)
     token_from_old = os.getenv(constants.TOKEN_ENV_OLD)
@@ -150,7 +162,7 @@ def _fetch_token() -> Optional[str]:
 
 
 def _read_defaults(
-    config_file: pathlib.Path = constants.DEFAULT_CONFIG_FILE
+    config_file: pathlib.Path = constants.DEFAULT_CONFIG_FILE,
 ) -> dict:
     token = _fetch_token()
     if not config_file.is_file():
@@ -167,7 +179,7 @@ def _read_defaults(
 
 
 def _read_config(
-    config_file: pathlib.Path = constants.DEFAULT_CONFIG_FILE
+    config_file: pathlib.Path = constants.DEFAULT_CONFIG_FILE,
 ) -> configparser.ConfigParser:
     config_parser = configparser.ConfigParser()
     try:
