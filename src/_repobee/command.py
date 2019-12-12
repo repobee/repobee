@@ -18,9 +18,6 @@ import shutil
 import os
 import sys
 import tempfile
-import contextlib
-import itertools
-import collections
 from typing import Iterable, List, Optional, Tuple, Generator, Mapping
 from colored import bg, fg, style
 
@@ -34,6 +31,7 @@ from _repobee import exception
 from _repobee import config
 from _repobee import constants
 from _repobee import formatters
+from _repobee import plugin
 from _repobee.git import Push
 
 LOGGER = daiquiri.getLogger(__file__)
@@ -65,11 +63,14 @@ def setup_student_repos(
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     urls = list(master_repo_urls)  # safe copy
+    master_repo_names = [util.repo_name(url) for url in urls]
 
     with tempfile.TemporaryDirectory() as tmpdir:
         LOGGER.info("Cloning into master repos ...")
         master_repo_paths = _clone_all(urls, cwd=tmpdir)
-        hook_results = _execute_setup_tasks(master_repo_paths, api)
+        hook_results = plugin.execute_setup_tasks(
+            master_repo_names, api, cwd=pathlib.Path(tmpdir)
+        )
 
         teams = _add_students_to_teams(teams, api)
         repo_urls = _create_student_repos(urls, teams, api)
@@ -173,7 +174,9 @@ def update_student_repos(
     with tempfile.TemporaryDirectory() as tmpdir:
         LOGGER.info("Cloning into master repos ...")
         master_repo_paths = _clone_all(urls, tmpdir)
-        hook_results = _execute_setup_tasks(master_repo_paths, api)
+        hook_results = plugin.execute_setup_tasks(
+            master_repo_names, api, cwd=pathlib.Path(tmpdir)
+        )
 
         push_tuples = _create_push_tuples(master_repo_paths, repo_urls)
 
@@ -436,10 +439,10 @@ def clone_repos(
     with tempfile.TemporaryDirectory() as tmpdir:
         _clone_repos_no_check(clone_urls, tmpdir, api)
 
-    for plugin in plug.manager.get_plugins():
-        if "act_on_cloned_repo" in dir(plugin) or "clone_task" in dir(plugin):
+    for p in plug.manager.get_plugins():
+        if "act_on_cloned_repo" in dir(p) or "clone_task" in dir(p):
             repo_names = plug.generate_repo_names(teams, master_repo_names)
-            return _execute_clone_tasks(repo_names, api)
+            return plugin.execute_clone_tasks(repo_names, api)
     return {}
 
 
@@ -700,77 +703,3 @@ def show_config() -> None:
     )
 
     LOGGER.info(output)
-
-
-def _wrap_act_on_cloned_repo():
-    """Wrap act_on_cloned_repo hook implementations in RepoBee Tasks."""
-    tasks = []
-    for p in plug.manager.get_plugins():
-        if "act_on_cloned_repo" in dir(p):
-            task = plug.Task(act=p.act_on_cloned_repo)
-            tasks.append(task)
-    return tasks
-
-
-def _execute_clone_tasks(
-    repo_names: List[str], api: plug.API
-) -> Mapping[str, List[plug.HookResult]]:
-    LOGGER.info("Executing post clone hooks on repos")
-    local_repos = [name for name in os.listdir() if name in repo_names]
-    tasks = plug.manager.hook.clone_task() + _wrap_act_on_cloned_repo()
-    paths = [pathlib.Path(name).absolute() for name in local_repos]
-    return _execute_tasks(paths, tasks, api)
-
-
-def _execute_setup_tasks(
-    master_repo_paths, api
-) -> Mapping[str, List[plug.HookResult]]:
-    """Execute setup_task implementations, if there are any, and return the
-    results.
-    """
-    if "setup_task" in itertools.chain.from_iterable(
-        map(dir, plug.manager.get_plugins())
-    ):
-        paths = list(map(pathlib.Path, master_repo_paths))
-        tasks = plug.manager.hook.setup_task()
-        return _execute_tasks(paths, tasks, api)
-    return {}
-
-
-def _execute_tasks(
-    repo_paths: List[pathlib.Path], tasks: Iterable[plug.Task], api: plug.API
-) -> Mapping[str, List[plug.HookResult]]:
-    """Execute plugin tasks on the provided repos."""
-    LOGGER.info("Executing tasks ...")
-    results = collections.defaultdict(list)
-    for path in repo_paths:
-        LOGGER.info("Processing {}".format(path.name))
-
-        for task in tasks:
-            with _convert_task_exceptions(task):
-                res = task.act(path, api)
-            if res:
-                results[path.name].append(res)
-    return results
-
-
-@contextlib.contextmanager
-def _convert_task_exceptions(task):
-    """Catch task exceptions and re-raise or convert into something more
-    appropriate for the user. Only plug.PlugErrors will be let through without
-    modification.
-    """
-    try:
-        yield
-    except plug.PlugError as exc:
-        raise plug.PlugError(
-            "A task from the module '{}' crashed: {}".format(
-                task.act.__module__, str(exc)
-            )
-        )
-    except Exception as exc:
-        raise plug.PlugError(
-            "A task from the module '{}' crashed unexpectedly. "
-            "This is a bug, please report it to the plugin "
-            "author.".format(task.act.__module__)
-        ) from exc

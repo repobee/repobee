@@ -6,15 +6,20 @@
         installed any other plugins, tests in here may fail unexpectedly
         without anything actually being wrong.
 """
+import pathlib
+import tempfile
 from unittest.mock import call, MagicMock
 
 import pytest
+
+import repobee_plug as plug
 
 import _repobee.constants
 from _repobee import plugin
 from _repobee import exception
 
 from _repobee.ext import javac, pylint
+
 
 import constants
 
@@ -121,3 +126,34 @@ class TestRegisterPlugins:
         plugin.register_plugins(modules)
 
         plugin_manager_mock.register.assert_has_calls(expected_calls)
+
+
+class TestTasks:
+    """Tests for testing RepoBee tasks."""
+
+    def test_tasks_run_on_repo_copies_by_default(self):
+        """Test that tasks run on copies of the repos by default."""
+        repo_name = "task-10"
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cwd = pathlib.Path(tmpdir)
+            repo_path = pathlib.Path(tmpdir) / repo_name
+            repo_path.mkdir()
+
+            def act(path: pathlib.Path, api: plug.API):
+                return plug.HookResult(
+                    hook="bogus",
+                    status=plug.Status.SUCCESS,
+                    msg="Yay",
+                    data={"path": path},
+                )
+
+            task = plug.Task(act=act)
+
+            results = plugin._execute_tasks(
+                [repo_name], [task], api=None, cwd=cwd
+            )
+
+        assert len(results[repo_name]) == 1
+        res = results[repo_name][0]
+        assert res.data["path"] != repo_path

@@ -1,4 +1,5 @@
 import os
+import pathlib
 from functools import partial
 from unittest.mock import patch, MagicMock, call, PropertyMock
 
@@ -564,7 +565,10 @@ class TestCloneRepos:
         javac_hook, pylint_hook = act_hook_mocks
         repo_names = plug.generate_repo_names(students, master_names)
 
-        with patch("os.listdir", return_value=repo_names):
+        with patch(
+            "pathlib.Path.glob",
+            return_value=(pathlib.Path(name) for name in repo_names),
+        ), patch("shutil.copytree"):
             hook_results = command.clone_repos(
                 master_names, students, api_mock
             )
@@ -587,10 +591,13 @@ class TestCloneRepos:
         for p in plug.manager.get_plugins():
             print(dir(p))
 
-        with patch("os.listdir", return_value=repo_names):
-            hook_results = command.clone_repos(
-                master_names, students, api_mock
-            )
+            with patch(
+                "pathlib.Path.glob",
+                return_value=(pathlib.Path(name) for name in repo_names),
+            ), patch("shutil.copytree"):
+                hook_results = command.clone_repos(
+                    master_names, students, api_mock
+                )
 
         assert len(hook_results) == len(repo_names)
         for repo_name in repo_names:
@@ -805,7 +812,11 @@ class TestSetupTask:
         modules = plugin.load_plugin_modules([plug_name])
         plugin.register_plugins(modules)
 
-        hook_results = cmd(master_urls, students, api_mock)
+        with patch(
+            "pathlib.Path.glob",
+            return_value=(pathlib.Path(name) for name in MASTER_NAMES),
+        ), patch("shutil.copytree"):
+            hook_results = cmd(master_urls, students, api_mock)
 
         assert len(hook_results) == len(
             master_urls

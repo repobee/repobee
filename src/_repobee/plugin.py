@@ -7,12 +7,16 @@ Module containing plugin system utility functions and classes.
 
 .. moduleauthor:: Simon Larsén
 """
+import collections
+import contextlib
+import shutil
+import tempfile
 
 import types
 import pathlib
 import importlib
 from types import ModuleType
-from typing import List, Optional, Iterable
+from typing import List, Optional, Iterable, Mapping
 
 import daiquiri
 
@@ -150,3 +154,100 @@ def resolve_plugin_version(plugin_module: types.ModuleType,) -> Optional[str]:
     return (
         pkg_module.__version__ if hasattr(pkg_module, "__version__") else None
     )
+
+
+def execute_clone_tasks(
+    repo_names: List[str], api: plug.API, cwd: Optional[pathlib.Path] = None
+) -> Mapping[str, List[plug.HookResult]]:
+    """Execute clone tasks, if there are any, and return the results.
+
+    Args:
+        repo_names: Names of the repositories to execute clone tasks on.
+        api: An instance of the platform API.
+        cwd: Directory in which to find the repos.
+    Returns:
+        A mapping from repo name to hook result.
+    """
+    tasks = plug.manager.hook.clone_task() + _wrap_act_on_cloned_repo()
+    return _execute_tasks(repo_names, tasks, api, cwd)
+
+
+def execute_setup_tasks(
+    repo_names: List[str], api: plug.API, cwd: Optional[pathlib.Path] = None
+) -> Mapping[str, List[plug.HookResult]]:
+    """Execute setup tasks, if there are any, and return the results.
+
+    Args:
+        repo_names: Names of the repositories to execute setup tasks on.
+        api: An instance of the platform API.
+        cwd: Directory in which to find the repos.
+    Returns:
+        A mapping from repo name to hook result.
+    """
+    tasks = plug.manager.hook.setup_task()
+    return _execute_tasks(repo_names, tasks, api, cwd)
+
+
+def _execute_tasks(
+    repo_names: List[str],
+    tasks: Iterable[plug.Task],
+    api: plug.API,
+    cwd: Optional[pathlib.Path],
+) -> Mapping[str, List[plug.HookResult]]:
+    """Execute plugin tasks on the provided repos."""
+    if not tasks:
+        return {}
+    cwd = cwd or pathlib.Path(".")
+    repo_paths = [f.absolute() for f in cwd.glob("*") if f.name in repo_names]
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        copies_root = pathlib.Path(tmpdir)
+        repo_copies = []
+        for path in repo_paths:
+            copy = copies_root / path.name
+            shutil.copytree(str(path), str(copy))
+            repo_copies.append(copy)
+
+        LOGGER.info("Executing tasks ...")
+        results = collections.defaultdict(list)
+        for path in repo_copies:
+            LOGGER.info("Processing {}".format(path.name))
+
+            for task in tasks:
+                with _convert_task_exceptions(task):
+                    res = task.act(path, api)
+                if res:
+                    results[path.name].append(res)
+    return results
+
+
+def _wrap_act_on_cloned_repo():
+    """Wrap act_on_cloned_repo hook implementations in RepoBee Tasks."""
+    tasks = []
+    for p in plug.manager.get_plugins():
+        if "act_on_cloned_repo" in dir(p):
+            task = plug.Task(act=p.act_on_cloned_repo)
+            tasks.append(task)
+    return tasks
+
+
+@contextlib.contextmanager
+def _convert_task_exceptions(task):
+    """Catch task exceptions and re-raise or convert into something more
+    appropriate for the user. Only plug.PlugErrors will be let through without
+    modification.
+    """
+    try:
+        yield
+    except plug.PlugError as exc:
+        raise plug.PlugError(
+            "A task from the module '{}' crashed: {}".format(
+                task.act.__module__, str(exc)
+            )
+        )
+    except Exception as exc:
+        raise plug.PlugError(
+            "A task from the module '{}' crashed unexpectedly. "
+            "This is a bug, please report it to the plugin "
+            "author.".format(task.act.__module__)
+        ) from exc
