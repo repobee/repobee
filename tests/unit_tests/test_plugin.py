@@ -8,7 +8,8 @@
 """
 import pathlib
 import tempfile
-from unittest.mock import call, MagicMock
+import types
+from unittest.mock import call, MagicMock, patch
 
 import pytest
 
@@ -24,6 +25,13 @@ from _repobee.ext import javac, pylint
 import constants
 
 PLUGINS = constants.PLUGINS
+
+
+@pytest.fixture(autouse=True)
+def unregister_plugins():
+    """Unregister all plugins for each test."""
+    for p in plug.manager.get_plugins():
+        plug.manager.unregister(p)
 
 
 class TestResolvePluginNames:
@@ -157,3 +165,36 @@ class TestTasks:
         assert len(results[repo_name]) == 1
         res = results[repo_name][0]
         assert res.data["path"] != repo_path
+
+
+class TestInitializePlugins:
+    """Tests for the initialize_plugins function."""
+
+    def test_deprecation_warning_is_emitted_for_deprecated_hook(
+        self, monkeypatch
+    ):
+        deprecated_hook = "act_on_cloned_repo"
+        assert (
+            deprecated_hook in plug.DEPRECATED_HOOKS
+        ), "hook used here must actually be deprecated"
+
+        # dynamically create a module with a deprecated hook function
+        @plug.repobee_hook
+        def act_on_cloned_repo(self, path, api):
+            pass
+
+        mod_name = "repobee-deprecation-test-plugin"
+        mod = types.ModuleType(mod_name)
+        mod.__dict__[deprecated_hook] = act_on_cloned_repo
+
+        monkeypatch.setattr
+        with patch(
+            "_repobee.plugin.load_plugin_modules",
+            autospec=True,
+            return_value=[mod],
+        ), patch(
+            "_repobee.plugin.LOGGER.warning", autospec=True
+        ) as warning_mock:
+            plugin.initialize_plugins([mod_name])
+
+        assert warning_mock.called

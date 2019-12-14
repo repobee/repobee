@@ -31,12 +31,6 @@ git
 .. automodule:: _repobee.git
     :members:
 
-tuples
-====================
-
-.. automodule:: _repobee.tuples
-    :members:
-
 util
 ====================
 

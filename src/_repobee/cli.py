@@ -23,7 +23,6 @@ import repobee_plug as plug
 
 import _repobee
 from _repobee import plugin
-from _repobee import tuples
 from _repobee import command
 from _repobee import util
 from _repobee import exception
@@ -122,11 +121,11 @@ HOOK_RESULTS_PARSER.add_argument(
 
 # add any diprecated parsers to this dict on the following form:
 #
-# ASSIGN_REVIEWS_PARSER_OLD: tuples.Deprecation(
+# ASSIGN_REVIEWS_PARSER_OLD: plug.Deprecation(
 #     replacement=ASSIGN_REVIEWS_PARSER, remove_by="v2.0.0"
 # ),
 DEPRECATED_PARSERS = {
-    "purge-review-teams": tuples.Deprecation(
+    "purge-review-teams": plug.Deprecation(
         replacement=PURGE_REVIEW_TEAMS_PARSER, remove_by="v2.2.0"
     )
 }

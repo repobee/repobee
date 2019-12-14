@@ -127,6 +127,7 @@ def initialize_plugins(plugin_names: List[str] = None):
         if p not in registered_plugins
     ]
     register_plugins(plug_modules)
+    _handle_deprecation()
 
 
 def resolve_plugin_names(
@@ -251,3 +252,26 @@ def _convert_task_exceptions(task):
             "This is a bug, please report it to the plugin "
             "author.".format(task.act.__module__)
         ) from exc
+
+
+def _handle_deprecation():
+    """Emit warnings if any deprecated hooks are used."""
+    deprecated_hook_names = plug.DEPRECATED_HOOKS.keys()
+    for p in plug.manager.get_plugins():
+        for member in dir(p):
+            if member in deprecated_hook_names:
+                deprecation = plug.DEPRECATED_HOOKS[member]
+                msg = (
+                    "A plugin from the module '{}' is using the "
+                    "deprecated '{}' hook, which will stop being supported as "
+                    "of RepoBee {}.".format(
+                        p.__module__ if "__module__" in dir(p) else p.__name__,
+                        member,
+                        deprecation.remove_by,
+                    )
+                )
+                if deprecation.replacement:
+                    msg += " '{}' should be used instead.".format(
+                        deprecation.replacement
+                    )
+                LOGGER.warning(msg)
