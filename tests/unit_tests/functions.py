@@ -2,7 +2,8 @@
 import datetime
 import random
 from unittest.mock import MagicMock
-from repobee_plug import apimeta
+
+import repobee_plug as plug
 
 import constants
 
@@ -55,8 +56,8 @@ def to_magic_mock_issue(issue):
 
 
 def from_magic_mock_issue(mock_issue):
-    """Convert a MagicMock issue into a apimeta.Issue."""
-    return apimeta.Issue(
+    """Convert a MagicMock issue into a plug.Issue."""
+    return plug.Issue(
         title=mock_issue.title,
         body=mock_issue.body,
         number=mock_issue.number,

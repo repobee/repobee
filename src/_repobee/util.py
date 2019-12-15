@@ -13,12 +13,12 @@ import shutil
 import tempfile
 from typing import Iterable, Generator, Union, Set, Callable, TypeVar
 
-from repobee_plug import apimeta
+import repobee_plug as plug
 
 T = TypeVar("T")
 
 
-def read_issue(issue_path: str) -> apimeta.Issue:
+def read_issue(issue_path: str) -> plug.Issue:
     """Attempt to read an issue from a textfile. The first line of the file
     is interpreted as the issue's title.
 
@@ -28,7 +28,7 @@ def read_issue(issue_path: str) -> apimeta.Issue:
     if not os.path.isfile(issue_path):
         raise ValueError("{} is not a file".format(issue_path))
     with open(issue_path, "r", encoding=sys.getdefaultencoding()) as file:
-        return apimeta.Issue(file.readline().strip(), file.read())
+        return plug.Issue(file.readline().strip(), file.read())
 
 
 def conflicting_files(filenames: Iterable[str], cwd: str = ".") -> Set[str]:

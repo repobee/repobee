@@ -25,16 +25,16 @@ TOKEN = constants.TOKEN
 random_date = functions.random_date
 
 OPEN_ISSUES = [
-    plug.apimeta.Issue(
+    plug.Issue(
         "close this issue", "This is a body", 3, random_date(), "slarse"
     ),
-    plug.apimeta.Issue(
+    plug.Issue(
         "Don't close this issue", "Another body", 4, random_date(), "glassey"
     ),
 ]
 
 CLOSED_ISSUES = [
-    plug.apimeta.Issue(
+    plug.Issue(
         "This is a closed issue",
         "With an uninteresting body that has a single very,"
         "very long line that would probably break the implementation "
@@ -43,7 +43,7 @@ CLOSED_ISSUES = [
         random_date(),
         "tmore",
     ),
-    plug.apimeta.Issue(
+    plug.Issue(
         "Yet another closed issue",
         "Even less interesting body",
         2,
@@ -54,7 +54,7 @@ CLOSED_ISSUES = [
 
 ORG_NAME = "test-org"
 BASE_URL = "https://some_enterprise_host/api/v3"
-ISSUE = plug.apimeta.Issue(
+ISSUE = plug.Issue(
     "Oops, something went wrong!", "This is the body **with some formatting**."
 )
 PLUGINS = constants.PLUGINS
@@ -82,10 +82,8 @@ def get_repo_urls_fake(self, master_repo_names, org_name=None, teams=None):
     )
 
 
-# check that get_repo_urls_fake conforms to APISpec.get_repo_urls
-plug.apimeta.check_parameters(
-    plug.apimeta.APISpec.get_repo_urls, get_repo_urls_fake
-)
+# TODO remove dependency on _apimeta, it is private behavior!
+plug._apimeta.check_parameters(plug.API.get_repo_urls, get_repo_urls_fake)
 
 MASTER_NAMES = ("week-1", "week-2", "week-3")
 MASTER_URLS = tuple(generate_repo_url(name) for name in MASTER_NAMES)
@@ -112,20 +110,18 @@ def git_mock(request, mocker):
     return git_mock
 
 
-def _get_issues(
-    repo_names, state=plug.apimeta.IssueState.OPEN, title_regex=""
-):
+def _get_issues(repo_names, state=plug.IssueState.OPEN, title_regex=""):
     """Bogus version of GitHubAPI.get_issues"""
     for repo_name in repo_names:
         if repo_name == STUDENT_REPO_NAMES[-2]:
             # repo without issues
             yield repo_name, iter([])
         elif repo_name in STUDENT_REPO_NAMES:
-            if state == plug.apimeta.IssueState.OPEN:
+            if state == plug.IssueState.OPEN:
                 issues = iter(OPEN_ISSUES)
-            elif state == plug.apimeta.IssueState.CLOSED:
+            elif state == plug.IssueState.CLOSED:
                 issues = iter(CLOSED_ISSUES)
-            elif state == plug.apimeta.IssueState.ALL:
+            elif state == plug.IssueState.ALL:
                 issues = iter(OPEN_ISSUES + CLOSED_ISSUES)
             else:
                 raise ValueError("Unexpected value for 'state': ", state)
@@ -166,7 +162,7 @@ def students():
 @pytest.fixture
 def ensure_teams_and_members_mock(api_mock, students):
     api_mock.ensure_teams_and_members.side_effect = lambda teams: [
-        plug.apimeta.Team(name=str(student), members=[student], id=id)
+        plug.Team(name=str(student), members=[student], id=id)
         for id, student in enumerate(students)
     ]
 
@@ -190,7 +186,7 @@ def repo_infos(master_urls, students):
     for url in master_urls:
         repo_base_name = util.repo_name(url)
         repo_infos += [
-            plug.apimeta.Repo(
+            plug.Repo(
                 name=plug.generate_repo_name(student, repo_base_name),
                 description="{} created for {}".format(
                     repo_base_name, student
@@ -344,12 +340,7 @@ class TestUpdateStudentRepos:
     @pytest.mark.nogitmock
     @pytest.mark.parametrize(
         "issue",
-        [
-            plug.apimeta.Issue(
-                "Oops", "Sorry, we failed to push to your repo!"
-            ),
-            None,
-        ],
+        [plug.Issue("Oops", "Sorry, we failed to push to your repo!"), None],
     )
     def test_issues_on_exceptions(
         self, issue, mocker, api_mock, repo_infos, push_tuples, rmtree_mock
@@ -451,7 +442,7 @@ class TestOpenIssue:
             "c-week-2",
         ]
 
-        issue = plug.apimeta.Issue(
+        issue = plug.Issue(
             "A title", "And a nice **formatted** body\n### With headings!"
         )
         command.open_issue(issue, master_names, students, api_mock)
@@ -663,11 +654,7 @@ class TestListIssues:
 
     @pytest.mark.parametrize(
         "state",
-        (
-            plug.apimeta.IssueState.OPEN,
-            plug.apimeta.IssueState.CLOSED,
-            plug.apimeta.IssueState.ALL,
-        ),
+        (plug.IssueState.OPEN, plug.IssueState.CLOSED, plug.IssueState.ALL),
     )
     @pytest.mark.parametrize("regex", ("", r"^.*$"))
     @pytest.mark.parametrize("show_body", (True, False))
@@ -747,7 +734,7 @@ class TestAssignPeerReviewers:
         assert "num_reviews must be greater than 0" in str(exc_info.value)
 
     def test_happy_path(self, master_names, students, api_mock):
-        issue = plug.apimeta.Issue("this is a title", "this is a body")
+        issue = plug.Issue("this is a title", "this is a body")
         mappings = [
             {
                 plug.generate_review_team_name(student, master_name): [

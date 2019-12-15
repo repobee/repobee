@@ -14,14 +14,12 @@ import collections
 import daiquiri
 import repobee_plug as plug
 
-from repobee_plug import apimeta
-
 from _repobee import formatters
 
 LOGGER = daiquiri.getLogger(__file__)
 
 
-def callback(args: argparse.Namespace, api: apimeta.API) -> None:
+def callback(args: argparse.Namespace, api: plug.API) -> None:
     hook_results_file = pathlib.Path(args.hook_results_file).resolve()
     if not hook_results_file.exists():
         raise plug.PlugError("no such file: {}".format(str(hook_results_file)))

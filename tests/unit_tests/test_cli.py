@@ -16,7 +16,6 @@ import _repobee.constants
 import _repobee.plugin
 from _repobee import cli
 from _repobee import exception
-from repobee_plug import apimeta
 
 import constants
 import functions
@@ -51,7 +50,7 @@ VALID_PARSED_ARGS = dict(
     issue=ISSUE,
     title_regex="some regex",
     traceback=False,
-    state=apimeta.IssueState.OPEN,
+    state=plug.IssueState.OPEN,
     show_body=True,
     author=None,
     token=TOKEN,
@@ -67,7 +66,7 @@ def api_instance_mock(mocker):
         generate_repo_url(rn, org_name) for rn in repo_names
     ]
     instance_mock.ensure_teams_and_members.side_effect = lambda team_dict: [
-        apimeta.Team(name=name, members=members, id=0)
+        plug.Team(name=name, members=members, id=0)
         for name, members in team_dict.items()
     ]
     return instance_mock
@@ -917,7 +916,7 @@ class TestStudentParsing:
             ["cat", "dog", "mouse"],
         )
         expected_groups = sorted(
-            apimeta.Team(members=group) for group in groupings
+            plug.Team(members=group) for group in groupings
         )
         empty_students_file.write(
             os.linesep.join([" ".join(group) for group in groupings])
@@ -946,7 +945,8 @@ class TestStudentParsing:
         # arrange
         groupings = (
             ["buddy", "shuddy"],
-            ["a" * apimeta.MAX_NAME_LENGTH, "b"],
+            # TODO remove dependency on _apimeta, it's private!
+            ["a" * plug._apimeta.MAX_NAME_LENGTH, "b"],
             ["cat", "dog", "mouse"],
         )
         empty_students_file.write(

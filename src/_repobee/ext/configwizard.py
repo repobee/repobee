@@ -14,13 +14,12 @@ import os
 import daiquiri
 import repobee_plug as plug
 
-from repobee_plug import apimeta
 from _repobee import constants
 
 LOGGER = daiquiri.getLogger(__file__)
 
 
-def callback(args: argparse.Namespace, api: apimeta.API) -> None:
+def callback(args: argparse.Namespace, api: plug.API) -> None:
     """Run through a configuration wizard."""
     parser = configparser.ConfigParser()
 

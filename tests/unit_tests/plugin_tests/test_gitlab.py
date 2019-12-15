@@ -356,17 +356,17 @@ class TestEnsureTeamsAndMembers:
         api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
         num_students = len(constants.STUDENTS)
         teams = [
-            plug.apimeta.Team(members=g1.members + g2.members)
+            plug.Team(members=g1.members + g2.members)
             for g1, g2 in zip(
                 constants.STUDENTS[: num_students // 2],
                 constants.STUDENTS[num_students // 2 :],
             )
         ]
         expected_teams = [
-            plug.apimeta.Team(
+            plug.Team(
                 members=[constants.USER] + t.members,
                 # the owner should not be included in the generated name
-                name=plug.apimeta.Team(members=t.members).name,
+                name=plug.Team(members=t.members).name,
             )
             for t in teams
         ]
@@ -418,7 +418,7 @@ class TestEnsureTeamsAndMembers:
         api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
 
         api.ensure_teams_and_members(
-            constants.STUDENTS, permission=plug.apimeta.TeamPermission.PULL
+            constants.STUDENTS, permission=plug.TeamPermission.PULL
         )
 
         actual_teams = api.get_teams()
@@ -532,7 +532,7 @@ class TestCreateRepos:
             for group in constants.STUDENTS
         ]
         yield [
-            plug.apimeta.Repo(
+            plug.Repo(
                 name=plug.generate_repo_name(group.name, master_name),
                 description="Student repo",
                 private=True,
