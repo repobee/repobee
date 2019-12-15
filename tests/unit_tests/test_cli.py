@@ -46,7 +46,7 @@ VALID_PARSED_ARGS = dict(
     user=USER,
     master_repo_urls=REPO_URLS,
     master_repo_names=REPO_NAMES,
-    students=STUDENTS,
+    students=list(STUDENTS),
     issue=ISSUE,
     title_regex="some regex",
     traceback=False,
@@ -65,9 +65,8 @@ def api_instance_mock(mocker):
     instance_mock.get_repo_urls.side_effect = lambda repo_names, org_name: [
         generate_repo_url(rn, org_name) for rn in repo_names
     ]
-    instance_mock.ensure_teams_and_members.side_effect = lambda team_dict: [
-        plug.Team(name=name, members=members, id=0)
-        for name, members in team_dict.items()
+    instance_mock.ensure_teams_and_members.side_effect = lambda teams: [
+        plug.Team(name=team.name, members=team.members, id=0) for team in teams
     ]
     return instance_mock
 
@@ -292,6 +291,18 @@ class TestDispatchCommand:
             args.students,
             api_instance_mock,
             issue=args.issue,
+        )
+
+    def test_create_teams_called_with_correct_args(self, api_instance_mock):
+        args = argparse.Namespace(
+            subparser=cli.CREATE_TEAMS_PARSER, **VALID_PARSED_ARGS
+        )
+        expected_arg = list(args.students)
+
+        cli.dispatch_command(args, api_instance_mock)
+
+        api_instance_mock.ensure_teams_and_members.assert_called_once_with(
+            expected_arg
         )
 
     def test_open_issue_called_with_correct_args(
@@ -618,6 +629,24 @@ class TestBaseParsing:
             cli.parse_args(sys_args)
 
         assert "unsupported protocol in {}".format(url) in str(exc_info.value)
+
+    def test_correctly_parses_create_teams(
+        self, api_instance_mock, students_file
+    ):
+        """Test that the create-teams command is correctly parsed."""
+        sys_args = [
+            cli.CREATE_TEAMS_PARSER,
+            *BASE_ARGS,
+            "--sf",
+            str(students_file),
+        ]
+
+        parsed_args, api = cli.parse_args(sys_args)
+
+        assert api == api_instance_mock
+        assert parsed_args.students == list(STUDENTS)
+        assert parsed_args.master_repo_names is None
+        assert parsed_args.master_repo_urls is None
 
 
 class TestExtensionCommands:

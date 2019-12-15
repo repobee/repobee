@@ -155,7 +155,7 @@ discovery of both student teams and student repositories.
 | -------                                                         | ------                                                                          | ---           |
 | Automatic discovery of student repos                            | WIP ([see #383](https://github.com/repobee/repobee/issues/383))                 | December 2019 |
 | Plugin system revamp                                            | WIP ([see this milestone](https://github.com/repobee/repobee-plug/milestone/1)) | December 2019 |
-| `create-teams` command for creating student teams without repos | Planning ([see #384](https://github.com/repobee/repobee/issues/384))            | December 2019 |
+| `create-teams` command for creating student teams without repos | Done ([see #384](https://github.com/repobee/repobee/issues/384))                | December 2019 |
 | Setup of shared read-only repos                                 | WIP ([see #391](https://github.com/repobee/repobee/issues/391))                 | January 2020  |
 
 #### Features coming in v3.0

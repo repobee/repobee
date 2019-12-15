@@ -72,7 +72,7 @@ def setup_student_repos(
             master_repo_names, api, cwd=pathlib.Path(tmpdir)
         )
 
-        teams = _add_students_to_teams(teams, api)
+        teams = api.ensure_teams_and_members(teams)
         repo_urls = _create_student_repos(urls, teams, api)
 
         push_tuples = _create_push_tuples(master_repo_paths, repo_urls)
@@ -80,24 +80,6 @@ def setup_student_repos(
         git.push(push_tuples)
 
     return hook_results
-
-
-def _add_students_to_teams(
-    teams: Iterable[plug.Team], api: plug.API
-) -> List[plug.Team]:
-    """Create the specified teams on the target platform,
-    and add the specified members to their teams. If a team already exists, it
-    is not created. If a student is already in his/her team, that student is
-    ignored.
-
-    Args:
-        teams: Team objects specifying student groups.
-        api: An implementation of :py:class:`repobee_plug.API` used to
-            interface with the platform (e.g. GitHub or GitLab) instance.
-    Returns:
-        all teams associated with the students in the students list.
-    """
-    return api.ensure_teams_and_members(teams)
 
 
 def _create_student_repos(

@@ -84,6 +84,7 @@ SUB = "subparser"
 SETUP_PARSER = "setup"
 UPDATE_PARSER = "update"
 CLONE_PARSER = "clone"
+CREATE_TEAMS_PARSER = "create-teams"
 MIGRATE_PARSER = "migrate"
 OPEN_ISSUE_PARSER = "open-issues"
 CLOSE_ISSUE_PARSER = "close-issues"
@@ -201,9 +202,13 @@ def parse_args(
     master_org_name = args.org_name
     if "master_org_name" in args and args.master_org_name is not None:
         master_org_name = args.master_org_name
-    master_names = args.master_repo_names
-    master_urls = _repo_names_to_urls(master_names, master_org_name, api)
-    assert master_urls and master_names
+
+    if subparser != CREATE_TEAMS_PARSER:
+        master_names = args.master_repo_names
+        master_urls = _repo_names_to_urls(master_names, master_org_name, api)
+        assert master_urls and master_names
+    else:
+        master_names = master_urls = None
 
     args_dict = vars(args)
     args_dict.setdefault("master_org_name", None)
@@ -349,6 +354,8 @@ def dispatch_command(
             args.num_reviews,
             api,
         )
+    elif args.subparser == CREATE_TEAMS_PARSER:
+        api.ensure_teams_and_members(args.students)
     else:
         raise exception.ParseError(
             "Illegal value for subparser: {}. "
@@ -805,6 +812,20 @@ def _add_subparsers(parser, show_all_opts, ext_commands):
         util.call_if_defined(task.add_option, clone)
 
     plug.manager.hook.clone_parser_hook(clone_parser=clone)
+
+    subparsers.add_parser(
+        CREATE_TEAMS_PARSER,
+        help="Create student teams without creating repos.",
+        description=(
+            "Only create student teams. This is intended for when you want to "
+            "use RepoBee for management, but don't want to dictate the names "
+            "of your student's repositories. The `setup` command performs "
+            "this step automatically, so there is never a need to run both "
+            "this command AND `setup`."
+        ),
+        parents=[base_parser, base_student_parser],
+        formatter_class=_OrderedFormatter,
+    )
 
     subparsers.add_parser(
         MIGRATE_PARSER,
