@@ -175,7 +175,7 @@ class TestInitializePlugins:
     ):
         deprecated_hook = "act_on_cloned_repo"
         assert (
-            deprecated_hook in plug.DEPRECATED_HOOKS
+            deprecated_hook in plug.deprecated_hooks()
         ), "hook used here must actually be deprecated"
 
         # dynamically create a module with a deprecated hook function

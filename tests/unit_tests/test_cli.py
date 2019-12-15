@@ -1243,13 +1243,13 @@ PURGE_REVIEW_TEAMS_PARSER_OLD = "purge-peer-review-teams"
 CHECK_REVIEW_PROGRESS_PARSER_OLD = "check-peer-review-progress"
 DEPRECATED_PARSERS = {
     ASSIGN_REVIEWS_PARSER_OLD: plug.Deprecation(
-        replacement=cli.ASSIGN_REVIEWS_PARSER, remove_by="v2.0.0"
+        replacement=cli.ASSIGN_REVIEWS_PARSER, remove_by_version="2.0.0"
     ),
     PURGE_REVIEW_TEAMS_PARSER_OLD: plug.Deprecation(
-        replacement=cli.PURGE_REVIEW_TEAMS_PARSER, remove_by="v2.0.0"
+        replacement=cli.PURGE_REVIEW_TEAMS_PARSER, remove_by_version="2.0.0"
     ),
     CHECK_REVIEW_PROGRESS_PARSER_OLD: plug.Deprecation(
-        replacement=cli.CHECK_REVIEW_PROGRESS_PARSER, remove_by="v2.0.0"
+        replacement=cli.CHECK_REVIEW_PROGRESS_PARSER, remove_by_version="2.0.0"
     ),
 }
 

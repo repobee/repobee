@@ -122,11 +122,11 @@ HOOK_RESULTS_PARSER.add_argument(
 # add any diprecated parsers to this dict on the following form:
 #
 # ASSIGN_REVIEWS_PARSER_OLD: plug.Deprecation(
-#     replacement=ASSIGN_REVIEWS_PARSER, remove_by="v2.0.0"
+#     replacement=ASSIGN_REVIEWS_PARSER, remove_by_version="2.0.0"
 # ),
 DEPRECATED_PARSERS = {
     "purge-review-teams": plug.Deprecation(
-        replacement=PURGE_REVIEW_TEAMS_PARSER, remove_by="v2.2.0"
+        replacement=PURGE_REVIEW_TEAMS_PARSER, remove_by_version="2.2.0"
     )
 }
 
@@ -260,7 +260,9 @@ def _handle_deprecation(sys_args: List[str]) -> List[str]:
         LOGGER.warning(
             "Use of '{}' has been deprecated and will be removed by {}, "
             "use '{}' instead".format(
-                parser_name, deprecation.remove_by, deprecation.replacement
+                parser_name,
+                deprecation.remove_by_version,
+                deprecation.replacement,
             )
         )
         return [deprecation.replacement] + sys_args[1:]

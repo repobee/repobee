@@ -256,18 +256,19 @@ def _convert_task_exceptions(task):
 
 def _handle_deprecation():
     """Emit warnings if any deprecated hooks are used."""
-    deprecated_hook_names = plug.DEPRECATED_HOOKS.keys()
+    deprecated_hooks = plug.deprecated_hooks()
+    deprecated_hook_names = deprecated_hooks.keys()
     for p in plug.manager.get_plugins():
         for member in dir(p):
             if member in deprecated_hook_names:
-                deprecation = plug.DEPRECATED_HOOKS[member]
+                deprecation = deprecated_hooks[member]
                 msg = (
                     "A plugin from the module '{}' is using the "
                     "deprecated '{}' hook, which will stop being supported as "
                     "of RepoBee {}.".format(
                         p.__module__ if "__module__" in dir(p) else p.__name__,
                         member,
-                        deprecation.remove_by,
+                        deprecation.remove_by_version,
                     )
                 )
                 if deprecation.replacement:
