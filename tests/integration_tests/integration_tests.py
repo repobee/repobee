@@ -10,7 +10,6 @@ import pytest
 import gitlab
 
 import repobee_plug as plug
-from repobee_plug import apimeta
 
 import _repobee.ext
 import _repobee.ext.gitlab
@@ -37,7 +36,7 @@ MASTER_ORG_NAME = "repobee-master"
 ACTUAL_USER = "repobee-user"
 
 MASTER_REPO_NAMES = "task-1 task-2 task-3".split()
-STUDENT_TEAMS = [apimeta.Team(members=[s]) for s in "slarse rjglasse".split()]
+STUDENT_TEAMS = [plug.Team(members=[s]) for s in "slarse rjglasse".split()]
 STUDENT_TEAM_NAMES = [str(t) for t in STUDENT_TEAMS]
 STUDENT_REPO_NAMES = plug.generate_repo_names(STUDENT_TEAMS, MASTER_REPO_NAMES)
 
@@ -415,10 +414,10 @@ def hash_directory(path):
 @pytest.fixture
 def open_issues(with_student_repos):
     """Open two issues in each student repo."""
-    task_issue = apimeta.Issue(
+    task_issue = plug.Issue(
         title="Task", body="The task is to do this, this and that"
     )
-    correction_issue = apimeta.Issue(
+    correction_issue = plug.Issue(
         title="Correction required", body="You need to fix this, this and that"
     )
     issues = [task_issue, correction_issue]
@@ -709,7 +708,7 @@ class TestMigrate:
 class TestOpenIssues:
     """Tests for the open-issues command."""
 
-    _ISSUE = apimeta.Issue(title="This is a title", body="This is a body")
+    _ISSUE = plug.Issue(title="This is a title", body="This is a body")
 
     def test_happy_path(self, tmpdir_volume_arg, tmpdir, extra_args):
         """Test opening an issue in each student repo."""
