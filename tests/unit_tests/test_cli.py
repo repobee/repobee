@@ -9,12 +9,14 @@ import pytest
 import repobee_plug as plug
 
 import _repobee
+import _repobee.cli.dispatch
+import _repobee.cli.parsing
 import _repobee.ext
 import _repobee.ext.github
 import _repobee.ext.query
 import _repobee.constants
 import _repobee.plugin
-from _repobee import cli
+from _repobee.cli import mainparser
 from _repobee import exception
 
 import constants
@@ -96,7 +98,7 @@ def no_plugins(load_default_plugins):
 
 @pytest.fixture
 def command_mock(mocker):
-    return mocker.patch("_repobee.cli.command", autospec=True)
+    return mocker.patch("_repobee.cli.dispatch.command", autospec=True)
 
 
 @pytest.fixture
@@ -120,7 +122,7 @@ def git_mock(mocker):
     return mocker.patch("_repobee.git", autospec=True)
 
 
-@pytest.fixture(scope="function", params=cli.PARSER_NAMES)
+@pytest.fixture(scope="function", params=mainparser.PARSER_NAMES)
 def parsed_args_all_subparsers(request):
     """Parametrized fixture which returns a namespace for each of the
     subparsers. These arguments are valid for all subparsers, even though
@@ -202,8 +204,8 @@ class TestDispatchCommand:
     @pytest.mark.parametrize(
         "parser, command_func",
         [
-            (cli.CLONE_PARSER, "_repobee.command.clone_repos"),
-            (cli.LIST_ISSUES_PARSER, "_repobee.command.list_issues"),
+            (mainparser.CLONE_PARSER, "_repobee.command.clone_repos"),
+            (mainparser.LIST_ISSUES_PARSER, "_repobee.command.list_issues"),
         ],
     )
     def test_writes_hook_results_correctly(
@@ -224,7 +226,7 @@ class TestDispatchCommand:
             command_func, autospec=True, return_value=hook_result_mapping
         ):
             args = argparse.Namespace(subparser=parser, **args_dict)
-            cli.dispatch_command(args, api_instance_mock)
+            _repobee.cli.dispatch.dispatch_command(args, api_instance_mock)
 
         write.assert_called_once_with(expected_json, expected_filepath)
 
@@ -242,8 +244,10 @@ class TestDispatchCommand:
         ) as write, mock.patch(
             "_repobee.command.clone_repos", autospec=True, return_value={}
         ):
-            args = argparse.Namespace(subparser=cli.CLONE_PARSER, **args_dict)
-            cli.dispatch_command(args, api_instance_mock)
+            args = argparse.Namespace(
+                subparser=mainparser.CLONE_PARSER, **args_dict
+            )
+            _repobee.cli.dispatch.dispatch_command(args, api_instance_mock)
 
         assert not write.called
 
@@ -252,7 +256,7 @@ class TestDispatchCommand:
         args = argparse.Namespace(subparser=parser, **VALID_PARSED_ARGS)
 
         with pytest.raises(exception.ParseError) as exc_info:
-            cli.dispatch_command(args, api_instance_mock)
+            _repobee.cli.dispatch.dispatch_command(args, api_instance_mock)
         assert "Illegal value for subparser: {}".format(parser) in str(
             exc_info.value
         )
@@ -262,16 +266,18 @@ class TestDispatchCommand:
     ):
         """Test that valid arguments does not result in crash. Only validates
         that there are no crashes, does not validate any other behavior!"""
-        cli.dispatch_command(parsed_args_all_subparsers, api_instance_mock)
+        _repobee.cli.dispatch.dispatch_command(
+            parsed_args_all_subparsers, api_instance_mock
+        )
 
     def test_setup_student_repos_called_with_correct_args(
         self, command_mock, api_instance_mock
     ):
         args = argparse.Namespace(
-            subparser=cli.SETUP_PARSER, **VALID_PARSED_ARGS
+            subparser=mainparser.SETUP_PARSER, **VALID_PARSED_ARGS
         )
 
-        cli.dispatch_command(args, api_instance_mock)
+        _repobee.cli.dispatch.dispatch_command(args, api_instance_mock)
 
         command_mock.setup_student_repos.assert_called_once_with(
             args.master_repo_urls, args.students, api_instance_mock
@@ -281,10 +287,10 @@ class TestDispatchCommand:
         self, command_mock, api_instance_mock
     ):
         args = argparse.Namespace(
-            subparser=cli.UPDATE_PARSER, **VALID_PARSED_ARGS
+            subparser=mainparser.UPDATE_PARSER, **VALID_PARSED_ARGS
         )
 
-        cli.dispatch_command(args, api_instance_mock)
+        _repobee.cli.dispatch.dispatch_command(args, api_instance_mock)
 
         command_mock.update_student_repos.assert_called_once_with(
             args.master_repo_urls,
@@ -295,11 +301,11 @@ class TestDispatchCommand:
 
     def test_create_teams_called_with_correct_args(self, api_instance_mock):
         args = argparse.Namespace(
-            subparser=cli.CREATE_TEAMS_PARSER, **VALID_PARSED_ARGS
+            subparser=mainparser.CREATE_TEAMS_PARSER, **VALID_PARSED_ARGS
         )
         expected_arg = list(args.students)
 
-        cli.dispatch_command(args, api_instance_mock)
+        _repobee.cli.dispatch.dispatch_command(args, api_instance_mock)
 
         api_instance_mock.ensure_teams_and_members.assert_called_once_with(
             expected_arg
@@ -309,10 +315,10 @@ class TestDispatchCommand:
         self, command_mock, api_instance_mock
     ):
         args = argparse.Namespace(
-            subparser=cli.OPEN_ISSUE_PARSER, **VALID_PARSED_ARGS
+            subparser=mainparser.OPEN_ISSUE_PARSER, **VALID_PARSED_ARGS
         )
 
-        cli.dispatch_command(args, api_instance_mock)
+        _repobee.cli.dispatch.dispatch_command(args, api_instance_mock)
 
         command_mock.open_issue.assert_called_once_with(
             args.issue,
@@ -325,10 +331,10 @@ class TestDispatchCommand:
         self, command_mock, api_instance_mock
     ):
         args = argparse.Namespace(
-            subparser=cli.CLOSE_ISSUE_PARSER, **VALID_PARSED_ARGS
+            subparser=mainparser.CLOSE_ISSUE_PARSER, **VALID_PARSED_ARGS
         )
 
-        cli.dispatch_command(args, api_instance_mock)
+        _repobee.cli.dispatch.dispatch_command(args, api_instance_mock)
 
         command_mock.close_issue.assert_called_once_with(
             args.title_regex,
@@ -341,10 +347,10 @@ class TestDispatchCommand:
         self, command_mock, api_instance_mock
     ):
         args = argparse.Namespace(
-            subparser=cli.MIGRATE_PARSER, **VALID_PARSED_ARGS
+            subparser=mainparser.MIGRATE_PARSER, **VALID_PARSED_ARGS
         )
 
-        cli.dispatch_command(args, api_instance_mock)
+        _repobee.cli.dispatch.dispatch_command(args, api_instance_mock)
 
         command_mock.migrate_repos.assert_called_once_with(
             args.master_repo_urls, api_instance_mock
@@ -354,10 +360,10 @@ class TestDispatchCommand:
         self, command_mock, api_instance_mock
     ):
         args = argparse.Namespace(
-            subparser=cli.CLONE_PARSER, **VALID_PARSED_ARGS
+            subparser=mainparser.CLONE_PARSER, **VALID_PARSED_ARGS
         )
 
-        cli.dispatch_command(args, api_instance_mock)
+        _repobee.cli.dispatch.dispatch_command(args, api_instance_mock)
 
         command_mock.clone_repos.assert_called_once_with(
             args.master_repo_names, args.students, api_instance_mock
@@ -367,7 +373,7 @@ class TestDispatchCommand:
         # regular mockaing is broken for static methods, it seems, produces
         # non-callable so using monkeypatch instead
         args = argparse.Namespace(
-            subparser=cli.VERIFY_PARSER,
+            subparser=mainparser.VERIFY_PARSER,
             user=USER,
             base_url=BASE_URL,
             token=TOKEN,
@@ -375,7 +381,7 @@ class TestDispatchCommand:
             master_org_name=None,
         )
 
-        cli.dispatch_command(args, None)
+        _repobee.cli.dispatch.dispatch_command(args, None)
 
         api_class_mock.verify_settings.assert_called_once_with(
             args.user, args.org_name, args.base_url, TOKEN, None
@@ -383,7 +389,7 @@ class TestDispatchCommand:
 
     def test_verify_settings_called_with_master_org_name(self, api_class_mock):
         args = argparse.Namespace(
-            subparser=cli.VERIFY_PARSER,
+            subparser=mainparser.VERIFY_PARSER,
             user=USER,
             base_url=BASE_URL,
             org_name=ORG_NAME,
@@ -391,14 +397,14 @@ class TestDispatchCommand:
             master_org_name=MASTER_ORG_NAME,
         )
 
-        cli.dispatch_command(args, None)
+        _repobee.cli.dispatch.dispatch_command(args, None)
 
         api_class_mock.verify_settings.assert_called_once_with(
             args.user, args.org_name, args.base_url, TOKEN, MASTER_ORG_NAME
         )
 
 
-@pytest.mark.parametrize("parser", cli.PARSER_NAMES)
+@pytest.mark.parametrize("parser", mainparser.PARSER_NAMES)
 def test_help_calls_add_arguments(monkeypatch, parser):
     """Test that the --help command causes _OrderedFormatter.add_arguments to
     be called. The reason this may not be the case is that
@@ -406,7 +412,7 @@ def test_help_calls_add_arguments(monkeypatch, parser):
     removed or changed in future versions of Python.
     """
     called = False
-    add_arguments = cli._OrderedFormatter.add_arguments
+    add_arguments = mainparser._OrderedFormatter.add_arguments
 
     def wrapper(self, *args, **kwargs):
         nonlocal called
@@ -414,11 +420,11 @@ def test_help_calls_add_arguments(monkeypatch, parser):
         add_arguments(self, *args, **kwargs)
 
     monkeypatch.setattr(
-        "_repobee.cli._OrderedFormatter.add_arguments", wrapper
+        "_repobee.cli.mainparser._OrderedFormatter.add_arguments", wrapper
     )
 
     with pytest.raises(SystemExit) as exc_info:
-        cli.parse_args([parser, "--help"])
+        _repobee.cli.parsing.handle_args([parser, "--help"])
 
     assert exc_info.value.code == 0
     assert called
@@ -426,7 +432,7 @@ def test_help_calls_add_arguments(monkeypatch, parser):
 
 def test_create_parser_for_docs(no_plugins):
     """Test that the docs parser initializes correctly."""
-    parser = cli.create_parser_for_docs()
+    parser = mainparser.create_parser_for_docs()
 
     assert isinstance(parser, argparse.ArgumentParser)
 
@@ -439,8 +445,10 @@ class TestBaseParsing:
     ):
         """Test that configured args are shown when show_all_opts is True."""
         with pytest.raises(SystemExit):
-            cli.parse_args(
-                [cli.SETUP_PARSER, "-h"], show_all_opts=True, ext_commands=[]
+            _repobee.cli.parsing.handle_args(
+                [mainparser.SETUP_PARSER, "-h"],
+                show_all_opts=True,
+                ext_commands=[],
             )
 
         captured = capsys.readouterr()
@@ -456,8 +464,10 @@ class TestBaseParsing:
     ):
         """Test that configured args are hidden when show_all_opts is False."""
         with pytest.raises(SystemExit):
-            cli.parse_args(
-                [cli.SETUP_PARSER, "-h"], show_all_opts=False, ext_commands=[]
+            _repobee.cli.parsing.handle_args(
+                [mainparser.SETUP_PARSER, "-h"],
+                show_all_opts=False,
+                ext_commands=[],
             )
 
         captured = capsys.readouterr()
@@ -479,9 +489,9 @@ class TestBaseParsing:
         api_class_mock.side_effect = raise_
 
         with pytest.raises(exception.NotFoundError) as exc_info:
-            cli.parse_args(
+            _repobee.cli.parsing.handle_args(
                 [
-                    cli.SETUP_PARSER,
+                    mainparser.SETUP_PARSER,
                     *COMPLETE_PUSH_ARGS,
                     "--sf",
                     str(students_file),
@@ -499,9 +509,9 @@ class TestBaseParsing:
         api_class_mock.side_effect = raise_
 
         with pytest.raises(exception.BadCredentials) as exc_info:
-            cli.parse_args(
+            _repobee.cli.parsing.handle_args(
                 [
-                    cli.SETUP_PARSER,
+                    mainparser.SETUP_PARSER,
                     *COMPLETE_PUSH_ARGS,
                     "--sf",
                     str(students_file),
@@ -519,9 +529,9 @@ class TestBaseParsing:
         api_class_mock.side_effect = raise_
 
         with pytest.raises(exception.ServiceNotFoundError) as exc_info:
-            cli.parse_args(
+            _repobee.cli.parsing.handle_args(
                 [
-                    cli.SETUP_PARSER,
+                    mainparser.SETUP_PARSER,
                     *COMPLETE_PUSH_ARGS,
                     "--sf",
                     str(students_file),
@@ -532,13 +542,15 @@ class TestBaseParsing:
             exc_info.value
         )
 
-    @pytest.mark.parametrize("parser", [cli.SETUP_PARSER, cli.UPDATE_PARSER])
+    @pytest.mark.parametrize(
+        "parser", [mainparser.SETUP_PARSER, mainparser.UPDATE_PARSER]
+    )
     def test_master_org_overrides_target_org_for_master_repos(
         self, command_mock, api_instance_mock, students_file, parser
     ):
-        parsed_args, _ = cli.parse_args(
+        parsed_args, _ = _repobee.cli.parsing.handle_args(
             [
-                cli.SETUP_PARSER,
+                mainparser.SETUP_PARSER,
                 *COMPLETE_PUSH_ARGS,
                 "--sf",
                 str(students_file),
@@ -554,11 +566,13 @@ class TestBaseParsing:
             ]
         )
 
-    @pytest.mark.parametrize("parser", [cli.SETUP_PARSER, cli.UPDATE_PARSER])
+    @pytest.mark.parametrize(
+        "parser", [mainparser.SETUP_PARSER, mainparser.UPDATE_PARSER]
+    )
     def test_master_org_name_defaults_to_org_name(
         self, api_instance_mock, students_file, parser
     ):
-        parsed_args, _ = cli.parse_args(
+        parsed_args, _ = _repobee.cli.parsing.handle_args(
             [parser, *COMPLETE_PUSH_ARGS, "--sf", str(students_file)]
         )
 
@@ -569,23 +583,27 @@ class TestBaseParsing:
             ]
         )
 
-    @pytest.mark.parametrize("parser", [cli.SETUP_PARSER, cli.UPDATE_PARSER])
+    @pytest.mark.parametrize(
+        "parser", [mainparser.SETUP_PARSER, mainparser.UPDATE_PARSER]
+    )
     def test_token_env_variable_picked_up(
         self, api_instance_mock, students_file, parser
     ):
-        parsed_args, _ = cli.parse_args(
+        parsed_args, _ = _repobee.cli.parsing.handle_args(
             [parser, *COMPLETE_PUSH_ARGS, "--sf", str(students_file)]
         )
 
         assert parsed_args.token == TOKEN
 
-    @pytest.mark.parametrize("parser", [cli.SETUP_PARSER, cli.UPDATE_PARSER])
+    @pytest.mark.parametrize(
+        "parser", [mainparser.SETUP_PARSER, mainparser.UPDATE_PARSER]
+    )
     def test_token_cli_arg_picked_up(
         self, mocker, api_instance_mock, students_file, parser
     ):
         mocker.patch("os.getenv", return_value="")
         token = "supersecretothertoken"
-        parsed_args, _ = cli.parse_args(
+        parsed_args, _ = _repobee.cli.parsing.handle_args(
             [
                 parser,
                 *COMPLETE_PUSH_ARGS,
@@ -613,7 +631,7 @@ class TestBaseParsing:
         required.
         """
         sys_args = [
-            cli.SETUP_PARSER,
+            mainparser.SETUP_PARSER,
             "-u",
             USER,
             "-o",
@@ -626,7 +644,7 @@ class TestBaseParsing:
         ]
 
         with pytest.raises(exception.ParseError) as exc_info:
-            cli.parse_args(sys_args)
+            _repobee.cli.parsing.handle_args(sys_args)
 
         assert "unsupported protocol in {}".format(url) in str(exc_info.value)
 
@@ -635,13 +653,13 @@ class TestBaseParsing:
     ):
         """Test that the create-teams command is correctly parsed."""
         sys_args = [
-            cli.CREATE_TEAMS_PARSER,
+            mainparser.CREATE_TEAMS_PARSER,
             *BASE_ARGS,
             "--sf",
             str(students_file),
         ]
 
-        parsed_args, api = cli.parse_args(sys_args)
+        parsed_args, api = _repobee.cli.parsing.handle_args(sys_args)
 
         assert api == api_instance_mock
         assert parsed_args.students == list(STUDENTS)
@@ -696,7 +714,7 @@ class TestExtensionCommands:
             option, action="store_true", required=True
         )
 
-        parsed_args, api = cli.parse_args(
+        parsed_args, api = _repobee.cli.parsing.handle_args(
             [ext_command.name, option], ext_commands=[ext_command]
         )
 
@@ -723,7 +741,7 @@ class TestExtensionCommands:
             option, action="store_true", required=True
         )
 
-        parsed_args, api = cli.parse_args(
+        parsed_args, api = _repobee.cli.parsing.handle_args(
             [ext_command.name, *BASE_ARGS, option], ext_commands=[ext_command]
         )
 
@@ -749,7 +767,9 @@ class TestExtensionCommands:
             subparser=ext_command.name, test_option=True, traceback=False
         )
 
-        cli.dispatch_command(parsed_args, None, [ext_command])
+        _repobee.cli.dispatch.dispatch_command(
+            parsed_args, None, [ext_command]
+        )
 
         # for some reason, this completely sane assertion fails ALWAYS
         # mock_callback.assert_called_once_with(
@@ -783,7 +803,9 @@ class TestExtensionCommands:
             **parsed_base_args_dict
         )
 
-        cli.dispatch_command(parsed_args, api_instance_mock, [ext_command])
+        _repobee.cli.dispatch.dispatch_command(
+            parsed_args, api_instance_mock, [ext_command]
+        )
 
         # for some reason, this completely sane assertion fails ALWAYS
         # mock_callback.assert_called_once_with(
@@ -808,7 +830,9 @@ class TestExtensionCommands:
             *STUDENTS_STRING.split(),
         ]
 
-        parsed_args, api = cli.parse_args(args, ext_commands=[query_command])
+        parsed_args, api = _repobee.cli.parsing.handle_args(
+            args, ext_commands=[query_command]
+        )
 
         assert api is None
         assert parsed_args.master_repo_names == list(REPO_NAMES)
@@ -830,13 +854,16 @@ class TestStudentParsing:
     STUDENT_PARSING_PARAMS = (
         "parser, extra_args",
         [
-            (cli.SETUP_PARSER, BASE_PUSH_ARGS),
-            (cli.UPDATE_PARSER, BASE_PUSH_ARGS),
+            (mainparser.SETUP_PARSER, BASE_PUSH_ARGS),
+            (mainparser.UPDATE_PARSER, BASE_PUSH_ARGS),
             (
-                cli.CLOSE_ISSUE_PARSER,
+                mainparser.CLOSE_ISSUE_PARSER,
                 ["--mn", *REPO_NAMES, "-r", "some-regex"],
             ),
-            (cli.OPEN_ISSUE_PARSER, ["--mn", *REPO_NAMES, "-i", ISSUE_PATH]),
+            (
+                mainparser.OPEN_ISSUE_PARSER,
+                ["--mn", *REPO_NAMES, "-i", ISSUE_PATH],
+            ),
         ],
     )
     STUDENT_PARSING_IDS = [
@@ -850,7 +877,7 @@ class TestStudentParsing:
         sys_args = [parser, *BASE_ARGS, "--sf", not_a_file, *extra_args]
 
         with pytest.raises(exception.FileError) as exc_info:
-            cli.parse_args(sys_args)
+            _repobee.cli.parsing.handle_args(sys_args)
 
         assert not_a_file in str(exc_info.value)
 
@@ -869,7 +896,7 @@ class TestStudentParsing:
             *extra_args,
         ]
 
-        parsed_args, _ = cli.parse_args(sys_args)
+        parsed_args, _ = _repobee.cli.parsing.handle_args(sys_args)
 
         assert parsed_args.students == list(STUDENTS)
 
@@ -888,7 +915,7 @@ class TestStudentParsing:
             *extra_args,
         ]
 
-        parsed_args, _ = cli.parse_args(sys_args)
+        parsed_args, _ = _repobee.cli.parsing.handle_args(sys_args)
 
         assert parsed_args.students == list(STUDENTS)
 
@@ -906,7 +933,7 @@ class TestStudentParsing:
         ]
 
         with pytest.raises(exception.FileError) as exc_info:
-            cli.parse_args(sys_args)
+            _repobee.cli.parsing.handle_args(sys_args)
 
         assert "is empty" in str(exc_info.value)
 
@@ -928,7 +955,7 @@ class TestStudentParsing:
         ]
 
         with pytest.raises(SystemExit):
-            cli.parse_args(sys_args)
+            _repobee.cli.parsing.handle_args(sys_args)
 
     @pytest.mark.parametrize(*STUDENT_PARSING_PARAMS, ids=STUDENT_PARSING_IDS)
     def test_student_groups_parsed_correcly(
@@ -959,7 +986,7 @@ class TestStudentParsing:
         ]
 
         # act
-        parsed_args, _ = cli.parse_args(sys_args)
+        parsed_args, _ = _repobee.cli.parsing.handle_args(sys_args)
 
         # assert
         assert sorted(parsed_args.students) == expected_groups
@@ -991,7 +1018,7 @@ class TestStudentParsing:
 
         # act
         with pytest.raises(ValueError) as exc_info:
-            cli.parse_args(sys_args)
+            _repobee.cli.parsing.handle_args(sys_args)
 
         # assert
         assert "generated Team/Repository name is too long" in str(
@@ -1019,7 +1046,7 @@ def assert_config_args(parser, parsed_args):
     assert parsed_args.students == list(STUDENTS)
     assert parsed_args.org_name == ORG_NAME
 
-    if parser in [cli.SETUP_PARSER, cli.UPDATE_PARSER]:
+    if parser in [mainparser.SETUP_PARSER, mainparser.UPDATE_PARSER]:
         assert parsed_args.user == USER
 
 
@@ -1029,9 +1056,12 @@ class TestConfig:
     @pytest.mark.parametrize(
         "parser, extra_args",
         [
-            (cli.SETUP_PARSER, ["--mn", *REPO_NAMES]),
-            (cli.UPDATE_PARSER, ["--mn", *REPO_NAMES]),
-            (cli.OPEN_ISSUE_PARSER, ["--mn", *REPO_NAMES, "-i", ISSUE_PATH]),
+            (mainparser.SETUP_PARSER, ["--mn", *REPO_NAMES]),
+            (mainparser.UPDATE_PARSER, ["--mn", *REPO_NAMES]),
+            (
+                mainparser.OPEN_ISSUE_PARSER,
+                ["--mn", *REPO_NAMES, "-i", ISSUE_PATH],
+            ),
         ],
     )
     def test_full_config(
@@ -1043,7 +1073,7 @@ class TestConfig:
         """
         sys_args = [parser, *extra_args]
 
-        parsed_args, _ = cli.parse_args(sys_args)
+        parsed_args, _ = _repobee.cli.parsing.handle_args(sys_args)
         assert_config_args(parser, parsed_args)
 
     # TODO test that not having base_url, org_name, user or
@@ -1057,10 +1087,10 @@ class TestConfig:
         if config_missing_option == "--mo":
             return
 
-        sys_args = [cli.SETUP_PARSER, "--mn", *REPO_NAMES]
+        sys_args = [mainparser.SETUP_PARSER, "--mn", *REPO_NAMES]
 
         with pytest.raises(SystemExit):
-            parsed_args, _ = cli.parse_args(sys_args)
+            parsed_args, _ = _repobee.cli.parsing.handle_args(sys_args)
         # TODO actually verify that the SystemExit came from the parsing!
 
     def test_missing_option_can_be_specified(
@@ -1078,7 +1108,7 @@ class TestConfig:
             missing_arg = "whatever"
 
         sys_args = [
-            cli.SETUP_PARSER,
+            mainparser.SETUP_PARSER,
             "--mn",
             *REPO_NAMES,
             config_missing_option,
@@ -1086,10 +1116,12 @@ class TestConfig:
         ]
 
         # only asserts that there is no crash
-        cli.parse_args(sys_args)
+        _repobee.cli.parsing.handle_args(sys_args)
 
 
-@pytest.mark.parametrize("parser", [cli.SETUP_PARSER, cli.UPDATE_PARSER])
+@pytest.mark.parametrize(
+    "parser", [mainparser.SETUP_PARSER, mainparser.UPDATE_PARSER]
+)
 class TestSetupAndUpdateParsers:
     """Tests that are in common for SETUP_PARSER and UPDATE_PARSER."""
 
@@ -1102,7 +1134,7 @@ class TestSetupAndUpdateParsers:
             *STUDENTS_STRING.split(),
         ]
 
-        parsed_args, _ = cli.parse_args(sys_args)
+        parsed_args, _ = _repobee.cli.parsing.handle_args(sys_args)
 
         assert_base_push_args(parsed_args, api_class_mock)
 
@@ -1133,7 +1165,7 @@ class TestSetupAndUpdateParsers:
             *STUDENTS_STRING.split(),
         ]
 
-        parsed_args, _ = cli.parse_args(sys_args)
+        parsed_args, _ = _repobee.cli.parsing.handle_args(sys_args)
 
         assert sorted(parsed_args.master_repo_urls) == sorted(expected)
 
@@ -1160,9 +1192,9 @@ class TestMigrateParser:
         assert parsed_args.master_repo_urls == self.LOCAL_URIS
 
     def test_happy_path(self):
-        sys_args = [cli.MIGRATE_PARSER, *BASE_ARGS, "--mn", *self.NAMES]
+        sys_args = [mainparser.MIGRATE_PARSER, *BASE_ARGS, "--mn", *self.NAMES]
 
-        parsed_args, _ = cli.parse_args(sys_args)
+        parsed_args, _ = _repobee.cli.parsing.handle_args(sys_args)
 
         self.assert_migrate_args(parsed_args)
 
@@ -1171,11 +1203,11 @@ class TestVerifyParser:
     """Tests for the VERIFY_PARSER."""
 
     def test_happy_path(self):
-        sys_args = [cli.VERIFY_PARSER, *BASE_ARGS]
+        sys_args = [mainparser.VERIFY_PARSER, *BASE_ARGS]
 
-        args, _ = cli.parse_args(sys_args)
+        args, _ = _repobee.cli.parsing.handle_args(sys_args)
 
-        assert args.subparser == cli.VERIFY_PARSER
+        assert args.subparser == mainparser.VERIFY_PARSER
         assert args.org_name == ORG_NAME
         assert args.base_url == BASE_URL
         assert args.user == USER
@@ -1186,7 +1218,7 @@ class TestCloneParser:
 
     def test_happy_path(self, students_file, plugin_manager_mock):
         sys_args = [
-            cli.CLONE_PARSER,
+            mainparser.CLONE_PARSER,
             *BASE_ARGS,
             "--mn",
             *REPO_NAMES,
@@ -1194,9 +1226,9 @@ class TestCloneParser:
             str(students_file),
         ]
 
-        args, _ = cli.parse_args(sys_args)
+        args, _ = _repobee.cli.parsing.handle_args(sys_args)
 
-        assert args.subparser == cli.CLONE_PARSER
+        assert args.subparser == mainparser.CLONE_PARSER
         assert args.org_name == ORG_NAME
         assert args.base_url == BASE_URL
         assert args.students == list(STUDENTS)
@@ -1212,15 +1244,15 @@ class TestCloneParser:
         "parser, extra_args",
         [
             (
-                cli.SETUP_PARSER,
+                mainparser.SETUP_PARSER,
                 ["-s", *STUDENTS_STRING.split(), "--mn", *REPO_NAMES],
             ),
             (
-                cli.UPDATE_PARSER,
+                mainparser.UPDATE_PARSER,
                 ["-s", *STUDENTS_STRING.split(), "--mn", *REPO_NAMES],
             ),
             (
-                cli.OPEN_ISSUE_PARSER,
+                mainparser.OPEN_ISSUE_PARSER,
                 [
                     "-s",
                     *STUDENTS_STRING.split(),
@@ -1231,7 +1263,7 @@ class TestCloneParser:
                 ],
             ),
             (
-                cli.CLOSE_ISSUE_PARSER,
+                mainparser.CLOSE_ISSUE_PARSER,
                 [
                     "-s",
                     *STUDENTS_STRING.split(),
@@ -1241,8 +1273,8 @@ class TestCloneParser:
                     "some-regex",
                 ],
             ),
-            (cli.VERIFY_PARSER, []),
-            (cli.MIGRATE_PARSER, ["--mn", *REPO_NAMES]),
+            (mainparser.VERIFY_PARSER, []),
+            (mainparser.MIGRATE_PARSER, ["--mn", *REPO_NAMES]),
         ],
     )
     def test_no_other_parser_gets_parse_hook(
@@ -1250,7 +1282,7 @@ class TestCloneParser:
     ):
         sys_args = [parser, *BASE_ARGS, *extra_args]
 
-        args, _ = cli.parse_args(sys_args)
+        args, _ = _repobee.cli.parsing.handle_args(sys_args)
 
         plugin_manager_mock.hook.clone_parser_hook.assert_called_once_with(
             clone_parser=mock.ANY
@@ -1262,9 +1294,11 @@ class TestShowConfigParser:
     """Tests for repobee show-config"""
 
     def test_happy_path(self):
-        args, _ = cli.parse_args([cli.SHOW_CONFIG_PARSER])
+        args, _ = _repobee.cli.parsing.handle_args(
+            [mainparser.SHOW_CONFIG_PARSER]
+        )
 
-        assert args.subparser == cli.SHOW_CONFIG_PARSER
+        assert args.subparser == mainparser.SHOW_CONFIG_PARSER
 
 
 ASSIGN_REVIEWS_PARSER_OLD = "assign-peer-reviews"
@@ -1272,13 +1306,15 @@ PURGE_REVIEW_TEAMS_PARSER_OLD = "purge-peer-review-teams"
 CHECK_REVIEW_PROGRESS_PARSER_OLD = "check-peer-review-progress"
 DEPRECATED_PARSERS = {
     ASSIGN_REVIEWS_PARSER_OLD: plug.Deprecation(
-        replacement=cli.ASSIGN_REVIEWS_PARSER, remove_by_version="2.0.0"
+        replacement=mainparser.ASSIGN_REVIEWS_PARSER, remove_by_version="2.0.0"
     ),
     PURGE_REVIEW_TEAMS_PARSER_OLD: plug.Deprecation(
-        replacement=cli.PURGE_REVIEW_TEAMS_PARSER, remove_by_version="2.0.0"
+        replacement=mainparser.PURGE_REVIEW_TEAMS_PARSER,
+        remove_by_version="2.0.0",
     ),
     CHECK_REVIEW_PROGRESS_PARSER_OLD: plug.Deprecation(
-        replacement=cli.CHECK_REVIEW_PROGRESS_PARSER, remove_by_version="2.0.0"
+        replacement=mainparser.CHECK_REVIEW_PROGRESS_PARSER,
+        remove_by_version="2.0.0",
     ),
 }
 
@@ -1294,7 +1330,7 @@ class TestCommandDeprecation:
     @pytest.fixture(autouse=True)
     def patch_deprecated_parsers(self, monkeypatch):
         monkeypatch.setattr(
-            "_repobee.cli.DEPRECATED_PARSERS", DEPRECATED_PARSERS
+            "_repobee.cli.parsing.DEPRECATED_PARSERS", DEPRECATED_PARSERS
         )
 
     @pytest.mark.parametrize(
@@ -1302,7 +1338,7 @@ class TestCommandDeprecation:
         [
             (
                 ASSIGN_REVIEWS_PARSER_OLD,
-                cli.ASSIGN_REVIEWS_PARSER,
+                mainparser.ASSIGN_REVIEWS_PARSER,
                 [
                     *BASE_ARGS,
                     "--mn",
@@ -1317,7 +1353,7 @@ class TestCommandDeprecation:
             ),
             (
                 PURGE_REVIEW_TEAMS_PARSER_OLD,
-                cli.PURGE_REVIEW_TEAMS_PARSER,
+                mainparser.PURGE_REVIEW_TEAMS_PARSER,
                 [
                     *BASE_ARGS,
                     "--mn",
@@ -1328,7 +1364,7 @@ class TestCommandDeprecation:
             ),
             (
                 CHECK_REVIEW_PROGRESS_PARSER_OLD,
-                cli.CHECK_REVIEW_PROGRESS_PARSER,
+                mainparser.CHECK_REVIEW_PROGRESS_PARSER,
                 [
                     *BASE_ARGS,
                     "--mn",
@@ -1354,8 +1390,12 @@ class TestCommandDeprecation:
         old_sys_args = [deprecated_parser] + sys_args
         new_sys_args = [current_parser] + sys_args
 
-        old_parsed_args, old_api = cli.parse_args(old_sys_args)
-        new_parsed_args, new_api = cli.parse_args(new_sys_args)
+        old_parsed_args, old_api = _repobee.cli.parsing.handle_args(
+            old_sys_args
+        )
+        new_parsed_args, new_api = _repobee.cli.parsing.handle_args(
+            new_sys_args
+        )
 
         assert old_parsed_args.subparser == current_parser
         assert old_parsed_args == new_parsed_args

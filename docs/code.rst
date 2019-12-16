@@ -10,7 +10,28 @@ command
 cli
 ====================
 
-.. automodule:: _repobee.cli
+mainparser
+----------
+
+.. automodule:: _repobee.cli.mainparser
+    :members:
+
+parsing
+-------
+
+.. automodule:: _repobee.cli.parsing
+    :members:
+
+dispatch
+--------
+
+.. automodule:: _repobee.cli.dispatch
+    :members:
+
+preparser
+---------
+
+.. automodule:: _repobee.cli.preparser
     :members:
 
 config

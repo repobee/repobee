@@ -4,9 +4,10 @@ from collections import namedtuple
 
 import pytest
 
+import _repobee.cli.preparser
 from functions import raise_
 import _repobee.constants
-from _repobee import cli
+from _repobee.cli import mainparser
 from _repobee import main
 from _repobee import plugin
 from _repobee.ext import configwizard
@@ -30,7 +31,7 @@ VALID_PARSED_ARGS = dict(
 )
 
 PARSED_ARGS = argparse.Namespace(
-    subparser=cli.SETUP_PARSER, **VALID_PARSED_ARGS
+    subparser=mainparser.SETUP_PARSER, **VALID_PARSED_ARGS
 )
 
 CLONE_ARGS = "clone --mn week-2 -s slarse".split()
@@ -63,9 +64,9 @@ def init_plugins_mock(mocker):
 
 
 @pytest.fixture
-def parse_args_mock(mocker, api_instance_mock):
+def handle_args_mock(mocker, api_instance_mock):
     return mocker.patch(
-        "_repobee.cli.parse_args",
+        "_repobee.cli.parsing.handle_args",
         autospec=True,
         return_value=(PARSED_ARGS, api_instance_mock),
     )
@@ -73,23 +74,25 @@ def parse_args_mock(mocker, api_instance_mock):
 
 @pytest.fixture
 def parse_preparser_options_mock(mocker):
-    return mocker.patch("_repobee.cli.parse_preparser_options", autospec=True)
+    return mocker.patch("_repobee.cli.preparser.parse_args", autospec=True)
 
 
 @pytest.fixture
 def dispatch_command_mock(mocker):
-    return mocker.patch("_repobee.cli.dispatch_command", autospec=True)
+    return mocker.patch(
+        "_repobee.cli.dispatch.dispatch_command", autospec=True
+    )
 
 
 def test_happy_path(
-    api_instance_mock, parse_args_mock, dispatch_command_mock, no_config_mock
+    api_instance_mock, handle_args_mock, dispatch_command_mock, no_config_mock
 ):
 
     sys_args = ["just some made up arguments".split()]
 
     main.main(sys_args)
 
-    parse_args_mock.assert_called_once_with(
+    handle_args_mock.assert_called_once_with(
         sys_args[1:], show_all_opts=False, ext_commands=DEFAULT_EXT_COMMANDS
     )
     dispatch_command_mock.assert_called_once_with(
@@ -98,24 +101,24 @@ def test_happy_path(
 
 
 def test_exit_status_1_on_exception_in_parsing(
-    api_instance_mock, parse_args_mock, dispatch_command_mock, no_config_mock
+    api_instance_mock, handle_args_mock, dispatch_command_mock, no_config_mock
 ):
     msg = "some nice error message"
-    parse_args_mock.side_effect = raise_(Exception(msg))
+    handle_args_mock.side_effect = raise_(Exception(msg))
     sys_args = ["just some made up arguments".split()]
 
     with pytest.raises(SystemExit) as exc_info:
         main.main(sys_args)
 
     assert exc_info.value.code == 1
-    parse_args_mock.assert_called_once_with(
+    handle_args_mock.assert_called_once_with(
         sys_args[1:], show_all_opts=False, ext_commands=DEFAULT_EXT_COMMANDS
     )
     assert not dispatch_command_mock.called
 
 
 def test_exit_status_1_on_exception_in_handling_parsed_args(
-    api_instance_mock, parse_args_mock, dispatch_command_mock
+    api_instance_mock, handle_args_mock, dispatch_command_mock
 ):
     """should just log, but not raise."""
     msg = "some nice error message"
@@ -126,13 +129,13 @@ def test_exit_status_1_on_exception_in_handling_parsed_args(
         main.main(sys_args)
 
     assert exc_info.value.code == 1
-    parse_args_mock.assert_called_once_with(
+    handle_args_mock.assert_called_once_with(
         sys_args[1:], show_all_opts=False, ext_commands=DEFAULT_EXT_COMMANDS
     )
 
 
 def test_plugins_args(
-    parse_args_mock, dispatch_command_mock, init_plugins_mock
+    handle_args_mock, dispatch_command_mock, init_plugins_mock
 ):
     plugin_args = "-p javac -p pylint".split()
     sys_args = ["repobee", *plugin_args, *CLONE_ARGS]
@@ -142,13 +145,13 @@ def test_plugins_args(
     init_plugins_mock.assert_called_once_with(
         ["javac", "pylint", _repobee.constants.DEFAULT_PLUGIN]
     )
-    parse_args_mock.assert_called_once_with(
+    handle_args_mock.assert_called_once_with(
         CLONE_ARGS, show_all_opts=False, ext_commands=[]
     )
 
 
 def test_no_plugins_arg(
-    parse_args_mock, dispatch_command_mock, init_plugins_mock
+    handle_args_mock, dispatch_command_mock, init_plugins_mock
 ):
     """Default plugins still need to be loaded, so initialize_plugins should be
     called only with the default plugin.
@@ -160,13 +163,13 @@ def test_no_plugins_arg(
     init_plugins_mock.assert_called_once_with(
         [_repobee.constants.DEFAULT_PLUGIN]
     )
-    parse_args_mock.assert_called_once_with(
+    handle_args_mock.assert_called_once_with(
         CLONE_ARGS, show_all_opts=False, ext_commands=[]
     )
 
 
 def test_no_plugins_with_configured_plugins(
-    parse_args_mock, dispatch_command_mock, init_plugins_mock, config_mock
+    handle_args_mock, dispatch_command_mock, init_plugins_mock, config_mock
 ):
     """Test that --no-plugins causes any plugins listed in the config file to
     NOT be loaded.
@@ -178,13 +181,13 @@ def test_no_plugins_with_configured_plugins(
     init_plugins_mock.assert_called_once_with(
         [_repobee.constants.DEFAULT_PLUGIN]
     )
-    parse_args_mock.assert_called_once_with(
+    handle_args_mock.assert_called_once_with(
         CLONE_ARGS, show_all_opts=False, ext_commands=[]
     )
 
 
 def test_configured_plugins_are_loaded(
-    parse_args_mock, dispatch_command_mock, init_plugins_mock, config_mock
+    handle_args_mock, dispatch_command_mock, init_plugins_mock, config_mock
 ):
     sys_args = ["repobee", *CLONE_ARGS]
 
@@ -193,13 +196,13 @@ def test_configured_plugins_are_loaded(
     init_plugins_mock.assert_called_once_with(
         [*constants.PLUGINS, _repobee.constants.DEFAULT_PLUGIN]
     )
-    parse_args_mock.assert_called_once_with(
+    handle_args_mock.assert_called_once_with(
         CLONE_ARGS, show_all_opts=False, ext_commands=[]
     )
 
 
 def test_plugin_with_subparser_name(
-    parse_args_mock, dispatch_command_mock, init_plugins_mock
+    handle_args_mock, dispatch_command_mock, init_plugins_mock
 ):
     sys_args = ["repobee", "-p", "javac", "-p", "clone", *CLONE_ARGS]
 
@@ -208,7 +211,7 @@ def test_plugin_with_subparser_name(
     init_plugins_mock.assert_called_once_with(
         ["javac", "clone", _repobee.constants.DEFAULT_PLUGIN]
     )
-    parse_args_mock.assert_called_once_with(
+    handle_args_mock.assert_called_once_with(
         CLONE_ARGS, show_all_opts=False, ext_commands=[]
     )
 
@@ -248,7 +251,7 @@ def test_invalid_plug_options(dispatch_command_mock, init_plugins_mock):
 
 def test_does_not_raise_on_exception_in_dispatch(
     api_instance_mock,
-    parse_args_mock,
+    handle_args_mock,
     dispatch_command_mock,
     no_config_mock,
     logger_exception_mock,
@@ -261,7 +264,7 @@ def test_does_not_raise_on_exception_in_dispatch(
 
 def test_logs_traceback_on_exception_in_dispatch_if_traceback(
     api_instance_mock,
-    parse_args_mock,
+    handle_args_mock,
     dispatch_command_mock,
     no_config_mock,
     logger_exception_mock,
@@ -270,7 +273,7 @@ def test_logs_traceback_on_exception_in_dispatch_if_traceback(
     args_with_traceback = dict(VALID_PARSED_ARGS)
     args_with_traceback["traceback"] = True
     parsed_args = argparse.Namespace(**args_with_traceback)
-    parse_args_mock.return_value = parsed_args, api_instance_mock
+    handle_args_mock.return_value = parsed_args, api_instance_mock
 
     def raise_():
         raise ValueError(msg)
@@ -283,7 +286,7 @@ def test_logs_traceback_on_exception_in_dispatch_if_traceback(
 
     assert exc_info.value.code == 1
     assert logger_exception_mock.called
-    parse_args_mock.assert_called_once_with(
+    handle_args_mock.assert_called_once_with(
         [*CLONE_ARGS, "--traceback"],
         show_all_opts=False,
         ext_commands=DEFAULT_EXT_COMMANDS,
@@ -291,7 +294,7 @@ def test_logs_traceback_on_exception_in_dispatch_if_traceback(
 
 
 def test_show_all_opts_correctly_separated(
-    parse_args_mock, parse_preparser_options_mock, no_config_mock
+    handle_args_mock, parse_preparser_options_mock, no_config_mock
 ):
     msg = "expected exit"
 
@@ -301,11 +304,11 @@ def test_show_all_opts_correctly_separated(
     parse_preparser_options_mock.return_value = argparse.Namespace(
         show_all_opts=True, no_plugins=False, plug=None
     )
-    parse_args_mock.side_effect = _raise_sysexit
+    handle_args_mock.side_effect = _raise_sysexit
     sys_args = [
         "repobee",
-        cli.PRE_PARSER_SHOW_ALL_OPTS,
-        cli.SETUP_PARSER,
+        _repobee.cli.preparser.PRE_PARSER_SHOW_ALL_OPTS,
+        mainparser.SETUP_PARSER,
         "-h",
     ]
 
@@ -313,23 +316,23 @@ def test_show_all_opts_correctly_separated(
         main.main(sys_args)
 
     assert msg in str(exc_info.value)
-    parse_args_mock.assert_called_once_with(
-        [cli.SETUP_PARSER, "-h"],
+    handle_args_mock.assert_called_once_with(
+        [mainparser.SETUP_PARSER, "-h"],
         show_all_opts=True,
         ext_commands=DEFAULT_EXT_COMMANDS,
     )
     parse_preparser_options_mock.assert_called_once_with(
-        [cli.PRE_PARSER_SHOW_ALL_OPTS]
+        [_repobee.cli.preparser.PRE_PARSER_SHOW_ALL_OPTS]
     )
 
 
 def test_non_zero_exit_status_on_exception(
-    parse_args_mock, parse_preparser_options_mock, no_config_mock
+    handle_args_mock, parse_preparser_options_mock, no_config_mock
 ):
     def raise_(*args, **kwargs):
         raise ValueError()
 
-    parse_args_mock.side_effect = raise_
+    handle_args_mock.side_effect = raise_
 
     sys_args = ["repobee", *CLONE_ARGS]
 

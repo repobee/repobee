@@ -1,83 +1,30 @@
-"""CLI module.
+"""Definition of the primary parser for RepoBee.
 
-This module contains the CLI for _repobee.
-
-.. module:: cli
-    :synopsis: The CLI for _repobee.
+.. module:: mainparser
+    :synopsis: The primary parser for RepoBee.
 
 .. moduleauthor:: Simon Larsén
 """
 
 import types
 import argparse
-import pathlib
-import os
-import sys
-import re
-from typing import List, Iterable, Optional, Tuple
 
 import logging
+from typing import List, Optional
+
 import daiquiri
 
 import repobee_plug as plug
 
 import _repobee
 from _repobee import plugin
-from _repobee import command
 from _repobee import util
-from _repobee import exception
 from _repobee import config
 from _repobee import constants
-from _repobee import formatters
-
-try:
-    os.makedirs(str(constants.LOG_DIR), exist_ok=True)
-except Exception as exc:
-    raise exception.FileError(
-        "can't create log directory at {}".format(constants.LOG_DIR)
-    ) from exc
-
-daiquiri.setup(
-    level=logging.INFO,
-    outputs=(
-        daiquiri.output.Stream(
-            sys.stdout,
-            formatter=daiquiri.formatter.ColorFormatter(
-                fmt="%(color)s[%(levelname)s] %(message)s%(color_stop)s"
-            ),
-        ),
-        daiquiri.output.File(
-            filename=str(
-                constants.LOG_DIR
-                / "{}.log".format(_repobee._external_package_name)
-            ),
-            formatter=daiquiri.formatter.ColorFormatter(
-                fmt="%(asctime)s [PID %(process)d] [%(levelname)s] "
-                "%(name)s -> %(message)s"
-            ),
-        ),
-    ),
-)
-
-
-def _filter_tokens():
-    """Filter out any secure tokens from log output."""
-    old_factory = logging.getLogRecordFactory()
-
-    def record_factory(*args, **kwargs):
-        record = old_factory(*args, **kwargs)
-        # from URLS (e.g. git error messages)
-        record.msg = re.sub("https://.*?@", "https://", record.msg)
-        # from show-config output
-        record.msg = re.sub(r"token\s*=\s*.*", "token = xxxxxxxxx", record.msg)
-        return record
-
-    logging.setLogRecordFactory(record_factory)
-
-
-_filter_tokens()
+from _repobee.cli.preparser import PRE_PARSER_SHOW_ALL_OPTS
 
 LOGGER = daiquiri.getLogger(__file__)
+
 SUB = "subparser"
 
 # Any new subparser mus tbe added to the PARSER_NAMES tuple!
@@ -132,252 +79,79 @@ DEPRECATED_PARSERS = {
     )
 }
 
-# any pre-parser options go here
-PRE_PARSER_PLUG_OPTS = ["-p", "--plug"]
-PRE_PARSER_NO_PLUGS = "--no-plugins"
-PRE_PARSER_SHOW_ALL_OPTS = "--show-all-opts"
 
-# this list should include all pre-parser flags
-PRE_PARSER_FLAGS = [PRE_PARSER_NO_PLUGS, PRE_PARSER_SHOW_ALL_OPTS]
+def create_parser_for_docs() -> argparse.ArgumentParser:
+    """Create a parser showing all options for the default CLI
+    documentation.
+
+    Returns:
+        The primary parser, specifically for generating documentation.
+    """
+    daiquiri.setup(level=logging.FATAL)
+    # load default plugins
+    plugin.initialize_plugins([_repobee.constants.DEFAULT_PLUGIN])
+    ext_commands = plug.manager.hook.create_extension_command()
+    return create_parser(show_all_opts=True, ext_commands=ext_commands)
 
 
-def parse_args(
-    sys_args: Iterable[str],
-    show_all_opts: bool = False,
-    ext_commands: Optional[List[plug.ExtensionCommand]] = None,
-) -> Tuple[None, Optional[plug.API]]:
-    """Parse the command line arguments and initialize an API.
+def create_parser(
+    show_all_opts: bool, ext_commands: Optional[List[plug.ExtensionCommand]]
+) -> argparse.ArgumentParser:
+    """Create the primary parser.
 
     Args:
-        sys_args: A list of command line arguments.
-        show_all_opts: If False, CLI arguments that are configure in the
-            configuration file are not shown in help menus.
+        show_all_opts: If False, help sections for options with configured
+            defaults are suppressed. Otherwise, all options are shown.
         ext_commands: A list of extension commands.
-
     Returns:
-        a argparse.Namespace namedtuple with the arguments, and an initialized
-        plug.API instance (or None of testing connection).
+        The primary parser.
     """
-    parser = _create_parser(show_all_opts, ext_commands)
-    args = parser.parse_args(_handle_deprecation(sys_args))
-    ext_command_names = [cmd.name for cmd in ext_commands or []]
-    subparser = getattr(args, SUB)
 
-    if subparser == SHOW_CONFIG_PARSER:
-        return argparse.Namespace(**vars(args)), None
-    elif ext_commands and subparser in ext_command_names:
-        return _handle_extension_parsing(
-            ext_commands[ext_command_names.index(subparser)], args
-        )
+    def _versioned_plugin_name(plugin_module: types.ModuleType) -> str:
+        """Return the name of the plugin, with version if available."""
+        name = plugin_module.__name__.split(".")[-1]
+        ver = plugin.resolve_plugin_version(plugin_module)
+        return "{}-{}".format(name, ver) if ver else name
 
-    _validate_tls_url(args.base_url)
-
-    user = args.user if "user" in args else None
-    if subparser == VERIFY_PARSER:
-        # quick parse for verify connection
-        return (
-            argparse.Namespace(
-                subparser=VERIFY_PARSER,
-                org_name=args.org_name,
-                base_url=args.base_url,
-                user=user,
-                traceback=args.traceback,
-                master_org_name=args.master_org_name
-                if "master_org_name" in args
-                else None,
-                token=args.token,
-            ),
-            None,
-        )
-    elif subparser == CLONE_PARSER:
-        # only if clone is chosen should plugins be able to hook in
-        plug.manager.hook.parse_args(args=args)
-        for task in plug.manager.hook.clone_task():
-            util.call_if_defined(task.handle_args, args)
-    elif subparser == SETUP_PARSER:
-        for task in plug.manager.hook.setup_task():
-            util.call_if_defined(task.handle_args, args)
-
-    api = _connect_to_api(args.base_url, args.token, args.org_name, user)
-
-    master_org_name = args.org_name
-    if "master_org_name" in args and args.master_org_name is not None:
-        master_org_name = args.master_org_name
-
-    if subparser != CREATE_TEAMS_PARSER:
-        master_names = args.master_repo_names
-        master_urls = _repo_names_to_urls(master_names, master_org_name, api)
-        assert master_urls and master_names
-    else:
-        master_names = master_urls = None
-
-    args_dict = vars(args)
-    args_dict.setdefault("master_org_name", None)
-    args_dict.setdefault("title_regex", None)
-    args_dict.setdefault("state", None)
-    args_dict.setdefault("show_body", None)
-    args_dict.setdefault("author", None)
-    args_dict.setdefault("num_reviews", None)
-    args_dict["students"] = _extract_groups(args)
-    args_dict["issue"] = (
-        util.read_issue(args.issue) if "issue" in args and args.issue else None
+    loaded_plugins = ", ".join(
+        [
+            _versioned_plugin_name(p)
+            for p in plug.manager.get_plugins()
+            if isinstance(p, types.ModuleType)
+        ]
     )
-    args_dict["master_repo_urls"] = master_urls
-    args_dict["master_repo_names"] = master_names
 
-    return argparse.Namespace(**args_dict), api
+    program_description = (
+        "A CLI tool for administrating large amounts of git repositories "
+        "on GitHub and\nGitLab instances. Read the docs at: "
+        "https://repobee.readthedocs.io\n\n"
+    )
 
-
-def _handle_extension_parsing(ext_command, args):
-    """Handle parsing of extension command arguments."""
-    api = None
-    if ext_command.requires_api:
-        api = _connect_to_api(
-            args.base_url, args.token, args.org_name, args.user
-        )
-    if "students" in args or "students_file" in args:
-        args.students = _extract_groups(args)
-    return args, api
-
-
-def _validate_tls_url(url):
-    """Url must use the https protocol."""
-    if not url.startswith("https://"):
-        raise exception.ParseError(
-            "unsupported protocol in {}: "
-            "for security reasons, only https is supported".format(url)
-        )
-
-
-def _handle_deprecation(sys_args: List[str]) -> List[str]:
-    """If the first argument on the arglist is a deprecated command, replace it
-    with the corresponding current command and issue a warning.
-
-    Returns:
-        The sys_args list with any deprecated command replaced with the current
-        one.
-    """
-    if not sys_args:
-        return []
-
-    parser_name = sys_args[0]
-    if parser_name in DEPRECATED_PARSERS:
-        deprecation = DEPRECATED_PARSERS[parser_name]
-        LOGGER.warning(
-            "Use of '{}' has been deprecated and will be removed by {}, "
-            "use '{}' instead".format(
-                parser_name,
-                deprecation.remove_by_version,
-                deprecation.replacement,
+    if not show_all_opts and constants.DEFAULT_CONFIG_FILE.is_file():
+        program_description += (
+            "CLI options that are set in the config file are suppressed in "
+            "help sections,\nrun with pre-parser option {all_opts_arg} to "
+            "unsuppress.\nExample: repobee {all_opts_arg} setup -h\n\n".format(
+                all_opts_arg=PRE_PARSER_SHOW_ALL_OPTS
             )
         )
-        return [deprecation.replacement] + sys_args[1:]
+    program_description += "Loaded plugins: " + loaded_plugins
 
-    return list(sys_args)
-
-
-def dispatch_command(
-    args: argparse.Namespace,
-    api: plug.API,
-    ext_commands: Optional[List[plug.ExtensionCommand]] = None,
-):
-    """Handle parsed CLI arguments and dispatch commands to the appropriate
-    functions. Expected exceptions are caught and turned into SystemExit
-    exceptions, while unexpected exceptions are allowed to propagate.
-
-    Args:
-        args: A namespace of parsed command line arguments.
-        api: An initialized plug.API instance.
-        ext_commands: A list of active extension commands.
-    """
-    ext_command_names = [cmd.name for cmd in ext_commands or []]
-    hook_results = {}
-    if ext_command_names and args.subparser in ext_command_names:
-        ext_cmd = ext_commands[ext_command_names.index(args.subparser)]
-        ext_cmd.callback(args, api)
-    elif args.subparser == SETUP_PARSER:
-        hook_results = command.setup_student_repos(
-            args.master_repo_urls, args.students, api
-        )
-    elif args.subparser == UPDATE_PARSER:
-        command.update_student_repos(
-            args.master_repo_urls, args.students, api, issue=args.issue
-        )
-    elif args.subparser == OPEN_ISSUE_PARSER:
-        command.open_issue(
-            args.issue, args.master_repo_names, args.students, api
-        )
-    elif args.subparser == CLOSE_ISSUE_PARSER:
-        command.close_issue(
-            args.title_regex, args.master_repo_names, args.students, api
-        )
-    elif args.subparser == MIGRATE_PARSER:
-        command.migrate_repos(args.master_repo_urls, api)
-    elif args.subparser == CLONE_PARSER:
-        hook_results = command.clone_repos(
-            args.master_repo_names, args.students, api
-        )
-    elif args.subparser == VERIFY_PARSER:
-        plug.manager.hook.get_api_class().verify_settings(
-            args.user,
-            args.org_name,
-            args.base_url,
-            args.token,
-            args.master_org_name,
-        )
-    elif args.subparser == LIST_ISSUES_PARSER:
-        hook_results = command.list_issues(
-            args.master_repo_names,
-            args.students,
-            api,
-            state=args.state,
-            title_regex=args.title_regex or "",
-            show_body=args.show_body,
-            author=args.author,
-        )
-    elif args.subparser == ASSIGN_REVIEWS_PARSER:
-        command.assign_peer_reviews(
-            args.master_repo_names,
-            args.students,
-            args.num_reviews,
-            args.issue,
-            api,
-        )
-    elif args.subparser == PURGE_REVIEW_TEAMS_PARSER:
-        command.purge_review_teams(args.master_repo_names, args.students, api)
-    elif args.subparser == SHOW_CONFIG_PARSER:
-        command.show_config()
-    elif args.subparser == CHECK_REVIEW_PROGRESS_PARSER:
-        command.check_peer_review_progress(
-            args.master_repo_names,
-            args.students,
-            args.title_regex,
-            args.num_reviews,
-            api,
-        )
-    elif args.subparser == CREATE_TEAMS_PARSER:
-        api.ensure_teams_and_members(args.students)
-    else:
-        raise exception.ParseError(
-            "Illegal value for subparser: {}. "
-            "This is a bug, please open an issue.".format(args.subparser)
-        )
-
-    LOGGER.info(formatters.format_hook_results_output(hook_results))
-    if hook_results and args.hook_results_file:
-        _handle_hook_results(
-            hook_results=hook_results, filepath=args.hook_results_file
-        )
-
-
-def _handle_hook_results(hook_results, filepath):
-    LOGGER.warning(
-        "Storing hook results to file is an alpha feature, the file format "
-        "is not final"
+    parser = argparse.ArgumentParser(
+        prog="repobee",
+        description=program_description,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    output_file = pathlib.Path(filepath)
-    util.atomic_write(plug.result_mapping_to_json(hook_results), output_file)
-    LOGGER.info("Hook results stored to {}".format(filepath))
+    parser.add_argument(
+        "-v",
+        "--version",
+        help="Display version info",
+        action="version",
+        version="{}".format(_repobee.__version__),
+    )
+    _add_subparsers(parser, show_all_opts, ext_commands)
+
+    return parser
 
 
 def _add_peer_review_parsers(base_parsers, subparsers):
@@ -616,67 +390,6 @@ class _OrderedFormatter(argparse.HelpFormatter):
 
         actions = sorted(actions, key=key)
         super().add_arguments(actions)
-
-
-def create_parser_for_docs():
-    """Create a parser showing all options for the default CLI
-    documentation.
-    """
-    daiquiri.setup(level=logging.FATAL)
-    # load default plugins
-    plugin.initialize_plugins([_repobee.constants.DEFAULT_PLUGIN])
-    ext_commands = plug.manager.hook.create_extension_command()
-    return _create_parser(show_all_opts=True, ext_commands=ext_commands)
-
-
-def _create_parser(show_all_opts, ext_commands):
-    """Create the parser."""
-
-    def _versioned_plugin_name(plugin_module: types.ModuleType) -> str:
-        """Return the name of the plugin, with version if available."""
-        name = plugin_module.__name__.split(".")[-1]
-        ver = plugin.resolve_plugin_version(plugin_module)
-        return "{}-{}".format(name, ver) if ver else name
-
-    loaded_plugins = ", ".join(
-        [
-            _versioned_plugin_name(p)
-            for p in plug.manager.get_plugins()
-            if isinstance(p, types.ModuleType)
-        ]
-    )
-
-    program_description = (
-        "A CLI tool for administrating large amounts of git repositories "
-        "on GitHub and\nGitLab instances. Read the docs at: "
-        "https://repobee.readthedocs.io\n\n"
-    )
-
-    if not show_all_opts and constants.DEFAULT_CONFIG_FILE.is_file():
-        program_description += (
-            "CLI options that are set in the config file are suppressed in "
-            "help sections,\nrun with pre-parser option {all_opts_arg} to "
-            "unsuppress.\nExample: repobee {all_opts_arg} setup -h\n\n".format(
-                all_opts_arg=PRE_PARSER_SHOW_ALL_OPTS
-            )
-        )
-    program_description += "Loaded plugins: " + loaded_plugins
-
-    parser = argparse.ArgumentParser(
-        prog="repobee",
-        description=program_description,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    parser.add_argument(
-        "-v",
-        "--version",
-        help="Display version info",
-        action="version",
-        version="{}".format(_repobee.__version__),
-    )
-    _add_subparsers(parser, show_all_opts, ext_commands)
-
-    return parser
 
 
 def _add_extension_parsers(
@@ -1028,130 +741,3 @@ def _add_traceback_arg(parser):
         action="store_true",
         dest="traceback",
     )
-
-
-def _extract_groups(args: argparse.Namespace) -> List[str]:
-    """Extract groups from args namespace.`
-
-    Args:
-        args: A namespace object.
-
-    Returns:
-        a list of student usernames, or None of neither `students` or
-        `students_file` is in the namespace.
-    """
-    if "students" in args and args.students:
-        students = [plug.Team(members=[s]) for s in args.students]
-    elif "students_file" in args and args.students_file:
-        students_file = pathlib.Path(args.students_file)
-        try:  # raises FileNotFoundError in 3.5 if no such file exists
-            students_file = students_file.resolve()
-        except FileNotFoundError:
-            pass  # handled by next check
-        if not students_file.is_file():
-            raise exception.FileError(
-                "'{!s}' is not a file".format(students_file)
-            )
-        if not students_file.stat().st_size:
-            raise exception.FileError("'{!s}' is empty".format(students_file))
-        students = [
-            plug.Team(members=[s for s in group.strip().split()])
-            for group in students_file.read_text(
-                encoding=sys.getdefaultencoding()
-            ).split(os.linesep)
-            if group  # skip blank lines
-        ]
-    else:
-        students = None
-
-    return students
-
-
-def _connect_to_api(
-    base_url: str, token: str, org_name: str, user: str
-) -> plug.API:
-    """Return an API instance connected to the specified API endpoint."""
-    required_args = plug.manager.hook.api_init_requires()
-    kwargs = {}
-    if "base_url" in required_args:
-        kwargs["base_url"] = base_url
-    if "token" in required_args:
-        kwargs["token"] = token
-    if "org_name" in required_args:
-        kwargs["org_name"] = org_name
-    if "user" in required_args:
-        kwargs["user"] = user
-    api_class = plug.manager.hook.get_api_class()
-    try:
-        return api_class(**kwargs)
-    except exception.NotFoundError:
-        # more informative message
-        raise exception.NotFoundError(
-            "either organization {} could not be found, "
-            "or the base url '{}' is incorrect".format(org_name, base_url)
-        )
-
-
-def _repo_names_to_urls(
-    repo_names: Iterable[str], org_name: str, api: plug.API
-) -> List[str]:
-    """Use the repo_names to extract urls to the repos. Look for git
-    repos with the correct names in the local directory and create local uris
-    for them.  For the rest, create urls to the repos assuming they are in the
-    target organization. Do note that there is _no_ guarantee that the remote
-    repos exist as checking this takes too much time with the REST API.
-
-    A possible improvement would be to use the GraphQL API for this function.
-
-    Args:
-        repo_names: names of repositories.
-        org_name: Name of the organization these repos are expected in.
-        api: An API instance.
-
-    Returns:
-        a list of urls corresponding to the repo_names.
-    """
-    local = [
-        name for name in repo_names if util.is_git_repo(os.path.abspath(name))
-    ]
-    non_local = [name for name in repo_names if name not in local]
-
-    non_local_urls = api.get_repo_urls(non_local, org_name)
-    local_uris = [
-        pathlib.Path(os.path.abspath(repo_name)).as_uri()
-        for repo_name in local
-    ]
-    return non_local_urls + local_uris
-
-
-def parse_preparser_options(sys_args: List[str]):
-    """Parse all arguments that can somehow alter the end-user CLI, such
-    as plugins.
-
-    Args:
-        sys_args: Command line arguments.
-    """
-    parser = argparse.ArgumentParser(
-        prog="repobee", description="plugin pre-parser for _repobee."
-    )
-
-    mutex_grp = parser.add_mutually_exclusive_group()
-    mutex_grp.add_argument(
-        *PRE_PARSER_PLUG_OPTS,
-        help="Specify the name of a plugin to use.",
-        type=str,
-        action="append",
-        default=None
-    )
-    mutex_grp.add_argument(
-        PRE_PARSER_NO_PLUGS, help="Disable plugins.", action="store_true"
-    )
-    mutex_grp.add_argument(
-        PRE_PARSER_SHOW_ALL_OPTS,
-        help="Unsuppress all options in help menus",
-        action="store_true",
-    )
-
-    args = parser.parse_args(sys_args)
-
-    return args

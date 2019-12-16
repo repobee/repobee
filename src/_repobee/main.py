@@ -12,11 +12,14 @@ from typing import List
 import daiquiri
 import repobee_plug as plug
 
-from _repobee import cli
+import _repobee.cli.dispatch
+import _repobee.cli.parsing
+import _repobee.cli.preparser
 from _repobee import plugin
 from _repobee import exception
 from _repobee import constants
 from _repobee import config
+from _repobee.cli.preparser import separate_args
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -30,31 +33,17 @@ and supply the stack trace below.""".replace(
 )
 
 
-def _separate_args(args: List[str]) -> (List[str], List[str]):
-    """Separate args into preparser args and repobee args."""
-    preparser_args = []
-    if args and args[0].startswith("-"):
-        cur = 0
-        while cur < len(args) and args[cur].startswith("-"):
-            if args[cur] in cli.PRE_PARSER_PLUG_OPTS:
-                preparser_args += args[cur : cur + 2]
-                cur += 2
-            elif args[cur] in cli.PRE_PARSER_FLAGS:
-                preparser_args.append(args[cur])
-                cur += 1
-            else:
-                break
-    return preparser_args, args[len(preparser_args) :]
-
-
 def main(sys_args: List[str]):
     """Start the repobee CLI."""
+    _repobee.cli.parsing.setup_logging()
     args = sys_args[1:]  # drop the name of the program
     traceback = False
     pre_init = True
     try:
-        preparser_args, app_args = _separate_args(args)
-        parsed_preparser_args = cli.parse_preparser_options(preparser_args)
+        preparser_args, app_args = separate_args(args)
+        parsed_preparser_args = _repobee.cli.preparser.parse_args(
+            preparser_args
+        )
 
         if parsed_preparser_args.no_plugins:
             LOGGER.info("Non-default plugins disabled")
@@ -71,14 +60,14 @@ def main(sys_args: List[str]):
 
         config.execute_config_hooks()
         ext_commands = plug.manager.hook.create_extension_command()
-        parsed_args, api = cli.parse_args(
+        parsed_args, api = _repobee.cli.parsing.handle_args(
             app_args,
             show_all_opts=parsed_preparser_args.show_all_opts,
             ext_commands=ext_commands,
         )
         traceback = parsed_args.traceback
         pre_init = False
-        cli.dispatch_command(parsed_args, api, ext_commands)
+        _repobee.cli.dispatch.dispatch_command(parsed_args, api, ext_commands)
     except exception.PluginLoadError as exc:
         LOGGER.error("{.__class__.__name__}: {}".format(exc, str(exc)))
         LOGGER.error(
@@ -100,21 +89,6 @@ def main(sys_args: List[str]):
         else:
             LOGGER.error("{.__class__.__name__}: {}".format(exc, str(exc)))
         sys.exit(1)
-
-
-def _hook_deprecation_warning():
-    # TODO fix this
-    for p in plug.manager.get_plugins():
-        if any(name for name in dir(p) if name in plug.DEPRECATED_HOOKS):
-            plugin_name = (
-                p.__module__ if "__module__" in dir(p) else p.__name__
-            ).split(".")[-1]
-            LOGGER.warning(
-                "Plugin '{}' uses the deprecated 'act_on_cloned_repo' hook. "
-                "This hook has been replaced by the 'clone_task' hook and "
-                "will be removed in a future version."
-                "".format(plugin_name)
-            )
 
 
 if __name__ == "__main__":
