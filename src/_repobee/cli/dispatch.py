@@ -71,9 +71,7 @@ def dispatch_command(
     elif args.subparser == MIGRATE_PARSER:
         command.migrate_repos(args.master_repo_urls, api)
     elif args.subparser == CLONE_PARSER:
-        hook_results = command.clone_repos(
-            args.master_repo_names, args.students, api
-        )
+        hook_results = command.clone_repos(args.repos, api)
     elif args.subparser == VERIFY_PARSER:
         plug.manager.hook.get_api_class().verify_settings(
             args.user,
