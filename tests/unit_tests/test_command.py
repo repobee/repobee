@@ -57,7 +57,7 @@ BASE_URL = "https://some_enterprise_host/api/v3"
 ISSUE = plug.Issue(
     "Oops, something went wrong!", "This is the body **with some formatting**."
 )
-PLUGINS = constants.PLUGINS
+PLUGINS = (constants.PLUGINS,)
 STUDENTS = constants.STUDENTS
 
 
@@ -105,7 +105,7 @@ def git_mock(request, mocker):
     if "nogitmock" in request.keywords:
         return
     pt = _repobee.git.Push
-    git_mock = mocker.patch("_repobee.command.git", autospec=True)
+    git_mock = mocker.patch("_repobee.command.repos.git", autospec=True)
     git_mock.Push = pt
     return git_mock
 
