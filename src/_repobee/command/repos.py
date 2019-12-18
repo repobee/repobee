@@ -36,7 +36,7 @@ LOGGER = daiquiri.getLogger(__file__)
 
 def setup_student_repos(
     master_repo_urls: Iterable[str], teams: Iterable[plug.Team], api: plug.API
-) -> Mapping[str, plug.HookResult]:
+) -> Mapping[str, List[plug.HookResult]]:
     """Setup student repositories based on master repo templates. Performs three
     primary tasks:
 
