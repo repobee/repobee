@@ -1,3 +1,14 @@
+"""Top-level commands for peer reviewing.
+
+This module contains the top-level functions for RepoBee's peer review
+functionality. Each public function in this module is to be treated as a
+self-contained program.
+
+.. module:: peer
+    :synopsis: Top-level commands for peer reviewing.
+
+.. moduleauthor:: Simon Larsén
+"""
 from typing import Iterable, Optional
 
 import repobee_plug as plug

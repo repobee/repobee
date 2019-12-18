@@ -1,4 +1,4 @@
-"""Primary API for _repobee.
+"""Top-level commands for working with repos.
 
 This module contains high level functions for administrating repositories, such
 as creating student repos from some master repo template. All functions follow
@@ -7,9 +7,8 @@ the conventions specified in :ref:`conventions`.
 Each public function in this module is to be treated as a self-contained
 program.
 
-.. module:: command
-    :synopsis: The primary API of repobee containing high level functions for
-        administrating GitHub repos in an opinionated fashion.
+.. module:: repos
+    :synopsis: Top-level commands for working with repos.
 
 .. moduleauthor:: Simon Larsén
 """

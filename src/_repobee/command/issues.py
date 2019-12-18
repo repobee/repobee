@@ -1,3 +1,14 @@
+"""Top-level commands for managing issues.
+
+This module contains the top-level functions for RepoBee's issue management
+functionality. Each public function in this module is to be treated as a
+self-contained program.
+
+.. module:: issues
+    :synopsis: Top-level commands for issue management.
+
+.. moduleauthor:: Simon Larsén
+"""
 import os
 from typing import Iterable, Optional, List, Generator, Tuple
 
