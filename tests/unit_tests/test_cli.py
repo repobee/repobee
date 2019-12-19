@@ -2,6 +2,7 @@ import os
 import pathlib
 import argparse
 import collections
+import itertools
 from unittest import mock
 
 import pytest
@@ -58,15 +59,28 @@ VALID_PARSED_ARGS = dict(
     token=TOKEN,
     num_reviews=1,
     hook_results_file=None,
+    repos=(
+        plug.Repo(
+            name=plug.generate_repo_name(team, master_name),
+            url=generate_repo_url(
+                plug.generate_repo_name(team, master_name), ORG_NAME
+            ),
+            description="",
+            private=True,
+        )
+        for team, master_name in itertools.product(STUDENTS, REPO_NAMES)
+    ),
 )
 
 
 @pytest.fixture(autouse=True)
-def api_instance_mock(mocker):
+def api_instance_mock():
     instance_mock = mock.MagicMock(spec=_repobee.ext.github.GitHubAPI)
-    instance_mock.get_repo_urls.side_effect = lambda repo_names, org_name: [
-        generate_repo_url(rn, org_name) for rn in repo_names
-    ]
+
+    def _get_repo_urls(repo_names, org_name=None, teams=None):
+        return [generate_repo_url(name, org_name) for name in repo_names]
+
+    instance_mock.get_repo_urls.side_effect = _get_repo_urls
     instance_mock.ensure_teams_and_members.side_effect = lambda teams: [
         plug.Team(name=team.name, members=team.members, id=0) for team in teams
     ]
@@ -366,7 +380,7 @@ class TestDispatchCommand:
         _repobee.cli.dispatch.dispatch_command(args, api_instance_mock)
 
         command_mock.clone_repos.assert_called_once_with(
-            args.master_repo_names, args.students, api_instance_mock
+            args.repos, api_instance_mock
         )
 
     def test_verify_settings_called_with_correct_args(self, api_class_mock):
@@ -1396,6 +1410,10 @@ class TestCommandDeprecation:
         new_parsed_args, new_api = _repobee.cli.parsing.handle_args(
             new_sys_args
         )
+
+        # exhaust the generators
+        old_parsed_args.repos = list(old_parsed_args.repos)
+        new_parsed_args.repos = list(new_parsed_args.repos)
 
         assert old_parsed_args.subparser == current_parser
         assert old_parsed_args == new_parsed_args

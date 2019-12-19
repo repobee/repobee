@@ -12,12 +12,13 @@ program.
 
 .. moduleauthor:: Simon Larsén
 """
+import itertools
 import pathlib
 import shutil
 import os
 import sys
 import tempfile
-from typing import Iterable, List, Optional, Mapping
+from typing import Iterable, List, Optional, Mapping, Generator
 
 import daiquiri
 
@@ -186,58 +187,67 @@ def _open_issue_by_urls(
 
 
 def clone_repos(
-    master_repo_names: Iterable[str], teams: Iterable[plug.Team], api: plug.API
+    repos: Iterable[plug.Repo], api: plug.API
 ) -> Mapping[str, List[plug.HookResult]]:
     """Clone all student repos related to the provided master repos and student
     teams.
 
     Args:
-        master_repo_names: Names of master repos.
-        teams: An iterable of student teams.
+        repos: The repos to be cloned. This function does not use the
+            ``implementation`` attribute, so it does not need to be set.
         api: An implementation of :py:class:`repobee_plug.API` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     Returns:
         A mapping from repo name to a list of hook results.
     """
-    repo_urls = api.get_repo_urls(master_repo_names, teams=teams)
-    # the reason we first compute the urls and then extract repo names is that
-    # GitLab needs the team names for namespacing: you can't reliably go from
-    # student repo name to student repo url!
-    repo_names = list(map(api.extract_repo_name, repo_urls))
-    name_conflicts = util.conflicting_files(map(str, repo_names), cwd=".")
-    clone_urls = [
-        url
-        for url in repo_urls
-        if api.extract_repo_name(url) not in name_conflicts
-    ]
-    for repo_name in name_conflicts:
-        LOGGER.warning("{} already exists, skipping".format(repo_name))
+    repos_for_tasks, repos_for_clone = itertools.tee(repos)
+    non_local_repos = _non_local_repos(repos_for_clone)
 
     LOGGER.info("Cloning into student repos ...")
     with tempfile.TemporaryDirectory() as tmpdir:
-        _clone_repos_no_check(clone_urls, tmpdir, api)
+        _clone_repos_no_check(non_local_repos, tmpdir, api)
 
     for p in plug.manager.get_plugins():
         if "act_on_cloned_repo" in dir(p) or "clone_task" in dir(p):
-            repo_names = plug.generate_repo_names(teams, master_repo_names)
-            return plugin.execute_clone_tasks(repo_names, api)
+            return plugin.execute_clone_tasks(
+                [repo.name for repo in repos_for_tasks], api
+            )
     return {}
 
 
-def _clone_repos_no_check(repo_urls, dst_dirpath, api):
+def _non_local_repos(
+    repos, cwd=pathlib.Path(".")
+) -> Generator[plug.Repo, None, None]:
+    """Yield repos with names that do not clash with any of the files present
+    in cwd.
+    """
+    local_files = set(path.name for path in cwd.glob("*"))
+    for repo in repos:
+        if repo.name not in local_files:
+            yield repo
+        else:
+            LOGGER.warning("{} already on disk, skipping".format(repo.name))
+
+
+def _clone_repos_no_check(repos, dst_dirpath, api) -> List[str]:
     """Clone the specified repo urls into the destination directory without
     making any sanity checks; they must be done in advance.
 
     Return a list of names of the successfully cloned repos.
     """
+    repos_iter_a, repos_iter_b = itertools.tee(repos)
+    repo_urls = (repo.url for repo in repos_iter_b)
+
     fail_urls = git.clone(repo_urls, cwd=dst_dirpath)
     fail_repo_names = set(api.extract_repo_name(url) for url in fail_urls)
+    repo_names = set(repo.name for repo in repos_iter_a)
     cloned_repos = [
         path
         for path in pathlib.Path(dst_dirpath).iterdir()
         if path.is_dir()
         and util.is_git_repo(str(path))
         and path.name not in fail_repo_names
+        and path.name in repo_names
     ]
 
     cur_dir = pathlib.Path(".").resolve()

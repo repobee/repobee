@@ -406,7 +406,9 @@ def hash_directory(path):
     for dirpath, _, filenames in os.walk(str(path)):
         if ".git" in dirpath:
             continue
-        files = (pathlib.Path(dirpath) / filename for filename in filenames)
+        files = list(
+            pathlib.Path(dirpath) / filename for filename in filenames
+        )
         shas += (hashlib.sha1(file.read_bytes()).digest() for file in files)
     return hashlib.sha1(b"".join(shas)).digest()
 
@@ -554,7 +556,9 @@ class TestClone:
         assert_cloned_repos(non_pre_existing_dirnames, tmpdir)
         for dirname in pre_existing_dirnames:
             dirhash = hash_directory(pathlib.Path(str(tmpdir)) / dirname)
-            assert dirhash == expected_dir_hashes[dirname]
+            assert dirhash == expected_dir_hashes[dirname], (
+                "hash mismatch for " + dirname
+            )
 
 
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")

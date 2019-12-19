@@ -11,7 +11,7 @@ import sys
 import pathlib
 import shutil
 import tempfile
-from typing import Iterable, Generator, Union, Set, Callable, TypeVar
+from typing import Iterable, Generator, Union, Callable, TypeVar
 
 import repobee_plug as plug
 
@@ -29,20 +29,6 @@ def read_issue(issue_path: str) -> plug.Issue:
         raise ValueError("{} is not a file".format(issue_path))
     with open(issue_path, "r", encoding=sys.getdefaultencoding()) as file:
         return plug.Issue(file.readline().strip(), file.read())
-
-
-def conflicting_files(filenames: Iterable[str], cwd: str = ".") -> Set[str]:
-    """Return a list of files (any kind of file, including directories, pipes
-    etc) in cwd that conflict with any of the given repo names.
-
-    Args:
-        repo_names: A list of filenames.
-        cwd: Directory to operate in.
-    Returns:
-        A set of conflicting filenames.
-    """
-    existing_filenames = set(os.listdir(cwd))
-    return set(filenames).intersection(existing_filenames)
 
 
 def repo_name(repo_url: str) -> str:

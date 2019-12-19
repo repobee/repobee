@@ -209,7 +209,7 @@ def push(push_tuples: Iterable[Push], tries: int = 3) -> List[str]:
 
 def _batch_execution(
     batch_func: Callable[[Iterable[Any], Any], List[asyncio.Task]],
-    arg_list: List[Any],
+    arg_list: Iterable[Any],
     *batch_func_args,
     **batch_func_kwargs
 ) -> List[Exception]:
@@ -230,17 +230,32 @@ def _batch_execution(
         function.
     """
     completed_tasks = []
+    args_iter = iter(arg_list)
 
     loop = asyncio.get_event_loop()
-    for i in range(0, len(arg_list), CONCURRENT_TASKS):
+    has_more_jobs = True
+    while has_more_jobs:
+        args = []
+        for _ in range(CONCURRENT_TASKS):
+            try:
+                args.append(next(args_iter))
+            except StopIteration:
+                has_more_jobs = False
+
         tasks = [
             loop.create_task(
-                batch_func(list_arg, *batch_func_args, **batch_func_kwargs)
+                batch_func(arg, *batch_func_args, **batch_func_kwargs)
             )
-            for list_arg in arg_list[i : i + CONCURRENT_TASKS]
+            for arg in args
         ]
-        loop.run_until_complete(asyncio.wait(tasks))
-        completed_tasks += tasks
+        # if
+        # a) arg_list was empty
+        # or
+        # b) len(arg_list) % CONCURRENT_TASKS == 0
+        # the last iteration will have no tasks
+        if tasks:
+            loop.run_until_complete(asyncio.wait(tasks))
+            completed_tasks += tasks
 
     exceptions = [
         task.exception() for task in completed_tasks if task.exception()

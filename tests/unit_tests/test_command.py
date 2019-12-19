@@ -1,6 +1,7 @@
 import os
 import pathlib
 from functools import partial
+from unittest import mock
 from unittest.mock import patch, MagicMock, call, PropertyMock
 
 import pytest
@@ -59,6 +60,16 @@ ISSUE = plug.Issue(
 )
 PLUGINS = (constants.PLUGINS,)
 STUDENTS = constants.STUDENTS
+
+
+def repo_generator(teams, master_repo_names):
+    for repo_name in plug.generate_repo_names(teams, master_repo_names):
+        yield plug.Repo(
+            name=repo_name,
+            url=generate_repo_url(repo_name),
+            private=True,
+            description="",
+        )
 
 
 def generate_team_repo_url(student, base_name):
@@ -539,30 +550,25 @@ class TestCloneRepos:
         self, api_mock, git_mock, master_names, students, tmpdir
     ):
         """Tests that the correct calls are made when there are no errors."""
-        expected_urls = [
-            generate_repo_url(name)
-            for name in plug.generate_repo_names(students, master_names)
-        ]
-
-        command.clone_repos(master_names, students, api_mock)
+        command.clone_repos(repo_generator(students, master_names), api_mock)
 
         # note that the tmpdir_mock fixture sets the return value of
         # tmpdir.TemporaryDirectory to tmpdir!
-        git_mock.clone.assert_called_once_with(expected_urls, cwd=str(tmpdir))
+        # TODO: improve assert, but as its a generator it's tricky
+        git_mock.clone.assert_called_once_with(mock.ANY, cwd=str(tmpdir))
 
     def test_executes_act_hooks(
         self, api_mock, git_mock, master_names, students, act_hook_mocks
     ):
         javac_hook, pylint_hook = act_hook_mocks
         repo_names = plug.generate_repo_names(students, master_names)
+        repos = repo_generator(students, master_names)
 
         with patch(
             "pathlib.Path.glob",
-            return_value=(pathlib.Path(name) for name in repo_names),
+            side_effect=lambda _: (pathlib.Path(name) for name in repo_names),
         ), patch("shutil.copytree"):
-            hook_results = command.clone_repos(
-                master_names, students, api_mock
-            )
+            hook_results = command.clone_repos(repos, api_mock)
 
         assert len(hook_results) == len(repo_names)
         for repo_name in repo_names:
@@ -579,16 +585,18 @@ class TestCloneRepos:
         modules = plugin.load_plugin_modules([plug_name])
         plugin.register_plugins(modules)
         repo_names = plug.generate_repo_names(students, master_names)
+        repos = repo_generator(students, master_names)
+
         for p in plug.manager.get_plugins():
             print(dir(p))
 
             with patch(
                 "pathlib.Path.glob",
-                return_value=(pathlib.Path(name) for name in repo_names),
+                side_effect=lambda _: (
+                    pathlib.Path(name) for name in repo_names
+                ),
             ), patch("shutil.copytree"):
-                hook_results = command.clone_repos(
-                    master_names, students, api_mock
-                )
+                hook_results = command.clone_repos(repos, api_mock)
 
         assert len(hook_results) == len(repo_names)
         for repo_name in repo_names:

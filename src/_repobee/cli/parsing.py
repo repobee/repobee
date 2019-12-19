@@ -15,7 +15,7 @@ import os
 import pathlib
 import re
 import sys
-from typing import Iterable, Optional, List, Tuple
+from typing import Iterable, Optional, List, Tuple, Generator
 
 import daiquiri
 import repobee_plug as plug
@@ -96,8 +96,6 @@ def _parse_args(
     elif subparser in ext_command_names:
         return args, True
 
-    ext_command_names = [cmd.name for cmd in ext_commands or []]
-
     args_dict = vars(args)
     args_dict["students"] = _extract_groups(args)
     args_dict["issue"] = (
@@ -117,7 +115,7 @@ def _parse_args(
 def _process_args(
     args: argparse.Namespace,
     ext_commands: Optional[List[plug.ExtensionCommand]] = None,
-) -> argparse.Namespace:
+) -> Tuple[argparse.Namespace, plug.API]:
     """Process parsed command line arguments.
 
     Args:
@@ -143,10 +141,23 @@ def _process_args(
     args_dict = vars(args)
     args_dict["master_repo_urls"] = master_urls
     args_dict["master_repo_names"] = master_names
+    args_dict["repos"] = _repo_tuple_generator(
+        master_names, args.students, api
+    )
     # marker for functionality that relies on fully processed args
     args_dict["_repobee_processed"] = True
 
     return argparse.Namespace(**args_dict), api
+
+
+def _repo_tuple_generator(
+    master_repo_names: List[str], teams: List[plug.Team], api: plug.API
+) -> Generator[plug.Repo, None, None]:
+    for master_repo_name in master_repo_names:
+        for team in teams:
+            url, *_ = api.get_repo_urls([master_repo_name], teams=[team])
+            name = plug.generate_repo_name(team, master_repo_name)
+            yield plug.Repo(name=name, url=url, private=True, description="")
 
 
 def _handle_task_parsing(args: argparse.Namespace) -> None:
