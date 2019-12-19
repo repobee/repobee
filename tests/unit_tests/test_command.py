@@ -670,9 +670,10 @@ class TestListIssues:
     def test_happy_path(
         self, master_names, students, api_mock, state, regex, show_body, author
     ):
+        repos = repo_generator(students, master_names)
+
         command.list_issues(
-            master_names,
-            students,
+            repos,
             api_mock,
             state=state,
             title_regex=regex,

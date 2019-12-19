@@ -10,7 +10,7 @@ self-contained program.
 .. moduleauthor:: Simon Larsén
 """
 import os
-from typing import Iterable, Optional, List, Generator, Tuple
+from typing import Iterable, Optional, List, Generator, Tuple, Any, Mapping
 
 import daiquiri
 
@@ -21,19 +21,17 @@ LOGGER = daiquiri.getLogger(__file__)
 
 
 def list_issues(
-    master_repo_names: Iterable[str],
-    teams: Iterable[plug.Team],
+    repos: Iterable[plug.Repo],
     api: plug.API,
     state: plug.IssueState = plug.IssueState.OPEN,
     title_regex: str = "",
     show_body: bool = False,
     author: Optional[str] = None,
-) -> List[plug.HookResult]:
+) -> Mapping[str, List[plug.HookResult]]:
     """List all issues in the specified repos.
 
     Args:
-        master_repo_names: Names of master repositories.
-        teams: An iterable of student teams.
+        repos: The repos from which to fetch issues.
         api: An implementation of :py:class:`repobee_plug.API` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
         state: state of the repo (open or closed). Defaults to open.
@@ -44,7 +42,9 @@ def list_issues(
             default info.
         author: Only show issues by this author.
     """
-    repo_names = plug.generate_repo_names(teams, master_repo_names)
+    # TODO optimize by not getting all repos at once
+    repos = list(repos)
+    repo_names = [repo.name for repo in repos]
     max_repo_name_length = max(map(len, repo_names))
     issues_per_repo = _get_issue_generator(
         repo_names=repo_names,
@@ -113,7 +113,7 @@ def _log_repo_issues(
     issues_per_repo: Tuple[str, Generator[plug.Issue, None, None]],
     show_body: bool,
     title_alignment: int,
-) -> None:
+) -> List[Tuple[Any, list]]:
     """Log repo issues.
 
     Args:

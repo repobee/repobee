@@ -82,8 +82,7 @@ def dispatch_command(
         )
     elif args.subparser == LIST_ISSUES_PARSER:
         hook_results = command.list_issues(
-            args.master_repo_names,
-            args.students,
+            args.repos,
             api,
             state=args.state,
             title_regex=args.title_regex or "",
