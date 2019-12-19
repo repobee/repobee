@@ -604,6 +604,23 @@ class GitHubAPI(plug.API):
                 "Can't find repos: {}".format(", ".join(missing_repos))
             )
 
+    def discover_repos(
+        self, teams: Iterable[plug.Team]
+    ) -> Generator[plug.Repo, None, None]:
+        """See :py:meth:`repobee_plug.APISpec.discover_repos."""
+        raw_teams = self._get_teams_in([team.name for team in teams])
+        with _try_api_request():
+            for team in raw_teams:
+                for repo in team.get_repos():
+                    yield plug.Repo(
+                        name=repo.name,
+                        description=repo.description,
+                        private=repo.private,
+                        team_id=team.id,
+                        url=self._insert_auth(repo.html_url),
+                        implementation=repo,
+                    )
+
     @staticmethod
     def verify_settings(
         user: str,
