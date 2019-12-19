@@ -155,7 +155,7 @@ def _repo_tuple_generator(
 ) -> Generator[plug.Repo, None, None]:
     for master_repo_name in master_repo_names:
         for team in teams:
-            url, *_ = api.get_repo_urls(master_repo_names, teams=[team])
+            url, *_ = api.get_repo_urls([master_repo_name], teams=[team])
             name = plug.generate_repo_name(team, master_repo_name)
             yield plug.Repo(name=name, url=url, private=True, description="")
 

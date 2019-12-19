@@ -248,8 +248,14 @@ def _batch_execution(
             )
             for arg in args
         ]
-        loop.run_until_complete(asyncio.wait(tasks))
-        completed_tasks += tasks
+        # if
+        # a) arg_list was empty
+        # or
+        # b) len(arg_list) % CONCURRENT_TASKS == 0
+        # the last iteration will have no tasks
+        if tasks:
+            loop.run_until_complete(asyncio.wait(tasks))
+            completed_tasks += tasks
 
     exceptions = [
         task.exception() for task in completed_tasks if task.exception()
