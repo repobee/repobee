@@ -560,6 +560,23 @@ class TestClone:
                 "hash mismatch for " + dirname
             )
 
+    def test_discover_repos(self, with_student_repos, tmpdir, extra_args):
+        """Test that the --discover-repos option finds all student repos."""
+        command = " ".join(
+            [
+                REPOBEE_GITLAB,
+                _repobee.cli.mainparser.CLONE_PARSER,
+                *BASE_ARGS,
+                *STUDENTS_ARG,
+                "--discover-repos",
+            ]
+        )
+
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
+
+        assert result.returncode == 0
+        assert_cloned_repos(STUDENT_REPO_NAMES, tmpdir)
+
 
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
 class TestSetup:
@@ -781,7 +798,11 @@ class TestCloseIssues:
 class TestListIssues:
     """Tests for the list-issues command."""
 
-    def test_lists_matching_issues(self, open_issues, extra_args):
+    @pytest.mark.parametrize("discover_repos", [False, True])
+    def test_lists_matching_issues(
+        self, open_issues, extra_args, discover_repos
+    ):
+        # arrange
         assert len(open_issues) == 2, "expected there to be only 2 open issues"
         matched = open_issues[0]
         unmatched = open_issues[1]
@@ -803,21 +824,24 @@ class TestListIssues:
             r"\[ERROR\]"
         ]  # any kind of error is bad
 
+        repo_arg = ["--discover-repos"] if discover_repos else MASTER_REPOS_ARG
         command = " ".join(
             [
                 REPOBEE_GITLAB,
                 _repobee.cli.mainparser.LIST_ISSUES_PARSER,
                 *BASE_ARGS,
-                *MASTER_REPOS_ARG,
+                *repo_arg,
                 *STUDENTS_ARG,
                 "-r",
                 matched.title,
             ]
         )
 
+        # act
         result = run_in_docker_with_coverage(command, extra_args=extra_args)
         output = result.stdout.decode("utf-8")
 
+        # assert
         assert result.returncode == 0
         search_flags = re.MULTILINE
         for expected_pattern in expected_issue_output_patterns:

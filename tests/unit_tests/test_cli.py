@@ -1412,8 +1412,8 @@ class TestCommandDeprecation:
         )
 
         # exhaust the generators
-        old_parsed_args.repos = list(old_parsed_args.repos)
-        new_parsed_args.repos = list(new_parsed_args.repos)
+        old_parsed_args.repos = list(old_parsed_args.repos or [])
+        new_parsed_args.repos = list(new_parsed_args.repos or [])
 
         assert old_parsed_args.subparser == current_parser
         assert old_parsed_args == new_parsed_args

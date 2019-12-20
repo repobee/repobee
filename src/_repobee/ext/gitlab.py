@@ -593,6 +593,30 @@ class GitLabAPI(plug.API):
                 review_teams.append(team)
         return review_teams
 
+    def discover_repos(
+        self, teams: Iterable[plug.Team]
+    ) -> Generator[plug.Repo, None, None]:
+        """See :py:meth:`repobee_plug.APISpec.discover_repos`."""
+        # TODO optimizi by using team.implementation, if available
+        with _try_api_request():
+            team_names = [team.name for team in teams]
+            groups = [
+                team.implementation for team in self._get_teams_in(team_names)
+            ]
+            for group in groups:
+                group_projects = group.projects.list(include_subgroups=True)
+                for group_project in group_projects:
+                    project = self._gitlab.projects.get(group_project.id)
+                    yield plug.Repo(
+                        name=project.name,
+                        description=project.description,
+                        private=project.visibility == "private",
+                        team_id=group.id,
+                        url=self._insert_auth(project.http_url_to_repo),
+                        implementation=project,
+                    )
+        yield from []  # in case there are no matches
+
     @staticmethod
     def verify_settings(
         user: str,

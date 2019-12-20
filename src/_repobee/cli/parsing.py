@@ -131,19 +131,19 @@ def _process_args(
     if "master_org_name" in args and args.master_org_name is not None:
         master_org_name = args.master_org_name
 
-    if args.subparser != CREATE_TEAMS_PARSER:
+    repos = master_names = master_urls = None
+    if "discover_repos" in args and args.discover_repos:
+        repos = api.discover_repos(args.students)
+    elif args.subparser != CREATE_TEAMS_PARSER:
         master_names = args.master_repo_names
         master_urls = _repo_names_to_urls(master_names, master_org_name, api)
+        repos = _repo_tuple_generator(master_names, args.students, api)
         assert master_urls and master_names
-    else:
-        master_names = master_urls = None
 
     args_dict = vars(args)
     args_dict["master_repo_urls"] = master_urls
     args_dict["master_repo_names"] = master_names
-    args_dict["repos"] = _repo_tuple_generator(
-        master_names, args.students, api
-    )
+    args_dict["repos"] = repos
     # marker for functionality that relies on fully processed args
     args_dict["_repobee_processed"] = True
 

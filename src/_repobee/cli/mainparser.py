@@ -58,15 +58,47 @@ PARSER_NAMES = (
     CHECK_REVIEW_PROGRESS_PARSER,
 )
 
-HOOK_RESULTS_PARSER = argparse.ArgumentParser(add_help=False)
-HOOK_RESULTS_PARSER.add_argument(
+_HOOK_RESULTS_PARSER = argparse.ArgumentParser(add_help=False)
+_HOOK_RESULTS_PARSER.add_argument(
     "--hook-results-file",
     help="Path to a file to store results from plugin hooks in. The "
     "results are stored as JSON, regardless of file extension.",
     type=str,
     default=None,
 )
-
+_REPO_NAME_PARSER = argparse.ArgumentParser(add_help=False)
+_REPO_NAME_PARSER.add_argument(
+    "--mn",
+    "--master-repo-names",
+    help="One or more names of master repositories. Names must either "
+    "refer to local directories, or to master repositories in the "
+    "target organization.",
+    type=str,
+    required=True,
+    nargs="+",
+    dest="master_repo_names",
+)
+_REPO_DISCOVERY_PARSER = argparse.ArgumentParser(add_help=False)
+_DISCOVERY_MUTEX_GRP = _REPO_DISCOVERY_PARSER.add_mutually_exclusive_group(
+    required=True
+)
+_DISCOVERY_MUTEX_GRP.add_argument(
+    "--mn",
+    "--master-repo-names",
+    help="One or more names of master repositories. Names must either "
+    "refer to local directories, or to master repositories in the "
+    "target organization.",
+    type=str,
+    nargs="+",
+    dest="master_repo_names",
+)
+_DISCOVERY_MUTEX_GRP.add_argument(
+    "--discover-repos",
+    help="Discover all repositories for the specified students. NOTE: This "
+    "is expensive in terms of API requests, if you have a rate limit you "
+    "may want to avoid this option.",
+    action="store_true",
+)
 
 # add any diprecated parsers to this dict on the following form:
 #
@@ -294,11 +326,17 @@ def _add_issue_parsers(base_parsers, subparsers):
         required=True,
     )
 
+    base_parser, base_student_parser, *_ = base_parsers
     list_parser = subparsers.add_parser(
         LIST_ISSUES_PARSER,
         description="List issues in student repos.",
         help="List issues in student repos.",
-        parents=[*base_parsers, HOOK_RESULTS_PARSER],
+        parents=[
+            base_parser,
+            base_student_parser,
+            _REPO_DISCOVERY_PARSER,
+            _HOOK_RESULTS_PARSER,
+        ],
         formatter_class=_OrderedFormatter,
     )
     list_parser.add_argument(
@@ -444,19 +482,6 @@ def _add_subparsers(parser, show_all_opts, ext_commands):
         show_all_opts
     )
 
-    repo_name_parser = argparse.ArgumentParser(add_help=False)
-    repo_name_parser.add_argument(
-        "--mn",
-        "--master-repo-names",
-        help="One or more names of master repositories. Names must either "
-        "refer to local directories, or to master repositories in the "
-        "target organization.",
-        type=str,
-        required=True,
-        nargs="+",
-        dest="master_repo_names",
-    )
-
     subparsers = parser.add_subparsers(dest=SUB)
     subparsers.required = True
 
@@ -476,8 +501,8 @@ def _add_subparsers(parser, show_all_opts, ext_commands):
             base_parser,
             base_student_parser,
             master_org_parser,
-            repo_name_parser,
-            HOOK_RESULTS_PARSER,
+            _REPO_NAME_PARSER,
+            _HOOK_RESULTS_PARSER,
         ],
         formatter_class=_OrderedFormatter,
     )
@@ -495,7 +520,7 @@ def _add_subparsers(parser, show_all_opts, ext_commands):
             base_parser,
             base_student_parser,
             master_org_parser,
-            repo_name_parser,
+            _REPO_NAME_PARSER,
         ],
         formatter_class=_OrderedFormatter,
     )
@@ -516,8 +541,8 @@ def _add_subparsers(parser, show_all_opts, ext_commands):
         parents=[
             base_parser,
             base_student_parser,
-            repo_name_parser,
-            HOOK_RESULTS_PARSER,
+            _REPO_DISCOVERY_PARSER,
+            _HOOK_RESULTS_PARSER,
         ],
         formatter_class=_OrderedFormatter,
     )
@@ -549,15 +574,15 @@ def _add_subparsers(parser, show_all_opts, ext_commands):
             "The repos must be local on disk to be migrated. Note that "
             "migrated repos will be private."
         ),
-        parents=[repo_name_parser, base_parser],
+        parents=[_REPO_NAME_PARSER, base_parser],
         formatter_class=_OrderedFormatter,
     )
 
     _add_issue_parsers(
-        [base_parser, base_student_parser, repo_name_parser], subparsers
+        [base_parser, base_student_parser, _REPO_NAME_PARSER], subparsers
     )
     _add_peer_review_parsers(
-        [base_parser, base_student_parser, repo_name_parser], subparsers
+        [base_parser, base_student_parser, _REPO_NAME_PARSER], subparsers
     )
 
     show_config = subparsers.add_parser(
@@ -586,7 +611,7 @@ def _add_subparsers(parser, show_all_opts, ext_commands):
         base_parser,
         base_student_parser,
         master_org_parser,
-        repo_name_parser,
+        _REPO_NAME_PARSER,
     )
 
 
