@@ -137,6 +137,7 @@ def _process_args(
     elif args.subparser != CREATE_TEAMS_PARSER:
         master_names = args.master_repo_names
         master_urls = _repo_names_to_urls(master_names, master_org_name, api)
+        repos = _repo_tuple_generator(master_names, args.students, api)
         assert master_urls and master_names
 
     args_dict = vars(args)
