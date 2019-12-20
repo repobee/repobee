@@ -607,7 +607,7 @@ class GitHubAPI(plug.API):
     def discover_repos(
         self, teams: Iterable[plug.Team]
     ) -> Generator[plug.Repo, None, None]:
-        """See :py:meth:`repobee_plug.APISpec.discover_repos."""
+        """See :py:meth:`repobee_plug.APISpec.discover_repos`."""
         raw_teams = self._get_teams_in([team.name for team in teams])
         with _try_api_request():
             for team in raw_teams:
