@@ -117,7 +117,8 @@ def dispatch_command(
             "This is a bug, please open an issue.".format(args.subparser)
         )
 
-    LOGGER.info(formatters.format_hook_results_output(hook_results))
+    if args.subparser in [SETUP_PARSER, UPDATE_PARSER, CLONE_PARSER]:
+        LOGGER.info(formatters.format_hook_results_output(hook_results))
     if hook_results and args.hook_results_file:
         _handle_hook_results(
             hook_results=hook_results, filepath=args.hook_results_file
