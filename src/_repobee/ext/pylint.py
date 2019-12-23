@@ -21,7 +21,7 @@ from typing import Tuple, Union, Iterable
 
 import daiquiri
 
-from repobee_plug import repobee_hook, HookResult, Status
+from repobee_plug import repobee_hook, Result, Status
 
 LOGGER = daiquiri.getLogger(name=__file__)
 
@@ -36,17 +36,17 @@ def act_on_cloned_repo(path: Union[str, pathlib.Path], api):
         path: Path to the repo.
         api: A platform API class instance.
     Returns:
-        a plug.HookResult specifying the outcome.
+        a plug.Result specifying the outcome.
     """
     path = pathlib.Path(path)
     python_files = list(path.rglob("*.py"))
 
     if not python_files:
         msg = "no .py files found"
-        return HookResult(SECTION, Status.WARNING, msg)
+        return Result(SECTION, Status.WARNING, msg)
 
     status, msg = _pylint(python_files)
-    return HookResult(hook=SECTION, status=Status.SUCCESS, msg=msg)
+    return Result(name=SECTION, status=Status.SUCCESS, msg=msg)
 
 
 def _pylint(python_files: Iterable[Union[pathlib.Path]]) -> Tuple[str, str]:
@@ -74,4 +74,4 @@ def _pylint(python_files: Iterable[Union[pathlib.Path]]) -> Tuple[str, str]:
         linted_files.append(str(py_file))
 
     msg = "linted files: {}".format(", ".join(linted_files))
-    return HookResult(hook=SECTION, status=Status.SUCCESS, msg=msg)
+    return Result(name=SECTION, status=Status.SUCCESS, msg=msg)

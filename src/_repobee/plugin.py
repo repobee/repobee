@@ -159,7 +159,7 @@ def resolve_plugin_version(plugin_module: types.ModuleType,) -> Optional[str]:
 
 def execute_clone_tasks(
     repo_names: List[str], api: plug.API, cwd: Optional[pathlib.Path] = None
-) -> Mapping[str, List[plug.HookResult]]:
+) -> Mapping[str, List[plug.Result]]:
     """Execute clone tasks, if there are any, and return the results.
 
     Args:
@@ -175,7 +175,7 @@ def execute_clone_tasks(
 
 def execute_setup_tasks(
     repo_names: List[str], api: plug.API, cwd: Optional[pathlib.Path] = None
-) -> Mapping[str, List[plug.HookResult]]:
+) -> Mapping[str, List[plug.Result]]:
     """Execute setup tasks, if there are any, and return the results.
 
     Args:
@@ -194,7 +194,7 @@ def _execute_tasks(
     tasks: Iterable[plug.Task],
     api: plug.API,
     cwd: Optional[pathlib.Path],
-) -> Mapping[str, List[plug.HookResult]]:
+) -> Mapping[str, List[plug.Result]]:
     """Execute plugin tasks on the provided repos."""
     if not tasks:
         return {}

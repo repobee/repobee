@@ -149,8 +149,8 @@ class TestTasks:
             repo_path.mkdir()
 
             def act(path: pathlib.Path, api: plug.API):
-                return plug.HookResult(
-                    hook="bogus",
+                return plug.Result(
+                    name="bogus",
                     status=plug.Status.SUCCESS,
                     msg="Yay",
                     data={"path": path},

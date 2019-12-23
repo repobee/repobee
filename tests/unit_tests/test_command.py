@@ -505,13 +505,13 @@ class TestCloneRepos:
         """
         javac_hook = MagicMock(
             spec="_repobee.ext.javac.JavacCloneHook._class.act_on_cloned_repo",
-            return_value=plug.HookResult(
+            return_value=plug.Result(
                 "javac", plug.Status.SUCCESS, "Great success!"
             ),
         )
         pylint_hook = MagicMock(
             spec="_repobee.ext.pylint.act_on_cloned_repo",
-            return_value=plug.HookResult(
+            return_value=plug.Result(
                 "pylint", plug.Status.WARNING, "Minor warning."
             ),
         )
@@ -575,8 +575,8 @@ class TestCloneRepos:
             assert repo_name in hook_results
             results = sorted(hook_results[repo_name])
             assert len(results) == 2
-            assert results[0].hook == "javac"
-            assert results[1].hook == "pylint"
+            assert results[0].name == "javac"
+            assert results[1].name == "pylint"
 
     def test_executes_clone_tasks(
         self, master_names, students, api_mock, git_mock
@@ -605,7 +605,7 @@ class TestCloneRepos:
             assert len(results) == 1
             res = results[0]
             assert res.status == plug.Status.SUCCESS
-            assert res.hook == plug_name
+            assert res.name == plug_name
 
 
 class TestMigrateRepo:

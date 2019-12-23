@@ -27,7 +27,7 @@ from typing import Union, Iterable, Tuple
 
 from _repobee import util
 
-from repobee_plug import Plugin, HookResult, Status
+from repobee_plug import Plugin, Result, Status
 
 SECTION = "javac"
 
@@ -42,14 +42,14 @@ class JavacCloneHook(Plugin):
 
     def act_on_cloned_repo(
         self, path: Union[str, pathlib.Path], api
-    ) -> HookResult:
+    ) -> Result:
         """Run ``javac`` on all .java files in the repo.
 
         Args:
             path: Path to the repo.
             api: A platform API class instance.
         Returns:
-            a HookResult specifying the outcome.
+            a Result specifying the outcome.
         """
         java_files = [
             str(file)
@@ -60,10 +60,10 @@ class JavacCloneHook(Plugin):
         if not java_files:
             msg = "no .java files found"
             status = Status.WARNING
-            return HookResult("javac", status, msg)
+            return Result("javac", status, msg)
 
         status, msg = self._javac(java_files)
-        return HookResult("javac", status, msg)
+        return Result("javac", status, msg)
 
     def _javac(
         self, java_files: Iterable[Union[str, pathlib.Path]]

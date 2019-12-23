@@ -207,7 +207,7 @@ def hook_result_mapping():
         ),
     ]:
         hook_results[repo_name].append(
-            plug.HookResult(hook=hook_name, status=status, msg=msg, data=data)
+            plug.Result(name=hook_name, status=status, msg=msg, data=data)
         )
     return dict(hook_results)
 

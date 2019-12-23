@@ -27,7 +27,7 @@ def list_issues(
     title_regex: str = "",
     show_body: bool = False,
     author: Optional[str] = None,
-) -> Mapping[str, List[plug.HookResult]]:
+) -> Mapping[str, List[plug.Result]]:
     """List all issues in the specified repos.
 
     Args:
@@ -65,8 +65,8 @@ def list_issues(
     # for writing to JSON
     hook_result_mapping = {
         repo_name: [
-            plug.HookResult(
-                hook="list-issues",
+            plug.Result(
+                name="list-issues",
                 status=plug.Status.SUCCESS,
                 msg="Fetched {} issues from {}".format(len(issues), repo_name),
                 data={issue.number: issue.to_dict() for issue in issues},
@@ -76,8 +76,8 @@ def list_issues(
     }
     # meta hook result
     hook_result_mapping["list-issues"] = [
-        plug.HookResult(
-            hook="meta",
+        plug.Result(
+            name="meta",
             status=plug.Status.SUCCESS,
             msg="Meta info about the list-issues hook results",
             data={"state": state.value},

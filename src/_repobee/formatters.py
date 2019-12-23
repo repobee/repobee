@@ -100,7 +100,7 @@ def format_hook_result(hook_result):
 
     out += (
         fg("white")
-        + hook_result.hook
+        + hook_result.name
         + ": "
         + hook_result.status.name
         + style.RESET

@@ -37,7 +37,7 @@ LOGGER = daiquiri.getLogger(__file__)
 
 def setup_student_repos(
     master_repo_urls: Iterable[str], teams: Iterable[plug.Team], api: plug.API
-) -> Mapping[str, List[plug.HookResult]]:
+) -> Mapping[str, List[plug.Result]]:
     """Setup student repositories based on master repo templates. Performs three
     primary tasks:
 
@@ -131,7 +131,7 @@ def update_student_repos(
     teams: Iterable[plug.Team],
     api: plug.API,
     issue: Optional[plug.Issue] = None,
-) -> Mapping[str, List[plug.HookResult]]:
+) -> Mapping[str, List[plug.Result]]:
     """Attempt to update all student repos related to one of the master repos.
 
     Args:
@@ -188,7 +188,7 @@ def _open_issue_by_urls(
 
 def clone_repos(
     repos: Iterable[plug.Repo], api: plug.API
-) -> Mapping[str, List[plug.HookResult]]:
+) -> Mapping[str, List[plug.Result]]:
     """Clone all student repos related to the provided master repos and student
     teams.
 

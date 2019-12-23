@@ -11,8 +11,8 @@ import repobee_plug as plug
 
 
 def act(path: pathlib.Path, api: plug.API):
-    return plug.HookResult(
-        hook="preflight",
+    return plug.Result(
+        name="preflight",
         msg="Successful preflight on {}".format(path),
         status=plug.Status.SUCCESS,
     )
