@@ -46,12 +46,25 @@ class JavacCloneHook(plug.Plugin):
     def setup_task(self) -> plug.Task:
         return self._to_task()
 
+    def config_hook(self, config_parser: configparser.ConfigParser) -> None:
+        """Check for configured ignore files.
+
+        Args:
+            config: the config parser after config has been read.
+        """
+        self._ignore = [
+            file.strip()
+            for file in config_parser.get(
+                PLUGIN_NAME, "ignore", fallback=""
+            ).split(",")
+            if file.strip()
+        ]
+
     def _to_task(self) -> plug.Task:
         return plug.Task(
             act=self._act,
             add_option=self._add_option,
             handle_args=self._handle_args,
-            handle_config=self._handle_config,
             persist_changes=False,
         )
 
@@ -127,17 +140,3 @@ class JavacCloneHook(plug.Plugin):
         """
         if args.javac_ignore:
             self._ignore = args.javac_ignore
-
-    def _handle_config(self, config_parser: configparser.ConfigParser) -> None:
-        """Check for configured ignore files.
-
-        Args:
-            config: the config parser after config has been read.
-        """
-        self._ignore = [
-            file.strip()
-            for file in config_parser.get(
-                PLUGIN_NAME, "ignore", fallback=""
-            ).split(",")
-            if file.strip()
-        ]
