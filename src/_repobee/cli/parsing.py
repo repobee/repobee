@@ -115,9 +115,7 @@ def _parse_args(
     args_dict.setdefault("num_reviews", None)
     args_dict.setdefault("user", None)
 
-    requires_processing = _resolve_requires_processing(
-        args.subparser, ext_commands
-    )
+    requires_processing = _resolve_requires_processing(args.subparser)
     return argparse.Namespace(**args_dict), requires_processing
 
 
@@ -130,14 +128,14 @@ def _resolve_extension_command(
     return None
 
 
-def _resolve_requires_processing(subparser, ext_commands) -> _ArgsProcessing:
+def _resolve_requires_processing(subparser) -> _ArgsProcessing:
     """Figure out if further processing of the parsed args is required.
     This is primarily decided on whether or not the platform API is required,
     as that implies further processing.
     """
-    if subparser == VERIFY_PARSER or subparser == SHOW_CONFIG_PARSER:
-        return _ArgsProcessing.CORE
-    return _ArgsProcessing.NONE
+    if subparser in [VERIFY_PARSER, SHOW_CONFIG_PARSER]:
+        return _ArgsProcessing.NONE
+    return _ArgsProcessing.CORE
 
 
 def _process_args(
@@ -347,7 +345,7 @@ def _process_ext_args(
         )
 
     args_dict = vars(args)
-    req_parsers = ext_cmd.requires_base_parsers
+    req_parsers = ext_cmd.requires_base_parsers or []
     bp = plug.BaseParser
     if bp.STUDENTS in req_parsers:
         args_dict["students"] = _extract_groups(args)
