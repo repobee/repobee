@@ -6,10 +6,4 @@ cd tests/integration_tests/
 sudo docker network create development
 ./startup.sh > /dev/null
 export REPOBEE_NO_VERIFY_SSL='true'
-pytest integration_tests.py -v
-if [ $? != 0 ]
-then
-    exit $?
-fi
-
-cat .coverage_files/report.txt
+pytest integration_tests.py -vv --exitfirst
