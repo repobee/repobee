@@ -18,7 +18,6 @@ import repobee_plug as plug
 
 from _repobee import exception
 from _repobee import constants
-from _repobee import util
 
 
 LOGGER = daiquiri.getLogger(__file__)
@@ -104,8 +103,6 @@ def execute_config_hooks(
         return
     config_parser = _read_config(config_file)
     plug.manager.hook.config_hook(config_parser=config_parser)
-    for task in get_all_tasks():
-        util.call_if_defined(task.handle_config, config_parser)
 
 
 def check_config_integrity(
