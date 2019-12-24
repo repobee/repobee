@@ -498,19 +498,19 @@ class TestCloneRepos:
         plugin.register_plugins(modules)
 
     @pytest.fixture
-    def act_hook_mocks(self, monkeypatch, config_mock):
-        """Mocks for the act_on_cloned_repo functions and method. This is a bit
+    def act_mocks(self, monkeypatch, config_mock):
+        """Mocks for the act functions and method. This is a bit
         messy as the functions must be marked with the
         repobee_plug.repobee_hook decorator to be picked up by pluggy.
         """
         javac_hook = MagicMock(
-            spec="_repobee.ext.javac.JavacCloneHook._class.act_on_cloned_repo",
+            spec="_repobee.ext.javac.JavacCloneHook._class._act",
             return_value=plug.Result(
                 "javac", plug.Status.SUCCESS, "Great success!"
             ),
         )
         pylint_hook = MagicMock(
-            spec="_repobee.ext.pylint.act_on_cloned_repo",
+            spec="_repobee.ext.pylint.act",
             return_value=plug.Result(
                 "pylint", plug.Status.WARNING, "Minor warning."
             ),
@@ -525,12 +525,10 @@ class TestCloneRepos:
             return javac_hook(self, path)
 
         monkeypatch.setattr(
-            "_repobee.ext.javac.JavacCloneHook.act_on_cloned_repo",
-            act_hook_meth,
+            "_repobee.ext.javac.JavacCloneHook._act", act_hook_meth
         )
-        monkeypatch.setattr(
-            "_repobee.ext.pylint.act_on_cloned_repo", act_hook_func
-        )
+        monkeypatch.setattr("_repobee.ext.pylint.act", act_hook_func)
+        _repobee.ext.pylint.act(None, None)
 
         plugin_names = plugin.resolve_plugin_names(
             plugin_names=constants.PLUGINS
@@ -558,9 +556,9 @@ class TestCloneRepos:
         git_mock.clone.assert_called_once_with(mock.ANY, cwd=str(tmpdir))
 
     def test_executes_act_hooks(
-        self, api_mock, git_mock, master_names, students, act_hook_mocks
+        self, api_mock, git_mock, master_names, students, act_mocks
     ):
-        javac_hook, pylint_hook = act_hook_mocks
+        javac_hook, pylint_hook = act_mocks
         repo_names = plug.generate_repo_names(students, master_names)
         repos = repo_generator(students, master_names)
 
@@ -588,8 +586,6 @@ class TestCloneRepos:
         repos = repo_generator(students, master_names)
 
         for p in plug.manager.get_plugins():
-            print(dir(p))
-
             with patch(
                 "pathlib.Path.glob",
                 side_effect=lambda _: (

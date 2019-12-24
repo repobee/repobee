@@ -21,15 +21,19 @@ from typing import Tuple, Union, Iterable
 
 import daiquiri
 
-from repobee_plug import repobee_hook, Result, Status
+import repobee_plug as plug
 
 LOGGER = daiquiri.getLogger(name=__file__)
 
 SECTION = "pylint"
 
 
-@repobee_hook
-def act_on_cloned_repo(path: Union[str, pathlib.Path], api):
+@plug.repobee_hook
+def clone_task() -> plug.Task:
+    return plug.Task(act=act)
+
+
+def act(path: pathlib.Path, api: plug.API):
     """Run pylint on all Python files in a repo.
 
     Args:
@@ -43,10 +47,10 @@ def act_on_cloned_repo(path: Union[str, pathlib.Path], api):
 
     if not python_files:
         msg = "no .py files found"
-        return Result(SECTION, Status.WARNING, msg)
+        return plug.Result(SECTION, plug.Status.WARNING, msg)
 
     status, msg = _pylint(python_files)
-    return Result(name=SECTION, status=Status.SUCCESS, msg=msg)
+    return plug.Result(name=SECTION, status=plug.Status.SUCCESS, msg=msg)
 
 
 def _pylint(python_files: Iterable[Union[pathlib.Path]]) -> Tuple[str, str]:
@@ -74,4 +78,4 @@ def _pylint(python_files: Iterable[Union[pathlib.Path]]) -> Tuple[str, str]:
         linted_files.append(str(py_file))
 
     msg = "linted files: {}".format(", ".join(linted_files))
-    return Result(name=SECTION, status=Status.SUCCESS, msg=msg)
+    return plug.Result(name=SECTION, status=plug.Status.SUCCESS, msg=msg)
