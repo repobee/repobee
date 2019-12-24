@@ -47,11 +47,14 @@ def dispatch_command(
         api: An initialized plug.API instance.
         ext_commands: A list of active extension commands.
     """
-    ext_command_names = [cmd.name for cmd in ext_commands or []]
     hook_results = {}
-    if ext_command_names and args.subparser in ext_command_names:
+
+    ext_command_names = [cmd.name for cmd in ext_commands or []]
+    is_ext_command = args.subparser in ext_command_names
+    if is_ext_command:
         ext_cmd = ext_commands[ext_command_names.index(args.subparser)]
-        ext_cmd.callback(args, api)
+        res = ext_cmd.callback(args, api)
+        hook_results = res if res else hook_results
     elif args.subparser == SETUP_PARSER:
         hook_results = command.setup_student_repos(
             args.master_repo_urls, args.students, api
@@ -117,9 +120,12 @@ def dispatch_command(
             "This is a bug, please open an issue.".format(args.subparser)
         )
 
-    if args.subparser in [SETUP_PARSER, UPDATE_PARSER, CLONE_PARSER]:
+    if (
+        args.subparser in [SETUP_PARSER, UPDATE_PARSER, CLONE_PARSER]
+        or is_ext_command
+    ):
         LOGGER.info(formatters.format_hook_results_output(hook_results))
-    if hook_results and args.hook_results_file:
+    if hook_results and "hook_results_file" in args and args.hook_results_file:
         _handle_hook_results(
             hook_results=hook_results, filepath=args.hook_results_file
         )
