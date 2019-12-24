@@ -15,6 +15,7 @@ import os
 import pathlib
 import re
 import sys
+import enum
 from typing import Iterable, Optional, List, Tuple, Generator
 
 import daiquiri
@@ -26,13 +27,19 @@ from _repobee.cli.mainparser import (
     create_parser,
     SHOW_CONFIG_PARSER,
     VERIFY_PARSER,
-    PARSER_NAMES,
-    CREATE_TEAMS_PARSER,
     CLONE_PARSER,
     SETUP_PARSER,
     DEPRECATED_PARSERS,
     LOGGER,
 )
+
+
+class _ArgsProcessing(enum.Enum):
+    """Enum for selecting the type of processing for args."""
+
+    NONE = "none"
+    CORE = "core"
+    EXT = "ext"
 
 
 def handle_args(
@@ -55,12 +62,13 @@ def handle_args(
         A tuple of a namespace with parsed and processed arguments, and an
         instance of the platform API if it is required for the command.
     """
-    args, requires_processing = _parse_args(
-        sys_args, show_all_opts, ext_commands
-    )
-    if requires_processing:
+    args, processing = _parse_args(sys_args, show_all_opts, ext_commands)
+    if processing == _ArgsProcessing.CORE:
         processed_args, api = _process_args(args, ext_commands)
         _handle_task_parsing(processed_args)
+        return processed_args, api
+    elif processing == _ArgsProcessing.EXT:
+        processed_args, api = _process_ext_args(args, ext_commands)
         return processed_args, api
     return args, None
 
@@ -69,7 +77,7 @@ def _parse_args(
     sys_args: Iterable[str],
     show_all_opts: bool = False,
     ext_commands: Optional[List[plug.ExtensionCommand]] = None,
-) -> Tuple[argparse.Namespace, bool]:
+) -> Tuple[argparse.Namespace, _ArgsProcessing]:
     """Parse the command line arguments with some light processing. Any
     processing that requires external resources (such as a network connection)
     must be performed by the :py:func:`_process_args` function.
@@ -86,15 +94,13 @@ def _parse_args(
     """
     parser = create_parser(show_all_opts, ext_commands)
     args = parser.parse_args(_handle_deprecation(sys_args))
+
+    ext_cmd = _resolve_extension_command(args.subparser, ext_commands)
+    if ext_cmd:
+        return args, _ArgsProcessing.EXT
+
     if "base_url" in args:
         _validate_tls_url(args.base_url)
-
-    subparser = args.subparser
-    ext_command_names = [cmd.name for cmd in ext_commands or []]
-    if subparser == SHOW_CONFIG_PARSER:
-        return args, False
-    elif subparser in ext_command_names:
-        return args, True
 
     args_dict = vars(args)
     args_dict["students"] = _extract_groups(args)
@@ -109,7 +115,29 @@ def _parse_args(
     args_dict.setdefault("num_reviews", None)
     args_dict.setdefault("user", None)
 
-    return argparse.Namespace(**args_dict), subparser != VERIFY_PARSER
+    requires_processing = _resolve_requires_processing(
+        args.subparser, ext_commands
+    )
+    return argparse.Namespace(**args_dict), requires_processing
+
+
+def _resolve_extension_command(
+    subparser, ext_commands
+) -> Optional[plug.ExtensionCommand]:
+    ext_command_names = [cmd.name for cmd in ext_commands or []]
+    if subparser in ext_command_names:
+        return ext_commands[ext_command_names.index(subparser)]
+    return None
+
+
+def _resolve_requires_processing(subparser, ext_commands) -> _ArgsProcessing:
+    """Figure out if further processing of the parsed args is required.
+    This is primarily decided on whether or not the platform API is required,
+    as that implies further processing.
+    """
+    if subparser == VERIFY_PARSER or subparser == SHOW_CONFIG_PARSER:
+        return _ArgsProcessing.CORE
+    return _ArgsProcessing.NONE
 
 
 def _process_args(
@@ -120,11 +148,6 @@ def _process_args(
 
     Args:
     """
-    ext_command_names = [cmd.name for cmd in ext_commands or []]
-    if args.subparser not in PARSER_NAMES:
-        return _handle_extension_parsing(
-            ext_commands[ext_command_names.index(args.subparser)], args
-        )
     api = _connect_to_api(args.base_url, args.token, args.org_name, args.user)
 
     master_org_name = args.org_name
@@ -134,7 +157,7 @@ def _process_args(
     repos = master_names = master_urls = None
     if "discover_repos" in args and args.discover_repos:
         repos = api.discover_repos(args.students)
-    elif args.subparser != CREATE_TEAMS_PARSER:
+    elif "master_repo_names" in args:
         master_names = args.master_repo_names
         master_urls = _repo_names_to_urls(master_names, master_org_name, api)
         repos = _repo_tuple_generator(master_names, args.students, api)
@@ -175,18 +198,6 @@ def _handle_task_parsing(args: argparse.Namespace) -> None:
     elif args.subparser == SETUP_PARSER:
         for task in plug.manager.hook.setup_task():
             util.call_if_defined(task.handle_args, args)
-
-
-def _handle_extension_parsing(ext_command, args):
-    """Handle parsing of extension command arguments."""
-    api = None
-    if ext_command.requires_api:
-        api = _connect_to_api(
-            args.base_url, args.token, args.org_name, args.user
-        )
-    if "students" in args or "students_file" in args:
-        args.students = _extract_groups(args)
-    return args, api
 
 
 def _validate_tls_url(url):
@@ -317,6 +328,33 @@ def _repo_names_to_urls(
         for repo_name in local
     ]
     return non_local_urls + local_uris
+
+
+def _process_ext_args(
+    args: argparse.Namespace, ext_commands: List[plug.ExtensionCommand]
+) -> Tuple[argparse.Namespace, Optional[plug.API]]:
+    ext_cmd = _resolve_extension_command(args.subparser, ext_commands)
+    assert ext_cmd
+
+    api = None
+    if ext_cmd.requires_api:
+        _validate_tls_url(args.base_url)
+        api = _connect_to_api(
+            args.base_url,
+            args.token,
+            args.org_name,
+            args.user if "user" in args else None,
+        )
+
+    args_dict = vars(args)
+    req_parsers = ext_cmd.requires_base_parsers
+    bp = plug.BaseParser
+    if bp.STUDENTS in req_parsers:
+        args_dict["students"] = _extract_groups(args)
+    if bp.REPO_DISCOVERY in req_parsers:
+        args_dict["repos"] = api.discover_repos(args_dict["students"])
+
+    return argparse.Namespace(**args_dict), api
 
 
 def _filter_tokens():

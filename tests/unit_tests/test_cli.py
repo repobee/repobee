@@ -764,6 +764,7 @@ class TestExtensionCommands:
         assert parsed_args == argparse.Namespace(
             subparser=ext_command.name,
             test_option=True,
+            _repobee_processed=True,
             **parsed_base_args_dict
         )
 

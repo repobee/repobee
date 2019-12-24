@@ -449,10 +449,13 @@ def _add_extension_parsers(
             parents.append(base_parser)
         if bp.STUDENTS in req_parsers:
             parents.append(base_student_parser)
-        if bp.REPO_NAMES in req_parsers:
-            parents.append(repo_name_parser)
         if bp.MASTER_ORG in req_parsers:
             parents.append(master_org_parser)
+
+        if bp.REPO_DISCOVERY in req_parsers:
+            parents.append(_REPO_DISCOVERY_PARSER)
+        elif bp.REPO_NAMES in req_parsers:
+            parents.append(repo_name_parser)
         parents.append(cmd.parser)
 
         ext_parser = subparsers.add_parser(
