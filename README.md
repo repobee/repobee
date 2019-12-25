@@ -151,12 +151,11 @@ discovery of both student teams and student repositories.
 
 #### Features coming in v2.4
 
-| Feature                                                         | Status                                                                          | ETA           |
-| -------                                                         | ------                                                                          | ---           |
-| Automatic discovery of student repos                            | WIP ([see #383](https://github.com/repobee/repobee/issues/383))                 | December 2019 |
-| Plugin system revamp                                            | WIP ([see this milestone](https://github.com/repobee/repobee-plug/milestone/1)) | December 2019 |
-| `create-teams` command for creating student teams without repos | Done ([see #384](https://github.com/repobee/repobee/issues/384))                | December 2019 |
-| Setup of shared read-only repos                                 | WIP ([see #391](https://github.com/repobee/repobee/issues/391))                 | January 2020  |
+| Feature                                                         | Status                                                                           | ETA           |
+| -------                                                         | ------                                                                           | ---           |
+| Automatic discovery of student repos                            | Done ([see #383](https://github.com/repobee/repobee/issues/383))                 | December 2019 |
+| Plugin system revamp                                            | Done ([see this milestone](https://github.com/repobee/repobee-plug/milestone/1)) | December 2019 |
+| `create-teams` command for creating student teams without repos | Done ([see #384](https://github.com/repobee/repobee/issues/384))                 | December 2019 |
 
 #### Features coming in v3.0
 
@@ -165,6 +164,7 @@ discovery of both student teams and student repositories.
 | Preprocessing of master repos in `setup` command | Planning                                                             | Summer 2020 |
 | Automatic discovery of student teams             | Planning ([see #390](https://github.com/repobee/repobee/issues/390)) | Summer 2020 |
 | Video tutorials                                  | Work in progress                                                     | Summer 2020 |
+| Setup of shared read-only repos                  | WIP ([see #391](https://github.com/repobee/repobee/issues/391))      | Summer 2020 |
 
 ## License
 This software is licensed under the MIT License. See the [LICENSE](LICENSE)
