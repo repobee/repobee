@@ -143,7 +143,7 @@ class GitLabAPI(plug.API):
         permission: plug.TeamPermission = plug.TeamPermission.PUSH,
     ) -> List[plug.Team]:
         """See
-        :py:meth:`repobee_plug.apimeta.APISpec.ensure_teams_and_members`.
+        :py:meth:`repobee_plug.API.ensure_teams_and_members`.
         """
         with _try_api_request():
             member_lists = {team.name: team.members for team in teams}
@@ -208,7 +208,7 @@ class GitLabAPI(plug.API):
         return [self._User(m.id, m.username) for m in group.members.list()]
 
     def get_teams(self) -> List[plug.Team]:
-        """See :py:meth:`repobee_plug.apimeta.APISpec.get_teams`."""
+        """See :py:meth:`repobee_plug.API.get_teams`."""
         with _try_api_request():
             teams = [
                 plug.Team(
@@ -281,7 +281,7 @@ class GitLabAPI(plug.API):
         return teams
 
     def create_repos(self, repos: Iterable[plug.Repo]) -> List[str]:
-        """See :py:meth:`repobee_plug.apimeta.APISpec.create_repos`."""
+        """See :py:meth:`repobee_plug.API.create_repos`."""
         repo_urls = []
         for repo in repos:
             created = False
@@ -329,7 +329,7 @@ class GitLabAPI(plug.API):
         org_name: Optional[str] = None,
         teams: Optional[List[plug.Team]] = None,
     ) -> List[str]:
-        """See :py:meth:`repobee_plug.apimeta.APISpec.get_repo_urls`."""
+        """See :py:meth:`repobee_plug.API.get_repo_urls`."""
         group_name = org_name if org_name else self._group_name
         group_url = "{}/{}".format(self._base_url, group_name)
         repo_urls = (
@@ -351,7 +351,7 @@ class GitLabAPI(plug.API):
         return [self._insert_auth(url) for url in repo_urls]
 
     def extract_repo_name(self, repo_url: str) -> str:
-        """See :py:meth:`repobee_plug.apimeta.APISpec.extract_repo_name`."""
+        """See :py:meth:`repobee_plug.API.extract_repo_name`."""
         return pathlib.Path(repo_url).stem
 
     def _insert_auth(self, repo_url: str):
@@ -399,7 +399,7 @@ class GitLabAPI(plug.API):
             LOGGER.warning(msg)
 
     def delete_teams(self, team_names: Iterable[str]) -> None:
-        """See :py:meth:`repobee_plug.apimeta.APISpec.delete_teams`."""
+        """See :py:meth:`repobee_plug.API.delete_teams`."""
         deleted = set()  # only for logging
         team_names = set(team_names)
         for team in self._get_teams_in(team_names):
@@ -417,7 +417,7 @@ class GitLabAPI(plug.API):
     def open_issue(
         self, title: str, body: str, repo_names: Iterable[str]
     ) -> None:
-        """See :py:meth:`repobee_plug.apimeta.APISpec.open_issue`."""
+        """See :py:meth:`repobee_plug.API.open_issue`."""
         with _try_api_request():
             projects = self._get_projects_and_names_by_name(repo_names)
             for lazy_project, project_name in projects:
@@ -438,7 +438,7 @@ class GitLabAPI(plug.API):
         )
 
     def close_issue(self, title_regex: str, repo_names: Iterable[str]) -> None:
-        """See :py:meth:`repobee_plug.apimeta.APISpec.close_issue`."""
+        """See :py:meth:`repobee_plug.API.close_issue`."""
         closed = 0
         with _try_api_request():
             projects = self._get_projects_and_names_by_name(repo_names)
@@ -469,7 +469,7 @@ class GitLabAPI(plug.API):
         state: plug.IssueState = plug.IssueState.OPEN,
         title_regex: str = "",
     ) -> Generator[Tuple[str, ISSUE_GENERATOR], None, None]:
-        """See :py:meth:`repobee_plug.apimeta.APISpec.get_issues`."""
+        """See :py:meth:`repobee_plug.API.get_issues`."""
         with _try_api_request():
             projects = self._get_projects_and_names_by_name(repo_names)
             raw_state = _ISSUE_STATE_MAPPING[state]
@@ -498,7 +498,7 @@ class GitLabAPI(plug.API):
         team_to_repos: Mapping[str, Iterable[str]],
         issue: Optional[plug.Issue] = None,
     ) -> None:
-        """See :py:meth:`repobee_plug.apimeta.APISpec.add_repos_to_review_teams`.
+        """See :py:meth:`repobee_plug.API.add_repos_to_review_teams`.
         """
         issue = issue or DEFAULT_REVIEW_ISSUE
         raw_teams = [
@@ -546,7 +546,7 @@ class GitLabAPI(plug.API):
         teams: Iterable[plug.Team],
         title_regex: str,
     ) -> Mapping[str, List[plug.Review]]:
-        """See :py:meth:`repobee_plug.apimeta.APISpec.get_review_progress`."""
+        """See :py:meth:`repobee_plug.API.get_review_progress`."""
         reviews = collections.defaultdict(list)
         raw_review_teams = [
             team.implementation
@@ -625,7 +625,7 @@ class GitLabAPI(plug.API):
         token: str,
         master_org_name: Optional[str] = None,
     ):
-        """See :py:meth:`repobee_plug.apimeta.APISpec.verify_settings`."""
+        """See :py:meth:`repobee_plug.API.verify_settings`."""
         LOGGER.info("GitLabAPI is verifying settings ...")
         if not token:
             raise exception.BadCredentials(
