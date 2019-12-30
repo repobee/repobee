@@ -470,20 +470,16 @@ class TestCloseIssue:
         title_regex = r"some-regex\d\w"
         master_names = ["week-1", "week-2"]
         students = list("abc")
-        expected_repo_names = [
-            "a-week-1",
-            "b-week-1",
-            "c-week-1",
-            "a-week-2",
-            "b-week-2",
-            "c-week-2",
-        ]
+        repos = repo_generator(students, master_names)
+        expected_repos = list(repos)
 
-        command.close_issue(title_regex, master_names, students, api_mock)
+        command.close_issue(title_regex, repos, api_mock)
 
-        api_mock.close_issue.assert_called_once_with(
-            title_regex, expected_repo_names
-        )
+        calls = api_mock.close_issue.mock_calls
+        assert len(calls) == 1
+        actual_regex, actual_repos = calls[0].args
+        assert actual_regex == title_regex
+        assert sorted(actual_repos) == sorted(expected_repos)
 
 
 class TestCloneRepos:

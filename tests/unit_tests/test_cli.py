@@ -351,10 +351,7 @@ class TestDispatchCommand:
         _repobee.cli.dispatch.dispatch_command(args, api_instance_mock)
 
         command_mock.close_issue.assert_called_once_with(
-            args.title_regex,
-            args.master_repo_names,
-            args.students,
-            api_instance_mock,
+            args.title_regex, args.repos, api_instance_mock
         )
 
     def test_migrate_repos_called_with_correct_args(

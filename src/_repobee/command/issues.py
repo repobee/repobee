@@ -203,10 +203,7 @@ def open_issue(
 
 
 def close_issue(
-    title_regex: str,
-    master_repo_names: Iterable[str],
-    teams: Iterable[plug.Team],
-    api: plug.API,
+    title_regex: str, repos: Iterable[plug.Repo], api: plug.API
 ) -> None:
     """Close issues whose titles match the title_regex in student repos.
 
@@ -217,5 +214,5 @@ def close_issue(
         api: An implementation of :py:class:`repobee_plug.API` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
-    repo_names = plug.generate_repo_names(teams, master_repo_names)
+    repo_names = (repo.name for repo in repos)
     api.close_issue(title_regex, repo_names)

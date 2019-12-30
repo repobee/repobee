@@ -282,6 +282,8 @@ def _add_peer_review_parsers(base_parsers, subparsers):
 
 
 def _add_issue_parsers(base_parsers, subparsers):
+    base_parser, base_student_parser, *_ = base_parsers
+
     open_parser = subparsers.add_parser(
         OPEN_ISSUE_PARSER,
         description=(
@@ -312,7 +314,7 @@ def _add_issue_parsers(base_parsers, subparsers):
             "are closed."
         ),
         help="Close issues in student repos.",
-        parents=base_parsers,
+        parents=[base_parser, base_student_parser, _REPO_DISCOVERY_PARSER],
         formatter_class=_OrderedFormatter,
     )
     close_parser.add_argument(
@@ -326,7 +328,6 @@ def _add_issue_parsers(base_parsers, subparsers):
         required=True,
     )
 
-    base_parser, base_student_parser, *_ = base_parsers
     list_parser = subparsers.add_parser(
         LIST_ISSUES_PARSER,
         description="List issues in student repos.",

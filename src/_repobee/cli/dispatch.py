@@ -68,9 +68,7 @@ def dispatch_command(
             args.issue, args.master_repo_names, args.students, api
         )
     elif args.subparser == CLOSE_ISSUE_PARSER:
-        command.close_issue(
-            args.title_regex, args.master_repo_names, args.students, api
-        )
+        command.close_issue(args.title_regex, args.repos, api)
     elif args.subparser == MIGRATE_PARSER:
         command.migrate_repos(args.master_repo_urls, api)
     elif args.subparser == CLONE_PARSER:
