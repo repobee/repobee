@@ -484,7 +484,9 @@ class TestCloseIssue:
 
         calls = api_mock.close_issue.mock_calls
         assert len(calls) == 1
-        regex, repo_names = calls[0].args
+        call = calls[0]
+        # in python 3.8, one can use call.args instead of call[1]
+        regex, repo_names = call[1]
         assert regex == title_regex
         assert sorted(repo_names) == sorted(expected_repo_names)
 
