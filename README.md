@@ -131,31 +131,23 @@ RepoBee need to be altered. **If you develop a plugin, please get in touch so
 that can be taken into consideration if breaking changes are introduced to the
 plugin system**.
 
+The plugin system is planned for stable release along with RepoBee 3.0 in
+summer 2020.
+
 ### Upcoming features
-There is still a lot in store for RepoBee. The final minor release of RepoBee 2
-will be version 2.4, which brings with it a few long-awaited features,
-including automatic discovery of student repositories and an overhauled
-task-based plugin system. RepoBee 3.0 is slated for release summer 2020, and
-will be accompanied by major features such as on-the-fly preprocessing of
-master repositories before pushing to student repositories, and automatic
-discovery of both student teams and student repositories.
-
-#### Features coming in v2.4
-
-| Feature                                                         | Status                                                                           | ETA           |
-| -------                                                         | ------                                                                           | ---           |
-| Automatic discovery of student repos                            | Done ([see #383](https://github.com/repobee/repobee/issues/383))                 | December 2019 |
-| Plugin system revamp                                            | Done ([see this milestone](https://github.com/repobee/repobee-plug/milestone/1)) | December 2019 |
-| `create-teams` command for creating student teams without repos | Done ([see #384](https://github.com/repobee/repobee/issues/384))                 | December 2019 |
+RepoBee 3.0 is slated for release summer 2020, and will be accompanied by major
+features such as on-the-fly preprocessing of master repositories before pushing
+to student repositories, and automatic discovery of both student teams and
+student repositories.
 
 #### Features coming in v3.0
-
 | Feature                                          | Status                                                               | ETA         |
 | -------                                          | ------                                                               | ---         |
 | Preprocessing of master repos in `setup` command | Planning                                                             | Summer 2020 |
 | Automatic discovery of student teams             | Planning ([see #390](https://github.com/repobee/repobee/issues/390)) | Summer 2020 |
 | Video tutorials                                  | Work in progress                                                     | Summer 2020 |
 | Setup of shared read-only repos                  | WIP ([see #391](https://github.com/repobee/repobee/issues/391))      | Summer 2020 |
+| Parallel execution of tasks                      | Planning ([see #415](https://github.com/repobee/repobee/issues/415)) | Summer 2020 |
 
 ## License
 This software is licensed under the MIT License. See the [LICENSE](LICENSE)
