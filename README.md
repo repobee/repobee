@@ -9,11 +9,6 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
-> **Important:** Massive changes are being made to the plugin system during
-> December. If you maintain a plugin or plan to create one, please see [this
-> milestone](https://github.com/repobee/repobee-plug/milestone/1) for all
-> planned changes.
-
 ## Overview
 RepoBee is a command line tool that allows teachers and teaching assistants
 to administrate large amounts of Git repositories on the GitHub and GitLab
@@ -46,11 +41,7 @@ If you want to reference RepoBee in a paper, please cite the following paper:
 > New York, NY, USA, 534-540. DOI: https://doi.org/10.1145/3304221.3319784
 
 ### Feature highlights
-
 * Compatible with both GitHub and GitLab (both cloud and self-hosted)
-    - GitLab support is in alpha and is continuosly being updated, see the
-      [GitLab docs](https://repobee.readthedocs.io/en/stable/gitlab.html) for
-      details.
 * Generate repositories for students based on master (template) repositories
 * Clone student repositories in batches
 * Peer review features: give students read access to other students'
