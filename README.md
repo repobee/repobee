@@ -9,6 +9,10 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
+> **Why no activity as of late?:** I'm currently working very hard with my
+> master thesis, and so will only address critical bugs. Development on RepoBee
+> will most likely resume in July.
+
 ## Overview
 RepoBee is a command line tool that allows teachers and teaching assistants
 to administrate large amounts of Git repositories on the GitHub and GitLab
