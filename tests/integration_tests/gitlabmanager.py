@@ -25,6 +25,7 @@ LOCAL_MASTER_REPOS = list(
 )
 
 DOCKER_START_COMMANDS = [
+    "docker network create development",
     "docker-compose up -d",
     "docker exec -it gitlab update-permissions",
     "docker container stop gitlab",
@@ -35,16 +36,17 @@ DOCKER_VOLUME = CURRENT_DIR / "volume_data"
 
 def main(args: List[str]) -> None:
     def _usage():
-        print("usage: python gitlabmanager.py <setup|restore|teardown>")
+        print("usage: python gitlabmanager.py <setup|backup|restore|teardown>")
         sys.exit(1)
 
-    if len(args != 2):
+    if len(args) != 2:
         _usage()
 
     cmd = args[1]
     if cmd == "setup":
         setup()
-        restore()
+    elif cmd == "backup":
+        backup()
     elif cmd == "restore":
         restore()
     elif cmd == "teardown":
@@ -54,15 +56,25 @@ def main(args: List[str]) -> None:
 
 
 def setup():
+    print("Setting up GitLab instance")
     for cmd in DOCKER_START_COMMANDS:
         subprocess.run(cmd.split(), cwd=CURRENT_DIR)
     if not await_gitlab_started():
         raise OSError("GitLab failed to start")
 
     setup_users(students=STUDENTS, teacher=TEACHER, token=TOKEN)
+    create_groups_and_projects(
+        local_master_repos=LOCAL_MASTER_REPOS,
+        teacher=TEACHER,
+        master_group_name=MASTER_REPO_GROUP,
+        course_round_group_name=COURSE_ROUND_GROUP,
+        token=TOKEN,
+    )
+    backup()
 
 
 def teardown():
+    print("Tearing down GitLab instance")
     subprocess.run("docker-compose down".split(), cwd=CURRENT_DIR)
     subprocess.run(f"rm -rf {str(DOCKER_VOLUME)}".split(), cwd=CURRENT_DIR)
     subprocess.run(
@@ -71,14 +83,18 @@ def teardown():
     )
 
 
+def backup():
+    print("Creating backup of GitLab instance")
+    subprocess.run(
+        "docker exec -t gitlab gitlab-backup create".split(), cwd=CURRENT_DIR
+    )
+
+
 def restore():
-    delete_groups()
-    create_groups_and_projects(
-        local_master_repos=LOCAL_MASTER_REPOS,
-        teacher=TEACHER,
-        master_group_name=MASTER_REPO_GROUP,
-        course_round_group_name=COURSE_ROUND_GROUP,
-        token=TOKEN,
+    print("Restoring GitLab instance from backup")
+    subprocess.run(
+        "docker exec -t gitlab gitlab-backup restore force=yes".split(),
+        cwd=CURRENT_DIR,
     )
 
 

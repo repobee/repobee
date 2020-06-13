@@ -5,6 +5,7 @@ import pathlib
 import re
 import itertools
 import tempfile
+import sys
 
 import pytest
 import gitlab
@@ -30,13 +31,15 @@ TOKEN = (DIR / "token").read_text(encoding="utf-8").strip()
 OAUTH_USER = "oauth2"
 BASE_DOMAIN = "gitlab.integrationtest.local"
 BASE_URL = "https://" + BASE_DOMAIN
-LOCAL_DOMAIN = "localhost"
+LOCAL_DOMAIN = "localhost:50443"
 LOCAL_BASE_URL = "https://" + LOCAL_DOMAIN
 ORG_NAME = "dd1337-fall2020"
 MASTER_ORG_NAME = "dd1337-master"
 ACTUAL_USER = "ric"
 
-MASTER_REPO_NAMES = "task-1 task-2 task-3".split()
+MASTER_REPO_NAMES = [
+    p.name for p in (DIR / "dd1337-master-repos").iterdir() if p.is_dir()
+]
 STUDENT_TEAMS = [
     plug.Team(members=[s.strip()])
     for s in pathlib.Path("students.txt").read_text().strip().split("\n")
@@ -53,8 +56,8 @@ MASTER_ORG_ARG = ["--mo", MASTER_ORG_NAME]
 
 TASK_CONTENTS_SHAS = {
     "task-1": b"\xb0\xb0,t\xd1\xe9a bu\xdfX\xcf,\x98\xd2\x04\x1a\xe8\x88",
-    "task-2": b'\x1d\xdc\xa6A\xd7\xec\xdc\xc6FSN\x01\xdf|\x95`U\xb5\xdc\x9d',
-    "task-3": b'Q\xd1x\x13r\x02\xd9\x98\xa2\xb2\xd9\xe3\xa9J^\xa2/X\xbe\x1b',
+    "task-2": b"\x1d\xdc\xa6A\xd7\xec\xdc\xc6FSN\x01\xdf|\x95`U\xb5\xdc\x9d",
+    "task-3": b"Q\xd1x\x13r\x02\xd9\x98\xa2\xb2\xd9\xe3\xa9J^\xa2/X\xbe\x1b",
 }
 
 
@@ -77,7 +80,7 @@ def assert_master_repos_exist(master_repo_names, org_name):
     """Assert that the master repos are in the specified group."""
     gl, *_ = gitlab_and_groups()
     group = gl.groups.list(search=org_name)[0]
-    actual_repo_names = [g.name for g in group.projects.list()]
+    actual_repo_names = [g.name for g in group.projects.list(all=True)]
     assert sorted(actual_repo_names) == sorted(master_repo_names)
 
 
@@ -88,7 +91,7 @@ def assert_repos_exist(student_teams, master_repo_names, org_name=ORG_NAME):
     target_group = gl.groups.list(search=ORG_NAME)[0]
     student_groups = gl.groups.list(id=target_group.id)
 
-    projects = [p for g in student_groups for p in g.projects.list()]
+    projects = [p for g in student_groups for p in g.projects.list(all=True)]
     project_names = [p.name for p in projects]
 
     assert set(project_names) == set(repo_names)
@@ -106,7 +109,7 @@ def assert_repos_contain(
     projects = [
         gl.projects.get(p.id)
         for g in student_groups
-        for p in g.projects.list()
+        for p in g.projects.list(all=True)
         if p.name in repo_names
     ]
     assert len(projects) == len(repo_names)
@@ -159,7 +162,7 @@ def assert_on_groups(
         # of groups he/she creates
         if single_group_assertion is None:
             expected_members = sorted(team.members + [ACTUAL_USER])
-            actual_members = sorted(m.username for m in group.members.list())
+            actual_members = sorted(m.username for m in group.members.list(all=True))
             assert group.name == team.name
             assert actual_members == expected_members
         else:
@@ -177,7 +180,7 @@ def _assert_on_projects(student_teams, master_repo_names, assertion):
     projects = [
         gl.projects.get(p.id)
         for g in student_groups
-        for p in g.projects.list()
+        for p in g.projects.list(all=True)
         if p.name in repo_names
     ]
 
@@ -197,7 +200,7 @@ def assert_issues_exist(
     """
 
     def assertion(project):
-        issues = project.issues.list()
+        issues = project.issues.list(all=True)
         for actual_issue in issues:
             if actual_issue.title == expected_issue.title:
                 assert actual_issue.state == expected_state
@@ -219,7 +222,7 @@ def assert_num_issues(student_teams, master_repo_names, num_issues):
     """
 
     def assertion(project):
-        assert len(project.issues.list()) == num_issues
+        assert len(project.issues.list(all=True)) == num_issues
 
     _assert_on_projects(student_teams, master_repo_names, assertion)
 
@@ -317,7 +320,7 @@ def run_in_docker(command, extra_args=None):
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
-    print(proc.stdout.decode("utf8"))
+    print(proc.stdout.decode(sys.getdefaultencoding())) # for test output on failure
     return proc
 
 
@@ -442,7 +445,7 @@ def open_issues(with_student_repos):
     target_group = gl.groups.list(search=ORG_NAME)[0]
     projects = (
         gl.projects.get(p.id)
-        for p in target_group.projects.list(include_subgroups=True)
+        for p in target_group.projects.list(include_subgroups=True, all=True)
     )
     for project in projects:
         project.issues.create(
@@ -869,11 +872,11 @@ def expected_num_members_group_assertion(expected_num_members):
     def group_assertion(expected, actual):
         assert expected.name == actual.name
         # +1 member for the group owner
-        assert len(actual.members.list()) == expected_num_members + 1
-        assert len(actual.projects.list()) == 1
-        project_name = actual.projects.list()[0].name
+        assert len(actual.members.list(all=True)) == expected_num_members + 1
+        assert len(actual.projects.list(all=True)) == 1
+        project_name = actual.projects.list(all=True)[0].name
         assert actual.name.startswith(project_name)
-        for member in actual.members.list():
+        for member in actual.members.list(all=True):
             if member.username == ACTUAL_USER:
                 continue
             assert member.username not in project_name
