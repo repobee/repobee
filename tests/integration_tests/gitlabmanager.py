@@ -25,12 +25,32 @@ LOCAL_MASTER_REPOS = list(
 )
 
 DOCKER_START_COMMANDS = [
-    "sudo docker-compose up -d",
-    "sudo docker exec -it gitlab update-permissions",
-    "sudo docker container stop gitlab",
-    "sudo docker-compose up -d",
+    "docker-compose up -d",
+    "docker exec -it gitlab update-permissions",
+    "docker container stop gitlab",
+    "docker-compose up -d",
 ]
 DOCKER_VOLUME = CURRENT_DIR / "volume_data"
+
+
+def main(args: List[str]) -> None:
+    def _usage():
+        print("usage: python gitlabmanager.py <setup|restore|teardown>")
+        sys.exit(1)
+
+    if len(args != 2):
+        _usage()
+
+    cmd = args[1]
+    if cmd == "setup":
+        setup()
+        restore()
+    elif cmd == "restore":
+        restore()
+    elif cmd == "teardown":
+        teardown()
+    else:
+        _usage()
 
 
 def setup():
@@ -39,8 +59,20 @@ def setup():
     if not await_gitlab_started():
         raise OSError("GitLab failed to start")
 
-    create_users(users=STUDENTS + [TEACHER])
-    create_teacher_token(teacher=TEACHER, token=TOKEN)
+    setup_users(students=STUDENTS, teacher=TEACHER, token=TOKEN)
+
+
+def teardown():
+    subprocess.run("docker-compose down".split(), cwd=CURRENT_DIR)
+    subprocess.run(f"rm -rf {str(DOCKER_VOLUME)}".split(), cwd=CURRENT_DIR)
+    subprocess.run(
+        f"git checkout {str(DOCKER_VOLUME.relative_to(CURRENT_DIR))}".split(),
+        cwd=CURRENT_DIR,
+    )
+
+
+def restore():
+    delete_groups()
     create_groups_and_projects(
         local_master_repos=LOCAL_MASTER_REPOS,
         teacher=TEACHER,
@@ -50,25 +82,20 @@ def setup():
     )
 
 
-def teardown():
-    subprocess.run("sudo docker-compose down".split(), cwd=CURRENT_DIR)
-    subprocess.run(
-        f"sudo rm -rf {str(DOCKER_VOLUME)}".split(), cwd=CURRENT_DIR
-    )
-    subprocess.run(
-        f"git checkout {str(DOCKER_VOLUME.relative_to(CURRENT_DIR))}".split(),
-        cwd=CURRENT_DIR,
-    )
+def restart():
+    teardown()
+    setup()
 
 
 def exec_gitlab_rails_cmd(cmd: str) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [*"sudo docker exec -t gitlab gitlab-rails runner".split(), cmd]
+        [*"docker exec -t gitlab gitlab-rails runner".split(), cmd]
     )
 
 
-def create_users(users: str) -> None:
-    print(f"Creating users: {users}")
+def setup_users(students: List[str], teacher: str, token: str) -> None:
+    print("Setting up users")
+    users = students + [teacher]
     create_users_cmd = (
         str(users).replace("'", '"')
         + """
@@ -79,18 +106,29 @@ end
             "\n", " "
         )
     )
-    exec_gitlab_rails_cmd(create_users_cmd)
-
-
-def create_teacher_token(teacher: str, token: str) -> None:
-    print("Creating teacher's access token")
     create_token_cmd = f"""
-user = User.find_by_username('{teacher}')
-token = user.personal_access_tokens.create(name: 'repobee', scopes: [:api, :read_repository, :write_repository])
+teacher_user = User.find_by_username('{teacher}')
+token = teacher_user.personal_access_tokens.create(name: 'repobee', scopes: [:api, :read_repository, :write_repository])
 token.set_token('{token}')
 token.save!
 """
-    exec_gitlab_rails_cmd(create_token_cmd)
+    set_root_password_cmd = """
+root_user = User.where(id: 1).first
+root_user.password = 'password'
+root_user.password_confirmation = 'password'
+root_user.save!
+"""
+    compound_cmd = create_users_cmd + create_token_cmd + set_root_password_cmd
+    exec_gitlab_rails_cmd(compound_cmd)
+
+
+def delete_groups() -> None:
+    print("Deleting groups")
+    delete_groups_cmd = """
+Group.all().each { |group| GroupDestroyWorker.perform_async(group.id, 1) }
+while not Group.first().nil? do print('Waiting for groups to be deleted ...\n'); sleep(1) end
+    """.strip()
+    exec_gitlab_rails_cmd(delete_groups_cmd)
 
 
 def create_groups_and_projects(
@@ -100,6 +138,7 @@ def create_groups_and_projects(
     course_round_group_name: str,
     token: str,
 ) -> None:
+    print("Creating groups and projects")
     gl = gitlab.Gitlab(
         "https://gitlab.integrationtest.local",
         private_token=TOKEN,
@@ -160,7 +199,7 @@ def await_gitlab_started() -> bool:
 def get_gitlab_status():
     return (
         subprocess.run(
-            "sudo docker inspect -f {{.State.Health.Status}} gitlab".split(),
+            "docker inspect -f {{.State.Health.Status}} gitlab".split(),
             capture_output=True,
         )
         .stdout.decode(sys.getdefaultencoding())
@@ -169,4 +208,4 @@ def get_gitlab_status():
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv)

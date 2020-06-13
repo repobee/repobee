@@ -15,6 +15,8 @@ import _repobee.ext
 import _repobee.ext.gitlab
 import _repobee.cli.mainparser
 
+import gitlabmanager
+
 assert os.getenv(
     "REPOBEE_NO_VERIFY_SSL"
 ), "The env variable REPOBEE_NO_VERIFY_SSL must be set to 'true'"
@@ -24,19 +26,21 @@ VOLUME_DST = "/workdir"
 COVERAGE_VOLUME_DST = "/coverage"
 DIR = pathlib.Path(__file__).resolve().parent
 TOKEN = (DIR / "token").read_text(encoding="utf-8").strip()
-RESTORE_SH = DIR / "restore.sh"
 
 OAUTH_USER = "oauth2"
 BASE_DOMAIN = "gitlab.integrationtest.local"
 BASE_URL = "https://" + BASE_DOMAIN
-LOCAL_DOMAIN = "localhost:50443"
+LOCAL_DOMAIN = "localhost"
 LOCAL_BASE_URL = "https://" + LOCAL_DOMAIN
-ORG_NAME = "repobee-testing"
-MASTER_ORG_NAME = "repobee-master"
-ACTUAL_USER = "repobee-user"
+ORG_NAME = "dd1337-fall2020"
+MASTER_ORG_NAME = "dd1337-master"
+ACTUAL_USER = "ric"
 
 MASTER_REPO_NAMES = "task-1 task-2 task-3".split()
-STUDENT_TEAMS = [plug.Team(members=[s]) for s in "slarse rjglasse".split()]
+STUDENT_TEAMS = [
+    plug.Team(members=[s.strip()])
+    for s in pathlib.Path("students.txt").read_text().strip().split("\n")
+]
 STUDENT_TEAM_NAMES = [str(t) for t in STUDENT_TEAMS]
 STUDENT_REPO_NAMES = plug.generate_repo_names(STUDENT_TEAMS, MASTER_REPO_NAMES)
 
@@ -48,11 +52,9 @@ MASTER_REPOS_ARG = ["--mn", " ".join(MASTER_REPO_NAMES)]
 MASTER_ORG_ARG = ["--mo", MASTER_ORG_NAME]
 
 TASK_CONTENTS_SHAS = {
-    "task-1": (
-        b"\xcc\xd5\xcb\xfd\xfe\xab\xc6g\xc9{\xe4c\xd2\xc7W\xa2\\>\xac\x1a"
-    ),
-    "task-2": b"!o\xb02\x9b~.`\xba=\xf9d\x11\x98\xf0\xedt\x1f\xd0D",
-    "task-3": b"\\\x163RV\r\xb7~n\xea\x14\xf6\xd5\xcb\xab\x82\xf9f1c",
+    "task-1": b"\xb0\xb0,t\xd1\xe9a bu\xdfX\xcf,\x98\xd2\x04\x1a\xe8\x88",
+    "task-2": b'\x1d\xdc\xa6A\xd7\xec\xdc\xc6FSN\x01\xdf|\x95`U\xb5\xdc\x9d',
+    "task-3": b'Q\xd1x\x13r\x02\xd9\x98\xa2\xb2\xd9\xe3\xa9J^\xa2/X\xbe\x1b',
 }
 
 
@@ -222,15 +224,25 @@ def assert_num_issues(student_teams, master_repo_names, num_issues):
     _assert_on_projects(student_teams, master_repo_names, assertion)
 
 
+@pytest.fixture(autouse=True, scope="session")
+def setup_gitlab_instance():
+    """Perform first-time setup of the GitLab instance."""
+    gitlabmanager.setup()
+
+
+@pytest.fixture(autouse=True, scope="session")
+def teardown_gitlab_instance():
+    """Teardown the GitLab instance after all tests have finished."""
+    yield
+    gitlabmanager.teardown()
+
+
 @pytest.fixture(autouse=True)
 def restore():
     """Run the script that restores the GitLab instance to its initial
     state.
     """
-    with open(os.devnull, "w") as devnull:
-        subprocess.run(
-            str(RESTORE_SH), shell=True, stdout=devnull, stderr=devnull
-        )
+    gitlabmanager.restore()
 
 
 @pytest.fixture
@@ -296,15 +308,17 @@ def run_in_docker_with_coverage(command, extra_args=None):
 def run_in_docker(command, extra_args=None):
     extra_args = " ".join(extra_args) if extra_args else ""
     docker_command = (
-        "docker run {} --net development --rm --name repobee "
+        "sudo docker run {} --net development --rm --name repobee "
         "repobee:test /bin/sh -c '{}'"
     ).format(extra_args, command)
-    return subprocess.run(
+    proc = subprocess.run(
         docker_command,
         shell=True,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
     )
+    print(proc.stdout.decode("utf8"))
+    return proc
 
 
 def update_repo(repo_name, filename, text):
@@ -394,6 +408,7 @@ def assert_cloned_repos(repo_names, tmpdir):
     root = pathlib.Path(tmpdir).resolve()
 
     for master_repo_name, student_repo_names in grouped_repo_names:
+
         expected_sha = TASK_CONTENTS_SHAS[master_repo_name]
         for repo_name in student_repo_names:
             sha = hash_directory(root / repo_name)
@@ -410,7 +425,7 @@ def hash_directory(path):
             pathlib.Path(dirpath) / filename for filename in filenames
         )
         shas += (hashlib.sha1(file.read_bytes()).digest() for file in files)
-    return hashlib.sha1(b"".join(shas)).digest()
+    return hashlib.sha1(b"".join(sorted(shas))).digest()
 
 
 @pytest.fixture
