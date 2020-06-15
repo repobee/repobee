@@ -16,7 +16,7 @@ STUDENTS = (
 )
 TOKEN = pathlib.Path("token").read_text(encoding="utf8").strip()
 
-BASE_URL = "https://gitlab.integrationtest.local:50443"
+BASE_URL = "https://localhost:50443"
 MASTER_REPO_GROUP = "dd1337-master"
 COURSE_ROUND_GROUP = "dd1337-fall2020"
 LOCAL_MASTER_REPOS = list(
