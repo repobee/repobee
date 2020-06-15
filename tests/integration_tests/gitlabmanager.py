@@ -1,13 +1,13 @@
 import pathlib
 import subprocess
 import tempfile
-import gitlab
 import shutil
 import time
 import sys
 
 from typing import List
 
+import gitlab
 
 CURRENT_DIR = pathlib.Path(__file__).parent
 TEACHER = "ric"
@@ -16,6 +16,7 @@ STUDENTS = (
 )
 TOKEN = pathlib.Path("token").read_text(encoding="utf8").strip()
 
+BASE_URL = "https://gitlab.integrationtest.local:50443"
 MASTER_REPO_GROUP = "dd1337-master"
 COURSE_ROUND_GROUP = "dd1337-fall2020"
 LOCAL_MASTER_REPOS = list(
@@ -32,6 +33,13 @@ DOCKER_START_COMMANDS = [
     "docker-compose up -d",
 ]
 DOCKER_VOLUME = CURRENT_DIR / "volume_data"
+
+DOCKER_TEARDOWN_COMMANDS = [
+    "docker-compose down",
+    "docker network rm development",
+    f"rm -rf {str(DOCKER_VOLUME)}",
+    f"git checkout {str(DOCKER_VOLUME.relative_to(CURRENT_DIR))}",
+]
 
 
 def main(args: List[str]) -> None:
@@ -63,24 +71,12 @@ def setup():
         raise OSError("GitLab failed to start")
 
     setup_users(students=STUDENTS, teacher=TEACHER, token=TOKEN)
-    create_groups_and_projects(
-        local_master_repos=LOCAL_MASTER_REPOS,
-        teacher=TEACHER,
-        master_group_name=MASTER_REPO_GROUP,
-        course_round_group_name=COURSE_ROUND_GROUP,
-        token=TOKEN,
-    )
-    backup()
 
 
 def teardown():
     print("Tearing down GitLab instance")
-    subprocess.run("docker-compose down".split(), cwd=CURRENT_DIR)
-    subprocess.run(f"rm -rf {str(DOCKER_VOLUME)}".split(), cwd=CURRENT_DIR)
-    subprocess.run(
-        f"git checkout {str(DOCKER_VOLUME.relative_to(CURRENT_DIR))}".split(),
-        cwd=CURRENT_DIR,
-    )
+    for cmd in DOCKER_TEARDOWN_COMMANDS:
+        subprocess.run(cmd.split(), cwd=CURRENT_DIR)
 
 
 def backup():
@@ -91,10 +87,13 @@ def backup():
 
 
 def restore():
-    print("Restoring GitLab instance from backup")
-    subprocess.run(
-        "docker exec -t gitlab gitlab-backup restore force=yes".split(),
-        cwd=CURRENT_DIR,
+    delete_groups()
+    create_groups_and_projects(
+        local_master_repos=LOCAL_MASTER_REPOS,
+        teacher=TEACHER,
+        master_group_name=MASTER_REPO_GROUP,
+        course_round_group_name=COURSE_ROUND_GROUP,
+        token=TOKEN,
     )
 
 
@@ -155,11 +154,7 @@ def create_groups_and_projects(
     token: str,
 ) -> None:
     print("Creating groups and projects")
-    gl = gitlab.Gitlab(
-        "https://gitlab.integrationtest.local",
-        private_token=TOKEN,
-        ssl_verify=False,
-    )
+    gl = gitlab.Gitlab(BASE_URL, private_token=TOKEN, ssl_verify=False,)
 
     master_group = gl.groups.create(
         dict(name=master_group_name, path=master_group_name)
@@ -178,8 +173,11 @@ def create_groups_and_projects(
                 namespace_id=master_group.id,
             )
         )
-        authed_project_url = project.attributes["http_url_to_repo"].replace(
+        authed_base_url = BASE_URL.replace(
             "https://", f"https://oauth2:{TOKEN}@"
+        )
+        authed_project_url = (
+            f"{authed_base_url}/{master_group_name}/{local_repo.name}.git"
         )
 
         with tempfile.TemporaryDirectory() as tmpdir:
