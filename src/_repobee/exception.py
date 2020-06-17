@@ -45,7 +45,7 @@ class APIError(RepoBeeException):
 
 
 class NotFoundError(APIError):
-    """An exception raised when the API responds with a 404."""
+    """An exception raised when a platform API fails to find a resource."""
 
 
 class ServiceNotFoundError(APIError):

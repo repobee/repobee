@@ -298,6 +298,14 @@ def raise_(error):
     return inner
 
 
+class TestInit:
+    """Tests for the GitLabAPI constructor."""
+
+    def test_raises_api_error_when_target_group_cant_be_found(self):
+        with pytest.raises(exception.NotFoundError):
+            _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, "fake-name")
+
+
 class TestEnsureTeamsAndMembers:
     @pytest.mark.parametrize(
         "raised_error,expected_error",
