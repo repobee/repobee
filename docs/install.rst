@@ -5,7 +5,7 @@ Install
 
 Requirements
 ------------
-RepoBee requires Python 3.5+ and a somewhat up-to-date version of Git (2.0+ to
+RepoBee requires Python 3.6+ and a somewhat up-to-date version of Git (2.0+ to
 be on the safe side). Officially supported operating systems are Ubuntu 17.04+
 and macOS, but RepoBee should run fine on any Linux distribution and also on
 WSL_ on Windows 10. Please report any issues with operating systems and/or Git
@@ -15,10 +15,10 @@ versions on the `issue tracker`_.
 
 Check your Python version
 -------------------------
-For RepoBee to run, you need to have Python 3.5 or later. On many operating
+For RepoBee to run, you need to have Python 3.6 or later. On many operating
 systems, ``python`` is an alias for Python 2.7, and ``python3`` is an alias for
 the latest version of Python 3 that is installed. For this install guide,
-python3 is assumed to be a Python version 3.5 or higher. You can check the
+python3 is assumed to be a Python version 3.6 or higher. You can check the
 version yourself with:
 
 .. code-block:: bash
@@ -27,7 +27,7 @@ version yourself with:
     # or
     $ python --version
 
-Then, just use whichever of those Pythons claim to be 3.5 or higher.
+Then, just use whichever of those Pythons claim to be 3.6 or higher.
 
 Option 1: Install from PyPi with `pip`
 --------------------------------------
