@@ -394,7 +394,7 @@ class _OrderedFormatter(argparse.HelpFormatter):
 
     The internals of the formatter classes are technically not public,
     so this class is "unsafe" when it comes to new versions of Python. It may
-    have to be disabled for future versions, but it works for 3.5, 3.6 and 3.7
+    have to be disabled for future versions, but it works for 3.6, 3.7 and 3.8
     at the time of writing. If this turns troublesome, it may be time to
     switch to some other CLI library.
     """

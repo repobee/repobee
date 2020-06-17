@@ -87,9 +87,7 @@ def _try_load_module(qualname: str) -> Optional[ModuleType]:
     """
     try:
         return importlib.import_module(qualname)
-    except ImportError:
-        # ImportError in 3.5, ModuleNotFoundError in 3.6+
-        # using ImportError for compatability
+    except ModuleNotFoundError:
         return None
 
 

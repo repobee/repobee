@@ -247,11 +247,7 @@ def _extract_groups(args: argparse.Namespace) -> List[str]:
     if "students" in args and args.students:
         students = [plug.Team(members=[s]) for s in args.students]
     elif "students_file" in args and args.students_file:
-        students_file = pathlib.Path(args.students_file)
-        try:  # raises FileNotFoundError in 3.5 if no such file exists
-            students_file = students_file.resolve()
-        except FileNotFoundError:
-            pass  # handled by next check
+        students_file = pathlib.Path(args.students_file).resolve()
         if not students_file.is_file():
             raise exception.FileError(
                 "'{!s}' is not a file".format(students_file)
