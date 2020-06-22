@@ -18,8 +18,8 @@ plugin](#writing-a-plugin) section below.
 ## Before you start
 The two approaches mentioned above require slightly different starting points,
 as outlined by the following two sections. Additionally, you will probably want
-to have a look at the docs for setting up a development environment over at
-[ReadTheDocs](https://repobee.readthedocs.io/latest/contributing.html).
+to have a look at the
+[docs for setting up a development environment](https://repobee.readthedocs.io/en/stable/contributing.html).
 
 ### Bugs, docs and feature requests
 If you want to do something that is not outlined by an existing issue, then
