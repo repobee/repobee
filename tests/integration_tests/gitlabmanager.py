@@ -140,9 +140,8 @@ root_user.save!
 def delete_groups() -> None:
     print("Deleting groups")
     delete_groups_cmd = """
-Group.all().each { |group| GroupDestroyWorker.perform_async(group.id, 1) }
-while not Group.first().nil? do print('Waiting for groups to be deleted ...\n'); sleep(1) end
-    """.strip()
+root_user = User.where(id: 1).first
+Group.all().each { |group| Groups::DestroyService.new(group, root_user).execute }""".strip()
     exec_gitlab_rails_cmd(delete_groups_cmd)
 
 
