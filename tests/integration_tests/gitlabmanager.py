@@ -4,6 +4,7 @@ import tempfile
 import shutil
 import time
 import sys
+import datetime
 
 from typing import List
 
@@ -62,15 +63,19 @@ def main(args: List[str]) -> None:
     else:
         _usage()
 
+def timestamp(msg):
+    print(f"{msg}: {datetime.datetime.now()}")
 
 def setup():
     print("Setting up GitLab instance")
+    timestamp("START SETUP")
     for cmd in DOCKER_START_COMMANDS:
         subprocess.run(cmd.split(), cwd=CURRENT_DIR)
     if not await_gitlab_started():
         raise OSError("GitLab failed to start")
 
     setup_users(students=STUDENTS, teacher=TEACHER, token=TOKEN)
+    timestamp("END SETUP")
 
 
 def teardown():
@@ -87,7 +92,9 @@ def backup():
 
 
 def restore():
+    timestamp("START RESTORE")
     delete_groups()
+    timestamp("MID RESTORE")
     create_groups_and_projects(
         local_master_repos=LOCAL_MASTER_REPOS,
         teacher=TEACHER,
@@ -95,6 +102,7 @@ def restore():
         course_round_group_name=COURSE_ROUND_GROUP,
         token=TOKEN,
     )
+    timestamp("END RESTORE")
 
 
 def restart():
