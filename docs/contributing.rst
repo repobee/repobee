@@ -68,7 +68,7 @@ recorded. They require the ``pre-commit`` package. I recommend installing this
 *outside* of the virtual environment so that hooks can run even if you are not
 in the virtual environment shell. In the root of the project, run:
 
-.. code-block::
+.. code-block:: bash
 
    $ python3 -m pip install --user pre-commit
    $ python3 -m pre-commit install
