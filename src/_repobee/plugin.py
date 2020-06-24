@@ -23,7 +23,6 @@ import daiquiri
 import _repobee
 from _repobee import config
 from _repobee import exception
-from _repobee import constants
 
 import repobee_plug as plug
 
@@ -129,8 +128,7 @@ def initialize_plugins(plugin_names: List[str] = None):
 
 
 def resolve_plugin_names(
-    plugin_names: Optional[List[str]] = None,
-    config_file: pathlib.Path = constants.DEFAULT_CONFIG_FILE,
+    plugin_names: Optional[List[str]], config_file: pathlib.Path,
 ) -> List[str]:
     """Return a list of plugin names to load into RepoBee given a list of
     externally specified plugin names, and a path to a configuration file.
