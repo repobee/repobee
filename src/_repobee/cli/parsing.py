@@ -46,6 +46,7 @@ def handle_args(
     sys_args: Iterable[str],
     show_all_opts: bool = False,
     ext_commands: Optional[List[plug.ExtensionCommand]] = None,
+    config_file: pathlib.Path = constants.DEFAULT_CONFIG_FILE,
 ) -> Tuple[argparse.Namespace, Optional[plug.API]]:
     """Parse and process command line arguments and instantiate the platform
     API (if it's needed).
@@ -53,6 +54,7 @@ def handle_args(
 
     Args:
         sys_args: Raw command line arguments for the primary parser.
+        config_file: Path to the config file.
         show_all_opts: If False, help sections for options that have
             configured defaults are suppressed. Otherwise, all options are
             shown.
@@ -62,7 +64,9 @@ def handle_args(
         A tuple of a namespace with parsed and processed arguments, and an
         instance of the platform API if it is required for the command.
     """
-    args, processing = _parse_args(sys_args, show_all_opts, ext_commands)
+    args, processing = _parse_args(
+        sys_args, config_file, show_all_opts, ext_commands
+    )
     if processing == _ArgsProcessing.CORE:
         processed_args, api = _process_args(args, ext_commands)
         _handle_task_parsing(processed_args)
@@ -75,6 +79,7 @@ def handle_args(
 
 def _parse_args(
     sys_args: Iterable[str],
+    config_file: pathlib.Path,
     show_all_opts: bool = False,
     ext_commands: Optional[List[plug.ExtensionCommand]] = None,
 ) -> Tuple[argparse.Namespace, _ArgsProcessing]:
@@ -84,6 +89,7 @@ def _parse_args(
 
     Args:
         sys_args: A list of command line arguments.
+        config_file: Path to the config file.
         show_all_opts: If False, CLI arguments that are configure in the
             configuration file are not shown in help menus.
         ext_commands: A list of extension commands.
@@ -92,7 +98,7 @@ def _parse_args(
         A namespace of parsed arpuments and a boolean that specifies whether or
         not further processing is required.
     """
-    parser = create_parser(show_all_opts, ext_commands)
+    parser = create_parser(show_all_opts, ext_commands, config_file)
     args = parser.parse_args(_handle_deprecation(sys_args))
 
     ext_cmd = _resolve_extension_command(args.subparser, ext_commands)

@@ -65,6 +65,7 @@ def main(sys_args: List[str]):
             app_args,
             show_all_opts=parsed_preparser_args.show_all_opts,
             ext_commands=ext_commands,
+            config_file=config_file,
         )
         traceback = parsed_args.traceback
         pre_init = False
