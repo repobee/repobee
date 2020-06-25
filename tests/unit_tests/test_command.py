@@ -495,15 +495,15 @@ class TestCloneRepos:
     """Tests for clone_repos."""
 
     @pytest.fixture
-    def register_default_plugins(self):
+    def register_default_plugins(self, unused_path):
         plugin_names = plugin.resolve_plugin_names(
-            plugin_names=constants.PLUGINS
+            plugin_names=constants.PLUGINS, config_file=unused_path
         )
         modules = plugin.load_plugin_modules(plugin_names)
         plugin.register_plugins(modules)
 
     @pytest.fixture
-    def act_mocks(self, monkeypatch, config_mock):
+    def act_mocks(self, monkeypatch, config_mock, unused_path):
         """Mocks for the act functions and method. This is a bit
         messy as the functions must be marked with the
         repobee_plug.repobee_hook decorator to be picked up by pluggy.
@@ -536,7 +536,7 @@ class TestCloneRepos:
         _repobee.ext.pylint.act(None, None)
 
         plugin_names = plugin.resolve_plugin_names(
-            plugin_names=constants.PLUGINS
+            plugin_names=constants.PLUGINS, config_file=unused_path
         )
         modules = plugin.load_plugin_modules(plugin_names)
         plugin.register_plugins(modules)

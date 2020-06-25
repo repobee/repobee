@@ -69,7 +69,9 @@ def main(sys_args: List[str]):
         )
         traceback = parsed_args.traceback
         pre_init = False
-        _repobee.cli.dispatch.dispatch_command(parsed_args, api, ext_commands)
+        _repobee.cli.dispatch.dispatch_command(
+            parsed_args, api, config_file, ext_commands
+        )
     except exception.PluginLoadError as exc:
         LOGGER.error("{.__class__.__name__}: {}".format(exc, str(exc)))
         LOGGER.error(

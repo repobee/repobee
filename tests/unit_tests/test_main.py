@@ -1,5 +1,7 @@
 import argparse
-from unittest.mock import MagicMock
+import tempfile
+import pathlib
+from unittest.mock import MagicMock, patch
 from collections import namedtuple
 
 import pytest
@@ -93,10 +95,16 @@ def test_happy_path(
     main.main(sys_args)
 
     handle_args_mock.assert_called_once_with(
-        sys_args[1:], show_all_opts=False, ext_commands=DEFAULT_EXT_COMMANDS
+        sys_args[1:],
+        show_all_opts=False,
+        ext_commands=DEFAULT_EXT_COMMANDS,
+        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
     dispatch_command_mock.assert_called_once_with(
-        PARSED_ARGS, api_instance_mock, DEFAULT_EXT_COMMANDS
+        PARSED_ARGS,
+        api_instance_mock,
+        _repobee.constants.DEFAULT_CONFIG_FILE,
+        DEFAULT_EXT_COMMANDS,
     )
 
 
@@ -112,7 +120,10 @@ def test_exit_status_1_on_exception_in_parsing(
 
     assert exc_info.value.code == 1
     handle_args_mock.assert_called_once_with(
-        sys_args[1:], show_all_opts=False, ext_commands=DEFAULT_EXT_COMMANDS
+        sys_args[1:],
+        show_all_opts=False,
+        ext_commands=DEFAULT_EXT_COMMANDS,
+        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
     assert not dispatch_command_mock.called
 
@@ -130,7 +141,10 @@ def test_exit_status_1_on_exception_in_handling_parsed_args(
 
     assert exc_info.value.code == 1
     handle_args_mock.assert_called_once_with(
-        sys_args[1:], show_all_opts=False, ext_commands=DEFAULT_EXT_COMMANDS
+        sys_args[1:],
+        show_all_opts=False,
+        ext_commands=DEFAULT_EXT_COMMANDS,
+        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
 
 
@@ -146,7 +160,10 @@ def test_plugins_args(
         ["javac", "pylint", _repobee.constants.DEFAULT_PLUGIN]
     )
     handle_args_mock.assert_called_once_with(
-        CLONE_ARGS, show_all_opts=False, ext_commands=[]
+        CLONE_ARGS,
+        show_all_opts=False,
+        ext_commands=[],
+        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
 
 
@@ -164,7 +181,10 @@ def test_no_plugins_arg(
         [_repobee.constants.DEFAULT_PLUGIN]
     )
     handle_args_mock.assert_called_once_with(
-        CLONE_ARGS, show_all_opts=False, ext_commands=[]
+        CLONE_ARGS,
+        show_all_opts=False,
+        ext_commands=[],
+        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
 
 
@@ -182,7 +202,10 @@ def test_no_plugins_with_configured_plugins(
         [_repobee.constants.DEFAULT_PLUGIN]
     )
     handle_args_mock.assert_called_once_with(
-        CLONE_ARGS, show_all_opts=False, ext_commands=[]
+        CLONE_ARGS,
+        show_all_opts=False,
+        ext_commands=[],
+        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
 
 
@@ -197,7 +220,10 @@ def test_configured_plugins_are_loaded(
         [*constants.PLUGINS, _repobee.constants.DEFAULT_PLUGIN]
     )
     handle_args_mock.assert_called_once_with(
-        CLONE_ARGS, show_all_opts=False, ext_commands=[]
+        CLONE_ARGS,
+        show_all_opts=False,
+        ext_commands=[],
+        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
 
 
@@ -212,7 +238,10 @@ def test_plugin_with_subparser_name(
         ["javac", "clone", _repobee.constants.DEFAULT_PLUGIN]
     )
     handle_args_mock.assert_called_once_with(
-        CLONE_ARGS, show_all_opts=False, ext_commands=[]
+        CLONE_ARGS,
+        show_all_opts=False,
+        ext_commands=[],
+        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
 
 
@@ -290,6 +319,7 @@ def test_logs_traceback_on_exception_in_dispatch_if_traceback(
         [*CLONE_ARGS, "--traceback"],
         show_all_opts=False,
         ext_commands=DEFAULT_EXT_COMMANDS,
+        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
 
 
@@ -302,7 +332,10 @@ def test_show_all_opts_correctly_separated(
         raise SystemExit(msg)
 
     parse_preparser_options_mock.return_value = argparse.Namespace(
-        show_all_opts=True, no_plugins=False, plug=None
+        show_all_opts=True,
+        no_plugins=False,
+        plug=None,
+        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
     handle_args_mock.side_effect = _raise_sysexit
     sys_args = [
@@ -320,6 +353,7 @@ def test_show_all_opts_correctly_separated(
         [mainparser.SETUP_PARSER, "-h"],
         show_all_opts=True,
         ext_commands=DEFAULT_EXT_COMMANDS,
+        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
     parse_preparser_options_mock.assert_called_once_with(
         [_repobee.cli.preparser.PRE_PARSER_SHOW_ALL_OPTS]
@@ -340,3 +374,19 @@ def test_non_zero_exit_status_on_exception(
         main.main(sys_args)
 
     assert exc_info.value.code == 1
+
+
+def test_show_config_custom_config():
+    config_text = """
+[DEFAULTS]
+user = some-unlikely-user
+""".strip()
+    with tempfile.NamedTemporaryFile() as tmpfile, patch(
+        "_repobee.command.show_config", autospec=True
+    ) as show_config_mock:
+        config_file = pathlib.Path(tmpfile.name)
+        config_file.write_text(config_text)
+        sys_args = ["repobee", "--config-file", tmpfile.name, "show-config"]
+        main.main(sys_args)
+
+    show_config_mock.assert_called_once_with(config_file)
