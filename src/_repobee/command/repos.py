@@ -207,7 +207,7 @@ def clone_repos(
         _clone_repos_no_check(non_local_repos, tmpdir, api)
 
     for p in plug.manager.get_plugins():
-        if "act_on_cloned_repo" in dir(p) or "clone_task" in dir(p):
+        if "clone_task" in dir(p):
             return plugin.execute_clone_tasks(
                 [repo.name for repo in repos_for_tasks], api
             )

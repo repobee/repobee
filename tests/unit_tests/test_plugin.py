@@ -170,6 +170,10 @@ class TestTasks:
 class TestInitializePlugins:
     """Tests for the initialize_plugins function."""
 
+    @pytest.mark.skipif(
+        len(plug.deprecated_hooks()) == 0,
+        reason="There are currently no deprecated hooks",
+    )
     def test_deprecation_warning_is_emitted_for_deprecated_hook(
         self, monkeypatch
     ):
