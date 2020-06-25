@@ -18,7 +18,7 @@ import constants
 sys.modules["github"] = MagicMock()
 
 
-import _repobee  # noqa: F402
+import _repobee  # noqa: E402
 
 EXPECTED_ENV_VARIABLES = [
     _repobee.constants.TOKEN_ENV,
@@ -50,6 +50,15 @@ def _students_file(populate: bool = True):
                 )
                 file.flush()
         yield file
+
+
+@pytest.fixture
+def unused_path():
+    with tempfile.NamedTemporaryFile() as tmpfile:
+        unused_path = pathlib.Path(tmpfile.name)
+
+    # exiting the with block destroys the temporary file
+    return unused_path
 
 
 @pytest.fixture(autouse=True)

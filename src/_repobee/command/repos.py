@@ -28,7 +28,6 @@ from _repobee import git
 from _repobee import util
 from _repobee import exception
 from _repobee import config
-from _repobee import constants
 from _repobee import plugin
 from _repobee.git import Push
 
@@ -351,16 +350,12 @@ def _create_push_tuples(
     return push_tuples
 
 
-def show_config() -> None:
+def show_config(config_file: pathlib.Path) -> None:
     """Print the configuration file to the log."""
-    config.check_config_integrity()
+    config.check_config_integrity(config_file)
 
-    LOGGER.info(
-        "Found valid config file at " + str(constants.DEFAULT_CONFIG_FILE)
-    )
-    with constants.DEFAULT_CONFIG_FILE.open(
-        encoding=sys.getdefaultencoding()
-    ) as f:
+    LOGGER.info(f"Found valid config file at {config_file}")
+    with config_file.open(encoding=sys.getdefaultencoding()) as f:
         config_contents = "".join(f.readlines())
 
     output = (

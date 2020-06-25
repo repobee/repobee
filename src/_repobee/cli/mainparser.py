@@ -8,6 +8,7 @@
 
 import types
 import argparse
+import pathlib
 
 import logging
 from typing import List, Optional
@@ -123,11 +124,17 @@ def create_parser_for_docs() -> argparse.ArgumentParser:
     # load default plugins
     plugin.initialize_plugins([_repobee.constants.DEFAULT_PLUGIN])
     ext_commands = plug.manager.hook.create_extension_command()
-    return create_parser(show_all_opts=True, ext_commands=ext_commands)
+    return create_parser(
+        show_all_opts=True,
+        ext_commands=ext_commands,
+        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
+    )
 
 
 def create_parser(
-    show_all_opts: bool, ext_commands: Optional[List[plug.ExtensionCommand]]
+    show_all_opts: bool,
+    ext_commands: Optional[List[plug.ExtensionCommand]],
+    config_file: pathlib.Path,
 ) -> argparse.ArgumentParser:
     """Create the primary parser.
 
@@ -135,6 +142,7 @@ def create_parser(
         show_all_opts: If False, help sections for options with configured
             defaults are suppressed. Otherwise, all options are shown.
         ext_commands: A list of extension commands.
+        config_file: Path to the config file.
     Returns:
         The primary parser.
     """
@@ -181,7 +189,7 @@ def create_parser(
         action="version",
         version="{}".format(_repobee.__version__),
     )
-    _add_subparsers(parser, show_all_opts, ext_commands)
+    _add_subparsers(parser, show_all_opts, ext_commands, config_file)
 
     return parser
 
@@ -475,7 +483,7 @@ def _add_extension_parsers(
     return ext_commands
 
 
-def _add_subparsers(parser, show_all_opts, ext_commands):
+def _add_subparsers(parser, show_all_opts, ext_commands, config_file):
     """Add all of the subparsers to the parser. Note that the parsers prefixed
     with `base_` do not have any parent parsers, so any parser inheriting from
     them must also inherit from the required `base_parser` (unless it is a
@@ -483,7 +491,7 @@ def _add_subparsers(parser, show_all_opts, ext_commands):
     """
 
     base_parser, base_student_parser, master_org_parser = _create_base_parsers(
-        show_all_opts
+        show_all_opts, config_file
     )
 
     subparsers = parser.add_subparsers(dest=SUB)
@@ -619,9 +627,9 @@ def _add_subparsers(parser, show_all_opts, ext_commands):
     )
 
 
-def _create_base_parsers(show_all_opts):
+def _create_base_parsers(show_all_opts, config_file):
     """Create the base parsers."""
-    configured_defaults = config.get_configured_defaults()
+    configured_defaults = config.get_configured_defaults(config_file)
 
     def default(arg_name):
         return (

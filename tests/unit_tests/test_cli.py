@@ -34,6 +34,8 @@ generate_repo_url = functions.generate_repo_url
 MASTER_ORG_NAME = constants.MASTER_ORG_NAME
 TOKEN = constants.TOKEN
 
+EMPTY_PATH = pathlib.Path(".")
+
 REPO_NAMES = ("week-1", "week-2", "week-3")
 REPO_URLS = tuple(map(lambda rn: generate_repo_url(rn, ORG_NAME), REPO_NAMES))
 
@@ -240,7 +242,9 @@ class TestDispatchCommand:
             command_func, autospec=True, return_value=hook_result_mapping
         ):
             args = argparse.Namespace(subparser=parser, **args_dict)
-            _repobee.cli.dispatch.dispatch_command(args, api_instance_mock)
+            _repobee.cli.dispatch.dispatch_command(
+                args, api_instance_mock, EMPTY_PATH
+            )
 
         write.assert_called_once_with(expected_json, expected_filepath)
 
@@ -261,7 +265,9 @@ class TestDispatchCommand:
             args = argparse.Namespace(
                 subparser=mainparser.CLONE_PARSER, **args_dict
             )
-            _repobee.cli.dispatch.dispatch_command(args, api_instance_mock)
+            _repobee.cli.dispatch.dispatch_command(
+                args, api_instance_mock, EMPTY_PATH
+            )
 
         assert not write.called
 
@@ -270,7 +276,9 @@ class TestDispatchCommand:
         args = argparse.Namespace(subparser=parser, **VALID_PARSED_ARGS)
 
         with pytest.raises(exception.ParseError) as exc_info:
-            _repobee.cli.dispatch.dispatch_command(args, api_instance_mock)
+            _repobee.cli.dispatch.dispatch_command(
+                args, api_instance_mock, EMPTY_PATH
+            )
         assert "Illegal value for subparser: {}".format(parser) in str(
             exc_info.value
         )
@@ -281,7 +289,7 @@ class TestDispatchCommand:
         """Test that valid arguments does not result in crash. Only validates
         that there are no crashes, does not validate any other behavior!"""
         _repobee.cli.dispatch.dispatch_command(
-            parsed_args_all_subparsers, api_instance_mock
+            parsed_args_all_subparsers, api_instance_mock, EMPTY_PATH
         )
 
     def test_setup_student_repos_called_with_correct_args(
@@ -291,7 +299,9 @@ class TestDispatchCommand:
             subparser=mainparser.SETUP_PARSER, **VALID_PARSED_ARGS
         )
 
-        _repobee.cli.dispatch.dispatch_command(args, api_instance_mock)
+        _repobee.cli.dispatch.dispatch_command(
+            args, api_instance_mock, EMPTY_PATH
+        )
 
         command_mock.setup_student_repos.assert_called_once_with(
             args.master_repo_urls, args.students, api_instance_mock
@@ -304,7 +314,9 @@ class TestDispatchCommand:
             subparser=mainparser.UPDATE_PARSER, **VALID_PARSED_ARGS
         )
 
-        _repobee.cli.dispatch.dispatch_command(args, api_instance_mock)
+        _repobee.cli.dispatch.dispatch_command(
+            args, api_instance_mock, EMPTY_PATH
+        )
 
         command_mock.update_student_repos.assert_called_once_with(
             args.master_repo_urls,
@@ -319,7 +331,9 @@ class TestDispatchCommand:
         )
         expected_arg = list(args.students)
 
-        _repobee.cli.dispatch.dispatch_command(args, api_instance_mock)
+        _repobee.cli.dispatch.dispatch_command(
+            args, api_instance_mock, EMPTY_PATH
+        )
 
         api_instance_mock.ensure_teams_and_members.assert_called_once_with(
             expected_arg
@@ -332,7 +346,9 @@ class TestDispatchCommand:
             subparser=mainparser.OPEN_ISSUE_PARSER, **VALID_PARSED_ARGS
         )
 
-        _repobee.cli.dispatch.dispatch_command(args, api_instance_mock)
+        _repobee.cli.dispatch.dispatch_command(
+            args, api_instance_mock, EMPTY_PATH
+        )
 
         command_mock.open_issue.assert_called_once_with(
             args.issue,
@@ -348,7 +364,9 @@ class TestDispatchCommand:
             subparser=mainparser.CLOSE_ISSUE_PARSER, **VALID_PARSED_ARGS
         )
 
-        _repobee.cli.dispatch.dispatch_command(args, api_instance_mock)
+        _repobee.cli.dispatch.dispatch_command(
+            args, api_instance_mock, EMPTY_PATH
+        )
 
         command_mock.close_issue.assert_called_once_with(
             args.title_regex, args.repos, api_instance_mock
@@ -361,7 +379,9 @@ class TestDispatchCommand:
             subparser=mainparser.MIGRATE_PARSER, **VALID_PARSED_ARGS
         )
 
-        _repobee.cli.dispatch.dispatch_command(args, api_instance_mock)
+        _repobee.cli.dispatch.dispatch_command(
+            args, api_instance_mock, EMPTY_PATH
+        )
 
         command_mock.migrate_repos.assert_called_once_with(
             args.master_repo_urls, api_instance_mock
@@ -374,7 +394,9 @@ class TestDispatchCommand:
             subparser=mainparser.CLONE_PARSER, **VALID_PARSED_ARGS
         )
 
-        _repobee.cli.dispatch.dispatch_command(args, api_instance_mock)
+        _repobee.cli.dispatch.dispatch_command(
+            args, api_instance_mock, EMPTY_PATH
+        )
 
         command_mock.clone_repos.assert_called_once_with(
             args.repos, api_instance_mock
@@ -392,7 +414,7 @@ class TestDispatchCommand:
             master_org_name=None,
         )
 
-        _repobee.cli.dispatch.dispatch_command(args, None)
+        _repobee.cli.dispatch.dispatch_command(args, None, EMPTY_PATH)
 
         api_class_mock.verify_settings.assert_called_once_with(
             args.user, args.org_name, args.base_url, TOKEN, None
@@ -408,7 +430,7 @@ class TestDispatchCommand:
             master_org_name=MASTER_ORG_NAME,
         )
 
-        _repobee.cli.dispatch.dispatch_command(args, None)
+        _repobee.cli.dispatch.dispatch_command(args, None, EMPTY_PATH)
 
         api_class_mock.verify_settings.assert_called_once_with(
             args.user, args.org_name, args.base_url, TOKEN, MASTER_ORG_NAME
@@ -779,7 +801,7 @@ class TestExtensionCommands:
         )
 
         _repobee.cli.dispatch.dispatch_command(
-            parsed_args, None, [ext_command]
+            parsed_args, None, EMPTY_PATH, [ext_command]
         )
 
         # for some reason, this completely sane assertion fails ALWAYS
@@ -815,7 +837,7 @@ class TestExtensionCommands:
         )
 
         _repobee.cli.dispatch.dispatch_command(
-            parsed_args, api_instance_mock, [ext_command]
+            parsed_args, api_instance_mock, EMPTY_PATH, [ext_command]
         )
 
         # for some reason, this completely sane assertion fails ALWAYS
