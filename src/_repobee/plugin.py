@@ -167,7 +167,7 @@ def execute_clone_tasks(
     Returns:
         A mapping from repo name to hook result.
     """
-    tasks = plug.manager.hook.clone_task() + _wrap_act_on_cloned_repo()
+    tasks = plug.manager.hook.clone_task()
     return _execute_tasks(repo_names, tasks, api, cwd)
 
 
@@ -218,16 +218,6 @@ def _execute_tasks(
                 if res:
                     results[path.name].append(res)
     return results
-
-
-def _wrap_act_on_cloned_repo():
-    """Wrap act_on_cloned_repo hook implementations in RepoBee Tasks."""
-    tasks = []
-    for p in plug.manager.get_plugins():
-        if "act_on_cloned_repo" in dir(p):
-            task = plug.Task(act=p.act_on_cloned_repo)
-            tasks.append(task)
-    return tasks
 
 
 @contextlib.contextmanager
