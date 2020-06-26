@@ -16,4 +16,4 @@ if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
 fi
 
 run_flake8
-pytest tests --cov=_repobee --cov-branch
+pytest tests --cov=_repobee --cov=repobee_plug --cov-branch
