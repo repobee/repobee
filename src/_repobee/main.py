@@ -50,9 +50,10 @@ def main(sys_args: List[str]):
             LOGGER.info("Non-default plugins disabled")
             plugin.initialize_plugins([constants.DEFAULT_PLUGIN])
         else:
-            plugin_names = plugin.resolve_plugin_names(
-                parsed_preparser_args.plug, config_file
-            )
+            plugin_names = (
+                parsed_preparser_args.plug
+                or config.get_plugin_names(config_file)
+            ) or []
             # IMPORTANT: the default plugin MUST be loaded last to ensure that
             # any user-defined plugins override the firstresult hooks
             plugin.initialize_plugins(
@@ -93,6 +94,8 @@ def main(sys_args: List[str]):
         else:
             LOGGER.error("{.__class__.__name__}: {}".format(exc, str(exc)))
         sys.exit(1)
+    finally:
+        plugin.unregister_all_plugins()
 
 
 if __name__ == "__main__":

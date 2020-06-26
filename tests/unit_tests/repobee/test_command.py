@@ -535,9 +535,7 @@ class TestCloneRepos:
         monkeypatch.setattr("_repobee.ext.pylint.act", act_hook_func)
         _repobee.ext.pylint.act(None, None)
 
-        plugin_names = plugin.resolve_plugin_names(
-            plugin_names=constants.PLUGINS, config_file=unused_path
-        )
+        plugin_names = constants.PLUGINS
         modules = plugin.load_plugin_modules(plugin_names)
         plugin.register_plugins(modules)
 
