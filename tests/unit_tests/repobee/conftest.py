@@ -7,10 +7,9 @@ import os
 from unittest.mock import MagicMock
 import pytest
 
-from repobee_plug import manager
-
 import _repobee.constants
 import _repobee.config
+import _repobee.plugin
 
 import constants
 
@@ -64,9 +63,7 @@ def unused_path():
 @pytest.fixture(autouse=True)
 def unregister_plugins():
     """All plugins should be unregistered after each function."""
-    registered = manager.get_plugins()
-    for plugin in registered:
-        manager.unregister(plugin)
+    _repobee.plugin.unregister_all_plugins()
 
 
 @pytest.fixture(autouse=True)

@@ -34,21 +34,6 @@ def unregister_plugins():
         plug.manager.unregister(p)
 
 
-class TestResolvePluginNames:
-    """Tests for resolve_plugin_names."""
-
-    def test_plugin_names_override_config_file(self, config_mock, mocker):
-        """Test that the plugin_names argument override the configuration
-        file."""
-        plugin_names = ["awesome", "the_slarse_plugin", "ric_easter_egg"]
-
-        actual_plugin_names = plugin.resolve_plugin_names(
-            config_file=str(config_mock), plugin_names=plugin_names
-        )
-
-        assert actual_plugin_names == plugin_names
-
-
 class TestLoadPluginModules:
     """Tests for load_plugin_modules."""
 
@@ -134,6 +119,33 @@ class TestRegisterPlugins:
         plugin.register_plugins(modules)
 
         plugin_manager_mock.register.assert_has_calls(expected_calls)
+
+
+class TestTryRegisterPlugin:
+    """Tests for try_register_plugin."""
+
+    def test_modules_unregistered_after_success(self):
+        plugin.try_register_plugin(pylint)
+        assert not plug.manager.get_plugins()
+
+    def test_modules_and_classes_unregistered_after_success(self):
+        plugin.try_register_plugin(javac, javac.JavacCloneHook)
+        assert not plug.manager.get_plugins()
+
+    def test_does_not_unregister_unrelated_plugins(self):
+        plug.manager.register(pylint)
+        plugin.try_register_plugin(javac, javac.JavacCloneHook)
+        assert pylint in plug.manager.get_plugins()
+
+    def test_modules_unregistered_after_fail(self):
+        with pytest.raises(plug.PlugError):
+            plugin.try_register_plugin(pylint, javac.JavacCloneHook)
+        assert not plug.manager.get_plugins()
+
+    def test_fails_if_classes_not_specified(self):
+        with pytest.raises(plug.PlugError) as exc_info:
+            plugin.try_register_plugin(javac)
+        assert javac.JavacCloneHook.__name__ in str(exc_info.value)
 
 
 class TestTasks:

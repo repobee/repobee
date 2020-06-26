@@ -16,12 +16,11 @@ import types
 import pathlib
 import importlib
 from types import ModuleType
-from typing import List, Optional, Iterable, Mapping
+from typing import List, Optional, Iterable, Mapping, Union
 
 import daiquiri
 
 import _repobee
-from _repobee import config
 from _repobee import exception
 
 import repobee_plug as plug
@@ -90,32 +89,129 @@ def _try_load_module(qualname: str) -> Optional[ModuleType]:
         return None
 
 
-def register_plugins(modules: List[ModuleType]) -> None:
+def register_plugins(modules: List[ModuleType],) -> List[object]:
     """Register the namespaces of the provided modules, and any plug.Plugin
     instances in them. Registers modules in reverse order as they are
     run in LIFO order.
 
     Args:
         modules: A list of modules.
+    Returns:
+        A list of registered modules and and plugin class instances.
     """
     assert all([isinstance(mod, ModuleType) for mod in modules])
+
+    registered = []
     for module in reversed(modules):  # reverse because plugins are run LIFO
         plug.manager.register(module)
+        registered.append(module)
+
         for value in module.__dict__.values():
             if (
                 isinstance(value, type)
                 and issubclass(value, plug.Plugin)
                 and value != plug.Plugin
             ):
-                plug.manager.register(value())
+                obj = value()
+                plug.manager.register(obj)
+                registered.append(obj)
+
+    return registered
 
 
-def initialize_plugins(plugin_names: List[str] = None):
+def unregister_all_plugins() -> None:
+    """Unregister all currently registered plugins."""
+    for p in plug.manager.get_plugins():
+        plug.manager.unregister(p)
+
+
+def try_register_plugin(
+    plugin_module: ModuleType, *plugin_classes: List[type],
+) -> None:
+    """Attempt to register a plugin module and then immediately unregister it.
+
+    .. important::
+        This is a convenience method for sanity checking plugins, and should
+        only be called in test suites. It's not for production use.
+
+    This convenience method can be used to sanity check plugins by registering
+    them with RepoBee. If they have incorrectly defined hooks, this will be
+    discovered only when registering.
+
+    As an example, assume that we have a plugin module with a single (useless)
+    plugin class in it, like this:
+
+    .. code-block:: python
+        :caption: useless.py
+
+        import repobee_plug as plug
+
+        class Useless(plug.Plugin):
+            \"\"\"This plugin does nothing!\"\"\"
+
+    We want to make sure that both the ``useless`` module and the ``Useless``
+    plugin class are registered correctly, and for that we can write some
+    simple code like this.
+
+    .. code-block:: python
+        :caption: Example test case to check registering
+
+        import repobee
+        # assuming that useless is defined in the external plugin
+        # repobee_useless
+        from repobee_useless import useless
+
+        def test_register_useless_plugin():
+            repobee.try_register_plugin(useless, useless.Useless)
+
+    Args:
+        plugin_module: A plugin module.
+        plugin_classes: If the plugin contains any plugin classes (i.e. classes
+            that extend :py:class:`repobee_plug.Plugin`), then these must be
+            provided here. Otherwise, this option should not be provided.
+    Raises:
+        :py:class:`repobee_plug.PlugError` if the module cannot be registered,
+        or if the contained plugin classes does not match
+        plugin_classes.
+    """
+    expected_plugin_classes = set(plugin_classes or [])
+    newly_registered = register_plugins([plugin_module])
+
+    registered_modules = [
+        reg for reg in newly_registered if isinstance(reg, ModuleType)
+    ]
+    registered_classes = {
+        cl.__class__ for cl in newly_registered if cl not in registered_modules
+    }
+
+    errors = []
+    if len(registered_modules) != 1 or registered_modules[0] != plugin_module:
+        errors.append(
+            f"Expected only module {plugin_module}, got {registered_modules}"
+        )
+    elif expected_plugin_classes != registered_classes:
+        errors.append(
+            f"Expected plugin classes {expected_plugin_classes}, "
+            f"got {registered_classes}"
+        )
+
+    for reg in newly_registered:
+        plug.manager.unregister(reg)
+
+    if errors:
+        raise plug.PlugError(errors)
+
+
+def initialize_plugins(
+    plugin_names: List[str] = None,
+) -> List[Union[ModuleType, type]]:
     """Load and register plugins.
 
     Args:
         plugin_names: An optional list of plugin names that overrides the
         configuration file's plugins.
+    Returns:
+        A list of registered modules and classes.
     """
     registered_plugins = plug.manager.get_plugins()
     plug_modules = [
@@ -123,23 +219,9 @@ def initialize_plugins(plugin_names: List[str] = None):
         for p in load_plugin_modules(plugin_names=plugin_names)
         if p not in registered_plugins
     ]
-    register_plugins(plug_modules)
+    registered = register_plugins(plug_modules)
     _handle_deprecation()
-
-
-def resolve_plugin_names(
-    plugin_names: Optional[List[str]], config_file: pathlib.Path,
-) -> List[str]:
-    """Return a list of plugin names to load into RepoBee given a list of
-    externally specified plugin names, and a path to a configuration file.
-
-    Args:
-        plugin_names: A list of names of plugins.
-        config_file: A configuration file.
-    Returns:
-        A list of plugin names that should be loaded.
-    """
-    return [*(plugin_names or config.get_plugin_names(config_file) or [])]
+    return registered
 
 
 def resolve_plugin_version(plugin_module: types.ModuleType,) -> Optional[str]:
