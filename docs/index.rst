@@ -31,6 +31,7 @@ rest of the guide assumes a configuration as described there.
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+   :glob:
 
    fundamentals
    install
@@ -38,8 +39,8 @@ rest of the guide assumes a configuration as described there.
    configuration
    cli
    contributing
+   repobee_plug/index
    code
-
 
 
 Indices and tables
