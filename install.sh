@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 REPOBEE_INSTALL_DIR="$HOME/.repobee"
 REPOBEE_BIN_DIR="$REPOBEE_INSTALL_DIR/bin"
@@ -24,7 +24,7 @@ function check_prerequisites() {
     # check that Python 3.6+, pip and Git are installed
     installed_python=$(find_python)
     if [ -z "$installed_python" ]; then
-        echo "Cannot find any compatible version of Python installed."
+        printf "\nCannot find any compatible version of Python installed.\n"
         echo "Please install Python 3.6 or higher and then rerun this script."
         echo "See https://www.python.org/downloads/ for a Python installer."
         exit 1
@@ -34,7 +34,7 @@ function check_prerequisites() {
 
     git --version &> /dev/null
     if [ $? != 0 ]; then
-        echo "Git is not installed."
+        printf "\nGit is not installed.\n"
         echo "Please install Git and then rerun this script."
         echo "See https://git-scm.com/downloads for Git install instructions"
         exit 1
@@ -46,7 +46,15 @@ function check_prerequisites() {
 function install_repobee() {
     echo "Installing RepoBee at $REPOBEE_INSTALL_DIR"
 
-    $(find_python) -m venv "$VENV_DIR" || exit 1
+    $(find_python) -m venv "$VENV_DIR" || {
+        printf "\nFailed to create a virtual environment for RepoBee."
+        echo "This is typically caused by the venv package not being installed."
+        printf "If you run Ubuntu/Debian, try running the following commands:\n\n"
+        echo "    sudo apt-add-repository universe"
+        echo "    sudo apt update"
+        echo "    sudo apt install python3-venv"
+        printf "\nThen re-execute this script."
+    }
     ensure_pip_installed
 
     echo "Installing RepoBee $REPOBEE_VERSION"
@@ -114,10 +122,10 @@ function create_repobee_executable() {
 }
 
 function add_to_path() {
-    printf "\n$REPOBEE_BIN_DIR is not on the PATH, so to run RepoBee you must type the full path to $REPOBEE_EXECUTABLE. "
-    printf "We can add $REPOBEE_BIN_DIR to your PATH by adding it to your profile file (e.g. .bashrc, .zshrc, config.fish, etc), and then you just need to type 'repobee' to run it. "
-    printf "If you prefer to do this manually, and know how to do it, then that's absolutely fine, and you can always run RepoBee with the full path to $REPOBEE_EXECUTABLE\n"
-    printf "Do you want us to add $REPOBEE_BIN_DIR to your PATH? (y/n): "
+    printf "\n$REPOBEE_BIN_DIR is not on the PATH, so to run RepoBee you must type the full path to $REPOBEE_EXECUTABLE.\n"
+    echo "We can add $REPOBEE_BIN_DIR to your PATH by adding it to your profile file (e.g. .bashrc, .zshrc, config.fish, etc), and then you just need to type 'repobee' to run it."
+    echo "If you prefer to do this manually, and know how to do it, then that's absolutely fine, and you can always run RepoBee with the full path to $REPOBEE_EXECUTABLE"
+    echo "Do you want us to add $REPOBEE_BIN_DIR to your PATH? (y/n): "
 
     # careful with read, its options work differently in zsh and bash
     read confirm
