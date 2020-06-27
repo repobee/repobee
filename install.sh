@@ -81,9 +81,25 @@ function ensure_pip_installed() {
     "$REPOBEE_PYTHON" -m pip install --upgrade pip &> /dev/null || {
         echo "Installing pip"
         get_pip="$REPOBEE_INSTALL_DIR/get-pip.py"
-        curl https://bootstrap.pypa.io/get-pip.py -o "$get_pip" || exit 1
+        download https://bootstrap.pypa.io/get-pip.py "$get_pip" || exit 1
         "$REPOBEE_PYTHON" "$get_pip" || exit 1
     }
+}
+
+function download() {
+    # try downloading a file with both curl and wget
+    url="$1"
+    dst="$2"
+
+    curl --version &> /dev/null && {
+        curl "$url" -o "$dst"
+        return 0
+    }
+    wget --version &> /dev/null && {
+        wget "$url" -O "$dst"
+        return 0
+    }
+    return 1
 }
 
 function create_repobee_executable() {
