@@ -1,4 +1,6 @@
 import re
+import pathlib
+import os
 from setuptools import setup, find_packages
 
 with open("README.md", mode="r", encoding="utf-8") as f:
@@ -9,6 +11,14 @@ with open("src/_repobee/__version.py", mode="r", encoding="utf-8") as f:
     line = f.readline()
     __version__ = line.split("=")[1].strip(" '\"\n")
     assert re.match(r"^\d+(\.\d+){2}(-(alpha|beta|rc)(\.\d+)?)?$", __version__)
+
+# so we can distinguish between installs with pip and install with
+# RepoBee's distribution tooling
+if os.getenv("REPOBEE_DIST_INSTALL"):
+    pathlib.Path("src/_repobee/_install_form.py").write_text(
+        "REPOBEE_DIST_INSTALL = True"
+    )
+
 
 test_requirements = [
     "pytest>=4.0.0",
