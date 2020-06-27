@@ -12,11 +12,14 @@ with open("src/_repobee/__version.py", mode="r", encoding="utf-8") as f:
     __version__ = line.split("=")[1].strip(" '\"\n")
     assert re.match(r"^\d+(\.\d+){2}(-(alpha|beta|rc)(\.\d+)?)?$", __version__)
 
-# so we can distinguish between installs with pip and install with
-# RepoBee's distribution tooling
-if os.getenv("REPOBEE_DIST_INSTALL"):
-    pathlib.Path("src/_repobee/_install_form.py").write_text(
-        "REPOBEE_DIST_INSTALL = True"
+python_interpreter = os.getenv("REPOBEE_PYTHON_INTERPRETER")
+if python_interpreter:  # install with RepoBee's install script
+    pathlib.Path("src/_repobee/_distinfo.py").write_text(
+        f"""
+import pathlib
+DIST_INSTALL = True
+PYTHON_INTERPRETER = pathlib.Path('{python_interpreter}')
+"""
     )
 
 

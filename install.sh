@@ -3,10 +3,10 @@
 REPOBEE_INSTALL_DIR="$HOME/.repobee"
 REPOBEE_BIN_DIR="$REPOBEE_INSTALL_DIR/bin"
 REPOBEE_REPO_DIR="$REPOBEE_INSTALL_DIR/repobee_git"
-REPOBEE_HTTPS_URL="https://github.com/repobee/repobee"
+REPOBEE_HTTPS_URL="https://github.com/slarse/repobee"
 REPOBEE_EXECUTABLE="$REPOBEE_BIN_DIR/repobee"
-REPOBEE_VERSION="v2.4.0"
-REPOBEE_ARCHIVE_URL="$REPOBEE_HTTPS_URL/archive/$REPOBEE_VERSION.tar.gz"
+REPOBEE_VERSION="issue/420-repobee-installer"
+REPOBEE_PIP_URL="git+$REPOBEE_HTTPS_URL.git@$REPOBEE_VERSION"
 
 VENV_DIR="$REPOBEE_INSTALL_DIR/env"
 REPOBEE_PYTHON="$VENV_DIR/bin/python"
@@ -59,7 +59,7 @@ function install_repobee() {
     ensure_pip_installed
 
     echo "Installing RepoBee $REPOBEE_VERSION"
-    pip_install_quiet_failfast "$REPOBEE_ARCHIVE_URL"
+    REPOBEE_PYTHON_INTERPRETER="$REPOBEE_PYTHON" pip_install_quiet_failfast "$REPOBEE_PIP_URL"
     create_repobee_executable
 
     echo "Checking PATH"
