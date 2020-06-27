@@ -54,6 +54,7 @@ function install_repobee() {
         echo "    sudo apt update"
         echo "    sudo apt install python3-venv"
         printf "\nThen re-execute this script."
+        exit 1
     }
     ensure_pip_installed
 
