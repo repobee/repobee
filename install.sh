@@ -46,8 +46,8 @@ function check_prerequisites() {
 function install_repobee() {
     echo "Installing RepoBee at $REPOBEE_INSTALL_DIR"
 
-    $(find_python) -m venv "$VENV_DIR" || {
-        printf "\nFailed to create a virtual environment for RepoBee."
+    $(find_python) -m venv "$VENV_DIR" &> /dev/null || {
+        printf "\nFailed to create a virtual environment for RepoBee.\n"
         echo "This is typically caused by the venv package not being installed."
         printf "If you run Ubuntu/Debian, try running the following commands:\n\n"
         echo "    sudo apt-add-repository universe"
