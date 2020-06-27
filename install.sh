@@ -46,7 +46,7 @@ function check_prerequisites() {
 function install_repobee() {
     echo "Installing RepoBee at $REPOBEE_INSTALL_DIR"
 
-    #$(find_python) -m venv "$VENV_DIR" || exit 1
+    $(find_python) -m venv "$VENV_DIR" || exit 1
     ensure_pip_installed
 
     echo "Installing RepoBee $REPOBEE_VERSION"
@@ -56,12 +56,7 @@ function install_repobee() {
     echo "Checking PATH"
     pip_install_quiet_failfast userpath
     "$REPOBEE_PYTHON" -m userpath verify "$REPOBEE_BIN_DIR" &> /dev/null \
-    && echo "PATH OK" \
-    || {
-        echo "Adding $REPOBEE_BIN_DIR to PATH to make the repobee program accessible"
-        "$REPOBEE_PYTHON" -m userpath prepend "$REPOBEE_BIN_DIR" || exit 1
-        echo "$REPOBEE_BIN_DIR added to PATH"
-    }
+    && echo "PATH OK" || add_to_path
 }
 
 function find_python() {
@@ -102,9 +97,26 @@ function create_repobee_executable() {
     echo "RepoBee exuctable created at $REPOBEE_EXECUTABLE"
 }
 
+function add_to_path() {
+    printf "\n$REPOBEE_BIN_DIR is not on the PATH, so to run RepoBee you must type the full path to $REPOBEE_EXECUTABLE. "
+    printf "We can add $REPOBEE_BIN_DIR to your PATH by adding it to your profile file (e.g. .bashrc, .zshrc, config.fish, etc), and then you just need to type 'repobee' to run it. "
+    printf "If you prefer to do this manually, and know how to do it, then that's absolutely fine, and you can always run RepoBee with the full path to $REPOBEE_EXECUTABLE\n"
+    printf "Do you want us to add $REPOBEE_BIN_DIR to your PATH? (y/n): "
+
+    # careful with read, its options work differently in zsh and bash
+    read confirm
+
+    case "$confirm" in y|Y|yes|YES|yes)
+            echo "Adding $REPOBEE_BIN_DIR to PATH"
+            "$REPOBEE_PYTHON" -m userpath prepend "$REPOBEE_BIN_DIR" || exit 1
+            echo "$REPOBEE_BIN_DIR added to PATH, please start a new shell for the changes to take effect."
+            ;;
+        *) echo "Not adding $REPOBEE_BIN_DIR to PATH. Please do this manually."
+    esac
+}
+
 install
 
 echo ""
 echo "RepoBee was installed successfully. To uninstall, simply remove the directory at $REPOBEE_INSTALL_DIR"
-echo "Please start a new shell/terminal session to ensure that the PATH is updated."
 echo "If you are having trouble, please visit the FAQ at https://repobee.readthedocs.io/troubleshoot.html"
