@@ -17,7 +17,6 @@ import _repobee.cli.parsing
 import _repobee.cli.preparser
 from _repobee import plugin
 from _repobee import exception
-from _repobee import constants
 from _repobee import config
 from _repobee.cli.preparser import separate_args
 
@@ -46,19 +45,22 @@ def main(sys_args: List[str]):
         )
         config_file = parsed_preparser_args.config_file
 
-        if parsed_preparser_args.no_plugins:
-            LOGGER.info("Non-default plugins disabled")
-            plugin.initialize_plugins([constants.DEFAULT_PLUGIN])
-        else:
+        if not parsed_preparser_args.no_plugins:
+            LOGGER.debug("Initializing user plugins")
             plugin_names = (
                 parsed_preparser_args.plug
                 or config.get_plugin_names(config_file)
             ) or []
-            # IMPORTANT: the default plugin MUST be loaded last to ensure that
-            # any user-defined plugins override the firstresult hooks
-            plugin.initialize_plugins(
-                plugin_names + [constants.DEFAULT_PLUGIN]
-            )
+            # IMPORTANT: the user-defined plugins MUST be loaded before
+            # defaults to ensure that user-defined plugins override the
+            # firstresult hooks
+            plugin.initialize_plugins(plugin_names)
+
+        LOGGER.debug("Initializing default plugins")
+        default_plugin_names = plugin.get_qualified_module_names(
+            _repobee.ext.defaults
+        )
+        plugin.initialize_plugins(default_plugin_names, allow_qualified=True)
 
         config.execute_config_hooks(config_file)
         ext_commands = plug.manager.hook.create_extension_command()
