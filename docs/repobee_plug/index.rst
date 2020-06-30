@@ -3,6 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+.. _repobee-plug:
+
 ``repobee-plug`` Developer Documentation
 ========================================
 
@@ -10,11 +12,10 @@
 <https://github.com/repobee/repobee>`_. While the plugin system itself is
 implemented in the core application, this package contains every part necessary
 to actually create a plugin. If you just want to use plugins created by others,
-then you're in the wrong place and should head over to `the RepoBee User Guide
-<https://repobee.readthedocs.io/en/stable/plugins.html>`_. If you want to create
-plugins, you are in precisely the right place! I recommend you read through all
-of the general documentation, and then refer to the parts of the module
-reference that you need for your plugin.
+then you're in the wrong place and should head over to :ref:`plugins`. If you
+want to create plugins, you are in precisely the right place! I recommend you
+read through all of the general documentation, and then refer to the parts of
+the module reference that you need for your plugin.
 
 Don't hesitate to get in touch if you need help, you can use the `issue tracker
 <https://github.com/repobee/repobee-plug>`_ or find `contact details on the

@@ -29,12 +29,11 @@ version yourself with:
 
 Then, just use whichever of those Pythons claim to be 3.6 or higher.
 
-Option 1: Install from PyPi with `pip`
---------------------------------------
-The latest release of RepoBee is on PyPi, and can thus be installed as usual with pip.
-I strongly discourage system-wide pip installs (e.g. ``sudo pip install <package>``), as this
-may land you with incompatible packages in a very short amount of time. A per-user install
-can be done like this:
+Option 1: Install from PyPi with `pip` --------------------------------------
+The latest release of RepoBee is on PyPi, and can thus be installed as usual
+with pip. I strongly discourage system-wide pip installs (e.g. ``sudo pip
+install <package>``), as this may land you with incompatible packages in a very
+short amount of time. A per-user install can be done like this:
 
 1. Execute ``python3 -m pip install --user --upgrade repobee`` to install the package.
 2. Run ``repobee -h`` to verify that you can find the script.
@@ -54,13 +53,13 @@ version.
 
     A ``--user`` install will perform a local install for the current user. Any
     scripts will be installed in a user-local bin directory. If this directory
-    is not on your path (which it often is not by default), you will not be
-    able to run the ``repobee`` script (however, ``python -m repobee``
-    should still work). pip should issue a warning about this, including the
-    path to the local bin directory. To resolve the problem, add the local bin
-    directory to your $PATH variable. When installing, pip will usually complain
-    that the bin directory is not on the $PATH variable and point out where the
-    directory is located.
+    is not on your path (which it often is not by default), you will not be able
+    to run the ``repobee`` script (however, ``python -m repobee`` should still
+    work). pip should issue a warning about this, including the path to the
+    local bin directory. To resolve the problem, add the local bin directory to
+    your $PATH variable. When installing, pip will usually complain that the bin
+    directory is not on the $PATH variable and point out where the directory is
+    located.
 
 .. _clone repo:
 

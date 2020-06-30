@@ -174,10 +174,9 @@ Interlude - Installing your plugin
 ----------------------------------
 
 Since you're here looking how to create your own plugins, I'm guessing you've
-already tried using a plugin or two (if not, have a look at the `plugin section
-of the user guide <https://repobee.readthedocs.io/en/stable/plugins.html>`_). To
-be able to use the ``exampleplug`` plugin that we just created, it needs to be
-installed. That can easily be done like this:
+already tried using a plugin or two (if not, have a look at the :ref:`plugins`
+section). To be able to use the ``exampleplug`` plugin that we just created, it
+needs to be installed. That can easily be done like this:
 
 .. code-block:: bash
 

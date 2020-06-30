@@ -13,8 +13,7 @@ Welcome to RepoBee's documentation!
 If you are new to RepoBee, the :ref:`fundamentals` and :ref:`userguide`
 sections are must-reads. Developers looking to work on RepoBee, or fork it, are
 probably most interested in the :ref:`modindex`. Developers looking to create
-plugins should head over to the documentation for `repobee-plug
-<https://repobee-plug.readthedocs.io/en/stable>`_.
+plugins should head over to the :ref:`repobee-plug`.
 
 If you use the :ref:`userguide` in any way and feel like skipping
 :ref:`getting_started`, make sure to read :ref:`configure_repobee` anyway! The
