@@ -29,7 +29,9 @@ version yourself with:
 
 Then, just use whichever of those Pythons claim to be 3.6 or higher.
 
-Option 1: Install from PyPi with `pip` --------------------------------------
+Option 1: Install from PyPi with `pip`
+--------------------------------------
+
 The latest release of RepoBee is on PyPi, and can thus be installed as usual
 with pip. I strongly discourage system-wide pip installs (e.g. ``sudo pip
 install <package>``), as this may land you with incompatible packages in a very
