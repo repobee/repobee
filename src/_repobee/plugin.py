@@ -20,6 +20,7 @@ from typing import List, Optional, Iterable, Mapping, Union
 import daiquiri
 
 import _repobee
+import _repobee.ext.defaults
 from _repobee import exception
 
 import repobee_plug as plug
@@ -259,6 +260,25 @@ def resolve_plugin_version(plugin_module: ModuleType) -> Optional[str]:
     return (
         pkg_module.__version__ if hasattr(pkg_module, "__version__") else None
     )
+
+
+def is_default_plugin(module: ModuleType) -> Optional[str]:
+    """Check if the provided module is a default module.
+
+    Args:
+        module: A Python module.
+    Returns:
+        True iff the provided module is a default plugin.
+    """
+    return module.__package__ == _repobee.ext.defaults.__name__
+
+
+def initialize_default_plugins() -> None:
+    """Initialize the default plugin modules."""
+    default_plugin_qualnames = get_qualified_module_names(
+        _repobee.ext.defaults
+    )
+    initialize_plugins(default_plugin_qualnames, allow_qualified=True)
 
 
 def get_qualified_module_names(pkg: ModuleType) -> List[str]:

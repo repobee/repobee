@@ -122,8 +122,7 @@ def create_parser_for_docs() -> argparse.ArgumentParser:
     """
     daiquiri.setup(level=logging.FATAL)
     # load default plugins
-    default_plugins = plugin.get_qualified_module_names(_repobee.ext.defaults)
-    plugin.initialize_plugins(default_plugins, allow_qualified=True)
+    plugin.initialize_default_plugins()
     ext_commands = plug.manager.hook.create_extension_command()
     return create_parser(
         show_all_opts=True,
@@ -159,6 +158,7 @@ def create_parser(
             _versioned_plugin_name(p)
             for p in plug.manager.get_plugins()
             if isinstance(p, types.ModuleType)
+            and not plugin.is_default_plugin(p)
         ]
     )
 
