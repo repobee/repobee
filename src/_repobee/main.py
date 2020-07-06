@@ -15,6 +15,7 @@ import repobee_plug as plug
 import _repobee.cli.dispatch
 import _repobee.cli.parsing
 import _repobee.cli.preparser
+import _repobee.ext.defaults
 from _repobee import plugin
 from _repobee import exception
 from _repobee import config
@@ -45,22 +46,22 @@ def main(sys_args: List[str]):
         )
         config_file = parsed_preparser_args.config_file
 
+        LOGGER.debug("Initializing default plugins")
+        default_plugin_names = plugin.get_qualified_module_names(
+            _repobee.ext.defaults
+        )
+        # IMPORTANT: the default plugins must be loaded before user-defined
+        # plugins to ensure that the user-defined plugins override the defaults
+        # in firstresult hooks
+        plugin.initialize_plugins(default_plugin_names, allow_qualified=True)
+
         if not parsed_preparser_args.no_plugins:
             LOGGER.debug("Initializing user plugins")
             plugin_names = (
                 parsed_preparser_args.plug
                 or config.get_plugin_names(config_file)
             ) or []
-            # IMPORTANT: the user-defined plugins MUST be loaded before
-            # defaults to ensure that user-defined plugins override the
-            # firstresult hooks
             plugin.initialize_plugins(plugin_names)
-
-        LOGGER.debug("Initializing default plugins")
-        default_plugin_names = plugin.get_qualified_module_names(
-            _repobee.ext.defaults
-        )
-        plugin.initialize_plugins(default_plugin_names, allow_qualified=True)
 
         config.execute_config_hooks(config_file)
         ext_commands = plug.manager.hook.create_extension_command()
