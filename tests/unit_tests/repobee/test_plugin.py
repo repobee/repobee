@@ -239,3 +239,10 @@ class TestInitializePlugins:
             plugin.initialize_plugins([mod_name])
 
         assert warning_mock.called
+
+    def test_raises_on_qualified_names_by_default(self):
+        qualname = "_repobee.ext.query"
+        with pytest.raises(exception.PluginLoadError) as exc_info:
+            plugin.initialize_plugins([qualname])
+
+        assert "Qualified names not allowed" in str(exc_info.value)
