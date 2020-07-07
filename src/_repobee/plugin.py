@@ -189,6 +189,8 @@ def try_register_plugin(
     """
     expected_plugin_classes = set(plugin_classes or [])
     newly_registered = register_plugins([plugin_module])
+    for reg in newly_registered:
+        plug.manager.unregister(reg)
 
     registered_modules = [
         reg for reg in newly_registered if isinstance(reg, ModuleType)
@@ -197,22 +199,12 @@ def try_register_plugin(
         cl.__class__ for cl in newly_registered if cl not in registered_modules
     }
 
-    errors = []
-    if len(registered_modules) != 1 or registered_modules[0] != plugin_module:
-        errors.append(
-            f"Expected only module {plugin_module}, got {registered_modules}"
-        )
-    elif expected_plugin_classes != registered_classes:
-        errors.append(
+    assert len(registered_modules) == 1, "Module was not registered"
+    if expected_plugin_classes != registered_classes:
+        raise plug.PlugError(
             f"Expected plugin classes {expected_plugin_classes}, "
             f"got {registered_classes}"
         )
-
-    for reg in newly_registered:
-        plug.manager.unregister(reg)
-
-    if errors:
-        raise plug.PlugError(errors)
 
 
 def initialize_plugins(
