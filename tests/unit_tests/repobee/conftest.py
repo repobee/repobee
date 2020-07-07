@@ -21,7 +21,6 @@ import _repobee  # noqa: E402
 
 EXPECTED_ENV_VARIABLES = [
     _repobee.constants.TOKEN_ENV,
-    _repobee.constants.TOKEN_ENV_OLD,
     "REPOBEE_NO_VERIFY_SSL",
 ]
 
