@@ -44,13 +44,13 @@ working on it!
 your thing!
 
 ## Submitting a pull request
-When you have complete whatever you were working on, or want feedback on the
+When you have completed whatever you were working on, or want feedback on the
 work you've done so far, it is time to submit a pull request. Go to the [pull
 request page](https://github.com/repobee/repobee/pulls/compare), select
 `repobee/master` as the base and your own fork and branch as the compare.
 
 ### Pull request title
-The pull request title should ideally follow the following form:
+The pull request title should ideally be on the following form:
 
 ```
 [<TAG>] <DESCRIPTION>
