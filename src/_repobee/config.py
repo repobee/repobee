@@ -11,7 +11,7 @@ Contains the code required for pre-configuring user interfaces.
 import os
 import pathlib
 import configparser
-from typing import Union, List, Mapping, Optional
+from typing import Union, List, Mapping
 
 import daiquiri
 import repobee_plug as plug
@@ -137,21 +137,8 @@ def get_all_tasks() -> List[plug.Task]:
     return plug.manager.hook.setup_task() + plug.manager.hook.clone_task()
 
 
-def _fetch_token() -> Optional[str]:
-    token = os.getenv(constants.TOKEN_ENV)
-    token_from_old = os.getenv(constants.TOKEN_ENV_OLD)
-    if token_from_old:
-        LOGGER.warning(
-            "The {} environment variable has been deprecated, "
-            "use {} instead".format(
-                constants.TOKEN_ENV_OLD, constants.TOKEN_ENV
-            )
-        )
-    return token or token_from_old
-
-
 def _read_defaults(config_file: pathlib.Path) -> dict:
-    token = _fetch_token()
+    token = os.getenv(constants.TOKEN_ENV)
     if not config_file.is_file():
         return {} if not token else dict(token=token)
     defaults = dict(_read_config(config_file)[constants.DEFAULTS_SECTION_HDR])
