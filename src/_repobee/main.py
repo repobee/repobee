@@ -57,7 +57,7 @@ def main(sys_args: List[str]):
                 parsed_preparser_args.plug
                 or config.get_plugin_names(config_file)
             ) or []
-            plugin.initialize_plugins(plugin_names)
+            plugin.initialize_plugins(plugin_names, allow_filepath=True)
 
         config.execute_config_hooks(config_file)
         ext_commands = plug.manager.hook.create_extension_command()

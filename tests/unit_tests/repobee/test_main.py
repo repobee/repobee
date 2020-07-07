@@ -57,7 +57,7 @@ def api_instance_mock(mocker):
 
 @pytest.fixture
 def init_plugins_mock(mocker):
-    def init_plugins(plugs=None, allow_qualified=False):
+    def init_plugins(plugs=None, allow_qualified=False, allow_filepath=False):
         list(map(module, plugs or []))
 
     return mocker.patch(
@@ -159,7 +159,7 @@ def test_plugins_args(
 
     init_plugins_mock.assert_has_calls(
         [
-            call(["javac", "pylint"]),
+            call(["javac", "pylint"], allow_filepath=True),
             call(DEFAULT_PLUGIN_NAMES, allow_qualified=True),
         ],
         any_order=True,
@@ -223,7 +223,7 @@ def test_configured_plugins_are_loaded(
 
     init_plugins_mock.assert_has_calls(
         [
-            call(["javac", "pylint"]),
+            call(["javac", "pylint"], allow_filepath=True),
             call(DEFAULT_PLUGIN_NAMES, allow_qualified=True),
         ],
         any_order=True,
@@ -245,7 +245,7 @@ def test_plugin_with_subparser_name(
 
     init_plugins_mock.assert_has_calls(
         [
-            call(["javac", "clone"]),
+            call(["javac", "clone"], allow_filepath=True),
             call(DEFAULT_PLUGIN_NAMES, allow_qualified=True),
         ],
         any_order=True,
@@ -287,7 +287,10 @@ def test_invalid_plug_options(dispatch_command_mock, init_plugins_mock):
         main.main(sys_args)
 
     init_plugins_mock.assert_has_calls(
-        [call(["javac"]), call(DEFAULT_PLUGIN_NAMES, allow_qualified=True)],
+        [
+            call(["javac"], allow_filepath=True),
+            call(DEFAULT_PLUGIN_NAMES, allow_qualified=True),
+        ],
         any_order=True,
     )
     assert not dispatch_command_mock.called

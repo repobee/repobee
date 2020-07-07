@@ -14,6 +14,9 @@ import tempfile
 import pkgutil
 import pathlib
 import importlib
+import hashlib
+import os
+import sys
 from types import ModuleType
 from typing import List, Optional, Iterable, Mapping, Union
 
@@ -39,7 +42,9 @@ def _external_plugin_qualname(plugin_name):
 
 
 def load_plugin_modules(
-    plugin_names: Iterable[str], allow_qualified: bool = False
+    plugin_names: Iterable[str],
+    allow_qualified: bool = False,
+    allow_filepath: bool = False,
 ) -> List[ModuleType]:
     """Load the given plugins. Plugins are loaded such that they are executed
     in the same order that they are specified in the plugin_names list.
@@ -56,18 +61,16 @@ def load_plugin_modules(
         # import nr 2
         from repobee_javac import javac
 
-    If ``allow_qualified`` is True, an additional import using the provided
-    plugin names as-is is also attempted.
-
-    .. code-block:: python
-
         # import nr 3 (only if allow_qualified)
         import javac
 
+        # import nr 4 (only if allow_filepath)
+        # Dynamically import using the name as a filepath
+
     Args:
         plugin_names: A list of plugin names.
-        allow_qualified: If True, attempts to import modules using the plugin
-            names as qualified paths.
+        allow_qualified: Allow the plugin to be specified by a qualified name.
+        allow_filepath: Allows the plugin to be specified as a filepath.
     Returns:
         a list of loaded modules.
     """
@@ -79,12 +82,37 @@ def load_plugin_modules(
             _try_load_module(_plugin_qualname(name))
             or _try_load_module(_external_plugin_qualname(name))
             or (allow_qualified and _try_load_module(name))
+            or (allow_filepath and _try_load_module_from_filepath(name))
         )
         if not plug_mod:
             msg = "failed to load plugin module " + name
             raise exception.PluginLoadError(msg)
         loaded_modules.append(plug_mod)
     return loaded_modules
+
+
+def _try_load_module_from_filepath(path: str) -> Optional[ModuleType]:
+    """Try to load a module from the specified filepath.
+
+    Adapted from code by Sebastian Rittau (https://stackoverflow.com/a/67692).
+
+    Args:
+        path: A path to a Python module.
+    Returns:
+        The module if loaded successfully, or None if there was no module at
+        the path.
+    """
+    package_name = f"_{hashlib.sha1(path.encode(sys.getdefaultencoding()))}"
+    module_name = pathlib.Path(path).stem
+    qualname = f"{package_name}.{module_name}"
+    spec = importlib.util.spec_from_file_location(qualname, path)
+    if not spec:
+        return None
+
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    return mod
 
 
 def _try_load_module(qualname: str) -> Optional[ModuleType]:
@@ -216,7 +244,9 @@ def try_register_plugin(
 
 
 def initialize_plugins(
-    plugin_names: List[str] = None, allow_qualified: bool = False,
+    plugin_names: List[str] = None,
+    allow_qualified: bool = False,
+    allow_filepath: bool = False,
 ) -> List[Union[ModuleType, type]]:
     """Load and register plugins.
 
@@ -224,18 +254,23 @@ def initialize_plugins(
         plugin_names: An optional list of plugin names that overrides the
             configuration file's plugins.
         allow_qualified: Allows the plugin names to be qualified.
+        allow_filepath: Allows the plugin to be specified as a filepath.
     Returns:
         A list of registered modules and classes.
     Raises:
         :py:class:`_repobee.exception.PluginLoadError`
     """
+    if not allow_filepath:
+        _check_no_filepaths(plugin_names)
     if not allow_qualified:
         _check_no_qualified_names(plugin_names)
 
     registered_plugins = plug.manager.get_plugins()
     plug_modules = [
         p
-        for p in load_plugin_modules(plugin_names, allow_qualified)
+        for p in load_plugin_modules(
+            plugin_names, allow_qualified, allow_filepath
+        )
         if p not in registered_plugins
     ]
     registered = register_plugins(plug_modules)
@@ -243,8 +278,20 @@ def initialize_plugins(
     return registered
 
 
+def _is_filepath(name: str) -> bool:
+    return os.pathsep in name or os.path.exists(name)
+
+
+def _check_no_filepaths(names: List[str]):
+    filepaths = [name for name in names if _is_filepath(name)]
+    if filepaths:
+        raise exception.PluginLoadError(f"Filepaths not allowed: {filepaths}")
+
+
 def _check_no_qualified_names(names: List[str]):
-    qualified_names = [name for name in names if "." in name]
+    qualified_names = [
+        name for name in names if "." in name and not _is_filepath(name)
+    ]
     if qualified_names:
         raise exception.PluginLoadError(
             f"Qualified names not allowed: {qualified_names}"
@@ -252,9 +299,18 @@ def _check_no_qualified_names(names: List[str]):
 
 
 def resolve_plugin_version(plugin_module: ModuleType) -> Optional[str]:
-    """Return the version of the top-level package containing the plugin, or
-    None if it is not defined.
+    """Return the version of this plugin. Tries to resolve the version by
+    first checking if the plugin module itself has a ``__version__``
+    attribute, and then the top level package.
+
+    Args:
+        plugin_module: A plugin module.
+    Returns:
+        The version if found, otherwise None.
     """
+    if hasattr(plugin_module, "__version__"):
+        return plugin_module.__version__
+
     pkg_name = plugin_module.__package__.split(".")[0]
     pkg_module = _try_load_module(pkg_name)
     return (

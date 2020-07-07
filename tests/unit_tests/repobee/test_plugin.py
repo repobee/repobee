@@ -6,6 +6,7 @@
         installed any other plugins, tests in here may fail unexpectedly
         without anything actually being wrong.
 """
+import shutil
 import pathlib
 import tempfile
 import types
@@ -246,3 +247,39 @@ class TestInitializePlugins:
             plugin.initialize_plugins([qualname])
 
         assert "Qualified names not allowed" in str(exc_info.value)
+
+    def test_raises_on_filepath_by_default(self, tmpdir):
+        plugin_file = pathlib.Path(str(tmpdir)) / "pylint.py"
+        shutil.copy(_repobee.ext.javac.__file__, str(plugin_file))
+
+        with pytest.raises(exception.PluginLoadError) as exc_info:
+            plugin.initialize_plugins([str(plugin_file)])
+
+        assert "Filepaths not allowed" in str(exc_info.value)
+
+    def test_initialize_from_filepath_filepath(self, tmpdir):
+        """Test initializing a plugin that's specified by a filepath."""
+        plugin_file = pathlib.Path(str(tmpdir)) / "pylint.py"
+        shutil.copy(_repobee.ext.pylint.__file__, str(plugin_file))
+
+        initialized_plugins = plugin.initialize_plugins(
+            [str(plugin_file)], allow_filepath=True
+        )
+
+        assert len(initialized_plugins) == 1
+        assert initialized_plugins[0].__file__ == str(plugin_file)
+
+    def test_raises_if_filepath_is_not_python_module(self, tmpdir):
+        not_a_python_module = pathlib.Path(str(tmpdir)) / "some_file.txt"
+        not_a_python_module.write_text(
+            "This is definitely\nnot a Python module"
+        )
+
+        with pytest.raises(exception.PluginLoadError) as exc_info:
+            plugin.initialize_plugins(
+                [str(not_a_python_module)], allow_filepath=True
+            )
+
+        assert f"failed to load plugin module {not_a_python_module}" in str(
+            exc_info
+        )
