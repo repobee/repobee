@@ -7,7 +7,7 @@ from unittest.mock import patch, MagicMock, call, PropertyMock
 import pytest
 
 import _repobee
-import _repobee.ext.github
+import _repobee.ext.defaults.github
 from _repobee import command
 from _repobee import git
 from _repobee import util
@@ -147,8 +147,10 @@ def api_mock(request, mocker):
     def url_from_repo_info(repo_info):
         return generate_repo_url(repo_info.name)
 
-    mock = MagicMock(spec=_repobee.ext.github.GitHubAPI)
-    api_class = mocker.patch("_repobee.ext.github.GitHubAPI", autospec=True)
+    mock = MagicMock(spec=_repobee.ext.defaults.github.GitHubAPI)
+    api_class = mocker.patch(
+        "_repobee.ext.defaults.github.GitHubAPI", autospec=True
+    )
     api_class.return_value = mock
 
     mock.get_repo_urls.side_effect = partial(
@@ -158,7 +160,7 @@ def api_mock(request, mocker):
         map(url_from_repo_info, repo_infos)
     )
     mock.get_issues = MagicMock(
-        spec="_repobee.ext.github.GitHubAPI.get_issues",
+        spec="_repobee.ext.defaults.github.GitHubAPI.get_issues",
         side_effect=_get_issues,
     )
     type(mock).token = PropertyMock(return_value=TOKEN)
@@ -701,11 +703,11 @@ def test_purge_review_teams(master_names, students, api_mock):
 # TODO add more test cases
 class TestAssignPeerReviewers:
     @pytest.fixture(autouse=True)
-    def load_default_plugins(self):
-        modules = plugin.load_plugin_modules(
-            [_repobee.constants.DEFAULT_PLUGIN]
-        )
-        plugin.register_plugins(modules)
+    def load_default_plugins_auto(self, load_default_plugins):
+        """The only point of this fixture is to make load_default_plugins
+        autouse=True.
+        """
+        yield
 
     @pytest.mark.parametrize(
         "num_students, num_reviews",

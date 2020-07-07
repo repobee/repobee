@@ -1,17 +1,7 @@
-"""The defaults plugin contains all default hook implementations.
+"""The default implementation of generate_review_allocations.
 
-The goal is to make core parts of repobee pluggable using hooks that only
-return the first result that is not None. The standard behavior will be
-provided by the default plugin (this one), which implements all of the required
-hooks.  The default plugin will always be run last, so any user-defined hooks
-will run before it and therefore effectively override the default hooks.
-
-Currently, only the peer review related generate_review_allocations hook has a
-default implementation.
-
-.. module:: defaults
-    :synopsis: Plugin that provides the default behavior for core repobee
-        functionality.
+.. module:: genreviews
+    :synopsis: The default implementation of generate_review_allocations
 
 .. moduleauthor:: Simon Larsén
 """
@@ -20,10 +10,6 @@ import itertools
 from typing import List
 
 import repobee_plug as plug
-
-# import other default plugins
-from _repobee.ext.github import DefaultAPIHooks  # noqa: F401
-from _repobee.ext.configwizard import create_extension_command  # noqa: F401
 
 
 @plug.repobee_hook

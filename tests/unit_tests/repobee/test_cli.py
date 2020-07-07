@@ -13,7 +13,7 @@ import _repobee
 import _repobee.cli.dispatch
 import _repobee.cli.parsing
 import _repobee.ext
-import _repobee.ext.github
+import _repobee.ext.defaults.github
 import _repobee.ext.query
 import _repobee.constants
 import _repobee.plugin
@@ -77,7 +77,7 @@ VALID_PARSED_ARGS = dict(
 
 @pytest.fixture(autouse=True)
 def api_instance_mock():
-    instance_mock = mock.MagicMock(spec=_repobee.ext.github.GitHubAPI)
+    instance_mock = mock.MagicMock(spec=_repobee.ext.defaults.github.GitHubAPI)
 
     def _get_repo_urls(repo_names, org_name=None, teams=None):
         return [generate_repo_url(name, org_name) for name in repo_names]
@@ -91,18 +91,19 @@ def api_instance_mock():
 
 @pytest.fixture(autouse=True)
 def api_class_mock(mocker, api_instance_mock):
-    class_mock = mocker.patch("_repobee.ext.github.GitHubAPI", autospec=True)
+    class_mock = mocker.patch(
+        "_repobee.ext.defaults.github.GitHubAPI", autospec=True
+    )
     class_mock.return_value = api_instance_mock
     return class_mock
 
 
 @pytest.fixture(autouse=True)
-def load_default_plugins(api_instance_mock):
-    """Load the default plugins after mocking the GitHubAPI."""
-    loaded = _repobee.plugin.load_plugin_modules(
-        [_repobee.constants.DEFAULT_PLUGIN]
-    )
-    _repobee.plugin.register_plugins(loaded)
+def load_default_plugins_auto(load_default_plugins):
+    """The only point of this fixture is to make load_default_plugins
+    autouse=True.
+    """
+    yield
 
 
 @pytest.fixture
@@ -709,7 +710,7 @@ class TestExtensionCommands:
         command.
         """
         yield mock.MagicMock(
-            spec=_repobee.ext.configwizard.create_extension_command
+            spec=_repobee.ext.defaults.configwizard.create_extension_command
         )
 
     @pytest.fixture

@@ -7,11 +7,9 @@ import github
 
 import repobee_plug as plug
 
-import _repobee
-import _repobee.ext
-import _repobee.ext.github
+import _repobee.ext.defaults.github as github_plugin
 from _repobee import exception
-from _repobee.ext.github import REQUIRED_TOKEN_SCOPES
+from _repobee.ext.defaults.github import REQUIRED_TOKEN_SCOPES
 
 import constants
 import functions
@@ -314,20 +312,20 @@ def issues(repos):
 
 @pytest.fixture(scope="function")
 def api(happy_github, organization, no_teams):
-    return _repobee.ext.github.GitHubAPI(BASE_URL, TOKEN, ORG_NAME, USER)
+    return github_plugin.GitHubAPI(BASE_URL, TOKEN, ORG_NAME, USER)
 
 
 class TestInit:
     def test_raises_on_empty_user_arg(self):
         with pytest.raises(TypeError) as exc_info:
-            _repobee.ext.github.GitHubAPI(BASE_URL, TOKEN, ORG_NAME, "")
+            github_plugin.GitHubAPI(BASE_URL, TOKEN, ORG_NAME, "")
 
         assert "argument 'user' must not be empty" in str(exc_info.value)
 
     @pytest.mark.parametrize("url", ["https://github.com", constants.HOST_URL])
     def test_raises_when_url_is_bad(self, url):
         with pytest.raises(plug.PlugError) as exc_info:
-            _repobee.ext.github.GitHubAPI(url, TOKEN, ORG_NAME, USER)
+            github_plugin.GitHubAPI(url, TOKEN, ORG_NAME, USER)
 
         assert (
             "invalid base url, should either be https://api.github.com or "
@@ -338,7 +336,7 @@ class TestInit:
         "url", ["https://api.github.com", constants.BASE_URL]
     )
     def test_accepts_valid_urls(self, url):
-        api = _repobee.ext.github.GitHubAPI(url, TOKEN, ORG_NAME, USER)
+        api = github_plugin.GitHubAPI(url, TOKEN, ORG_NAME, USER)
 
         assert isinstance(api, plug.API)
 
@@ -756,7 +754,7 @@ def team_to_repos(api, no_repos, organization):
 class TestAddReposToReviewTeams:
     def test_with_default_issue(self, team_to_repos, organization, api):
         num_teams = len(team_to_repos)
-        default_issue = _repobee.ext.github.DEFAULT_REVIEW_ISSUE
+        default_issue = github_plugin.DEFAULT_REVIEW_ISSUE
         assert num_teams, "pre-test assert"
         team_repo_tuples = [
             (team, *repos) for team, repos in team_to_repos.items()
@@ -829,7 +827,7 @@ class TestVerifySettings:
 
     def test_happy_path(self, happy_github, organization, api):
         """Tests that no exceptions are raised when all info is correct."""
-        _repobee.ext.github.GitHubAPI.verify_settings(
+        github_plugin.GitHubAPI.verify_settings(
             USER, ORG_NAME, BASE_URL, TOKEN
         )
 
@@ -837,7 +835,7 @@ class TestVerifySettings:
         self, happy_github, monkeypatch, api
     ):
         with pytest.raises(exception.BadCredentials) as exc_info:
-            _repobee.ext.github.GitHubAPI.verify_settings(
+            github_plugin.GitHubAPI.verify_settings(
                 USER, ORG_NAME, BASE_URL, ""
             )
 
@@ -845,7 +843,7 @@ class TestVerifySettings:
 
     def test_incorrect_info_raises_not_found_error(self, github_bad_info, api):
         with pytest.raises(exception.NotFoundError):
-            _repobee.ext.github.GitHubAPI.verify_settings(
+            github_plugin.GitHubAPI.verify_settings(
                 USER, ORG_NAME, BASE_URL, TOKEN
             )
 
@@ -853,14 +851,14 @@ class TestVerifySettings:
         type(happy_github).oauth_scopes = PropertyMock(return_value=["repo"])
 
         with pytest.raises(exception.BadCredentials) as exc_info:
-            _repobee.ext.github.GitHubAPI.verify_settings(
+            github_plugin.GitHubAPI.verify_settings(
                 USER, ORG_NAME, BASE_URL, TOKEN
             )
         assert "missing one or more access token scopes" in str(exc_info.value)
 
     def test_not_owner_raises(self, happy_github, organization, api):
         with pytest.raises(exception.BadCredentials) as exc_info:
-            _repobee.ext.github.GitHubAPI.verify_settings(
+            github_plugin.GitHubAPI.verify_settings(
                 NOT_OWNER, ORG_NAME, BASE_URL, TOKEN
             )
 
@@ -883,7 +881,7 @@ class TestVerifySettings:
         happy_github.get_user.side_effect = lambda _: User(login=None)
 
         with pytest.raises(exception.UnexpectedException) as exc_info:
-            _repobee.ext.github.GitHubAPI.verify_settings(
+            github_plugin.GitHubAPI.verify_settings(
                 USER, ORG_NAME, BASE_URL, TOKEN
             )
 
@@ -907,7 +905,7 @@ class TestVerifySettings:
         ]
 
         with pytest.raises(exception.UnexpectedException) as exc_info:
-            _repobee.ext.github.GitHubAPI.verify_settings(
+            github_plugin.GitHubAPI.verify_settings(
                 USER, ORG_NAME, BASE_URL, TOKEN
             )
 

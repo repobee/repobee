@@ -1,18 +1,19 @@
 import argparse
 import tempfile
 import pathlib
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, call
 from collections import namedtuple
 
 import pytest
 
 import _repobee.cli.preparser
+import _repobee.ext.defaults
 from functions import raise_
 import _repobee.constants
 from _repobee.cli import mainparser
 from _repobee import main
 from _repobee import plugin
-from _repobee.ext import configwizard
+from _repobee.ext.defaults import configwizard
 
 import constants
 
@@ -41,6 +42,7 @@ CLONE_ARGS = "clone --mn week-2 -s slarse".split()
 module = namedtuple("module", ("name",))
 
 DEFAULT_EXT_COMMANDS = [configwizard.create_extension_command()]
+DEFAULT_PLUGIN_NAMES = plugin.get_qualified_module_names(_repobee.ext.defaults)
 
 
 @pytest.fixture
@@ -55,7 +57,7 @@ def api_instance_mock(mocker):
 
 @pytest.fixture
 def init_plugins_mock(mocker):
-    def init_plugins(plugs=None):
+    def init_plugins(plugs=None, allow_qualified=False):
         list(map(module, plugs or []))
 
     return mocker.patch(
@@ -89,7 +91,6 @@ def dispatch_command_mock(mocker):
 def test_happy_path(
     api_instance_mock, handle_args_mock, dispatch_command_mock, no_config_mock
 ):
-
     sys_args = ["just some made up arguments".split()]
 
     main.main(sys_args)
@@ -156,8 +157,12 @@ def test_plugins_args(
 
     main.main(sys_args)
 
-    init_plugins_mock.assert_called_once_with(
-        ["javac", "pylint", _repobee.constants.DEFAULT_PLUGIN]
+    init_plugins_mock.assert_has_calls(
+        [
+            call(["javac", "pylint"]),
+            call(DEFAULT_PLUGIN_NAMES, allow_qualified=True),
+        ],
+        any_order=True,
     )
     handle_args_mock.assert_called_once_with(
         CLONE_ARGS,
@@ -178,7 +183,7 @@ def test_no_plugins_arg(
     main.main(sys_args)
 
     init_plugins_mock.assert_called_once_with(
-        [_repobee.constants.DEFAULT_PLUGIN]
+        DEFAULT_PLUGIN_NAMES, allow_qualified=True
     )
     handle_args_mock.assert_called_once_with(
         CLONE_ARGS,
@@ -199,7 +204,7 @@ def test_no_plugins_with_configured_plugins(
     main.main(sys_args)
 
     init_plugins_mock.assert_called_once_with(
-        [_repobee.constants.DEFAULT_PLUGIN]
+        DEFAULT_PLUGIN_NAMES, allow_qualified=True
     )
     handle_args_mock.assert_called_once_with(
         CLONE_ARGS,
@@ -216,8 +221,12 @@ def test_configured_plugins_are_loaded(
 
     main.main(sys_args)
 
-    init_plugins_mock.assert_called_once_with(
-        [*constants.PLUGINS, _repobee.constants.DEFAULT_PLUGIN]
+    init_plugins_mock.assert_has_calls(
+        [
+            call(["javac", "pylint"]),
+            call(DEFAULT_PLUGIN_NAMES, allow_qualified=True),
+        ],
+        any_order=True,
     )
     handle_args_mock.assert_called_once_with(
         CLONE_ARGS,
@@ -234,8 +243,12 @@ def test_plugin_with_subparser_name(
 
     main.main(sys_args)
 
-    init_plugins_mock.assert_called_once_with(
-        ["javac", "clone", _repobee.constants.DEFAULT_PLUGIN]
+    init_plugins_mock.assert_has_calls(
+        [
+            call(["javac", "clone"]),
+            call(DEFAULT_PLUGIN_NAMES, allow_qualified=True),
+        ],
+        any_order=True,
     )
     handle_args_mock.assert_called_once_with(
         CLONE_ARGS,
@@ -263,17 +276,19 @@ def test_invalid_plug_options(dispatch_command_mock, init_plugins_mock):
 
     Note that the default plugins must be loaded for this test to work.
     """
-    # load default plugins
-    loaded = plugin.load_plugin_modules([_repobee.constants.DEFAULT_PLUGIN])
-    plugin.register_plugins(loaded)
+    plugin.initialize_plugins(
+        plugin.get_qualified_module_names(_repobee.ext.defaults),
+        allow_qualified=True,
+    )
 
     sys_args = ["repobee", "-p", "javac", "-f", *CLONE_ARGS]
 
     with pytest.raises(SystemExit):
         main.main(sys_args)
 
-    init_plugins_mock.assert_called_once_with(
-        ["javac", _repobee.constants.DEFAULT_PLUGIN]
+    init_plugins_mock.assert_has_calls(
+        [call(["javac"]), call(DEFAULT_PLUGIN_NAMES, allow_qualified=True)],
+        any_order=True,
     )
     assert not dispatch_command_mock.called
 
