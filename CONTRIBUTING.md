@@ -43,14 +43,53 @@ working on it!
 [Fork the repository](https://help.github.com/en/articles/fork-a-repo) and do
 your thing!
 
-## Submitting a PR
-When you have complete whatever you were working on, or want feedback on the
+## Submitting a pull request
+When you have completed whatever you were working on, or want feedback on the
 work you've done so far, it is time to submit a pull request. Go to the [pull
 request page](https://github.com/repobee/repobee/pulls/compare), select
-`repobee/master` as the base and your own fork and branch as the compare. Then
-open the pull request and write whatever info is appropriate in its body. Wait
-for feedback from a maintainer for further instructions. If the PR is accepted,
-it will be merged into RepoBee core!
+`repobee/master` as the base and your own fork and branch as the compare.
+
+### Pull request title
+The pull request title should ideally be on the following form:
+
+```
+[<TAG>] <DESCRIPTION>
+```
+
+> **Note:** If the instructions seem frighteningly complex, don't worry too
+> much about it. Just make a best effort attempt, and we'll help out making the
+> title align with these instructions.
+
+The `<DESCRIPTION>` should be written like a commit message, on imperative
+form. For example, `Remove finder plugin` or `Add instructions for integration
+test setup`.
+
+The `<TAG>` categorizes the type of PR, and is both used for easy
+identification of the PR subject, and for automatically generating change notes
+on new releases. The following tags are currently used.
+
+* `wip` - Indicates that the PR is not yet ready to be merged. We will not merge
+  a PR that has the `wip` tag.
+* `feat` - A new or enhanced feature. Must be backwards compatible.
+* `break` - Removal of a feature, or addition of a feature that requires
+  backwards incompatible changes.
+* `fix` - A bug fix.
+* `fact` - A refactoring.
+* `docs` - For PRs that only touch documentation.
+* `test` - For PRs that only touch test code.
+
+For examples, [just have a look at past
+PRs](https://github.com/repobee/repobee/pulls?q=is%3Apr+is%3Aclosed)
+
+### Pull request body
+The first line of the body should indicate which issue the PR is related to.
+Typically, it should say `Fix #<ISSUE_NR>`. If the PR is not intended to
+entirely fix an issue, but is related, then just write `#<ISSUE_NR>`.
+
+The rest of the body should describe the PR, if applicable (very small and/or
+obvious PRs may not need a description). If you need help, this is also the
+place to ask for it. Again, don't worry too much about this, just write what you
+feel is relevant and we will prod for any information we feel is missing.
 
 ## Writing a plugin
 The less involved way of contributing to RepoBee is to write a plugin, as
