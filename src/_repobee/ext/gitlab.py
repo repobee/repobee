@@ -25,7 +25,7 @@ import requests.exceptions
 import repobee_plug as plug
 
 from _repobee import exception
-from _repobee.ext.github import DEFAULT_REVIEW_ISSUE
+from _repobee.ext.defaults.github import DEFAULT_REVIEW_ISSUE
 
 LOGGER = daiquiri.getLogger(__file__)
 

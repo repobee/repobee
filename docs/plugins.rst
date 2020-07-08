@@ -5,7 +5,7 @@ Plugins for RepoBee
 RepoBee defines a fairly simple but powerful plugin system that allows
 programmers to hook into certain execution points. To read more about the
 details of these hooks (and how to write your own plugins), see the
-`repobee-plug docs`_.
+:ref:`repobee-plug`.
 
 .. _list of plugins:
 
@@ -162,6 +162,8 @@ runs pylint_ on every ``.py`` file in each cloned repo. These plugins are
 mostly meant to serve as demonstarations of how to implement simple plugins in
 the ``repobee`` package itself.
 
+.. _pylint-plugin:
+
 ``pylint``
 ----------
 The :py:mod:`~_repobee.ext.pylint` plugin is fairly simple: it finds all
@@ -213,7 +215,7 @@ the ``[javac]`` section. Example:
 External Plugins
 ================
 It's also possible to use plugins that are not included with RepoBee.
-Following the conventions defined in the `repobee-plug docs`_, all plugins
+Following the conventions defined in the :ref:`repobee-plug`, all plugins
 uploaded to PyPi should be named ``repobee-<plugin>``, where ``<plugin>`` is
 the name of the plugin and thereby the thing to add to the ``plugins`` option
 in the configuration file. Any options for the plugin itself should be
@@ -248,4 +250,3 @@ define some defaults:
 .. _repobee-junit4: https://github.com/repobee/repobee-junit4
 .. _repobee-plug: https://github.com/repobee/repobee-plug
 .. _pylint: https://www.pylint.org/
-.. _repobee-plug docs: https://repobee-plug.readthedocs.io/en/latest/

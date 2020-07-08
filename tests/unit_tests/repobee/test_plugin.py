@@ -6,6 +6,7 @@
         installed any other plugins, tests in here may fail unexpectedly
         without anything actually being wrong.
 """
+import shutil
 import pathlib
 import tempfile
 import types
@@ -16,6 +17,7 @@ import pytest
 import repobee_plug as plug
 
 import _repobee.constants
+import _repobee.ext.defaults
 from _repobee import plugin
 from _repobee import exception
 
@@ -37,23 +39,34 @@ def unregister_plugins():
 class TestLoadPluginModules:
     """Tests for load_plugin_modules."""
 
-    def test_load_all_bundled_plugins(self):
-        """Test load the bundled plugins, i.e. the ones listed in
-        constants.PLUGINS.
-        """
-        plugin_names = [*PLUGINS, _repobee.constants.DEFAULT_PLUGIN]
-        plugin_qualnames = list(map(plugin._plugin_qualname, plugin_names))
+    def test_load_default_plugins(self):
+        default_plugin_qualnames = plugin.get_qualified_module_names(
+            _repobee.ext.defaults
+        )
 
-        modules = plugin.load_plugin_modules(plugin_names)
+        modules = plugin.load_plugin_modules(
+            default_plugin_qualnames, allow_qualified=True
+        )
+
         module_names = [mod.__name__ for mod in modules]
+        assert module_names == default_plugin_qualnames
 
-        assert module_names == plugin_qualnames
+    def test_load_bundled_plugins(self):
+        """Test load the bundled plugins that are not default plugins."""
+        bundled_plugin_qualnames = plugin.get_qualified_module_names(
+            _repobee.ext
+        )
+        bundled_plugin_names = plugin.get_module_names(_repobee.ext)
+
+        modules = plugin.load_plugin_modules(bundled_plugin_names)
+
+        module_names = [mod.__name__ for mod in modules]
+        assert module_names == bundled_plugin_qualnames
 
     def test_load_no_plugins(self, no_config_mock):
         """Test calling load plugins when no plugins are specified results in
         no plugins being loaded."""
         modules = plugin.load_plugin_modules([])
-
         assert modules == []
 
     def test_raises_when_loading_invalid_module(self, empty_config_mock):
@@ -68,6 +81,19 @@ class TestLoadPluginModules:
         assert "failed to load plugin module " + plugin_name in str(
             exc_info.value
         )
+
+    def test_raises_when_loading_default_plugins_without_allow_qualified(self):
+        """Default plugins can only be loaded by their qualified names, and it
+        should only be allowed if allow_qualify is True.
+        """
+        default_plugin_qualnames = plugin.get_qualified_module_names(
+            _repobee.ext.defaults
+        )
+
+        with pytest.raises(exception.PluginLoadError) as exc_info:
+            plugin.load_plugin_modules(default_plugin_qualnames)
+
+        assert "failed to load plugin module" in str(exc_info.value)
 
 
 class TestRegisterPlugins:
@@ -214,3 +240,46 @@ class TestInitializePlugins:
             plugin.initialize_plugins([mod_name])
 
         assert warning_mock.called
+
+    def test_raises_on_qualified_names_by_default(self):
+        qualname = "_repobee.ext.query"
+        with pytest.raises(exception.PluginLoadError) as exc_info:
+            plugin.initialize_plugins([qualname])
+
+        assert "Qualified names not allowed" in str(exc_info.value)
+
+    def test_raises_on_filepath_by_default(self, tmpdir):
+        plugin_file = pathlib.Path(str(tmpdir)) / "pylint.py"
+        shutil.copy(_repobee.ext.javac.__file__, str(plugin_file))
+
+        with pytest.raises(exception.PluginLoadError) as exc_info:
+            plugin.initialize_plugins([str(plugin_file)])
+
+        assert "Filepaths not allowed" in str(exc_info.value)
+
+    def test_initialize_from_filepath_filepath(self, tmpdir):
+        """Test initializing a plugin that's specified by a filepath."""
+        plugin_file = pathlib.Path(str(tmpdir)) / "pylint.py"
+        shutil.copy(_repobee.ext.pylint.__file__, str(plugin_file))
+
+        initialized_plugins = plugin.initialize_plugins(
+            [str(plugin_file)], allow_filepath=True
+        )
+
+        assert len(initialized_plugins) == 1
+        assert initialized_plugins[0].__file__ == str(plugin_file)
+
+    def test_raises_when_filepath_is_not_python_module(self, tmpdir):
+        not_a_python_module = pathlib.Path(str(tmpdir)) / "some_file.txt"
+        not_a_python_module.write_text(
+            "This is definitely\nnot a Python module"
+        )
+
+        with pytest.raises(exception.PluginLoadError) as exc_info:
+            plugin.initialize_plugins(
+                [str(not_a_python_module)], allow_filepath=True
+            )
+
+        assert f"failed to load plugin module {not_a_python_module}" in str(
+            exc_info.value
+        )

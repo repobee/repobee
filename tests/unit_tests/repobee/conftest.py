@@ -21,7 +21,6 @@ import _repobee  # noqa: E402
 
 EXPECTED_ENV_VARIABLES = [
     _repobee.constants.TOKEN_ENV,
-    _repobee.constants.TOKEN_ENV_OLD,
     "REPOBEE_NO_VERIFY_SSL",
 ]
 
@@ -199,3 +198,14 @@ def config_mock(empty_config_mock, students_file):
     )
     empty_config_mock.write(config_contents)
     yield empty_config_mock
+
+
+@pytest.fixture
+def load_default_plugins():
+    """Load the default plugins."""
+    default_plugin_names = _repobee.plugin.get_qualified_module_names(
+        _repobee.ext.defaults
+    )
+    _repobee.plugin.initialize_plugins(
+        default_plugin_names, allow_qualified=True
+    )

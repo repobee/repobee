@@ -60,8 +60,7 @@ Tasks
 +++++
 RepoBee has a notion of a *task*, which is a collection of one or more
 interdependent functions. The purpose of all tasks is to *act* on repositories.
-For example, the built-in `pylint
-plugin <https://repobee.readthedocs.io/en/stable/plugins.html#pylint>`_ is a task
+For example, the built-in :ref:`pylint-plugin` plugin is a task
 whose act consists of running static analysis on all Python files in a
 repository. The `repobee-junit4
 plugin <https://github.com/repobee/repobee-junit4>`_ is another task plugin whose
@@ -168,6 +167,4 @@ complete example of a plugin written with this approach, see the
 .. _javac plugin: https://github.com/repobee/repobee/blob/master/repobee/ext/javac.py
 .. _pylint plugin: https://github.com/repobee/repobee/blob/master/repobee/ext/pylint.py
 
-.. _repobee built-ins: https://repobee.readthedocs.io/en/stable/plugins.html#built-in-plugins
 .. _repobee-junit4: https://github.com/repobee/repobee-junit4
-.. _Using Existing Plugins: https://repobee.readthedocs.io/en/stable/plugins.html#using-existing-plugins

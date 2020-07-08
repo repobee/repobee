@@ -55,23 +55,6 @@ class TestGetConfiguredDefaults:
         defaults = config.get_configured_defaults(str(config_mock))
         assert defaults["token"] == constants.TOKEN
 
-    @pytest.mark.skipif(
-        "_repobee.__version__ >= '3.0.0'",
-        msg="Old token should have been removed",
-    )
-    def test_deprecated_token_env(self, config_mock, mock_getenv):
-        token = "superdupertoken"
-
-        def _env(name):
-            if name == _repobee.constants.TOKEN_ENV_OLD:
-                return token
-            return None
-
-        mock_getenv.side_effect = _env
-
-        defaults = config.get_configured_defaults(str(config_mock))
-        assert defaults["token"] == token
-
     def test_get_configured_defaults_raises_on_invalid_keys(
         self, empty_config_mock, students_file
     ):
