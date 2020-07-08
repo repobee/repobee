@@ -15,6 +15,7 @@ import repobee_plug as plug
 import _repobee.cli.dispatch
 import _repobee.cli.parsing
 import _repobee.cli.preparser
+import _repobee._distinfo
 from _repobee import plugin
 from _repobee import exception
 from _repobee import config
@@ -50,6 +51,8 @@ def main(sys_args: List[str]):
         # in firstresult hooks
         LOGGER.debug("Initializing default plugins")
         plugin.initialize_default_plugins()
+        if _repobee._distinfo.DIST_INSTALL and False:
+            plugin.initialize_dist_plugins()
 
         if not parsed_preparser_args.no_plugins:
             LOGGER.debug("Initializing user plugins")
@@ -94,7 +97,8 @@ def main(sys_args: List[str]):
             LOGGER.error("{.__class__.__name__}: {}".format(exc, str(exc)))
         sys.exit(1)
     finally:
-        plugin.unregister_all_plugins()
+        pass
+        # plugin.unregister_all_plugins()
 
 
 if __name__ == "__main__":

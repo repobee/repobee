@@ -1,13 +1,17 @@
 import argparse
 import tempfile
 import pathlib
+import types
 from unittest.mock import MagicMock, patch, call
 from collections import namedtuple
 
 import pytest
 
+import repobee_plug as plug
+
 import _repobee.cli.preparser
 import _repobee.ext.defaults
+import _repobee.ext.dist
 from functions import raise_
 import _repobee.constants
 from _repobee.cli import mainparser
@@ -234,6 +238,25 @@ def test_configured_plugins_are_loaded(
         ext_commands=[],
         config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
+
+
+def test_dist_plugins_are_loaded_when_dist_install(monkeypatch):
+    dist_plugin_qualnames = plugin.get_qualified_module_names(
+        _repobee.ext.dist
+    )
+    sys_args = "repobee -h".split()
+    monkeypatch.setattr("_repobee._distinfo.DIST_INSTALL", True)
+
+    with pytest.raises(SystemExit):
+        # calling -h always causes a SystemExit
+        main.main(sys_args)
+
+    qualnames = {
+        p.__name__
+        for p in plug.manager.get_plugins()
+        if isinstance(p, types.ModuleType)
+    }
+    raise ValueError(qualnames)
 
 
 def test_plugin_with_subparser_name(

@@ -329,6 +329,12 @@ def initialize_default_plugins() -> None:
     initialize_plugins(default_plugin_qualnames, allow_qualified=True)
 
 
+def initialize_dist_plugins() -> None:
+    """Initialize the distribution plugin modules."""
+    dist_plugin_qualnames = get_qualified_module_names(_repobee.ext.dist)
+    initialize_plugins(dist_plugin_qualnames, allow_qualified=True)
+
+
 def get_qualified_module_names(pkg: ModuleType) -> List[str]:
     """Return a list of all python modules in the given package. Only considers
     the modules directly in this package, and not in subpackages.
