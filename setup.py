@@ -17,6 +17,7 @@ test_requirements = [
     "codecov",
     "bandit",
     "flake8",
+    "black",
 ]
 docs_requirements = [
     "sphinx>=1.8.2",

@@ -4,3 +4,4 @@ pytest-mock
 codecov
 bandit>=1.6.2
 flake8>=3.8.3
+black
