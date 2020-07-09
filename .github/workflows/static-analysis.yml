@@ -23,5 +23,6 @@ jobs:
         pip install -r requirements/app.txt -r requirements/test.txt
         pip install -e .[TEST]
     - name: Lint with flake8
-      run: |
-        flake8 . --statistics
+      run: flake8 . --statistics
+    - name: Lint with Bandit
+    - run: bandit -r src/ --skip B322 -ll
