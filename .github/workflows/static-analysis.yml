@@ -25,4 +25,4 @@ jobs:
     - name: Lint with flake8
       run: flake8 . --statistics
     - name: Lint with Bandit
-    - run: bandit -r src/ --skip B322 -ll
+      run: bandit -r src/ --skip B322 -ll
