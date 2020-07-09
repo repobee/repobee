@@ -54,9 +54,7 @@ def _convert_404_to_not_found_error(msg):
         if exc.response_code == 404:
             raise exception.NotFoundError(msg)
         raise exception.UnexpectedException(
-            "An unexpected exception occured. {.__name__}: {}".format(
-                type(exc), str(exc)
-            )
+            f"An unexpected exception occured. {type(exc).__name__}: {str(exc)}"
         )
 
 
@@ -95,7 +93,7 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
         raise
     except Exception as e:
         raise exception.UnexpectedException(
-            "a {} occured unexpectedly: {}".format(type(e).__name__, str(e))
+            f"a {type(e).__name__} occured unexpectedly: {str(e)}"
         ) from e
 
 
@@ -187,15 +185,11 @@ class GitLabAPI(plug.API):
 
         if missing_members:
             LOGGER.info(
-                "Adding members {} to team {}".format(
-                    ", ".join(missing_members), team.name
-                )
+                f'Adding members {", ".join(missing_members)} to team {team.name}'
             )
         if existing_members:
             LOGGER.info(
-                "{} already in team {}, skipping...".format(
-                    ", ".join(existing_members), team.name
-                )
+                f'{", ".join(existing_members)} already in team {team.name}, skipping...'
             )
         self._add_to_team(missing_members, team, permission)
 
@@ -247,7 +241,7 @@ class GitLabAPI(plug.API):
         for name in usernames:
             user = self._gitlab.users.list(username=name)
             # if not user:
-            # LOGGER.warning("user {} could not be found".format(user))
+            # LOGGER.warning(f"user {user} could not be found")
             users += user
         return users
 
@@ -283,7 +277,7 @@ class GitLabAPI(plug.API):
                         "parent_id": parent_id,
                     }
                 )
-                LOGGER.info("Created team {}".format(team_name))
+                LOGGER.info(f"Created team {team_name}")
                 teams.append(new_team)
         return teams
 
@@ -309,7 +303,7 @@ class GitLabAPI(plug.API):
                     ).attributes["http_url_to_repo"]
                 )
                 LOGGER.info(
-                    "Created {}/{}".format(self._group.name, repo.name)
+                    f"Created {self._group.name}/{repo.name}"
                 )
                 created = True
 
@@ -323,9 +317,7 @@ class GitLabAPI(plug.API):
                         ).attributes["http_url_to_repo"]
                     )
                     LOGGER.info(
-                        "{}/{} already exists".format(
-                            self._group.name, repo.name
-                        )
+                        f"{self._group.name}/{repo.name} already exists"
                     )
 
         return [self._insert_auth(url) for url in repo_urls]
@@ -338,19 +330,15 @@ class GitLabAPI(plug.API):
     ) -> List[str]:
         """See :py:meth:`repobee_plug.API.get_repo_urls`."""
         group_name = org_name if org_name else self._group_name
-        group_url = "{}/{}".format(self._base_url, group_name)
+        group_url = f"{self._base_url}/{group_name}"
         repo_urls = (
             [
-                "{}/{}.git".format(group_url, repo_name)
+                f"{group_url}/{repo_name}.git"
                 for repo_name in master_repo_names
             ]
             if not teams
             else [
-                "{}/{}/{}.git".format(
-                    group_url,
-                    team,
-                    plug.generate_repo_name(str(team), master_repo_name),
-                )
+                f"{group_url}/{team}/{plug.generate_repo_name(str(team), master_repo_name)}.git"
                 for team in teams
                 for master_repo_name in master_repo_names
             ]
@@ -371,12 +359,10 @@ class GitLabAPI(plug.API):
         """
         if not repo_url.startswith("https://"):
             raise ValueError(
-                "unsupported protocol in '{}', please use https:// ".format(
-                    repo_url
-                )
+                f"unsupported protocol in '{repo_url}', please use https:// "
             )
-        auth = "{}:{}".format(self._user, self._token)
-        return repo_url.replace("https://", "https://{}@".format(auth))
+        auth = f"{self._user}:{self._token}"
+        return repo_url.replace("https://", f"https://{auth}@")
 
     def _get_projects_and_names_by_name(self, repo_names, strict=False):
         """Return lazy projects (minimal amount of info loaded) along with
@@ -400,7 +386,7 @@ class GitLabAPI(plug.API):
 
         missing = set(repo_names) - set(projects)
         if missing:
-            msg = "Can't find repos: {}".format(", ".join(missing))
+            msg = f"Can't find repos: {', '.join(missing)}"
             if strict:
                 raise exception.NotFoundError(msg)
             LOGGER.warning(msg)
@@ -412,13 +398,13 @@ class GitLabAPI(plug.API):
         for team in self._get_teams_in(team_names):
             team.implementation.delete()
             deleted.add(team.name)
-            LOGGER.info("Deleted team {}".format(team.name))
+            LOGGER.info(f"Deleted team {team.name}")
 
         # only logging
         missing = set(team_names) - deleted
         if missing:
             LOGGER.warning(
-                "Could not find teams: {}".format(", ".join(missing))
+                f"Could not find teams: {', '.join(missing)}"
             )
 
     def open_issue(
@@ -439,9 +425,7 @@ class GitLabAPI(plug.API):
         project_name = project_name or project.name
         issue = project.issues.create(issue_dict)
         LOGGER.info(
-            "Opened issue {}/#{}-'{}'".format(
-                project_name, issue.id, issue.title
-            )
+            f"Opened issue {project_name}/#{issue.id}-'{issue.title}'"
         )
 
     def close_issue(self, title_regex: str, repo_names: Iterable[str]) -> None:
@@ -459,14 +443,12 @@ class GitLabAPI(plug.API):
                 issue.state_event = "close"
                 issue.save()
                 LOGGER.info(
-                    "Closed issue {}/#{}-'{}'".format(
-                        project_name, issue.id, issue.title
-                    )
+                    f"Closed issue {project_name}/#{issue.id}-'{issue.title}'"
                 )
                 closed += 1
 
         if closed:
-            LOGGER.info("Closed {} issues".format(closed))
+            LOGGER.info(f"Closed {closed} issues")
         else:
             LOGGER.warning("Found no issues matching the title regex")
 
@@ -561,14 +543,14 @@ class GitLabAPI(plug.API):
         ]
         for raw_team in raw_review_teams:
             with _try_api_request():
-                LOGGER.info("Processing {}".format(raw_team.name))
+                LOGGER.info(f"Processing {raw_team.name}")
                 reviewers = set(m.username for m in raw_team.members.list())
                 review_teams = self._extract_review_teams(teams, reviewers)
                 projects = raw_team.projects.list()
                 if len(projects) != 1:
                     LOGGER.warning(
-                        "Expected {} to have 1 associated projects, found {}."
-                        "Skipping...".format(raw_team.name, len(projects))
+                        f"Expected {raw_team.name} to have 1 associated projects, found {len(projects)}."
+                        f"Skipping..."
                     )
                     continue
 
@@ -644,7 +626,7 @@ class GitLabAPI(plug.API):
             base_url, private_token=token, ssl_verify=GitLabAPI._ssl_verify()
         )
 
-        LOGGER.info("Authenticating connection to {}...".format(base_url))
+        LOGGER.info(f"Authenticating connection to {base_url}...")
         with _convert_error(
             gitlab.exceptions.GitlabAuthenticationError,
             exception.BadCredentials,
@@ -652,13 +634,11 @@ class GitLabAPI(plug.API):
         ), _convert_error(
             requests.exceptions.ConnectionError,
             exception.APIError,
-            "Could not connect to {}, please check the URL".format(base_url),
+            f"Could not connect to {base_url}, please check the URL",
         ):
             gl.auth()
         LOGGER.info(
-            "SUCCESS: Authenticated as {} at {}".format(
-                gl.user.username, base_url
-            )
+            f"SUCCESS: Authenticated as {gl.user.username} at {base_url}"
         )
 
         GitLabAPI._verify_group(org_name, gl)
@@ -672,7 +652,7 @@ class GitLabAPI(plug.API):
         """Check that the group exists and that the user is an owner."""
         user = gl.user.username
 
-        LOGGER.info("Trying to fetch group {}".format(group_name))
+        LOGGER.info(f"Trying to fetch group {group_name}")
         slug_matched = [
             group
             for group in gl.groups.list(search=group_name)
@@ -680,17 +660,15 @@ class GitLabAPI(plug.API):
         ]
         if not slug_matched:
             raise exception.NotFoundError(
-                "Could not find group with slug {}. Verify that you have "
-                "access to the group, and that you've provided the slug "
-                "(the name in the address bar).".format(group_name)
+                f"Could not find group with slug {group_name}. Verify that you have "
+                f"access to the group, and that you've provided the slug "
+                f"(the name in the address bar)."
             )
         group = slug_matched[0]
-        LOGGER.info("SUCCESS: Found group {}".format(group.name))
+        LOGGER.info(f"SUCCESS: Found group {group.name}")
 
         LOGGER.info(
-            "Verifying that user {} is an owner of group {}".format(
-                user, group_name
-            )
+            f"Verifying that user {user} is an owner of group {group_name}"
         )
         matching_members = [
             member
@@ -700,10 +678,10 @@ class GitLabAPI(plug.API):
         ]
         if not matching_members:
             raise exception.BadCredentials(
-                "User {} is not an owner of {}".format(user, group_name)
+                f"User {user} is not an owner of {group_name}"
             )
         LOGGER.info(
-            "SUCCESS: User {} is an owner of group {}".format(user, group_name)
+            f"SUCCESS: User {user} is an owner of group {group_name}"
         )
 
 
