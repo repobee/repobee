@@ -26,3 +26,5 @@ jobs:
       run: flake8 . --statistics
     - name: Lint with Bandit
       run: bandit -r src/ --skip B322 -ll
+    - name: Check with Black
+      run: black --check .
