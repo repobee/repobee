@@ -11,6 +11,7 @@ from typing import List
 import gitlab
 
 CURRENT_DIR = pathlib.Path(__file__).parent
+GIT_DATA = CURRENT_DIR / "volume_data" / "main" / "git-data"
 TEACHER = "ric"
 STUDENTS = (
     pathlib.Path("students.txt").read_text(encoding="utf8").strip().split("\n")
@@ -45,7 +46,7 @@ DOCKER_TEARDOWN_COMMANDS = [
 
 def main(args: List[str]) -> None:
     def _usage():
-        print("usage: python gitlabmanager.py <setup|backup|restore|teardown>")
+        print("usage: python gitlabmanager.py <setup|set-state|backup|restore-backup|teardown>")
         sys.exit(1)
 
     if len(args) != 2:
@@ -56,26 +57,28 @@ def main(args: List[str]) -> None:
         setup()
     elif cmd == "backup":
         backup()
-    elif cmd == "restore":
-        restore()
+    elif cmd == "set-state":
+        set_state()
     elif cmd == "teardown":
         teardown()
+    elif cmd == "restore-backup":
+        restore_from_backup()
     else:
         _usage()
+
 
 def timestamp(msg):
     print(f"{msg}: {datetime.datetime.now()}")
 
+
 def setup():
-    print("Setting up GitLab instance")
-    timestamp("START SETUP")
+    print("Initializing GitLab instance")
     for cmd in DOCKER_START_COMMANDS:
         subprocess.run(cmd.split(), cwd=CURRENT_DIR)
     if not await_gitlab_started():
         raise OSError("GitLab failed to start")
 
     setup_users(students=STUDENTS, teacher=TEACHER, token=TOKEN)
-    timestamp("END SETUP")
 
 
 def teardown():
@@ -91,10 +94,27 @@ def backup():
     )
 
 
-def restore():
-    timestamp("START RESTORE")
+def restore_from_backup():
+    print("Restoring from backup")
+    shutil.rmtree(GIT_DATA)  # forcibly remove repo data
+    # we need to reconfigure now, because otherwise GitLab does not restore
+    # the repositories in the next step
+    subprocess.run(
+        "docker exec -t gitlab gitlab-ctl reconfigure".split()
+    )
+    # this restores the repositories and database
+    subprocess.run(
+        "docker exec -t gitlab gitlab-backup restore".split()
+    )
+    # unsure if this reconfigure is necessary, but it only takes a few seconds
+    # so why not
+    subprocess.run(
+        "docker exec -t gitlab gitlab-ctl reconfigure".split()
+    )
+
+
+def set_state():
     delete_groups()
-    timestamp("MID RESTORE")
     create_groups_and_projects(
         local_master_repos=LOCAL_MASTER_REPOS,
         teacher=TEACHER,
@@ -102,7 +122,6 @@ def restore():
         course_round_group_name=COURSE_ROUND_GROUP,
         token=TOKEN,
     )
-    timestamp("END RESTORE")
 
 
 def restart():

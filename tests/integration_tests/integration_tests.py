@@ -231,6 +231,8 @@ def assert_num_issues(student_teams, master_repo_names, num_issues):
 def setup_gitlab_instance():
     """Perform first-time setup of the GitLab instance."""
     gitlabmanager.setup()
+    gitlabmanager.set_state()
+    gitlabmanager.backup()
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -245,7 +247,7 @@ def restore():
     """Run the script that restores the GitLab instance to its initial
     state.
     """
-    gitlabmanager.restore()
+    gitlabmanager.restore_from_backup()
 
 
 @pytest.fixture
