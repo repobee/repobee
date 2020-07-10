@@ -28,6 +28,9 @@ test_requirements = [
     "pytest-cov>=2.6.1",
     "pytest-mock",
     "codecov",
+    "bandit",
+    "flake8",
+    "black",
 ]
 docs_requirements = [
     "sphinx>=1.8.2",

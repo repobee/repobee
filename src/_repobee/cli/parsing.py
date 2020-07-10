@@ -384,13 +384,14 @@ def setup_logging() -> None:
         ) from exc
 
     daiquiri.setup(
-        level=logging.INFO,
+        level=logging.DEBUG,
         outputs=(
             daiquiri.output.Stream(
                 sys.stdout,
                 formatter=daiquiri.formatter.ColorFormatter(
                     fmt="%(color)s[%(levelname)s] %(message)s%(color_stop)s"
                 ),
+                level=logging.INFO,
             ),
             daiquiri.output.File(
                 filename=str(
@@ -401,6 +402,7 @@ def setup_logging() -> None:
                     fmt="%(asctime)s [PID %(process)d] [%(levelname)s] "
                     "%(name)s -> %(message)s"
                 ),
+                level=logging.DEBUG,
             ),
         ),
     )
