@@ -17,9 +17,6 @@ import _repobee._distinfo
 LOGGER = daiquiri.getLogger(__file__)
 PLUGIN = "pluginmanager"
 
-if not _repobee._distinfo.DIST_INSTALL:
-    raise plug.PlugError(f"{PLUGIN} may only be used for installed RepoBee!")
-
 
 class InstallPluginCommand(plug.Plugin):
     """Extension command for installing a plugin."""
