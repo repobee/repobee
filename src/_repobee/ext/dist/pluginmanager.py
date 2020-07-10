@@ -12,7 +12,7 @@ import daiquiri
 import repobee_plug as plug
 
 
-import _repobee._distinfo
+import _repobee.distinfo
 
 LOGGER = daiquiri.getLogger(__file__)
 PLUGIN = "pluginmanager"
@@ -39,7 +39,7 @@ class InstallPluginCommand(plug.Plugin):
             f"git+https://github.com/repobee/" f"{plugin_name}.git@{version}"
         )
         cmd = [
-            str(_repobee._distinfo.PYTHON_INTERPRETER),
+            str(_repobee.distinfo.PYTHON_INTERPRETER),
             "-m",
             "pip",
             "install",

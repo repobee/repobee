@@ -25,7 +25,7 @@ import daiquiri
 import _repobee
 import _repobee.ext.defaults
 import _repobee.ext.dist
-import _repobee._distinfo
+import _repobee.distinfo
 from _repobee import exception
 
 import repobee_plug as plug
@@ -333,7 +333,7 @@ def initialize_default_plugins() -> None:
 
 def initialize_dist_plugins() -> None:
     """Initialize the distribution plugin modules."""
-    if not _repobee._distinfo.DIST_INSTALL:
+    if not _repobee.distinfo.DIST_INSTALL:
         raise exception.PluginLoadError(
             "Dist plugins can only be loaded with installed RepoBee"
         )

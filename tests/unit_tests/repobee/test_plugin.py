@@ -289,10 +289,10 @@ class TestInitializeDistPlugins:
     """Tests for the initialize_dist_plugins function."""
 
     def test_raises_if_dist_install_is_false(self, monkeypatch):
-        """If _distinfo.DIST_INSTALL is False, it should not be possible to
+        """If distinfo.DIST_INSTALL is False, it should not be possible to
         initialize dist plugins.
         """
-        monkeypatch.setattr("_repobee._distinfo.DIST_INSTALL", False)
+        monkeypatch.setattr("_repobee.distinfo.DIST_INSTALL", False)
 
         with pytest.raises(exception.PluginLoadError) as exc_info:
             plugin.initialize_dist_plugins()

@@ -14,7 +14,7 @@ with open("src/_repobee/__version.py", mode="r", encoding="utf-8") as f:
 
 python_interpreter = os.getenv("REPOBEE_PYTHON_INTERPRETER")
 if python_interpreter:  # install with RepoBee's install script
-    pathlib.Path("src/_repobee/_distinfo.py").write_text(
+    pathlib.Path("src/_repobee/distinfo.py").write_text(
         f"""
 import pathlib
 DIST_INSTALL = True

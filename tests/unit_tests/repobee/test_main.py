@@ -245,7 +245,7 @@ def test_dist_plugins_are_loaded_when_dist_install(monkeypatch):
         _repobee.ext.dist
     )
     sys_args = "repobee -h".split()
-    monkeypatch.setattr("_repobee._distinfo.DIST_INSTALL", True)
+    monkeypatch.setattr("_repobee.distinfo.DIST_INSTALL", True)
 
     with pytest.raises(SystemExit):
         # calling -h always causes a SystemExit

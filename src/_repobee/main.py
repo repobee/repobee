@@ -15,7 +15,7 @@ import repobee_plug as plug
 import _repobee.cli.dispatch
 import _repobee.cli.parsing
 import _repobee.cli.preparser
-import _repobee._distinfo
+import _repobee.distinfo
 from _repobee import plugin
 from _repobee import exception
 from _repobee import config
@@ -57,7 +57,7 @@ def main(sys_args: List[str], unload_plugins: bool = True):
         # in firstresult hooks
         LOGGER.debug("Initializing default plugins")
         plugin.initialize_default_plugins()
-        if _repobee._distinfo.DIST_INSTALL:
+        if _repobee.distinfo.DIST_INSTALL:
             LOGGER.debug("Initializing dist plugins")
             plugin.initialize_dist_plugins()
 
