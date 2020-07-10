@@ -33,8 +33,14 @@ and supply the stack trace below.""".replace(
 )
 
 
-def main(sys_args: List[str]):
-    """Start the repobee CLI."""
+def main(sys_args: List[str], unload_plugins: bool = True):
+    """Start the repobee CLI.
+
+    Args:
+        sys_args: Arguments from the command line.
+        unload_plugins: If True, plugins are automatically unloaded just before
+            the function returns.
+    """
     _repobee.cli.parsing.setup_logging()
     args = sys_args[1:]  # drop the name of the program
     traceback = False
@@ -51,7 +57,8 @@ def main(sys_args: List[str]):
         # in firstresult hooks
         LOGGER.debug("Initializing default plugins")
         plugin.initialize_default_plugins()
-        if _repobee._distinfo.DIST_INSTALL and False:
+        if _repobee._distinfo.DIST_INSTALL:
+            LOGGER.debug("Initializing dist plugins")
             plugin.initialize_dist_plugins()
 
         if not parsed_preparser_args.no_plugins:
@@ -97,8 +104,8 @@ def main(sys_args: List[str]):
             LOGGER.error("{.__class__.__name__}: {}".format(exc, str(exc)))
         sys.exit(1)
     finally:
-        pass
-        # plugin.unregister_all_plugins()
+        if unload_plugins:
+            plugin.unregister_all_plugins()
 
 
 if __name__ == "__main__":

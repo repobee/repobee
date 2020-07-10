@@ -249,14 +249,15 @@ def test_dist_plugins_are_loaded_when_dist_install(monkeypatch):
 
     with pytest.raises(SystemExit):
         # calling -h always causes a SystemExit
-        main.main(sys_args)
+        main.main(sys_args, unload_plugins=False)
 
     qualnames = {
         p.__name__
         for p in plug.manager.get_plugins()
         if isinstance(p, types.ModuleType)
     }
-    raise ValueError(qualnames)
+
+    assert qualnames.issuperset(dist_plugin_qualnames)
 
 
 def test_plugin_with_subparser_name(
