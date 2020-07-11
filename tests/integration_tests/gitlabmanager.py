@@ -99,7 +99,7 @@ def backup():
 
 def restore_from_backup():
     print("Restoring from backup")
-    shutil.rmtree(GIT_DATA)  # forcibly remove repo data
+    subprocess.run(f"sudo rm -rf {GIT_DATA}".split()) # forcibly remove repo data
     # we need to reconfigure now, because otherwise GitLab does not restore
     # the repositories in the next step
     subprocess.run("docker exec -t gitlab gitlab-ctl reconfigure".split())
