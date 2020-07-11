@@ -104,7 +104,7 @@ def restore_from_backup():
     )
     # this restores the repositories and database
     subprocess.run(
-        "docker exec -t gitlab gitlab-backup restore".split()
+        "docker exec -t gitlab gitlab-backup restore force=yes".split()
     )
     # unsure if this reconfigure is necessary, but it only takes a few seconds
     # so why not
