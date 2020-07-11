@@ -229,19 +229,19 @@ def assert_num_issues(student_teams, master_repo_names, num_issues):
     _assert_on_projects(student_teams, master_repo_names, assertion)
 
 
-#@pytest.fixture(autouse=True, scope="session")
-#def setup_gitlab_instance():
-#    """Perform first-time setup of the GitLab instance."""
-#    gitlabmanager.setup()
-#    gitlabmanager.set_state()
-#    gitlabmanager.backup()
+@pytest.fixture(autouse=True, scope="session")
+def setup_gitlab_instance():
+    """Perform first-time setup of the GitLab instance."""
+    gitlabmanager.setup()
+    gitlabmanager.set_state()
+    gitlabmanager.backup()
 
 
-#@pytest.fixture(autouse=True, scope="session")
-#def teardown_gitlab_instance():
-#    """Teardown the GitLab instance after all tests have finished."""
-#    yield
-#    gitlabmanager.teardown()
+@pytest.fixture(autouse=True, scope="session")
+def teardown_gitlab_instance():
+    """Teardown the GitLab instance after all tests have finished."""
+    yield
+    gitlabmanager.teardown()
 
 
 @pytest.fixture(autouse=True)
