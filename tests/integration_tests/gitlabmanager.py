@@ -46,7 +46,10 @@ DOCKER_TEARDOWN_COMMANDS = [
 
 def main(args: List[str]) -> None:
     def _usage():
-        print("usage: python gitlabmanager.py <setup|set-state|backup|restore-backup|teardown>")
+        print(
+            "usage: python gitlabmanager.py "
+            "<setup|set-state|backup|restore-backup|teardown>"
+        )
         sys.exit(1)
 
     if len(args) != 2:
@@ -99,18 +102,14 @@ def restore_from_backup():
     shutil.rmtree(GIT_DATA)  # forcibly remove repo data
     # we need to reconfigure now, because otherwise GitLab does not restore
     # the repositories in the next step
-    subprocess.run(
-        "docker exec -t gitlab gitlab-ctl reconfigure".split()
-    )
+    subprocess.run("docker exec -t gitlab gitlab-ctl reconfigure".split())
     # this restores the repositories and database
     subprocess.run(
         "docker exec -t gitlab gitlab-backup restore force=yes".split()
     )
     # unsure if this reconfigure is necessary, but it only takes a few seconds
     # so why not
-    subprocess.run(
-        "docker exec -t gitlab gitlab-ctl reconfigure".split()
-    )
+    subprocess.run("docker exec -t gitlab gitlab-ctl reconfigure".split())
 
 
 def set_state():
@@ -142,7 +141,11 @@ def setup_users(students: List[str], teacher: str, token: str) -> None:
         str(users).replace("'", '"')
         + """
 .each do |username|
-    User.create(name: username.capitalize, username: username, email: "#{username}@repobee.org", password: "#{username}_pass", skip_confirmation: true).save!
+    User.create(
+        name: username.capitalize,
+        username: username, email: "#{username}@repobee.org",
+        password: "#{username}_pass",
+        skip_confirmation: true).save!
 end
 """.strip().replace(
             "\n", " "
@@ -150,7 +153,10 @@ end
     )
     create_token_cmd = f"""
 teacher_user = User.find_by_username('{teacher}')
-token = teacher_user.personal_access_tokens.create(name: 'repobee', scopes: [:api, :read_repository, :write_repository])
+token = teacher_user.personal_access_tokens.create(
+    name: 'repobee',
+    scopes: [:api, :read_repository, :write_repository]
+)
 token.set_token('{token}')
 token.save!
 """
@@ -168,7 +174,9 @@ def delete_groups() -> None:
     print("Deleting groups")
     delete_groups_cmd = """
 root_user = User.where(id: 1).first
-Group.all().each { |group| Groups::DestroyService.new(group, root_user).execute }""".strip()
+Group.all().each {
+    |group| Groups::DestroyService.new(group, root_user).execute
+}""".strip()
     exec_gitlab_rails_cmd(delete_groups_cmd)
 
 
@@ -190,7 +198,7 @@ def create_groups_and_projects(
     )
 
     for local_repo in local_master_repos:
-        project = gl.projects.create(
+        gl.projects.create(
             dict(
                 name=local_repo.name,
                 path=local_repo.name,
@@ -211,9 +219,12 @@ def create_groups_and_projects(
             shutil.copytree(src=local_repo, dst=repodir)
             commands = [
                 "git init".split(),
-                f"git config --local http.sslverify false".split(),
+                "git config --local http.sslverify false".split(),
                 f"git config --local user.name {teacher.capitalize()}".split(),
-                f"git config --local user.email {teacher.capitalize()}@repobee.org".split(),
+                (
+                    f"git config --local user.email {teacher.capitalize()}"
+                    "@repobee.org".split()
+                ),
                 "git add .".split(),
                 [*"git commit -m".split(), "'Add task template'"],
                 f"git push {authed_project_url} master".split(),

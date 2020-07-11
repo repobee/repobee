@@ -162,7 +162,9 @@ def assert_on_groups(
         # of groups he/she creates
         if single_group_assertion is None:
             expected_members = sorted(team.members + [ACTUAL_USER])
-            actual_members = sorted(m.username for m in group.members.list(all=True))
+            actual_members = sorted(
+                m.username for m in group.members.list(all=True)
+            )
             assert group.name == team.name
             assert actual_members == expected_members
         else:
@@ -227,19 +229,19 @@ def assert_num_issues(student_teams, master_repo_names, num_issues):
     _assert_on_projects(student_teams, master_repo_names, assertion)
 
 
-@pytest.fixture(autouse=True, scope="session")
-def setup_gitlab_instance():
-    """Perform first-time setup of the GitLab instance."""
-    gitlabmanager.setup()
-    gitlabmanager.set_state()
-    gitlabmanager.backup()
+#@pytest.fixture(autouse=True, scope="session")
+#def setup_gitlab_instance():
+#    """Perform first-time setup of the GitLab instance."""
+#    gitlabmanager.setup()
+#    gitlabmanager.set_state()
+#    gitlabmanager.backup()
 
 
-@pytest.fixture(autouse=True, scope="session")
-def teardown_gitlab_instance():
-    """Teardown the GitLab instance after all tests have finished."""
-    yield
-    gitlabmanager.teardown()
+#@pytest.fixture(autouse=True, scope="session")
+#def teardown_gitlab_instance():
+#    """Teardown the GitLab instance after all tests have finished."""
+#    yield
+#    gitlabmanager.teardown()
 
 
 @pytest.fixture(autouse=True)
@@ -322,7 +324,9 @@ def run_in_docker(command, extra_args=None):
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
-    print(proc.stdout.decode(sys.getdefaultencoding())) # for test output on failure
+    print(
+        proc.stdout.decode(sys.getdefaultencoding())
+    )  # for test output on failure
     return proc
 
 
