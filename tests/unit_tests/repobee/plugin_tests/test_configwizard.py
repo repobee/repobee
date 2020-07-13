@@ -9,7 +9,7 @@ from unittest.mock import patch
 import pytest
 
 import _repobee.constants
-from _repobee.ext import configwizard
+from _repobee.ext.defaults import configwizard
 
 
 @pytest.fixture

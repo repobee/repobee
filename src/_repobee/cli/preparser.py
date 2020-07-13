@@ -14,13 +14,17 @@ possible if a separate parser runs before the primary parser.
 .. moduleauthor:: Simon Larsén
 """
 
-# any pre-parser options go here
 import argparse
+import pathlib
 from typing import List
 
 import _repobee.cli
+import _repobee.constants
 
 PRE_PARSER_PLUG_OPTS = ["-p", "--plug"]
+PRE_PARSER_CONFIG_OPTS = ["-c", "--config-file"]
+PRE_PARSER_OPTS = PRE_PARSER_PLUG_OPTS + PRE_PARSER_CONFIG_OPTS
+
 PRE_PARSER_NO_PLUGS = "--no-plugins"
 PRE_PARSER_SHOW_ALL_OPTS = "--show-all-opts"
 # this list should include all pre-parser flags
@@ -38,6 +42,13 @@ def parse_args(sys_args: List[str]) -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser(
         prog="repobee", description="plugin pre-parser for _repobee."
+    )
+
+    parser.add_argument(
+        *PRE_PARSER_CONFIG_OPTS,
+        help="Specify path to the config file to use.",
+        type=pathlib.Path,
+        default=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
 
     mutex_grp = parser.add_mutually_exclusive_group()
@@ -74,7 +85,7 @@ def separate_args(args: List[str]) -> (List[str], List[str]):
     if args and args[0].startswith("-"):
         cur = 0
         while cur < len(args) and args[cur].startswith("-"):
-            if args[cur] in _repobee.cli.preparser.PRE_PARSER_PLUG_OPTS:
+            if args[cur] in _repobee.cli.preparser.PRE_PARSER_OPTS:
                 preparser_args += args[cur : cur + 2]
                 cur += 2
             elif args[cur] in _repobee.cli.preparser.PRE_PARSER_FLAGS:

@@ -36,6 +36,7 @@ from _repobee.cli.mainparser import (
 def dispatch_command(
     args: argparse.Namespace,
     api: plug.API,
+    config_file: pathlib.Path,
     ext_commands: Optional[List[plug.ExtensionCommand]] = None,
 ):
     """Handle parsed CLI arguments and dispatch commands to the appropriate
@@ -45,6 +46,7 @@ def dispatch_command(
     Args:
         args: A namespace of parsed command line arguments.
         api: An initialized plug.API instance.
+        config_file: Path to the config file.
         ext_commands: A list of active extension commands.
     """
     hook_results = {}
@@ -101,7 +103,7 @@ def dispatch_command(
     elif args.subparser == PURGE_REVIEW_TEAMS_PARSER:
         command.purge_review_teams(args.master_repo_names, args.students, api)
     elif args.subparser == SHOW_CONFIG_PARSER:
-        command.show_config()
+        command.show_config(config_file)
     elif args.subparser == CHECK_REVIEW_PROGRESS_PARSER:
         command.check_peer_review_progress(
             args.master_repo_names,

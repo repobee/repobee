@@ -29,8 +29,6 @@ matrix:
       - INTEGRATION_TEST=true
       - MODULE_SET=3
   - os: linux
-    python: 3.5
-  - os: linux
     python: 3.6
   - os: linux
     python: 3.7

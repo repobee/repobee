@@ -119,9 +119,7 @@ class JavacCloneHook(plug.Plugin):
         return status, msg
 
     def _add_option(self, clone_parser: argparse.ArgumentParser) -> None:
-        """Add ignore files option to the clone parser. All filenames specified
-        will be ignored when running the :py:func:`act_on_cloned_repo`
-        function.
+        """Add ignore files option to the clone parser.
 
         Args:
             clone_parser: The ``clone`` subparser.
