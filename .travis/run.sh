@@ -1,10 +1,5 @@
 #!/bin/bash
 
-function run_flake8() {
-    pip install flake8
-    flake8 --ignore=W503,E203
-}
-
 if [[ $INTEGRATION_TEST == "true" ]]; then
     ./.travis/integration_test.sh
     exit $?
@@ -15,5 +10,4 @@ if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
     pyenv global 3.5.4
 fi
 
-run_flake8
-pytest tests --cov=_repobee --cov-branch
+pytest tests/unit_tests --cov=_repobee --cov-branch
