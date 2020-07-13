@@ -1,4 +1,5 @@
 """Integration tests for the review commands."""
+import re
 
 import pytest
 
