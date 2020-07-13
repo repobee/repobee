@@ -54,7 +54,7 @@ def _convert_404_to_not_found_error(msg):
         if exc.response_code == 404:
             raise exception.NotFoundError(msg)
         raise exception.UnexpectedException(
-            f"An unexpected exception occured. {type(exc).__name__}: {str(exc)}"
+            f"An unexpected exception occured. {type(exc).__name__}: {exc}"
         )
 
 
@@ -185,11 +185,13 @@ class GitLabAPI(plug.API):
 
         if missing_members:
             LOGGER.info(
-                f'Adding members {", ".join(missing_members)} to team {team.name}'
+                f'Adding members {", ".join(missing_members)} '
+                f"to team {team.name}"
             )
         if existing_members:
             LOGGER.info(
-                f'{", ".join(existing_members)} already in team {team.name}, skipping...'
+                f'{", ".join(existing_members)} already in team {team.name}, '
+                f"skipping..."
             )
         self._add_to_team(missing_members, team, permission)
 
@@ -302,9 +304,7 @@ class GitLabAPI(plug.API):
                         }
                     ).attributes["http_url_to_repo"]
                 )
-                LOGGER.info(
-                    f"Created {self._group.name}/{repo.name}"
-                )
+                LOGGER.info(f"Created {self._group.name}/{repo.name}")
                 created = True
 
             if not created:
@@ -332,13 +332,11 @@ class GitLabAPI(plug.API):
         group_name = org_name if org_name else self._group_name
         group_url = f"{self._base_url}/{group_name}"
         repo_urls = (
-            [
-                f"{group_url}/{repo_name}.git"
-                for repo_name in master_repo_names
-            ]
+            [f"{group_url}/{repo_name}.git" for repo_name in master_repo_names]
             if not teams
             else [
-                f"{group_url}/{team}/{plug.generate_repo_name(str(team), master_repo_name)}.git"
+                f"{group_url}/{team}/"
+                f"{plug.generate_repo_name(str(team), master_repo_name)}.git"
                 for team in teams
                 for master_repo_name in master_repo_names
             ]
@@ -403,9 +401,7 @@ class GitLabAPI(plug.API):
         # only logging
         missing = set(team_names) - deleted
         if missing:
-            LOGGER.warning(
-                f"Could not find teams: {', '.join(missing)}"
-            )
+            LOGGER.warning(f"Could not find teams: {', '.join(missing)}")
 
     def open_issue(
         self, title: str, body: str, repo_names: Iterable[str]
@@ -424,9 +420,7 @@ class GitLabAPI(plug.API):
     def _create_issue(project, issue_dict, project_name=None):
         project_name = project_name or project.name
         issue = project.issues.create(issue_dict)
-        LOGGER.info(
-            f"Opened issue {project_name}/#{issue.id}-'{issue.title}'"
-        )
+        LOGGER.info(f"Opened issue {project_name}/#{issue.id}-'{issue.title}'")
 
     def close_issue(self, title_regex: str, repo_names: Iterable[str]) -> None:
         """See :py:meth:`repobee_plug.API.close_issue`."""
@@ -549,7 +543,8 @@ class GitLabAPI(plug.API):
                 projects = raw_team.projects.list()
                 if len(projects) != 1:
                     LOGGER.warning(
-                        f"Expected {raw_team.name} to have 1 associated projects, found {len(projects)}."
+                        f"Expected {raw_team.name} to have 1 associated "
+                        f"projects, found {len(projects)}."
                         f"Skipping..."
                     )
                     continue
@@ -660,9 +655,9 @@ class GitLabAPI(plug.API):
         ]
         if not slug_matched:
             raise exception.NotFoundError(
-                f"Could not find group with slug {group_name}. Verify that you have "
-                f"access to the group, and that you've provided the slug "
-                f"(the name in the address bar)."
+                f"Could not find group with slug {group_name}. Verify that "
+                f"you have access to the group, and that you've provided "
+                f"the slug (the name in the address bar)."
             )
         group = slug_matched[0]
         LOGGER.info(f"SUCCESS: Found group {group.name}")
@@ -680,9 +675,7 @@ class GitLabAPI(plug.API):
             raise exception.BadCredentials(
                 f"User {user} is not an owner of {group_name}"
             )
-        LOGGER.info(
-            f"SUCCESS: User {user} is an owner of group {group_name}"
-        )
+        LOGGER.info(f"SUCCESS: User {user} is an owner of group {group_name}")
 
 
 class GitLabAPIHook(plug.Plugin):
