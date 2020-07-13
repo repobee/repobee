@@ -7,6 +7,7 @@ import _repobee.cli.mainparser
 import asserts
 from helpers import *
 
+
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
 class TestMigrate:
     """Integration tests for the migrate command."""
@@ -47,5 +48,3 @@ class TestMigrate:
 
         assert result.returncode == 0
         asserts.assert_master_repos_exist(local_master_repos, ORG_NAME)
-
-

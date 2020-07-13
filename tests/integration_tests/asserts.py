@@ -1,6 +1,7 @@
 import itertools
 from helpers import *
 
+
 def assert_master_repos_exist(master_repo_names, org_name):
     """Assert that the master repos are in the specified group."""
     gl, *_ = gitlab_and_groups()
@@ -87,7 +88,9 @@ def assert_on_groups(
         # of groups he/she creates
         if single_group_assertion is None:
             expected_members = sorted(team.members + [ACTUAL_USER])
-            actual_members = sorted(m.username for m in group.members.list(all=True))
+            actual_members = sorted(
+                m.username for m in group.members.list(all=True)
+            )
             assert group.name == team.name
             assert actual_members == expected_members
         else:

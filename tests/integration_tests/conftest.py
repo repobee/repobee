@@ -13,6 +13,7 @@ assert os.getenv(
     "REPOBEE_NO_VERIFY_SSL"
 ), "The env variable REPOBEE_NO_VERIFY_SSL must be set to 'true'"
 
+
 @pytest.fixture(autouse=True, scope="session")
 def setup_gitlab_instance():
     """Perform first-time setup of the GitLab instance."""
@@ -138,11 +139,14 @@ def open_issues(with_student_repos):
             )
         )
 
-    asserts.assert_num_issues(STUDENT_TEAM_NAMES, MASTER_REPO_NAMES, len(issues))
-    asserts.assert_issues_exist(STUDENT_TEAM_NAMES, MASTER_REPO_NAMES, task_issue)
+    asserts.assert_num_issues(
+        STUDENT_TEAM_NAMES, MASTER_REPO_NAMES, len(issues)
+    )
+    asserts.assert_issues_exist(
+        STUDENT_TEAM_NAMES, MASTER_REPO_NAMES, task_issue
+    )
     asserts.assert_issues_exist(
         STUDENT_TEAM_NAMES, MASTER_REPO_NAMES, correction_issue
     )
 
     return issues
-

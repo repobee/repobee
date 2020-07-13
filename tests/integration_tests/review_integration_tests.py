@@ -7,6 +7,7 @@ import _repobee.cli.mainparser
 import asserts
 from helpers import *
 
+
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
 class TestAssignReviews:
     """Tests for the assign-reviews command."""

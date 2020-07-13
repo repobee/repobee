@@ -83,7 +83,9 @@ def run_in_docker(command, extra_args=None):
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
-    print(proc.stdout.decode(sys.getdefaultencoding())) # for test output on failure
+    print(
+        proc.stdout.decode(sys.getdefaultencoding())
+    )  # for test output on failure
     return proc
 
 
@@ -133,6 +135,7 @@ def update_repo(repo_name, filename, text):
 
     assert proj.files.get(filename, "master").decode().decode("utf8") == text
 
+
 def hash_directory(path):
     shas = []
     for dirpath, _, filenames in os.walk(str(path)):
@@ -143,5 +146,3 @@ def hash_directory(path):
         )
         shas += (hashlib.sha1(file.read_bytes()).digest() for file in files)
     return hashlib.sha1(b"".join(sorted(shas))).digest()
-
-

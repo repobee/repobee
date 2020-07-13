@@ -9,6 +9,7 @@ import _repobee.cli.mainparser
 import asserts
 from helpers import *
 
+
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
 class TestOpenIssues:
     """Tests for the open-issues command."""
@@ -134,4 +135,3 @@ class TestListIssues:
             assert re.search(expected_pattern, output, search_flags)
         for unexpected_pattern in unexpected_issue_output_patterns:
             assert not re.search(unexpected_pattern, output, search_flags)
-
