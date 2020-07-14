@@ -11,7 +11,7 @@ Contains the code required for pre-configuring user interfaces.
 import os
 import pathlib
 import configparser
-from typing import Union, List, Mapping, Optional
+from typing import Union, List, Mapping
 
 import daiquiri
 import repobee_plug as plug
@@ -23,9 +23,7 @@ from _repobee import constants
 LOGGER = daiquiri.getLogger(__file__)
 
 
-def get_configured_defaults(
-    config_file: Union[str, pathlib.Path] = constants.DEFAULT_CONFIG_FILE
-) -> dict:
+def get_configured_defaults(config_file: Union[str, pathlib.Path]) -> dict:
     """Access the config file and return a ConfigParser instance with
     its contents.
 
@@ -63,9 +61,7 @@ def check_defaults(
         )
 
 
-def get_plugin_names(
-    config_file: Union[str, pathlib.Path] = constants.DEFAULT_CONFIG_FILE
-) -> List[str]:
+def get_plugin_names(config_file: Union[str, pathlib.Path]) -> List[str]:
     """Return a list of unqualified names of plugins listed in the config. The
     order of the plugins is preserved.
 
@@ -90,9 +86,7 @@ def get_plugin_names(
     return [name.strip() for name in plugin_string.split(",") if name]
 
 
-def execute_config_hooks(
-    config_file: Union[str, pathlib.Path] = constants.DEFAULT_CONFIG_FILE
-) -> None:
+def execute_config_hooks(config_file: Union[str, pathlib.Path]) -> None:
     """Execute all config hooks.
 
     Args:
@@ -105,9 +99,7 @@ def execute_config_hooks(
     plug.manager.hook.config_hook(config_parser=config_parser)
 
 
-def check_config_integrity(
-    config_file: Union[str, pathlib.Path] = constants.DEFAULT_CONFIG_FILE
-) -> None:
+def check_config_integrity(config_file: Union[str, pathlib.Path]) -> None:
     """Raise an exception if the configuration file contains syntactical
     errors, or if the defaults are misconfigured. Note that plugin options are
     not checked.
@@ -145,23 +137,8 @@ def get_all_tasks() -> List[plug.Task]:
     return plug.manager.hook.setup_task() + plug.manager.hook.clone_task()
 
 
-def _fetch_token() -> Optional[str]:
+def _read_defaults(config_file: pathlib.Path) -> dict:
     token = os.getenv(constants.TOKEN_ENV)
-    token_from_old = os.getenv(constants.TOKEN_ENV_OLD)
-    if token_from_old:
-        LOGGER.warning(
-            "The {} environment variable has been deprecated, "
-            "use {} instead".format(
-                constants.TOKEN_ENV_OLD, constants.TOKEN_ENV
-            )
-        )
-    return token or token_from_old
-
-
-def _read_defaults(
-    config_file: pathlib.Path = constants.DEFAULT_CONFIG_FILE,
-) -> dict:
-    token = _fetch_token()
     if not config_file.is_file():
         return {} if not token else dict(token=token)
     defaults = dict(_read_config(config_file)[constants.DEFAULTS_SECTION_HDR])
@@ -175,9 +152,7 @@ def _read_defaults(
     return defaults
 
 
-def _read_config(
-    config_file: pathlib.Path = constants.DEFAULT_CONFIG_FILE,
-) -> configparser.ConfigParser:
+def _read_config(config_file: pathlib.Path) -> configparser.ConfigParser:
     config_parser = configparser.ConfigParser()
     try:
         config_parser.read(str(config_file))

@@ -1,6 +1,8 @@
 import os
 from unittest import mock
+
 import pytest
+
 import _repobee.constants
 from _repobee import config
 from _repobee import exception
@@ -19,8 +21,10 @@ CONFIG_TOKEN = constants.CONFIG_TOKEN
 class TestGetConfiguredDefaults:
     """Tests for get_configured_defaults"""
 
-    def test_get_configured_defaults_no_config_file(self, isfile_mock):
-        defaults = config.get_configured_defaults()
+    def test_get_configured_defaults_no_config_file(
+        self, isfile_mock, unused_path
+    ):
+        defaults = config.get_configured_defaults(unused_path)
         assert defaults == dict(token=constants.TOKEN)
 
     def test_get_configured_defaults_empty_file(self, empty_config_mock):
@@ -50,23 +54,6 @@ class TestGetConfiguredDefaults:
     ):
         defaults = config.get_configured_defaults(str(config_mock))
         assert defaults["token"] == constants.TOKEN
-
-    @pytest.mark.skipif(
-        "_repobee.__version__ >= '3.0.0'",
-        msg="Old token should have been removed",
-    )
-    def test_deprecated_token_env(self, config_mock, mock_getenv):
-        token = "superdupertoken"
-
-        def _env(name):
-            if name == _repobee.constants.TOKEN_ENV_OLD:
-                return token
-            return None
-
-        mock_getenv.side_effect = _env
-
-        defaults = config.get_configured_defaults(str(config_mock))
-        assert defaults["token"] == token
 
     def test_get_configured_defaults_raises_on_invalid_keys(
         self, empty_config_mock, students_file
@@ -153,8 +140,8 @@ class TestGetPluginNames:
 class TestExecuteConfigHooks:
     """Tests for execute_config_hooks."""
 
-    def test_with_no_config_file(self, no_config_mock, plugin_manager_mock):
-        config.execute_config_hooks()
+    def test_with_no_config_file(self, unused_path, plugin_manager_mock):
+        config.execute_config_hooks(config_file=unused_path)
         assert not plugin_manager_mock.hook.config_hook.called
 
     def test_with_config_file(self, config_mock, plugin_manager_mock):
@@ -180,13 +167,11 @@ class TestCheckConfigIntegrity:
             + os.linesep.join(["[some_config]", "option = value", "bla = blu"])
         )
 
-    def test_with_no_config_file_raises(self, no_config_mock):
+    def test_with_no_config_file_raises(self, unused_path):
         with pytest.raises(exception.FileError) as exc_info:
-            config.check_config_integrity()
+            config.check_config_integrity(config_file=unused_path)
 
-        assert str(_repobee.constants.DEFAULT_CONFIG_FILE) in str(
-            exc_info.value
-        )
+        assert str(unused_path) in str(exc_info.value)
 
     def test_with_invalid_defaults_key_raises(self, empty_config_mock):
         empty_config_mock.write(

@@ -8,6 +8,7 @@
 
 import types
 import argparse
+import pathlib
 
 import logging
 from typing import List, Optional
@@ -121,13 +122,19 @@ def create_parser_for_docs() -> argparse.ArgumentParser:
     """
     daiquiri.setup(level=logging.FATAL)
     # load default plugins
-    plugin.initialize_plugins([_repobee.constants.DEFAULT_PLUGIN])
+    plugin.initialize_default_plugins()
     ext_commands = plug.manager.hook.create_extension_command()
-    return create_parser(show_all_opts=True, ext_commands=ext_commands)
+    return create_parser(
+        show_all_opts=True,
+        ext_commands=ext_commands,
+        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
+    )
 
 
 def create_parser(
-    show_all_opts: bool, ext_commands: Optional[List[plug.ExtensionCommand]]
+    show_all_opts: bool,
+    ext_commands: Optional[List[plug.ExtensionCommand]],
+    config_file: pathlib.Path,
 ) -> argparse.ArgumentParser:
     """Create the primary parser.
 
@@ -135,6 +142,7 @@ def create_parser(
         show_all_opts: If False, help sections for options with configured
             defaults are suppressed. Otherwise, all options are shown.
         ext_commands: A list of extension commands.
+        config_file: Path to the config file.
     Returns:
         The primary parser.
     """
@@ -150,6 +158,7 @@ def create_parser(
             _versioned_plugin_name(p)
             for p in plug.manager.get_plugins()
             if isinstance(p, types.ModuleType)
+            and not plugin.is_default_plugin(p)
         ]
     )
 
@@ -181,7 +190,7 @@ def create_parser(
         action="version",
         version="{}".format(_repobee.__version__),
     )
-    _add_subparsers(parser, show_all_opts, ext_commands)
+    _add_subparsers(parser, show_all_opts, ext_commands, config_file)
 
     return parser
 
@@ -394,7 +403,7 @@ class _OrderedFormatter(argparse.HelpFormatter):
 
     The internals of the formatter classes are technically not public,
     so this class is "unsafe" when it comes to new versions of Python. It may
-    have to be disabled for future versions, but it works for 3.5, 3.6 and 3.7
+    have to be disabled for future versions, but it works for 3.6, 3.7 and 3.8
     at the time of writing. If this turns troublesome, it may be time to
     switch to some other CLI library.
     """
@@ -475,7 +484,7 @@ def _add_extension_parsers(
     return ext_commands
 
 
-def _add_subparsers(parser, show_all_opts, ext_commands):
+def _add_subparsers(parser, show_all_opts, ext_commands, config_file):
     """Add all of the subparsers to the parser. Note that the parsers prefixed
     with `base_` do not have any parent parsers, so any parser inheriting from
     them must also inherit from the required `base_parser` (unless it is a
@@ -483,7 +492,7 @@ def _add_subparsers(parser, show_all_opts, ext_commands):
     """
 
     base_parser, base_student_parser, master_org_parser = _create_base_parsers(
-        show_all_opts
+        show_all_opts, config_file
     )
 
     subparsers = parser.add_subparsers(dest=SUB)
@@ -619,9 +628,9 @@ def _add_subparsers(parser, show_all_opts, ext_commands):
     )
 
 
-def _create_base_parsers(show_all_opts):
+def _create_base_parsers(show_all_opts, config_file):
     """Create the base parsers."""
-    configured_defaults = config.get_configured_defaults()
+    configured_defaults = config.get_configured_defaults(config_file)
 
     def default(arg_name):
         return (

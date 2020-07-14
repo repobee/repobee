@@ -7,7 +7,7 @@ from unittest.mock import patch, MagicMock, call, PropertyMock
 import pytest
 
 import _repobee
-import _repobee.ext.github
+import _repobee.ext.defaults.github
 from _repobee import command
 from _repobee import git
 from _repobee import util
@@ -147,8 +147,10 @@ def api_mock(request, mocker):
     def url_from_repo_info(repo_info):
         return generate_repo_url(repo_info.name)
 
-    mock = MagicMock(spec=_repobee.ext.github.GitHubAPI)
-    api_class = mocker.patch("_repobee.ext.github.GitHubAPI", autospec=True)
+    mock = MagicMock(spec=_repobee.ext.defaults.github.GitHubAPI)
+    api_class = mocker.patch(
+        "_repobee.ext.defaults.github.GitHubAPI", autospec=True
+    )
     api_class.return_value = mock
 
     mock.get_repo_urls.side_effect = partial(
@@ -158,7 +160,7 @@ def api_mock(request, mocker):
         map(url_from_repo_info, repo_infos)
     )
     mock.get_issues = MagicMock(
-        spec="_repobee.ext.github.GitHubAPI.get_issues",
+        spec="_repobee.ext.defaults.github.GitHubAPI.get_issues",
         side_effect=_get_issues,
     )
     type(mock).token = PropertyMock(return_value=TOKEN)
@@ -495,15 +497,15 @@ class TestCloneRepos:
     """Tests for clone_repos."""
 
     @pytest.fixture
-    def register_default_plugins(self):
+    def register_default_plugins(self, unused_path):
         plugin_names = plugin.resolve_plugin_names(
-            plugin_names=constants.PLUGINS
+            plugin_names=constants.PLUGINS, config_file=unused_path
         )
         modules = plugin.load_plugin_modules(plugin_names)
         plugin.register_plugins(modules)
 
     @pytest.fixture
-    def act_mocks(self, monkeypatch, config_mock):
+    def act_mocks(self, monkeypatch, config_mock, unused_path):
         """Mocks for the act functions and method. This is a bit
         messy as the functions must be marked with the
         repobee_plug.repobee_hook decorator to be picked up by pluggy.
@@ -535,9 +537,7 @@ class TestCloneRepos:
         monkeypatch.setattr("_repobee.ext.pylint.act", act_hook_func)
         _repobee.ext.pylint.act(None, None)
 
-        plugin_names = plugin.resolve_plugin_names(
-            plugin_names=constants.PLUGINS
-        )
+        plugin_names = constants.PLUGINS
         modules = plugin.load_plugin_modules(plugin_names)
         plugin.register_plugins(modules)
 
@@ -703,11 +703,11 @@ def test_purge_review_teams(master_names, students, api_mock):
 # TODO add more test cases
 class TestAssignPeerReviewers:
     @pytest.fixture(autouse=True)
-    def load_default_plugins(self):
-        modules = plugin.load_plugin_modules(
-            [_repobee.constants.DEFAULT_PLUGIN]
-        )
-        plugin.register_plugins(modules)
+    def load_default_plugins_auto(self, load_default_plugins):
+        """The only point of this fixture is to make load_default_plugins
+        autouse=True.
+        """
+        yield
 
     @pytest.mark.parametrize(
         "num_students, num_reviews",

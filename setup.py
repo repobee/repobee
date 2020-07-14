@@ -15,6 +15,9 @@ test_requirements = [
     "pytest-cov>=2.6.1",
     "pytest-mock",
     "codecov",
+    "bandit",
+    "flake8",
+    "black",
 ]
 docs_requirements = [
     "sphinx>=1.8.2",
@@ -27,8 +30,8 @@ required = [
     "daiquiri",
     "pygithub",
     "colored",
-    "repobee-plug==0.12.0",
     "python-gitlab==1.15.0",
+    "pluggy>=0.13.1",
 ]
 
 setup(
@@ -57,13 +60,13 @@ setup(
     scripts=["bin/repobee"],
     include_package_data=True,
     zip_safe=False,
-    python_requires=">=3.5",
+    python_requires=">=3.6",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Education",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: Implementation :: CPython",
         "License :: OSI Approved :: MIT License",
         "Operating System :: POSIX",

@@ -59,38 +59,38 @@ util
     :members:
 
 
-Core plugins
-============
+Default plugins
+===============
+These plugins are loaded by default.
 
-defaults
---------
+configwizard
+------------
 
-.. automodule:: _repobee.ext.defaults
+.. automodule:: _repobee.ext.defaults.configwizard
     :members:
+
+genreviews
+----------
+
+.. automodule:: _repobee.ext.defaults.genreviews
+    :members:
+
 
 github
 ------
 
-.. automodule:: _repobee.ext.github
+.. automodule:: _repobee.ext.defaults.github
     :members:
+
+Additional plugins
+==================
+These plugins ship with RepoBee, but are not loaded by default.
 
 gitlab
 ------
 
 .. automodule:: _repobee.ext.gitlab
    :members:
-
-
-
-pairwise
---------
-
-.. automodule:: _repobee.ext.pairwise
-    :members:
-
-
-Extension plugins
-=================
 
 javac
 -----
@@ -104,11 +104,12 @@ pylint
 .. automodule:: _repobee.ext.pylint
     :members:
 
-config-wizard
--------------
 
-.. automodule:: _repobee.ext.configwizard
-   :members:
+pairwise
+--------
+
+.. automodule:: _repobee.ext.pairwise
+    :members:
 
 query
 -----

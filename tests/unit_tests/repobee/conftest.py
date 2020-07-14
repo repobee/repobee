@@ -7,10 +7,9 @@ import os
 from unittest.mock import MagicMock
 import pytest
 
-from repobee_plug import manager
-
 import _repobee.constants
 import _repobee.config
+import _repobee.plugin
 
 import constants
 
@@ -18,11 +17,10 @@ import constants
 sys.modules["github"] = MagicMock()
 
 
-import _repobee  # noqa: F402
+import _repobee  # noqa: E402
 
 EXPECTED_ENV_VARIABLES = [
     _repobee.constants.TOKEN_ENV,
-    _repobee.constants.TOKEN_ENV_OLD,
     "REPOBEE_NO_VERIFY_SSL",
 ]
 
@@ -52,12 +50,19 @@ def _students_file(populate: bool = True):
         yield file
 
 
+@pytest.fixture
+def unused_path():
+    with tempfile.NamedTemporaryFile() as tmpfile:
+        unused_path = pathlib.Path(tmpfile.name)
+
+    # exiting the with block destroys the temporary file
+    return unused_path
+
+
 @pytest.fixture(autouse=True)
 def unregister_plugins():
     """All plugins should be unregistered after each function."""
-    registered = manager.get_plugins()
-    for plugin in registered:
-        manager.unregister(plugin)
+    _repobee.plugin.unregister_all_plugins()
 
 
 @pytest.fixture(autouse=True)
@@ -193,3 +198,14 @@ def config_mock(empty_config_mock, students_file):
     )
     empty_config_mock.write(config_contents)
     yield empty_config_mock
+
+
+@pytest.fixture
+def load_default_plugins():
+    """Load the default plugins."""
+    default_plugin_names = _repobee.plugin.get_qualified_module_names(
+        _repobee.ext.defaults
+    )
+    _repobee.plugin.initialize_plugins(
+        default_plugin_names, allow_qualified=True
+    )

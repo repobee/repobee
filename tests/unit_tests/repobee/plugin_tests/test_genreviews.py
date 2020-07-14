@@ -1,10 +1,10 @@
-"""Tests for the defaults plugin."""
+"""Tests for the genreviews plugin."""
 import itertools
 import collections
 
 import pytest
 
-from _repobee.ext import defaults
+from _repobee.ext.defaults import genreviews
 
 import constants
 
@@ -16,7 +16,7 @@ class TestGenerateReviewAllocations:
     def test_raises_when_too_many_reviews(self, num_students, num_reviews):
         teams = list(constants.STUDENTS[:num_students])
         with pytest.raises(ValueError) as exc_info:
-            defaults.generate_review_allocations(teams, num_reviews)
+            genreviews.generate_review_allocations(teams, num_reviews)
 
         assert "num_reviews must be less than len(teams)" in str(
             exc_info.value
@@ -24,7 +24,7 @@ class TestGenerateReviewAllocations:
 
     def test_raises_when_too_few_reviews(self):
         with pytest.raises(ValueError) as exc_info:
-            defaults.generate_review_allocations(list(constants.STUDENTS), 0)
+            genreviews.generate_review_allocations(list(constants.STUDENTS), 0)
         assert "num_reviews must be greater than 0" in str(exc_info.value)
 
     @pytest.mark.parametrize(
@@ -37,7 +37,7 @@ class TestGenerateReviewAllocations:
         students = list(constants.STUDENTS[:num_students])
         assert len(students) == num_students, "pre-test assert"
 
-        allocations = defaults.generate_review_allocations(
+        allocations = genreviews.generate_review_allocations(
             students, num_reviews
         )
 
@@ -60,7 +60,9 @@ class TestGenerateReviewAllocations:
         teams = list(constants.STUDENTS[:num_students])
         expected_reviewed_teams = list(teams)
 
-        allocations = defaults.generate_review_allocations(teams, num_reviews)
+        allocations = genreviews.generate_review_allocations(
+            teams, num_reviews
+        )
 
         assert sorted(expected_reviewed_teams) == sorted(
             [alloc.reviewed_team for alloc in allocations]

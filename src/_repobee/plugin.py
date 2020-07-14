@@ -11,19 +11,20 @@ import collections
 import contextlib
 import shutil
 import tempfile
-
-import types
+import pkgutil
 import pathlib
 import importlib
+import hashlib
+import os
+import sys
 from types import ModuleType
-from typing import List, Optional, Iterable, Mapping
+from typing import List, Optional, Iterable, Mapping, Union
 
 import daiquiri
 
 import _repobee
-from _repobee import config
+import _repobee.ext.defaults
 from _repobee import exception
-from _repobee import constants
 
 import repobee_plug as plug
 
@@ -40,7 +41,11 @@ def _external_plugin_qualname(plugin_name):
     )
 
 
-def load_plugin_modules(plugin_names: Iterable[str]) -> List[ModuleType]:
+def load_plugin_modules(
+    plugin_names: Iterable[str],
+    allow_qualified: bool = False,
+    allow_filepath: bool = False,
+) -> List[ModuleType]:
     """Load the given plugins. Plugins are loaded such that they are executed
     in the same order that they are specified in the plugin_names list.
 
@@ -56,9 +61,16 @@ def load_plugin_modules(plugin_names: Iterable[str]) -> List[ModuleType]:
         # import nr 2
         from repobee_javac import javac
 
-    Args:
-        plugin_names: A list of plugin names. Overrides the config file.
+        # import nr 3 (only if allow_qualified)
+        import javac
 
+        # import nr 4 (only if allow_filepath)
+        # Dynamically import using the name as a filepath
+
+    Args:
+        plugin_names: A list of plugin names.
+        allow_qualified: Allow the plugin to be specified by a qualified name.
+        allow_filepath: Allows the plugin to be specified as a filepath.
     Returns:
         a list of loaded modules.
     """
@@ -66,14 +78,45 @@ def load_plugin_modules(plugin_names: Iterable[str]) -> List[ModuleType]:
     LOGGER.debug("Loading plugins: " + ", ".join(plugin_names))
 
     for name in plugin_names:
-        plug_mod = _try_load_module(
-            _plugin_qualname(name)
-        ) or _try_load_module(_external_plugin_qualname(name))
+        plug_mod = (
+            _try_load_module(_plugin_qualname(name))
+            or _try_load_module(_external_plugin_qualname(name))
+            or (allow_qualified and _try_load_module(name))
+            or (allow_filepath and _try_load_module_from_filepath(name))
+        )
         if not plug_mod:
             msg = "failed to load plugin module " + name
             raise exception.PluginLoadError(msg)
         loaded_modules.append(plug_mod)
     return loaded_modules
+
+
+def _try_load_module_from_filepath(path: str) -> Optional[ModuleType]:
+    """Try to load a module from the specified filepath.
+
+    Adapted from code by Sebastian Rittau (https://stackoverflow.com/a/67692).
+
+    Args:
+        path: A path to a Python module.
+    Returns:
+        The module if loaded successfully, or None if there was no module at
+        the path.
+    """
+    package_name = (
+        # The use of SHA1 here is not a security issue as it is only intended
+        # to come up with a (most likely) unique name for the package
+        f"_{hashlib.sha1(path.encode(sys.getdefaultencoding()))}"  # nosec
+    )
+    module_name = pathlib.Path(path).stem
+    qualname = f"{package_name}.{module_name}"
+    spec = importlib.util.spec_from_file_location(qualname, path)
+    if not spec:
+        return None
+
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    return mod
 
 
 def _try_load_module(qualname: str) -> Optional[ModuleType]:
@@ -87,74 +130,235 @@ def _try_load_module(qualname: str) -> Optional[ModuleType]:
     """
     try:
         return importlib.import_module(qualname)
-    except ImportError:
-        # ImportError in 3.5, ModuleNotFoundError in 3.6+
-        # using ImportError for compatability
+    except ModuleNotFoundError:
         return None
 
 
-def register_plugins(modules: List[ModuleType]) -> None:
+def register_plugins(modules: List[ModuleType],) -> List[object]:
     """Register the namespaces of the provided modules, and any plug.Plugin
     instances in them. Registers modules in reverse order as they are
     run in LIFO order.
 
     Args:
         modules: A list of modules.
+    Returns:
+        A list of registered modules and and plugin class instances.
     """
     assert all([isinstance(mod, ModuleType) for mod in modules])
+
+    registered = []
     for module in reversed(modules):  # reverse because plugins are run LIFO
         plug.manager.register(module)
+        registered.append(module)
+
         for value in module.__dict__.values():
             if (
                 isinstance(value, type)
                 and issubclass(value, plug.Plugin)
                 and value != plug.Plugin
             ):
-                plug.manager.register(value())
+                obj = value()
+                plug.manager.register(obj)
+                registered.append(obj)
+
+    return registered
 
 
-def initialize_plugins(plugin_names: List[str] = None):
+def unregister_all_plugins() -> None:
+    """Unregister all currently registered plugins."""
+    for p in plug.manager.get_plugins():
+        plug.manager.unregister(p)
+
+
+def try_register_plugin(
+    plugin_module: ModuleType, *plugin_classes: List[type]
+) -> None:
+    """Attempt to register a plugin module and then immediately unregister it.
+
+    .. important::
+        This is a convenience method for sanity checking plugins, and should
+        only be called in test suites. It's not for production use.
+
+    This convenience method can be used to sanity check plugins by registering
+    them with RepoBee. If they have incorrectly defined hooks, this will be
+    discovered only when registering.
+
+    As an example, assume that we have a plugin module with a single (useless)
+    plugin class in it, like this:
+
+    .. code-block:: python
+        :caption: useless.py
+
+        import repobee_plug as plug
+
+        class Useless(plug.Plugin):
+            \"\"\"This plugin does nothing!\"\"\"
+
+    We want to make sure that both the ``useless`` module and the ``Useless``
+    plugin class are registered correctly, and for that we can write some
+    simple code like this.
+
+    .. code-block:: python
+        :caption: Example test case to check registering
+
+        import repobee
+        # assuming that useless is defined in the external plugin
+        # repobee_useless
+        from repobee_useless import useless
+
+        def test_register_useless_plugin():
+            repobee.try_register_plugin(useless, useless.Useless)
+
+    Args:
+        plugin_module: A plugin module.
+        plugin_classes: If the plugin contains any plugin classes (i.e. classes
+            that extend :py:class:`repobee_plug.Plugin`), then these must be
+            provided here. Otherwise, this option should not be provided.
+    Raises:
+        :py:class:`repobee_plug.PlugError` if the module cannot be registered,
+        or if the contained plugin classes does not match
+        plugin_classes.
+    """
+    expected_plugin_classes = set(plugin_classes or [])
+    newly_registered = register_plugins([plugin_module])
+    for reg in newly_registered:
+        plug.manager.unregister(reg)
+
+    registered_modules = [
+        reg for reg in newly_registered if isinstance(reg, ModuleType)
+    ]
+    registered_classes = {
+        cl.__class__ for cl in newly_registered if cl not in registered_modules
+    }
+
+    assert len(registered_modules) == 1, "Module was not registered"
+    if expected_plugin_classes != registered_classes:
+        raise plug.PlugError(
+            f"Expected plugin classes {expected_plugin_classes}, "
+            f"got {registered_classes}"
+        )
+
+
+def initialize_plugins(
+    plugin_names: List[str] = None,
+    allow_qualified: bool = False,
+    allow_filepath: bool = False,
+) -> List[Union[ModuleType, type]]:
     """Load and register plugins.
 
     Args:
         plugin_names: An optional list of plugin names that overrides the
-        configuration file's plugins.
+            configuration file's plugins.
+        allow_qualified: Allows the plugin names to be qualified.
+        allow_filepath: Allows the plugin to be specified as a filepath.
+    Returns:
+        A list of registered modules and classes.
+    Raises:
+        :py:class:`_repobee.exception.PluginLoadError`
     """
+    if not allow_filepath:
+        _check_no_filepaths(plugin_names)
+    if not allow_qualified:
+        _check_no_qualified_names(plugin_names)
+
     registered_plugins = plug.manager.get_plugins()
     plug_modules = [
         p
-        for p in load_plugin_modules(plugin_names=plugin_names)
+        for p in load_plugin_modules(
+            plugin_names, allow_qualified, allow_filepath
+        )
         if p not in registered_plugins
     ]
-    register_plugins(plug_modules)
+    registered = register_plugins(plug_modules)
     _handle_deprecation()
+    return registered
 
 
-def resolve_plugin_names(
-    plugin_names: Optional[List[str]] = None,
-    config_file: pathlib.Path = constants.DEFAULT_CONFIG_FILE,
-) -> List[str]:
-    """Return a list of plugin names to load into RepoBee given a list of
-    externally specified plugin names, and a path to a configuration file.
+def _is_filepath(name: str) -> bool:
+    return os.pathsep in name or os.path.exists(name)
+
+
+def _check_no_filepaths(names: List[str]):
+    filepaths = [name for name in names if _is_filepath(name)]
+    if filepaths:
+        raise exception.PluginLoadError(f"Filepaths not allowed: {filepaths}")
+
+
+def _check_no_qualified_names(names: List[str]):
+    qualified_names = [
+        name for name in names if "." in name and not _is_filepath(name)
+    ]
+    if qualified_names:
+        raise exception.PluginLoadError(
+            f"Qualified names not allowed: {qualified_names}"
+        )
+
+
+def resolve_plugin_version(plugin_module: ModuleType) -> Optional[str]:
+    """Return the version of this plugin. Tries to resolve the version by
+    first checking if the plugin module itself has a ``__version__``
+    attribute, and then the top level package.
 
     Args:
-        plugin_names: A list of names of plugins.
-        config_file: A configuration file.
+        plugin_module: A plugin module.
     Returns:
-        A list of plugin names that should be loaded.
+        The version if found, otherwise None.
     """
-    return [*(plugin_names or config.get_plugin_names(config_file) or [])]
+    if hasattr(plugin_module, "__version__"):
+        return plugin_module.__version__
 
-
-def resolve_plugin_version(plugin_module: types.ModuleType,) -> Optional[str]:
-    """Return the version of the top-level package containing the plugin, or
-    None if it is not defined.
-    """
     pkg_name = plugin_module.__package__.split(".")[0]
     pkg_module = _try_load_module(pkg_name)
     return (
         pkg_module.__version__ if hasattr(pkg_module, "__version__") else None
     )
+
+
+def is_default_plugin(module: ModuleType) -> Optional[str]:
+    """Check if the provided module is a default module.
+
+    Args:
+        module: A Python module.
+    Returns:
+        True iff the provided module is a default plugin.
+    """
+    return module.__package__ == _repobee.ext.defaults.__name__
+
+
+def initialize_default_plugins() -> None:
+    """Initialize the default plugin modules."""
+    default_plugin_qualnames = get_qualified_module_names(
+        _repobee.ext.defaults
+    )
+    initialize_plugins(default_plugin_qualnames, allow_qualified=True)
+
+
+def get_qualified_module_names(pkg: ModuleType) -> List[str]:
+    """Return a list of all python modules in the given package. Only considers
+    the modules directly in this package, and not in subpackages.
+
+    Args:
+        pkg: The package to resolve modules in.
+    Returns:
+        All modules in the given package.
+    """
+    return [f"{pkg.__name__}.{name}" for name in get_module_names(pkg)]
+
+
+def get_module_names(pkg: ModuleType) -> List[str]:
+    """Get the unqualified module names from the given package.
+
+    Args:
+        pkg: The package to resolve modules in.
+    Returns:
+        All modules in the given package.
+    """
+    return [
+        name
+        for file_finder, name, _ in pkgutil.iter_modules(pkg.__path__)
+        # only include modules (i.e. files), not subpackages
+        if (pathlib.Path(file_finder.path) / (name + ".py")).is_file()
+    ]
 
 
 def execute_clone_tasks(
@@ -169,7 +373,7 @@ def execute_clone_tasks(
     Returns:
         A mapping from repo name to hook result.
     """
-    tasks = plug.manager.hook.clone_task() + _wrap_act_on_cloned_repo()
+    tasks = plug.manager.hook.clone_task()
     return _execute_tasks(repo_names, tasks, api, cwd)
 
 
@@ -220,16 +424,6 @@ def _execute_tasks(
                 if res:
                     results[path.name].append(res)
     return results
-
-
-def _wrap_act_on_cloned_repo():
-    """Wrap act_on_cloned_repo hook implementations in RepoBee Tasks."""
-    tasks = []
-    for p in plug.manager.get_plugins():
-        if "act_on_cloned_repo" in dir(p):
-            task = plug.Task(act=p.act_on_cloned_repo)
-            tasks.append(task)
-    return tasks
 
 
 @contextlib.contextmanager

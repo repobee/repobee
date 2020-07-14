@@ -25,7 +25,7 @@ import requests.exceptions
 import repobee_plug as plug
 
 from _repobee import exception
-from _repobee.ext.github import DEFAULT_REVIEW_ISSUE
+from _repobee.ext.defaults.github import DEFAULT_REVIEW_ISSUE
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -91,6 +91,8 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
             ) from e
         else:
             raise exception.APIError(str(e), status=e.response_code) from e
+    except (exception.RepoBeeException, plug.PlugError):
+        raise
     except Exception as e:
         raise exception.UnexpectedException(
             "a {} occured unexpectedly: {}".format(type(e).__name__, str(e))
@@ -198,11 +200,16 @@ class GitLabAPI(plug.API):
         self._add_to_team(missing_members, team, permission)
 
     def _get_organization(self, org_name):
-        return [
+        matches = [
             g
             for g in self._gitlab.groups.list(search=org_name)
             if g.path == org_name
-        ][0]
+        ]
+
+        if not matches:
+            raise exception.NotFoundError(org_name, status=404)
+
+        return matches[0]
 
     def _get_members(self, group):
         return [self._User(m.id, m.username) for m in group.members.list()]

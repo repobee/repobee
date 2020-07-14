@@ -12,8 +12,7 @@ fi
 
 if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
     eval "$(pyenv init -)"
-    pyenv global 3.5.4
+    pyenv global 3.6.10
 fi
 
-run_flake8
-pytest tests/unit_tests --cov=_repobee --cov-branch
+pytest tests --cov=_repobee --cov=repobee_plug --cov-branch

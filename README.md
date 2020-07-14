@@ -4,14 +4,10 @@
 [![Code Coverage](https://codecov.io/gh/repobee/repobee/branch/master/graph/badge.svg)](https://codecov.io/gh/repobee/repobee)
 [![Documentation Status](https://readthedocs.org/projects/repobee/badge/?version=stable)](http://repobee.readthedocs.io/en/stable/)
 [![PyPi Version](https://badge.fury.io/py/repobee.svg)](https://badge.fury.io/py/repobee)
-![Supported Python Versions](https://img.shields.io/badge/python-3.5%2C%203.6%2C%203.7%2C%203.8-blue.svg)
+![Supported Python Versions](https://img.shields.io/badge/python-3.6%2C%203.7%2C%203.8-blue.svg)
 ![Supported Platforms](https://img.shields.io/badge/platforms-Linux%2C%20macOS-blue.svg)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
-
-> **Why no activity as of late?:** I'm currently working very hard with my
-> master thesis, and so will only address critical bugs. Development on RepoBee
-> will most likely resume in July.
 
 ## Overview
 RepoBee is a command line tool that allows teachers and teaching assistants
