@@ -147,11 +147,11 @@ while not Group.first().nil? do print('Waiting for groups to be deleted ...\n');
 
 
 def create_groups_and_projects(
-    local_master_repos: List[pathlib.Path],
-    teacher: str,
     master_group_name: str,
     course_round_group_name: str,
-    token: str,
+    local_master_repos: List[pathlib.Path] = LOCAL_MASTER_REPOS,
+    teacher: str = TEACHER,
+    token: str = TOKEN,
 ) -> None:
     print("Creating groups and projects")
     gl = gitlab.Gitlab(BASE_URL, private_token=TOKEN, ssl_verify=False,)

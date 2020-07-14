@@ -1,5 +1,6 @@
 import pathlib
 import os
+import secrets
 
 import pytest
 import gitlabmanager
@@ -12,6 +13,35 @@ from helpers import *
 assert os.getenv(
     "REPOBEE_NO_VERIFY_SSL"
 ), "The env variable REPOBEE_NO_VERIFY_SSL must be set to 'true'"
+
+
+@pytest.fixture
+def base_args(target_group_name):
+    return [
+        "--bu",
+        BASE_URL,
+        "-o",
+        target_group_name,
+        "-t",
+        TOKEN,
+    ]
+
+
+@pytest.fixture
+def target_group_name(create_groups):
+    target_name, _ = create_groups
+    return target_name
+
+
+@pytest.fixture
+def master_group_name(create_groups):
+    _, master_name = create_groups
+    return master_name
+
+
+@pytest.fixture
+def master_org_arg(master_group_name):
+    return ["--mo", master_group_name]
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -28,11 +58,16 @@ def teardown_gitlab_instance():
 
 
 @pytest.fixture(autouse=True)
-def restore():
-    """Run the script that restores the GitLab instance to its initial
-    state.
-    """
-    gitlabmanager.restore()
+def create_groups():
+    """Create a new target group for this test run."""
+    group_suffix = secrets.token_hex(5)
+    target_group_name = f"dd1337-{group_suffix}"
+    master_group_name = f"dd1337-master-{group_suffix}"
+    gitlabmanager.create_groups_and_projects(
+        course_round_group_name=target_group_name,
+        master_group_name=master_group_name,
+    )
+    return target_group_name, master_group_name
 
 
 @pytest.fixture
@@ -88,18 +123,14 @@ def extra_args(tmpdir_volume_arg, coverage_volume):
 
 
 @pytest.fixture
-def with_student_repos(restore):
-    """Set up student repos before starting tests.
-
-    Note that explicitly including restore here is necessary to ensure that
-    it runs before this fixture.
-    """
+def with_student_repos(base_args, master_org_arg, target_group_name):
+    """Set up student repos before starting tests"""
     command = " ".join(
         [
             REPOBEE_GITLAB,
             _repobee.cli.mainparser.SETUP_PARSER,
-            *BASE_ARGS,
-            *MASTER_ORG_ARG,
+            *base_args,
+            *master_org_arg,
             *MASTER_REPOS_ARG,
             *STUDENTS_ARG,
         ]
@@ -109,13 +140,16 @@ def with_student_repos(restore):
 
     # pre-test asserts
     assert result.returncode == 0
-    asserts.assert_repos_exist(STUDENT_TEAMS, MASTER_REPO_NAMES)
-    asserts.assert_on_groups(STUDENT_TEAMS)
+    asserts.assert_repos_exist(
+        STUDENT_TEAMS, MASTER_REPO_NAMES, org_name=target_group_name
+    )
+    asserts.assert_on_groups(STUDENT_TEAMS, target_group_name)
 
 
 @pytest.fixture
-def open_issues(with_student_repos):
+def open_issues(with_student_repos, create_groups):
     """Open two issues in each student repo."""
+    target_group_name, _ = create_groups
     task_issue = plug.Issue(
         title="Task", body="The task is to do this, this and that"
     )
@@ -124,7 +158,7 @@ def open_issues(with_student_repos):
     )
     issues = [task_issue, correction_issue]
     gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
-    target_group = gl.groups.list(search=ORG_NAME)[0]
+    target_group = gl.groups.list(search=target_group_name)[0]
     projects = (
         gl.projects.get(p.id)
         for p in target_group.projects.list(include_subgroups=True, all=True)

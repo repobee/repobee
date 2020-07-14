@@ -10,11 +10,11 @@ def assert_master_repos_exist(master_repo_names, org_name):
     assert sorted(actual_repo_names) == sorted(master_repo_names)
 
 
-def assert_repos_exist(student_teams, master_repo_names, org_name=ORG_NAME):
+def assert_repos_exist(student_teams, master_repo_names, org_name):
     """Assert that the associated student repos exist."""
     repo_names = plug.generate_repo_names(student_teams, master_repo_names)
     gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
-    target_group = gl.groups.list(search=ORG_NAME)[0]
+    target_group = gl.groups.list(search=org_name)[0]
     student_groups = gl.groups.list(id=target_group.id)
 
     projects = [p for g in student_groups for p in g.projects.list(all=True)]
@@ -24,12 +24,12 @@ def assert_repos_exist(student_teams, master_repo_names, org_name=ORG_NAME):
 
 
 def assert_repos_contain(
-    student_teams, master_repo_names, filename, text, org=ORG_NAME
+    student_teams, master_repo_names, filename, text, org_name
 ):
     """Assert that each of the student repos contain the given file."""
     repo_names = plug.generate_repo_names(student_teams, master_repo_names)
     gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
-    target_group = gl.groups.list(search=ORG_NAME)[0]
+    target_group = gl.groups.list(search=org_name)[0]
     student_groups = gl.groups.list(id=target_group.id)
 
     projects = [
@@ -48,7 +48,7 @@ def assert_repos_contain(
 
 def assert_on_groups(
     student_teams,
-    org_name=ORG_NAME,
+    org_name,
     single_group_assertion=None,
     all_groups_assertion=None,
 ):
@@ -64,7 +64,7 @@ def assert_on_groups(
     provided, this is used INSTEAD of the default all-groups assertion.
     """
     gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
-    target_group = gl.groups.list(search=ORG_NAME)[0]
+    target_group = gl.groups.list(search=org_name)[0]
     sorted_teams = sorted(list(student_teams), key=lambda t: t.name)
     team_names = set(t.name for t in sorted_teams)
 
@@ -97,13 +97,13 @@ def assert_on_groups(
             single_group_assertion(expected=team, actual=group)
 
 
-def _assert_on_projects(student_teams, master_repo_names, assertion):
+def _assert_on_projects(org_name, student_teams, master_repo_names, assertion):
     """Execute the specified assertion operation on a project. Assertion should
     be a callable taking precisely on project as an argument.
     """
     gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
     repo_names = plug.generate_repo_names(student_teams, master_repo_names)
-    target_group = gl.groups.list(search=ORG_NAME)[0]
+    target_group = gl.groups.list(search=org_name)[0]
     student_groups = gl.groups.list(id=target_group.id)
     projects = [
         gl.projects.get(p.id)
@@ -117,6 +117,7 @@ def _assert_on_projects(student_teams, master_repo_names, assertion):
 
 
 def assert_issues_exist(
+    org_name,
     student_teams,
     master_repo_names,
     expected_issue,
@@ -141,10 +142,10 @@ def assert_issues_exist(
                 return
         assert False, "no issue matching the specified title"
 
-    _assert_on_projects(student_teams, master_repo_names, assertion)
+    _assert_on_projects(org_name, student_teams, master_repo_names, assertion)
 
 
-def assert_num_issues(student_teams, master_repo_names, num_issues):
+def assert_num_issues(org_name, student_teams, master_repo_names, num_issues):
     """Assert that there are precisely num_issues issues in each student
     repo.
     """
@@ -152,7 +153,7 @@ def assert_num_issues(student_teams, master_repo_names, num_issues):
     def assertion(project):
         assert len(project.issues.list(all=True)) == num_issues
 
-    _assert_on_projects(student_teams, master_repo_names, assertion)
+    _assert_on_projects(org_name, student_teams, master_repo_names, assertion)
 
 
 def assert_cloned_repos(repo_names, tmpdir):

@@ -31,7 +31,7 @@ class TestMigrate:
         assert result.returncode == 0
         return MASTER_REPO_NAMES
 
-    def test_happy_path(self, local_master_repos, extra_args):
+    def test_happy_path(self, local_master_repos, extra_args, target_group_name, base_args):
         """Migrate a few repos from the existing master repo into the target
         organization.
         """
@@ -39,7 +39,7 @@ class TestMigrate:
             [
                 REPOBEE_GITLAB,
                 _repobee.cli.mainparser.MIGRATE_PARSER,
-                *BASE_ARGS,
+                *base_args,
                 *MASTER_REPOS_ARG,
             ]
         )
@@ -47,4 +47,4 @@ class TestMigrate:
         result = run_in_docker_with_coverage(command, extra_args=extra_args)
 
         assert result.returncode == 0
-        asserts.assert_master_repos_exist(local_master_repos, ORG_NAME)
+        asserts.assert_master_repos_exist(local_master_repos, target_group_name)

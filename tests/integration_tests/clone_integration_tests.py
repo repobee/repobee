@@ -1,18 +1,32 @@
 """Integration tests for the clone command."""
+import os
+import pathlib
 
 import pytest
+import repobee_plug as plug
 
 import _repobee.cli.mainparser
 
 import asserts
-from helpers import *
+from helpers import (
+    REPOBEE_GITLAB,
+    MASTER_REPOS_ARG,
+    STUDENTS_ARG,
+    run_in_docker_with_coverage,
+    STUDENT_REPO_NAMES,
+    STUDENT_TEAMS,
+    MASTER_REPO_NAMES,
+    hash_directory,
+)
 
 
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
 class TestClone:
     """Integration tests for the clone command."""
 
-    def test_clean_clone(self, with_student_repos, tmpdir, extra_args):
+    def test_clean_clone(
+        self, with_student_repos, tmpdir, extra_args, base_args
+    ):
         """Test cloning student repos when there are no repos in the current
         working directory.
         """
@@ -20,7 +34,7 @@ class TestClone:
             [
                 REPOBEE_GITLAB,
                 _repobee.cli.mainparser.CLONE_PARSER,
-                *BASE_ARGS,
+                *base_args,
                 *MASTER_REPOS_ARG,
                 *STUDENTS_ARG,
             ]
@@ -31,14 +45,16 @@ class TestClone:
         assert result.returncode == 0
         asserts.assert_cloned_repos(STUDENT_REPO_NAMES, tmpdir)
 
-    def test_clone_twice(self, with_student_repos, tmpdir, extra_args):
+    def test_clone_twice(
+        self, with_student_repos, tmpdir, base_args, extra_args
+    ):
         """Cloning twice in a row should have the same effect as cloning once.
         """
         command = " ".join(
             [
                 REPOBEE_GITLAB,
                 _repobee.cli.mainparser.CLONE_PARSER,
-                *BASE_ARGS,
+                *base_args,
                 *MASTER_REPOS_ARG,
                 *STUDENTS_ARG,
             ]
@@ -56,7 +72,7 @@ class TestClone:
         asserts.assert_cloned_repos(STUDENT_REPO_NAMES, tmpdir)
 
     def test_clone_does_not_create_dirs_on_fail(
-        self, with_student_repos, tmpdir, extra_args
+        self, with_student_repos, tmpdir, extra_args, base_args
     ):
         """Test that no local directories are created for repos that RepoBee
         fails to pull.
@@ -66,7 +82,7 @@ class TestClone:
             [
                 REPOBEE_GITLAB,
                 _repobee.cli.mainparser.CLONE_PARSER,
-                *BASE_ARGS,
+                *base_args,
                 *STUDENTS_ARG,
                 "--mn",
                 " ".join(non_existing_master_repo_names),
@@ -81,7 +97,7 @@ class TestClone:
         ] == []
 
     def test_clone_does_not_alter_existing_dirs(
-        self, with_student_repos, tmpdir, extra_args
+        self, with_student_repos, tmpdir, extra_args, base_args
     ):
         """Test that clone does not clobber existing directories."""
         team_with_local_repos = STUDENT_TEAMS[0]
@@ -104,7 +120,7 @@ class TestClone:
             [
                 REPOBEE_GITLAB,
                 _repobee.cli.mainparser.CLONE_PARSER,
-                *BASE_ARGS,
+                *base_args,
                 *MASTER_REPOS_ARG,
                 *STUDENTS_ARG,
             ]
@@ -120,13 +136,15 @@ class TestClone:
                 "hash mismatch for " + dirname
             )
 
-    def test_discover_repos(self, with_student_repos, tmpdir, extra_args):
+    def test_discover_repos(
+        self, with_student_repos, tmpdir, base_args, extra_args
+    ):
         """Test that the --discover-repos option finds all student repos."""
         command = " ".join(
             [
                 REPOBEE_GITLAB,
                 _repobee.cli.mainparser.CLONE_PARSER,
-                *BASE_ARGS,
+                *base_args,
                 *STUDENTS_ARG,
                 "--discover-repos",
             ]
