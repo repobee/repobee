@@ -1,7 +1,7 @@
 version: '3'
 services:
   gitlab:
-    image: gitlab/gitlab-ce:13.0.6-ce.0
+    image: gitlab/gitlab-ce:13.1.4-ce.0
     container_name: gitlab
     restart: always
     environment:
@@ -12,8 +12,9 @@ services:
         gitlab_rails['gitlab_email_display_name'] = 'GitLab Administrator'
         gitlab_rails['gitlab_email_reply_to'] = ''
         gitlab_rails['backup_keep_time'] = 1
-        unicorn['worker_timeout'] = 60
-        unicorn['worker_processes'] = 3
+        puma['enable'] = true
+        puma['worker_timeout'] = 60
+        puma['worker_processes'] = 2
         logging['logrotate_frequency'] = "weekly"
         logging['logrotate_rotate'] = 52
         logging['logrotate_compress'] = "compress"
