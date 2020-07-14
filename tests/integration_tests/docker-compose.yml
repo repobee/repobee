@@ -12,8 +12,8 @@ services:
         gitlab_rails['gitlab_email_display_name'] = 'GitLab Administrator'
         gitlab_rails['gitlab_email_reply_to'] = ''
         gitlab_rails['backup_keep_time'] = 1
-        unicorn['worker_timeout'] = 60
-        unicorn['worker_processes'] = 3
+        puma['worker_timeout'] = 60
+        puma['worker_processes'] = 2
         logging['logrotate_frequency'] = "weekly"
         logging['logrotate_rotate'] = 52
         logging['logrotate_compress'] = "compress"
