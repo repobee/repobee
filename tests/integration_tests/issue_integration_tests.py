@@ -16,7 +16,14 @@ class TestOpenIssues:
 
     _ISSUE = plug.Issue(title="This is a title", body="This is a body")
 
-    def test_happy_path(self, tmpdir_volume_arg, tmpdir, extra_args):
+    def test_happy_path(
+        self,
+        tmpdir_volume_arg,
+        tmpdir,
+        extra_args,
+        target_group_name,
+        base_args,
+    ):
         """Test opening an issue in each student repo."""
         filename = "issue.md"
         text = "{}\n{}".format(self._ISSUE.title, self._ISSUE.body)
@@ -26,7 +33,7 @@ class TestOpenIssues:
             [
                 REPOBEE_GITLAB,
                 _repobee.cli.mainparser.OPEN_ISSUE_PARSER,
-                *BASE_ARGS,
+                *base_args,
                 *MASTER_REPOS_ARG,
                 *STUDENTS_ARG,
                 "-i",
@@ -37,9 +44,11 @@ class TestOpenIssues:
         result = run_in_docker_with_coverage(command, extra_args=extra_args)
 
         assert result.returncode == 0
-        asserts.assert_num_issues(STUDENT_TEAMS, MASTER_REPO_NAMES, 1)
+        asserts.assert_num_issues(
+            target_group_name, STUDENT_TEAMS, MASTER_REPO_NAMES, 1
+        )
         asserts.assert_issues_exist(
-            STUDENT_TEAMS, MASTER_REPO_NAMES, self._ISSUE
+            target_group_name, STUDENT_TEAMS, MASTER_REPO_NAMES, self._ISSUE
         )
 
 
@@ -47,7 +56,9 @@ class TestOpenIssues:
 class TestCloseIssues:
     """Tests for the close-issues command."""
 
-    def test_closes_only_matched_issues(self, open_issues, extra_args):
+    def test_closes_only_matched_issues(
+        self, open_issues, extra_args, base_args, target_group_name
+    ):
         """Test that close-issues respects the regex."""
         assert len(open_issues) == 2, "expected there to be only 2 open issues"
         close_issue = open_issues[0]
@@ -56,7 +67,7 @@ class TestCloseIssues:
             [
                 REPOBEE_GITLAB,
                 _repobee.cli.mainparser.CLOSE_ISSUE_PARSER,
-                *BASE_ARGS,
+                *base_args,
                 *MASTER_REPOS_ARG,
                 *STUDENTS_ARG,
                 "-r",
@@ -68,12 +79,14 @@ class TestCloseIssues:
 
         assert result.returncode == 0
         asserts.assert_issues_exist(
+            target_group_name,
             STUDENT_TEAM_NAMES,
             MASTER_REPO_NAMES,
             close_issue,
             expected_state="closed",
         )
         asserts.assert_issues_exist(
+            target_group_name,
             STUDENT_TEAM_NAMES,
             MASTER_REPO_NAMES,
             open_issue,
@@ -87,7 +100,7 @@ class TestListIssues:
 
     @pytest.mark.parametrize("discover_repos", [False, True])
     def test_lists_matching_issues(
-        self, open_issues, extra_args, discover_repos
+        self, open_issues, extra_args, discover_repos, base_args
     ):
         # arrange
         assert len(open_issues) == 2, "expected there to be only 2 open issues"
@@ -116,7 +129,7 @@ class TestListIssues:
             [
                 REPOBEE_GITLAB,
                 _repobee.cli.mainparser.LIST_ISSUES_PARSER,
-                *BASE_ARGS,
+                *base_args,
                 *repo_arg,
                 *STUDENTS_ARG,
                 "-r",

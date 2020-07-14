@@ -97,7 +97,7 @@ def assert_on_groups(
             single_group_assertion(expected=team, actual=group)
 
 
-def _assert_on_projects(org_name, student_teams, master_repo_names, assertion):
+def _assert_on_projects(student_teams, master_repo_names, assertion, org_name):
     """Execute the specified assertion operation on a project. Assertion should
     be a callable taking precisely on project as an argument.
     """
@@ -142,7 +142,7 @@ def assert_issues_exist(
                 return
         assert False, "no issue matching the specified title"
 
-    _assert_on_projects(org_name, student_teams, master_repo_names, assertion)
+    _assert_on_projects(student_teams, master_repo_names, assertion, org_name)
 
 
 def assert_num_issues(org_name, student_teams, master_repo_names, num_issues):
@@ -153,7 +153,7 @@ def assert_num_issues(org_name, student_teams, master_repo_names, num_issues):
     def assertion(project):
         assert len(project.issues.list(all=True)) == num_issues
 
-    _assert_on_projects(org_name, student_teams, master_repo_names, assertion)
+    _assert_on_projects(student_teams, master_repo_names, assertion, org_name)
 
 
 def assert_cloned_repos(repo_names, tmpdir):
