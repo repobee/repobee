@@ -115,7 +115,12 @@ def setup_users(students: List[str], teacher: str, token: str) -> None:
         str(users).replace("'", '"')
         + """
 .each do |username|
-    User.create(name: username.capitalize, username: username, email: "#{username}@repobee.org", password: "#{username}_pass", skip_confirmation: true).save!
+    User.create(
+        name: username.capitalize,
+        username: username,
+        email: "#{username}@repobee.org",
+        password: "#{username}_pass",
+        skip_confirmation: true).save!
 end
 """.strip().replace(
             "\n", " "
@@ -123,7 +128,9 @@ end
     )
     create_token_cmd = f"""
 teacher_user = User.find_by_username('{teacher}')
-token = teacher_user.personal_access_tokens.create(name: 'repobee', scopes: [:api, :read_repository, :write_repository])
+token = teacher_user.personal_access_tokens.create(
+    name: 'repobee',
+    scopes: [:api, :read_repository, :write_repository])
 token.set_token('{token}')
 token.save!
 """
@@ -141,7 +148,10 @@ def delete_groups() -> None:
     print("Deleting groups")
     delete_groups_cmd = """
 Group.all().each { |group| GroupDestroyWorker.perform_async(group.id, 1) }
-while not Group.first().nil? do print('Waiting for groups to be deleted ...\n'); sleep(1) end
+while not Group.first().nil?
+    print('Waiting for groups to be deleted ...\n')
+    sleep(1)
+end
     """.strip()
     exec_gitlab_rails_cmd(delete_groups_cmd)
 
@@ -164,7 +174,7 @@ def create_groups_and_projects(
     )
 
     for local_repo in local_master_repos:
-        project = gl.projects.create(
+        gl.projects.create(
             dict(
                 name=local_repo.name,
                 path=local_repo.name,
@@ -185,9 +195,12 @@ def create_groups_and_projects(
             shutil.copytree(src=local_repo, dst=repodir)
             commands = [
                 "git init".split(),
-                f"git config --local http.sslverify false".split(),
+                "git config --local http.sslverify false".split(),
                 f"git config --local user.name {teacher.capitalize()}".split(),
-                f"git config --local user.email {teacher.capitalize()}@repobee.org".split(),
+                (
+                    f"git config --local user.email {teacher.capitalize()}"
+                    f"@repobee.org".split()
+                ),
                 "git add .".split(),
                 [*"git commit -m".split(), "'Add task template'"],
                 f"git push {authed_project_url} master".split(),

@@ -46,10 +46,6 @@ from helpers import (
     hash_directory,
 )
 
-assert os.getenv(
-    "REPOBEE_NO_VERIFY_SSL"
-), "The env variable REPOBEE_NO_VERIFY_SSL must be set to 'true'"
-
 
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
 class TestClone:

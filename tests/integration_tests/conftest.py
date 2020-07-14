@@ -1,3 +1,4 @@
+import os
 import pathlib
 
 import _repobee.cli
@@ -29,6 +30,11 @@ from const import (
     ACTUAL_USER,
 )
 from helpers import run_in_docker
+
+
+assert os.getenv(
+    "REPOBEE_NO_VERIFY_SSL"
+), "The env variable REPOBEE_NO_VERIFY_SSL must be set to 'true'"
 
 
 @pytest.fixture(autouse=True, scope="session")
