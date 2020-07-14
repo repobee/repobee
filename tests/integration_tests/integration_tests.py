@@ -19,14 +19,12 @@ from asserts import (
     assert_num_issues,
     assert_cloned_repos,
 )
-from conftest import expected_num_members_group_assertion
 from const import (
     VOLUME_DST,
     BASE_DOMAIN,
     LOCAL_DOMAIN,
     ORG_NAME,
     MASTER_ORG_NAME,
-    ACTUAL_USER,
     MASTER_REPO_NAMES,
     STUDENT_TEAMS,
     STUDENT_TEAM_NAMES,
@@ -44,7 +42,10 @@ from helpers import (
     run_in_docker,
     update_repo,
     hash_directory,
+    expected_num_members_group_assertion,
 )
+
+from const import TEACHER
 
 
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
@@ -409,15 +410,11 @@ class TestListIssues:
 
         issue_pattern_template = r"^\[INFO\].*{}/#\d:\s+{}.*by {}.?$"
         expected_issue_output_patterns = [
-            issue_pattern_template.format(
-                repo_name, matched.title, ACTUAL_USER
-            )
+            issue_pattern_template.format(repo_name, matched.title, TEACHER)
             for repo_name in repo_names
         ]
         unexpected_issue_output_patterns = [
-            issue_pattern_template.format(
-                repo_name, unmatched.title, ACTUAL_USER
-            )
+            issue_pattern_template.format(repo_name, unmatched.title, TEACHER)
             for repo_name in repo_names
         ] + [
             r"\[ERROR\]"

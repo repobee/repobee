@@ -1,3 +1,4 @@
+"""Constants used in the integration tests."""
 import pathlib
 
 import repobee_plug as plug
@@ -5,7 +6,7 @@ import repobee_plug as plug
 VOLUME_DST = "/workdir"
 COVERAGE_VOLUME_DST = "/coverage"
 DIR = pathlib.Path(__file__).resolve().parent
-TOKEN = (DIR / "token").read_text(encoding="utf-8").strip()
+TOKEN = (DIR.parent / "token").read_text(encoding="utf-8").strip()
 OAUTH_USER = "oauth2"
 BASE_DOMAIN = "gitlab.integrationtest.local"
 BASE_URL = "https://" + BASE_DOMAIN
@@ -13,13 +14,15 @@ LOCAL_DOMAIN = "localhost:50443"
 LOCAL_BASE_URL = "https://" + LOCAL_DOMAIN
 ORG_NAME = "dd1337-fall2020"
 MASTER_ORG_NAME = "dd1337-master"
-ACTUAL_USER = "ric"
+TEACHER = "ric"
 MASTER_REPO_NAMES = [
-    p.name for p in (DIR / "dd1337-master-repos").iterdir() if p.is_dir()
+    p.name
+    for p in (DIR.parent / "dd1337-master-repos").iterdir()
+    if p.is_dir()
 ]
 STUDENT_TEAMS = [
     plug.Team(members=[s.strip()])
-    for s in pathlib.Path("students.txt").read_text().strip().split("\n")
+    for s in (DIR.parent / "students.txt").read_text().strip().split("\n")
 ]
 STUDENT_TEAM_NAMES = [str(t) for t in STUDENT_TEAMS]
 STUDENT_REPO_NAMES = plug.generate_repo_names(STUDENT_TEAMS, MASTER_REPO_NAMES)

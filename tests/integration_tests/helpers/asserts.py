@@ -1,3 +1,4 @@
+"""Assert functions for integration tests."""
 import itertools
 import pathlib
 
@@ -8,7 +9,7 @@ from const import (
     ORG_NAME,
     LOCAL_BASE_URL,
     TOKEN,
-    ACTUAL_USER,
+    TEACHER,
     MASTER_REPO_NAMES,
     TASK_CONTENTS_SHAS,
 )
@@ -100,7 +101,7 @@ def assert_on_groups(
         # the user who owns the OAUTH token is always listed as a member
         # of groups he/she creates
         if single_group_assertion is None:
-            expected_members = sorted(team.members + [ACTUAL_USER])
+            expected_members = sorted(team.members + [TEACHER])
             actual_members = sorted(
                 m.username for m in group.members.list(all=True)
             )
@@ -147,7 +148,7 @@ def assert_issues_exist(
                 assert actual_issue.state == expected_state
                 assert actual_issue.description == expected_issue.body
                 assert len(actual_issue.assignees) == expected_num_asignees
-                assert ACTUAL_USER not in [
+                assert TEACHER not in [
                     asignee["username"] for asignee in actual_issue.assignees
                 ]
 

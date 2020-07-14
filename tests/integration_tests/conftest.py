@@ -1,5 +1,7 @@
+"""Integration test fixtures."""
 import os
 import pathlib
+import sys
 
 import _repobee.cli
 import gitlab
@@ -27,14 +29,15 @@ from const import (
     TOKEN,
     ORG_NAME,
     STUDENT_TEAM_NAMES,
-    ACTUAL_USER,
 )
-from helpers import run_in_docker
-
+from helpers import run_in_docker, expected_num_members_group_assertion
 
 assert os.getenv(
     "REPOBEE_NO_VERIFY_SSL"
 ), "The env variable REPOBEE_NO_VERIFY_SSL must be set to 'true'"
+
+# make sure the helpers are accessible no matter where the tests are run
+sys.path.append(str(pathlib.Path(__file__).parent / "helpers"))
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -169,23 +172,6 @@ def open_issues(with_student_repos):
     )
 
     return issues
-
-
-def expected_num_members_group_assertion(expected_num_members):
-    def group_assertion(expected, actual):
-        assert expected.name == actual.name
-        # +1 member for the group owner
-        assert len(actual.members.list(all=True)) == expected_num_members + 1
-        assert len(actual.projects.list(all=True)) == 1
-        project_name = actual.projects.list(all=True)[0].name
-        assert actual.name.startswith(project_name)
-        for member in actual.members.list(all=True):
-            if member.username == ACTUAL_USER:
-                continue
-            assert member.username not in project_name
-            assert member.access_level == gitlab.REPORTER_ACCESS
-
-    return group_assertion
 
 
 @pytest.fixture

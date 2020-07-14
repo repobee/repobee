@@ -1,3 +1,4 @@
+"""Helper functions for the integration tests."""
 import hashlib
 import os
 import pathlib
@@ -15,6 +16,7 @@ from const import (
     MASTER_ORG_NAME,
     BASE_DOMAIN,
     LOCAL_DOMAIN,
+    TEACHER,
 )
 
 
@@ -116,3 +118,20 @@ def hash_directory(path):
         )
         shas += (hashlib.sha1(file.read_bytes()).digest() for file in files)
     return hashlib.sha1(b"".join(sorted(shas))).digest()
+
+
+def expected_num_members_group_assertion(expected_num_members):
+    def group_assertion(expected, actual):
+        assert expected.name == actual.name
+        # +1 member for the group owner
+        assert len(actual.members.list(all=True)) == expected_num_members + 1
+        assert len(actual.projects.list(all=True)) == 1
+        project_name = actual.projects.list(all=True)[0].name
+        assert actual.name.startswith(project_name)
+        for member in actual.members.list(all=True):
+            if member.username == TEACHER:
+                continue
+            assert member.username not in project_name
+            assert member.access_level == gitlab.REPORTER_ACCESS
+
+    return group_assertion

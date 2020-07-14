@@ -9,19 +9,14 @@ from typing import List
 
 import gitlab
 
+from const import MASTER_ORG_NAME, ORG_NAME, TEACHER, STUDENT_TEAM_NAMES, TOKEN
+
 CURRENT_DIR = pathlib.Path(__file__).parent
-TEACHER = "ric"
-STUDENTS = (
-    pathlib.Path("students.txt").read_text(encoding="utf8").strip().split("\n")
-)
-TOKEN = pathlib.Path("token").read_text(encoding="utf8").strip()
 
 BASE_URL = "https://localhost:50443"
-MASTER_REPO_GROUP = "dd1337-master"
-COURSE_ROUND_GROUP = "dd1337-fall2020"
 LOCAL_MASTER_REPOS = list(
-    dir_
-    for dir_ in (CURRENT_DIR / "dd1337-master-repos").iterdir()
+    dir_.absolute()
+    for dir_ in (CURRENT_DIR.parent / "dd1337-master-repos").iterdir()
     if dir_.is_dir()
 )
 
@@ -70,7 +65,7 @@ def setup():
     if not await_gitlab_started():
         raise OSError("GitLab failed to start")
 
-    setup_users(students=STUDENTS, teacher=TEACHER, token=TOKEN)
+    setup_users(students=STUDENT_TEAM_NAMES, teacher=TEACHER, token=TOKEN)
 
 
 def teardown():
@@ -91,8 +86,8 @@ def restore():
     create_groups_and_projects(
         local_master_repos=LOCAL_MASTER_REPOS,
         teacher=TEACHER,
-        master_group_name=MASTER_REPO_GROUP,
-        course_round_group_name=COURSE_ROUND_GROUP,
+        master_group_name=MASTER_ORG_NAME,
+        course_round_group_name=ORG_NAME,
         token=TOKEN,
     )
 
