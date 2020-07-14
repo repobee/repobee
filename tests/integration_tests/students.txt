@@ -1,5 +1,3 @@
 simon
 alice
-bob
 eve
-greg
