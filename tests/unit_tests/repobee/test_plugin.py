@@ -283,3 +283,20 @@ class TestInitializePlugins:
         assert f"failed to load plugin module {not_a_python_module}" in str(
             exc_info.value
         )
+
+
+class TestInitializeDistPlugins:
+    """Tests for the initialize_dist_plugins function."""
+
+    def test_raises_if_dist_install_is_false(self, monkeypatch):
+        """If distinfo.DIST_INSTALL is False, it should not be possible to
+        initialize dist plugins.
+        """
+        monkeypatch.setattr("_repobee.distinfo.DIST_INSTALL", False)
+
+        with pytest.raises(exception.PluginLoadError) as exc_info:
+            plugin.initialize_dist_plugins()
+
+        assert "Dist plugins can only be loaded with installed RepoBee" in str(
+            exc_info.value
+        )
