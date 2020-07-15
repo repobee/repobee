@@ -9,14 +9,20 @@ from typing import List
 
 import gitlab
 
-from const import MASTER_ORG_NAME, ORG_NAME, TEACHER, STUDENT_TEAM_NAMES, TOKEN
+from _helpers.const import (
+    MASTER_ORG_NAME,
+    ORG_NAME,
+    TEACHER,
+    STUDENT_TEAM_NAMES,
+    TOKEN,
+)
 
 CURRENT_DIR = pathlib.Path(__file__).parent
 
 BASE_URL = "https://localhost:50443"
 LOCAL_MASTER_REPOS = list(
     dir_.absolute()
-    for dir_ in (CURRENT_DIR.parent / "dd1337-master-repos").iterdir()
+    for dir_ in (CURRENT_DIR / "dd1337-master-repos").iterdir()
     if dir_.is_dir()
 )
 

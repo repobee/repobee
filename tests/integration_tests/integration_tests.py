@@ -10,7 +10,7 @@ import _repobee.ext
 import _repobee.ext.gitlab
 import _repobee.cli.mainparser
 
-from asserts import (
+from _helpers.asserts import (
     assert_master_repos_exist,
     assert_repos_exist,
     assert_repos_contain,
@@ -19,7 +19,7 @@ from asserts import (
     assert_num_issues,
     assert_cloned_repos,
 )
-from const import (
+from _helpers.const import (
     VOLUME_DST,
     BASE_DOMAIN,
     LOCAL_DOMAIN,
@@ -35,8 +35,9 @@ from const import (
     STUDENTS_ARG,
     MASTER_REPOS_ARG,
     MASTER_ORG_ARG,
+    TEACHER,
 )
-from helpers import (
+from _helpers.helpers import (
     api_instance,
     run_in_docker_with_coverage,
     run_in_docker,
@@ -44,8 +45,6 @@ from helpers import (
     hash_directory,
     expected_num_members_group_assertion,
 )
-
-from const import TEACHER
 
 
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")

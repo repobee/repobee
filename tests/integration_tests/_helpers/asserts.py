@@ -5,7 +5,7 @@ import pathlib
 import gitlab
 import repobee_plug as plug
 
-from const import (
+from .const import (
     ORG_NAME,
     LOCAL_BASE_URL,
     TOKEN,
@@ -13,7 +13,7 @@ from const import (
     MASTER_REPO_NAMES,
     TASK_CONTENTS_SHAS,
 )
-from helpers import gitlab_and_groups, hash_directory
+from .helpers import gitlab_and_groups, hash_directory
 
 
 def assert_master_repos_exist(master_repo_names, org_name):
