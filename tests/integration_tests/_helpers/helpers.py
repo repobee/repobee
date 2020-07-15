@@ -9,7 +9,7 @@ import tempfile
 import _repobee.ext
 import gitlab
 
-from const import (
+from .const import (
     ORG_NAME,
     LOCAL_BASE_URL,
     TOKEN,

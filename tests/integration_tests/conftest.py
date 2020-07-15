@@ -1,47 +1,38 @@
 """Integration test fixtures."""
 import os
 import pathlib
-import sys
 
 import _repobee.cli
 import gitlab
 import pytest
 import repobee_plug as plug
 
-# make sure the helpers are accessible no matter where the tests are run
-sys.path.append(str(pathlib.Path(__file__).parent / "helpers"))
-
-try:
-    # this is a hack to avoid the flake8 E402 warning caused by imports
-    # coming after the sys.path.append above
-    import gitlabmanager
-    from asserts import (
-        assert_repos_exist,
-        assert_on_groups,
-        assert_num_issues,
-        assert_issues_exist,
-    )
-    from const import (
-        VOLUME_DST,
-        COVERAGE_VOLUME_DST,
-        REPOBEE_GITLAB,
-        BASE_ARGS,
-        MASTER_ORG_ARG,
-        MASTER_REPOS_ARG,
-        STUDENTS_ARG,
-        STUDENT_TEAMS,
-        MASTER_REPO_NAMES,
-        LOCAL_BASE_URL,
-        TOKEN,
-        ORG_NAME,
-        STUDENT_TEAM_NAMES,
-    )
-    from helpers import (
-        run_in_docker,
-        expected_num_members_group_assertion,
-    )
-except Exception:
-    raise
+import gitlabmanager
+from _helpers.asserts import (
+    assert_repos_exist,
+    assert_on_groups,
+    assert_num_issues,
+    assert_issues_exist,
+)
+from _helpers.const import (
+    VOLUME_DST,
+    COVERAGE_VOLUME_DST,
+    REPOBEE_GITLAB,
+    BASE_ARGS,
+    MASTER_ORG_ARG,
+    MASTER_REPOS_ARG,
+    STUDENTS_ARG,
+    STUDENT_TEAMS,
+    MASTER_REPO_NAMES,
+    LOCAL_BASE_URL,
+    TOKEN,
+    ORG_NAME,
+    STUDENT_TEAM_NAMES,
+)
+from _helpers.helpers import (
+    run_in_docker,
+    expected_num_members_group_assertion,
+)
 
 assert os.getenv(
     "REPOBEE_NO_VERIFY_SSL"
