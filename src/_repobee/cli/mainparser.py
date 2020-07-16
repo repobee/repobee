@@ -26,7 +26,8 @@ from _repobee.cli.preparser import PRE_PARSER_SHOW_ALL_OPTS
 
 LOGGER = daiquiri.getLogger(__file__)
 
-SUB = "subparser"
+SUB = "category"
+ACTION = "action"
 
 # Any new subparser mus tbe added to the PARSER_NAMES tuple!
 SETUP_PARSER = "setup"
@@ -214,7 +215,7 @@ def _add_subparsers(parser, show_all_opts, ext_commands, config_file):
         category_command = subparsers.add_parser(
             category.value, help=help, description=description
         )
-        category_parsers = category_command.add_subparsers(dest="action")
+        category_parsers = category_command.add_subparsers(dest=ACTION)
         category_parsers.required = True
         categories[category] = category_parsers
         return category_parsers
@@ -665,8 +666,16 @@ def _add_extension_parsers(
         try:
             _add_traceback_arg(ext_parser)
         except argparse.ArgumentError:
-            # already added
             pass
+
+        # This is a little bit of a dirty trick. It allows us to easily
+        # find the associated extension command when parsing the arguments.
+        ext_parser.add_argument(
+            "_extension_command",
+            action="store_const",
+            help=argparse.SUPPRESS,
+            const=cmd,
+        )
 
     return ext_commands
 

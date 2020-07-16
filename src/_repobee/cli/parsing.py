@@ -72,7 +72,7 @@ def handle_args(
         _handle_task_parsing(processed_args)
         return processed_args, api
     elif processing == _ArgsProcessing.EXT:
-        processed_args, api = _process_ext_args(args, ext_commands)
+        processed_args, api = _process_ext_args(args)
         return processed_args, api
     return args, None
 
@@ -101,8 +101,7 @@ def _parse_args(
     parser = create_parser(show_all_opts, ext_commands, config_file)
     args = parser.parse_args(_handle_deprecation(sys_args))
 
-    ext_cmd = _resolve_extension_command(args.subparser, ext_commands)
-    if ext_cmd:
+    if "_extension_command" in args:
         return args, _ArgsProcessing.EXT
 
     if "base_url" in args:
@@ -121,7 +120,7 @@ def _parse_args(
     args_dict.setdefault("num_reviews", None)
     args_dict.setdefault("user", None)
 
-    requires_processing = _resolve_requires_processing(args.subparser)
+    requires_processing = _resolve_requires_processing(args)
     return argparse.Namespace(**args_dict), requires_processing
 
 
@@ -134,12 +133,16 @@ def _resolve_extension_command(
     return None
 
 
-def _resolve_requires_processing(subparser) -> _ArgsProcessing:
+def _resolve_requires_processing(args: argparse.Namespace) -> _ArgsProcessing:
     """Figure out if further processing of the parsed args is required.
     This is primarily decided on whether or not the platform API is required,
     as that implies further processing.
     """
-    if subparser in [VERIFY_PARSER, SHOW_CONFIG_PARSER]:
+    category = plug.ParserCategory(args.category)
+    if category == plug.ParserCategory.CONFIG and args.action in [
+        VERIFY_PARSER,
+        SHOW_CONFIG_PARSER,
+    ]:
         return _ArgsProcessing.NONE
     return _ArgsProcessing.CORE
 
@@ -191,15 +194,19 @@ def _handle_task_parsing(args: argparse.Namespace) -> None:
     """Call hooks that allows Tasks to parse command line arguments. Must be
     called with fully processed args.
     """
-    if args.subparser not in [CLONE_PARSER, SETUP_PARSER]:
+    category = plug.ParserCategory(args.category)
+    if not (
+        category == plug.ParserCategory.REPOS
+        and args.action in [CLONE_PARSER, SETUP_PARSER]
+    ):
         return
 
     assert args._repobee_processed
-    if args.subparser == CLONE_PARSER:
+    if args.action == CLONE_PARSER:
         plug.manager.hook.parse_args(args=args)
         for task in plug.manager.hook.clone_task():
             util.call_if_defined(task.handle_args, args)
-    elif args.subparser == SETUP_PARSER:
+    elif args.action == SETUP_PARSER:
         for task in plug.manager.hook.setup_task():
             util.call_if_defined(task.handle_args, args)
 
@@ -331,9 +338,9 @@ def _repo_names_to_urls(
 
 
 def _process_ext_args(
-    args: argparse.Namespace, ext_commands: List[plug.ExtensionCommand]
+    args: argparse.Namespace,
 ) -> Tuple[argparse.Namespace, Optional[plug.API]]:
-    ext_cmd = _resolve_extension_command(args.subparser, ext_commands)
+    ext_cmd = args._extension_command
     assert ext_cmd
 
     api = None
