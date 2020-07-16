@@ -121,6 +121,15 @@ class BaseParser(enum.Enum):
     MASTER_ORG = "master-org"
 
 
+class ParserCategory(enum.Enum):
+    """Parser category signifying where an extension parser belongs."""
+
+    REPOS = "repos"
+    ISSUES = "issues"
+    REVIEWS = "reviews"
+    CONFIG = "config"
+
+
 class ExtensionCommand(
     collections.namedtuple(
         "ExtensionCommand",
@@ -132,6 +141,7 @@ class ExtensionCommand(
             "callback",
             "requires_api",
             "requires_base_parsers",
+            "category",
         ),
     )
 ):
@@ -149,6 +159,7 @@ class ExtensionCommand(
         ],
         requires_api: bool = False,
         requires_base_parsers: Optional[List[BaseParser]] = None,
+        category: Optional[ParserCategory] = None,
     ):
         if not isinstance(parser, ExtensionParser):
             raise _exceptions.ExtensionCommandError(
@@ -174,6 +185,7 @@ class ExtensionCommand(
             callback,
             requires_api,
             requires_base_parsers,
+            category,
         )
 
     # the init method is just for documentation purposes
@@ -188,6 +200,7 @@ class ExtensionCommand(
         ],
         requires_api: bool = False,
         requires_base_parsers: Optional[Iterable[BaseParser]] = None,
+        category: Optional[ParserCategory] = None,
     ):
         """
         Args:
@@ -214,6 +227,8 @@ class ExtensionCommand(
                 ``requires_base_parsers = [BaseParser.STUDENTS]`` adds the
                 ``--students`` and ``--students-file`` options to this
                 extension command's parser.
+            category: The category to place this parser in. If ``None``, this
+                becomes a top-level command.
         """
         super().__init__()
 
