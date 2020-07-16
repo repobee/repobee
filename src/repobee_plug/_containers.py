@@ -184,8 +184,7 @@ class ExtensionCommand(
         help: str,
         description: str,
         callback: Callable[
-            [argparse.Namespace, Optional[_apimeta.API]],
-            Optional[Mapping[str, Result]],
+            [argparse.Namespace, Optional[_apimeta.API]], Optional[Result],
         ],
         requires_api: bool = False,
         requires_base_parsers: Optional[Iterable[BaseParser]] = None,
@@ -200,9 +199,8 @@ class ExtensionCommand(
                 describing the usage of the command.
             callback: A callback function that is called if this command is
                 used on the CLI. It is passed the parsed namespace and the
-                platform API. It may optionally return a result mapping on
-                the form (name: str -> List[Result]) that's reported by
-                RepoBee.
+                platform API. It may optionally return a plugin result that's
+                reported by RepoBee's CLI.
             requires_api: If True, the base arguments required for the platform
                 API are added as options to the extension command, and the
                 platform API is then passed to the callback function. It is

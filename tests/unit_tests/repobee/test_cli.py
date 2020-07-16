@@ -17,6 +17,7 @@ import _repobee.ext.defaults.github
 import _repobee.ext.query
 import _repobee.constants
 import _repobee.plugin
+import _repobee.ext.defaults.configwizard
 from _repobee.cli import mainparser
 from _repobee import exception
 
@@ -709,8 +710,12 @@ class TestExtensionCommands:
         """Return a mock callback function for use with an extension
         command.
         """
+        result = plug.Result(
+            name="mock", msg="Hello!", status=plug.Status.SUCCESS
+        )
         yield mock.MagicMock(
-            spec=_repobee.ext.defaults.configwizard.create_extension_command
+            spec=_repobee.ext.defaults.configwizard.callback,
+            return_value=result,
         )
 
     @pytest.fixture
@@ -805,13 +810,7 @@ class TestExtensionCommands:
             parsed_args, None, EMPTY_PATH, [ext_command]
         )
 
-        # for some reason, this completely sane assertion fails ALWAYS
-        # mock_callback.assert_called_once_with(
-        #   parsed_args, None)
-
-        # this is a workaround
-        assert len(mock_callback.call_args_list) == 1
-        assert mock_callback.call_args_list[0] == mock.call(parsed_args, None)
+        mock_callback.assert_called_once_with(parsed_args, None)
 
     def test_dispatch_ext_command_that_requires_api(
         self,
@@ -841,15 +840,7 @@ class TestExtensionCommands:
             parsed_args, api_instance_mock, EMPTY_PATH, [ext_command]
         )
 
-        # for some reason, this completely sane assertion fails ALWAYS
-        # mock_callback.assert_called_once_with(
-        #   parsed_args, api_instance_mock)
-
-        # this is a workaround
-        assert len(mock_callback.call_args_list) == 1
-        assert mock_callback.call_args_list[0] == mock.call(
-            parsed_args, api_instance_mock
-        )
+        mock_callback.assert_called_once_with(parsed_args, api_instance_mock)
 
     def test_parse_ext_command_that_requires_base_parsers(self):
         """The query command requires the students and repo names parsers."""

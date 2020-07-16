@@ -444,12 +444,11 @@ will look something like this instead:
 
     def callback(
         args: argparse.Namespace, api: Optional[plug.API]
-    ) -> Optional[Mapping[str, List[plug.Result]]]:
+    ) -> Optional[plug.Result]:
         # do whatever you want to do!
-        return {
-            PLUGIN_NAME: [plug.Result(
+        return plug.Result(
                 name=PLUGIN_NAME, status=plug.Status.SUCCESS, msg="Hello, world!"
-            )]
+            )
         }
 
     @plug.repobee_hook

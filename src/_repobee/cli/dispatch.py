@@ -56,7 +56,7 @@ def dispatch_command(
     if is_ext_command:
         ext_cmd = ext_commands[ext_command_names.index(args.subparser)]
         res = ext_cmd.callback(args, api)
-        hook_results = res if res else hook_results
+        hook_results = {ext_cmd.name: [res]} if res else hook_results
     elif args.subparser == SETUP_PARSER:
         hook_results = command.setup_student_repos(
             args.master_repo_urls, args.students, api
