@@ -58,6 +58,7 @@ class TestClone:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
+                plug.ParserCategory.REPOS.value,
                 _repobee.cli.mainparser.CLONE_PARSER,
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
@@ -76,6 +77,7 @@ class TestClone:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
+                plug.ParserCategory.REPOS.value,
                 _repobee.cli.mainparser.CLONE_PARSER,
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
@@ -104,6 +106,7 @@ class TestClone:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
+                plug.ParserCategory.REPOS.value,
                 _repobee.cli.mainparser.CLONE_PARSER,
                 *BASE_ARGS,
                 *STUDENTS_ARG,
@@ -142,6 +145,7 @@ class TestClone:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
+                plug.ParserCategory.REPOS.value,
                 _repobee.cli.mainparser.CLONE_PARSER,
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
@@ -164,6 +168,7 @@ class TestClone:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
+                plug.ParserCategory.REPOS.value,
                 _repobee.cli.mainparser.CLONE_PARSER,
                 *BASE_ARGS,
                 *STUDENTS_ARG,
@@ -186,6 +191,7 @@ class TestSetup:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
+                plug.ParserCategory.REPOS.value,
                 _repobee.cli.mainparser.SETUP_PARSER,
                 *BASE_ARGS,
                 *MASTER_ORG_ARG,
@@ -204,6 +210,7 @@ class TestSetup:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
+                plug.ParserCategory.REPOS.value,
                 _repobee.cli.mainparser.SETUP_PARSER,
                 *BASE_ARGS,
                 *MASTER_ORG_ARG,
@@ -232,6 +239,7 @@ class TestUpdate:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
+                plug.ParserCategory.REPOS.value,
                 _repobee.cli.mainparser.UPDATE_PARSER,
                 *MASTER_ORG_ARG,
                 *BASE_ARGS,
@@ -264,6 +272,7 @@ class TestUpdate:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
+                plug.ParserCategory.REPOS.value,
                 _repobee.cli.mainparser.UPDATE_PARSER,
                 *MASTER_ORG_ARG,
                 *BASE_ARGS,
@@ -312,6 +321,7 @@ class TestMigrate:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
+                plug.ParserCategory.REPOS.value,
                 _repobee.cli.mainparser.MIGRATE_PARSER,
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
@@ -339,6 +349,7 @@ class TestOpenIssues:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
+                plug.ParserCategory.ISSUES.value,
                 _repobee.cli.mainparser.OPEN_ISSUE_PARSER,
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
@@ -367,6 +378,7 @@ class TestCloseIssues:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
+                plug.ParserCategory.ISSUES.value,
                 _repobee.cli.mainparser.CLOSE_ISSUE_PARSER,
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
@@ -423,6 +435,7 @@ class TestListIssues:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
+                plug.ParserCategory.ISSUES.value,
                 _repobee.cli.mainparser.LIST_ISSUES_PARSER,
                 *BASE_ARGS,
                 *repo_arg,
@@ -463,6 +476,7 @@ class TestAssignReviews:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
+                plug.ParserCategory.REVIEWS.value,
                 _repobee.cli.mainparser.ASSIGN_REVIEWS_PARSER,
                 *BASE_ARGS,
                 "--mn",
@@ -503,6 +517,7 @@ class TestAssignReviews:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
+                plug.ParserCategory.REVIEWS.value,
                 _repobee.cli.mainparser.ASSIGN_REVIEWS_PARSER,
                 *BASE_ARGS_NO_TB,
                 "--mn",
@@ -534,6 +549,7 @@ class TestEndReviews:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
+                plug.ParserCategory.REVIEWS.value,
                 _repobee.cli.mainparser.PURGE_REVIEW_TEAMS_PARSER,
                 *BASE_ARGS,
                 "--mn",
@@ -561,6 +577,7 @@ class TestEndReviews:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
+                plug.ParserCategory.REVIEWS.value,
                 _repobee.cli.mainparser.PURGE_REVIEW_TEAMS_PARSER,
                 *BASE_ARGS,
                 "--mn",
@@ -602,6 +619,7 @@ class TestCheckReviews:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
+                plug.ParserCategory.REVIEWS.value,
                 _repobee.cli.mainparser.CHECK_REVIEW_PROGRESS_PARSER,
                 *BASE_ARGS,
                 "--mn",
@@ -659,6 +677,7 @@ class TestCheckReviews:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
+                plug.ParserCategory.REVIEWS.value,
                 _repobee.cli.mainparser.CHECK_REVIEW_PROGRESS_PARSER,
                 *BASE_ARGS,
                 "--mn",
