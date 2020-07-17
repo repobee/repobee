@@ -68,10 +68,11 @@ def dispatch_command(
             dispatch_table[category](args, config_file, api) or hook_results
         )
 
-    if (
-        args.action in [SETUP_PARSER, UPDATE_PARSER, CLONE_PARSER]
-        or is_ext_command
-    ):
+    if is_ext_command or args.action in [
+        SETUP_PARSER,
+        UPDATE_PARSER,
+        CLONE_PARSER,
+    ]:
         LOGGER.info(formatters.format_hook_results_output(hook_results))
     if hook_results and "hook_results_file" in args and args.hook_results_file:
         _handle_hook_results(
