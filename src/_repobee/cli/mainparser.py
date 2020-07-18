@@ -271,7 +271,7 @@ def _add_repo_parsers(
     base_parser, base_student_parser, master_org_parser, repo_parsers
 ):
     repo_parsers.add_parser(
-        plug.CoreCommand.repos.setup,
+        plug.CoreCommand.repos.setup.name,
         help="Setup student repos.",
         description=(
             "Setup student repositories based on master repositories. "
@@ -293,7 +293,7 @@ def _add_repo_parsers(
     )
 
     update = repo_parsers.add_parser(
-        plug.CoreCommand.repos.update,
+        plug.CoreCommand.repos.update.name,
         help="Update existing student repos.",
         description=(
             "Push changes from master repos to student repos. If the "
@@ -320,7 +320,7 @@ def _add_repo_parsers(
     )
 
     clone = repo_parsers.add_parser(
-        plug.CoreCommand.repos.clone,
+        plug.CoreCommand.repos.clone.name,
         help="Clone student repos.",
         description="Clone student repos asynchronously in bulk.",
         parents=[
@@ -338,7 +338,7 @@ def _add_repo_parsers(
     plug.manager.hook.clone_parser_hook(clone_parser=clone)
 
     repo_parsers.add_parser(
-        plug.CoreCommand.repos.create_team,
+        plug.CoreCommand.repos.create_teams.name,
         help="Create student teams without creating repos.",
         description=(
             "Only create student teams. This is intended for when you want to "
@@ -352,7 +352,7 @@ def _add_repo_parsers(
     )
 
     repo_parsers.add_parser(
-        plug.CoreCommand.repos.migrate,
+        plug.CoreCommand.repos.migrate.name,
         help="Migrate repositories into the target organization.",
         description=(
             "Migrate repositories into the target organization. "
