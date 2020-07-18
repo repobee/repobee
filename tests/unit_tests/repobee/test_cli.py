@@ -140,13 +140,16 @@ def git_mock(mocker):
     return mocker.patch("_repobee.git", autospec=True)
 
 
-@pytest.fixture(scope="function", params=mainparser.PARSER_NAMES)
+@pytest.fixture(scope="function", params=mainparser.CATEGORIZED_ACTIONS)
 def parsed_args_all_subparsers(request):
     """Parametrized fixture which returns a namespace for each of the
     subparsers. These arguments are valid for all subparsers, even though
     many will only use some of the arguments.
     """
-    return argparse.Namespace(subparser=request.param, **VALID_PARSED_ARGS)
+    category, action = request.param
+    return argparse.Namespace(
+        category=category.name, action=action, **VALID_PARSED_ARGS
+    )
 
 
 @pytest.fixture(
@@ -220,7 +223,7 @@ class TestDispatchCommand:
     """Test the handling of parsed arguments."""
 
     @pytest.mark.parametrize(
-        "parser, command_func",
+        "category, action, command_func",
         [
             (mainparser.CLONE_PARSER, "_repobee.command.clone_repos"),
             (mainparser.LIST_ISSUES_PARSER, "_repobee.command.list_issues"),
@@ -439,13 +442,14 @@ class TestDispatchCommand:
         )
 
 
-@pytest.mark.parametrize("parser", mainparser.PARSER_NAMES)
-def test_help_calls_add_arguments(monkeypatch, parser):
+@pytest.mark.parametrize("categorized_action", mainparser.CATEGORIZED_ACTIONS)
+def test_help_calls_add_arguments(monkeypatch, categorized_action):
     """Test that the --help command causes _OrderedFormatter.add_arguments to
     be called. The reason this may not be the case is that
     HelpFormatter.add_arguments is not technically public, and so it could be
     removed or changed in future versions of Python.
     """
+    category, action = categorized_action
     called = False
     add_arguments = mainparser._OrderedFormatter.add_arguments
 
@@ -459,7 +463,7 @@ def test_help_calls_add_arguments(monkeypatch, parser):
     )
 
     with pytest.raises(SystemExit) as exc_info:
-        _repobee.cli.parsing.handle_args([parser, "--help"])
+        _repobee.cli.parsing.handle_args([category.name, action, "--help"])
 
     assert exc_info.value.code == 0
     assert called

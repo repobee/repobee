@@ -2,7 +2,6 @@
 import os
 import pathlib
 
-import _repobee.cli
 import gitlab
 import pytest
 import repobee_plug as plug
@@ -122,8 +121,7 @@ def with_student_repos(restore):
     command = " ".join(
         [
             REPOBEE_GITLAB,
-            plug.ParserCategory.REPOS.value,
-            _repobee.cli.mainparser.SETUP_PARSER,
+            *str(plug.CoreCommand.repos.setup).split(),
             *BASE_ARGS,
             *MASTER_ORG_ARG,
             *MASTER_REPOS_ARG,
@@ -189,8 +187,7 @@ def with_reviews(with_student_repos):
     command = " ".join(
         [
             REPOBEE_GITLAB,
-            plug.ParserCategory.REVIEWS.value,
-            _repobee.cli.mainparser.ASSIGN_REVIEWS_PARSER,
+            *str(plug.CoreCommand.reviews.assign).split(),
             *BASE_ARGS,
             "--mn",
             master_repo_name,

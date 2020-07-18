@@ -29,7 +29,7 @@ LOGGER = daiquiri.getLogger(__file__)
 SUB = "category"
 ACTION = "action"
 
-# Any new subparser mus tbe added to the PARSER_NAMES tuple!
+# Any new action parser must be added to the CATEGORIZED_ACTIONS tuple!
 SETUP_PARSER = "setup"
 UPDATE_PARSER = "update"
 CLONE_PARSER = "clone"
@@ -44,21 +44,25 @@ PURGE_REVIEW_TEAMS_PARSER = "end"
 CHECK_REVIEW_PROGRESS_PARSER = "check"
 SHOW_CONFIG_PARSER = "show"
 
-PARSER_NAMES = (
-    SETUP_PARSER,
-    UPDATE_PARSER,
-    CLONE_PARSER,
-    CREATE_TEAMS_PARSER,
-    MIGRATE_PARSER,
-    OPEN_ISSUE_PARSER,
-    CLOSE_ISSUE_PARSER,
-    LIST_ISSUES_PARSER,
-    VERIFY_PARSER,
-    ASSIGN_REVIEWS_PARSER,
-    PURGE_REVIEW_TEAMS_PARSER,
-    SHOW_CONFIG_PARSER,
-    CHECK_REVIEW_PROGRESS_PARSER,
+# tuples on the form (category, action)
+CATEGORIZED_ACTIONS = (
+    (plug.CoreCommand.repos, SETUP_PARSER),
+    (plug.CoreCommand.repos, UPDATE_PARSER),
+    (plug.CoreCommand.repos, CLONE_PARSER),
+    (plug.CoreCommand.repos, CREATE_TEAMS_PARSER),
+    (plug.CoreCommand.repos, MIGRATE_PARSER),
+    (plug.CoreCommand.issues, OPEN_ISSUE_PARSER),
+    (plug.CoreCommand.issues, CLOSE_ISSUE_PARSER),
+    (plug.CoreCommand.issues, LIST_ISSUES_PARSER),
+    (plug.CoreCommand.reviews, ASSIGN_REVIEWS_PARSER),
+    (plug.CoreCommand.reviews, PURGE_REVIEW_TEAMS_PARSER),
+    (plug.CoreCommand.reviews, CHECK_REVIEW_PROGRESS_PARSER),
+    (plug.CoreCommand.config, VERIFY_PARSER),
+    (plug.CoreCommand.config, SHOW_CONFIG_PARSER),
 )
+
+# Reverse mapping of CATEGORY_TO_ACTIONS
+ACTIONS_TO_CATEGORY = {}
 
 _HOOK_RESULTS_PARSER = argparse.ArgumentParser(add_help=False)
 _HOOK_RESULTS_PARSER.add_argument(
@@ -213,7 +217,7 @@ def _add_subparsers(parser, show_all_opts, ext_commands, config_file):
 
     def _create_category_parsers(category, help, description):
         category_command = subparsers.add_parser(
-            category.value, help=help, description=description
+            category.name, help=help, description=description
         )
         category_parsers = category_command.add_subparsers(dest=ACTION)
         category_parsers.required = True
@@ -221,22 +225,22 @@ def _add_subparsers(parser, show_all_opts, ext_commands, config_file):
         return category_parsers
 
     repo_parsers = _create_category_parsers(
-        plug.ParserCategory.REPOS,
+        plug.CoreCommand.repos,
         description="Manage repositories.",
         help="Manage repositories.",
     )
     issues_parsers = _create_category_parsers(
-        plug.ParserCategory.ISSUES,
+        plug.CoreCommand.issues,
         description="Manage issues.",
         help="Manage issues.",
     )
     review_parsers = _create_category_parsers(
-        plug.ParserCategory.REVIEWS,
+        plug.CoreCommand.reviews,
         help="Manage peer reviews.",
         description="Manage peer reviews.",
     )
     config_parsers = _create_category_parsers(
-        plug.ParserCategory.CONFIG,
+        plug.CoreCommand.config,
         help="Configure RepoBee.",
         description="Configure RepoBee.",
     )
@@ -267,7 +271,7 @@ def _add_repo_parsers(
     base_parser, base_student_parser, master_org_parser, repo_parsers
 ):
     repo_parsers.add_parser(
-        SETUP_PARSER,
+        plug.CoreCommand.repos.setup,
         help="Setup student repos.",
         description=(
             "Setup student repositories based on master repositories. "
@@ -289,7 +293,7 @@ def _add_repo_parsers(
     )
 
     update = repo_parsers.add_parser(
-        UPDATE_PARSER,
+        plug.CoreCommand.repos.update,
         help="Update existing student repos.",
         description=(
             "Push changes from master repos to student repos. If the "
@@ -316,7 +320,7 @@ def _add_repo_parsers(
     )
 
     clone = repo_parsers.add_parser(
-        CLONE_PARSER,
+        plug.CoreCommand.repos.clone,
         help="Clone student repos.",
         description="Clone student repos asynchronously in bulk.",
         parents=[
@@ -334,7 +338,7 @@ def _add_repo_parsers(
     plug.manager.hook.clone_parser_hook(clone_parser=clone)
 
     repo_parsers.add_parser(
-        CREATE_TEAMS_PARSER,
+        plug.CoreCommand.repos.create_team,
         help="Create student teams without creating repos.",
         description=(
             "Only create student teams. This is intended for when you want to "
@@ -348,7 +352,7 @@ def _add_repo_parsers(
     )
 
     repo_parsers.add_parser(
-        MIGRATE_PARSER,
+        plug.CoreCommand.repos.migrate,
         help="Migrate repositories into the target organization.",
         description=(
             "Migrate repositories into the target organization. "

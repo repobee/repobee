@@ -138,8 +138,8 @@ def _resolve_requires_processing(args: argparse.Namespace) -> _ArgsProcessing:
     This is primarily decided on whether or not the platform API is required,
     as that implies further processing.
     """
-    category = plug.ParserCategory(args.category)
-    if category == plug.ParserCategory.CONFIG and args.action in [
+    category = plug.CoreCommand(args.category)
+    if category == plug.CoreCommand.config and args.action in [
         VERIFY_PARSER,
         SHOW_CONFIG_PARSER,
     ]:
@@ -194,9 +194,9 @@ def _handle_task_parsing(args: argparse.Namespace) -> None:
     """Call hooks that allows Tasks to parse command line arguments. Must be
     called with fully processed args.
     """
-    category = plug.ParserCategory(args.category)
+    category = plug.CoreCommand(args.category)
     if not (
-        category == plug.ParserCategory.REPOS
+        category == plug.CoreCommand.repos
         and args.action in [CLONE_PARSER, SETUP_PARSER]
     ):
         return

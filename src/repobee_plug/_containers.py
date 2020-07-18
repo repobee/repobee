@@ -9,6 +9,7 @@ import collections
 import enum
 import argparse
 import pluggy
+import itertools
 
 from typing import Mapping, Any, Optional, Callable, Iterable, List
 
@@ -121,13 +122,111 @@ class BaseParser(enum.Enum):
     MASTER_ORG = "master-org"
 
 
-class ParserCategory(enum.Enum):
+class _ImmutableMixin:
+    """Make a class (more or less) immutable."""
+
+    def __setattr__(self, name, value):
+        raise AttributeError(f"{self.__class__} is immutable")
+
+    def __setattribute__(self, name, value):
+        self.__setattr__(name, value)
+
+
+class Category(_ImmutableMixin):
+    """Class describing a command category for RepoBee's CLI. The purpose of
+    this class is to make it easy to programmatically access the different
+    commands in RepoBee.
+
+    A full command in RepoBee typically takes the following form:
+
+    .. code-block:: bash
+
+        $ repobee <category> <action> [options ...]
+
+    For example, the command ``repobee issues list`` has category ``issues``
+    and action ``list``. Actions are unique only within their category.
+
+    Attributes:
+        name: Name of this category.
+        actions: A tuple of names of actions applicable to this category.
+    """
+
+    def __init__(self, name: str, action_names: List[str]):
+        object.__setattr__(self, "name", name)
+        object.__setattr__(self, "action_names", set(action_names))
+        # This is just to reserve the name 'actions'
+        object.__setattr__(self, "actions", None)
+
+        for key in self.__dict__.keys():
+            if key in self.action_names:
+                raise ValueError(f"Illegal action name: {key}")
+
+        actions = []
+        for action_name in action_names:
+            action = Action(action_name, self)
+            object.__setattr__(self, action_name.replace("-", "_"), action)
+            actions.append(action)
+
+        object.__setattr__(self, "actions", tuple(actions))
+
+    def __iter__(self):
+        return iter(self.actions)
+
+    def __repr__(self):
+        return f"Category(name={self.name}, actions={self.action_names})"
+
+    def __str__(self):
+        return self.name
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return self.name == other.name
+
+    def __hash__(self):
+        return hash(repr(self))
+
+
+class Action(_ImmutableMixin):
+    """Class describing a RepoBee CLI action.
+
+    Attributes:
+        name: Name of this action.
+        category: The category this action belongs to.
+    """
+
+    def __init__(self, name: str, category: Category):
+        object.__setattr__(self, "name", name)
+        object.__setattr__(self, "category", category)
+
+    def __repr__(self):
+        return f"<Action(name={self.name},category={self.category})>"
+
+    def __str__(self):
+        return f"{self.category.name} {self.name}"
+
+
+class _CoreCommand(_ImmutableMixin):
     """Parser category signifying where an extension parser belongs."""
 
-    REPOS = "repos"
-    ISSUES = "issues"
-    REVIEWS = "reviews"
-    CONFIG = "config"
+    def __call__(self, key):
+        return self.__class__.__dict__[key]
+
+    def __iter__(self):
+        return itertools.chain.from_iterable(
+            map(iter, [self.repos, self.issues, self.reviews, self.config])
+        )
+
+    repos = Category(
+        name="repos",
+        action_names="setup update clone migrate create-teams".split(),
+    )
+    issues = Category(name="issues", action_names="open close list".split())
+    reviews = Category(name="reviews", action_names="assign check end".split())
+    config = Category(name="config", action_names="show verify".split())
+
+
+CoreCommand = _CoreCommand()
 
 
 class ExtensionCommand(
@@ -159,7 +258,7 @@ class ExtensionCommand(
         ],
         requires_api: bool = False,
         requires_base_parsers: Optional[List[BaseParser]] = None,
-        category: Optional[ParserCategory] = None,
+        category: Optional[CoreCommand] = None,
     ):
         if not isinstance(parser, ExtensionParser):
             raise _exceptions.ExtensionCommandError(
@@ -200,7 +299,7 @@ class ExtensionCommand(
         ],
         requires_api: bool = False,
         requires_base_parsers: Optional[Iterable[BaseParser]] = None,
-        category: Optional[ParserCategory] = None,
+        category: Optional[CoreCommand] = None,
     ):
         """
         Args:

@@ -51,10 +51,10 @@ def dispatch_command(
     """
     hook_results = {}
     dispatch_table = {
-        plug.ParserCategory.REPOS: _dispatch_repos_command,
-        plug.ParserCategory.ISSUES: _dispatch_issues_command,
-        plug.ParserCategory.CONFIG: _dispatch_config_command,
-        plug.ParserCategory.REVIEWS: _dispatch_reviews_command,
+        plug.CoreCommand.repos: _dispatch_repos_command,
+        plug.CoreCommand.issues: _dispatch_issues_command,
+        plug.CoreCommand.config: _dispatch_config_command,
+        plug.CoreCommand.reviews: _dispatch_reviews_command,
     }
 
     is_ext_command = "_extension_command" in args
@@ -63,7 +63,7 @@ def dispatch_command(
         res = ext_cmd.callback(args, api)
         hook_results = {ext_cmd.name: [res]} if res else hook_results
     else:
-        category = plug.ParserCategory(args.category)
+        category = plug.CoreCommand(args.category)
         hook_results = (
             dispatch_table[category](args, config_file, api) or hook_results
         )

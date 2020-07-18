@@ -87,5 +87,5 @@ def create_extension_command():
             "overwritten."
         ),
         callback=callback,
-        category=plug.ParserCategory.CONFIG,
+        category=plug.CoreCommand.config,
     )
