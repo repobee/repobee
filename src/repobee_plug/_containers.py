@@ -10,8 +10,9 @@ import enum
 import argparse
 import pluggy
 import itertools
+import abc
 
-from typing import Mapping, Any, Optional, Callable, Iterable, List
+from typing import Mapping, Any, Optional, Callable, Iterable, List, Tuple, Set
 
 import daiquiri
 
@@ -132,7 +133,7 @@ class _ImmutableMixin:
         self.__setattr__(name, value)
 
 
-class Category(_ImmutableMixin):
+class Category(_ImmutableMixin, abc.ABC):
     """Class describing a command category for RepoBee's CLI. The purpose of
     this class is to make it easy to programmatically access the different
     commands in RepoBee.
@@ -151,20 +152,35 @@ class Category(_ImmutableMixin):
         actions: A tuple of names of actions applicable to this category.
     """
 
-    def __init__(self, name: str, action_names: List[str]):
+    name: str
+    actions: Tuple["Action"]
+    action_names: Set[str]
+
+    def __init__(self):
+        # determine the name of this category based on the runtime type of the
+        # inheriting class
+        name = self.__class__.__name__.lower().strip("_")
+        # determine the action names based on type annotations in the
+        # inheriting class
+        action_names = {
+            name
+            for name, tpe in self.__annotations__.items()
+            if issubclass(tpe, Action)
+        }
+
         object.__setattr__(self, "name", name)
         object.__setattr__(self, "action_names", set(action_names))
         # This is just to reserve the name 'actions'
         object.__setattr__(self, "actions", None)
 
         for key in self.__dict__.keys():
-            if key in self.action_names:
+            if key in action_names:
                 raise ValueError(f"Illegal action name: {key}")
 
         actions = []
         for action_name in action_names:
-            action = Action(action_name, self)
-            object.__setattr__(self, action_name.replace("-", "_"), action)
+            action = Action(action_name.replace("_", "-"), self)
+            object.__setattr__(self, action_name, action)
             actions.append(action)
 
         object.__setattr__(self, "actions", tuple(actions))
@@ -195,6 +211,9 @@ class Action(_ImmutableMixin):
         category: The category this action belongs to.
     """
 
+    name: str
+    category: Category
+
     def __init__(self, name: str, category: Category):
         object.__setattr__(self, "name", name)
         object.__setattr__(self, "category", category)
@@ -217,13 +236,31 @@ class _CoreCommand(_ImmutableMixin):
             map(iter, [self.repos, self.issues, self.reviews, self.config])
         )
 
-    repos = Category(
-        name="repos",
-        action_names="setup update clone migrate create-teams".split(),
-    )
-    issues = Category(name="issues", action_names="open close list".split())
-    reviews = Category(name="reviews", action_names="assign check end".split())
-    config = Category(name="config", action_names="show verify".split())
+    class _Repos(Category):
+        setup: Action
+        update: Action
+        clone: Action
+        migrate: Action
+        create_teams: Action
+
+    class _Issues(Category):
+        open: Action
+        close: Action
+        list: Action
+
+    class _Config(Category):
+        show: Action
+        verify: Action
+
+    class _Reviews(Category):
+        assign: Action
+        check: Action
+        end: Action
+
+    repos = _Repos()
+    issues = _Issues()
+    reviews = _Config()
+    config = _Reviews()
 
 
 CoreCommand = _CoreCommand()
@@ -295,7 +332,7 @@ class ExtensionCommand(
         help: str,
         description: str,
         callback: Callable[
-            [argparse.Namespace, Optional[_apimeta.API]], Optional[Result],
+            [argparse.Namespace, Optional[_apimeta.API]], Optional[Result]
         ],
         requires_api: bool = False,
         requires_base_parsers: Optional[Iterable[BaseParser]] = None,
