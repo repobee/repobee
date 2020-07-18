@@ -188,6 +188,9 @@ class Category(_ImmutableMixin, abc.ABC):
     def __iter__(self):
         return iter(self.actions)
 
+    def __len__(self):
+        return len(self.actions)
+
     def __repr__(self):
         return f"Category(name={self.name}, actions={self.action_names})"
 
@@ -229,12 +232,24 @@ class _CoreCommand(_ImmutableMixin):
     """Parser category signifying where an extension parser belongs."""
 
     def __call__(self, key):
-        return self.__class__.__dict__[key]
+        category_map = {c.name: c for c in self._categories}
+        if key not in category_map:
+            raise ValueError(f"No such category: '{key}'")
+        return category_map[key]
 
     def __iter__(self):
-        return itertools.chain.from_iterable(
-            map(iter, [self.repos, self.issues, self.reviews, self.config])
-        )
+        return itertools.chain.from_iterable(map(iter, self._categories))
+
+    def __len__(self):
+        return sum(map(len, self._categories))
+
+    @property
+    def _categories(self):
+        return [
+            attr
+            for attr in self.__class__.__dict__.values()
+            if isinstance(attr, Category)
+        ]
 
     class _Repos(Category):
         setup: Action
