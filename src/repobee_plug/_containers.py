@@ -155,6 +155,7 @@ class Category(_ImmutableMixin, abc.ABC):
     name: str
     actions: Tuple["Action"]
     action_names: Set[str]
+    _action_table: Mapping[str, "Action"]
 
     def __init__(self):
         # determine the name of this category based on the runtime type of the
@@ -184,8 +185,12 @@ class Category(_ImmutableMixin, abc.ABC):
             actions.append(action)
 
         object.__setattr__(self, "actions", tuple(actions))
+        object.__setattr__(self, "_action_table", {a.name: a for a in actions})
 
-    def __iter__(self):
+    def __getitem__(self, key: str) -> "Action":
+        return self._action_table[key]
+
+    def __iter__(self) -> Iterable["Action"]:
         return iter(self.actions)
 
     def __len__(self):
@@ -227,9 +232,39 @@ class Action(_ImmutableMixin):
     def __str__(self):
         return f"{self.category.name} {self.name}"
 
+    def asdict(self) -> Mapping[str, str]:
+        """This is a convenience method for testing that returns a dictionary
+        on the following form:
+
+        .. code-block:: python
+
+            {"category": self.category.name "action": self.name}
+
+        Returns:
+            A dictionary with the name of this action and its category.
+        """
+        return {"category": self.category.name, "action": self.name}
+
+    def astuple(self) -> Tuple[str, str]:
+        """This is a convenience method for testing that returns a tuple
+        on the following form:
+
+        .. code-block:: python
+
+            (self.category.name, self.name)
+
+        Returns:
+            A dictionary with the name of this action and its category.
+        """
+        return (self.category.name, self.name)
+
 
 class _CoreCommand(_ImmutableMixin):
     """Parser category signifying where an extension parser belongs."""
+
+    def iter_actions(self) -> Iterable[Action]:
+        """Iterate over all command actions."""
+        return iter(self)
 
     def __call__(self, key):
         category_map = {c.name: c for c in self._categories}
@@ -237,7 +272,7 @@ class _CoreCommand(_ImmutableMixin):
             raise ValueError(f"No such category: '{key}'")
         return category_map[key]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterable[Action]:
         return itertools.chain.from_iterable(map(iter, self._categories))
 
     def __len__(self):
@@ -274,8 +309,8 @@ class _CoreCommand(_ImmutableMixin):
 
     repos = _Repos()
     issues = _Issues()
-    reviews = _Config()
-    config = _Reviews()
+    config = _Config()
+    reviews = _Reviews()
 
 
 CoreCommand = _CoreCommand()

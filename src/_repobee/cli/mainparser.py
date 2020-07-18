@@ -29,41 +29,6 @@ LOGGER = daiquiri.getLogger(__file__)
 SUB = "category"
 ACTION = "action"
 
-# Any new action parser must be added to the CATEGORIZED_ACTIONS tuple!
-SETUP_PARSER = "setup"
-UPDATE_PARSER = "update"
-CLONE_PARSER = "clone"
-CREATE_TEAMS_PARSER = "create-teams"
-MIGRATE_PARSER = "migrate"
-OPEN_ISSUE_PARSER = "open"
-CLOSE_ISSUE_PARSER = "close"
-LIST_ISSUES_PARSER = "list"
-VERIFY_PARSER = "verify"
-ASSIGN_REVIEWS_PARSER = "assign"
-PURGE_REVIEW_TEAMS_PARSER = "end"
-CHECK_REVIEW_PROGRESS_PARSER = "check"
-SHOW_CONFIG_PARSER = "show"
-
-# tuples on the form (category, action)
-CATEGORIZED_ACTIONS = (
-    (plug.CoreCommand.repos, SETUP_PARSER),
-    (plug.CoreCommand.repos, UPDATE_PARSER),
-    (plug.CoreCommand.repos, CLONE_PARSER),
-    (plug.CoreCommand.repos, CREATE_TEAMS_PARSER),
-    (plug.CoreCommand.repos, MIGRATE_PARSER),
-    (plug.CoreCommand.issues, OPEN_ISSUE_PARSER),
-    (plug.CoreCommand.issues, CLOSE_ISSUE_PARSER),
-    (plug.CoreCommand.issues, LIST_ISSUES_PARSER),
-    (plug.CoreCommand.reviews, ASSIGN_REVIEWS_PARSER),
-    (plug.CoreCommand.reviews, PURGE_REVIEW_TEAMS_PARSER),
-    (plug.CoreCommand.reviews, CHECK_REVIEW_PROGRESS_PARSER),
-    (plug.CoreCommand.config, VERIFY_PARSER),
-    (plug.CoreCommand.config, SHOW_CONFIG_PARSER),
-)
-
-# Reverse mapping of CATEGORY_TO_ACTIONS
-ACTIONS_TO_CATEGORY = {}
-
 _HOOK_RESULTS_PARSER = argparse.ArgumentParser(add_help=False)
 _HOOK_RESULTS_PARSER.add_argument(
     "--hook-results-file",
@@ -105,17 +70,6 @@ _DISCOVERY_MUTEX_GRP.add_argument(
     "may want to avoid this option.",
     action="store_true",
 )
-
-# add any diprecated parsers to this dict on the following form:
-#
-# ASSIGN_REVIEWS_PARSER_OLD: plug.Deprecation(
-#     replacement=ASSIGN_REVIEWS_PARSER, remove_by_version="2.0.0"
-# ),
-DEPRECATED_PARSERS = {
-    "purge-review-teams": plug.Deprecation(
-        replacement=PURGE_REVIEW_TEAMS_PARSER, remove_by_version="2.2.0"
-    )
-}
 
 
 def create_parser_for_docs() -> argparse.ArgumentParser:
@@ -366,7 +320,7 @@ def _add_repo_parsers(
 
 def _add_config_parsers(base_parser, master_org_parser, config_parsers):
     show_config = config_parsers.add_parser(
-        SHOW_CONFIG_PARSER,
+        plug.CoreCommand.config.show.name,
         help="Show the configuration file",
         description=(
             "Show the contents of the configuration file. If no configuration "
@@ -378,7 +332,7 @@ def _add_config_parsers(base_parser, master_org_parser, config_parsers):
     _add_traceback_arg(show_config)
 
     config_parsers.add_parser(
-        VERIFY_PARSER,
+        plug.CoreCommand.config.verify.name,
         help="Verify core settings.",
         description="Verify core settings by trying various API requests.",
         parents=[base_parser, master_org_parser],
@@ -388,7 +342,7 @@ def _add_config_parsers(base_parser, master_org_parser, config_parsers):
 
 def _add_peer_review_parsers(base_parsers, review_parsers):
     assign_parser = review_parsers.add_parser(
-        ASSIGN_REVIEWS_PARSER,
+        plug.CoreCommand.reviews.assign.name,
         description=(
             "For each student repo, create a review team with read access "
             "named <student-repo-name>-review and randomly assign "
@@ -424,7 +378,7 @@ def _add_peer_review_parsers(base_parsers, review_parsers):
         type=str,
     )
     check_review_progress = review_parsers.add_parser(
-        CHECK_REVIEW_PROGRESS_PARSER,
+        plug.CoreCommand.reviews.check.name,
         description=(
             "Check which students have opened review review issues in their "
             "assigned repos. As it is possible for students to leave the peer "
@@ -459,7 +413,7 @@ def _add_peer_review_parsers(base_parsers, review_parsers):
         required=True,
     )
     review_parsers.add_parser(
-        PURGE_REVIEW_TEAMS_PARSER,
+        plug.CoreCommand.reviews.end.name,
         description=(
             "Delete review allocations assigned with `assign-reviews`. "
             "This is a destructive action, as the allocations for reviews "
@@ -484,7 +438,7 @@ def _add_peer_review_parsers(base_parsers, review_parsers):
 def _add_issue_parsers(base_parsers, issue_parsers):
     base_parser, base_student_parser, master_org_parser = base_parsers
     open_parser = issue_parsers.add_parser(
-        OPEN_ISSUE_PARSER,
+        plug.CoreCommand.issues.open.name,
         description=(
             "Open issues in student repositories. For each master repository "
             "specified, the student list is traversed. For every student repo "
@@ -505,7 +459,7 @@ def _add_issue_parsers(base_parsers, issue_parsers):
     )
 
     close_parser = issue_parsers.add_parser(
-        CLOSE_ISSUE_PARSER,
+        plug.CoreCommand.issues.close.name,
         description=(
             "Close issues in student repos based on a regex. For each master "
             "repository specified, the student list is traversed. For every "
@@ -528,7 +482,7 @@ def _add_issue_parsers(base_parsers, issue_parsers):
     )
 
     list_parser = issue_parsers.add_parser(
-        LIST_ISSUES_PARSER,
+        plug.CoreCommand.issues.list.name,
         description="List issues in student repos.",
         help="List issues in student repos.",
         parents=[
