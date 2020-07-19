@@ -423,6 +423,8 @@ class ExtensionCommand(
         respects except for the parser, as argpars.ArgumentParser instances do
         not implement __eq__.
         """
+        if not isinstance(other, self.__class__):
+            return False
         _, *rest = self
         _, *other_rest = other
         return rest == other_rest
