@@ -626,14 +626,35 @@ def _add_extension_parsers(
         except argparse.ArgumentError:
             pass
 
+        ext_parser.add_argument(
+            "--repobee-action",
+            action="store_const",
+            help=argparse.SUPPRESS,
+            const=cmd.name,
+            default=cmd.name,
+            dest="action",
+        )
+
         # This is a little bit of a dirty trick. It allows us to easily
         # find the associated extension command when parsing the arguments.
         ext_parser.add_argument(
-            "_extension_command",
+            "--repobee-extension-command",
             action="store_const",
             help=argparse.SUPPRESS,
             const=cmd,
+            default=cmd,
+            dest="_extension_command",
         )
+        if category_parsers == subparsers:
+            # in this case it's a category action, and we must add the category
+            ext_parser.add_argument(
+                "--repobee-category",
+                action="store_const",
+                help=argparse.SUPPRESS,
+                const=cmd.name,
+                default=cmd.name,
+                dest="category",
+            )
 
     return ext_commands
 

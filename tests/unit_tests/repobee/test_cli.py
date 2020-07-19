@@ -717,9 +717,6 @@ class TestBaseParsing:
         assert parsed_args.master_repo_urls is None
 
 
-@pytest.mark.xfail(
-    reason="Extension command functionality is currently broken"
-)
 class TestExtensionCommands:
     """Parsing and dispatch tests for extension commands."""
 
@@ -747,7 +744,6 @@ class TestExtensionCommands:
             help="help",
             description="description",
             callback=mock_callback,
-            category=plug.CoreCommand.repos,
         )
 
     @pytest.fixture
@@ -776,8 +772,9 @@ class TestExtensionCommands:
 
         assert api is None
         assert parsed_args == argparse.Namespace(
-            category=plug.CoreCommand.repos.name,
+            category=ext_command.name,
             action=ext_command.name,
+            _extension_command=ext_command,
             test_option=True,
             traceback=False,
         )
@@ -807,8 +804,10 @@ class TestExtensionCommands:
         assert api is api_instance_mock
         api_class_mock.assert_called_once_with(BASE_URL, TOKEN, ORG_NAME, USER)
         assert parsed_args == argparse.Namespace(
-            subparser=ext_command.name,
+            category=ext_command.name,
+            action=ext_command.name,
             test_option=True,
+            _extension_command=ext_command,
             **parsed_base_args_dict
         )
 
@@ -823,7 +822,10 @@ class TestExtensionCommands:
             option, action="store_true", required=True
         )
         parsed_args = argparse.Namespace(
-            subparser=ext_command.name, test_option=True, traceback=False
+            action=ext_command.name,
+            _extension_command=ext_command,
+            test_option=True,
+            traceback=False,
         )
 
         _repobee.cli.dispatch.dispatch_command(
@@ -851,8 +853,8 @@ class TestExtensionCommands:
             option, action="store_true", required=True
         )
         parsed_args = argparse.Namespace(
-            category=plug.CoreCommand.repos.name,
             action=ext_command.name,
+            _extension_command=ext_command,
             test_option=True,
             **parsed_base_args_dict
         )
