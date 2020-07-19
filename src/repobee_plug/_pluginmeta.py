@@ -1,10 +1,15 @@
 import argparse
-import collections
+import daiquiri
+
+from typing import List, Tuple, Callable, Mapping, Any
 
 from repobee_plug import _exceptions
 from repobee_plug import _corehooks
 from repobee_plug import _exthooks
 from repobee_plug import _containers
+from repobee_plug import cli
+
+LOGGER = daiquiri.getLogger(__name__)
 
 _HOOK_METHODS = {
     key: value
@@ -37,6 +42,13 @@ class _PluginMeta(type):
         Checking signatures is delegated to ``pluggy`` during registration of
         the hook.
         """
+        cli_options = _extract_cli_options(attrdict)
+        if cli_options:
+            ext_cmd_func = _generate_extension_command_func(
+                attrdict, cli_options
+            )
+            attrdict[ext_cmd_func.__name__] = ext_cmd_func
+
         methods = cls._extract_public_methods(attrdict)
         cls._check_names(methods)
         hooked_methods = {
@@ -69,99 +81,88 @@ class _PluginMeta(type):
         }
 
 
-opt = collections.namedtuple(
-    "opt",
-    [
-        "short_name",
-        "long_name",
-        "configurable",
-        "help",
-        "description",
-        "converter",
-        "required",
-        "default",
-        "argparse_kwargs",
-    ],
-)
-opt.__new__.__defaults__ = (None,) * len(opt._fields)
+def _extract_cli_options(attrdict) -> List[Tuple[str, cli.Option]]:
+    """Return any members that are CLI options as a list of tuples on the form
+    (member_name, option).
+    """
+    return [
+        (key, value)
+        for key, value in attrdict.items()
+        if isinstance(value, cli.Option)
+    ]
 
 
-class _ActionMeta(_PluginMeta):
-    def __new__(cls, name, bases, attrdict):
-        opts = []
-        for key, value in attrdict.items():
-            if isinstance(value, opt):
-                argparse_args = []
-                argparse_kwargs = value.argparse_kwargs or {}
+def _generate_extension_command_func(
+    attrdict: Mapping[str, Any], opts: List[Tuple[str, cli.Option]]
+) -> Callable:
+    """Generate an implementation of the ``create_extension_command`` hook
+    function based on the declarative-style extension command class.
+    """
 
-                if value.short_name:
-                    argparse_args.append(value.short_name)
+    def create_extension_command(self):
+        def create_parser(config, show_all_opts):
+            parser = _containers.ExtensionParser()
+            config_name = (
+                attrdict.get("__config_section__") or self.plugin_name
+            )
+            config_section = (
+                dict(config[config_name]) if config_name in config else {}
+            )
 
-                if value.long_name:
-                    argparse_args.append(value.long_name)
-                else:
-                    argparse_args.append(f"--{key.replace('_', '-')}")
+            for (name, opt) in opts:
+                args = []
+                kwargs = opt.argparse_kwargs or {}
+                configured_value = config_section.get(name)
 
-                if value.converter:
-                    argparse_kwargs["type"] = value.converter
-
-                for kwarg_key in "required default help description".split():
-                    kwarg_val = getattr(value, kwarg_key)
-                    if kwarg_val:
-                        argparse_kwargs[kwarg_key] = kwarg_val
-
-                argparse_kwargs["dest"] = key
-
-                opts.append((argparse_args, argparse_kwargs))
-
-        if opts:
-            category = attrdict["__category__"]
-            action_name = attrdict["__action_name__"]
-
-            def create_extension_command(self):
-                def create_parser(config, show_all_opts):
-                    parser = _containers.ExtensionParser()
-
-                    config_section = (
-                        dict(config[self.plugin_name])
-                        if self.plugin_name in config
-                        else {}
+                if configured_value and not opt.configurable:
+                    raise _exceptions.PlugError(
+                        f"Plugin '{self.plugin_name}' does not allow "
+                        f"'{name}' to be configured"
                     )
 
-                    for (args, kwargs) in opts:
-                        dest = kwargs["dest"]
-                        is_configured = dest in config_section
+                if opt.short_name:
+                    args.append(opt.short_name)
 
-                        kwargs["required"] = (
-                            not is_configured and kwargs["required"]
-                        )
-                        kwargs["help"] = (
-                            argparse.SUPPRESS
-                            if (is_configured and not show_all_opts)
-                            else kwargs["help"]
-                        )
-                        if is_configured:
-                            kwargs["default"] = config_section[dest]
+                if opt.long_name:
+                    args.append(opt.long_name)
+                else:
+                    args.append(f"--{name.replace('_', '-')}")
 
-                        parser.add_argument(*args, **kwargs)
-                    return parser
-
-                return _containers.ExtensionCommand(
-                    parser=create_parser,
-                    name=action_name,
-                    help="Yay",
-                    description="Yay",
-                    callback=self.action_callback,
-                    category=category,
+                kwargs["type"] = opt.converter
+                # configured value takes precedence over default
+                kwargs["default"] = configured_value or opt.default
+                kwargs["dest"] = name
+                # required opts become not required if configured
+                kwargs["required"] = not configured_value and opt.required
+                kwargs["help"] = (
+                    argparse.SUPPRESS
+                    if (configured_value and not show_all_opts)
+                    else opt.help or ""
                 )
 
-            # add the extension command
-            attrdict["create_extension_command"] = create_extension_command
+                parser.add_argument(*args, **kwargs)
+            return parser
 
-        return super().__new__(cls, name, bases, attrdict)
+        category = attrdict.get("__category__")
+        action_name = attrdict.get(
+            "__action_name__"
+        ) or self.__class__.__name__.lower().replace("_", "-")
+        help = attrdict.get("__help__") or ""
+        description = attrdict.get("__description__") or ""
+
+        return _containers.ExtensionCommand(
+            parser=create_parser,
+            name=action_name,
+            help=help,
+            description=description,
+            callback=self.action_callback,
+            category=category,
+        )
+
+    return create_extension_command
 
 
-class Plugin(metaclass=_ActionMeta):
+class Plugin(metaclass=_PluginMeta):
     """This is a base class for plugin classes. For plugin classes to be picked
     up by RepoBee, they must inherit from this class.
 

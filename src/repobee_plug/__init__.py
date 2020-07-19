@@ -4,8 +4,8 @@ from repobee_plug.__version import __version__  # noqa: F401
 
 # Plugin stuff
 from repobee_plug._pluginmeta import Plugin
-from repobee_plug._pluginmeta import opt
 from repobee_plug._containers import hookimpl as repobee_hook
+from repobee_plug._pluginmeta import cli
 
 # Containers
 from repobee_plug._containers import Review
@@ -80,7 +80,6 @@ __all__ = [
     "Review",
     "Task",
     "Deprecation",
-    "opt",
     # API wrappers
     "Team",
     "TeamPermission",
@@ -103,4 +102,6 @@ __all__ = [
     "generate_review_team_name",
     "deprecate",
     "deprecated_hooks",
+    # Modules
+    "cli",
 ]
