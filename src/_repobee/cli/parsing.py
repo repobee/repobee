@@ -22,6 +22,7 @@ import daiquiri
 import repobee_plug as plug
 
 import _repobee
+import _repobee.cli.mainparser
 from _repobee import util, exception, constants, cli
 
 
