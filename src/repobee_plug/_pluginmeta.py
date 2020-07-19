@@ -26,7 +26,9 @@ _HOOK_METHODS = {
 
 class _PluginMeta(type):
     """Metaclass used for converting methods with appropriate names into
-    hook methods.
+    hook methods. It also enables the declarative style of extension commands
+    by automatically implementing the ``create_extension_command`` hook
+    for any inheriting class that declares CLI-related members.
 
     Also ensures that all public methods have the name of a hook method.
 
@@ -110,37 +112,14 @@ def _generate_extension_command_func(
             )
 
             for (name, opt) in opts:
-                args = []
-                kwargs = opt.argparse_kwargs or {}
                 configured_value = config_section.get(name)
-
                 if configured_value and not opt.configurable:
                     raise _exceptions.PlugError(
                         f"Plugin '{self.plugin_name}' does not allow "
                         f"'{name}' to be configured"
                     )
+                _add_option(name, opt, configured_value, show_all_opts, parser)
 
-                if opt.short_name:
-                    args.append(opt.short_name)
-
-                if opt.long_name:
-                    args.append(opt.long_name)
-                else:
-                    args.append(f"--{name.replace('_', '-')}")
-
-                kwargs["type"] = opt.converter
-                # configured value takes precedence over default
-                kwargs["default"] = configured_value or opt.default
-                kwargs["dest"] = name
-                # required opts become not required if configured
-                kwargs["required"] = not configured_value and opt.required
-                kwargs["help"] = (
-                    argparse.SUPPRESS
-                    if (configured_value and not show_all_opts)
-                    else opt.help or ""
-                )
-
-                parser.add_argument(*args, **kwargs)
             return parser
 
         category = attrdict.get("__category__")
@@ -160,6 +139,40 @@ def _generate_extension_command_func(
         )
 
     return create_extension_command
+
+
+def _add_option(
+    name: str,
+    opt: cli.Option,
+    configured_value: str,
+    show_all_opts: bool,
+    parser: argparse.ArgumentParser,
+) -> None:
+    """Add an option to the parser based on the cli option."""
+    args = []
+    kwargs = opt.argparse_kwargs or {}
+
+    if opt.short_name:
+        args.append(opt.short_name)
+
+    if opt.long_name:
+        args.append(opt.long_name)
+    else:
+        args.append(f"--{name.replace('_', '-')}")
+
+    kwargs["type"] = opt.converter
+    # configured value takes precedence over default
+    kwargs["default"] = configured_value or opt.default
+    kwargs["dest"] = name
+    # required opts become not required if configured
+    kwargs["required"] = not configured_value and opt.required
+    kwargs["help"] = (
+        argparse.SUPPRESS
+        if (configured_value and not show_all_opts)
+        else opt.help or ""
+    )
+
+    parser.add_argument(*args, **kwargs)
 
 
 class Plugin(metaclass=_PluginMeta):
