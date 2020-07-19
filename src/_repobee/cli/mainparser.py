@@ -218,7 +218,7 @@ def _add_subparsers(parser, show_all_opts, ext_commands, config_file):
         master_org_parser,
         _REPO_NAME_PARSER,
         categories,
-        config._read_config(config_file),
+        config._read_config(config_file) if config_file.is_file() else {},
         show_all_opts,
     )
 
