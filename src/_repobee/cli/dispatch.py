@@ -10,27 +10,14 @@ CLI into commands for RepoBee's core.
 """
 import argparse
 import pathlib
-from typing import Optional, List
+from typing import Optional, List, Mapping
 
 import repobee_plug as plug
+import daiquiri
 
 from _repobee import command, exception, formatters, util
-from _repobee.cli.mainparser import (
-    SETUP_PARSER,
-    UPDATE_PARSER,
-    OPEN_ISSUE_PARSER,
-    CLOSE_ISSUE_PARSER,
-    MIGRATE_PARSER,
-    CLONE_PARSER,
-    VERIFY_PARSER,
-    LIST_ISSUES_PARSER,
-    ASSIGN_REVIEWS_PARSER,
-    PURGE_REVIEW_TEAMS_PARSER,
-    SHOW_CONFIG_PARSER,
-    CHECK_REVIEW_PROGRESS_PARSER,
-    CREATE_TEAMS_PARSER,
-    LOGGER,
-)
+
+LOGGER = daiquiri.getLogger(__file__)
 
 
 def dispatch_command(
@@ -50,41 +37,76 @@ def dispatch_command(
         ext_commands: A list of active extension commands.
     """
     hook_results = {}
+    dispatch_table = {
+        plug.CoreCommand.repos: _dispatch_repos_command,
+        plug.CoreCommand.issues: _dispatch_issues_command,
+        plug.CoreCommand.config: _dispatch_config_command,
+        plug.CoreCommand.reviews: _dispatch_reviews_command,
+    }
 
-    ext_command_names = [cmd.name for cmd in ext_commands or []]
-    is_ext_command = args.subparser in ext_command_names
+    is_ext_command = "_extension_command" in args
     if is_ext_command:
-        ext_cmd = ext_commands[ext_command_names.index(args.subparser)]
+        ext_cmd = args._extension_command
         res = ext_cmd.callback(args, api)
         hook_results = {ext_cmd.name: [res]} if res else hook_results
-    elif args.subparser == SETUP_PARSER:
-        hook_results = command.setup_student_repos(
+    else:
+        category = plug.CoreCommand(args.category)
+        hook_results = (
+            dispatch_table[category](args, config_file, api) or hook_results
+        )
+
+    if is_ext_command or args.action in [
+        plug.CoreCommand.repos.setup.name,
+        plug.CoreCommand.repos.update.name,
+        plug.CoreCommand.repos.clone.name,
+    ]:
+        LOGGER.info(formatters.format_hook_results_output(hook_results))
+    if hook_results and "hook_results_file" in args and args.hook_results_file:
+        _handle_hook_results(
+            hook_results=hook_results, filepath=args.hook_results_file
+        )
+
+
+def _dispatch_repos_command(
+    args: argparse.Namespace, config_file: pathlib.Path, api: plug.API
+) -> Optional[Mapping[str, List[plug.Result]]]:
+    repos = plug.CoreCommand.repos
+    action = repos[args.action]
+    if action == repos.setup:
+        return command.setup_student_repos(
             args.master_repo_urls, args.students, api
         )
-    elif args.subparser == UPDATE_PARSER:
+    elif action == repos.update:
         command.update_student_repos(
             args.master_repo_urls, args.students, api, issue=args.issue
         )
-    elif args.subparser == OPEN_ISSUE_PARSER:
+        return None
+    elif action == repos.migrate:
+        command.migrate_repos(args.master_repo_urls, api)
+        return None
+    elif action == repos.clone:
+        return command.clone_repos(args.repos, api)
+    elif action == repos.create_teams:
+        api.ensure_teams_and_members(args.students)
+        return None
+    _raise_illegal_action_error(args)
+
+
+def _dispatch_issues_command(
+    args: argparse.Namespace, config_file: pathlib.Path, api: plug.API
+) -> Optional[Mapping[str, List[plug.Result]]]:
+    issues = plug.CoreCommand.issues
+    action = issues[args.action]
+    if action == issues.open:
         command.open_issue(
             args.issue, args.master_repo_names, args.students, api
         )
-    elif args.subparser == CLOSE_ISSUE_PARSER:
+        return None
+    elif action == issues.close:
         command.close_issue(args.title_regex, args.repos, api)
-    elif args.subparser == MIGRATE_PARSER:
-        command.migrate_repos(args.master_repo_urls, api)
-    elif args.subparser == CLONE_PARSER:
-        hook_results = command.clone_repos(args.repos, api)
-    elif args.subparser == VERIFY_PARSER:
-        plug.manager.hook.get_api_class().verify_settings(
-            args.user,
-            args.org_name,
-            args.base_url,
-            args.token,
-            args.master_org_name,
-        )
-    elif args.subparser == LIST_ISSUES_PARSER:
-        hook_results = command.list_issues(
+        return None
+    elif action == issues.list:
+        return command.list_issues(
             args.repos,
             api,
             state=args.state,
@@ -92,7 +114,35 @@ def dispatch_command(
             show_body=args.show_body,
             author=args.author,
         )
-    elif args.subparser == ASSIGN_REVIEWS_PARSER:
+    _raise_illegal_action_error(args)
+
+
+def _dispatch_config_command(
+    args: argparse.Namespace, config_file: pathlib.Path, api: plug.API
+) -> Optional[Mapping[str, List[plug.Result]]]:
+    config = plug.CoreCommand.config
+    action = config[args.action]
+    if action == config.verify:
+        plug.manager.hook.get_api_class().verify_settings(
+            args.user,
+            args.org_name,
+            args.base_url,
+            args.token,
+            args.master_org_name,
+        )
+        return None
+    elif action == config.show:
+        command.show_config(config_file)
+        return None
+    _raise_illegal_action_error(args)
+
+
+def _dispatch_reviews_command(
+    args: argparse.Namespace, config_file: pathlib.Path, api: plug.API
+) -> Optional[Mapping[str, List[plug.Result]]]:
+    reviews = plug.CoreCommand.reviews
+    action = reviews[args.action]
+    if action == reviews.assign:
         command.assign_peer_reviews(
             args.master_repo_names,
             args.students,
@@ -100,11 +150,11 @@ def dispatch_command(
             args.issue,
             api,
         )
-    elif args.subparser == PURGE_REVIEW_TEAMS_PARSER:
+        return None
+    elif action == reviews.end:
         command.purge_review_teams(args.master_repo_names, args.students, api)
-    elif args.subparser == SHOW_CONFIG_PARSER:
-        command.show_config(config_file)
-    elif args.subparser == CHECK_REVIEW_PROGRESS_PARSER:
+        return None
+    elif action == reviews.check:
         command.check_peer_review_progress(
             args.master_repo_names,
             args.students,
@@ -112,23 +162,14 @@ def dispatch_command(
             args.num_reviews,
             api,
         )
-    elif args.subparser == CREATE_TEAMS_PARSER:
-        api.ensure_teams_and_members(args.students)
-    else:
-        raise exception.ParseError(
-            "Illegal value for subparser: {}. "
-            "This is a bug, please open an issue.".format(args.subparser)
-        )
+        return None
+    _raise_illegal_action_error(args)
 
-    if (
-        args.subparser in [SETUP_PARSER, UPDATE_PARSER, CLONE_PARSER]
-        or is_ext_command
-    ):
-        LOGGER.info(formatters.format_hook_results_output(hook_results))
-    if hook_results and "hook_results_file" in args and args.hook_results_file:
-        _handle_hook_results(
-            hook_results=hook_results, filepath=args.hook_results_file
-        )
+
+def _raise_illegal_action_error(args: argparse.Namespace) -> None:
+    raise exception.ParseError(
+        f"Unknown action {args.action} for category {args.category}"
+    )
 
 
 def _handle_hook_results(hook_results, filepath):

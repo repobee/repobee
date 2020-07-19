@@ -26,38 +26,8 @@ from _repobee.cli.preparser import PRE_PARSER_SHOW_ALL_OPTS
 
 LOGGER = daiquiri.getLogger(__file__)
 
-SUB = "subparser"
-
-# Any new subparser mus tbe added to the PARSER_NAMES tuple!
-SETUP_PARSER = "setup"
-UPDATE_PARSER = "update"
-CLONE_PARSER = "clone"
-CREATE_TEAMS_PARSER = "create-teams"
-MIGRATE_PARSER = "migrate"
-OPEN_ISSUE_PARSER = "open-issues"
-CLOSE_ISSUE_PARSER = "close-issues"
-LIST_ISSUES_PARSER = "list-issues"
-VERIFY_PARSER = "verify-settings"
-ASSIGN_REVIEWS_PARSER = "assign-reviews"
-PURGE_REVIEW_TEAMS_PARSER = "end-reviews"
-CHECK_REVIEW_PROGRESS_PARSER = "check-reviews"
-SHOW_CONFIG_PARSER = "show-config"
-
-PARSER_NAMES = (
-    SETUP_PARSER,
-    UPDATE_PARSER,
-    CLONE_PARSER,
-    CREATE_TEAMS_PARSER,
-    MIGRATE_PARSER,
-    OPEN_ISSUE_PARSER,
-    CLOSE_ISSUE_PARSER,
-    LIST_ISSUES_PARSER,
-    VERIFY_PARSER,
-    ASSIGN_REVIEWS_PARSER,
-    PURGE_REVIEW_TEAMS_PARSER,
-    SHOW_CONFIG_PARSER,
-    CHECK_REVIEW_PROGRESS_PARSER,
-)
+SUB = "category"
+ACTION = "action"
 
 _HOOK_RESULTS_PARSER = argparse.ArgumentParser(add_help=False)
 _HOOK_RESULTS_PARSER.add_argument(
@@ -100,17 +70,6 @@ _DISCOVERY_MUTEX_GRP.add_argument(
     "may want to avoid this option.",
     action="store_true",
 )
-
-# add any diprecated parsers to this dict on the following form:
-#
-# ASSIGN_REVIEWS_PARSER_OLD: plug.Deprecation(
-#     replacement=ASSIGN_REVIEWS_PARSER, remove_by_version="2.0.0"
-# ),
-DEPRECATED_PARSERS = {
-    "purge-review-teams": plug.Deprecation(
-        replacement=PURGE_REVIEW_TEAMS_PARSER, remove_by_version="2.2.0"
-    )
-}
 
 
 def create_parser_for_docs() -> argparse.ArgumentParser:
@@ -195,9 +154,195 @@ def create_parser(
     return parser
 
 
-def _add_peer_review_parsers(base_parsers, subparsers):
-    assign_parser = subparsers.add_parser(
-        ASSIGN_REVIEWS_PARSER,
+def _add_subparsers(parser, show_all_opts, ext_commands, config_file):
+    """Add all of the subparsers to the parser. Note that the parsers prefixed
+    with `base_` do not have any parent parsers, so any parser inheriting from
+    them must also inherit from the required `base_parser` (unless it is a
+    `base_` prefixed parser, of course).
+    """
+
+    base_parser, base_student_parser, master_org_parser = _create_base_parsers(
+        show_all_opts, config_file
+    )
+
+    subparsers = parser.add_subparsers(dest=SUB)
+    subparsers.required = True
+    categories = {}
+
+    def _create_category_parsers(category, help, description):
+        category_command = subparsers.add_parser(
+            category.name, help=help, description=description
+        )
+        category_parsers = category_command.add_subparsers(dest=ACTION)
+        category_parsers.required = True
+        categories[category] = category_parsers
+        return category_parsers
+
+    repo_parsers = _create_category_parsers(
+        plug.CoreCommand.repos,
+        description="Manage repositories.",
+        help="Manage repositories.",
+    )
+    issues_parsers = _create_category_parsers(
+        plug.CoreCommand.issues,
+        description="Manage issues.",
+        help="Manage issues.",
+    )
+    review_parsers = _create_category_parsers(
+        plug.CoreCommand.reviews,
+        help="Manage peer reviews.",
+        description="Manage peer reviews.",
+    )
+    config_parsers = _create_category_parsers(
+        plug.CoreCommand.config,
+        help="Configure RepoBee.",
+        description="Configure RepoBee.",
+    )
+
+    _add_repo_parsers(
+        base_parser, base_student_parser, master_org_parser, repo_parsers
+    )
+    _add_issue_parsers(
+        [base_parser, base_student_parser, _REPO_NAME_PARSER], issues_parsers
+    )
+    _add_peer_review_parsers(
+        [base_parser, base_student_parser, _REPO_NAME_PARSER], review_parsers
+    )
+    _add_config_parsers(base_parser, master_org_parser, config_parsers)
+
+    return _add_extension_parsers(
+        subparsers,
+        ext_commands,
+        base_parser,
+        base_student_parser,
+        master_org_parser,
+        _REPO_NAME_PARSER,
+        categories,
+    )
+
+
+def _add_repo_parsers(
+    base_parser, base_student_parser, master_org_parser, repo_parsers
+):
+    repo_parsers.add_parser(
+        plug.CoreCommand.repos.setup.name,
+        help="Setup student repos.",
+        description=(
+            "Setup student repositories based on master repositories. "
+            "This command performs three primary actions: sets up the "
+            "student teams, creates one student repository for each "
+            "master repository and finally pushes the master repo files to "
+            "the corresponding student repos. It is perfectly safe to run "
+            "this command several times, as any previously performed step "
+            "will simply be skipped."
+        ),
+        parents=[
+            base_parser,
+            base_student_parser,
+            master_org_parser,
+            _REPO_NAME_PARSER,
+            _HOOK_RESULTS_PARSER,
+        ],
+        formatter_class=_OrderedFormatter,
+    )
+
+    update = repo_parsers.add_parser(
+        plug.CoreCommand.repos.update.name,
+        help="Update existing student repos.",
+        description=(
+            "Push changes from master repos to student repos. If the "
+            "`--issue` option is provided, the specified issue is opened in "
+            "any repo to which pushes fail (because the students have pushed "
+            "something already)."
+        ),
+        parents=[
+            base_parser,
+            base_student_parser,
+            master_org_parser,
+            _REPO_NAME_PARSER,
+        ],
+        formatter_class=_OrderedFormatter,
+    )
+    update.add_argument(
+        "-i",
+        "--issue",
+        help=(
+            "Path to issue to open in repos to which pushes fail. "
+            "Assumes that the first line is the title of the issue."
+        ),
+        type=str,
+    )
+
+    clone = repo_parsers.add_parser(
+        plug.CoreCommand.repos.clone.name,
+        help="Clone student repos.",
+        description="Clone student repos asynchronously in bulk.",
+        parents=[
+            base_parser,
+            base_student_parser,
+            _REPO_DISCOVERY_PARSER,
+            _HOOK_RESULTS_PARSER,
+        ],
+        formatter_class=_OrderedFormatter,
+    )
+
+    for task in plug.manager.hook.clone_task():
+        util.call_if_defined(task.add_option, clone)
+
+    plug.manager.hook.clone_parser_hook(clone_parser=clone)
+
+    repo_parsers.add_parser(
+        plug.CoreCommand.repos.create_teams.name,
+        help="Create student teams without creating repos.",
+        description=(
+            "Only create student teams. This is intended for when you want to "
+            "use RepoBee for management, but don't want to dictate the names "
+            "of your student's repositories. The `setup` command performs "
+            "this step automatically, so there is never a need to run both "
+            "this command AND `setup`."
+        ),
+        parents=[base_parser, base_student_parser],
+        formatter_class=_OrderedFormatter,
+    )
+
+    repo_parsers.add_parser(
+        plug.CoreCommand.repos.migrate.name,
+        help="Migrate repositories into the target organization.",
+        description=(
+            "Migrate repositories into the target organization. "
+            "The repos must be local on disk to be migrated. Note that "
+            "migrated repos will be private."
+        ),
+        parents=[_REPO_NAME_PARSER, base_parser],
+        formatter_class=_OrderedFormatter,
+    )
+
+
+def _add_config_parsers(base_parser, master_org_parser, config_parsers):
+    show_config = config_parsers.add_parser(
+        plug.CoreCommand.config.show.name,
+        help="Show the configuration file",
+        description=(
+            "Show the contents of the configuration file. If no configuration "
+            "file can be found, show the path where repobee expectes to find "
+            "it."
+        ),
+        formatter_class=_OrderedFormatter,
+    )
+    _add_traceback_arg(show_config)
+
+    config_parsers.add_parser(
+        plug.CoreCommand.config.verify.name,
+        help="Verify core settings.",
+        description="Verify core settings by trying various API requests.",
+        parents=[base_parser, master_org_parser],
+        formatter_class=_OrderedFormatter,
+    )
+
+
+def _add_peer_review_parsers(base_parsers, review_parsers):
+    assign_parser = review_parsers.add_parser(
+        plug.CoreCommand.reviews.assign.name,
         description=(
             "For each student repo, create a review team with read access "
             "named <student-repo-name>-review and randomly assign "
@@ -232,8 +377,8 @@ def _add_peer_review_parsers(base_parsers, subparsers):
         ),
         type=str,
     )
-    check_review_progress = subparsers.add_parser(
-        CHECK_REVIEW_PROGRESS_PARSER,
+    check_review_progress = review_parsers.add_parser(
+        plug.CoreCommand.reviews.check.name,
         description=(
             "Check which students have opened review review issues in their "
             "assigned repos. As it is possible for students to leave the peer "
@@ -267,8 +412,8 @@ def _add_peer_review_parsers(base_parsers, subparsers):
         type=int,
         required=True,
     )
-    subparsers.add_parser(
-        PURGE_REVIEW_TEAMS_PARSER,
+    review_parsers.add_parser(
+        plug.CoreCommand.reviews.end.name,
         description=(
             "Delete review allocations assigned with `assign-reviews`. "
             "This is a destructive action, as the allocations for reviews "
@@ -290,11 +435,10 @@ def _add_peer_review_parsers(base_parsers, subparsers):
     )
 
 
-def _add_issue_parsers(base_parsers, subparsers):
-    base_parser, base_student_parser, *_ = base_parsers
-
-    open_parser = subparsers.add_parser(
-        OPEN_ISSUE_PARSER,
+def _add_issue_parsers(base_parsers, issue_parsers):
+    base_parser, base_student_parser, master_org_parser = base_parsers
+    open_parser = issue_parsers.add_parser(
+        plug.CoreCommand.issues.open.name,
         description=(
             "Open issues in student repositories. For each master repository "
             "specified, the student list is traversed. For every student repo "
@@ -314,8 +458,8 @@ def _add_issue_parsers(base_parsers, subparsers):
         required=True,
     )
 
-    close_parser = subparsers.add_parser(
-        CLOSE_ISSUE_PARSER,
+    close_parser = issue_parsers.add_parser(
+        plug.CoreCommand.issues.close.name,
         description=(
             "Close issues in student repos based on a regex. For each master "
             "repository specified, the student list is traversed. For every "
@@ -337,8 +481,8 @@ def _add_issue_parsers(base_parsers, subparsers):
         required=True,
     )
 
-    list_parser = subparsers.add_parser(
-        LIST_ISSUES_PARSER,
+    list_parser = issue_parsers.add_parser(
+        plug.CoreCommand.issues.list.name,
         description="List issues in student repos.",
         help="List issues in student repos.",
         parents=[
@@ -447,6 +591,7 @@ def _add_extension_parsers(
     base_student_parser,
     master_org_parser,
     repo_name_parser,
+    categories,
 ):
     """Add extension parsers defined by plugins."""
     if not ext_commands:
@@ -468,7 +613,8 @@ def _add_extension_parsers(
             parents.append(repo_name_parser)
         parents.append(cmd.parser)
 
-        ext_parser = subparsers.add_parser(
+        category_parsers = categories.get(cmd.category) or subparsers
+        ext_parser = category_parsers.add_parser(
             cmd.name,
             help=cmd.help,
             description=cmd.description,
@@ -478,154 +624,39 @@ def _add_extension_parsers(
         try:
             _add_traceback_arg(ext_parser)
         except argparse.ArgumentError:
-            # already added
             pass
 
+        ext_parser.add_argument(
+            "--repobee-action",
+            action="store_const",
+            help=argparse.SUPPRESS,
+            const=cmd.name,
+            default=cmd.name,
+            dest="action",
+        )
+
+        # This is a little bit of a dirty trick. It allows us to easily
+        # find the associated extension command when parsing the arguments.
+        ext_parser.add_argument(
+            "--repobee-extension-command",
+            action="store_const",
+            help=argparse.SUPPRESS,
+            const=cmd,
+            default=cmd,
+            dest="_extension_command",
+        )
+        if category_parsers == subparsers:
+            # in this case it's a category action, and we must add the category
+            ext_parser.add_argument(
+                "--repobee-category",
+                action="store_const",
+                help=argparse.SUPPRESS,
+                const=cmd.name,
+                default=cmd.name,
+                dest="category",
+            )
+
     return ext_commands
-
-
-def _add_subparsers(parser, show_all_opts, ext_commands, config_file):
-    """Add all of the subparsers to the parser. Note that the parsers prefixed
-    with `base_` do not have any parent parsers, so any parser inheriting from
-    them must also inherit from the required `base_parser` (unless it is a
-    `base_` prefixed parser, of course).
-    """
-
-    base_parser, base_student_parser, master_org_parser = _create_base_parsers(
-        show_all_opts, config_file
-    )
-
-    subparsers = parser.add_subparsers(dest=SUB)
-    subparsers.required = True
-
-    subparsers.add_parser(
-        SETUP_PARSER,
-        help="Setup student repos.",
-        description=(
-            "Setup student repositories based on master repositories. "
-            "This command performs three primary actions: sets up the "
-            "student teams, creates one student repository for each "
-            "master repository and finally pushes the master repo files to "
-            "the corresponding student repos. It is perfectly safe to run "
-            "this command several times, as any previously performed step "
-            "will simply be skipped."
-        ),
-        parents=[
-            base_parser,
-            base_student_parser,
-            master_org_parser,
-            _REPO_NAME_PARSER,
-            _HOOK_RESULTS_PARSER,
-        ],
-        formatter_class=_OrderedFormatter,
-    )
-
-    update = subparsers.add_parser(
-        UPDATE_PARSER,
-        help="Update existing student repos.",
-        description=(
-            "Push changes from master repos to student repos. If the "
-            "`--issue` option is provided, the specified issue is opened in "
-            "any repo to which pushes fail (because the students have pushed "
-            "something already)."
-        ),
-        parents=[
-            base_parser,
-            base_student_parser,
-            master_org_parser,
-            _REPO_NAME_PARSER,
-        ],
-        formatter_class=_OrderedFormatter,
-    )
-    update.add_argument(
-        "-i",
-        "--issue",
-        help=(
-            "Path to issue to open in repos to which pushes fail. "
-            "Assumes that the first line is the title of the issue."
-        ),
-        type=str,
-    )
-
-    clone = subparsers.add_parser(
-        CLONE_PARSER,
-        help="Clone student repos.",
-        description="Clone student repos asynchronously in bulk.",
-        parents=[
-            base_parser,
-            base_student_parser,
-            _REPO_DISCOVERY_PARSER,
-            _HOOK_RESULTS_PARSER,
-        ],
-        formatter_class=_OrderedFormatter,
-    )
-
-    for task in plug.manager.hook.clone_task():
-        util.call_if_defined(task.add_option, clone)
-
-    plug.manager.hook.clone_parser_hook(clone_parser=clone)
-
-    subparsers.add_parser(
-        CREATE_TEAMS_PARSER,
-        help="Create student teams without creating repos.",
-        description=(
-            "Only create student teams. This is intended for when you want to "
-            "use RepoBee for management, but don't want to dictate the names "
-            "of your student's repositories. The `setup` command performs "
-            "this step automatically, so there is never a need to run both "
-            "this command AND `setup`."
-        ),
-        parents=[base_parser, base_student_parser],
-        formatter_class=_OrderedFormatter,
-    )
-
-    subparsers.add_parser(
-        MIGRATE_PARSER,
-        help="Migrate repositories into the target organization.",
-        description=(
-            "Migrate repositories into the target organization. "
-            "The repos must be local on disk to be migrated. Note that "
-            "migrated repos will be private."
-        ),
-        parents=[_REPO_NAME_PARSER, base_parser],
-        formatter_class=_OrderedFormatter,
-    )
-
-    _add_issue_parsers(
-        [base_parser, base_student_parser, _REPO_NAME_PARSER], subparsers
-    )
-    _add_peer_review_parsers(
-        [base_parser, base_student_parser, _REPO_NAME_PARSER], subparsers
-    )
-
-    show_config = subparsers.add_parser(
-        SHOW_CONFIG_PARSER,
-        help="Show the configuration file",
-        description=(
-            "Show the contents of the configuration file. If no configuration "
-            "file can be found, show the path where repobee expectes to find "
-            "it."
-        ),
-        formatter_class=_OrderedFormatter,
-    )
-    _add_traceback_arg(show_config)
-
-    subparsers.add_parser(
-        VERIFY_PARSER,
-        help="Verify core settings.",
-        description="Verify core settings by trying various API requests.",
-        parents=[base_parser, master_org_parser],
-        formatter_class=_OrderedFormatter,
-    )
-
-    return _add_extension_parsers(
-        subparsers,
-        ext_commands,
-        base_parser,
-        base_student_parser,
-        master_org_parser,
-        _REPO_NAME_PARSER,
-    )
 
 
 def _create_base_parsers(show_all_opts, config_file):

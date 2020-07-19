@@ -12,6 +12,7 @@ from repobee_plug._containers import Result
 from repobee_plug._containers import Status
 from repobee_plug._containers import ExtensionParser
 from repobee_plug._containers import ExtensionCommand
+from repobee_plug._containers import CoreCommand
 from repobee_plug._containers import ReviewAllocation
 from repobee_plug._containers import BaseParser
 from repobee_plug._containers import Deprecation
@@ -73,6 +74,7 @@ __all__ = [
     "Status",
     "ExtensionParser",
     "ExtensionCommand",
+    "CoreCommand",
     "ReviewAllocation",
     "Review",
     "Task",

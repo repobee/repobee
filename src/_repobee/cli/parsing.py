@@ -22,16 +22,11 @@ import daiquiri
 import repobee_plug as plug
 
 import _repobee
-from _repobee import util, exception, constants
-from _repobee.cli.mainparser import (
-    create_parser,
-    SHOW_CONFIG_PARSER,
-    VERIFY_PARSER,
-    CLONE_PARSER,
-    SETUP_PARSER,
-    DEPRECATED_PARSERS,
-    LOGGER,
-)
+import _repobee.cli.mainparser
+from _repobee import util, exception, constants, cli
+
+
+LOGGER = daiquiri.getLogger(__file__)
 
 
 class _ArgsProcessing(enum.Enum):
@@ -72,7 +67,7 @@ def handle_args(
         _handle_task_parsing(processed_args)
         return processed_args, api
     elif processing == _ArgsProcessing.EXT:
-        processed_args, api = _process_ext_args(args, ext_commands)
+        processed_args, api = _process_ext_args(args)
         return processed_args, api
     return args, None
 
@@ -98,11 +93,12 @@ def _parse_args(
         A namespace of parsed arpuments and a boolean that specifies whether or
         not further processing is required.
     """
-    parser = create_parser(show_all_opts, ext_commands, config_file)
+    parser = cli.mainparser.create_parser(
+        show_all_opts, ext_commands, config_file
+    )
     args = parser.parse_args(_handle_deprecation(sys_args))
 
-    ext_cmd = _resolve_extension_command(args.subparser, ext_commands)
-    if ext_cmd:
+    if "_extension_command" in args:
         return args, _ArgsProcessing.EXT
 
     if "base_url" in args:
@@ -121,7 +117,7 @@ def _parse_args(
     args_dict.setdefault("num_reviews", None)
     args_dict.setdefault("user", None)
 
-    requires_processing = _resolve_requires_processing(args.subparser)
+    requires_processing = _resolve_requires_processing(args)
     return argparse.Namespace(**args_dict), requires_processing
 
 
@@ -134,12 +130,16 @@ def _resolve_extension_command(
     return None
 
 
-def _resolve_requires_processing(subparser) -> _ArgsProcessing:
+def _resolve_requires_processing(args: argparse.Namespace) -> _ArgsProcessing:
     """Figure out if further processing of the parsed args is required.
     This is primarily decided on whether or not the platform API is required,
     as that implies further processing.
     """
-    if subparser in [VERIFY_PARSER, SHOW_CONFIG_PARSER]:
+    action = plug.CoreCommand(args.category)[args.action]
+    if action in [
+        plug.CoreCommand.config.verify,
+        plug.CoreCommand.config.show,
+    ]:
         return _ArgsProcessing.NONE
     return _ArgsProcessing.CORE
 
@@ -191,15 +191,14 @@ def _handle_task_parsing(args: argparse.Namespace) -> None:
     """Call hooks that allows Tasks to parse command line arguments. Must be
     called with fully processed args.
     """
-    if args.subparser not in [CLONE_PARSER, SETUP_PARSER]:
-        return
-
     assert args._repobee_processed
-    if args.subparser == CLONE_PARSER:
+
+    action = plug.CoreCommand(args.category)[args.action]
+    if action == plug.CoreCommand.repos.clone:
         plug.manager.hook.parse_args(args=args)
         for task in plug.manager.hook.clone_task():
             util.call_if_defined(task.handle_args, args)
-    elif args.subparser == SETUP_PARSER:
+    elif args.action == plug.CoreCommand.repos.setup:
         for task in plug.manager.hook.setup_task():
             util.call_if_defined(task.handle_args, args)
 
@@ -221,23 +220,8 @@ def _handle_deprecation(sys_args: List[str]) -> List[str]:
         The sys_args list with any deprecated command replaced with the current
         one.
     """
-    if not sys_args:
-        return []
-
-    parser_name = sys_args[0]
-    if parser_name in DEPRECATED_PARSERS:
-        deprecation = DEPRECATED_PARSERS[parser_name]
-        LOGGER.warning(
-            "Use of '{}' has been deprecated and will be removed by {}, "
-            "use '{}' instead".format(
-                parser_name,
-                deprecation.remove_by_version,
-                deprecation.replacement,
-            )
-        )
-        return [deprecation.replacement] + sys_args[1:]
-
-    return list(sys_args)
+    # FIXME Deprecation needs to be re-implemented
+    return sys_args
 
 
 def _extract_groups(args: argparse.Namespace) -> List[str]:
@@ -331,9 +315,9 @@ def _repo_names_to_urls(
 
 
 def _process_ext_args(
-    args: argparse.Namespace, ext_commands: List[plug.ExtensionCommand]
+    args: argparse.Namespace,
 ) -> Tuple[argparse.Namespace, Optional[plug.API]]:
-    ext_cmd = _resolve_extension_command(args.subparser, ext_commands)
+    ext_cmd = args._extension_command
     assert ext_cmd
 
     api = None

@@ -79,7 +79,7 @@ def create_extension_command():
     parser = plug.ExtensionParser()
     return plug.ExtensionCommand(
         parser=parser,
-        name="config-wizard",
+        name="wizard",
         help="Interactive configuration wizard to set up the config file.",
         description=(
             "A configuration wizard that sets up the configuration file."
@@ -87,4 +87,5 @@ def create_extension_command():
             "overwritten."
         ),
         callback=callback,
+        category=plug.CoreCommand.config,
     )
