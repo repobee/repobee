@@ -44,11 +44,8 @@ class _PluginMeta(type):
         Checking signatures is delegated to ``pluggy`` during registration of
         the hook.
         """
-        cli_options = _extract_cli_options(attrdict)
-        if cli_options:
-            ext_cmd_func = _generate_extension_command_func(
-                attrdict, cli_options
-            )
+        if cli.Action in bases:
+            ext_cmd_func = _generate_extension_command_func(attrdict)
             attrdict[ext_cmd_func.__name__] = ext_cmd_func
 
         methods = cls._extract_public_methods(attrdict)
@@ -94,12 +91,11 @@ def _extract_cli_options(attrdict) -> List[Tuple[str, cli.Option]]:
     ]
 
 
-def _generate_extension_command_func(
-    attrdict: Mapping[str, Any], opts: List[Tuple[str, cli.Option]]
-) -> Callable:
+def _generate_extension_command_func(attrdict: Mapping[str, Any]) -> Callable:
     """Generate an implementation of the ``create_extension_command`` hook
     function based on the declarative-style extension command class.
     """
+    opts = _extract_cli_options(attrdict)
 
     def create_extension_command(self):
         def create_parser(config, show_all_opts):
@@ -128,6 +124,8 @@ def _generate_extension_command_func(
         ) or self.__class__.__name__.lower().replace("_", "-")
         help = attrdict.get("__help__") or ""
         description = attrdict.get("__description__") or ""
+        requires_api = attrdict.get("__requires_api__") or False
+        base_parsers = attrdict.get("__base_parsers__") or None
 
         return _containers.ExtensionCommand(
             parser=create_parser,
@@ -136,6 +134,8 @@ def _generate_extension_command_func(
             description=description,
             callback=self.action_callback,
             category=category,
+            requires_api=requires_api,
+            requires_base_parsers=base_parsers,
         )
 
     return create_extension_command
