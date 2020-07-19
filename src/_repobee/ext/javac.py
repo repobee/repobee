@@ -37,7 +37,8 @@ class JavacCloneHook(plug.Plugin):
     adding/parsing arguments and acting on the repo.
     """
 
-    def __init__(self):
+    def __init__(self, plugin_name: str):
+        super().__init__(plugin_name)
         self._ignore = []
 
     def clone_task(self) -> plug.Task:

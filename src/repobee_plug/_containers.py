@@ -349,7 +349,7 @@ class ExtensionCommand(
     ):
         if not (isinstance(parser, ExtensionParser) or callable(parser)):
             raise _exceptions.ExtensionCommandError(
-                "parser must be callable or a {.__name__}".format(
+                "parser must be a {.__name__} or callable".format(
                     ExtensionParser
                 )
             )

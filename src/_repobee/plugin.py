@@ -151,7 +151,6 @@ def register_plugins(modules: List[ModuleType]) -> List[object]:
     registered = []
     for module in reversed(modules):  # reverse because plugins are run LIFO
         plugin_name = module.__name__.split(".")[-1]
-        module._repobee_plugin_name = plugin_name
         plug.manager.register(module)
         registered.append(module)
 
@@ -162,7 +161,6 @@ def register_plugins(modules: List[ModuleType]) -> List[object]:
                 and value != plug.Plugin
             ):
                 obj = value(plugin_name)
-                obj._repobee_plugin_name = plugin_name
                 plug.manager.register(obj)
                 registered.append(obj)
 
