@@ -48,7 +48,12 @@ def parse_args(sys_args: List[str]) -> argparse.Namespace:
         *PRE_PARSER_CONFIG_OPTS,
         help="Specify path to the config file to use.",
         type=pathlib.Path,
-        default=_repobee.constants.DEFAULT_CONFIG_FILE,
+        default=_repobee.constants.DEFAULT_CONFIG_FILE
+    )
+    parser.add_argument(
+        PRE_PARSER_SHOW_ALL_OPTS,
+        help="Unsuppress all options in help menus",
+        action="store_true",
     )
 
     mutex_grp = parser.add_mutually_exclusive_group()
@@ -61,11 +66,6 @@ def parse_args(sys_args: List[str]) -> argparse.Namespace:
     )
     mutex_grp.add_argument(
         PRE_PARSER_NO_PLUGS, help="Disable plugins.", action="store_true"
-    )
-    mutex_grp.add_argument(
-        PRE_PARSER_SHOW_ALL_OPTS,
-        help="Unsuppress all options in help menus",
-        action="store_true",
     )
 
     args = parser.parse_args(sys_args)

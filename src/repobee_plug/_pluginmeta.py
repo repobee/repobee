@@ -1,3 +1,6 @@
+import argparse
+import collections
+
 from repobee_plug import _exceptions
 from repobee_plug import _corehooks
 from repobee_plug import _exthooks
@@ -60,11 +63,105 @@ class _PluginMeta(type):
         return {
             key: value
             for key, value in attrdict.items()
-            if callable(value) and not key.startswith("_")
+            if callable(value)
+            and not key.startswith("_")
+            and key != "action_callback"
         }
 
 
-class Plugin(metaclass=_PluginMeta):
+opt = collections.namedtuple(
+    "opt",
+    [
+        "short_name",
+        "long_name",
+        "configurable",
+        "help",
+        "description",
+        "converter",
+        "required",
+        "default",
+        "argparse_kwargs",
+    ],
+)
+opt.__new__.__defaults__ = (None,) * len(opt._fields)
+
+
+class _ActionMeta(_PluginMeta):
+    def __new__(cls, name, bases, attrdict):
+        opts = []
+        for key, value in attrdict.items():
+            if isinstance(value, opt):
+                argparse_args = []
+                argparse_kwargs = value.argparse_kwargs or {}
+
+                if value.short_name:
+                    argparse_args.append(value.short_name)
+
+                if value.long_name:
+                    argparse_args.append(value.long_name)
+                else:
+                    argparse_args.append(f"--{key.replace('_', '-')}")
+
+                if value.converter:
+                    argparse_kwargs["type"] = value.converter
+
+                for kwarg_key in "required default help description".split():
+                    kwarg_val = getattr(value, kwarg_key)
+                    if kwarg_val:
+                        argparse_kwargs[kwarg_key] = kwarg_val
+
+                argparse_kwargs["dest"] = key
+
+                opts.append((argparse_args, argparse_kwargs))
+
+        if opts:
+            category = attrdict["__category__"]
+            action_name = attrdict["__action_name__"]
+
+            def create_extension_command(self):
+                def create_parser(config, show_all_opts):
+                    parser = _containers.ExtensionParser()
+
+                    config_section = (
+                        dict(config[self.plugin_name])
+                        if self.plugin_name in config
+                        else {}
+                    )
+
+                    for (args, kwargs) in opts:
+                        dest = kwargs["dest"]
+                        is_configured = dest in config_section
+
+                        kwargs["required"] = (
+                            not is_configured and kwargs["required"]
+                        )
+                        kwargs["help"] = (
+                            argparse.SUPPRESS
+                            if (is_configured and not show_all_opts)
+                            else kwargs["help"]
+                        )
+                        if is_configured:
+                            kwargs["default"] = config_section[dest]
+
+                        parser.add_argument(*args, **kwargs)
+                    return parser
+
+                return _containers.ExtensionCommand(
+                    parser=create_parser,
+                    name=action_name,
+                    help="Yay",
+                    description="Yay",
+                    callback=self.action_callback,
+                    category=category,
+                )
+
+            # add the extension command
+            attrdict["create_extension_command"] = create_extension_command
+
+        return super().__new__(cls, name, bases, attrdict)
+
+
+class Plugin(metaclass=_ActionMeta):
     """This is a base class for plugin classes. For plugin classes to be picked
     up by RepoBee, they must inherit from this class.
 
@@ -87,3 +184,10 @@ class Plugin(metaclass=_PluginMeta):
     well suited for implementing tasks that require command line options or
     configuration values, as well as for implementing extension commands.
     """
+
+    def __init__(self, plugin_name: str):
+        """
+        Args:
+            plugin_name: Name of the plugin that this instance belongs to.
+        """
+        self.plugin_name = plugin_name

@@ -347,9 +347,11 @@ class ExtensionCommand(
         requires_base_parsers: Optional[List[BaseParser]] = None,
         category: Optional[CoreCommand] = None,
     ):
-        if not isinstance(parser, ExtensionParser):
+        if not (isinstance(parser, ExtensionParser) or callable(parser)):
             raise _exceptions.ExtensionCommandError(
-                "parser must be a {.__name__}".format(ExtensionParser)
+                "parser must be callable or a {.__name__}".format(
+                    ExtensionParser
+                )
             )
         if not callable(callback):
             raise _exceptions.ExtensionCommandError(
