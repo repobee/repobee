@@ -19,6 +19,21 @@ from _repobee import constants
 LOGGER = daiquiri.getLogger(__file__)
 
 
+class Wizard(plug.Plugin, plug.cli.Command):
+    __category__ = plug.CoreCommand.config
+    __help__ = "Interactive configuration wizard to set up the config file."
+    __description__ = (
+        "A configuration wizard that sets up the configuration file."
+        "Warns if there already is a configuration file, as it will be "
+        "overwritten."
+    )
+
+    def command_callback(
+        self, args: argparse.Namespace, api: plug.API
+    ) -> None:
+        return callback(args, api)
+
+
 def callback(args: argparse.Namespace, api: plug.API) -> None:
     """Run through a configuration wizard."""
     parser = configparser.ConfigParser()
@@ -71,21 +86,4 @@ def callback(args: argparse.Namespace, api: plug.API) -> None:
         "Configuration file written to {}".format(
             str(constants.DEFAULT_CONFIG_FILE)
         )
-    )
-
-
-@plug.repobee_hook
-def create_extension_command():
-    parser = plug.ExtensionParser()
-    return plug.ExtensionCommand(
-        parser=parser,
-        name="wizard",
-        help="Interactive configuration wizard to set up the config file.",
-        description=(
-            "A configuration wizard that sets up the configuration file."
-            "Warns if there already is a configuration file, as it will be "
-            "overwritten."
-        ),
-        callback=callback,
-        category=plug.CoreCommand.config,
     )

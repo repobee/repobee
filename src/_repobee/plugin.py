@@ -136,7 +136,7 @@ def _try_load_module(qualname: str) -> Optional[ModuleType]:
         return None
 
 
-def register_plugins(modules: List[ModuleType],) -> List[object]:
+def register_plugins(modules: List[ModuleType]) -> List[object]:
     """Register the namespaces of the provided modules, and any plug.Plugin
     instances in them. Registers modules in reverse order as they are
     run in LIFO order.
@@ -150,6 +150,7 @@ def register_plugins(modules: List[ModuleType],) -> List[object]:
 
     registered = []
     for module in reversed(modules):  # reverse because plugins are run LIFO
+        plugin_name = module.__name__.split(".")[-1]
         plug.manager.register(module)
         registered.append(module)
 
@@ -159,7 +160,7 @@ def register_plugins(modules: List[ModuleType],) -> List[object]:
                 and issubclass(value, plug.Plugin)
                 and value != plug.Plugin
             ):
-                obj = value()
+                obj = value(plugin_name)
                 plug.manager.register(obj)
                 registered.append(obj)
 

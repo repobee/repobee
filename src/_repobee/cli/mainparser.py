@@ -218,6 +218,8 @@ def _add_subparsers(parser, show_all_opts, ext_commands, config_file):
         master_org_parser,
         _REPO_NAME_PARSER,
         categories,
+        config._read_config(config_file) if config_file.is_file() else {},
+        show_all_opts,
     )
 
 
@@ -592,6 +594,8 @@ def _add_extension_parsers(
     master_org_parser,
     repo_name_parser,
     categories,
+    parsed_config,
+    show_all_opts,
 ):
     """Add extension parsers defined by plugins."""
     if not ext_commands:
@@ -611,7 +615,13 @@ def _add_extension_parsers(
             parents.append(_REPO_DISCOVERY_PARSER)
         elif bp.REPO_NAMES in req_parsers:
             parents.append(repo_name_parser)
-        parents.append(cmd.parser)
+
+        cmd_parser = (
+            cmd.parser(parsed_config, show_all_opts)
+            if callable(cmd.parser)
+            else cmd.parser
+        )
+        parents.append(cmd_parser)
 
         category_parsers = categories.get(cmd.category) or subparsers
         ext_parser = category_parsers.add_parser(

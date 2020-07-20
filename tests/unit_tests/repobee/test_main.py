@@ -2,7 +2,7 @@ import argparse
 import tempfile
 import pathlib
 import types
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch, call, ANY
 from collections import namedtuple
 
 import pytest
@@ -44,7 +44,9 @@ CLONE_ARGS = "clone --mn week-2 -s slarse".split()
 
 module = namedtuple("module", ("name",))
 
-DEFAULT_EXT_COMMANDS = [configwizard.create_extension_command()]
+DEFAULT_EXT_COMMANDS = [
+    configwizard.Wizard("config-wizard").create_extension_command()
+]
 DEFAULT_PLUGIN_NAMES = plugin.get_qualified_module_names(_repobee.ext.defaults)
 
 
@@ -101,14 +103,14 @@ def test_happy_path(
     handle_args_mock.assert_called_once_with(
         sys_args[1:],
         show_all_opts=False,
-        ext_commands=DEFAULT_EXT_COMMANDS,
+        ext_commands=[ANY] * len(DEFAULT_EXT_COMMANDS),
         config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
     dispatch_command_mock.assert_called_once_with(
         PARSED_ARGS,
         api_instance_mock,
         _repobee.constants.DEFAULT_CONFIG_FILE,
-        DEFAULT_EXT_COMMANDS,
+        [ANY] * len(DEFAULT_EXT_COMMANDS),
     )
 
 
@@ -126,7 +128,7 @@ def test_exit_status_1_on_exception_in_parsing(
     handle_args_mock.assert_called_once_with(
         sys_args[1:],
         show_all_opts=False,
-        ext_commands=DEFAULT_EXT_COMMANDS,
+        ext_commands=[ANY] * len(DEFAULT_EXT_COMMANDS),
         config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
     assert not dispatch_command_mock.called
@@ -147,7 +149,7 @@ def test_exit_status_1_on_exception_in_handling_parsed_args(
     handle_args_mock.assert_called_once_with(
         sys_args[1:],
         show_all_opts=False,
-        ext_commands=DEFAULT_EXT_COMMANDS,
+        ext_commands=[ANY] * len(DEFAULT_EXT_COMMANDS),
         config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
 
@@ -359,7 +361,7 @@ def test_logs_traceback_on_exception_in_dispatch_if_traceback(
     handle_args_mock.assert_called_once_with(
         [*CLONE_ARGS, "--traceback"],
         show_all_opts=False,
-        ext_commands=DEFAULT_EXT_COMMANDS,
+        ext_commands=[ANY] * len(DEFAULT_EXT_COMMANDS),
         config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
 
@@ -393,7 +395,7 @@ def test_show_all_opts_correctly_separated(
     handle_args_mock.assert_called_once_with(
         [*plug.CoreCommand.repos.setup.astuple(), "-h"],
         show_all_opts=True,
-        ext_commands=DEFAULT_EXT_COMMANDS,
+        ext_commands=[ANY] * len(DEFAULT_EXT_COMMANDS),
         config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
     parse_preparser_options_mock.assert_called_once_with(

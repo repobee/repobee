@@ -10,7 +10,7 @@ import shutil
 import pathlib
 import tempfile
 import types
-from unittest.mock import call, MagicMock, patch
+from unittest.mock import call, patch, ANY
 
 import pytest
 
@@ -99,37 +99,21 @@ class TestLoadPluginModules:
 class TestRegisterPlugins:
     """Tests for register_plugins."""
 
-    @pytest.fixture
-    def javac_clone_hook_mock(self, mocker):
-        """Return an instance of the clone hook mock"""
-        instance_mock = MagicMock()
-        mocker.patch(
-            "_repobee.ext.javac.JavacCloneHook.__new__",
-            autospec=True,
-            return_value=instance_mock,
-        )
-        return instance_mock
-
     def test_register_module(self, plugin_manager_mock):
         """Test registering a plugin module with module level hooks."""
         plugin.register_plugins([pylint])
-
         plugin_manager_mock.register.assert_called_once_with(pylint)
 
-    def test_register_module_with_plugin_class(
-        self, plugin_manager_mock, javac_clone_hook_mock
-    ):
+    def test_register_module_with_plugin_class(self, plugin_manager_mock):
         """Test that both the module itself and the class (instance) are
         registered."""
-        expected_calls = [call(javac), call(javac_clone_hook_mock)]
+        expected_calls = [call(javac), call(ANY)]
 
         plugin.register_plugins([javac])
 
         plugin_manager_mock.register.assert_has_calls(expected_calls)
 
-    def test_register_modules_and_classes(
-        self, plugin_manager_mock, javac_clone_hook_mock
-    ):
+    def test_register_modules_and_classes(self, plugin_manager_mock):
         """Test that both module level hooks and class hooks are registered
         properly at the same time.
 
@@ -137,11 +121,7 @@ class TestRegisterPlugins:
         """
         modules = [javac, pylint]
         # pylint should be registered before javac because of FIFO order
-        expected_calls = [
-            call(pylint),
-            call(javac),
-            call(javac_clone_hook_mock),
-        ]
+        expected_calls = [call(pylint), call(javac), call(ANY)]
         plugin.register_plugins(modules)
 
         plugin_manager_mock.register.assert_has_calls(expected_calls)

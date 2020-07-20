@@ -24,7 +24,9 @@ def defaults_options():
 
 
 def test_ext_command_does_not_require_api():
-    ext_command = configwizard.create_extension_command()
+    ext_command = configwizard.Wizard(
+        "config-wizard"
+    ).create_extension_command()
     assert not ext_command.requires_api
 
 
