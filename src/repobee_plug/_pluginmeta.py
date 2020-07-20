@@ -44,7 +44,7 @@ class _PluginMeta(type):
         Checking signatures is delegated to ``pluggy`` during registration of
         the hook.
         """
-        if cli.Action in bases:
+        if cli.Command in bases:
             ext_cmd_func = _generate_extension_command_func(attrdict)
             attrdict[ext_cmd_func.__name__] = ext_cmd_func
 
@@ -76,7 +76,7 @@ class _PluginMeta(type):
             for key, value in attrdict.items()
             if callable(value)
             and not key.startswith("_")
-            and key != "action_callback"
+            and key != "command_callback"
         }
 
 
@@ -132,7 +132,7 @@ def _generate_extension_command_func(attrdict: Mapping[str, Any]) -> Callable:
             name=action_name,
             help=help,
             description=description,
-            callback=self.action_callback,
+            callback=self.command_callback,
             category=category,
             requires_api=requires_api,
             requires_base_parsers=base_parsers,

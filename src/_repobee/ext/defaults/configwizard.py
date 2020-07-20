@@ -19,7 +19,7 @@ from _repobee import constants
 LOGGER = daiquiri.getLogger(__file__)
 
 
-class Wizard(plug.Plugin, plug.cli.Action):
+class Wizard(plug.Plugin, plug.cli.Command):
     __category__ = plug.CoreCommand.config
     __help__ = "Interactive configuration wizard to set up the config file."
     __description__ = (
@@ -28,7 +28,9 @@ class Wizard(plug.Plugin, plug.cli.Action):
         "overwritten."
     )
 
-    def action_callback(self, args: argparse.Namespace, api: plug.API) -> None:
+    def command_callback(
+        self, args: argparse.Namespace, api: plug.API
+    ) -> None:
         return callback(args, api)
 
 
