@@ -11,7 +11,7 @@ import argparse
 import pathlib
 
 import logging
-from typing import List, Optional
+from typing import List, Optional, Union, Mapping
 
 import daiquiri
 
@@ -167,7 +167,9 @@ def _add_subparsers(parser, show_all_opts, ext_commands, config_file):
 
     subparsers = parser.add_subparsers(dest=SUB)
     subparsers.required = True
-    categories = {}
+    parsers: Mapping[
+        Union[plug.Category, plug.Action], argparse.ArgumentParser
+    ] = {}
 
     def _create_category_parsers(category, help, description):
         category_command = subparsers.add_parser(
@@ -175,7 +177,7 @@ def _add_subparsers(parser, show_all_opts, ext_commands, config_file):
         )
         category_parsers = category_command.add_subparsers(dest=ACTION)
         category_parsers.required = True
-        categories[category] = category_parsers
+        parsers[category] = category_parsers
         return category_parsers
 
     repo_parsers = _create_category_parsers(
@@ -199,16 +201,32 @@ def _add_subparsers(parser, show_all_opts, ext_commands, config_file):
         description="Configure RepoBee.",
     )
 
+    def _add_action_parser(category_parsers):
+        def inner(action, **kwargs):
+            parsers[action] = category_parsers.add_parser(
+                action.name, **kwargs
+            )
+            return parsers[action]
+
+        return inner
+
     _add_repo_parsers(
-        base_parser, base_student_parser, master_org_parser, repo_parsers
+        base_parser,
+        base_student_parser,
+        master_org_parser,
+        _add_action_parser(repo_parsers),
     )
     _add_issue_parsers(
-        [base_parser, base_student_parser, _REPO_NAME_PARSER], issues_parsers
+        [base_parser, base_student_parser, _REPO_NAME_PARSER],
+        _add_action_parser(issues_parsers),
     )
     _add_peer_review_parsers(
-        [base_parser, base_student_parser, _REPO_NAME_PARSER], review_parsers
+        [base_parser, base_student_parser, _REPO_NAME_PARSER],
+        _add_action_parser(review_parsers),
     )
-    _add_config_parsers(base_parser, master_org_parser, config_parsers)
+    _add_config_parsers(
+        base_parser, master_org_parser, _add_action_parser(config_parsers)
+    )
 
     return _add_extension_parsers(
         subparsers,
@@ -217,17 +235,17 @@ def _add_subparsers(parser, show_all_opts, ext_commands, config_file):
         base_student_parser,
         master_org_parser,
         _REPO_NAME_PARSER,
-        categories,
+        parsers,
         config._read_config(config_file) if config_file.is_file() else {},
         show_all_opts,
     )
 
 
 def _add_repo_parsers(
-    base_parser, base_student_parser, master_org_parser, repo_parsers
+    base_parser, base_student_parser, master_org_parser, add_parser
 ):
-    repo_parsers.add_parser(
-        plug.CoreCommand.repos.setup.name,
+    add_parser(
+        plug.CoreCommand.repos.setup,
         help="Setup student repos.",
         description=(
             "Setup student repositories based on master repositories. "
@@ -248,8 +266,8 @@ def _add_repo_parsers(
         formatter_class=_OrderedFormatter,
     )
 
-    update = repo_parsers.add_parser(
-        plug.CoreCommand.repos.update.name,
+    update = add_parser(
+        plug.CoreCommand.repos.update,
         help="Update existing student repos.",
         description=(
             "Push changes from master repos to student repos. If the "
@@ -275,8 +293,8 @@ def _add_repo_parsers(
         type=str,
     )
 
-    clone = repo_parsers.add_parser(
-        plug.CoreCommand.repos.clone.name,
+    clone = add_parser(
+        plug.CoreCommand.repos.clone,
         help="Clone student repos.",
         description="Clone student repos asynchronously in bulk.",
         parents=[
@@ -293,8 +311,8 @@ def _add_repo_parsers(
 
     plug.manager.hook.clone_parser_hook(clone_parser=clone)
 
-    repo_parsers.add_parser(
-        plug.CoreCommand.repos.create_teams.name,
+    add_parser(
+        plug.CoreCommand.repos.create_teams,
         help="Create student teams without creating repos.",
         description=(
             "Only create student teams. This is intended for when you want to "
@@ -307,8 +325,8 @@ def _add_repo_parsers(
         formatter_class=_OrderedFormatter,
     )
 
-    repo_parsers.add_parser(
-        plug.CoreCommand.repos.migrate.name,
+    add_parser(
+        plug.CoreCommand.repos.migrate,
         help="Migrate repositories into the target organization.",
         description=(
             "Migrate repositories into the target organization. "
@@ -320,9 +338,9 @@ def _add_repo_parsers(
     )
 
 
-def _add_config_parsers(base_parser, master_org_parser, config_parsers):
-    show_config = config_parsers.add_parser(
-        plug.CoreCommand.config.show.name,
+def _add_config_parsers(base_parser, master_org_parser, add_parser):
+    show_config = add_parser(
+        plug.CoreCommand.config.show,
         help="Show the configuration file",
         description=(
             "Show the contents of the configuration file. If no configuration "
@@ -333,8 +351,8 @@ def _add_config_parsers(base_parser, master_org_parser, config_parsers):
     )
     _add_traceback_arg(show_config)
 
-    config_parsers.add_parser(
-        plug.CoreCommand.config.verify.name,
+    add_parser(
+        plug.CoreCommand.config.verify,
         help="Verify core settings.",
         description="Verify core settings by trying various API requests.",
         parents=[base_parser, master_org_parser],
@@ -342,9 +360,9 @@ def _add_config_parsers(base_parser, master_org_parser, config_parsers):
     )
 
 
-def _add_peer_review_parsers(base_parsers, review_parsers):
-    assign_parser = review_parsers.add_parser(
-        plug.CoreCommand.reviews.assign.name,
+def _add_peer_review_parsers(base_parsers, add_parser):
+    assign_parser = add_parser(
+        plug.CoreCommand.reviews.assign,
         description=(
             "For each student repo, create a review team with read access "
             "named <student-repo-name>-review and randomly assign "
@@ -379,8 +397,8 @@ def _add_peer_review_parsers(base_parsers, review_parsers):
         ),
         type=str,
     )
-    check_review_progress = review_parsers.add_parser(
-        plug.CoreCommand.reviews.check.name,
+    check_review_progress = add_parser(
+        plug.CoreCommand.reviews.check,
         description=(
             "Check which students have opened review review issues in their "
             "assigned repos. As it is possible for students to leave the peer "
@@ -414,8 +432,8 @@ def _add_peer_review_parsers(base_parsers, review_parsers):
         type=int,
         required=True,
     )
-    review_parsers.add_parser(
-        plug.CoreCommand.reviews.end.name,
+    add_parser(
+        plug.CoreCommand.reviews.end,
         description=(
             "Delete review allocations assigned with `assign-reviews`. "
             "This is a destructive action, as the allocations for reviews "
@@ -437,10 +455,10 @@ def _add_peer_review_parsers(base_parsers, review_parsers):
     )
 
 
-def _add_issue_parsers(base_parsers, issue_parsers):
+def _add_issue_parsers(base_parsers, add_parser):
     base_parser, base_student_parser, master_org_parser = base_parsers
-    open_parser = issue_parsers.add_parser(
-        plug.CoreCommand.issues.open.name,
+    open_parser = add_parser(
+        plug.CoreCommand.issues.open,
         description=(
             "Open issues in student repositories. For each master repository "
             "specified, the student list is traversed. For every student repo "
@@ -460,8 +478,8 @@ def _add_issue_parsers(base_parsers, issue_parsers):
         required=True,
     )
 
-    close_parser = issue_parsers.add_parser(
-        plug.CoreCommand.issues.close.name,
+    close_parser = add_parser(
+        plug.CoreCommand.issues.close,
         description=(
             "Close issues in student repos based on a regex. For each master "
             "repository specified, the student list is traversed. For every "
@@ -483,8 +501,8 @@ def _add_issue_parsers(base_parsers, issue_parsers):
         required=True,
     )
 
-    list_parser = issue_parsers.add_parser(
-        plug.CoreCommand.issues.list.name,
+    list_parser = add_parser(
+        plug.CoreCommand.issues.list,
         description="List issues in student repos.",
         help="List issues in student repos.",
         parents=[
@@ -593,7 +611,7 @@ def _add_extension_parsers(
     base_student_parser,
     master_org_parser,
     repo_name_parser,
-    categories,
+    parsers_mapping,
     parsed_config,
     show_all_opts,
 ):
@@ -616,47 +634,62 @@ def _add_extension_parsers(
         elif bp.REPO_NAMES in req_parsers:
             parents.append(repo_name_parser)
 
-        cmd_parser = (
-            cmd.parser(parsed_config, show_all_opts)
-            if callable(cmd.parser)
-            else cmd.parser
-        )
-        parents.append(cmd_parser)
+        if callable(cmd.parser):
+            action = cmd.category.get(cmd.name) if cmd.category else None
+            ext_parser = parsers_mapping.get(action) or (
+                parsers_mapping.get(cmd.category) or subparsers
+            ).add_parser(
+                cmd.name,
+                help=cmd.help,
+                description=cmd.description,
+                parents=parents,
+                formatter_class=_OrderedFormatter,
+            )
+            cmd.parser(
+                config=parsed_config,
+                show_all_opts=show_all_opts,
+                parser=ext_parser,
+            )
+        else:
+            parents.append(cmd.parser)
+            category_parsers = parsers_mapping.get(cmd.category) or subparsers
+            ext_parser = category_parsers.add_parser(
+                cmd.name,
+                help=cmd.help,
+                description=cmd.description,
+                parents=parents,
+                formatter_class=_OrderedFormatter,
+            )
 
-        category_parsers = categories.get(cmd.category) or subparsers
-        ext_parser = category_parsers.add_parser(
-            cmd.name,
-            help=cmd.help,
-            description=cmd.description,
-            parents=parents,
-            formatter_class=_OrderedFormatter,
-        )
         try:
             _add_traceback_arg(ext_parser)
         except argparse.ArgumentError:
             pass
 
-        ext_parser.add_argument(
-            "--repobee-action",
-            action="store_const",
-            help=argparse.SUPPRESS,
-            const=cmd.name,
-            default=cmd.name,
-            dest="action",
-        )
+        try:
+            # this will fail if we are adding arguments to an existing command
+            ext_parser.add_argument(
+                "--repobee-action",
+                action="store_const",
+                help=argparse.SUPPRESS,
+                const=cmd.name,
+                default=cmd.name,
+                dest="action",
+            )
+            # This is a little bit of a dirty trick. It allows us to easily
+            # find the associated extension command when parsing the arguments.
+            ext_parser.add_argument(
+                "--repobee-extension-command",
+                action="store_const",
+                help=argparse.SUPPRESS,
+                const=cmd,
+                default=cmd,
+                dest="_extension_command",
+            )
+        except argparse.ArgumentError:
+            pass
 
-        # This is a little bit of a dirty trick. It allows us to easily
-        # find the associated extension command when parsing the arguments.
-        ext_parser.add_argument(
-            "--repobee-extension-command",
-            action="store_const",
-            help=argparse.SUPPRESS,
-            const=cmd,
-            default=cmd,
-            dest="_extension_command",
-        )
-        if category_parsers == subparsers:
-            # in this case it's a category action, and we must add the category
+        try:
             ext_parser.add_argument(
                 "--repobee-category",
                 action="store_const",
@@ -665,6 +698,8 @@ def _add_extension_parsers(
                 default=cmd.name,
                 dest="category",
             )
+        except argparse.ArgumentError:
+            pass
 
     return ext_commands
 

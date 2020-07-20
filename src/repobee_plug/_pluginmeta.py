@@ -98,8 +98,16 @@ def _generate_extension_command_func(attrdict: Mapping[str, Any]) -> Callable:
     opts = _extract_cli_options(attrdict)
 
     def create_extension_command(self):
-        def create_parser(config, show_all_opts):
-            parser = _containers.ExtensionParser()
+        category = attrdict.get("__category__")
+        action_name = attrdict.get(
+            "__action_name__"
+        ) or self.__class__.__name__.lower().replace("_", "-")
+        help = attrdict.get("__help__") or ""
+        description = attrdict.get("__description__") or ""
+        requires_api = attrdict.get("__requires_api__") or False
+        base_parsers = attrdict.get("__base_parsers__") or None
+
+        def attach_options(config, show_all_opts, parser):
             config_name = (
                 attrdict.get("__config_section__") or self.plugin_name
             )
@@ -118,17 +126,8 @@ def _generate_extension_command_func(attrdict: Mapping[str, Any]) -> Callable:
 
             return parser
 
-        category = attrdict.get("__category__")
-        action_name = attrdict.get(
-            "__action_name__"
-        ) or self.__class__.__name__.lower().replace("_", "-")
-        help = attrdict.get("__help__") or ""
-        description = attrdict.get("__description__") or ""
-        requires_api = attrdict.get("__requires_api__") or False
-        base_parsers = attrdict.get("__base_parsers__") or None
-
         return _containers.ExtensionCommand(
-            parser=create_parser,
+            parser=attach_options,
             name=action_name,
             help=help,
             description=description,

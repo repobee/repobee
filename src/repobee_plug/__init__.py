@@ -19,6 +19,8 @@ from repobee_plug._containers import BaseParser
 from repobee_plug._containers import Deprecation
 from repobee_plug._containers import HookResult
 from repobee_plug._tasks import Task
+from repobee_plug._containers import Action
+from repobee_plug._containers import Category
 
 # Hook functions
 from repobee_plug._corehooks import PeerReviewHook as _peer_hook
@@ -80,6 +82,8 @@ __all__ = [
     "Review",
     "Task",
     "Deprecation",
+    "Action",
+    "Category",
     # API wrappers
     "Team",
     "TeamPermission",
