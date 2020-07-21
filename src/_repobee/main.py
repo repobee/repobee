@@ -6,8 +6,10 @@
 .. moduleauthor:: Simon Larsén
 """
 
+import pathlib
 import sys
-from typing import List
+from typing import List, Optional, Union, Mapping
+from types import ModuleType
 
 import daiquiri
 import repobee_plug as plug
@@ -31,6 +33,80 @@ an issue at https://github.com/repobee/repobee/issues/new
 and supply the stack trace below.""".replace(
     "\n", " "
 )
+
+
+def run(
+    cmd: List[str],
+    show_all_opts: bool = False,
+    config_file: Union[str, pathlib.Path] = "",
+    plugins: Optional[List[Union[ModuleType, plug.Plugin]]] = None,
+) -> Mapping[str, List[plug.Result]]:
+    """Run RepoBee with the provided options. This function is mostly intended
+    to be used for testing plugins.
+
+    .. important::
+
+        This function will always unregister all plugins after execution,
+        including anly plugins that may have been registered prior to running
+        this function.
+
+    Running this function is almost equivalent to running RepoBee from the CLI,
+    with the following exceptions:
+
+    1. Preparser options must be passed as arguments to this function (i.e.
+       cannot be given as part of ``cmd``).
+    2. There is no error handling at the top level, so exceptions are raised
+       instead of just logged.
+
+    As an example, the following CLI call:
+
+    .. code-block:: bash
+
+        $ repobee --plug ext.py --config-file config.ini config show
+
+    Can be executed as follows:
+
+    .. code-block:: python
+
+        import ext
+        from repobee import run
+
+        run(["config", "show"], config_file="config.ini", plugins=[ext])
+
+    Args:
+        cmd: The command to run.
+        show_all_opts: Equivalent to the ``--show-all-opts`` flag.
+        config_file: Path to the configuration file.
+        plugins: A list of plugin modules and/or plugin classes.
+    Returns:
+        A mapping (plugin_name -> plugin_results).
+    """
+    config_file = pathlib.Path(config_file)
+
+    def _ensure_is_module(p: Union[ModuleType, plug.Plugin]):
+        if issubclass(p, plug.Plugin):
+            mod = ModuleType(p.__name__.lower())
+            mod.__package__ = f"__{p.__name__}"
+            setattr(mod, p.__name__, p)
+            return mod
+        elif isinstance(p, ModuleType):
+            return p
+        else:
+            raise TypeError(f"not plugin or module: {p}")
+
+    wrapped_plugins = list(map(_ensure_is_module, plugins or []))
+    try:
+        _repobee.cli.parsing.setup_logging()
+        plugin.initialize_default_plugins()
+        plugin.register_plugins(wrapped_plugins)
+        parsed_args, api, ext_commands = _parse_args(
+            cmd, config_file, show_all_opts
+        )
+        _repobee.cli.dispatch.dispatch_command(
+            parsed_args, api, config_file, ext_commands
+        )
+    finally:
+        plugin.unregister_all_plugins()
 
 
 def main(sys_args: List[str], unload_plugins: bool = True):
@@ -69,13 +145,8 @@ def main(sys_args: List[str], unload_plugins: bool = True):
             ) or []
             plugin.initialize_plugins(plugin_names, allow_filepath=True)
 
-        config.execute_config_hooks(config_file)
-        ext_commands = plug.manager.hook.create_extension_command()
-        parsed_args, api = _repobee.cli.parsing.handle_args(
-            app_args,
-            show_all_opts=parsed_preparser_args.show_all_opts,
-            ext_commands=ext_commands,
-            config_file=config_file,
+        parsed_args, api, ext_commands = _parse_args(
+            app_args, config_file, parsed_preparser_args.show_all_opts
         )
         traceback = parsed_args.traceback
         pre_init = False
@@ -106,6 +177,18 @@ def main(sys_args: List[str], unload_plugins: bool = True):
     finally:
         if unload_plugins:
             plugin.unregister_all_plugins()
+
+
+def _parse_args(args, config_file, show_all_opts):
+    config.execute_config_hooks(config_file)
+    ext_commands = plug.manager.hook.create_extension_command()
+    parsed_args, api = _repobee.cli.parsing.handle_args(
+        args,
+        show_all_opts=show_all_opts,
+        ext_commands=ext_commands,
+        config_file=config_file,
+    )
+    return parsed_args, api, ext_commands
 
 
 if __name__ == "__main__":

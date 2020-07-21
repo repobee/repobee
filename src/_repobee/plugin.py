@@ -164,6 +164,7 @@ def register_plugins(modules: List[ModuleType]) -> List[object]:
                 plug.manager.register(obj)
                 registered.append(obj)
 
+    _handle_deprecation()
     return registered
 
 
@@ -273,7 +274,6 @@ def initialize_plugins(
         if p not in registered_plugins
     ]
     registered = register_plugins(plug_modules)
-    _handle_deprecation()
     return registered
 
 
