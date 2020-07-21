@@ -25,7 +25,7 @@ def dispatch_command(
     api: plug.API,
     config_file: pathlib.Path,
     ext_commands: Optional[List[plug.ExtensionCommand]] = None,
-):
+) -> Mapping[str, List[plug.Result]]:
     """Handle parsed CLI arguments and dispatch commands to the appropriate
     functions. Expected exceptions are caught and turned into SystemExit
     exceptions, while unexpected exceptions are allowed to propagate.
@@ -65,6 +65,8 @@ def dispatch_command(
         _handle_hook_results(
             hook_results=hook_results, filepath=args.hook_results_file
         )
+
+    return hook_results
 
 
 def _dispatch_repos_command(

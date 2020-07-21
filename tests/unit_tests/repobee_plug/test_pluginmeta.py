@@ -1,4 +1,5 @@
 import argparse
+import pathlib
 
 import pytest
 
@@ -270,7 +271,15 @@ class TestDeclarativeExtensionCommand:
 class TestDeclarativeCommandExtension:
     """Test creating command extensions to existing commands."""
 
-    def test_add_required_option_to_config_show(self, capsys):
+    @pytest.fixture
+    def config_file(self, tmpdir):
+        config_file = pathlib.Path(str(tmpdir)) / "config.ini"
+        config_file.write_text("[DEFAULTS]")
+        return config_file
+
+    def test_add_required_option_to_config_show(
+        self, capsys, tmpdir, config_file
+    ):
         """Tests adding a required option to ``config show``."""
 
         class ConfigShowExt(plug.Plugin, plug.cli.CommandExtension):
@@ -278,17 +287,12 @@ class TestDeclarativeCommandExtension:
 
             silly_new_option = plug.cli.Option(help="your name", required=True)
 
-        plugin_instance = ConfigShowExt("silly-option")
-
-        # TODO remove when using repobee.run instaed of repobee.main
-        plug.manager.register(plugin_instance)
-
         with pytest.raises(SystemExit):
-            # TODO use repobee.run instead, when it is available
-            repobee.main("repobee config show".split())
-
-        # TODO remove when using repobee.run instaed of repobee.main
-        plug.manager.unregister(plugin_instance)
+            repobee.run(
+                "config show".split(),
+                config_file=config_file,
+                plugins=[ConfigShowExt],
+            )
 
         assert (
             "the following arguments are required: --silly-new-option"
