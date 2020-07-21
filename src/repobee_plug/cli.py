@@ -1,7 +1,7 @@
 """Plugin functionality for creating extensions to the RepoBee CLI."""
 import collections
 
-__all__ = ["Option", "Command"]
+__all__ = ["Option", "Command", "CommandExtension"]
 
 
 Option = collections.namedtuple(
@@ -18,6 +18,12 @@ Option = collections.namedtuple(
     ],
 )
 Option.__new__.__defaults__ = (None,) * len(Option._fields)
+
+
+class CommandExtension:
+    """Mixin class for use with the Plugin class. Marks the extending class as
+    a command extension, that adds options to an existing command.
+    """
 
 
 class Command:

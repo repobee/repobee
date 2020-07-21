@@ -634,9 +634,14 @@ def _add_extension_parsers(
         elif bp.REPO_NAMES in req_parsers:
             parents.append(repo_name_parser)
 
-        if callable(cmd.parser):
-            action = cmd.category.get(cmd.name) if cmd.category else None
-            ext_parser = parsers_mapping.get(action) or (
+        def _add_ext_parser(
+            parents: List[argparse.ArgumentParser],
+        ) -> argparse.ArgumentParser:
+            """Add a new parser either to the extension command's category (if
+            specified), or to the top level subparsers (if category is not
+            specified).
+            """
+            return (
                 parsers_mapping.get(cmd.category) or subparsers
             ).add_parser(
                 cmd.name,
@@ -645,6 +650,19 @@ def _add_extension_parsers(
                 parents=parents,
                 formatter_class=_OrderedFormatter,
             )
+
+        if cmd.name in plug.CoreCommand:
+            ext_parser = parsers_mapping[cmd.name]
+            cmd.parser(
+                config=parsed_config,
+                show_all_opts=show_all_opts,
+                parser=ext_parser,
+            )
+        elif callable(cmd.parser):
+            action = cmd.category.get(cmd.name) if cmd.category else None
+            ext_parser = parsers_mapping.get(action) or _add_ext_parser(
+                parents
+            )
             cmd.parser(
                 config=parsed_config,
                 show_all_opts=show_all_opts,
@@ -652,14 +670,7 @@ def _add_extension_parsers(
             )
         else:
             parents.append(cmd.parser)
-            category_parsers = parsers_mapping.get(cmd.category) or subparsers
-            ext_parser = category_parsers.add_parser(
-                cmd.name,
-                help=cmd.help,
-                description=cmd.description,
-                parents=parents,
-                formatter_class=_OrderedFormatter,
-            )
+            ext_parser = _add_ext_parser(parents)
 
         try:
             _add_traceback_arg(ext_parser)
