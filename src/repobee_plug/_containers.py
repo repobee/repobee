@@ -187,6 +187,9 @@ class Category(_ImmutableMixin, abc.ABC):
         object.__setattr__(self, "actions", tuple(actions))
         object.__setattr__(self, "_action_table", {a.name: a for a in actions})
 
+    def get(self, key: str) -> "Action":
+        return self._action_table.get(key)
+
     def __getitem__(self, key: str) -> "Action":
         return self._action_table[key]
 
@@ -231,6 +234,16 @@ class Action(_ImmutableMixin):
 
     def __str__(self):
         return f"{self.category.name} {self.name}"
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, self.__class__)
+            and self.name == other.name
+            and self.category == other.category
+        )
+
+    def __hash__(self):
+        return hash(str(self))
 
     def asdict(self) -> Mapping[str, str]:
         """This is a convenience method for testing that returns a dictionary

@@ -1,5 +1,6 @@
 import argparse
 import daiquiri
+import functools
 
 from typing import List, Tuple, Callable, Mapping, Any
 
@@ -44,8 +45,17 @@ class _PluginMeta(type):
         Checking signatures is delegated to ``pluggy`` during registration of
         the hook.
         """
-        if cli.Command in bases:
-            ext_cmd_func = _generate_extension_command_func(attrdict)
+        if cli.Command in bases and cli.CommandExtension in bases:
+            raise _exceptions.PlugError(
+                "A plugin cannot be both a Command and a CommandExtension"
+            )
+
+        if cli.Command in bases or cli.CommandExtension in bases:
+            ext_cmd_func = (
+                _generate_command_func(attrdict)
+                if cli.Command in bases
+                else _generate_command_extension_func()
+            )
             attrdict[ext_cmd_func.__name__] = ext_cmd_func
 
         methods = cls._extract_public_methods(attrdict)
@@ -91,33 +101,48 @@ def _extract_cli_options(attrdict) -> List[Tuple[str, cli.Option]]:
     ]
 
 
-def _generate_extension_command_func(attrdict: Mapping[str, Any]) -> Callable:
+def _generate_command_extension_func() -> Callable:
+    """Generate an implementation of the ``create_extension_command`` that
+    returns an extension to an existing command.
+    """
+
+    def create_extension_command(self):
+        return _containers.ExtensionCommand(
+            parser=functools.partial(_attach_options, plugin=self),
+            name=self.__action__,
+            callback=lambda: None,
+            description=None,
+            help=None,
+        )
+
+    return create_extension_command
+
+
+def _attach_options(config, show_all_opts, parser, plugin: "Plugin"):
+    config_name = (
+        getattr(plugin, "__config_section__", None) or plugin.plugin_name
+    )
+    config_section = dict(config[config_name]) if config_name in config else {}
+
+    opts = _extract_cli_options(plugin.__class__.__dict__)
+    for (name, opt) in opts:
+        configured_value = config_section.get(name)
+        if configured_value and not opt.configurable:
+            raise _exceptions.PlugError(
+                f"Plugin '{plugin.plugin_name}' does not allow "
+                f"'{name}' to be configured"
+            )
+        _add_option(name, opt, configured_value, show_all_opts, parser)
+
+    return parser
+
+
+def _generate_command_func(attrdict: Mapping[str, Any]) -> Callable:
     """Generate an implementation of the ``create_extension_command`` hook
     function based on the declarative-style extension command class.
     """
-    opts = _extract_cli_options(attrdict)
 
     def create_extension_command(self):
-        def create_parser(config, show_all_opts):
-            parser = _containers.ExtensionParser()
-            config_name = (
-                attrdict.get("__config_section__") or self.plugin_name
-            )
-            config_section = (
-                dict(config[config_name]) if config_name in config else {}
-            )
-
-            for (name, opt) in opts:
-                configured_value = config_section.get(name)
-                if configured_value and not opt.configurable:
-                    raise _exceptions.PlugError(
-                        f"Plugin '{self.plugin_name}' does not allow "
-                        f"'{name}' to be configured"
-                    )
-                _add_option(name, opt, configured_value, show_all_opts, parser)
-
-            return parser
-
         category = attrdict.get("__category__")
         action_name = attrdict.get(
             "__action_name__"
@@ -128,7 +153,7 @@ def _generate_extension_command_func(attrdict: Mapping[str, Any]) -> Callable:
         base_parsers = attrdict.get("__base_parsers__") or None
 
         return _containers.ExtensionCommand(
-            parser=create_parser,
+            parser=functools.partial(_attach_options, plugin=self),
             name=action_name,
             help=help,
             description=description,

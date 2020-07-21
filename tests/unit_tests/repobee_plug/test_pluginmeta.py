@@ -1,9 +1,13 @@
+import argparse
+
 import pytest
 
 import repobee_plug as plug
 
 from repobee_plug import _pluginmeta
 from repobee_plug import _exceptions
+
+import repobee
 
 
 class TestPluginInheritance:
@@ -178,7 +182,8 @@ class TestDeclarativeExtensionCommand:
     def test_generated_parser(self, basic_greeting_command):
         """Test the parser that's generated automatically."""
         ext_cmd = basic_greeting_command("greeting").create_extension_command()
-        parser = ext_cmd.parser(config={}, show_all_opts=True)
+        parser = argparse.ArgumentParser()
+        ext_cmd.parser(config={}, show_all_opts=True, parser=parser)
         args = parser.parse_args("--name Eve".split())
 
         assert args.name == "Eve"
@@ -199,7 +204,8 @@ class TestDeclarativeExtensionCommand:
         configured_name = "Alice"
         config = {plugin_name: {"name": configured_name}}
         ext_cmd = Greeting("greeting").create_extension_command()
-        parser = ext_cmd.parser(config=config, show_all_opts=False)
+        parser = argparse.ArgumentParser()
+        ext_cmd.parser(config=config, show_all_opts=False, parser=parser)
         args = parser.parse_args([])
 
         assert args.name == configured_name
@@ -222,7 +228,11 @@ class TestDeclarativeExtensionCommand:
         ext_cmd = Greeting("greeting").create_extension_command()
 
         with pytest.raises(plug.PlugError) as exc_info:
-            ext_cmd.parser(config=config, show_all_opts=False)
+            ext_cmd.parser(
+                config=config,
+                show_all_opts=False,
+                parser=argparse.ArgumentParser(),
+            )
 
         assert (
             f"Plugin '{plugin_name}' does not allow 'name' to be configured"
@@ -246,7 +256,8 @@ class TestDeclarativeExtensionCommand:
                 pass
 
         ext_cmd = Greeting("g").create_extension_command()
-        parser = ext_cmd.parser(config={}, show_all_opts=False)
+        parser = argparse.ArgumentParser()
+        ext_cmd.parser(config={}, show_all_opts=False, parser=parser)
         name = "Alice"
 
         short_opt_args = parser.parse_args(f"-n {name}".split())
@@ -254,3 +265,50 @@ class TestDeclarativeExtensionCommand:
 
         assert short_opt_args.name == name
         assert long_opt_args.name == name
+
+
+class TestDeclarativeCommandExtension:
+    """Test creating command extensions to existing commands."""
+
+    def test_add_required_option_to_config_show(self, capsys):
+        """Tests adding a required option to ``config show``."""
+
+        class ConfigShowExt(plug.Plugin, plug.cli.CommandExtension):
+            __action__ = plug.CoreCommand.config.show
+
+            silly_new_option = plug.cli.Option(help="your name", required=True)
+
+        plugin_instance = ConfigShowExt("silly-option")
+
+        # TODO remove when using repobee.run instaed of repobee.main
+        plug.manager.register(plugin_instance)
+
+        with pytest.raises(SystemExit):
+            # TODO use repobee.run instead, when it is available
+            repobee.main("repobee config show".split())
+
+        # TODO remove when using repobee.run instaed of repobee.main
+        plug.manager.unregister(plugin_instance)
+
+        assert (
+            "the following arguments are required: --silly-new-option"
+            in capsys.readouterr().err
+        )
+
+    def test_raises_when_command_and_command_extension_are_subclassed_together(
+        self,
+    ):
+        """It should not be possible for a class to be both a command, and a
+        command extension.
+        """
+        with pytest.raises(plug.PlugError) as exc_info:
+
+            class Ext(
+                plug.Plugin, plug.cli.Command, plug.cli.CommandExtension
+            ):
+                pass
+
+        assert (
+            "A plugin cannot be both a Command and a CommandExtension"
+            in str(exc_info.value)
+        )
