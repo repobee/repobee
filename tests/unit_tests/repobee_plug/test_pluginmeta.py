@@ -4,7 +4,6 @@ import pathlib
 import pytest
 
 import repobee_plug as plug
-import repobee_plug.cli
 
 from repobee_plug import _pluginmeta
 from repobee_plug import _exceptions
@@ -145,11 +144,9 @@ class TestDeclarativeExtensionCommand:
         assert ext_cmd.requires_base_parsers is None
         assert ext_cmd.category is None
 
-    def test_with_metadata(self):
-        """Test declaring an command with no explicit metadata, and checking
-        that the defaults are as expected.
-        """
-        expected_category = repobee_plug.cli.CoreCommand.config
+    def test_with_settings(self):
+        """Test declaring an command with settings."""
+        expected_category = plug.cli.CoreCommand.config
         expected_name = "cool-greetings"
         expected_help = "This is a greeting command!"
         expected_description = "This is a greeting"
@@ -160,12 +157,14 @@ class TestDeclarativeExtensionCommand:
         expected_requires_api = True
 
         class ExtCommand(plug.Plugin, plug.cli.Command):
-            __category__ = expected_category
-            __action_name__ = expected_name
-            __help__ = expected_help
-            __description__ = expected_description
-            __base_parsers__ = expected_base_parsers
-            __requires_api__ = expected_requires_api
+            __settings__ = plug.cli.CommandSettings(
+                category=expected_category,
+                action_name=expected_name,
+                help=expected_help,
+                description=expected_description,
+                base_parsers=expected_base_parsers,
+                requires_api=expected_requires_api,
+            )
 
             def command_callback(self, args, api):
                 pass
@@ -370,7 +369,9 @@ class TestDeclarativeCommandExtension:
         """Tests adding a required option to ``config show``."""
 
         class ConfigShowExt(plug.Plugin, plug.cli.CommandExtension):
-            __action__ = repobee_plug.cli.CoreCommand.config.show
+            __settings__ = plug.cli.CommandExtensionSettings(
+                actions=[plug.cli.CoreCommand.config.show]
+            )
 
             silly_new_option = plug.cli.Option(help="your name", required=True)
 

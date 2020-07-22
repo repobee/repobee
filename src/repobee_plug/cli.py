@@ -15,6 +15,7 @@ __all__ = [
     "Action",
     "Category",
     "CoreCommand",
+    "CommandSettings",
 ]
 
 from repobee_plug._containers import ImmutableMixin
@@ -40,24 +41,75 @@ Positional = collections.namedtuple(
 Positional.__new__.__defaults__ = (None,) * len(Positional._fields)
 
 
-class Settings(_containers.ImmutableMixin):
-    """Settings for a :py:class:`Command`.
+class CommandSettings(_containers.ImmutableMixin):
+    """Settings for a :py:class:`Command`, that can be provided in the
+    ``__settings__`` attribute.
 
-    Args:
-        action_name: The name of the action that the command will be
-            available under.
+    Example usage:
+
+    .. code-block:: python
+        :caption: ext.py
+
+        import repobee_plug as plug
+
+        class Ext(plug.Plugin, plug.cli.Command):
+            __settings__ = plug.cli.CommandSettings(
+                action_name="hello",
+                category=plug.cli.CoreCommand.config,
+            )
+
+            def command_callback(self, args, api):
+                print("Hello, world!")
+
+    This can then be called with:
+
+    .. code-block:: bash
+
+        $ repobee -p ext.py config hello
+        Hello, world!
     """
 
     def __init__(
         self,
         action_name: Optional[str] = None,
-        category: Optional[str] = None,
-        help: Optional[str] = None,
-        description: Optional[str] = None,
-        requires_api: Optional[bool] = None,
+        category: Optional["CoreCommand"] = None,
+        help: str = "",
+        description: str = "",
+        requires_api: bool = False,
         base_parsers: Optional[List[_containers.BaseParser]] = None,
+        config_section_name: Optional[str] = None,
     ):
-        pass
+        """
+        Args:
+            action_name: The name of the action that the command will be
+                available under.
+        """
+        object.__setattr__(self, "action_name", action_name)
+        object.__setattr__(self, "category", category)
+        object.__setattr__(self, "help", help)
+        object.__setattr__(self, "description", description)
+        object.__setattr__(self, "requires_api", requires_api)
+        object.__setattr__(self, "base_parsers", base_parsers)
+        object.__setattr__(self, "config_section_name", config_section_name)
+
+
+class CommandExtensionSettings(_containers.ImmutableMixin):
+    """Settings for a :py:class:`CommandExtension`."""
+
+    actions: List["Action"]
+    config_section_name: Optional[str]
+
+    def __init__(
+        self,
+        actions: List["Action"],
+        config_section_name: Optional[str] = None,
+    ):
+        if not actions:
+            raise ValueError(
+                f"argument 'actions' must be a non-empty list: {actions}"
+            )
+        object.__setattr__(self, "actions", actions)
+        object.__setattr__(self, "config_section_name", config_section_name)
 
 
 class MutuallyExclusiveGroup(_containers.ImmutableMixin):
