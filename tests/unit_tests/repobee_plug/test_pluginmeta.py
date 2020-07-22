@@ -286,6 +286,70 @@ class TestDeclarativeExtensionCommand:
         assert parsed_args.name == name
         assert parsed_args.age == age
 
+    def test_mutex_group_arguments_are_mutually_exclusive(self, capsys):
+        """Test that mutually exclusive arguments can't be provided at the same
+        time.
+        """
+
+        class Greeting(plug.Plugin, plug.cli.Command):
+            age_mutex = plug.cli.MutuallyExclusiveGroup(
+                age=plug.cli.Option(converter=int),
+                old=plug.cli.Option(
+                    argparse_kwargs=dict(action="store_const", const=1337),
+                ),
+            )
+
+            def command_callback(self, args, api):
+                pass
+
+        ext_cmd = Greeting("g").create_extension_command()
+        parser = argparse.ArgumentParser()
+        ext_cmd.parser(config={}, show_all_opts=False, parser=parser)
+
+        with pytest.raises(SystemExit):
+            parser.parse_args("--age 12 --old".split())
+
+        assert (
+            "error: argument --old: not allowed with argument --age"
+            in capsys.readouterr().err
+        )
+
+    def test_positionals_not_allowed_in_mutex_group(self):
+        """Positional arguments don't make sense in a mutex group."""
+
+        with pytest.raises(TypeError) as exc_info:
+            plug.cli.MutuallyExclusiveGroup(
+                age=plug.cli.Positional(converter=int),
+                old=plug.cli.Option(
+                    argparse_kwargs=dict(action="store_const", const=1337),
+                ),
+            )
+
+        assert "Positional not allowed in mutex group" in str(exc_info)
+
+    def test_mutex_group_allows_one_argument(self):
+        """Test that a mutex group allows one argument to be specified."""
+        old = 1337
+
+        class Greeting(plug.Plugin, plug.cli.Command):
+            age_mutex = plug.cli.MutuallyExclusiveGroup(
+                age=plug.cli.Option(converter=int),
+                old=plug.cli.Option(
+                    argparse_kwargs=dict(action="store_const", const=old),
+                ),
+            )
+
+            def command_callback(self, args, api):
+                pass
+
+        ext_cmd = Greeting("g").create_extension_command()
+        parser = argparse.ArgumentParser()
+        ext_cmd.parser(config={}, show_all_opts=False, parser=parser)
+
+        parsed_args = parser.parse_args(["--old"])
+
+        assert parsed_args.old == old
+
 
 class TestDeclarativeCommandExtension:
     """Test creating command extensions to existing commands."""

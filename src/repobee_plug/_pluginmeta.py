@@ -92,7 +92,9 @@ class _PluginMeta(type):
 
 def _extract_cli_options(
     attrdict,
-) -> List[Tuple[str, Union[cli.Option, cli.Positional]]]:
+) -> List[
+    Tuple[str, Union[cli.Option, cli.Positional, cli.MutuallyExclusiveGroup]]
+]:
     """Return any members that are CLI options as a list of tuples on the form
     (member_name, option). Other types of CLI arguments, such as positionals,
     are converted to :py:class:`~cli.Option`s.
@@ -100,7 +102,9 @@ def _extract_cli_options(
     return [
         (key, value)
         for key, value in attrdict.items()
-        if isinstance(value, (cli.Option, cli.Positional))
+        if isinstance(
+            value, (cli.Option, cli.Positional, cli.MutuallyExclusiveGroup)
+        )
     ]
 
 
@@ -173,12 +177,26 @@ def _generate_command_func(attrdict: Mapping[str, Any]) -> Callable:
 
 def _add_option(
     name: str,
-    opt: Union[cli.Positional, cli.Option],
+    opt: Union[cli.Positional, cli.Option, cli.MutuallyExclusiveGroup],
     configured_value: str,
     show_all_opts: bool,
     parser: argparse.ArgumentParser,
 ) -> None:
     """Add an option to the parser based on the cli option."""
+    if isinstance(opt, cli.MutuallyExclusiveGroup):
+        mutex_parser = parser.add_mutually_exclusive_group(
+            required=opt.required
+        )
+        for (mutex_opt_name, mutex_opt) in opt.options:
+            _add_option(
+                mutex_opt_name,
+                mutex_opt,
+                configured_value,
+                show_all_opts,
+                mutex_parser,
+            )
+        return
+
     args = []
     kwargs = opt.argparse_kwargs or {}
 
