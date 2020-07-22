@@ -123,7 +123,7 @@ class BaseParser(enum.Enum):
     MASTER_ORG = "master-org"
 
 
-class _ImmutableMixin:
+class ImmutableMixin:
     """Make a class (more or less) immutable."""
 
     def __setattr__(self, name, value):
@@ -133,7 +133,7 @@ class _ImmutableMixin:
         self.__setattr__(name, value)
 
 
-class Category(_ImmutableMixin, abc.ABC):
+class Category(ImmutableMixin, abc.ABC):
     """Class describing a command category for RepoBee's CLI. The purpose of
     this class is to make it easy to programmatically access the different
     commands in RepoBee.
@@ -214,7 +214,7 @@ class Category(_ImmutableMixin, abc.ABC):
         return hash(repr(self))
 
 
-class Action(_ImmutableMixin):
+class Action(ImmutableMixin):
     """Class describing a RepoBee CLI action.
 
     Attributes:
@@ -272,7 +272,7 @@ class Action(_ImmutableMixin):
         return (self.category.name, self.name)
 
 
-class _CoreCommand(_ImmutableMixin):
+class _CoreCommand(ImmutableMixin):
     """Parser category signifying where an extension parser belongs."""
 
     def iter_actions(self) -> Iterable[Action]:

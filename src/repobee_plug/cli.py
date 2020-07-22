@@ -1,7 +1,16 @@
 """Plugin functionality for creating extensions to the RepoBee CLI."""
 import collections
+from typing import List, Tuple
 
-__all__ = ["Option", "Command", "CommandExtension"]
+from repobee_plug import _containers
+
+__all__ = [
+    "Option",
+    "Positional",
+    "MutuallyExclusiveGroup",
+    "Command",
+    "CommandExtension",
+]
 
 
 Option = collections.namedtuple(
@@ -23,6 +32,45 @@ Positional = collections.namedtuple(
     "Positional", ["help", "converter", "argparse_kwargs"]
 )
 Positional.__new__.__defaults__ = (None,) * len(Positional._fields)
+
+
+class MutuallyExclusiveGroup(_containers.ImmutableMixin):
+    """A group of mutually exclusive CLI options.
+
+    Attributes:
+        ALLOWED_TYPES: The types that are allowed to be passed in the
+            constructor kwargs.
+        options: The options that have been stored in this group.
+        required: Whether or not this mutex group is required.
+    """
+
+    ALLOWED_TYPES = (Option,)
+    options: List[Tuple[str, Option]]
+    required: bool
+
+    def __init__(self, *, __required__: bool = False, **kwargs):
+        """
+        Args:
+            __required__: Whether or not this mutex group is required.
+            kwargs: Keyword arguments on the form ``name=plug.cli.Option()``.
+        """
+
+        def _check_type(key, value):
+            if not isinstance(value, self.ALLOWED_TYPES):
+                raise TypeError(
+                    f"{value.__class__.__name__} "
+                    f"not allowed in mutex group: {key}={value}"
+                )
+            return True
+
+        options = [
+            (key, value)
+            for key, value in kwargs.items()
+            if _check_type(key, value)
+        ]
+
+        object.__setattr__(self, "options", options)
+        object.__setattr__(self, "required", __required__)
 
 
 class CommandExtension:
