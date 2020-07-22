@@ -19,6 +19,11 @@ Option = collections.namedtuple(
 )
 Option.__new__.__defaults__ = (None,) * len(Option._fields)
 
+Positional = collections.namedtuple(
+    "Positional", ["help", "converter", "argparse_kwargs"]
+)
+Positional.__new__.__defaults__ = (None,) * len(Positional._fields)
+
 
 class CommandExtension:
     """Mixin class for use with the Plugin class. Marks the extending class as

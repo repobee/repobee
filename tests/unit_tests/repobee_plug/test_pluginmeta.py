@@ -267,6 +267,25 @@ class TestDeclarativeExtensionCommand:
         assert short_opt_args.name == name
         assert long_opt_args.name == name
 
+    def test_positional_arguments(self):
+        class Greeting(plug.Plugin, plug.cli.Command):
+            name = plug.cli.Positional()
+            age = plug.cli.Positional(converter=int)
+
+            def command_callback(self, args, api):
+                pass
+
+        ext_cmd = Greeting("g").create_extension_command()
+        parser = argparse.ArgumentParser()
+        ext_cmd.parser(config={}, show_all_opts=False, parser=parser)
+
+        name = "Alice"
+        age = 33
+        parsed_args = parser.parse_args(f"{name} {age}".split())
+
+        assert parsed_args.name == name
+        assert parsed_args.age == age
+
 
 class TestDeclarativeCommandExtension:
     """Test creating command extensions to existing commands."""
