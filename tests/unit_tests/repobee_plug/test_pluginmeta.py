@@ -327,7 +327,7 @@ class TestDeclarativeExtensionCommand:
                 __required__=True,
             )
 
-        assert "Positional not allowed in mutex group" in str(exc_info)
+        assert "Positional not allowed in mutex group" in str(exc_info.value)
 
     def test_mutex_group_allows_one_argument(self):
         """Test that a mutex group allows one argument to be specified."""
