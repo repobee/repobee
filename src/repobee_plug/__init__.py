@@ -13,14 +13,11 @@ from repobee_plug._containers import Result
 from repobee_plug._containers import Status
 from repobee_plug._containers import ExtensionParser
 from repobee_plug._containers import ExtensionCommand
-from repobee_plug._containers import CoreCommand
 from repobee_plug._containers import ReviewAllocation
 from repobee_plug._containers import BaseParser
 from repobee_plug._containers import Deprecation
 from repobee_plug._containers import HookResult
 from repobee_plug._tasks import Task
-from repobee_plug._containers import Action
-from repobee_plug._containers import Category
 
 # Hook functions
 from repobee_plug._corehooks import PeerReviewHook as _peer_hook
@@ -77,13 +74,10 @@ __all__ = [
     "Status",
     "ExtensionParser",
     "ExtensionCommand",
-    "CoreCommand",
     "ReviewAllocation",
     "Review",
     "Task",
     "Deprecation",
-    "Action",
-    "Category",
     # API wrappers
     "Team",
     "TeamPermission",

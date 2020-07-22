@@ -135,10 +135,10 @@ def _resolve_requires_processing(args: argparse.Namespace) -> _ArgsProcessing:
     This is primarily decided on whether or not the platform API is required,
     as that implies further processing.
     """
-    action = plug.CoreCommand(args.category)[args.action]
+    action = plug.cli.CoreCommand(args.category)[args.action]
     if action in [
-        plug.CoreCommand.config.verify,
-        plug.CoreCommand.config.show,
+        plug.cli.CoreCommand.config.verify,
+        plug.cli.CoreCommand.config.show,
     ]:
         return _ArgsProcessing.NONE
     return _ArgsProcessing.CORE
@@ -193,12 +193,12 @@ def _handle_task_parsing(args: argparse.Namespace) -> None:
     """
     assert args._repobee_processed
 
-    action = plug.CoreCommand(args.category)[args.action]
-    if action == plug.CoreCommand.repos.clone:
+    action = plug.cli.CoreCommand(args.category)[args.action]
+    if action == plug.cli.CoreCommand.repos.clone:
         plug.manager.hook.parse_args(args=args)
         for task in plug.manager.hook.clone_task():
             util.call_if_defined(task.handle_args, args)
-    elif args.action == plug.CoreCommand.repos.setup:
+    elif args.action == plug.cli.CoreCommand.repos.setup:
         for task in plug.manager.hook.setup_task():
             util.call_if_defined(task.handle_args, args)
 

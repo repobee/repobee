@@ -14,6 +14,7 @@ import _repobee.ext.defaults
 import _repobee.ext.dist
 from functions import raise_
 import _repobee.constants
+import repobee_plug.cli
 from _repobee import main
 from _repobee import plugin
 from _repobee.ext.defaults import configwizard
@@ -37,7 +38,7 @@ VALID_PARSED_ARGS = dict(
 )
 
 PARSED_ARGS = argparse.Namespace(
-    **plug.CoreCommand.repos.setup.asdict(), **VALID_PARSED_ARGS
+    **repobee_plug.cli.CoreCommand.repos.setup.asdict(), **VALID_PARSED_ARGS
 )
 
 CLONE_ARGS = "clone --mn week-2 -s slarse".split()
@@ -384,7 +385,7 @@ def test_show_all_opts_correctly_separated(
     sys_args = [
         "repobee",
         _repobee.cli.preparser.PRE_PARSER_SHOW_ALL_OPTS,
-        *plug.CoreCommand.repos.setup.astuple(),
+        *repobee_plug.cli.CoreCommand.repos.setup.astuple(),
         "-h",
     ]
 
@@ -393,7 +394,7 @@ def test_show_all_opts_correctly_separated(
 
     assert msg in str(exc_info.value)
     handle_args_mock.assert_called_once_with(
-        [*plug.CoreCommand.repos.setup.astuple(), "-h"],
+        [*repobee_plug.cli.CoreCommand.repos.setup.astuple(), "-h"],
         show_all_opts=True,
         ext_commands=[ANY] * len(DEFAULT_EXT_COMMANDS),
         config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
@@ -433,7 +434,7 @@ user = some-unlikely-user
             "repobee",
             "--config-file",
             tmpfile.name,
-            *plug.CoreCommand.config.show.astuple(),
+            *repobee_plug.cli.CoreCommand.config.show.astuple(),
         ]
         main.main(sys_args)
 

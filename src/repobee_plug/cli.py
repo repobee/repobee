@@ -1,6 +1,8 @@
 """Plugin functionality for creating extensions to the RepoBee CLI."""
+import abc
 import collections
-from typing import List, Tuple
+import itertools
+from typing import List, Tuple, Optional, Set, Mapping, Iterable
 
 from repobee_plug import _containers
 
@@ -10,8 +12,12 @@ __all__ = [
     "MutuallyExclusiveGroup",
     "Command",
     "CommandExtension",
+    "Action",
+    "Category",
+    "CoreCommand",
 ]
 
+from repobee_plug._containers import ImmutableMixin
 
 Option = collections.namedtuple(
     "Option",
@@ -32,6 +38,26 @@ Positional = collections.namedtuple(
     "Positional", ["help", "converter", "argparse_kwargs"]
 )
 Positional.__new__.__defaults__ = (None,) * len(Positional._fields)
+
+
+class Settings(_containers.ImmutableMixin):
+    """Settings for a :py:class:`Command`.
+
+    Args:
+        action_name: The name of the action that the command will be
+            available under.
+    """
+
+    def __init__(
+        self,
+        action_name: Optional[str] = None,
+        category: Optional[str] = None,
+        help: Optional[str] = None,
+        description: Optional[str] = None,
+        requires_api: Optional[bool] = None,
+        base_parsers: Optional[List[_containers.BaseParser]] = None,
+    ):
+        pass
 
 
 class MutuallyExclusiveGroup(_containers.ImmutableMixin):
@@ -132,3 +158,199 @@ class Command:
         $ repobee -p command.py greeting -n Alice
         Hello, my name is Alice and I am 30
     """
+
+
+class Category(ImmutableMixin, abc.ABC):
+    """Class describing a command category for RepoBee's CLI. The purpose of
+    this class is to make it easy to programmatically access the different
+    commands in RepoBee.
+
+    A full command in RepoBee typically takes the following form:
+
+    .. code-block:: bash
+
+        $ repobee <category> <action> [options ...]
+
+    For example, the command ``repobee issues list`` has category ``issues``
+    and action ``list``. Actions are unique only within their category.
+
+    Attributes:
+        name: Name of this category.
+        actions: A tuple of names of actions applicable to this category.
+    """
+
+    name: str
+    actions: Tuple["Action"]
+    action_names: Set[str]
+    _action_table: Mapping[str, "Action"]
+
+    def __init__(self):
+        # determine the name of this category based on the runtime type of the
+        # inheriting class
+        name = self.__class__.__name__.lower().strip("_")
+        # determine the action names based on type annotations in the
+        # inheriting class
+        action_names = {
+            name
+            for name, tpe in self.__annotations__.items()
+            if issubclass(tpe, Action)
+        }
+
+        object.__setattr__(self, "name", name)
+        object.__setattr__(self, "action_names", set(action_names))
+        # This is just to reserve the name 'actions'
+        object.__setattr__(self, "actions", None)
+
+        for key in self.__dict__.keys():
+            if key in action_names:
+                raise ValueError(f"Illegal action name: {key}")
+
+        actions = []
+        for action_name in action_names:
+            action = Action(action_name.replace("_", "-"), self)
+            object.__setattr__(self, action_name, action)
+            actions.append(action)
+
+        object.__setattr__(self, "actions", tuple(actions))
+        object.__setattr__(self, "_action_table", {a.name: a for a in actions})
+
+    def get(self, key: str) -> "Action":
+        return self._action_table.get(key)
+
+    def __getitem__(self, key: str) -> "Action":
+        return self._action_table[key]
+
+    def __iter__(self) -> Iterable["Action"]:
+        return iter(self.actions)
+
+    def __len__(self):
+        return len(self.actions)
+
+    def __repr__(self):
+        return f"Category(name={self.name}, actions={self.action_names})"
+
+    def __str__(self):
+        return self.name
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return self.name == other.name
+
+    def __hash__(self):
+        return hash(repr(self))
+
+
+class Action(ImmutableMixin):
+    """Class describing a RepoBee CLI action.
+
+    Attributes:
+        name: Name of this action.
+        category: The category this action belongs to.
+    """
+
+    name: str
+    category: Category
+
+    def __init__(self, name: str, category: Category):
+        object.__setattr__(self, "name", name)
+        object.__setattr__(self, "category", category)
+
+    def __repr__(self):
+        return f"<Action(name={self.name},category={self.category})>"
+
+    def __str__(self):
+        return f"{self.category.name} {self.name}"
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, self.__class__)
+            and self.name == other.name
+            and self.category == other.category
+        )
+
+    def __hash__(self):
+        return hash(str(self))
+
+    def asdict(self) -> Mapping[str, str]:
+        """This is a convenience method for testing that returns a dictionary
+        on the following form:
+
+        .. code-block:: python
+
+            {"category": self.category.name "action": self.name}
+
+        Returns:
+            A dictionary with the name of this action and its category.
+        """
+        return {"category": self.category.name, "action": self.name}
+
+    def astuple(self) -> Tuple[str, str]:
+        """This is a convenience method for testing that returns a tuple
+        on the following form:
+
+        .. code-block:: python
+
+            (self.category.name, self.name)
+
+        Returns:
+            A dictionary with the name of this action and its category.
+        """
+        return (self.category.name, self.name)
+
+
+class _CoreCommand(ImmutableMixin):
+    """Parser category signifying where an extension parser belongs."""
+
+    def iter_actions(self) -> Iterable[Action]:
+        """Iterate over all command actions."""
+        return iter(self)
+
+    def __call__(self, key):
+        category_map = {c.name: c for c in self._categories}
+        if key not in category_map:
+            raise ValueError(f"No such category: '{key}'")
+        return category_map[key]
+
+    def __iter__(self) -> Iterable[Action]:
+        return itertools.chain.from_iterable(map(iter, self._categories))
+
+    def __len__(self):
+        return sum(map(len, self._categories))
+
+    @property
+    def _categories(self):
+        return [
+            attr
+            for attr in self.__class__.__dict__.values()
+            if isinstance(attr, Category)
+        ]
+
+    class _Repos(Category):
+        setup: Action
+        update: Action
+        clone: Action
+        migrate: Action
+        create_teams: Action
+
+    class _Issues(Category):
+        open: Action
+        close: Action
+        list: Action
+
+    class _Config(Category):
+        show: Action
+        verify: Action
+
+    class _Reviews(Category):
+        assign: Action
+        check: Action
+        end: Action
+
+    repos = _Repos()
+    issues = _Issues()
+    config = _Config()
+    reviews = _Reviews()
+
+
+CoreCommand = _CoreCommand()

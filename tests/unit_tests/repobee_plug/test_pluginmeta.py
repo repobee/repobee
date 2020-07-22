@@ -4,6 +4,7 @@ import pathlib
 import pytest
 
 import repobee_plug as plug
+import repobee_plug.cli
 
 from repobee_plug import _pluginmeta
 from repobee_plug import _exceptions
@@ -148,7 +149,7 @@ class TestDeclarativeExtensionCommand:
         """Test declaring an command with no explicit metadata, and checking
         that the defaults are as expected.
         """
-        expected_category = plug.CoreCommand.config
+        expected_category = repobee_plug.cli.CoreCommand.config
         expected_name = "cool-greetings"
         expected_help = "This is a greeting command!"
         expected_description = "This is a greeting"
@@ -369,7 +370,7 @@ class TestDeclarativeCommandExtension:
         """Tests adding a required option to ``config show``."""
 
         class ConfigShowExt(plug.Plugin, plug.cli.CommandExtension):
-            __action__ = plug.CoreCommand.config.show
+            __action__ = repobee_plug.cli.CoreCommand.config.show
 
             silly_new_option = plug.cli.Option(help="your name", required=True)
 
