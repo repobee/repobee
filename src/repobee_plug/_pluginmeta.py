@@ -50,12 +50,15 @@ class _PluginMeta(type):
                 "A plugin cannot be both a Command and a CommandExtension"
             )
 
-        if cli.Command in bases or cli.CommandExtension in bases:
-            ext_cmd_func = (
-                _generate_command_func(attrdict)
-                if cli.Command in bases
-                else _generate_command_extension_func()
-            )
+        if cli.Command in bases:
+            ext_cmd_func = _generate_command_func(attrdict)
+            attrdict[ext_cmd_func.__name__] = ext_cmd_func
+        elif cli.CommandExtension in bases:
+            if "__settings__" not in attrdict:
+                raise _exceptions.PlugError(
+                    "CommandExtension must have a '__settings__' attribute"
+                )
+            ext_cmd_func = _generate_command_extension_func()
             attrdict[ext_cmd_func.__name__] = ext_cmd_func
 
         methods = cls._extract_public_methods(attrdict)

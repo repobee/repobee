@@ -404,3 +404,27 @@ class TestDeclarativeCommandExtension:
             "A plugin cannot be both a Command and a CommandExtension"
             in str(exc_info.value)
         )
+
+    def test_requires_settings(self):
+        """Test that an error is raised if the __settings__ attribute is not
+        defined.
+        """
+        with pytest.raises(plug.PlugError) as exc_info:
+
+            class Ext(plug.Plugin, plug.cli.CommandExtension):
+                pass
+
+        assert "CommandExtension must have a '__settings__' attribute" in str(
+            exc_info.value
+        )
+
+    def test_requires_non_empty_actions_list(self):
+
+        with pytest.raises(ValueError) as exc_info:
+
+            class Ext(plug.Plugin, plug.cli.CommandExtension):
+                __settings__ = plug.cli.CommandExtensionSettings(actions=[])
+
+        assert "argument 'actions' must be a non-empty list" in str(
+            exc_info.value
+        )

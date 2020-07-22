@@ -69,6 +69,14 @@ class CommandSettings(_containers.ImmutableMixin):
         Hello, world!
     """
 
+    action_name: Optional[str]
+    category: Optional["CoreCommand"]
+    help: str
+    description: str
+    requires_api: bool
+    base_parsers: Optional[List[_containers.BaseParser]]
+    config_section_name: Optional[str]
+
     def __init__(
         self,
         action_name: Optional[str] = None,
@@ -82,7 +90,19 @@ class CommandSettings(_containers.ImmutableMixin):
         """
         Args:
             action_name: The name of the action that the command will be
-                available under.
+                available under. Defaults to the name of the plugin class.
+            category: The category to place this command in. If not specified,
+                then the command will be top-level (i.e. uncategorized).
+            help: A help section for the command. This appears when listing the
+                help section of the command's category.
+            description: A help section for the command. This appears when
+                listing the help section for the command itself.
+            requires_api: If True, a platform API will be insantiated and
+                passed to the command function.
+            base_parsers: A list of base parsers to add to the command.
+            config_section_name: The name of the configuration section the
+                command should look for configurable options in. Defaults
+                to the name of the plugin the command is defined in.
         """
         object.__setattr__(self, "action_name", action_name)
         object.__setattr__(self, "category", category)
@@ -104,6 +124,14 @@ class CommandExtensionSettings(_containers.ImmutableMixin):
         actions: List["Action"],
         config_section_name: Optional[str] = None,
     ):
+        """
+        Args:
+            actions: A list of actions to extend.
+            config_section_name: Name of the configuration section that the
+                command extension will fetch configuration values from.
+                Defaults to the name of the plugin in which the extension is
+                defined.
+        """
         if not actions:
             raise ValueError(
                 f"argument 'actions' must be a non-empty list: {actions}"
