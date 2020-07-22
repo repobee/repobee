@@ -23,7 +23,7 @@ LOG_DIR = pathlib.Path(
     )
 )
 DEFAULTS_SECTION_HDR = "DEFAULTS"
-DEFAULT_CONFIG_FILE = CONFIG_DIR / "config.cnf"
+DEFAULT_CONFIG_FILE = CONFIG_DIR / "config.ini"
 assert DEFAULT_CONFIG_FILE.is_absolute()
 
 # arguments that can be configured via config file
