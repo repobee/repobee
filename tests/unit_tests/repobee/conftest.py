@@ -132,7 +132,7 @@ def no_config_mock(mocker, isfile_mock, tmpdir):
 def empty_config_mock(mocker, isfile_mock, tmpdir, monkeypatch):
     """Sets up an empty config file which is read by the config._read_config
     function."""
-    file = tmpdir.join("config.cnf")
+    file = tmpdir.join("config.ini")
     file.ensure()
     read_config = _repobee.config._read_config
     mocker.patch(

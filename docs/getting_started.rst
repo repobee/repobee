@@ -74,7 +74,7 @@ command line. For the rest of this guide, I will assume that the config file
 has defaults for at least the following:
 
 .. code-block:: bash
-   :caption: config.cnf
+   :caption: config.ini
 
    [DEFAULTS]
    base_url = https://some-enterprise-host/api/v3
@@ -110,7 +110,7 @@ that you got everything correctly.
 .. code-block:: bash
 
     $ repobee show-config
-    [INFO] Found valid config file at /home/slarse/.config/repobee/config.cnf
+    [INFO] Found valid config file at /home/slarse/.config/repobee/config.ini
     [INFO]
     ----------------BEGIN CONFIG FILE-----------------
     [DEFAULTS]
