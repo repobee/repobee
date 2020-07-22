@@ -2,7 +2,7 @@ import argparse
 import daiquiri
 import functools
 
-from typing import List, Tuple, Callable, Mapping, Any
+from typing import List, Tuple, Callable, Mapping, Any, Union
 
 from repobee_plug import _exceptions
 from repobee_plug import _corehooks
@@ -90,14 +90,17 @@ class _PluginMeta(type):
         }
 
 
-def _extract_cli_options(attrdict) -> List[Tuple[str, cli.Option]]:
+def _extract_cli_options(
+    attrdict,
+) -> List[Tuple[str, Union[cli.Option, cli.Positional]]]:
     """Return any members that are CLI options as a list of tuples on the form
-    (member_name, option).
+    (member_name, option). Other types of CLI arguments, such as positionals,
+    are converted to :py:class:`~cli.Option`s.
     """
     return [
         (key, value)
         for key, value in attrdict.items()
-        if isinstance(value, cli.Option)
+        if isinstance(value, (cli.Option, cli.Positional))
     ]
 
 
@@ -127,7 +130,9 @@ def _attach_options(config, show_all_opts, parser, plugin: "Plugin"):
     opts = _extract_cli_options(plugin.__class__.__dict__)
     for (name, opt) in opts:
         configured_value = config_section.get(name)
-        if configured_value and not opt.configurable:
+        if configured_value and not (
+            hasattr(opt, "configurable") and opt.configurable
+        ):
             raise _exceptions.PlugError(
                 f"Plugin '{plugin.plugin_name}' does not allow "
                 f"'{name}' to be configured"
@@ -168,7 +173,7 @@ def _generate_command_func(attrdict: Mapping[str, Any]) -> Callable:
 
 def _add_option(
     name: str,
-    opt: cli.Option,
+    opt: Union[cli.Positional, cli.Option],
     configured_value: str,
     show_all_opts: bool,
     parser: argparse.ArgumentParser,
@@ -177,25 +182,31 @@ def _add_option(
     args = []
     kwargs = opt.argparse_kwargs or {}
 
-    if opt.short_name:
-        args.append(opt.short_name)
+    if opt.converter:
+        kwargs["type"] = opt.converter
 
-    if opt.long_name:
-        args.append(opt.long_name)
-    else:
-        args.append(f"--{name.replace('_', '-')}")
-
-    kwargs["type"] = opt.converter
-    # configured value takes precedence over default
-    kwargs["default"] = configured_value or opt.default
-    kwargs["dest"] = name
-    # required opts become not required if configured
-    kwargs["required"] = not configured_value and opt.required
     kwargs["help"] = (
         argparse.SUPPRESS
         if (configured_value and not show_all_opts)
         else opt.help or ""
     )
+
+    if isinstance(opt, cli.Option):
+        if opt.short_name:
+            args.append(opt.short_name)
+
+        if opt.long_name:
+            args.append(opt.long_name)
+        else:
+            args.append(f"--{name.replace('_', '-')}")
+
+        kwargs["dest"] = name
+        # configured value takes precedence over default
+        kwargs["default"] = configured_value or opt.default
+        # required opts become not required if configured
+        kwargs["required"] = not configured_value and opt.required
+    elif isinstance(opt, cli.Positional):
+        args.append(name)
 
     parser.add_argument(*args, **kwargs)
 
