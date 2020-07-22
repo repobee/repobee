@@ -48,10 +48,10 @@ class MutuallyExclusiveGroup(_containers.ImmutableMixin):
     options: List[Tuple[str, Option]]
     required: bool
 
-    def __init__(self, *, required: bool = False, **kwargs):
+    def __init__(self, *, __required__: bool = False, **kwargs):
         """
         Args:
-            required: Whether or not this mutex group is required.
+            __required__: Whether or not this mutex group is required.
             kwargs: Keyword arguments on the form ``name=plug.cli.Option()``.
         """
 
@@ -70,7 +70,7 @@ class MutuallyExclusiveGroup(_containers.ImmutableMixin):
         ]
 
         object.__setattr__(self, "options", options)
-        object.__setattr__(self, "required", required)
+        object.__setattr__(self, "required", __required__)
 
 
 class CommandExtension:

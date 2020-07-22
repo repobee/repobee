@@ -297,6 +297,7 @@ class TestDeclarativeExtensionCommand:
                 old=plug.cli.Option(
                     argparse_kwargs=dict(action="store_const", const=1337),
                 ),
+                __required__=True,
             )
 
             def command_callback(self, args, api):
@@ -323,6 +324,7 @@ class TestDeclarativeExtensionCommand:
                 old=plug.cli.Option(
                     argparse_kwargs=dict(action="store_const", const=1337),
                 ),
+                __required__=True,
             )
 
         assert "Positional not allowed in mutex group" in str(exc_info)
@@ -337,6 +339,7 @@ class TestDeclarativeExtensionCommand:
                 old=plug.cli.Option(
                     argparse_kwargs=dict(action="store_const", const=old),
                 ),
+                __required__=True,
             )
 
             def command_callback(self, args, api):
