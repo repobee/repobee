@@ -7,6 +7,7 @@ import pytest
 import repobee_plug as plug
 
 import gitlabmanager
+import repobee_plug.cli
 from _helpers.asserts import (
     assert_repos_exist,
     assert_on_groups,
@@ -121,7 +122,7 @@ def with_student_repos(restore):
     command = " ".join(
         [
             REPOBEE_GITLAB,
-            *str(plug.CoreCommand.repos.setup).split(),
+            *str(repobee_plug.cli.CoreCommand.repos.setup).split(),
             *BASE_ARGS,
             *MASTER_ORG_ARG,
             *MASTER_REPOS_ARG,
@@ -187,7 +188,7 @@ def with_reviews(with_student_repos):
     command = " ".join(
         [
             REPOBEE_GITLAB,
-            *str(plug.CoreCommand.reviews.assign).split(),
+            *str(repobee_plug.cli.CoreCommand.reviews.assign).split(),
             *BASE_ARGS,
             "--mn",
             master_repo_name,

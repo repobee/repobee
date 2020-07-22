@@ -168,7 +168,7 @@ def _add_subparsers(parser, show_all_opts, ext_commands, config_file):
     subparsers = parser.add_subparsers(dest=SUB)
     subparsers.required = True
     parsers: Mapping[
-        Union[plug.Category, plug.Action], argparse.ArgumentParser
+        Union[plug.cli.Category, plug.cli.Action], argparse.ArgumentParser
     ] = {}
 
     def _create_category_parsers(category, help, description):
@@ -181,22 +181,22 @@ def _add_subparsers(parser, show_all_opts, ext_commands, config_file):
         return category_parsers
 
     repo_parsers = _create_category_parsers(
-        plug.CoreCommand.repos,
+        plug.cli.CoreCommand.repos,
         description="Manage repositories.",
         help="Manage repositories.",
     )
     issues_parsers = _create_category_parsers(
-        plug.CoreCommand.issues,
+        plug.cli.CoreCommand.issues,
         description="Manage issues.",
         help="Manage issues.",
     )
     review_parsers = _create_category_parsers(
-        plug.CoreCommand.reviews,
+        plug.cli.CoreCommand.reviews,
         help="Manage peer reviews.",
         description="Manage peer reviews.",
     )
     config_parsers = _create_category_parsers(
-        plug.CoreCommand.config,
+        plug.cli.CoreCommand.config,
         help="Configure RepoBee.",
         description="Configure RepoBee.",
     )
@@ -245,7 +245,7 @@ def _add_repo_parsers(
     base_parser, base_student_parser, master_org_parser, add_parser
 ):
     add_parser(
-        plug.CoreCommand.repos.setup,
+        plug.cli.CoreCommand.repos.setup,
         help="Setup student repos.",
         description=(
             "Setup student repositories based on master repositories. "
@@ -267,7 +267,7 @@ def _add_repo_parsers(
     )
 
     update = add_parser(
-        plug.CoreCommand.repos.update,
+        plug.cli.CoreCommand.repos.update,
         help="Update existing student repos.",
         description=(
             "Push changes from master repos to student repos. If the "
@@ -294,7 +294,7 @@ def _add_repo_parsers(
     )
 
     clone = add_parser(
-        plug.CoreCommand.repos.clone,
+        plug.cli.CoreCommand.repos.clone,
         help="Clone student repos.",
         description="Clone student repos asynchronously in bulk.",
         parents=[
@@ -312,7 +312,7 @@ def _add_repo_parsers(
     plug.manager.hook.clone_parser_hook(clone_parser=clone)
 
     add_parser(
-        plug.CoreCommand.repos.create_teams,
+        plug.cli.CoreCommand.repos.create_teams,
         help="Create student teams without creating repos.",
         description=(
             "Only create student teams. This is intended for when you want to "
@@ -326,7 +326,7 @@ def _add_repo_parsers(
     )
 
     add_parser(
-        plug.CoreCommand.repos.migrate,
+        plug.cli.CoreCommand.repos.migrate,
         help="Migrate repositories into the target organization.",
         description=(
             "Migrate repositories into the target organization. "
@@ -340,7 +340,7 @@ def _add_repo_parsers(
 
 def _add_config_parsers(base_parser, master_org_parser, add_parser):
     show_config = add_parser(
-        plug.CoreCommand.config.show,
+        plug.cli.CoreCommand.config.show,
         help="Show the configuration file",
         description=(
             "Show the contents of the configuration file. If no configuration "
@@ -352,7 +352,7 @@ def _add_config_parsers(base_parser, master_org_parser, add_parser):
     _add_traceback_arg(show_config)
 
     add_parser(
-        plug.CoreCommand.config.verify,
+        plug.cli.CoreCommand.config.verify,
         help="Verify core settings.",
         description="Verify core settings by trying various API requests.",
         parents=[base_parser, master_org_parser],
@@ -362,7 +362,7 @@ def _add_config_parsers(base_parser, master_org_parser, add_parser):
 
 def _add_peer_review_parsers(base_parsers, add_parser):
     assign_parser = add_parser(
-        plug.CoreCommand.reviews.assign,
+        plug.cli.CoreCommand.reviews.assign,
         description=(
             "For each student repo, create a review team with read access "
             "named <student-repo-name>-review and randomly assign "
@@ -398,7 +398,7 @@ def _add_peer_review_parsers(base_parsers, add_parser):
         type=str,
     )
     check_review_progress = add_parser(
-        plug.CoreCommand.reviews.check,
+        plug.cli.CoreCommand.reviews.check,
         description=(
             "Check which students have opened review review issues in their "
             "assigned repos. As it is possible for students to leave the peer "
@@ -433,7 +433,7 @@ def _add_peer_review_parsers(base_parsers, add_parser):
         required=True,
     )
     add_parser(
-        plug.CoreCommand.reviews.end,
+        plug.cli.CoreCommand.reviews.end,
         description=(
             "Delete review allocations assigned with `assign-reviews`. "
             "This is a destructive action, as the allocations for reviews "
@@ -458,7 +458,7 @@ def _add_peer_review_parsers(base_parsers, add_parser):
 def _add_issue_parsers(base_parsers, add_parser):
     base_parser, base_student_parser, master_org_parser = base_parsers
     open_parser = add_parser(
-        plug.CoreCommand.issues.open,
+        plug.cli.CoreCommand.issues.open,
         description=(
             "Open issues in student repositories. For each master repository "
             "specified, the student list is traversed. For every student repo "
@@ -479,7 +479,7 @@ def _add_issue_parsers(base_parsers, add_parser):
     )
 
     close_parser = add_parser(
-        plug.CoreCommand.issues.close,
+        plug.cli.CoreCommand.issues.close,
         description=(
             "Close issues in student repos based on a regex. For each master "
             "repository specified, the student list is traversed. For every "
@@ -502,7 +502,7 @@ def _add_issue_parsers(base_parsers, add_parser):
     )
 
     list_parser = add_parser(
-        plug.CoreCommand.issues.list,
+        plug.cli.CoreCommand.issues.list,
         description="List issues in student repos.",
         help="List issues in student repos.",
         parents=[
@@ -651,7 +651,7 @@ def _add_extension_parsers(
                 formatter_class=_OrderedFormatter,
             )
 
-        if cmd.name in plug.CoreCommand:
+        if cmd.name in plug.cli.CoreCommand:
             ext_parser = parsers_mapping[cmd.name]
             cmd.parser(
                 config=parsed_config,

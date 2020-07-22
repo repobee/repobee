@@ -144,11 +144,9 @@ class TestDeclarativeExtensionCommand:
         assert ext_cmd.requires_base_parsers is None
         assert ext_cmd.category is None
 
-    def test_with_metadata(self):
-        """Test declaring an command with no explicit metadata, and checking
-        that the defaults are as expected.
-        """
-        expected_category = plug.CoreCommand.config
+    def test_with_settings(self):
+        """Test declaring an command with settings."""
+        expected_category = plug.cli.CoreCommand.config
         expected_name = "cool-greetings"
         expected_help = "This is a greeting command!"
         expected_description = "This is a greeting"
@@ -159,12 +157,14 @@ class TestDeclarativeExtensionCommand:
         expected_requires_api = True
 
         class ExtCommand(plug.Plugin, plug.cli.Command):
-            __category__ = expected_category
-            __action_name__ = expected_name
-            __help__ = expected_help
-            __description__ = expected_description
-            __base_parsers__ = expected_base_parsers
-            __requires_api__ = expected_requires_api
+            __settings__ = plug.cli.CommandSettings(
+                category=expected_category,
+                action_name=expected_name,
+                help=expected_help,
+                description=expected_description,
+                base_parsers=expected_base_parsers,
+                requires_api=expected_requires_api,
+            )
 
             def command_callback(self, args, api):
                 pass
@@ -369,7 +369,9 @@ class TestDeclarativeCommandExtension:
         """Tests adding a required option to ``config show``."""
 
         class ConfigShowExt(plug.Plugin, plug.cli.CommandExtension):
-            __action__ = plug.CoreCommand.config.show
+            __settings__ = plug.cli.CommandExtensionSettings(
+                actions=[plug.cli.CoreCommand.config.show]
+            )
 
             silly_new_option = plug.cli.Option(help="your name", required=True)
 
@@ -401,4 +403,28 @@ class TestDeclarativeCommandExtension:
         assert (
             "A plugin cannot be both a Command and a CommandExtension"
             in str(exc_info.value)
+        )
+
+    def test_requires_settings(self):
+        """Test that an error is raised if the __settings__ attribute is not
+        defined.
+        """
+        with pytest.raises(plug.PlugError) as exc_info:
+
+            class Ext(plug.Plugin, plug.cli.CommandExtension):
+                pass
+
+        assert "CommandExtension must have a '__settings__' attribute" in str(
+            exc_info.value
+        )
+
+    def test_requires_non_empty_actions_list(self):
+
+        with pytest.raises(ValueError) as exc_info:
+
+            class Ext(plug.Plugin, plug.cli.CommandExtension):
+                __settings__ = plug.cli.CommandExtensionSettings(actions=[])
+
+        assert "argument 'actions' must be a non-empty list" in str(
+            exc_info.value
         )

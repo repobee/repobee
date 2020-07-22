@@ -50,12 +50,15 @@ class _PluginMeta(type):
                 "A plugin cannot be both a Command and a CommandExtension"
             )
 
-        if cli.Command in bases or cli.CommandExtension in bases:
-            ext_cmd_func = (
-                _generate_command_func(attrdict)
-                if cli.Command in bases
-                else _generate_command_extension_func()
-            )
+        if cli.Command in bases:
+            ext_cmd_func = _generate_command_func(attrdict)
+            attrdict[ext_cmd_func.__name__] = ext_cmd_func
+        elif cli.CommandExtension in bases:
+            if "__settings__" not in attrdict:
+                raise _exceptions.PlugError(
+                    "CommandExtension must have a '__settings__' attribute"
+                )
+            ext_cmd_func = _generate_command_extension_func()
             attrdict[ext_cmd_func.__name__] = ext_cmd_func
 
         methods = cls._extract_public_methods(attrdict)
@@ -114,9 +117,14 @@ def _generate_command_extension_func() -> Callable:
     """
 
     def create_extension_command(self):
+        settings = self.__settings__
+        if settings.config_section_name:
+            self.__config_section__ = settings.config_section_name
+
         return _containers.ExtensionCommand(
             parser=functools.partial(_attach_options, plugin=self),
-            name=self.__action__,
+            # FIXME support more than one action
+            name=settings.actions[0],
             callback=lambda: None,
             description=None,
             help=None,
@@ -152,24 +160,20 @@ def _generate_command_func(attrdict: Mapping[str, Any]) -> Callable:
     """
 
     def create_extension_command(self):
-        category = attrdict.get("__category__")
-        action_name = attrdict.get(
-            "__action_name__"
-        ) or self.__class__.__name__.lower().replace("_", "-")
-        help = attrdict.get("__help__") or ""
-        description = attrdict.get("__description__") or ""
-        requires_api = attrdict.get("__requires_api__") or False
-        base_parsers = attrdict.get("__base_parsers__") or None
+        settings = attrdict.get("__settings__") or cli.CommandSettings()
+        if settings.config_section_name:
+            self.__config_section__ = settings.config_section_name
 
         return _containers.ExtensionCommand(
             parser=functools.partial(_attach_options, plugin=self),
-            name=action_name,
-            help=help,
-            description=description,
+            name=settings.action_name
+            or self.__class__.__name__.lower().replace("_", "-"),
+            help=settings.help,
+            description=settings.description,
             callback=self.command_callback,
-            category=category,
-            requires_api=requires_api,
-            requires_base_parsers=base_parsers,
+            category=settings.category,
+            requires_api=settings.requires_api,
+            requires_base_parsers=settings.base_parsers,
         )
 
     return create_extension_command
