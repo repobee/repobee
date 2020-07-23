@@ -318,7 +318,7 @@ class TestDeclarativeExtensionCommand:
     def test_positionals_not_allowed_in_mutex_group(self):
         """Positional arguments don't make sense in a mutex group."""
 
-        with pytest.raises(TypeError) as exc_info:
+        with pytest.raises(ValueError) as exc_info:
             plug.cli.mutually_exclusive_group(
                 age=plug.cli.positional(converter=int),
                 old=plug.cli.option(

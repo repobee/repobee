@@ -24,10 +24,10 @@ __all__ = [
 from repobee_plug._containers import ImmutableMixin
 
 
-class OptionType(enum.Enum):
-    OPTION = enum.auto()
-    POSITIONAL = enum.auto()
-    MUTEX_GROUP = enum.auto()
+class ArgumentType(enum.Enum):
+    OPTION = "Option"
+    POSITIONAL = "Positional"
+    MUTEX_GROUP = "Mutex"
 
 
 _Option = collections.namedtuple(
@@ -40,90 +40,29 @@ _Option = collections.namedtuple(
         "converter",
         "required",
         "default",
+        "argument_type",
         "argparse_kwargs",
     ],
 )
+_Option.__new__.__defaults__ = (None,) * len(_Option._fields)
 
-_Positional = collections.namedtuple(
-    "Positional", ["help", "converter", "argparse_kwargs"]
+_CommandSettings = collections.namedtuple(
+    "_CommandSettings",
+    [
+        "action_name",
+        "category",
+        "help",
+        "description",
+        "requires_api",
+        "base_parsers",
+        "config_section_name",
+    ],
 )
 
 
-class _CommandSettings(_containers.ImmutableMixin):
-    """Settings for a :py:class:`Command`, that can be provided in the
-    ``__settings__`` attribute.
-
-    """
-
-    action_name: Optional[str]
-    category: Optional["CoreCommand"]
-    help: str
-    description: str
-    requires_api: bool
-    base_parsers: Optional[List[_containers.BaseParser]]
-    config_section_name: Optional[str]
-
-    def __init__(
-        self,
-        action_name: Optional[str] = None,
-        category: Optional["CoreCommand"] = None,
-        help: str = "",
-        description: str = "",
-        requires_api: bool = False,
-        base_parsers: Optional[List[_containers.BaseParser]] = None,
-        config_section_name: Optional[str] = None,
-    ):
-        """
-        Args:
-            action_name: The name of the action that the command will be
-                available under. Defaults to the name of the plugin class.
-            category: The category to place this command in. If not specified,
-                then the command will be top-level (i.e. uncategorized).
-            help: A help section for the command. This appears when listing the
-                help section of the command's category.
-            description: A help section for the command. This appears when
-                listing the help section for the command itself.
-            requires_api: If True, a platform API will be insantiated and
-                passed to the command function.
-            base_parsers: A list of base parsers to add to the command.
-            config_section_name: The name of the configuration section the
-                command should look for configurable options in. Defaults
-                to the name of the plugin the command is defined in.
-        """
-        object.__setattr__(self, "action_name", action_name)
-        object.__setattr__(self, "category", category)
-        object.__setattr__(self, "help", help)
-        object.__setattr__(self, "description", description)
-        object.__setattr__(self, "requires_api", requires_api)
-        object.__setattr__(self, "base_parsers", base_parsers)
-        object.__setattr__(self, "config_section_name", config_section_name)
-
-
-class _CommandExtensionSettings(_containers.ImmutableMixin):
-    """Settings for a :py:class:`CommandExtension`."""
-
-    actions: List["Action"]
-    config_section_name: Optional[str]
-
-    def __init__(
-        self,
-        actions: List["Action"],
-        config_section_name: Optional[str] = None,
-    ):
-        """
-        Args:
-            actions: A list of actions to extend.
-            config_section_name: Name of the configuration section that the
-                command extension will fetch configuration values from.
-                Defaults to the name of the plugin in which the extension is
-                defined.
-        """
-        if not actions:
-            raise ValueError(
-                f"argument 'actions' must be a non-empty list: {actions}"
-            )
-        object.__setattr__(self, "actions", actions)
-        object.__setattr__(self, "config_section_name", config_section_name)
+_CommandExtensionSettings = collections.namedtuple(
+    "_CommandExtensionSettings", ["actions", "config_section_name"]
+)
 
 
 def command_settings(
@@ -134,7 +73,7 @@ def command_settings(
     requires_api: bool = False,
     base_parsers: Optional[List[_containers.BaseParser]] = None,
     config_section_name: Optional[str] = None,
-):
+) -> _CommandSettings:
     """Create a settings object for a :py:class:`Command`.
 
     Example usage:
@@ -189,7 +128,23 @@ def command_settings(
 
 def command_extension_settings(
     actions: List["Action"], config_section_name: Optional[str] = None
-):
+) -> _CommandExtensionSettings:
+    """Settings for a :py:class:`CommandExtension`.
+
+    Args:
+        actions: A list of actions to extend.
+        config_section_name: Name of the configuration section that the
+            command extension will fetch configuration values from.
+            Defaults to the name of the plugin in which the extension is
+            defined.
+    Returns:
+        A wrapper object for settings.
+    """
+
+    if not actions:
+        raise ValueError(
+            f"argument 'actions' must be a non-empty list: {actions}"
+        )
     return _CommandExtensionSettings(
         actions=actions, config_section_name=config_section_name
     )
@@ -205,6 +160,54 @@ def option(
     converter: Optional[Callable[[str], Any]] = None,
     argparse_kwargs: Optional[Mapping[str, Any]] = None,
 ):
+    """Create an option for a :py:class:`Command` or a
+    :py:class:`CommandExtension`.
+
+    Example usage:
+
+    .. code-block:: python
+        :caption: ext.py
+
+        import repobee_plug as plug
+
+
+        class Hello(plug.Plugin, plug.cli.Command):
+            name = plug.cli.option(help="Your name.")
+            age = plug.cli.option(converter=int, help="Your age.")
+
+            def command_callback(self, args, api):
+                print(
+                    f"Hello, my name is {args.name} "
+                    f"and I am {args.age} years old"
+                )
+
+    This command can then be called like so:
+
+    .. code-block:: bash
+
+        $ repobee -p ext.py hello --name Alice --age 22
+        Hello, my name is Alice and I am 22 years old
+
+    Args:
+        short_name: The short name of this option. Must start with ``-``.
+        long_name: The long name of this option. Must start with `--`.
+        help: A description of this option that is used in the CLI help
+            section.
+        required: Whether or not this option is required.
+        default: A default value for this option.
+        configurable: Whether or not this option is configurable. If an option
+            is both configurable and required, having a value for the option
+            in the configuration file makes the option non-required.
+        converter: A converter function that takes a string and returns
+            the argument in its proper state. Should also perform input
+            validation and raise an error if the input is malformed.
+        argparse_kwargs: Keyword arguments that are passed directly to
+            :py:meth:`argparse.ArgumentParser.add_argument`
+    Returns:
+        A CLI argument wrapper used internally by RepoBee to create command
+        line arguments.
+    """
+
     return _Option(
         short_name=short_name,
         long_name=long_name,
@@ -213,6 +216,7 @@ def option(
         converter=converter,
         required=required,
         default=default,
+        argument_type=ArgumentType.OPTION,
         argparse_kwargs=argparse_kwargs or {},
     )
 
@@ -221,53 +225,80 @@ def positional(
     help: str = "",
     converter: Optional[Callable[[str], Any]] = None,
     argparse_kwargs: Optional[Mapping[str, Any]] = None,
-):
-    return _Positional(
-        help=help, converter=converter, argparse_kwargs=argparse_kwargs or {}
+) -> _Option:
+    """Create a positional argument for a :py:class:`Command` or a
+    :py:class:`CommandExtension`.
+
+    Example usage:
+
+    .. code-block:: python
+        :caption: ext.py
+
+        import repobee_plug as plug
+
+
+        class Hello(plug.Plugin, plug.cli.Command):
+            name = plug.cli.Positional(help="Your name.")
+            age = plug.cli.Positional(converter=int, help="Your age.")
+
+            def command_callback(self, args, api):
+                print(
+                    f"Hello, my name is {args.name} "
+                    f"and I am {args.age} years old"
+                )
+
+    This command can then be called like so:
+
+    .. code-block:: bash
+
+        $ repobee -p ext.py hello Alice 22
+        Hello, my name is Alice and I am 22 years old
+
+    Args:
+        help: The help section for the positional argument.
+        converter: A converter function that takes a string and returns
+            the argument in its proper state. Should also perform input
+            validation and raise an error if the input is malformed.
+        argparse_kwargs: Keyword arguments that are passed directly to
+            :py:meth:`argparse.ArgumentParser.add_argument`
+    Returns:
+        A CLI argument wrapper used internally by RepoBee to create command
+        line argument.
+    """
+    return _Option(
+        help=help,
+        converter=converter,
+        argparse_kwargs=argparse_kwargs or {},
+        argument_type=ArgumentType.POSITIONAL,
     )
 
 
 def mutually_exclusive_group(*, __required__: bool = False, **kwargs):
-    return _MutuallyExclusiveGroup(__required__=__required__, **kwargs)
-
-
-class _MutuallyExclusiveGroup(_containers.ImmutableMixin):
-    """A group of mutually exclusive CLI options.
-
-    Attributes:
-        ALLOWED_TYPES: The types that are allowed to be passed in the
-            constructor kwargs.
-        options: The options that have been stored in this group.
-        required: Whether or not this mutex group is required.
     """
+    Args:
+        __required__: Whether or not this mutex group is required.
+        kwargs: Keyword arguments on the form ``name=plug.cli.Option()``.
+    """
+    allowed_types = (ArgumentType.OPTION,)
 
-    ALLOWED_TYPES = (_Option,)
-    options: List[Tuple[str, _Option]]
-    required: bool
+    def _check_arg_type(name, opt):
+        if opt.argument_type not in allowed_types:
+            raise ValueError(
+                f"{opt.argument_type.value} not allowed in mutex group"
+            )
+        return True
 
-    def __init__(self, *, __required__: bool = False, **kwargs):
-        """
-        Args:
-            __required__: Whether or not this mutex group is required.
-            kwargs: Keyword arguments on the form ``name=plug.cli.Option()``.
-        """
+    options = [
+        (key, value)
+        for key, value in kwargs.items()
+        if _check_arg_type(key, value)
+    ]
+    return _MutuallyExclusiveGroup(required=__required__, options=options)
 
-        def _check_type(key, value):
-            if not isinstance(value, self.ALLOWED_TYPES):
-                raise TypeError(
-                    f"{value.__class__.__name__} "
-                    f"not allowed in mutex group: {key}={value}"
-                )
-            return True
 
-        options = [
-            (key, value)
-            for key, value in kwargs.items()
-            if _check_type(key, value)
-        ]
-
-        object.__setattr__(self, "options", options)
-        object.__setattr__(self, "required", __required__)
+_MutuallyExclusiveGroup = collections.namedtuple(
+    "_MutuallyExclusiveGroup", ["options", "required"]
+)
 
 
 class CommandExtension:
