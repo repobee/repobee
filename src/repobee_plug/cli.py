@@ -1,24 +1,34 @@
 """Plugin functionality for creating extensions to the RepoBee CLI."""
 import abc
 import collections
+import enum
 import itertools
-from typing import List, Tuple, Optional, Set, Mapping, Iterable
+from typing import List, Tuple, Optional, Set, Mapping, Iterable, Any, Callable
 
 from repobee_plug import _containers
 
+
 __all__ = [
-    "Option",
-    "Positional",
-    "MutuallyExclusiveGroup",
+    "option",
+    "positional",
+    "mutually_exclusive_group",
+    "command_settings",
+    "command_extension_settings",
     "Command",
     "CommandExtension",
     "Action",
     "Category",
     "CoreCommand",
-    "CommandSettings",
 ]
 
 from repobee_plug._containers import ImmutableMixin
+
+
+class OptionType(enum.Enum):
+    OPTION = enum.auto()
+    POSITIONAL = enum.auto()
+    MUTEX_GROUP = enum.auto()
+
 
 Option = collections.namedtuple(
     "Option",
@@ -138,6 +148,87 @@ class CommandExtensionSettings(_containers.ImmutableMixin):
             )
         object.__setattr__(self, "actions", actions)
         object.__setattr__(self, "config_section_name", config_section_name)
+
+
+def command_settings(
+    action_name: Optional[str] = None,
+    category: Optional["CoreCommand"] = None,
+    help: str = "",
+    description: str = "",
+    requires_api: bool = False,
+    base_parsers: Optional[List[_containers.BaseParser]] = None,
+    config_section_name: Optional[str] = None,
+):
+    """
+    Args:
+        action_name: The name of the action that the command will be
+            available under. Defaults to the name of the plugin class.
+        category: The category to place this command in. If not specified,
+            then the command will be top-level (i.e. uncategorized).
+        help: A help section for the command. This appears when listing the
+            help section of the command's category.
+        description: A help section for the command. This appears when
+            listing the help section for the command itself.
+        requires_api: If True, a platform API will be insantiated and
+            passed to the command function.
+        base_parsers: A list of base parsers to add to the command.
+        config_section_name: The name of the configuration section the
+            command should look for configurable options in. Defaults
+            to the name of the plugin the command is defined in.
+    """
+    return CommandSettings(
+        action_name=action_name,
+        category=category,
+        help=help,
+        description=description,
+        requires_api=requires_api,
+        base_parsers=base_parsers,
+        config_section_name=config_section_name,
+    )
+
+
+def command_extension_settings(
+    actions: List["Action"], config_section_name: Optional[str] = None
+):
+    return CommandExtensionSettings(
+        actions=actions, config_section_name=config_section_name
+    )
+
+
+def option(
+    short_name: Optional[str] = None,
+    long_name: Optional[str] = None,
+    help: str = "",
+    required: bool = False,
+    default: Optional[Any] = None,
+    configurable: bool = False,
+    converter: Optional[Callable[[str], Any]] = None,
+    argparse_kwargs: Optional[Mapping[str, Any]] = None,
+):
+    return Option(
+        short_name=short_name,
+        long_name=long_name,
+        configurable=configurable,
+        help=help,
+        converter=converter,
+        required=required,
+        default=default,
+        argparse_kwargs=argparse_kwargs or {},
+    )
+
+
+def positional(
+    help: str = "",
+    converter: Optional[Callable[[str], Any]] = None,
+    argparse_kwargs: Optional[Mapping[str, Any]] = None,
+):
+    return Positional(
+        help=help, converter=converter, argparse_kwargs=argparse_kwargs or {}
+    )
+
+
+def mutually_exclusive_group(*, __required__: bool = False, **kwargs):
+    return MutuallyExclusiveGroup(__required__=__required__, **kwargs)
 
 
 class MutuallyExclusiveGroup(_containers.ImmutableMixin):

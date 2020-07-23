@@ -202,7 +202,7 @@ def _add_option(
         return
 
     args = []
-    kwargs = opt.argparse_kwargs or {}
+    kwargs = opt.argparse_kwargs
 
     if opt.converter:
         kwargs["type"] = opt.converter

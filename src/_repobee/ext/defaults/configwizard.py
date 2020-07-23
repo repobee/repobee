@@ -20,7 +20,7 @@ LOGGER = daiquiri.getLogger(__file__)
 
 
 class Wizard(plug.Plugin, plug.cli.Command):
-    __settings__ = plug.cli.CommandSettings(
+    __settings__ = plug.cli.command_settings(
         category=plug.cli.CoreCommand.config,
         help="Interactive configuration wizard to set up the config file.",
         description=(
