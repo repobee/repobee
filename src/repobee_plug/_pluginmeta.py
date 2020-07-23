@@ -95,9 +95,7 @@ class _PluginMeta(type):
 
 def _extract_cli_options(
     attrdict,
-) -> List[
-    Tuple[str, Union[cli.Option, cli.Positional, cli.MutuallyExclusiveGroup]]
-]:
+) -> List[Tuple[str, Union[cli._Option, cli._MutuallyExclusiveGroup]]]:
     """Return any members that are CLI options as a list of tuples on the form
     (member_name, option). Other types of CLI arguments, such as positionals,
     are converted to :py:class:`~cli.Option`s.
@@ -105,9 +103,7 @@ def _extract_cli_options(
     return [
         (key, value)
         for key, value in attrdict.items()
-        if isinstance(
-            value, (cli.Option, cli.Positional, cli.MutuallyExclusiveGroup)
-        )
+        if isinstance(value, (cli._Option, cli._MutuallyExclusiveGroup))
     ]
 
 
@@ -160,7 +156,7 @@ def _generate_command_func(attrdict: Mapping[str, Any]) -> Callable:
     """
 
     def create_extension_command(self):
-        settings = attrdict.get("__settings__") or cli.CommandSettings()
+        settings = attrdict.get("__settings__") or cli.command_settings()
         if settings.config_section_name:
             self.__config_section__ = settings.config_section_name
 
@@ -181,13 +177,13 @@ def _generate_command_func(attrdict: Mapping[str, Any]) -> Callable:
 
 def _add_option(
     name: str,
-    opt: Union[cli.Positional, cli.Option, cli.MutuallyExclusiveGroup],
+    opt: Union[cli._Option, cli._MutuallyExclusiveGroup],
     configured_value: str,
     show_all_opts: bool,
     parser: argparse.ArgumentParser,
 ) -> None:
     """Add an option to the parser based on the cli option."""
-    if isinstance(opt, cli.MutuallyExclusiveGroup):
+    if isinstance(opt, cli._MutuallyExclusiveGroup):
         mutex_parser = parser.add_mutually_exclusive_group(
             required=opt.required
         )
@@ -201,8 +197,9 @@ def _add_option(
             )
         return
 
+    assert isinstance(opt, cli._Option)
     args = []
-    kwargs = opt.argparse_kwargs or {}
+    kwargs = opt.argparse_kwargs
 
     if opt.converter:
         kwargs["type"] = opt.converter
@@ -213,7 +210,7 @@ def _add_option(
         else opt.help or ""
     )
 
-    if isinstance(opt, cli.Option):
+    if opt.argument_type == cli.ArgumentType.OPTION:
         if opt.short_name:
             args.append(opt.short_name)
 
@@ -227,7 +224,7 @@ def _add_option(
         kwargs["default"] = configured_value or opt.default
         # required opts become not required if configured
         kwargs["required"] = not configured_value and opt.required
-    elif isinstance(opt, cli.Positional):
+    elif opt.argument_type == cli.ArgumentType.POSITIONAL:
         args.append(name)
 
     parser.add_argument(*args, **kwargs)

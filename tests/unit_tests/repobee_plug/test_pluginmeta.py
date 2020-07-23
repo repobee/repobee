@@ -120,8 +120,8 @@ class TestDeclarativeExtensionCommand:
         """
 
         class Greeting(plug.Plugin, plug.cli.Command):
-            name = plug.cli.Option(help="your name", required=True)
-            age = plug.cli.Option(converter=int, help="your age", default=30)
+            name = plug.cli.option(help="your name", required=True)
+            age = plug.cli.option(converter=int, help="your age", default=30)
 
             def command_callback(self, args, api):
                 print(f"My name is {args.name} and I am {args.age} years old")
@@ -157,7 +157,7 @@ class TestDeclarativeExtensionCommand:
         expected_requires_api = True
 
         class ExtCommand(plug.Plugin, plug.cli.Command):
-            __settings__ = plug.cli.CommandSettings(
+            __settings__ = plug.cli.command_settings(
                 category=expected_category,
                 action_name=expected_name,
                 help=expected_help,
@@ -194,7 +194,7 @@ class TestDeclarativeExtensionCommand:
         """Test configuring a default value for an option."""
 
         class Greeting(plug.Plugin, plug.cli.Command):
-            name = plug.cli.Option(
+            name = plug.cli.option(
                 help="Your name.", required=True, configurable=True
             )
 
@@ -218,7 +218,7 @@ class TestDeclarativeExtensionCommand:
         """
 
         class Greeting(plug.Plugin, plug.cli.Command):
-            name = plug.cli.Option(help="Your name.", required=True)
+            name = plug.cli.option(help="Your name.", required=True)
 
             def command_callback(self, args, api):
                 pass
@@ -246,7 +246,7 @@ class TestDeclarativeExtensionCommand:
         """
 
         class Greeting(plug.Plugin, plug.cli.Command):
-            name = plug.cli.Option(
+            name = plug.cli.option(
                 short_name="-n",
                 long_name="--your-name",
                 help="your name",
@@ -269,8 +269,8 @@ class TestDeclarativeExtensionCommand:
 
     def test_positional_arguments(self):
         class Greeting(plug.Plugin, plug.cli.Command):
-            name = plug.cli.Positional()
-            age = plug.cli.Positional(converter=int)
+            name = plug.cli.positional()
+            age = plug.cli.positional(converter=int)
 
             def command_callback(self, args, api):
                 pass
@@ -292,10 +292,10 @@ class TestDeclarativeExtensionCommand:
         """
 
         class Greeting(plug.Plugin, plug.cli.Command):
-            age_mutex = plug.cli.MutuallyExclusiveGroup(
-                age=plug.cli.Option(converter=int),
-                old=plug.cli.Option(
-                    argparse_kwargs=dict(action="store_const", const=1337),
+            age_mutex = plug.cli.mutually_exclusive_group(
+                age=plug.cli.option(converter=int),
+                old=plug.cli.option(
+                    argparse_kwargs=dict(action="store_const", const=1337)
                 ),
                 __required__=True,
             )
@@ -318,11 +318,11 @@ class TestDeclarativeExtensionCommand:
     def test_positionals_not_allowed_in_mutex_group(self):
         """Positional arguments don't make sense in a mutex group."""
 
-        with pytest.raises(TypeError) as exc_info:
-            plug.cli.MutuallyExclusiveGroup(
-                age=plug.cli.Positional(converter=int),
-                old=plug.cli.Option(
-                    argparse_kwargs=dict(action="store_const", const=1337),
+        with pytest.raises(ValueError) as exc_info:
+            plug.cli.mutually_exclusive_group(
+                age=plug.cli.positional(converter=int),
+                old=plug.cli.option(
+                    argparse_kwargs=dict(action="store_const", const=1337)
                 ),
                 __required__=True,
             )
@@ -334,10 +334,10 @@ class TestDeclarativeExtensionCommand:
         old = 1337
 
         class Greeting(plug.Plugin, plug.cli.Command):
-            age_mutex = plug.cli.MutuallyExclusiveGroup(
-                age=plug.cli.Option(converter=int),
-                old=plug.cli.Option(
-                    argparse_kwargs=dict(action="store_const", const=old),
+            age_mutex = plug.cli.mutually_exclusive_group(
+                age=plug.cli.option(converter=int),
+                old=plug.cli.option(
+                    argparse_kwargs=dict(action="store_const", const=old)
                 ),
                 __required__=True,
             )
@@ -369,11 +369,11 @@ class TestDeclarativeCommandExtension:
         """Tests adding a required option to ``config show``."""
 
         class ConfigShowExt(plug.Plugin, plug.cli.CommandExtension):
-            __settings__ = plug.cli.CommandExtensionSettings(
+            __settings__ = plug.cli.command_extension_settings(
                 actions=[plug.cli.CoreCommand.config.show]
             )
 
-            silly_new_option = plug.cli.Option(help="your name", required=True)
+            silly_new_option = plug.cli.option(help="your name", required=True)
 
         with pytest.raises(SystemExit):
             repobee.run(
@@ -423,7 +423,7 @@ class TestDeclarativeCommandExtension:
         with pytest.raises(ValueError) as exc_info:
 
             class Ext(plug.Plugin, plug.cli.CommandExtension):
-                __settings__ = plug.cli.CommandExtensionSettings(actions=[])
+                __settings__ = plug.cli.command_extension_settings(actions=[])
 
         assert "argument 'actions' must be a non-empty list" in str(
             exc_info.value
