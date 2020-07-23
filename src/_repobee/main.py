@@ -102,7 +102,7 @@ def run(
         parsed_args, api, ext_commands = _parse_args(
             cmd, config_file, show_all_opts
         )
-        _repobee.cli.dispatch.dispatch_command(
+        return _repobee.cli.dispatch.dispatch_command(
             parsed_args, api, config_file, ext_commands
         )
     finally:
