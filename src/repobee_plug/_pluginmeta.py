@@ -87,9 +87,7 @@ class _PluginMeta(type):
         return {
             key: value
             for key, value in attrdict.items()
-            if callable(value)
-            and not key.startswith("_")
-            and key != "command_callback"
+            if callable(value) and not key.startswith("_") and key != "command"
         }
 
 
@@ -166,7 +164,7 @@ def _generate_command_func(attrdict: Mapping[str, Any]) -> Callable:
             or self.__class__.__name__.lower().replace("_", "-"),
             help=settings.help,
             description=settings.description,
-            callback=self.command_callback,
+            callback=self.command,
             category=settings.category,
             requires_api=settings.requires_api,
             requires_base_parsers=settings.base_parsers,

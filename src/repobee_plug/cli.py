@@ -89,7 +89,7 @@ def command_settings(
                 category=plug.cli.CoreCommand.config,
             )
 
-            def command_callback(self, args, api):
+            def command(self, args, api):
                 print("Hello, world!")
 
     This can then be called with:
@@ -175,7 +175,7 @@ def option(
             name = plug.cli.option(help="Your name.")
             age = plug.cli.option(converter=int, help="Your age.")
 
-            def command_callback(self, args, api):
+            def command(self, args, api):
                 print(
                     f"Hello, my name is {args.name} "
                     f"and I am {args.age} years old"
@@ -241,7 +241,7 @@ def positional(
             name = plug.cli.Positional(help="Your name.")
             age = plug.cli.Positional(converter=int, help="Your age.")
 
-            def command_callback(self, args, api):
+            def command(self, args, api):
                 print(
                     f"Hello, my name is {args.name} "
                     f"and I am {args.age} years old"
@@ -316,7 +316,7 @@ class Command:
 
     .. code-block:: python
 
-        def command_callback(
+        def command(
             self, args: argparse.Namespace, api: plug.API
         ) -> Optional[plug.Result]:
             pass
@@ -326,7 +326,7 @@ class Command:
 
     .. code-block:: python
 
-        def command_callback(self, args, api):
+        def command(self, args, api):
             pass
 
     Declaring static members of type :py:class:`Option` will add command line
@@ -349,7 +349,7 @@ class Command:
                 converter=int, help="your age", default=30
             )
 
-            def command_callback(self, args, api):
+            def command(self, args, api):
                 print(f"Hello, my name is {args.name} and I am {args.age}")
 
     Note that the file is called ``command.py``. We can run this command with
