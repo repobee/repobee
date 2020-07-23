@@ -159,7 +159,7 @@ class TestDeclarativeExtensionCommand:
         class ExtCommand(plug.Plugin, plug.cli.Command):
             __settings__ = plug.cli.command_settings(
                 category=expected_category,
-                action_name=expected_name,
+                action=expected_name,
                 help=expected_help,
                 description=expected_description,
                 base_parsers=expected_base_parsers,
@@ -352,6 +352,60 @@ class TestDeclarativeExtensionCommand:
         parsed_args = parser.parse_args(["--old"])
 
         assert parsed_args.old == old
+
+    def test_create_new_category(self):
+        """Test that command can be added to a new category."""
+
+        class Greetings(plug.cli.Category):
+            hello: plug.cli.Action
+
+        class Hello(plug.Plugin, plug.cli.Command):
+            __settings__ = plug.cli.command_settings(action=Greetings().hello)
+            name = plug.cli.positional()
+            age = plug.cli.positional(converter=int)
+
+            def command(self, args, api):
+                return plug.Result(
+                    name=self.plugin_name,
+                    msg="Nice!",
+                    status=plug.Status.SUCCESS,
+                    data={"name": args.name, "age": args.age},
+                )
+
+        name = "Bob"
+        age = 24
+        results_mapping = repobee.run(
+            f"greetings hello {name} {age}".split(), plugins=[Hello]
+        )
+        _, results = list(results_mapping.items())[0]
+        result, *_ = results
+
+        assert result.data["name"] == name
+        assert result.data["age"] == age
+
+    def test_raises_when_both_action_and_category_given(self):
+        """It is not allowed to give an Action object to the action argument,
+        and at the same time give a Category, as the Action object defines
+        both.
+        """
+
+        class Cat(plug.cli.Category):
+            greetings: plug.cli.Action
+
+        with pytest.raises(TypeError) as exc_info:
+
+            class Greetings(plug.Plugin, plug.cli.Command):
+                __settings__ = plug.cli.command_settings(
+                    action=Cat().greetings, category=Cat()
+                )
+
+                def command(self, args, api):
+                    pass
+
+        assert (
+            "argument 'category' not allowed when argument "
+            "'action' is an Action object"
+        ) in str(exc_info.value)
 
 
 class TestDeclarativeCommandExtension:

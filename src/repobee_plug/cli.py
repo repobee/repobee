@@ -3,7 +3,17 @@ import abc
 import collections
 import enum
 import itertools
-from typing import List, Tuple, Optional, Set, Mapping, Iterable, Any, Callable
+from typing import (
+    List,
+    Tuple,
+    Optional,
+    Set,
+    Mapping,
+    Iterable,
+    Any,
+    Callable,
+    Union,
+)
 
 from repobee_plug import _containers
 
@@ -49,7 +59,7 @@ _Option.__new__.__defaults__ = (None,) * len(_Option._fields)
 _CommandSettings = collections.namedtuple(
     "_CommandSettings",
     [
-        "action_name",
+        "action",
         "category",
         "help",
         "description",
@@ -66,7 +76,7 @@ _CommandExtensionSettings = collections.namedtuple(
 
 
 def command_settings(
-    action_name: Optional[str] = None,
+    action: Optional[Union[str, "Action"]] = None,
     category: Optional["CoreCommand"] = None,
     help: str = "",
     description: str = "",
@@ -100,10 +110,13 @@ def command_settings(
         Hello, world!
 
     Args:
-        action_name: The name of the action that the command will be
-            available under. Defaults to the name of the plugin class.
+        action: The name of this command, or a :py:class:`Action` object that
+            defines both category and action for the command. Defaults to the
+            name of the plugin class.
         category: The category to place this command in. If not specified,
-            then the command will be top-level (i.e. uncategorized).
+            then the command will be top-level (i.e. uncategorized). If
+            ``action`` is an :py:class:`Action` (as opposed to a ``str``),
+            then this argument is not allowed.
         help: A help section for the command. This appears when listing the
             help section of the command's category.
         description: A help section for the command. This appears when
@@ -115,8 +128,16 @@ def command_settings(
             command should look for configurable options in. Defaults
             to the name of the plugin the command is defined in.
     """
+    if isinstance(action, Action):
+        if category:
+            raise TypeError(
+                "argument 'category' not allowed when argument 'action' is an "
+                "Action object"
+            )
+        category = action.category
+
     return _CommandSettings(
-        action_name=action_name,
+        action=action,
         category=category,
         help=help,
         description=description,
