@@ -30,7 +30,7 @@ class OptionType(enum.Enum):
     MUTEX_GROUP = enum.auto()
 
 
-Option = collections.namedtuple(
+_Option = collections.namedtuple(
     "Option",
     [
         "short_name",
@@ -43,40 +43,16 @@ Option = collections.namedtuple(
         "argparse_kwargs",
     ],
 )
-Option.__new__.__defaults__ = (None,) * len(Option._fields)
 
-Positional = collections.namedtuple(
+_Positional = collections.namedtuple(
     "Positional", ["help", "converter", "argparse_kwargs"]
 )
-Positional.__new__.__defaults__ = (None,) * len(Positional._fields)
 
 
-class CommandSettings(_containers.ImmutableMixin):
+class _CommandSettings(_containers.ImmutableMixin):
     """Settings for a :py:class:`Command`, that can be provided in the
     ``__settings__`` attribute.
 
-    Example usage:
-
-    .. code-block:: python
-        :caption: ext.py
-
-        import repobee_plug as plug
-
-        class Ext(plug.Plugin, plug.cli.Command):
-            __settings__ = plug.cli.CommandSettings(
-                action_name="hello",
-                category=plug.cli.CoreCommand.config,
-            )
-
-            def command_callback(self, args, api):
-                print("Hello, world!")
-
-    This can then be called with:
-
-    .. code-block:: bash
-
-        $ repobee -p ext.py config hello
-        Hello, world!
     """
 
     action_name: Optional[str]
@@ -123,7 +99,7 @@ class CommandSettings(_containers.ImmutableMixin):
         object.__setattr__(self, "config_section_name", config_section_name)
 
 
-class CommandExtensionSettings(_containers.ImmutableMixin):
+class _CommandExtensionSettings(_containers.ImmutableMixin):
     """Settings for a :py:class:`CommandExtension`."""
 
     actions: List["Action"]
@@ -159,7 +135,31 @@ def command_settings(
     base_parsers: Optional[List[_containers.BaseParser]] = None,
     config_section_name: Optional[str] = None,
 ):
-    """
+    """Create a settings object for a :py:class:`Command`.
+
+    Example usage:
+
+    .. code-block:: python
+        :caption: ext.py
+
+        import repobee_plug as plug
+
+        class Ext(plug.Plugin, plug.cli.Command):
+            __settings__ = plug.cli.command_settings(
+                action_name="hello",
+                category=plug.cli.CoreCommand.config,
+            )
+
+            def command_callback(self, args, api):
+                print("Hello, world!")
+
+    This can then be called with:
+
+    .. code-block:: bash
+
+        $ repobee -p ext.py config hello
+        Hello, world!
+
     Args:
         action_name: The name of the action that the command will be
             available under. Defaults to the name of the plugin class.
@@ -176,7 +176,7 @@ def command_settings(
             command should look for configurable options in. Defaults
             to the name of the plugin the command is defined in.
     """
-    return CommandSettings(
+    return _CommandSettings(
         action_name=action_name,
         category=category,
         help=help,
@@ -190,7 +190,7 @@ def command_settings(
 def command_extension_settings(
     actions: List["Action"], config_section_name: Optional[str] = None
 ):
-    return CommandExtensionSettings(
+    return _CommandExtensionSettings(
         actions=actions, config_section_name=config_section_name
     )
 
@@ -205,7 +205,7 @@ def option(
     converter: Optional[Callable[[str], Any]] = None,
     argparse_kwargs: Optional[Mapping[str, Any]] = None,
 ):
-    return Option(
+    return _Option(
         short_name=short_name,
         long_name=long_name,
         configurable=configurable,
@@ -222,16 +222,16 @@ def positional(
     converter: Optional[Callable[[str], Any]] = None,
     argparse_kwargs: Optional[Mapping[str, Any]] = None,
 ):
-    return Positional(
+    return _Positional(
         help=help, converter=converter, argparse_kwargs=argparse_kwargs or {}
     )
 
 
 def mutually_exclusive_group(*, __required__: bool = False, **kwargs):
-    return MutuallyExclusiveGroup(__required__=__required__, **kwargs)
+    return _MutuallyExclusiveGroup(__required__=__required__, **kwargs)
 
 
-class MutuallyExclusiveGroup(_containers.ImmutableMixin):
+class _MutuallyExclusiveGroup(_containers.ImmutableMixin):
     """A group of mutually exclusive CLI options.
 
     Attributes:
@@ -241,8 +241,8 @@ class MutuallyExclusiveGroup(_containers.ImmutableMixin):
         required: Whether or not this mutex group is required.
     """
 
-    ALLOWED_TYPES = (Option,)
-    options: List[Tuple[str, Option]]
+    ALLOWED_TYPES = (_Option,)
+    options: List[Tuple[str, _Option]]
     required: bool
 
     def __init__(self, *, __required__: bool = False, **kwargs):
