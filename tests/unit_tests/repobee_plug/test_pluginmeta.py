@@ -123,7 +123,7 @@ class TestDeclarativeExtensionCommand:
             name = plug.cli.option(help="your name", required=True)
             age = plug.cli.option(converter=int, help="your age", default=30)
 
-            def command_callback(self, args, api):
+            def command(self, args, api):
                 print(f"My name is {args.name} and I am {args.age} years old")
 
         return Greeting
@@ -139,7 +139,7 @@ class TestDeclarativeExtensionCommand:
         assert ext_cmd.name == basic_greeting_command.__name__.lower()
         assert ext_cmd.help == ""
         assert ext_cmd.description == ""
-        assert ext_cmd.callback == plugin_instance.command_callback
+        assert ext_cmd.callback == plugin_instance.command
         assert ext_cmd.requires_api is False
         assert ext_cmd.requires_base_parsers is None
         assert ext_cmd.category is None
@@ -166,7 +166,7 @@ class TestDeclarativeExtensionCommand:
                 requires_api=expected_requires_api,
             )
 
-            def command_callback(self, args, api):
+            def command(self, args, api):
                 pass
 
         plugin_instance = ExtCommand("greeting")
@@ -176,7 +176,7 @@ class TestDeclarativeExtensionCommand:
         assert ext_cmd.name == expected_name
         assert ext_cmd.help == expected_help
         assert ext_cmd.description == expected_description
-        assert ext_cmd.callback == plugin_instance.command_callback
+        assert ext_cmd.callback == plugin_instance.command
         assert ext_cmd.requires_api == expected_requires_api
         assert ext_cmd.requires_base_parsers == expected_base_parsers
 
@@ -198,7 +198,7 @@ class TestDeclarativeExtensionCommand:
                 help="Your name.", required=True, configurable=True
             )
 
-            def command_callback(self, args, api):
+            def command(self, args, api):
                 pass
 
         plugin_name = "greeting"
@@ -220,7 +220,7 @@ class TestDeclarativeExtensionCommand:
         class Greeting(plug.Plugin, plug.cli.Command):
             name = plug.cli.option(help="Your name.", required=True)
 
-            def command_callback(self, args, api):
+            def command(self, args, api):
                 pass
 
         plugin_name = "greeting"
@@ -253,7 +253,7 @@ class TestDeclarativeExtensionCommand:
                 required=True,
             )
 
-            def command_callback(self, args, api):
+            def command(self, args, api):
                 pass
 
         ext_cmd = Greeting("g").create_extension_command()
@@ -272,7 +272,7 @@ class TestDeclarativeExtensionCommand:
             name = plug.cli.positional()
             age = plug.cli.positional(converter=int)
 
-            def command_callback(self, args, api):
+            def command(self, args, api):
                 pass
 
         ext_cmd = Greeting("g").create_extension_command()
@@ -300,7 +300,7 @@ class TestDeclarativeExtensionCommand:
                 __required__=True,
             )
 
-            def command_callback(self, args, api):
+            def command(self, args, api):
                 pass
 
         ext_cmd = Greeting("g").create_extension_command()
@@ -342,7 +342,7 @@ class TestDeclarativeExtensionCommand:
                 __required__=True,
             )
 
-            def command_callback(self, args, api):
+            def command(self, args, api):
                 pass
 
         ext_cmd = Greeting("g").create_extension_command()
