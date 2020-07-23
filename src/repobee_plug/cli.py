@@ -277,7 +277,7 @@ def mutually_exclusive_group(*, __required__: bool = False, **kwargs):
     """
     Args:
         __required__: Whether or not this mutex group is required.
-        kwargs: Keyword arguments on the form ``name=plug.cli.Option()``.
+        kwargs: Keyword arguments on the form ``name=plug.cli.option()``.
     """
     allowed_types = (ArgumentType.OPTION,)
 
@@ -342,10 +342,10 @@ class Command:
 
         class Greeting(plug.Plugin, plug.cli.Command):
 
-            name = plug.cli.Option(
+            name = plug.cli.option(
                 short_name="-n", help="your name", required=True
             )
-            age = plug.cli.Option(
+            age = plug.cli.option(
                 converter=int, help="your age", default=30
             )
 
