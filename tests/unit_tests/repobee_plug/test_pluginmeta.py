@@ -432,15 +432,13 @@ class TestDeclarativeExtensionCommand:
         and at the same time give a Category, as the Action object defines
         both.
         """
-
-        class Cat(plug.cli.Category):
-            greetings: plug.cli.Action
+        category = plug.cli.category("cat", action_names=["greetings"])
 
         with pytest.raises(TypeError) as exc_info:
 
             class Greetings(plug.Plugin, plug.cli.Command):
                 __settings__ = plug.cli.command_settings(
-                    action=Cat().greetings, category=Cat()
+                    action=category.greetings, category=category
                 )
 
                 def command(self, args, api):

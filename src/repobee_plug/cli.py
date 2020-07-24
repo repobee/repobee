@@ -127,6 +127,8 @@ def command_settings(
         config_section_name: The name of the configuration section the
             command should look for configurable options in. Defaults
             to the name of the plugin the command is defined in.
+    Returns:
+        A settings object used internally by RepoBee.
     """
     if isinstance(action, Action):
         if category:
@@ -144,6 +146,26 @@ def command_settings(
         requires_api=requires_api,
         base_parsers=base_parsers,
         config_section_name=config_section_name,
+    )
+
+
+def category(
+    name: str, action_names: List[str], help: str = "", description: str = ""
+) -> "Category":
+    """Create a category for CLI actions.
+
+    Args:
+        name: Name of the category.
+        action_names: The actions of this category.
+    Returns:
+        A CLI category.
+    """
+    action_names = set(action_names)
+    return Category(
+        name=name,
+        action_names=action_names,
+        help=help,
+        description=description,
     )
 
 
@@ -396,10 +418,6 @@ class Category(ImmutableMixin, abc.ABC):
 
     For example, the command ``repobee issues list`` has category ``issues``
     and action ``list``. Actions are unique only within their category.
-
-    Attributes:
-        name: Name of this category.
-        actions: A tuple of names of actions applicable to this category.
     """
 
     help: str = ""
@@ -409,18 +427,28 @@ class Category(ImmutableMixin, abc.ABC):
     action_names: Set[str]
     _action_table: Mapping[str, "Action"]
 
-    def __init__(self):
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        action_names: Optional[Set[str]] = None,
+        help: Optional[str] = None,
+        description: Optional[str] = None,
+    ):
         # determine the name of this category based on the runtime type of the
         # inheriting class
-        name = self.__class__.__name__.lower().strip("_")
+        name = name or self.__class__.__name__.lower().strip("_")
         # determine the action names based on type annotations in the
         # inheriting class
-        action_names = {
+        action_names = (action_names or set()) | {
             name
             for name, tpe in self.__annotations__.items()
-            if issubclass(tpe, Action)
+            if isinstance(tpe, type) and issubclass(tpe, Action)
         }
 
+        object.__setattr__(self, "help", help or self.help)
+        object.__setattr__(
+            self, "description", description or self.description
+        )
         object.__setattr__(self, "name", name)
         object.__setattr__(self, "action_names", set(action_names))
         # This is just to reserve the name 'actions'
