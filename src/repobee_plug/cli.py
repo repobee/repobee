@@ -402,6 +402,8 @@ class Category(ImmutableMixin, abc.ABC):
         actions: A tuple of names of actions applicable to this category.
     """
 
+    help: str = ""
+    description: str = ""
     name: str
     actions: Tuple["Action"]
     action_names: Set[str]

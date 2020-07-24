@@ -383,6 +383,50 @@ class TestDeclarativeExtensionCommand:
         assert result.data["name"] == name
         assert result.data["age"] == age
 
+    def test_add_two_actions_to_new_category(self):
+        """Test that it's possible to add multiple actions to a custom
+        category.
+        """
+
+        class Greetings(plug.cli.Category):
+            hello: plug.cli.Action
+            bye: plug.cli.Action
+
+        category = Greetings()
+
+        class Hello(plug.Plugin, plug.cli.Command):
+            __settings__ = plug.cli.command_settings(action=category.hello)
+            name = plug.cli.positional()
+
+            def command(self, args, api):
+                return plug.Result(
+                    name=self.plugin_name,
+                    msg=f"Hello {args.name}",
+                    status=plug.Status.SUCCESS,
+                )
+
+        class Bye(plug.Plugin, plug.cli.Command):
+            __settings__ = plug.cli.command_settings(action=category.bye)
+            name = plug.cli.positional()
+
+            def command(self, args, api):
+                return plug.Result(
+                    name=self.plugin_name,
+                    msg=f"Bye {args.name}",
+                    status=plug.Status.SUCCESS,
+                )
+
+        name = "Alice"
+        hello_results = repobee.run(
+            f"greetings hello {name}".split(), plugins=[Hello, Bye]
+        )
+        bye_results = repobee.run(
+            f"greetings bye {name}".split(), plugins=[Hello, Bye]
+        )
+
+        assert hello_results[category.hello][0].msg == f"Hello {name}"
+        assert bye_results[category.bye][0].msg == f"Bye {name}"
+
     def test_raises_when_both_action_and_category_given(self):
         """It is not allowed to give an Action object to the action argument,
         and at the same time give a Category, as the Action object defines

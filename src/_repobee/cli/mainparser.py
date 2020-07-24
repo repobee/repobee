@@ -659,11 +659,21 @@ def _add_extension_parsers(
                 parser=ext_parser,
             )
         elif isinstance(cmd.name, plug.cli.Action):
-            category_cmd = subparsers.add_parser(cmd.category.name)
-            category_parsers = category_cmd.add_subparsers(dest=ACTION)
-            category_parsers.required = True
-            parsers_mapping[cmd.category] = category_parsers
-            ext_parser = _add_ext_parser(parents=parents, name=cmd.name.name)
+            action = cmd.name
+            category = action.category
+
+            if category not in parsers_mapping:
+                # new category
+                category_cmd = subparsers.add_parser(
+                    category.name,
+                    help=category.help,
+                    description=category.description,
+                )
+                category_parsers = category_cmd.add_subparsers(dest=ACTION)
+                category_parsers.required = True
+                parsers_mapping[category] = category_parsers
+
+            ext_parser = _add_ext_parser(parents=parents, name=action.name)
             cmd.parser(
                 config=parsed_config,
                 show_all_opts=show_all_opts,
