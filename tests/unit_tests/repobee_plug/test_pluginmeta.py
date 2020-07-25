@@ -7,6 +7,7 @@ import repobee_plug as plug
 
 from repobee_plug import _pluginmeta
 from repobee_plug import _exceptions
+from repobee_plug.cli import categorization
 
 import repobee
 
@@ -356,8 +357,8 @@ class TestDeclarativeExtensionCommand:
     def test_create_new_category(self):
         """Test that command can be added to a new category."""
 
-        class Greetings(plug.cli.Category):
-            hello: plug.cli.Action
+        class Greetings(categorization.Category):
+            hello: categorization.Action
 
         class Hello(plug.Plugin, plug.cli.Command):
             __settings__ = plug.cli.command_settings(action=Greetings().hello)
@@ -388,9 +389,9 @@ class TestDeclarativeExtensionCommand:
         category.
         """
 
-        class Greetings(plug.cli.Category):
-            hello: plug.cli.Action
-            bye: plug.cli.Action
+        class Greetings(categorization.Category):
+            hello: categorization.Action
+            bye: categorization.Action
 
         category = Greetings()
 

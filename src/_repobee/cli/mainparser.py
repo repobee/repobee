@@ -16,6 +16,7 @@ from typing import List, Optional, Union, Mapping
 import daiquiri
 
 import repobee_plug as plug
+from repobee_plug.cli import categorization
 
 import _repobee
 from _repobee import plugin
@@ -168,7 +169,8 @@ def _add_subparsers(parser, show_all_opts, ext_commands, config_file):
     subparsers = parser.add_subparsers(dest=SUB)
     subparsers.required = True
     parsers: Mapping[
-        Union[plug.cli.Category, plug.cli.Action], argparse.ArgumentParser
+        Union[categorization.Category, categorization.Action],
+        argparse.ArgumentParser,
     ] = {}
 
     def _create_category_parsers(category, help, description):
@@ -653,7 +655,7 @@ def _add_extension_parsers(
 
         category = (
             cmd.name.category
-            if isinstance(cmd.name, plug.cli.Action)
+            if isinstance(cmd.name, categorization.Action)
             else cmd.category
         )
         if category and category not in parsers_mapping:
@@ -674,7 +676,7 @@ def _add_extension_parsers(
                 show_all_opts=show_all_opts,
                 parser=ext_parser,
             )
-        elif isinstance(cmd.name, plug.cli.Action):
+        elif isinstance(cmd.name, categorization.Action):
             action = cmd.name
             ext_parser = _add_ext_parser(parents=parents, name=action.name)
             cmd.parser(
