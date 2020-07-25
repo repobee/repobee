@@ -46,11 +46,9 @@ class JavacCloneHook(plug.Plugin, plug.cli.CommandExtension):
         argparse_kwargs={"nargs": "+"},
     )
 
-    @plug.repobee_hook
     def handle_processed_args(self, args: argparse.Namespace):
         self.ignore = args.javac_ignore or []
 
-    @plug.repobee_hook
     def post_clone(self, path: pathlib.Path, api: plug.API) -> plug.Result:
         """Run ``javac`` on all .java files in the repo.
 
