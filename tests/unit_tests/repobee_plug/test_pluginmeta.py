@@ -44,7 +44,7 @@ class TestPluginInheritance:
             def clone_parser_hook(self, clone_parser):
                 pass
 
-            def parse_args(self, args):
+            def raw_args(self, args):
                 pass
 
             def config_hook(self, config_parser):
@@ -80,7 +80,7 @@ class TestPluginInheritance:
             def clone_parser_hook(self, clone_parser):
                 pass
 
-            def parse_args(self, args):
+            def raw_args(self, args):
                 pass
 
             def config_hook(self, config_parser):

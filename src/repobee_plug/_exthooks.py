@@ -55,14 +55,12 @@ class CloneHook:
         """
 
     @hookspec
-    def parse_args(self, args: argparse.Namespace) -> None:
-        """Get the raw args from the parser. Only called for the clone parser.
-        The typical task is to fetch any values from options added in
-        :py:func:`clone_parser_hook`.
+    def raw_args(self, args: argparse.Namespace) -> None:
+        """Get the raw args from the parser, before any processing is applied.
 
         Args:
             args: The full namespace returned by
-                :py:func:`argparse.ArgumentParser.parse_args`
+            :py:func:`argparse.ArgumentParser.parse_args`
         """
 
     @hookspec
