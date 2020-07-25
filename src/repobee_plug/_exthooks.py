@@ -55,12 +55,22 @@ class CloneHook:
         """
 
     @hookspec
-    def raw_args(self, args: argparse.Namespace) -> None:
-        """Get the raw args from the parser, before any processing is applied.
+    def handle_parsed_args(self, args: argparse.Namespace) -> None:
+        """Handle the parsed args from the parser, before any processing is
+        applied.
 
         Args:
             args: The full namespace returned by
-            :py:func:`argparse.ArgumentParser.parse_args`
+                :py:func:`argparse.ArgumentParser.parse_args`
+        """
+
+    @hookspec
+    def handle_processed_args(self, args: argparse.Namespace) -> None:
+        """Handle the parsed command line arguments after RepoBee has applied
+        processing.
+
+        Args:
+            args: A processed version of the parsed CLI arguments.
         """
 
     @hookspec
