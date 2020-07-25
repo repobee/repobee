@@ -10,6 +10,8 @@ from repobee_plug import _exthooks
 from repobee_plug import _containers
 from repobee_plug import cli
 
+from repobee_plug.cli.args import Option, MutuallyExclusiveGroup
+
 LOGGER = daiquiri.getLogger(__name__)
 
 _HOOK_METHODS = {
@@ -93,7 +95,7 @@ class _PluginMeta(type):
 
 def _extract_cli_options(
     attrdict,
-) -> List[Tuple[str, Union[cli._Option, cli._MutuallyExclusiveGroup]]]:
+) -> List[Tuple[str, Union[Option, MutuallyExclusiveGroup]]]:
     """Return any members that are CLI options as a list of tuples on the form
     (member_name, option). Other types of CLI arguments, such as positionals,
     are converted to :py:class:`~cli.Option`s.
@@ -101,7 +103,7 @@ def _extract_cli_options(
     return [
         (key, value)
         for key, value in attrdict.items()
-        if isinstance(value, (cli._Option, cli._MutuallyExclusiveGroup))
+        if isinstance(value, (Option, MutuallyExclusiveGroup))
     ]
 
 
@@ -175,13 +177,13 @@ def _generate_command_func(attrdict: Mapping[str, Any]) -> Callable:
 
 def _add_option(
     name: str,
-    opt: Union[cli._Option, cli._MutuallyExclusiveGroup],
+    opt: Union[Option, MutuallyExclusiveGroup],
     configured_value: str,
     show_all_opts: bool,
     parser: argparse.ArgumentParser,
 ) -> None:
     """Add an option to the parser based on the cli option."""
-    if isinstance(opt, cli._MutuallyExclusiveGroup):
+    if isinstance(opt, MutuallyExclusiveGroup):
         mutex_parser = parser.add_mutually_exclusive_group(
             required=opt.required
         )
@@ -195,7 +197,7 @@ def _add_option(
             )
         return
 
-    assert isinstance(opt, cli._Option)
+    assert isinstance(opt, Option)
     args = []
     kwargs = opt.argparse_kwargs
 
