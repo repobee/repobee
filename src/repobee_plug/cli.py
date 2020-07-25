@@ -3,7 +3,17 @@ import abc
 import collections
 import enum
 import itertools
-from typing import List, Tuple, Optional, Set, Mapping, Iterable, Any, Callable
+from typing import (
+    List,
+    Tuple,
+    Optional,
+    Set,
+    Mapping,
+    Iterable,
+    Any,
+    Callable,
+    Union,
+)
 
 from repobee_plug import _containers
 
@@ -49,7 +59,7 @@ _Option.__new__.__defaults__ = (None,) * len(_Option._fields)
 _CommandSettings = collections.namedtuple(
     "_CommandSettings",
     [
-        "action_name",
+        "action",
         "category",
         "help",
         "description",
@@ -66,7 +76,7 @@ _CommandExtensionSettings = collections.namedtuple(
 
 
 def command_settings(
-    action_name: Optional[str] = None,
+    action: Optional[Union[str, "Action"]] = None,
     category: Optional["CoreCommand"] = None,
     help: str = "",
     description: str = "",
@@ -100,10 +110,13 @@ def command_settings(
         Hello, world!
 
     Args:
-        action_name: The name of the action that the command will be
-            available under. Defaults to the name of the plugin class.
+        action: The name of this command, or a :py:class:`Action` object that
+            defines both category and action for the command. Defaults to the
+            name of the plugin class.
         category: The category to place this command in. If not specified,
-            then the command will be top-level (i.e. uncategorized).
+            then the command will be top-level (i.e. uncategorized). If
+            ``action`` is an :py:class:`Action` (as opposed to a ``str``),
+            then this argument is not allowed.
         help: A help section for the command. This appears when listing the
             help section of the command's category.
         description: A help section for the command. This appears when
@@ -114,15 +127,45 @@ def command_settings(
         config_section_name: The name of the configuration section the
             command should look for configurable options in. Defaults
             to the name of the plugin the command is defined in.
+    Returns:
+        A settings object used internally by RepoBee.
     """
+    if isinstance(action, Action):
+        if category:
+            raise TypeError(
+                "argument 'category' not allowed when argument 'action' is an "
+                "Action object"
+            )
+        category = action.category
+
     return _CommandSettings(
-        action_name=action_name,
+        action=action,
         category=category,
         help=help,
         description=description,
         requires_api=requires_api,
         base_parsers=base_parsers,
         config_section_name=config_section_name,
+    )
+
+
+def category(
+    name: str, action_names: List[str], help: str = "", description: str = ""
+) -> "Category":
+    """Create a category for CLI actions.
+
+    Args:
+        name: Name of the category.
+        action_names: The actions of this category.
+    Returns:
+        A CLI category.
+    """
+    action_names = set(action_names)
+    return Category(
+        name=name,
+        action_names=action_names,
+        help=help,
+        description=description,
     )
 
 
@@ -375,29 +418,37 @@ class Category(ImmutableMixin, abc.ABC):
 
     For example, the command ``repobee issues list`` has category ``issues``
     and action ``list``. Actions are unique only within their category.
-
-    Attributes:
-        name: Name of this category.
-        actions: A tuple of names of actions applicable to this category.
     """
 
+    help: str = ""
+    description: str = ""
     name: str
     actions: Tuple["Action"]
     action_names: Set[str]
     _action_table: Mapping[str, "Action"]
 
-    def __init__(self):
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        action_names: Optional[Set[str]] = None,
+        help: Optional[str] = None,
+        description: Optional[str] = None,
+    ):
         # determine the name of this category based on the runtime type of the
         # inheriting class
-        name = self.__class__.__name__.lower().strip("_")
+        name = name or self.__class__.__name__.lower().strip("_")
         # determine the action names based on type annotations in the
         # inheriting class
-        action_names = {
+        action_names = (action_names or set()) | {
             name
             for name, tpe in self.__annotations__.items()
-            if issubclass(tpe, Action)
+            if isinstance(tpe, type) and issubclass(tpe, Action)
         }
 
+        object.__setattr__(self, "help", help or self.help)
+        object.__setattr__(
+            self, "description", description or self.description
+        )
         object.__setattr__(self, "name", name)
         object.__setattr__(self, "action_names", set(action_names))
         # This is just to reserve the name 'actions'
@@ -410,7 +461,7 @@ class Category(ImmutableMixin, abc.ABC):
         actions = []
         for action_name in action_names:
             action = Action(action_name.replace("_", "-"), self)
-            object.__setattr__(self, action_name, action)
+            object.__setattr__(self, action_name.replace("-", "_"), action)
             actions.append(action)
 
         object.__setattr__(self, "actions", tuple(actions))

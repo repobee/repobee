@@ -160,7 +160,7 @@ def _generate_command_func(attrdict: Mapping[str, Any]) -> Callable:
 
         return _containers.ExtensionCommand(
             parser=functools.partial(_attach_options, plugin=self),
-            name=settings.action_name
+            name=settings.action
             or self.__class__.__name__.lower().replace("_", "-"),
             help=settings.help,
             description=settings.description,
