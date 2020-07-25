@@ -18,10 +18,10 @@ _HOOK_METHODS = {
     key: value
     for key, value in [
         *_exthooks.CloneHook.__dict__.items(),
+        *_exthooks.SetupHook.__dict__.items(),
         *_corehooks.PeerReviewHook.__dict__.items(),
         *_corehooks.APIHook.__dict__.items(),
         *_exthooks.ExtensionCommandHook.__dict__.items(),
-        *_exthooks.TaskHooks.__dict__.items(),
     ]
     if callable(value) and not key.startswith("_")
 }

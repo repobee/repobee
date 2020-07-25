@@ -38,7 +38,7 @@ class TestPluginInheritance:
         class Derived(_pluginmeta.Plugin):
             """Has all hook methods defined."""
 
-            def act_on_cloned_repo(self, path):
+            def post_clone(self, path):
                 pass
 
             def clone_parser_hook(self, clone_parser):
@@ -74,7 +74,7 @@ class TestPluginInheritance:
         class Derived(_pluginmeta.Plugin):
             """Has all hook methods defined."""
 
-            def act_on_cloned_repo(self, path):
+            def post_clone(self, path, api):
                 pass
 
             def clone_parser_hook(self, clone_parser):
