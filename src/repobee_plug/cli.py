@@ -461,7 +461,7 @@ class Category(ImmutableMixin, abc.ABC):
         actions = []
         for action_name in action_names:
             action = Action(action_name.replace("_", "-"), self)
-            object.__setattr__(self, action_name, action)
+            object.__setattr__(self, action_name.replace("-", "_"), action)
             actions.append(action)
 
         object.__setattr__(self, "actions", tuple(actions))

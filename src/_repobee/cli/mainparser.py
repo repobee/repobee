@@ -651,6 +651,22 @@ def _add_extension_parsers(
                 formatter_class=_OrderedFormatter,
             )
 
+        category = (
+            cmd.name.category
+            if isinstance(cmd.name, plug.cli.Action)
+            else cmd.category
+        )
+        if category and category not in parsers_mapping:
+            # new category
+            category_cmd = subparsers.add_parser(
+                category.name,
+                help=category.help,
+                description=category.description,
+            )
+            category_parsers = category_cmd.add_subparsers(dest=ACTION)
+            category_parsers.required = True
+            parsers_mapping[category] = category_parsers
+
         if cmd.name in parsers_mapping:
             ext_parser = parsers_mapping[cmd.name]
             cmd.parser(
@@ -660,19 +676,6 @@ def _add_extension_parsers(
             )
         elif isinstance(cmd.name, plug.cli.Action):
             action = cmd.name
-            category = action.category
-
-            if category not in parsers_mapping:
-                # new category
-                category_cmd = subparsers.add_parser(
-                    category.name,
-                    help=category.help,
-                    description=category.description,
-                )
-                category_parsers = category_cmd.add_subparsers(dest=ACTION)
-                category_parsers.required = True
-                parsers_mapping[category] = category_parsers
-
             ext_parser = _add_ext_parser(parents=parents, name=action.name)
             cmd.parser(
                 config=parsed_config,
