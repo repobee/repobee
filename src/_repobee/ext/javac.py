@@ -46,10 +46,6 @@ class JavacCloneHook(plug.Plugin, plug.cli.CommandExtension):
         argparse_kwargs={"nargs": "+"},
     )
 
-    def __init__(self, plugin_name: str):
-        super().__init__(plugin_name)
-        self._ignore = []
-
     @plug.repobee_hook
     def handle_processed_args(self, args: argparse.Namespace):
         self.ignore = args.javac_ignore or []
