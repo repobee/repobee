@@ -50,15 +50,15 @@ def dispatch_command(
         res = ext_cmd.callback(args, api)
         hook_results = {ext_cmd.name: [res]} if res else hook_results
     else:
-        category = plug.cli.CoreCommand(args.category)
+        category = args.category
         hook_results = (
             dispatch_table[category](args, config_file, api) or hook_results
         )
 
     if is_ext_command or args.action in [
-        plug.cli.CoreCommand.repos.setup.name,
-        plug.cli.CoreCommand.repos.update.name,
-        plug.cli.CoreCommand.repos.clone.name,
+        plug.cli.CoreCommand.repos.setup,
+        plug.cli.CoreCommand.repos.update,
+        plug.cli.CoreCommand.repos.clone,
     ]:
         LOGGER.info(formatters.format_hook_results_output(hook_results))
     if hook_results and "hook_results_file" in args and args.hook_results_file:
@@ -73,7 +73,7 @@ def _dispatch_repos_command(
     args: argparse.Namespace, config_file: pathlib.Path, api: plug.API
 ) -> Optional[Mapping[str, List[plug.Result]]]:
     repos = plug.cli.CoreCommand.repos
-    action = repos[args.action]
+    action = args.action
     if action == repos.setup:
         return command.setup_student_repos(
             args.master_repo_urls, args.students, api
@@ -98,7 +98,7 @@ def _dispatch_issues_command(
     args: argparse.Namespace, config_file: pathlib.Path, api: plug.API
 ) -> Optional[Mapping[str, List[plug.Result]]]:
     issues = plug.cli.CoreCommand.issues
-    action = issues[args.action]
+    action = args.action
     if action == issues.open:
         command.open_issue(
             args.issue, args.master_repo_names, args.students, api
@@ -123,7 +123,7 @@ def _dispatch_config_command(
     args: argparse.Namespace, config_file: pathlib.Path, api: plug.API
 ) -> Optional[Mapping[str, List[plug.Result]]]:
     config = plug.cli.CoreCommand.config
-    action = config[args.action]
+    action = args.action
     if action == config.verify:
         plug.manager.hook.get_api_class().verify_settings(
             args.user,
@@ -143,7 +143,7 @@ def _dispatch_reviews_command(
     args: argparse.Namespace, config_file: pathlib.Path, api: plug.API
 ) -> Optional[Mapping[str, List[plug.Result]]]:
     reviews = plug.cli.CoreCommand.reviews
-    action = reviews[args.action]
+    action = args.action
     if action == reviews.assign:
         command.assign_peer_reviews(
             args.master_repo_names,

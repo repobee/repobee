@@ -385,7 +385,7 @@ def test_show_all_opts_correctly_separated(
     sys_args = [
         "repobee",
         _repobee.cli.preparser.PRE_PARSER_SHOW_ALL_OPTS,
-        *repobee_plug.cli.CoreCommand.repos.setup.astuple(),
+        *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
         "-h",
     ]
 
@@ -394,7 +394,7 @@ def test_show_all_opts_correctly_separated(
 
     assert msg in str(exc_info.value)
     handle_args_mock.assert_called_once_with(
-        [*repobee_plug.cli.CoreCommand.repos.setup.astuple(), "-h"],
+        [*repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(), "-h"],
         show_all_opts=True,
         ext_commands=[ANY] * len(DEFAULT_EXT_COMMANDS),
         config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
@@ -434,7 +434,7 @@ user = some-unlikely-user
             "repobee",
             "--config-file",
             tmpfile.name,
-            *repobee_plug.cli.CoreCommand.config.show.astuple(),
+            *repobee_plug.cli.CoreCommand.config.show.as_name_tuple(),
         ]
         main.main(sys_args)
 

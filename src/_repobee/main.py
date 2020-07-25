@@ -188,6 +188,7 @@ def _parse_args(args, config_file, show_all_opts):
         ext_commands=ext_commands,
         config_file=config_file,
     )
+    plug.manager.hook.handle_processed_args(args=parsed_args)
     return parsed_args, api, ext_commands
 
 

@@ -60,13 +60,6 @@ _serialize
    :members:
    :noindex:
 
-_tasks
-======
-
-.. automodule:: repobee_plug._tasks
-   :members:
-   :noindex:
-
 _deprecation
 ============
 

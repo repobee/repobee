@@ -8,7 +8,6 @@
 """
 import shutil
 import pathlib
-import tempfile
 import types
 from unittest.mock import call, patch, ANY
 
@@ -154,37 +153,6 @@ class TestTryRegisterPlugin:
         assert javac.JavacCloneHook.__name__ in str(exc_info.value)
 
 
-class TestTasks:
-    """Tests for testing RepoBee tasks."""
-
-    def test_tasks_run_on_repo_copies_by_default(self):
-        """Test that tasks run on copies of the repos by default."""
-        repo_name = "task-10"
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            cwd = pathlib.Path(tmpdir)
-            repo_path = pathlib.Path(tmpdir) / repo_name
-            repo_path.mkdir()
-
-            def act(path: pathlib.Path, api: plug.API):
-                return plug.Result(
-                    name="bogus",
-                    status=plug.Status.SUCCESS,
-                    msg="Yay",
-                    data={"path": path},
-                )
-
-            task = plug.Task(act=act)
-
-            results = plugin._execute_tasks(
-                [repo_name], [task], api=None, cwd=cwd
-            )
-
-        assert len(results[repo_name]) == 1
-        res = results[repo_name][0]
-        assert res.data["path"] != repo_path
-
-
 class TestInitializePlugins:
     """Tests for the initialize_plugins function."""
 
@@ -195,19 +163,19 @@ class TestInitializePlugins:
     def test_deprecation_warning_is_emitted_for_deprecated_hook(
         self, monkeypatch
     ):
-        deprecated_hook = "act_on_cloned_repo"
+        deprecated_hook = "clone_parser_hook"
         assert (
             deprecated_hook in plug.deprecated_hooks()
         ), "hook used here must actually be deprecated"
 
         # dynamically create a module with a deprecated hook function
         @plug.repobee_hook
-        def act_on_cloned_repo(self, path, api):
+        def clone_parser_hook(self, clone_parser):
             pass
 
         mod_name = "repobee-deprecation-test-plugin"
         mod = types.ModuleType(mod_name)
-        mod.__dict__[deprecated_hook] = act_on_cloned_repo
+        mod.__dict__[deprecated_hook] = clone_parser_hook
 
         monkeypatch.setattr
         with patch(

@@ -38,17 +38,24 @@ class CloneHook:
             for the hook.
         """
 
-    @deprecate(remove_by_version="3.0.0", replacement="clone_task")
+    @deprecate(remove_by_version="3.0.0", replacement="handle_parsed_args")
     @hookspec
     def clone_parser_hook(self, clone_parser: argparse.ArgumentParser) -> None:
         """Do something with the clone repos subparser before it is used used to
         parse CLI options. The typical task is to add options to it.
 
+        .. danger:: 3.0.0
+
+            This hook no longer has any effect, it is only kept for testing
+            purposes.
+
         .. deprecated:: 0.12.0
 
-            This hook is has been replaced by :py:meth:`TaskHooks.clone_task`.
-            Once all known, existing plugins have been migrated to the new
-            hook, this hook will be removed.
+            This hook is has been replaced by
+            :py:meth:`CloneHook.handle_parsed_args` and
+            :py:meth:`CloneHook.handle_processed_args`. Once all known,
+            existing plugins have been migrated to the new hook, this hook will
+            be removed.
 
         Args:
             clone_parser: The ``clone`` subparser.

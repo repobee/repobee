@@ -128,15 +128,6 @@ def check_config_integrity(config_file: Union[str, pathlib.Path]) -> None:
     check_defaults(defaults, config_file)
 
 
-def get_all_tasks() -> List[plug.Task]:
-    """Return all plugin tasks, regardless of which command they are intended for.
-
-    Returns:
-        All plugin tasks.
-    """
-    return plug.manager.hook.setup_task() + plug.manager.hook.clone_task()
-
-
 def _read_defaults(config_file: pathlib.Path) -> dict:
     token = os.getenv(constants.TOKEN_ENV)
     if not config_file.is_file():

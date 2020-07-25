@@ -21,7 +21,6 @@ and specifically the more advanced use of the ``clone_parser_hook`` and
 import subprocess
 import sys
 import argparse
-import configparser
 import pathlib
 from typing import Union, Iterable, Tuple
 
@@ -32,44 +31,31 @@ import repobee_plug as plug
 PLUGIN_NAME = "javac"
 
 
-class JavacCloneHook(plug.Plugin):
+class JavacCloneHook(plug.Plugin, plug.cli.CommandExtension):
     """Containe for the plugin hooks allowing for persistence between
     adding/parsing arguments and acting on the repo.
     """
+
+    __settings__ = plug.cli.command_extension_settings(
+        actions=[plug.cli.CoreCommand.repos.clone]
+    )
+
+    javac_ignore = plug.cli.option(
+        help="Filenames to ignore.",
+        configurable=True,
+        argparse_kwargs={"nargs": "+"},
+    )
 
     def __init__(self, plugin_name: str):
         super().__init__(plugin_name)
         self._ignore = []
 
-    def clone_task(self) -> plug.Task:
-        return self._to_task()
+    @plug.repobee_hook
+    def handle_processed_args(self, args: argparse.Namespace):
+        self.ignore = args.javac_ignore or []
 
-    def setup_task(self) -> plug.Task:
-        return self._to_task()
-
-    def config_hook(self, config_parser: configparser.ConfigParser) -> None:
-        """Check for configured ignore files.
-
-        Args:
-            config: the config parser after config has been read.
-        """
-        self._ignore = [
-            file.strip()
-            for file in config_parser.get(
-                PLUGIN_NAME, "ignore", fallback=""
-            ).split(",")
-            if file.strip()
-        ]
-
-    def _to_task(self) -> plug.Task:
-        return plug.Task(
-            act=self._act,
-            add_option=self._add_option,
-            handle_args=self._handle_args,
-            persist_changes=False,
-        )
-
-    def _act(self, path: pathlib.Path, api: plug.API) -> plug.Result:
+    @plug.repobee_hook
+    def post_clone(self, path: pathlib.Path, api: plug.API) -> plug.Result:
         """Run ``javac`` on all .java files in the repo.
 
         Args:
@@ -81,7 +67,7 @@ class JavacCloneHook(plug.Plugin):
         java_files = [
             str(file)
             for file in util.find_files_by_extension(path, ".java")
-            if file.name not in self._ignore
+            if file.name not in self.ignore
         ]
 
         if not java_files:
@@ -118,24 +104,3 @@ class JavacCloneHook(plug.Plugin):
             status = plug.Status.SUCCESS
 
         return status, msg
-
-    def _add_option(self, clone_parser: argparse.ArgumentParser) -> None:
-        """Add ignore files option to the clone parser.
-
-        Args:
-            clone_parser: The ``clone`` subparser.
-        """
-        clone_parser.add_argument(
-            "--javac-ignore", help="File names to ignore.", nargs="+"
-        )
-
-    def _handle_args(self, args: argparse.Namespace) -> None:
-        """Get the option stored in the ``--ignore`` option added by
-        :py:func:`clone_parser_hook`.
-
-        Args:
-            args: The full namespace returned by
-                :py:meth:`argparse.ArgumentParser.parse_args`
-        """
-        if args.javac_ignore:
-            self._ignore = args.javac_ignore

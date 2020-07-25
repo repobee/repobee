@@ -20,6 +20,7 @@ from typing import Iterable, Optional, List, Tuple, Generator
 
 import daiquiri
 import repobee_plug as plug
+from repobee_plug.cli import categorization
 
 import _repobee
 import _repobee.cli.mainparser
@@ -62,9 +63,10 @@ def handle_args(
     args, processing = _parse_args(
         sys_args, config_file, show_all_opts, ext_commands
     )
+    plug.manager.hook.handle_parsed_args(args=args)
+
     if processing == _ArgsProcessing.CORE:
         processed_args, api = _process_args(args, ext_commands)
-        _handle_task_parsing(processed_args)
         return processed_args, api
     elif processing == _ArgsProcessing.EXT:
         processed_args, api = _process_ext_args(args)
@@ -116,6 +118,16 @@ def _parse_args(
     args_dict.setdefault("author", None)
     args_dict.setdefault("num_reviews", None)
     args_dict.setdefault("user", None)
+    args_dict["action"] = (
+        args.action
+        if isinstance(args.action, categorization.Action)
+        else plug.cli.CoreCommand(args.category)[args.action]
+    )
+    args_dict["category"] = (
+        args.category
+        if isinstance(args.category, categorization.Category)
+        else plug.cli.CoreCommand(args.category)
+    )
 
     requires_processing = _resolve_requires_processing(args)
     return argparse.Namespace(**args_dict), requires_processing
@@ -135,8 +147,7 @@ def _resolve_requires_processing(args: argparse.Namespace) -> _ArgsProcessing:
     This is primarily decided on whether or not the platform API is required,
     as that implies further processing.
     """
-    action = plug.cli.CoreCommand(args.category)[args.action]
-    if action in [
+    if args.action in [
         plug.cli.CoreCommand.config.verify,
         plug.cli.CoreCommand.config.show,
     ]:
@@ -185,22 +196,6 @@ def _repo_tuple_generator(
             url, *_ = api.get_repo_urls([master_repo_name], teams=[team])
             name = plug.generate_repo_name(team, master_repo_name)
             yield plug.Repo(name=name, url=url, private=True, description="")
-
-
-def _handle_task_parsing(args: argparse.Namespace) -> None:
-    """Call hooks that allows Tasks to parse command line arguments. Must be
-    called with fully processed args.
-    """
-    assert args._repobee_processed
-
-    action = plug.cli.CoreCommand(args.category)[args.action]
-    if action == plug.cli.CoreCommand.repos.clone:
-        plug.manager.hook.parse_args(args=args)
-        for task in plug.manager.hook.clone_task():
-            util.call_if_defined(task.handle_args, args)
-    elif args.action == plug.cli.CoreCommand.repos.setup:
-        for task in plug.manager.hook.setup_task():
-            util.call_if_defined(task.handle_args, args)
 
 
 def _validate_tls_url(url):

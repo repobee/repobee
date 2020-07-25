@@ -310,6 +310,37 @@ class TestSetupStudentRepos:
         api_mock.create_repos.assert_called_once_with(repo_infos)
         git_mock.push.assert_called_once_with(push_tuples)
 
+    @pytest.mark.parametrize(
+        "cmd", [command.setup_student_repos, command.update_student_repos]
+    )
+    def test_executes_pre_setup_hook(
+        self, master_urls, students, api_mock, cmd
+    ):
+        """Test that the pre_setup hook is executed."""
+        plug_name = "preflight"
+        modules = plugin.load_plugin_modules([plug_name])
+        plugin.register_plugins(modules)
+
+        with patch(
+            "pathlib.Path.glob",
+            return_value=(pathlib.Path(name) for name in MASTER_NAMES),
+        ), patch("shutil.copytree"):
+            hook_results = cmd(master_urls, students, api_mock)
+
+        assert len(hook_results) == len(
+            master_urls
+        ), "expected as many hook results as master repos"
+        for master_repo_name in MASTER_NAMES:
+            assert (
+                master_repo_name in hook_results
+            ), "expected hook result for master repo {}".format(
+                master_repo_name
+            )
+            results = hook_results[master_repo_name]
+            assert len(results) == 1, "expected only a single hook result"
+            res = results[0]
+            assert res.status == plug.Status.SUCCESS
+
 
 class TestUpdateStudentRepos:
     """Tests for update_student_repos."""
@@ -497,53 +528,6 @@ class TestCloneRepos:
     """Tests for clone_repos."""
 
     @pytest.fixture
-    def register_default_plugins(self, unused_path):
-        plugin_names = plugin.resolve_plugin_names(
-            plugin_names=constants.PLUGINS, config_file=unused_path
-        )
-        modules = plugin.load_plugin_modules(plugin_names)
-        plugin.register_plugins(modules)
-
-    @pytest.fixture
-    def act_mocks(self, monkeypatch, config_mock, unused_path):
-        """Mocks for the act functions and method. This is a bit
-        messy as the functions must be marked with the
-        repobee_plug.repobee_hook decorator to be picked up by pluggy.
-        """
-        javac_hook = MagicMock(
-            spec="_repobee.ext.javac.JavacCloneHook._class._act",
-            return_value=plug.Result(
-                "javac", plug.Status.SUCCESS, "Great success!"
-            ),
-        )
-        pylint_hook = MagicMock(
-            spec="_repobee.ext.pylint.act",
-            return_value=plug.Result(
-                "pylint", plug.Status.WARNING, "Minor warning."
-            ),
-        )
-
-        @plug.repobee_hook
-        def act_hook_func(path, api):
-            return pylint_hook(path)
-
-        @plug.repobee_hook
-        def act_hook_meth(self, path, api):
-            return javac_hook(self, path)
-
-        monkeypatch.setattr(
-            "_repobee.ext.javac.JavacCloneHook._act", act_hook_meth
-        )
-        monkeypatch.setattr("_repobee.ext.pylint.act", act_hook_func)
-        _repobee.ext.pylint.act(None, None)
-
-        plugin_names = constants.PLUGINS
-        modules = plugin.load_plugin_modules(plugin_names)
-        plugin.register_plugins(modules)
-
-        return javac_hook, pylint_hook
-
-    @pytest.fixture
     def get_plugin_names_mock(self, mocker):
         return mocker.patch(
             "_repobee.config.get_plugin_names", return_value=PLUGINS
@@ -560,30 +544,10 @@ class TestCloneRepos:
         # TODO: improve assert, but as its a generator it's tricky
         git_mock.clone.assert_called_once_with(mock.ANY, cwd=str(tmpdir))
 
-    def test_executes_act_hooks(
-        self, api_mock, git_mock, master_names, students, act_mocks
-    ):
-        javac_hook, pylint_hook = act_mocks
-        repo_names = plug.generate_repo_names(students, master_names)
-        repos = repo_generator(students, master_names)
-
-        with patch(
-            "pathlib.Path.glob",
-            side_effect=lambda _: (pathlib.Path(name) for name in repo_names),
-        ), patch("shutil.copytree"):
-            hook_results = command.clone_repos(repos, api_mock)
-
-        assert len(hook_results) == len(repo_names)
-        for repo_name in repo_names:
-            assert repo_name in hook_results
-            results = sorted(hook_results[repo_name])
-            assert len(results) == 2
-            assert results[0].name == "javac"
-            assert results[1].name == "pylint"
-
-    def test_executes_clone_tasks(
+    def test_executes_post_clone(
         self, master_names, students, api_mock, git_mock
     ):
+        """Test that the post_clone hook is executed."""
         plug_name = "postflight"
         modules = plugin.load_plugin_modules([plug_name])
         plugin.register_plugins(modules)
@@ -799,32 +763,3 @@ class TestSetupTask:
     """Tests for the setup and update commands when it comes to the setup_task
     hook.
     """
-
-    @pytest.mark.parametrize(
-        "cmd", [command.setup_student_repos, command.update_student_repos]
-    )
-    def test_executes_setup_hooks(self, master_urls, students, api_mock, cmd):
-        """Test that the setup hooks are executed."""
-        plug_name = "preflight"
-        modules = plugin.load_plugin_modules([plug_name])
-        plugin.register_plugins(modules)
-
-        with patch(
-            "pathlib.Path.glob",
-            return_value=(pathlib.Path(name) for name in MASTER_NAMES),
-        ), patch("shutil.copytree"):
-            hook_results = cmd(master_urls, students, api_mock)
-
-        assert len(hook_results) == len(
-            master_urls
-        ), "expected as many hook results as master repos"
-        for master_repo_name in MASTER_NAMES:
-            assert (
-                master_repo_name in hook_results
-            ), "expected hook result for master repo {}".format(
-                master_repo_name
-            )
-            results = hook_results[master_repo_name]
-            assert len(results) == 1, "expected only a single hook result"
-            res = results[0]
-            assert res.status == plug.Status.SUCCESS

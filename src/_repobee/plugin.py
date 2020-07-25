@@ -18,7 +18,7 @@ import hashlib
 import os
 import sys
 from types import ModuleType
-from typing import List, Optional, Iterable, Mapping, Union
+from typing import List, Optional, Iterable, Mapping, Union, Callable
 
 import daiquiri
 
@@ -386,8 +386,7 @@ def execute_clone_tasks(
     Returns:
         A mapping from repo name to hook result.
     """
-    tasks = plug.manager.hook.clone_task()
-    return _execute_tasks(repo_names, tasks, api, cwd)
+    return _execute_tasks(repo_names, plug.manager.hook.post_clone, api, cwd)
 
 
 def execute_setup_tasks(
@@ -402,19 +401,16 @@ def execute_setup_tasks(
     Returns:
         A mapping from repo name to hook result.
     """
-    tasks = plug.manager.hook.setup_task()
-    return _execute_tasks(repo_names, tasks, api, cwd)
+    return _execute_tasks(repo_names, plug.manager.hook.pre_setup, api, cwd)
 
 
 def _execute_tasks(
     repo_names: List[str],
-    tasks: Iterable[plug.Task],
+    hook_function: Callable[[pathlib.Path, plug.API], Optional[plug.Result]],
     api: plug.API,
     cwd: Optional[pathlib.Path],
 ) -> Mapping[str, List[plug.Result]]:
     """Execute plugin tasks on the provided repos."""
-    if not tasks:
-        return {}
     cwd = cwd or pathlib.Path(".")
     repo_paths = [f.absolute() for f in cwd.glob("*") if f.name in repo_names]
 
@@ -431,11 +427,9 @@ def _execute_tasks(
         for path in repo_copies:
             LOGGER.info("Processing {}".format(path.name))
 
-            for task in tasks:
-                with _convert_task_exceptions(task):
-                    res = task.act(path, api)
-                if res:
-                    results[path.name].append(res)
+            for result in hook_function(path=path, api=api):
+                if result:
+                    results[path.name].append(result)
     return results
 
 

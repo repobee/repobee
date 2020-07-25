@@ -121,7 +121,7 @@ def _generate_command_extension_func() -> Callable:
             parser=functools.partial(_attach_options, plugin=self),
             # FIXME support more than one action
             name=settings.actions[0],
-            callback=lambda: None,
+            callback=None,
             description=None,
             help=None,
         )
