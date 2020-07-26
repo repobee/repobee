@@ -1,3 +1,4 @@
+import os
 import argparse
 import tempfile
 import pathlib
@@ -439,3 +440,24 @@ user = some-unlikely-user
         main.main(sys_args)
 
     show_config_mock.assert_called_once_with(config_file)
+
+
+class TestRun:
+    """Tests for the run function."""
+
+    class Workdir(plug.Plugin, plug.cli.Command):
+        def command(self, args, api):
+            return plug.Result(
+                name="workdir",
+                msg="workdir",
+                status=plug.Status.SUCCESS,
+                data={"cwd": os.getcwd()},
+            )
+
+    def test_operates_in_current_workdir_by_default(self):
+        results = main.run(["workdir"], plugins=[self.Workdir])
+        assert results["workdir"][0].data["cwd"] == os.getcwd()
+
+    def test_operates_in_specified_workdir(self, tmpdir):
+        results = main.run(["workdir"], plugins=[self.Workdir], workdir=tmpdir)
+        assert results["workdir"][0].data["cwd"] == str(tmpdir)

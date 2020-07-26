@@ -7,7 +7,9 @@
 """
 
 import pathlib
+import contextlib
 import sys
+import os
 from typing import List, Optional, Union, Mapping
 from types import ModuleType
 
@@ -40,6 +42,7 @@ def run(
     show_all_opts: bool = False,
     config_file: Union[str, pathlib.Path] = "",
     plugins: Optional[List[Union[ModuleType, plug.Plugin]]] = None,
+    workdir: Union[str, pathlib.Path] = ".",
 ) -> Mapping[str, List[plug.Result]]:
     """Run RepoBee with the provided options. This function is mostly intended
     to be used for testing plugins.
@@ -78,10 +81,21 @@ def run(
         show_all_opts: Equivalent to the ``--show-all-opts`` flag.
         config_file: Path to the configuration file.
         plugins: A list of plugin modules and/or plugin classes.
+        workdir: The working directory to run RepoBee in.
     Returns:
         A mapping (plugin_name -> plugin_results).
     """
     config_file = pathlib.Path(config_file)
+    cur_workdir = pathlib.Path(".").absolute()
+    requested_workdir = pathlib.Path(str(workdir)).resolve(strict=True)
+
+    @contextlib.contextmanager
+    def _in_requested_workdir():
+        try:
+            os.chdir(requested_workdir)
+            yield
+        finally:
+            os.chdir(cur_workdir)
 
     def _ensure_is_module(p: Union[ModuleType, plug.Plugin]):
         if issubclass(p, plug.Plugin):
@@ -95,18 +109,20 @@ def run(
             raise TypeError(f"not plugin or module: {p}")
 
     wrapped_plugins = list(map(_ensure_is_module, plugins or []))
-    try:
-        _repobee.cli.parsing.setup_logging()
-        plugin.initialize_default_plugins()
-        plugin.register_plugins(wrapped_plugins)
-        parsed_args, api, ext_commands = _parse_args(
-            cmd, config_file, show_all_opts
-        )
-        return _repobee.cli.dispatch.dispatch_command(
-            parsed_args, api, config_file, ext_commands
-        )
-    finally:
-        plugin.unregister_all_plugins()
+
+    with _in_requested_workdir():
+        try:
+            _repobee.cli.parsing.setup_logging()
+            plugin.initialize_default_plugins()
+            plugin.register_plugins(wrapped_plugins)
+            parsed_args, api, ext_commands = _parse_args(
+                cmd, config_file, show_all_opts
+            )
+            return _repobee.cli.dispatch.dispatch_command(
+                parsed_args, api, config_file, ext_commands
+            )
+        finally:
+            plugin.unregister_all_plugins()
 
 
 def main(sys_args: List[str], unload_plugins: bool = True):
