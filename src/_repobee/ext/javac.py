@@ -20,7 +20,6 @@ and specifically the more advanced use of the ``clone_parser_hook`` and
 """
 import subprocess
 import sys
-import argparse
 import pathlib
 from typing import Union, Iterable, Tuple
 
@@ -46,9 +45,6 @@ class JavacCloneHook(plug.Plugin, plug.cli.CommandExtension):
         argparse_kwargs={"nargs": "+"},
     )
 
-    def handle_processed_args(self, args: argparse.Namespace):
-        self.ignore = args.javac_ignore or []
-
     def post_clone(self, path: pathlib.Path, api: plug.API) -> plug.Result:
         """Run ``javac`` on all .java files in the repo.
 
@@ -58,10 +54,11 @@ class JavacCloneHook(plug.Plugin, plug.cli.CommandExtension):
         Returns:
             a Result specifying the outcome.
         """
+        ignore = self.javac_ignore or []
         java_files = [
             str(file)
             for file in util.find_files_by_extension(path, ".java")
-            if file.name not in self.ignore
+            if file.name not in ignore
         ]
 
         if not java_files:

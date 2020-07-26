@@ -1,6 +1,12 @@
 from .settings import command_settings, command_extension_settings
 from .categorization import category
-from .args import option, positional, mutually_exclusive_group, ArgumentType
+from .args import (
+    option,
+    positional,
+    mutually_exclusive_group,
+    ArgumentType,
+    is_cli_arg,
+)
 from .commandmarkers import Command, CommandExtension
 
 from ._corecommand import _CoreCommand
@@ -18,4 +24,5 @@ __all__ = [
     "Command",
     "CommandExtension",
     "CoreCommand",
+    "is_cli_arg",
 ]

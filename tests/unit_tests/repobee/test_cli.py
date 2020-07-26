@@ -852,7 +852,9 @@ class TestExtensionCommands:
             parsed_args, None, EMPTY_PATH, [ext_command]
         )
 
-        mock_callback.assert_called_once_with(parsed_args, None)
+        calls = mock_callback.mock_calls
+        assert len(calls) == 1
+        assert calls[0] == mock.call(None)
 
     def test_dispatch_ext_command_that_requires_api(
         self,
@@ -883,7 +885,9 @@ class TestExtensionCommands:
             parsed_args, api_instance_mock, EMPTY_PATH, [ext_command]
         )
 
-        mock_callback.assert_called_once_with(parsed_args, api_instance_mock)
+        calls = mock_callback.mock_calls
+        assert len(calls) == 1
+        assert calls[0] == mock.call(api_instance_mock)
 
     def test_parse_ext_command_that_requires_base_parsers(self):
         """The query command requires the students and repo names parsers."""

@@ -1,4 +1,5 @@
 import argparse
+import itertools
 import daiquiri
 import functools
 
@@ -55,6 +56,8 @@ class _PluginMeta(type):
         if cli.Command in bases:
             ext_cmd_func = _generate_command_func(attrdict)
             attrdict[ext_cmd_func.__name__] = ext_cmd_func
+            handle_processed_args = _generate_handle_processed_args_func()
+            attrdict[handle_processed_args.__name__] = handle_processed_args
         elif cli.CommandExtension in bases:
             if "__settings__" not in attrdict:
                 raise _exceptions.PlugError(
@@ -62,6 +65,8 @@ class _PluginMeta(type):
                 )
             ext_cmd_func = _generate_command_extension_func()
             attrdict[ext_cmd_func.__name__] = ext_cmd_func
+            handle_processed_args = _generate_handle_processed_args_func()
+            attrdict[handle_processed_args.__name__] = handle_processed_args
 
         methods = cls._extract_public_methods(attrdict)
         cls._check_names(methods)
@@ -173,6 +178,41 @@ def _generate_command_func(attrdict: Mapping[str, Any]) -> Callable:
         )
 
     return create_extension_command
+
+
+def _generate_handle_processed_args_func():
+    def handle_processed_args(self, args):
+        self.args = args
+        cli_args = [
+            (k, v)
+            for k, v in self.__class__.__dict__.items()
+            if cli.is_cli_arg(v)
+        ]
+        flattened_args = itertools.chain.from_iterable(
+            map(_flatten_arg, cli_args)
+        )
+
+        for name, arg in flattened_args:
+            dest = (
+                name
+                if "dest" not in arg.argparse_kwargs
+                else arg.argparse_kwargs["dest"]
+            )
+            if dest in args:
+                parsed_arg = getattr(args, dest)
+                setattr(self, dest, parsed_arg)
+
+    return handle_processed_args
+
+
+def _flatten_arg(arg_tup):
+    name, arg = arg_tup
+    assert cli.is_cli_arg(arg)
+
+    if isinstance(arg, MutuallyExclusiveGroup):
+        return itertools.chain.from_iterable(map(_flatten_arg, arg.options))
+    else:
+        return [arg_tup]
 
 
 def _add_option(

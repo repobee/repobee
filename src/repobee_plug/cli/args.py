@@ -31,6 +31,17 @@ MutuallyExclusiveGroup = collections.namedtuple(
 )
 
 
+def is_cli_arg(obj: Any) -> bool:
+    """Determine if an object is a CLI argument.
+
+    Args:
+        obj: An object.
+    Returns:
+        True if the object is an instance of a CLI argument class.
+    """
+    return isinstance(obj, (Option, MutuallyExclusiveGroup))
+
+
 def option(
     short_name: Optional[str] = None,
     long_name: Optional[str] = None,
@@ -56,10 +67,10 @@ def option(
             name = plug.cli.option(help="Your name.")
             age = plug.cli.option(converter=int, help="Your age.")
 
-            def command(self, args, api):
+            def command(self, api):
                 print(
-                    f"Hello, my name is {args.name} "
-                    f"and I am {args.age} years old"
+                    f"Hello, my name is {self.name} "
+                    f"and I am {self.age} years old"
                 )
 
     This command can then be called like so:
@@ -122,10 +133,10 @@ def positional(
             name = plug.cli.Positional(help="Your name.")
             age = plug.cli.Positional(converter=int, help="Your age.")
 
-            def command(self, args, api):
+            def command(self, api):
                 print(
-                    f"Hello, my name is {args.name} "
-                    f"and I am {args.age} years old"
+                    f"Hello, my name is {self.name} "
+                    f"and I am {self.age} years old"
                 )
 
     This command can then be called like so:

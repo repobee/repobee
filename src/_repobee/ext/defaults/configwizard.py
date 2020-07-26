@@ -30,8 +30,8 @@ class Wizard(plug.Plugin, plug.cli.Command):
         ),
     )
 
-    def command(self, args: argparse.Namespace, api: plug.API) -> None:
-        return callback(args, api)
+    def command(self, api: plug.API) -> None:
+        return callback(self.args, api)
 
 
 def callback(args: argparse.Namespace, api: plug.API) -> None:

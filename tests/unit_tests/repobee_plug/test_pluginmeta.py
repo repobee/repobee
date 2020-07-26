@@ -124,8 +124,8 @@ class TestDeclarativeExtensionCommand:
             name = plug.cli.option(help="your name", required=True)
             age = plug.cli.option(converter=int, help="your age", default=30)
 
-            def command(self, args, api):
-                print(f"My name is {args.name} and I am {args.age} years old")
+            def command(self, api):
+                print(f"My name is {self.name} and I am {self.age} years old")
 
         return Greeting
 
@@ -167,7 +167,7 @@ class TestDeclarativeExtensionCommand:
                 requires_api=expected_requires_api,
             )
 
-            def command(self, args, api):
+            def command(self, api):
                 pass
 
         plugin_instance = ExtCommand("greeting")
@@ -199,7 +199,7 @@ class TestDeclarativeExtensionCommand:
                 help="Your name.", required=True, configurable=True
             )
 
-            def command(self, args, api):
+            def command(self, api):
                 pass
 
         plugin_name = "greeting"
@@ -221,7 +221,7 @@ class TestDeclarativeExtensionCommand:
         class Greeting(plug.Plugin, plug.cli.Command):
             name = plug.cli.option(help="Your name.", required=True)
 
-            def command(self, args, api):
+            def command(self, api):
                 pass
 
         plugin_name = "greeting"
@@ -254,7 +254,7 @@ class TestDeclarativeExtensionCommand:
                 required=True,
             )
 
-            def command(self, args, api):
+            def command(self, api):
                 pass
 
         ext_cmd = Greeting("g").create_extension_command()
@@ -273,7 +273,7 @@ class TestDeclarativeExtensionCommand:
             name = plug.cli.positional()
             age = plug.cli.positional(converter=int)
 
-            def command(self, args, api):
+            def command(self, api):
                 pass
 
         ext_cmd = Greeting("g").create_extension_command()
@@ -301,7 +301,7 @@ class TestDeclarativeExtensionCommand:
                 __required__=True,
             )
 
-            def command(self, args, api):
+            def command(self, api):
                 pass
 
         ext_cmd = Greeting("g").create_extension_command()
@@ -343,7 +343,7 @@ class TestDeclarativeExtensionCommand:
                 __required__=True,
             )
 
-            def command(self, args, api):
+            def command(self, api):
                 pass
 
         ext_cmd = Greeting("g").create_extension_command()
@@ -365,12 +365,12 @@ class TestDeclarativeExtensionCommand:
             name = plug.cli.positional()
             age = plug.cli.positional(converter=int)
 
-            def command(self, args, api):
+            def command(self, api):
                 return plug.Result(
                     name=self.plugin_name,
                     msg="Nice!",
                     status=plug.Status.SUCCESS,
-                    data={"name": args.name, "age": args.age},
+                    data={"name": self.name, "age": self.age},
                 )
 
         name = "Bob"
@@ -399,10 +399,10 @@ class TestDeclarativeExtensionCommand:
             __settings__ = plug.cli.command_settings(action=category.hello)
             name = plug.cli.positional()
 
-            def command(self, args, api):
+            def command(self, api):
                 return plug.Result(
                     name=self.plugin_name,
-                    msg=f"Hello {args.name}",
+                    msg=f"Hello {self.name}",
                     status=plug.Status.SUCCESS,
                 )
 
@@ -410,10 +410,10 @@ class TestDeclarativeExtensionCommand:
             __settings__ = plug.cli.command_settings(action=category.bye)
             name = plug.cli.positional()
 
-            def command(self, args, api):
+            def command(self, api):
                 return plug.Result(
                     name=self.plugin_name,
-                    msg=f"Bye {args.name}",
+                    msg=f"Bye {self.name}",
                     status=plug.Status.SUCCESS,
                 )
 
@@ -442,13 +442,49 @@ class TestDeclarativeExtensionCommand:
                     action=category.greetings, category=category
                 )
 
-                def command(self, args, api):
+                def command(self, api):
                     pass
 
         assert (
             "argument 'category' not allowed when argument "
             "'action' is an Action object"
         ) in str(exc_info.value)
+
+    def test_parsed_args_are_added_to_self(self):
+        """Parsed cli arguments should automatically be added to the plugin
+        object instance.
+        """
+
+        class Ext(plug.Plugin, plug.cli.Command):
+            name = plug.cli.option()
+            age = plug.cli.positional(converter=int)
+            tolerance = plug.cli.mutually_exclusive_group(
+                high=plug.cli.option(
+                    argparse_kwargs=dict(action="store_true")
+                ),
+                low=plug.cli.option(argparse_kwargs=dict(action="store_true")),
+                __required__=True,
+            )
+
+            def command(self, api):
+                return plug.Result(
+                    name="ext",
+                    msg="",
+                    status=plug.Status.SUCCESS,
+                    data={"instance": self},
+                )
+
+        name = "Eve"
+        age = 22
+        instance = repobee.run(
+            f"ext {age} --name {name} --high".split(), plugins=[Ext]
+        )["ext"][0].data["instance"]
+
+        assert instance.name == name
+        assert instance.age == age
+        assert instance.high
+        assert not instance.low
+        assert isinstance(instance.args, argparse.Namespace)
 
 
 class TestDeclarativeCommandExtension:
