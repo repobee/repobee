@@ -115,11 +115,9 @@ def run(
             _repobee.cli.parsing.setup_logging()
             plugin.initialize_default_plugins()
             plugin.register_plugins(wrapped_plugins)
-            parsed_args, api, ext_commands = _parse_args(
-                cmd, config_file, show_all_opts
-            )
+            parsed_args, api = _parse_args(cmd, config_file, show_all_opts)
             return _repobee.cli.dispatch.dispatch_command(
-                parsed_args, api, config_file, ext_commands
+                parsed_args, api, config_file
             )
         finally:
             plugin.unregister_all_plugins()
@@ -161,14 +159,12 @@ def main(sys_args: List[str], unload_plugins: bool = True):
             ) or []
             plugin.initialize_plugins(plugin_names, allow_filepath=True)
 
-        parsed_args, api, ext_commands = _parse_args(
+        parsed_args, api = _parse_args(
             app_args, config_file, parsed_preparser_args.show_all_opts
         )
         traceback = parsed_args.traceback
         pre_init = False
-        _repobee.cli.dispatch.dispatch_command(
-            parsed_args, api, config_file, ext_commands
-        )
+        _repobee.cli.dispatch.dispatch_command(parsed_args, api, config_file)
     except exception.PluginLoadError as exc:
         LOGGER.error("{.__class__.__name__}: {}".format(exc, str(exc)))
         LOGGER.error(
@@ -197,15 +193,11 @@ def main(sys_args: List[str], unload_plugins: bool = True):
 
 def _parse_args(args, config_file, show_all_opts):
     config.execute_config_hooks(config_file)
-    ext_commands = plug.manager.hook.create_extension_command()
     parsed_args, api = _repobee.cli.parsing.handle_args(
-        args,
-        show_all_opts=show_all_opts,
-        ext_commands=ext_commands,
-        config_file=config_file,
+        args, show_all_opts=show_all_opts, config_file=config_file
     )
     plug.manager.hook.handle_processed_args(args=parsed_args)
-    return parsed_args, api, ext_commands
+    return parsed_args, api
 
 
 if __name__ == "__main__":

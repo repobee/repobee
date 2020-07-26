@@ -41,7 +41,6 @@ class _ArgsProcessing(enum.Enum):
 def handle_args(
     sys_args: Iterable[str],
     show_all_opts: bool = False,
-    ext_commands: Optional[List[plug.ExtensionCommand]] = None,
     config_file: pathlib.Path = constants.DEFAULT_CONFIG_FILE,
 ) -> Tuple[argparse.Namespace, Optional[plug.API]]:
     """Parse and process command line arguments and instantiate the platform
@@ -54,19 +53,16 @@ def handle_args(
         show_all_opts: If False, help sections for options that have
             configured defaults are suppressed. Otherwise, all options are
             shown.
-        ext_commands: An optional list of extension commands.
 
     Returns:
         A tuple of a namespace with parsed and processed arguments, and an
         instance of the platform API if it is required for the command.
     """
-    args, processing = _parse_args(
-        sys_args, config_file, show_all_opts, ext_commands
-    )
+    args, processing = _parse_args(sys_args, config_file, show_all_opts)
     plug.manager.hook.handle_parsed_args(args=args)
 
     if processing == _ArgsProcessing.CORE:
-        processed_args, api = _process_args(args, ext_commands)
+        processed_args, api = _process_args(args)
         return processed_args, api
     elif processing == _ArgsProcessing.EXT:
         processed_args, api = _process_ext_args(args)
@@ -78,7 +74,6 @@ def _parse_args(
     sys_args: Iterable[str],
     config_file: pathlib.Path,
     show_all_opts: bool = False,
-    ext_commands: Optional[List[plug.ExtensionCommand]] = None,
 ) -> Tuple[argparse.Namespace, _ArgsProcessing]:
     """Parse the command line arguments with some light processing. Any
     processing that requires external resources (such as a network connection)
@@ -89,15 +84,12 @@ def _parse_args(
         config_file: Path to the config file.
         show_all_opts: If False, CLI arguments that are configure in the
             configuration file are not shown in help menus.
-        ext_commands: A list of extension commands.
 
     Returns:
         A namespace of parsed arpuments and a boolean that specifies whether or
         not further processing is required.
     """
-    parser = cli.mainparser.create_parser(
-        show_all_opts, ext_commands, config_file
-    )
+    parser = cli.mainparser.create_parser(show_all_opts, config_file)
     args = parser.parse_args(_handle_deprecation(sys_args))
 
     if "_extension_command" in args:
@@ -133,15 +125,6 @@ def _parse_args(
     return argparse.Namespace(**args_dict), requires_processing
 
 
-def _resolve_extension_command(
-    subparser, ext_commands
-) -> Optional[plug.ExtensionCommand]:
-    ext_command_names = [cmd.name for cmd in ext_commands or []]
-    if subparser in ext_command_names:
-        return ext_commands[ext_command_names.index(subparser)]
-    return None
-
-
 def _resolve_requires_processing(args: argparse.Namespace) -> _ArgsProcessing:
     """Figure out if further processing of the parsed args is required.
     This is primarily decided on whether or not the platform API is required,
@@ -157,7 +140,6 @@ def _resolve_requires_processing(args: argparse.Namespace) -> _ArgsProcessing:
 
 def _process_args(
     args: argparse.Namespace,
-    ext_commands: Optional[List[plug.ExtensionCommand]] = None,
 ) -> Tuple[argparse.Namespace, plug.API]:
     """Process parsed command line arguments.
 
@@ -314,9 +296,10 @@ def _process_ext_args(
 ) -> Tuple[argparse.Namespace, Optional[plug.API]]:
     ext_cmd = args._extension_command
     assert ext_cmd
+    settings = ext_cmd.__settings__
 
     api = None
-    if ext_cmd.requires_api:
+    if settings.requires_api:
         _validate_tls_url(args.base_url)
         api = _connect_to_api(
             args.base_url,
@@ -326,7 +309,7 @@ def _process_ext_args(
         )
 
     args_dict = vars(args)
-    req_parsers = ext_cmd.requires_base_parsers or []
+    req_parsers = settings.base_parsers or []
     bp = plug.BaseParser
     if bp.STUDENTS in req_parsers:
         args_dict["students"] = _extract_groups(args)

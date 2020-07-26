@@ -23,7 +23,6 @@ from repobee_plug._corehooks import PeerReviewHook as _peer_hook
 from repobee_plug._corehooks import APIHook as _api_hook
 from repobee_plug._exthooks import CloneHook as _clone_hook
 from repobee_plug._exthooks import SetupHook as _setup_hook
-from repobee_plug._exthooks import ExtensionCommandHook as _ext_command_hook
 
 # Helpers
 from repobee_plug._deprecation import deprecate, deprecated_hooks
@@ -60,7 +59,6 @@ manager.add_hookspecs(_clone_hook)
 manager.add_hookspecs(_setup_hook)
 manager.add_hookspecs(_peer_hook)
 manager.add_hookspecs(_api_hook)
-manager.add_hookspecs(_ext_command_hook)
 
 __all__ = [
     # Plugin stuff

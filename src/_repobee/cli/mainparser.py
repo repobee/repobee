@@ -11,7 +11,7 @@ import argparse
 import pathlib
 
 import logging
-from typing import List, Optional, Union, Mapping
+from typing import Union, Mapping
 
 import daiquiri
 
@@ -82,25 +82,19 @@ def create_parser_for_docs() -> argparse.ArgumentParser:
     daiquiri.setup(level=logging.FATAL)
     # load default plugins
     plugin.initialize_default_plugins()
-    ext_commands = plug.manager.hook.create_extension_command()
     return create_parser(
-        show_all_opts=True,
-        ext_commands=ext_commands,
-        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
+        show_all_opts=True, config_file=_repobee.constants.DEFAULT_CONFIG_FILE
     )
 
 
 def create_parser(
-    show_all_opts: bool,
-    ext_commands: Optional[List[plug.ExtensionCommand]],
-    config_file: pathlib.Path,
+    show_all_opts: bool, config_file: pathlib.Path
 ) -> argparse.ArgumentParser:
     """Create the primary parser.
 
     Args:
         show_all_opts: If False, help sections for options with configured
             defaults are suppressed. Otherwise, all options are shown.
-        ext_commands: A list of extension commands.
         config_file: Path to the config file.
     Returns:
         The primary parser.
@@ -149,12 +143,12 @@ def create_parser(
         action="version",
         version="{}".format(_repobee.__version__),
     )
-    _add_subparsers(parser, show_all_opts, ext_commands, config_file)
+    _add_subparsers(parser, show_all_opts, config_file)
 
     return parser
 
 
-def _add_subparsers(parser, show_all_opts, ext_commands, config_file):
+def _add_subparsers(parser, show_all_opts, config_file):
     """Add all of the subparsers to the parser. Note that the parsers prefixed
     with `base_` do not have any parent parsers, so any parser inheriting from
     them must also inherit from the required `base_parser` (unless it is a
@@ -229,9 +223,8 @@ def _add_subparsers(parser, show_all_opts, ext_commands, config_file):
         base_parser, master_org_parser, _add_action_parser(config_parsers)
     )
 
-    return _add_extension_parsers(
+    _add_extension_parsers(
         subparsers,
-        ext_commands,
         base_parser,
         base_student_parser,
         master_org_parser,
@@ -602,7 +595,6 @@ class _OrderedFormatter(argparse.HelpFormatter):
 
 def _add_extension_parsers(
     subparsers,
-    ext_commands,
     base_parser,
     base_student_parser,
     master_org_parser,
@@ -612,13 +604,52 @@ def _add_extension_parsers(
     show_all_opts,
 ):
     """Add extension parsers defined by plugins."""
-    if not ext_commands:
-        return []
-    for cmd in ext_commands:
+    command_extension_plugins = [
+        p
+        for p in plug.manager.get_plugins()
+        if isinstance(p, plug.cli.CommandExtension)
+    ]
+    for cmd in command_extension_plugins:
+        for action in cmd.__settings__.actions:
+            parser = parsers_mapping[action]
+            cmd.attach_options(
+                config=parsed_config,
+                show_all_opts=show_all_opts,
+                parser=parser,
+            )
+
+    command_plugins = [
+        p
+        for p in plug.manager.get_plugins()
+        if isinstance(p, plug.cli.Command)
+    ]
+    for cmd in command_plugins:
+        is_category_action = False
+        settings = cmd.__settings__
+        category = (
+            settings.action.category
+            if isinstance(settings.action, categorization.Action)
+            else settings.category
+        )
+        action = settings.action or cmd.__class__.__name__.lower().replace(
+            "_", "-"
+        )
+        if isinstance(action, str):
+            if not category:
+                is_category_action = True
+                category = plug.cli.category(
+                    name=action, action_names=[action]
+                )
+            action = (
+                category[action]
+                if category and action in category
+                else categorization.Action(name=action, category=category)
+            )
+
         parents = []
         bp = plug.BaseParser
-        req_parsers = cmd.requires_base_parsers or []
-        if cmd.requires_api or bp.BASE in req_parsers:
+        req_parsers = settings.base_parsers or []
+        if settings.requires_api or bp.BASE in req_parsers:
             parents.append(base_parser)
         if bp.STUDENTS in req_parsers:
             parents.append(base_student_parser)
@@ -630,29 +661,11 @@ def _add_extension_parsers(
         elif bp.REPO_NAMES in req_parsers:
             parents.append(repo_name_parser)
 
-        def _add_ext_parser(
-            name=None, parents: List[argparse.ArgumentParser] = None
-        ) -> argparse.ArgumentParser:
-            """Add a new parser either to the extension command's category (if
-            specified), or to the top level subparsers (if category is not
-            specified).
-            """
-            return (
-                parsers_mapping.get(cmd.category) or subparsers
-            ).add_parser(
-                name or cmd.name,
-                help=cmd.help,
-                description=cmd.description,
-                parents=parents,
-                formatter_class=_OrderedFormatter,
-            )
-
-        category = (
-            cmd.name.category
-            if isinstance(cmd.name, categorization.Action)
-            else cmd.category
-        )
-        if category and category not in parsers_mapping:
+        if (
+            category
+            and category not in parsers_mapping
+            and not is_category_action
+        ):
             # new category
             category_cmd = subparsers.add_parser(
                 category.name,
@@ -663,34 +676,15 @@ def _add_extension_parsers(
             category_parsers.required = True
             parsers_mapping[category] = category_parsers
 
-        if cmd.name in parsers_mapping:
-            ext_parser = parsers_mapping[cmd.name]
-            cmd.parser(
-                config=parsed_config,
-                show_all_opts=show_all_opts,
-                parser=ext_parser,
-            )
-        elif isinstance(cmd.name, categorization.Action):
-            action = cmd.name
-            ext_parser = _add_ext_parser(parents=parents, name=action.name)
-            cmd.parser(
-                config=parsed_config,
-                show_all_opts=show_all_opts,
-                parser=ext_parser,
-            )
-        elif callable(cmd.parser):
-            action = cmd.category.get(cmd.name) if cmd.category else None
-            ext_parser = parsers_mapping.get(action) or _add_ext_parser(
-                parents=parents
-            )
-            cmd.parser(
-                config=parsed_config,
-                show_all_opts=show_all_opts,
-                parser=ext_parser,
-            )
-        else:
-            parents.append(cmd.parser)
-            ext_parser = _add_ext_parser(parents=parents)
+        assert action not in parsers_mapping
+
+        ext_parser = (parsers_mapping.get(category) or subparsers).add_parser(
+            action.name,
+            help=settings.help,
+            description=settings.description,
+            parents=parents,
+            formatter_class=_OrderedFormatter,
+        )
 
         try:
             _add_traceback_arg(ext_parser)
@@ -703,35 +697,43 @@ def _add_extension_parsers(
                 "--repobee-action",
                 action="store_const",
                 help=argparse.SUPPRESS,
-                const=cmd.name,
-                default=cmd.name,
+                const=action.name,
+                default=action.name,
                 dest="action",
             )
             # This is a little bit of a dirty trick. It allows us to easily
             # find the associated extension command when parsing the arguments.
-            if cmd.callback:
-                ext_parser.add_argument(
-                    "--repobee-extension-command",
-                    action="store_const",
-                    help=argparse.SUPPRESS,
-                    const=cmd,
-                    default=cmd,
-                    dest="_extension_command",
-                )
+            ext_parser.add_argument(
+                "--repobee-extension-command",
+                action="store_const",
+                help=argparse.SUPPRESS,
+                const=cmd,
+                default=cmd,
+                dest="_extension_command",
+            )
         except argparse.ArgumentError:
             pass
 
-        if isinstance(cmd.name, str) and not cmd.category:
+        if is_category_action:
+            # category is not specified, so it's a category-action
             ext_parser.add_argument(
                 "--repobee-category",
                 action="store_const",
                 help=argparse.SUPPRESS,
-                const=cmd.name,
-                default=cmd.name,
+                const=category,
+                default=category,
                 dest="category",
             )
 
-    return ext_commands
+        cmd.attach_options(
+            config=parsed_config,
+            show_all_opts=show_all_opts,
+            parser=ext_parser,
+        )
+
+        settings_dict = settings._asdict()
+        settings_dict.update(dict(action=action, category=category))
+        cmd.__settings__ = settings.__class__(**settings_dict)
 
 
 def _create_base_parsers(show_all_opts, config_file):

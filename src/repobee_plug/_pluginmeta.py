@@ -1,9 +1,8 @@
 import argparse
 import itertools
 import daiquiri
-import functools
 
-from typing import List, Tuple, Callable, Mapping, Any, Union
+from typing import List, Tuple, Union
 
 from repobee_plug import _exceptions
 from repobee_plug import _corehooks
@@ -22,7 +21,6 @@ _HOOK_METHODS = {
         *_exthooks.SetupHook.__dict__.items(),
         *_corehooks.PeerReviewHook.__dict__.items(),
         *_corehooks.APIHook.__dict__.items(),
-        *_exthooks.ExtensionCommandHook.__dict__.items(),
     ]
     if callable(value) and not key.startswith("_")
 }
@@ -30,11 +28,8 @@ _HOOK_METHODS = {
 
 class _PluginMeta(type):
     """Metaclass used for converting methods with appropriate names into
-    hook methods. It also enables the declarative style of extension commands
-    by automatically implementing the ``create_extension_command`` hook
-    for any inheriting class that declares CLI-related members.
-
-    Also ensures that all public methods have the name of a hook method.
+    hook methods. It ensures that all public methods have the name of a hook
+    method.
 
     Checking signatures is handled by pluggy on registration.
     """
@@ -54,19 +49,19 @@ class _PluginMeta(type):
             )
 
         if cli.Command in bases:
-            ext_cmd_func = _generate_command_func(attrdict)
-            attrdict[ext_cmd_func.__name__] = ext_cmd_func
+            if "__settings__" not in attrdict:
+                attrdict["__settings__"] = cli.command_settings()
             handle_processed_args = _generate_handle_processed_args_func()
             attrdict[handle_processed_args.__name__] = handle_processed_args
+            attrdict["attach_options"] = _attach_options
         elif cli.CommandExtension in bases:
             if "__settings__" not in attrdict:
                 raise _exceptions.PlugError(
                     "CommandExtension must have a '__settings__' attribute"
                 )
-            ext_cmd_func = _generate_command_extension_func()
-            attrdict[ext_cmd_func.__name__] = ext_cmd_func
             handle_processed_args = _generate_handle_processed_args_func()
             attrdict[handle_processed_args.__name__] = handle_processed_args
+            attrdict["attach_options"] = _attach_options
 
         methods = cls._extract_public_methods(attrdict)
         cls._check_names(methods)
@@ -94,7 +89,9 @@ class _PluginMeta(type):
         return {
             key: value
             for key, value in attrdict.items()
-            if callable(value) and not key.startswith("_") and key != "command"
+            if callable(value)
+            and not key.startswith("_")
+            and key not in ["command", "attach_options"]
         }
 
 
@@ -112,72 +109,23 @@ def _extract_cli_options(
     ]
 
 
-def _generate_command_extension_func() -> Callable:
-    """Generate an implementation of the ``create_extension_command`` that
-    returns an extension to an existing command.
-    """
-
-    def create_extension_command(self):
-        settings = self.__settings__
-        if settings.config_section_name:
-            self.__config_section__ = settings.config_section_name
-
-        return _containers.ExtensionCommand(
-            parser=functools.partial(_attach_options, plugin=self),
-            # FIXME support more than one action
-            name=settings.actions[0],
-            callback=None,
-            description=None,
-            help=None,
-        )
-
-    return create_extension_command
-
-
-def _attach_options(config, show_all_opts, parser, plugin: "Plugin"):
-    config_name = (
-        getattr(plugin, "__config_section__", None) or plugin.plugin_name
-    )
+def _attach_options(self, config, show_all_opts, parser):
+    config_name = self.__settings__.config_section_name or self.plugin_name
     config_section = dict(config[config_name]) if config_name in config else {}
 
-    opts = _extract_cli_options(plugin.__class__.__dict__)
+    opts = _extract_cli_options(self.__class__.__dict__)
     for (name, opt) in opts:
         configured_value = config_section.get(name)
         if configured_value and not (
             hasattr(opt, "configurable") and opt.configurable
         ):
             raise _exceptions.PlugError(
-                f"Plugin '{plugin.plugin_name}' does not allow "
+                f"Plugin '{self.plugin_name}' does not allow "
                 f"'{name}' to be configured"
             )
         _add_option(name, opt, configured_value, show_all_opts, parser)
 
     return parser
-
-
-def _generate_command_func(attrdict: Mapping[str, Any]) -> Callable:
-    """Generate an implementation of the ``create_extension_command`` hook
-    function based on the declarative-style extension command class.
-    """
-
-    def create_extension_command(self):
-        settings = attrdict.get("__settings__") or cli.command_settings()
-        if settings.config_section_name:
-            self.__config_section__ = settings.config_section_name
-
-        return _containers.ExtensionCommand(
-            parser=functools.partial(_attach_options, plugin=self),
-            name=settings.action
-            or self.__class__.__name__.lower().replace("_", "-"),
-            help=settings.help,
-            description=settings.description,
-            callback=self.command,
-            category=settings.category,
-            requires_api=settings.requires_api,
-            requires_base_parsers=settings.base_parsers,
-        )
-
-    return create_extension_command
 
 
 def _generate_handle_processed_args_func():

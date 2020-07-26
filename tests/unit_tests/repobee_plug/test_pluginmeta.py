@@ -7,7 +7,6 @@ import repobee_plug as plug
 
 from repobee_plug import _pluginmeta
 from repobee_plug import _exceptions
-from repobee_plug.cli import categorization
 
 import repobee
 
@@ -65,9 +64,6 @@ class TestPluginInheritance:
             def api_init_requires(self):
                 pass
 
-            def create_extension_command(self):
-                pass
-
     def test_with_private_methods(self):
         """Private methods should be able to have any names."""
 
@@ -101,9 +97,6 @@ class TestPluginInheritance:
             def api_init_requires(self):
                 pass
 
-            def create_extension_command(self):
-                pass
-
             def _some_method(self, x, y):
                 return x + y
 
@@ -129,63 +122,26 @@ class TestDeclarativeExtensionCommand:
 
         return Greeting
 
-    def test_defaults(self, basic_greeting_command):
+    def test_default_settings(self, basic_greeting_command):
         """Test declaring an command with no explicit metadata, and checking
         that the defaults are as expected.
         """
         plugin_instance = basic_greeting_command("greeting")
-        ext_cmd = plugin_instance.create_extension_command()
+        settings = plugin_instance.__settings__
 
-        assert callable(ext_cmd.parser)
-        assert ext_cmd.name == basic_greeting_command.__name__.lower()
-        assert ext_cmd.help == ""
-        assert ext_cmd.description == ""
-        assert ext_cmd.callback == plugin_instance.command
-        assert ext_cmd.requires_api is False
-        assert ext_cmd.requires_base_parsers is None
-        assert ext_cmd.category is None
-
-    def test_with_settings(self):
-        """Test declaring an command with settings."""
-        expected_category = plug.cli.CoreCommand.config
-        expected_name = "cool-greetings"
-        expected_help = "This is a greeting command!"
-        expected_description = "This is a greeting"
-        expected_base_parsers = [
-            plug.BaseParser.REPO_NAMES,
-            plug.BaseParser.MASTER_ORG,
-        ]
-        expected_requires_api = True
-
-        class ExtCommand(plug.Plugin, plug.cli.Command):
-            __settings__ = plug.cli.command_settings(
-                category=expected_category,
-                action=expected_name,
-                help=expected_help,
-                description=expected_description,
-                base_parsers=expected_base_parsers,
-                requires_api=expected_requires_api,
-            )
-
-            def command(self, api):
-                pass
-
-        plugin_instance = ExtCommand("greeting")
-        ext_cmd = plugin_instance.create_extension_command()
-
-        assert callable(ext_cmd.parser)
-        assert ext_cmd.name == expected_name
-        assert ext_cmd.help == expected_help
-        assert ext_cmd.description == expected_description
-        assert ext_cmd.callback == plugin_instance.command
-        assert ext_cmd.requires_api == expected_requires_api
-        assert ext_cmd.requires_base_parsers == expected_base_parsers
+        assert settings.help == ""
+        assert settings.description == ""
+        assert settings.requires_api is False
+        assert settings.base_parsers is None
+        assert settings.category is None
 
     def test_generated_parser(self, basic_greeting_command):
         """Test the parser that's generated automatically."""
-        ext_cmd = basic_greeting_command("greeting").create_extension_command()
+        plugin_instance = basic_greeting_command("g")
         parser = argparse.ArgumentParser()
-        ext_cmd.parser(config={}, show_all_opts=True, parser=parser)
+        plugin_instance.attach_options(
+            config={}, show_all_opts=False, parser=parser
+        )
         args = parser.parse_args("--name Eve".split())
 
         assert args.name == "Eve"
@@ -205,9 +161,11 @@ class TestDeclarativeExtensionCommand:
         plugin_name = "greeting"
         configured_name = "Alice"
         config = {plugin_name: {"name": configured_name}}
-        ext_cmd = Greeting("greeting").create_extension_command()
+        plugin_instance = Greeting("greeting")
         parser = argparse.ArgumentParser()
-        ext_cmd.parser(config=config, show_all_opts=False, parser=parser)
+        plugin_instance.attach_options(
+            config=config, show_all_opts=False, parser=parser
+        )
         args = parser.parse_args([])
 
         assert args.name == configured_name
@@ -227,13 +185,12 @@ class TestDeclarativeExtensionCommand:
         plugin_name = "greeting"
         configured_name = "Alice"
         config = {plugin_name: {"name": configured_name}}
-        ext_cmd = Greeting("greeting").create_extension_command()
+        plugin_instance = Greeting(plugin_name)
+        parser = argparse.ArgumentParser()
 
         with pytest.raises(plug.PlugError) as exc_info:
-            ext_cmd.parser(
-                config=config,
-                show_all_opts=False,
-                parser=argparse.ArgumentParser(),
+            plugin_instance.attach_options(
+                config=config, show_all_opts=False, parser=parser
             )
 
         assert (
@@ -257,9 +214,11 @@ class TestDeclarativeExtensionCommand:
             def command(self, api):
                 pass
 
-        ext_cmd = Greeting("g").create_extension_command()
+        plugin_instance = Greeting("g")
         parser = argparse.ArgumentParser()
-        ext_cmd.parser(config={}, show_all_opts=False, parser=parser)
+        plugin_instance.attach_options(
+            config={}, show_all_opts=False, parser=parser
+        )
         name = "Alice"
 
         short_opt_args = parser.parse_args(f"-n {name}".split())
@@ -276,9 +235,11 @@ class TestDeclarativeExtensionCommand:
             def command(self, api):
                 pass
 
-        ext_cmd = Greeting("g").create_extension_command()
+        plugin_instance = Greeting("g")
         parser = argparse.ArgumentParser()
-        ext_cmd.parser(config={}, show_all_opts=False, parser=parser)
+        plugin_instance.attach_options(
+            config={}, show_all_opts=False, parser=parser
+        )
 
         name = "Alice"
         age = 33
@@ -304,9 +265,11 @@ class TestDeclarativeExtensionCommand:
             def command(self, api):
                 pass
 
-        ext_cmd = Greeting("g").create_extension_command()
+        plugin_instance = Greeting("g")
         parser = argparse.ArgumentParser()
-        ext_cmd.parser(config={}, show_all_opts=False, parser=parser)
+        plugin_instance.attach_options(
+            config={}, show_all_opts=False, parser=parser
+        )
 
         with pytest.raises(SystemExit):
             parser.parse_args("--age 12 --old".split())
@@ -346,9 +309,11 @@ class TestDeclarativeExtensionCommand:
             def command(self, api):
                 pass
 
-        ext_cmd = Greeting("g").create_extension_command()
+        plugin_instance = Greeting("g")
         parser = argparse.ArgumentParser()
-        ext_cmd.parser(config={}, show_all_opts=False, parser=parser)
+        plugin_instance.attach_options(
+            config={}, show_all_opts=False, parser=parser
+        )
 
         parsed_args = parser.parse_args(["--old"])
 
@@ -357,11 +322,10 @@ class TestDeclarativeExtensionCommand:
     def test_create_new_category(self):
         """Test that command can be added to a new category."""
 
-        class Greetings(categorization.Category):
-            hello: categorization.Action
+        category = plug.cli.category("greetings", action_names=["hello"])
 
         class Hello(plug.Plugin, plug.cli.Command):
-            __settings__ = plug.cli.command_settings(action=Greetings().hello)
+            __settings__ = plug.cli.command_settings(action=category.hello)
             name = plug.cli.positional()
             age = plug.cli.positional(converter=int)
 
@@ -378,6 +342,7 @@ class TestDeclarativeExtensionCommand:
         results_mapping = repobee.run(
             f"greetings hello {name} {age}".split(), plugins=[Hello]
         )
+        print(results_mapping)
         _, results = list(results_mapping.items())[0]
         result, *_ = results
 
@@ -389,44 +354,34 @@ class TestDeclarativeExtensionCommand:
         category.
         """
 
-        class Greetings(categorization.Category):
-            hello: categorization.Action
-            bye: categorization.Action
-
-        category = Greetings()
+        category = plug.cli.category(
+            name="greetings", action_names=["hello", "bye"]
+        )
+        hello_instance = None
+        bye_instance = None
 
         class Hello(plug.Plugin, plug.cli.Command):
             __settings__ = plug.cli.command_settings(action=category.hello)
             name = plug.cli.positional()
 
             def command(self, api):
-                return plug.Result(
-                    name=self.plugin_name,
-                    msg=f"Hello {self.name}",
-                    status=plug.Status.SUCCESS,
-                )
+                nonlocal hello_instance
+                hello_instance = self
 
         class Bye(plug.Plugin, plug.cli.Command):
             __settings__ = plug.cli.command_settings(action=category.bye)
             name = plug.cli.positional()
 
             def command(self, api):
-                return plug.Result(
-                    name=self.plugin_name,
-                    msg=f"Bye {self.name}",
-                    status=plug.Status.SUCCESS,
-                )
+                nonlocal bye_instance
+                bye_instance = self
 
         name = "Alice"
-        hello_results = repobee.run(
-            f"greetings hello {name}".split(), plugins=[Hello, Bye]
-        )
-        bye_results = repobee.run(
-            f"greetings bye {name}".split(), plugins=[Hello, Bye]
-        )
+        repobee.run(f"greetings hello {name}".split(), plugins=[Hello, Bye])
+        repobee.run(f"greetings bye {name}".split(), plugins=[Hello, Bye])
 
-        assert hello_results[category.hello][0].msg == f"Hello {name}"
-        assert bye_results[category.bye][0].msg == f"Bye {name}"
+        assert hello_instance.name == name
+        assert bye_instance.name == name
 
     def test_raises_when_both_action_and_category_given(self):
         """It is not allowed to give an Action object to the action argument,
@@ -454,6 +409,7 @@ class TestDeclarativeExtensionCommand:
         """Parsed cli arguments should automatically be added to the plugin
         object instance.
         """
+        instance = None
 
         class Ext(plug.Plugin, plug.cli.Command):
             name = plug.cli.option()
@@ -467,18 +423,12 @@ class TestDeclarativeExtensionCommand:
             )
 
             def command(self, api):
-                return plug.Result(
-                    name="ext",
-                    msg="",
-                    status=plug.Status.SUCCESS,
-                    data={"instance": self},
-                )
+                nonlocal instance
+                instance = self
 
         name = "Eve"
         age = 22
-        instance = repobee.run(
-            f"ext {age} --name {name} --high".split(), plugins=[Ext]
-        )["ext"][0].data["instance"]
+        repobee.run(f"ext {age} --name {name} --high".split(), plugins=[Ext])
 
         assert instance.name == name
         assert instance.age == age
