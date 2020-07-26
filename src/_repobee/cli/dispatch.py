@@ -47,7 +47,7 @@ def dispatch_command(
     is_ext_command = "_extension_command" in args
     if is_ext_command:
         ext_cmd = args._extension_command
-        res = ext_cmd.callback(args, api)
+        res = ext_cmd.callback(api)
         hook_results = {ext_cmd.name: [res]} if res else hook_results
     else:
         category = args.category
