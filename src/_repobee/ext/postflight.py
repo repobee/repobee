@@ -10,14 +10,10 @@ import pathlib
 import repobee_plug as plug
 
 
-def act(path: pathlib.Path, api: plug.API):
+@plug.repobee_hook
+def post_clone(path: pathlib.Path, api: plug.API):
     return plug.Result(
         name="postflight",
         msg="Successful postflight on {}".format(path),
         status=plug.Status.SUCCESS,
     )
-
-
-@plug.repobee_hook
-def clone_task() -> plug.Task:
-    return plug.Task(act=act)

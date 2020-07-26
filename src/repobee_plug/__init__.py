@@ -17,13 +17,12 @@ from repobee_plug._containers import ReviewAllocation
 from repobee_plug._containers import BaseParser
 from repobee_plug._containers import Deprecation
 from repobee_plug._containers import HookResult
-from repobee_plug._tasks import Task
 
 # Hook functions
 from repobee_plug._corehooks import PeerReviewHook as _peer_hook
 from repobee_plug._corehooks import APIHook as _api_hook
 from repobee_plug._exthooks import CloneHook as _clone_hook
-from repobee_plug._exthooks import TaskHooks as _task_hooks
+from repobee_plug._exthooks import SetupHook as _setup_hook
 from repobee_plug._exthooks import ExtensionCommandHook as _ext_command_hook
 
 # Helpers
@@ -58,10 +57,10 @@ from repobee_plug._exceptions import (
 
 manager = pluggy.PluginManager(__package__)
 manager.add_hookspecs(_clone_hook)
+manager.add_hookspecs(_setup_hook)
 manager.add_hookspecs(_peer_hook)
 manager.add_hookspecs(_api_hook)
 manager.add_hookspecs(_ext_command_hook)
-manager.add_hookspecs(_task_hooks)
 
 __all__ = [
     # Plugin stuff
@@ -76,7 +75,6 @@ __all__ = [
     "ExtensionCommand",
     "ReviewAllocation",
     "Review",
-    "Task",
     "Deprecation",
     # API wrappers
     "Team",

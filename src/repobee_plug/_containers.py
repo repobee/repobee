@@ -168,10 +168,6 @@ class ExtensionCommand(
                     ExtensionParser
                 )
             )
-        if not callable(callback):
-            raise _exceptions.ExtensionCommandError(
-                "callback must be a callable"
-            )
         if (
             BaseParser.REPO_DISCOVERY in (requires_base_parsers or [])
             and not requires_api

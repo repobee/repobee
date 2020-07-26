@@ -38,13 +38,13 @@ class TestPluginInheritance:
         class Derived(_pluginmeta.Plugin):
             """Has all hook methods defined."""
 
-            def act_on_cloned_repo(self, path):
+            def post_clone(self, path):
                 pass
 
             def clone_parser_hook(self, clone_parser):
                 pass
 
-            def parse_args(self, args):
+            def handle_parsed_args(self, args):
                 pass
 
             def config_hook(self, config_parser):
@@ -74,13 +74,13 @@ class TestPluginInheritance:
         class Derived(_pluginmeta.Plugin):
             """Has all hook methods defined."""
 
-            def act_on_cloned_repo(self, path):
+            def post_clone(self, path, api):
                 pass
 
             def clone_parser_hook(self, clone_parser):
                 pass
 
-            def parse_args(self, args):
+            def handle_parsed_args(self, args):
                 pass
 
             def config_hook(self, config_parser):

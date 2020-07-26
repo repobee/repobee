@@ -20,14 +20,13 @@ from repobee_plug.cli import categorization
 
 import _repobee
 from _repobee import plugin
-from _repobee import util
 from _repobee import config
 from _repobee import constants
 from _repobee.cli.preparser import PRE_PARSER_SHOW_ALL_OPTS
 
 LOGGER = daiquiri.getLogger(__file__)
 
-SUB = "category"
+CATEGORY = "category"
 ACTION = "action"
 
 _HOOK_RESULTS_PARSER = argparse.ArgumentParser(add_help=False)
@@ -166,7 +165,7 @@ def _add_subparsers(parser, show_all_opts, ext_commands, config_file):
         show_all_opts, config_file
     )
 
-    subparsers = parser.add_subparsers(dest=SUB)
+    subparsers = parser.add_subparsers(dest=CATEGORY)
     subparsers.required = True
     parsers: Mapping[
         Union[categorization.Category, categorization.Action],
@@ -295,7 +294,7 @@ def _add_repo_parsers(
         type=str,
     )
 
-    clone = add_parser(
+    add_parser(
         plug.cli.CoreCommand.repos.clone,
         help="Clone student repos.",
         description="Clone student repos asynchronously in bulk.",
@@ -307,11 +306,6 @@ def _add_repo_parsers(
         ],
         formatter_class=_OrderedFormatter,
     )
-
-    for task in plug.manager.hook.clone_task():
-        util.call_if_defined(task.add_option, clone)
-
-    plug.manager.hook.clone_parser_hook(clone_parser=clone)
 
     add_parser(
         plug.cli.CoreCommand.repos.create_teams,
@@ -715,18 +709,19 @@ def _add_extension_parsers(
             )
             # This is a little bit of a dirty trick. It allows us to easily
             # find the associated extension command when parsing the arguments.
-            ext_parser.add_argument(
-                "--repobee-extension-command",
-                action="store_const",
-                help=argparse.SUPPRESS,
-                const=cmd,
-                default=cmd,
-                dest="_extension_command",
-            )
+            if cmd.callback:
+                ext_parser.add_argument(
+                    "--repobee-extension-command",
+                    action="store_const",
+                    help=argparse.SUPPRESS,
+                    const=cmd,
+                    default=cmd,
+                    dest="_extension_command",
+                )
         except argparse.ArgumentError:
             pass
 
-        try:
+        if isinstance(cmd.name, str) and not cmd.category:
             ext_parser.add_argument(
                 "--repobee-category",
                 action="store_const",
@@ -735,8 +730,6 @@ def _add_extension_parsers(
                 default=cmd.name,
                 dest="category",
             )
-        except argparse.ArgumentError:
-            pass
 
     return ext_commands
 

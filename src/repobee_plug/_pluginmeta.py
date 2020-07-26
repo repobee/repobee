@@ -18,10 +18,10 @@ _HOOK_METHODS = {
     key: value
     for key, value in [
         *_exthooks.CloneHook.__dict__.items(),
+        *_exthooks.SetupHook.__dict__.items(),
         *_corehooks.PeerReviewHook.__dict__.items(),
         *_corehooks.APIHook.__dict__.items(),
         *_exthooks.ExtensionCommandHook.__dict__.items(),
-        *_exthooks.TaskHooks.__dict__.items(),
     ]
     if callable(value) and not key.startswith("_")
 }
@@ -121,7 +121,7 @@ def _generate_command_extension_func() -> Callable:
             parser=functools.partial(_attach_options, plugin=self),
             # FIXME support more than one action
             name=settings.actions[0],
-            callback=lambda: None,
+            callback=None,
             description=None,
             help=None,
         )

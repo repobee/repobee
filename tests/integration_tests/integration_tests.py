@@ -59,7 +59,7 @@ class TestClone:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                *str(repobee_plug.cli.CoreCommand.repos.clone).split(),
+                *repobee_plug.cli.CoreCommand.repos.clone.as_name_tuple(),
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
                 *STUDENTS_ARG,
@@ -77,7 +77,7 @@ class TestClone:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                *str(repobee_plug.cli.CoreCommand.repos.clone).split(),
+                *repobee_plug.cli.CoreCommand.repos.clone.as_name_tuple(),
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
                 *STUDENTS_ARG,
@@ -105,7 +105,7 @@ class TestClone:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                *str(repobee_plug.cli.CoreCommand.repos.clone).split(),
+                *repobee_plug.cli.CoreCommand.repos.clone.as_name_tuple(),
                 *BASE_ARGS,
                 *STUDENTS_ARG,
                 "--mn",
@@ -143,7 +143,7 @@ class TestClone:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                *str(repobee_plug.cli.CoreCommand.repos.clone).split(),
+                *repobee_plug.cli.CoreCommand.repos.clone.as_name_tuple(),
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
                 *STUDENTS_ARG,
@@ -165,7 +165,7 @@ class TestClone:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                *str(repobee_plug.cli.CoreCommand.repos.clone).split(),
+                *repobee_plug.cli.CoreCommand.repos.clone.as_name_tuple(),
                 *BASE_ARGS,
                 *STUDENTS_ARG,
                 "--discover-repos",
@@ -187,7 +187,7 @@ class TestSetup:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                *str(repobee_plug.cli.CoreCommand.repos.setup).split(),
+                *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
                 *BASE_ARGS,
                 *MASTER_ORG_ARG,
                 *MASTER_REPOS_ARG,
@@ -205,7 +205,7 @@ class TestSetup:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                *str(repobee_plug.cli.CoreCommand.repos.setup).split(),
+                *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
                 *BASE_ARGS,
                 *MASTER_ORG_ARG,
                 *MASTER_REPOS_ARG,
@@ -233,7 +233,7 @@ class TestUpdate:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                *str(repobee_plug.cli.CoreCommand.repos.update).split(),
+                *repobee_plug.cli.CoreCommand.repos.update.as_name_tuple(),
                 *MASTER_ORG_ARG,
                 *BASE_ARGS,
                 "--mn",
@@ -265,7 +265,7 @@ class TestUpdate:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                *str(repobee_plug.cli.CoreCommand.repos.update).split(),
+                *repobee_plug.cli.CoreCommand.repos.update.as_name_tuple(),
                 *MASTER_ORG_ARG,
                 *BASE_ARGS,
                 "--mn",
@@ -313,7 +313,7 @@ class TestMigrate:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                *str(repobee_plug.cli.CoreCommand.repos.migrate).split(),
+                *repobee_plug.cli.CoreCommand.repos.migrate.as_name_tuple(),
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
             ]
@@ -340,7 +340,7 @@ class TestOpenIssues:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                *str(repobee_plug.cli.CoreCommand.issues.open).split(),
+                *repobee_plug.cli.CoreCommand.issues.open.as_name_tuple(),
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
                 *STUDENTS_ARG,
@@ -368,7 +368,7 @@ class TestCloseIssues:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                *str(repobee_plug.cli.CoreCommand.issues.close).split(),
+                *repobee_plug.cli.CoreCommand.issues.close.as_name_tuple(),
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
                 *STUDENTS_ARG,
@@ -424,7 +424,7 @@ class TestListIssues:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                *str(repobee_plug.cli.CoreCommand.issues.list).split(),
+                *repobee_plug.cli.CoreCommand.issues.list.as_name_tuple(),
                 *BASE_ARGS,
                 *repo_arg,
                 *STUDENTS_ARG,
@@ -464,7 +464,7 @@ class TestAssignReviews:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                *str(repobee_plug.cli.CoreCommand.reviews.assign).split(),
+                *repobee_plug.cli.CoreCommand.reviews.assign.as_name_tuple(),
                 *BASE_ARGS,
                 "--mn",
                 master_repo_name,
@@ -504,7 +504,7 @@ class TestAssignReviews:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                *str(repobee_plug.cli.CoreCommand.reviews.assign).split(),
+                *repobee_plug.cli.CoreCommand.reviews.assign.as_name_tuple(),
                 *BASE_ARGS_NO_TB,
                 "--mn",
                 master_repo_name,
@@ -535,7 +535,7 @@ class TestEndReviews:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                *str(repobee_plug.cli.CoreCommand.reviews.end).split(),
+                *repobee_plug.cli.CoreCommand.reviews.end.as_name_tuple(),
                 *BASE_ARGS,
                 "--mn",
                 master_repo_name,
@@ -562,7 +562,7 @@ class TestEndReviews:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                *str(repobee_plug.cli.CoreCommand.reviews.end).split(),
+                *repobee_plug.cli.CoreCommand.reviews.end.as_name_tuple(),
                 *BASE_ARGS,
                 "--mn",
                 master_repo_name,
@@ -603,7 +603,7 @@ class TestCheckReviews:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                *str(repobee_plug.cli.CoreCommand.reviews.check).split(),
+                *repobee_plug.cli.CoreCommand.reviews.check.as_name_tuple(),
                 *BASE_ARGS,
                 "--mn",
                 master_repo_name,
@@ -660,7 +660,7 @@ class TestCheckReviews:
         command = " ".join(
             [
                 REPOBEE_GITLAB,
-                *str(repobee_plug.cli.CoreCommand.reviews.check).split(),
+                *repobee_plug.cli.CoreCommand.reviews.check.as_name_tuple(),
                 *BASE_ARGS,
                 "--mn",
                 master_repo_name,

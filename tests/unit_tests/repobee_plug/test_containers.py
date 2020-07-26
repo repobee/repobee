@@ -19,18 +19,6 @@ class TestExtensionCommand:
 
         assert "parser must be a ExtensionParser" in str(exc_info.value)
 
-    def test_raises_if_callback_is_not_callable(self):
-        callback = 2
-
-        with pytest.raises(_exceptions.ExtensionCommandError):
-            _containers.ExtensionCommand(
-                _containers.ExtensionParser(),
-                "test-command",
-                "help",
-                "description",
-                callback,
-            )
-
     def test_requires_api_false_by_default(self):
         exc_command = _containers.ExtensionCommand(
             _containers.ExtensionParser(),

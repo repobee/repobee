@@ -1,6 +1,6 @@
 """Categorization classes for CLI commands."""
 import abc
-from typing import Tuple, Set, List, Mapping, Optional, Iterable
+from typing import Tuple, Set, List, Mapping, Optional, Iterable, Union
 
 from repobee_plug._containers import ImmutableMixin
 
@@ -125,7 +125,7 @@ class Action(ImmutableMixin):
     def __hash__(self):
         return hash(str(self))
 
-    def asdict(self) -> Mapping[str, str]:
+    def as_name_dict(self) -> Mapping[str, str]:
         """This is a convenience method for testing that returns a dictionary
         on the following form:
 
@@ -138,7 +138,7 @@ class Action(ImmutableMixin):
         """
         return {"category": self.category.name, "action": self.name}
 
-    def astuple(self) -> Tuple[str, str]:
+    def as_name_tuple(self) -> Tuple[str, str]:
         """This is a convenience method for testing that returns a tuple
         on the following form:
 
@@ -150,6 +150,24 @@ class Action(ImmutableMixin):
             A dictionary with the name of this action and its category.
         """
         return (self.category.name, self.name)
+
+    def astuple(self) -> Tuple["Category", "Action"]:
+        """Same as :py:meth:`Action.as_name_tuple`, but with the proper
+        :py:class:`Category` and :py:class:`Action` objects instead of strings.
+
+        Returns:
+            A tuple with the category and action.
+        """
+        return (self.category, self)
+
+    def asdict(self) -> Mapping[str, Union["Category", "Action"]]:
+        """Same as :py:meth:`Action.as_name_dict`, but with the proper
+        :py:class:`Category` and :py:class:`Action` objects instead of strings.
+
+        Returns:
+            A dictionary with the category and action.
+        """
+        return {"category": self.category, "action": self}
 
 
 def category(
