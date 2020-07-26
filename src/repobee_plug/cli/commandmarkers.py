@@ -1,10 +1,14 @@
 """Mixin classes for marking plugins as CLI commands/extensions."""
 
+import argparse
+
 
 class CommandExtension:
     """Mixin class for use with the Plugin class. Marks the extending class as
     a command extension, that adds options to an existing command.
     """
+
+    args: argparse.Namespace
 
 
 class Command:
@@ -60,3 +64,5 @@ class Command:
         $ repobee -p command.py greeting -n Alice
         Hello, my name is Alice and I am 30
     """
+
+    args: argparse.Namespace
