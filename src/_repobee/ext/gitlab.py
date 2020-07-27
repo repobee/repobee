@@ -418,7 +418,6 @@ class GitLabAPI(plug.API):
 
     @staticmethod
     def _create_issue(project, issue_dict, project_name=None):
-        print(issue_dict)
         project_name = project_name or project.name
         issue = project.issues.create(issue_dict)
         LOGGER.info(f"Opened issue {project_name}/#{issue.id}-'{issue.title}'")
@@ -504,8 +503,6 @@ class GitLabAPI(plug.API):
                 for member in team.members.list()
                 if member.username != self._actual_user
             ]
-            print(team.members.list())
-            print([m.name for m in team.members.list()])
             for proj_name in team_to_repos[team.name]:
                 lazy_project = projects[proj_name]
                 with _try_api_request(ignore_statuses=[409]):
