@@ -198,7 +198,7 @@ def _add_option(
         else opt.help or ""
     )
 
-    if opt.argument_type == cli.ArgumentType.OPTION:
+    if opt.argument_type in [cli.ArgumentType.OPTION, cli.ArgumentType.FLAG]:
         if opt.short_name:
             args.append(opt.short_name)
 
@@ -208,8 +208,9 @@ def _add_option(
             args.append(f"--{name.replace('_', '-')}")
 
         kwargs["dest"] = name
-        # configured value takes precedence over default
-        kwargs["default"] = configured_value or opt.default
+        if not opt.argument_type == cli.ArgumentType.FLAG:
+            # configured value takes precedence over default
+            kwargs["default"] = configured_value or opt.default
         # required opts become not required if configured
         kwargs["required"] = not configured_value and opt.required
     elif opt.argument_type == cli.ArgumentType.POSITIONAL:

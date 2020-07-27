@@ -256,9 +256,7 @@ class TestDeclarativeExtensionCommand:
         class Greeting(plug.Plugin, plug.cli.Command):
             age_mutex = plug.cli.mutually_exclusive_group(
                 age=plug.cli.option(converter=int),
-                old=plug.cli.option(
-                    argparse_kwargs=dict(action="store_const", const=1337)
-                ),
+                old=plug.cli.flag(const=1337),
                 __required__=True,
             )
 
@@ -285,13 +283,14 @@ class TestDeclarativeExtensionCommand:
         with pytest.raises(ValueError) as exc_info:
             plug.cli.mutually_exclusive_group(
                 age=plug.cli.positional(converter=int),
-                old=plug.cli.option(
-                    argparse_kwargs=dict(action="store_const", const=1337)
-                ),
+                old=plug.cli.flag(const=1337),
                 __required__=True,
             )
 
-        assert "Positional not allowed in mutex group" in str(exc_info.value)
+        assert (
+            f"{plug.cli.ArgumentType.POSITIONAL.value} not allowed in mutex"
+            in str(exc_info.value)
+        )
 
     def test_mutex_group_allows_one_argument(self):
         """Test that a mutex group allows one argument to be specified."""
@@ -300,9 +299,7 @@ class TestDeclarativeExtensionCommand:
         class Greeting(plug.Plugin, plug.cli.Command):
             age_mutex = plug.cli.mutually_exclusive_group(
                 age=plug.cli.option(converter=int),
-                old=plug.cli.option(
-                    argparse_kwargs=dict(action="store_const", const=old)
-                ),
+                old=plug.cli.flag(const=1337),
                 __required__=True,
             )
 
@@ -415,11 +412,7 @@ class TestDeclarativeExtensionCommand:
             name = plug.cli.option()
             age = plug.cli.positional(converter=int)
             tolerance = plug.cli.mutually_exclusive_group(
-                high=plug.cli.option(
-                    argparse_kwargs=dict(action="store_true")
-                ),
-                low=plug.cli.option(argparse_kwargs=dict(action="store_true")),
-                __required__=True,
+                high=plug.cli.flag(), low=plug.cli.flag(), __required__=True,
             )
 
             def command(self, api):
