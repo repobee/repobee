@@ -210,7 +210,6 @@ def flag(
                 print("meaning", self.meaning)
                 print("approve", self.approve)
 
-
     We can then call this command (for example) like so:
 
         .. code-block:: bash
