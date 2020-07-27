@@ -169,9 +169,9 @@ def positional(
 def flag(
     short_name: Optional[str] = None,
     long_name: Optional[str] = None,
+    help: str = "",
     const: Any = True,
     default: Optional[Any] = None,
-    help: str = "",
 ) -> Option:
     """Create a command line flag for a :py:class:`Command` or a
     :py:class`CommandExtension`. This is simply a convenience wrapper around
@@ -187,9 +187,6 @@ def flag(
     can also be overridden by specifying the ``default`` argument.
 
     Example:
-
-    .. code-block:: python
-
 
     .. code-block:: python
         :caption: ext.py
@@ -214,11 +211,26 @@ def flag(
                 print("approve", self.approve)
 
 
-    We can then call this command like so:
+    We can then call this command (for example) like so:
 
         .. code-block:: bash
 
-            $ repobee
+            $ repobee -p ext.py flags --meaning --not-great
+            is_great False
+            not_great False
+            meaning 42
+            approve no
+
+    Args:
+        short_name: The short name of this option. Must start with ``-``.
+        long_name: The long name of this option. Must start with `--`.
+        help: A description of this option that is used in the CLI help
+            section.
+        const: The constant to store.
+        default: The value to default to if the flag is omitted.
+    Returns:
+        A CLI argument wrapper used internally by RepoBee to create command
+        line argument.
     """
     resolved_default = (
         not const if default is None and isinstance(const, bool) else default
