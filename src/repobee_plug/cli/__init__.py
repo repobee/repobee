@@ -3,6 +3,7 @@ from .categorization import category
 from .args import (
     option,
     positional,
+    flag,
     mutually_exclusive_group,
     ArgumentType,
     is_cli_arg,
@@ -17,6 +18,7 @@ __all__ = [
     "ArgumentType",
     "option",
     "positional",
+    "flag",
     "mutually_exclusive_group",
     "category",
     "command_settings",

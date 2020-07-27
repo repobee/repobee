@@ -5,9 +5,10 @@ from typing import Optional, Any, Callable, Mapping
 
 
 class ArgumentType(enum.Enum):
-    OPTION = "Option"
-    POSITIONAL = "Positional"
-    MUTEX_GROUP = "Mutex"
+    OPTION = "option"
+    POSITIONAL = "positional"
+    MUTEX_GROUP = "mutually_exclusive_group"
+    FLAG = "flag"
 
 
 Option = collections.namedtuple(
@@ -130,8 +131,8 @@ def positional(
 
 
         class Hello(plug.Plugin, plug.cli.Command):
-            name = plug.cli.Positional(help="Your name.")
-            age = plug.cli.Positional(converter=int, help="Your age.")
+            name = plug.cli.positional(help="Your name.")
+            age = plug.cli.positional(converter=int, help="Your age.")
 
             def command(self, api):
                 print(
@@ -165,13 +166,81 @@ def positional(
     )
 
 
+def flag(
+    short_name: Optional[str] = None,
+    long_name: Optional[str] = None,
+    const: Any = True,
+    default: Optional[Any] = None,
+    help: str = "",
+) -> Option:
+    """Create a command line flag for a :py:class:`Command` or a
+    :py:class`CommandExtension`. This is simply a convenience wrapper around
+    :py:func:`option`.
+
+    A flag is specified on the command line as ``--flag``, and causes a
+    constant to be stored. If the flag is omitted, a default value is used
+    instead. The default behavior is that specifying ``--flag``
+    stores the constant ``True``, and omitting it causes it to default to
+    ``False``. It can also be used to store any other form of constant by
+    specifying the ``const`` argument. If so, then omitting the flag will cause
+    it to default to ``None`` instead of ``False``. Finally, the default value
+    can also be overridden by specifying the ``default`` argument.
+
+    Example:
+
+    .. code-block:: python
+
+
+    .. code-block:: python
+        :caption: ext.py
+
+        import repobee_plug as plug
+
+
+        class Flags(plug.Plugin, plug.cli.Command):
+            # a normal flag, which toggles between True and False
+            is_great = plug.cli.flag()
+            # a "reverse" flag which defaults to True instead of False
+            not_great = plug.cli.flag(const=False, default=True)
+            # a flag that stores a constant and defaults to None
+            meaning = plug.cli.flag(const=42)
+            # a flag that stores a constant and defaults to another constant
+            approve = plug.cli.flag(const="yes", default="no")
+
+            def command(self, api):
+                print("is_great", self.is_great)
+                print("not_great", self.not_great)
+                print("meaning", self.meaning)
+                print("approve", self.approve)
+
+
+    We can then call this command like so:
+
+        .. code-block:: bash
+
+            $ repobee
+    """
+    resolved_default = (
+        not const if default is None and isinstance(const, bool) else default
+    )
+    return Option(
+        short_name=short_name,
+        long_name=long_name,
+        help=help,
+        argparse_kwargs=dict(
+            action="store_const", const=const, default=resolved_default
+        ),
+        argument_type=ArgumentType.FLAG,
+    )
+
+
 def mutually_exclusive_group(*, __required__: bool = False, **kwargs):
     """
     Args:
         __required__: Whether or not this mutex group is required.
         kwargs: Keyword arguments on the form ``name=plug.cli.option()``.
     """
-    allowed_types = (ArgumentType.OPTION,)
+    allowed_types = (ArgumentType.OPTION, ArgumentType.FLAG)
 
     def _check_arg_type(name, opt):
         if opt.argument_type not in allowed_types:
