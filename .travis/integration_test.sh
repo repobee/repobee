@@ -4,4 +4,5 @@ docker build -t repobee:test -f Dockerfile.test .
 # execute integration tests
 cd tests/integration_tests/
 export REPOBEE_NO_VERIFY_SSL='true'
-pytest integration_tests.py -vv
+export PYTHONWARNINGS="ignore:Unverified HTTPS request"
+pytest integration_tests.py -vv --showlocals
