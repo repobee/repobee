@@ -49,11 +49,5 @@ class HookNameError(PlugError):
     """
 
 
-class ExtensionCommandError(PlugError):
-    """Raise when an :py:class:~repobee_plug.containers.ExtensionCommand: is
-    incorrectly defined.
-    """
-
-
 class APIImplementationError(PlugError):
     """Raise when an API is defined incorrectly."""

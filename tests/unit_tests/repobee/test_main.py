@@ -3,7 +3,7 @@ import argparse
 import tempfile
 import pathlib
 import types
-from unittest.mock import MagicMock, patch, call, ANY
+from unittest.mock import MagicMock, patch, call
 from collections import namedtuple
 
 import pytest
@@ -18,7 +18,6 @@ import _repobee.constants
 import repobee_plug.cli
 from _repobee import main
 from _repobee import plugin
-from _repobee.ext.defaults import configwizard
 
 import constants
 
@@ -46,9 +45,6 @@ CLONE_ARGS = "clone --mn week-2 -s slarse".split()
 
 module = namedtuple("module", ("name",))
 
-DEFAULT_EXT_COMMANDS = [
-    configwizard.Wizard("config-wizard").create_extension_command()
-]
 DEFAULT_PLUGIN_NAMES = plugin.get_qualified_module_names(_repobee.ext.defaults)
 
 
@@ -105,14 +101,10 @@ def test_happy_path(
     handle_args_mock.assert_called_once_with(
         sys_args[1:],
         show_all_opts=False,
-        ext_commands=[ANY] * len(DEFAULT_EXT_COMMANDS),
         config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
     dispatch_command_mock.assert_called_once_with(
-        PARSED_ARGS,
-        api_instance_mock,
-        _repobee.constants.DEFAULT_CONFIG_FILE,
-        [ANY] * len(DEFAULT_EXT_COMMANDS),
+        PARSED_ARGS, api_instance_mock, _repobee.constants.DEFAULT_CONFIG_FILE
     )
 
 
@@ -130,7 +122,6 @@ def test_exit_status_1_on_exception_in_parsing(
     handle_args_mock.assert_called_once_with(
         sys_args[1:],
         show_all_opts=False,
-        ext_commands=[ANY] * len(DEFAULT_EXT_COMMANDS),
         config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
     assert not dispatch_command_mock.called
@@ -151,7 +142,6 @@ def test_exit_status_1_on_exception_in_handling_parsed_args(
     handle_args_mock.assert_called_once_with(
         sys_args[1:],
         show_all_opts=False,
-        ext_commands=[ANY] * len(DEFAULT_EXT_COMMANDS),
         config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
 
@@ -174,7 +164,6 @@ def test_plugins_args(
     handle_args_mock.assert_called_once_with(
         CLONE_ARGS,
         show_all_opts=False,
-        ext_commands=[],
         config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
 
@@ -195,7 +184,6 @@ def test_no_plugins_arg(
     handle_args_mock.assert_called_once_with(
         CLONE_ARGS,
         show_all_opts=False,
-        ext_commands=[],
         config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
 
@@ -216,7 +204,6 @@ def test_no_plugins_with_configured_plugins(
     handle_args_mock.assert_called_once_with(
         CLONE_ARGS,
         show_all_opts=False,
-        ext_commands=[],
         config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
 
@@ -238,7 +225,6 @@ def test_configured_plugins_are_loaded(
     handle_args_mock.assert_called_once_with(
         CLONE_ARGS,
         show_all_opts=False,
-        ext_commands=[],
         config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
 
@@ -280,7 +266,6 @@ def test_plugin_with_subparser_name(
     handle_args_mock.assert_called_once_with(
         CLONE_ARGS,
         show_all_opts=False,
-        ext_commands=[],
         config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
 
@@ -363,7 +348,6 @@ def test_logs_traceback_on_exception_in_dispatch_if_traceback(
     handle_args_mock.assert_called_once_with(
         [*CLONE_ARGS, "--traceback"],
         show_all_opts=False,
-        ext_commands=[ANY] * len(DEFAULT_EXT_COMMANDS),
         config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
 
@@ -397,7 +381,6 @@ def test_show_all_opts_correctly_separated(
     handle_args_mock.assert_called_once_with(
         [*repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(), "-h"],
         show_all_opts=True,
-        ext_commands=[ANY] * len(DEFAULT_EXT_COMMANDS),
         config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
     parse_preparser_options_mock.assert_called_once_with(
@@ -442,6 +425,9 @@ user = some-unlikely-user
     show_config_mock.assert_called_once_with(config_file)
 
 
+workdir_category = plug.cli.category("workdir", ["workdir"])
+
+
 class TestRun:
     """Tests for the run function."""
 
@@ -455,9 +441,15 @@ class TestRun:
             )
 
     def test_operates_in_current_workdir_by_default(self):
-        results = main.run(["workdir"], plugins=[self.Workdir])
-        assert results["workdir"][0].data["cwd"] == os.getcwd()
+        results, *_ = list(
+            main.run(["workdir"], plugins=[self.Workdir]).values()
+        )[0]
+        assert results.data["cwd"] == os.getcwd()
 
     def test_operates_in_specified_workdir(self, tmpdir):
-        results = main.run(["workdir"], plugins=[self.Workdir], workdir=tmpdir)
-        assert results["workdir"][0].data["cwd"] == str(tmpdir)
+        results, *_ = list(
+            main.run(
+                ["workdir"], plugins=[self.Workdir], workdir=str(tmpdir)
+            ).values()
+        )[0]
+        assert results.data["cwd"] == str(tmpdir)

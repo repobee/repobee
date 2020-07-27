@@ -6,7 +6,6 @@ a hook results JSON file.
 
 .. moduleauthor:: Simon Larsén
 """
-import argparse
 import pathlib
 import sys
 import collections
@@ -19,45 +18,38 @@ from _repobee import formatters
 LOGGER = daiquiri.getLogger(__file__)
 
 
-def callback(args: argparse.Namespace, api: plug.API) -> None:
-    hook_results_file = pathlib.Path(args.hook_results_file).resolve()
-    if not hook_results_file.exists():
-        raise plug.PlugError("no such file: {}".format(str(hook_results_file)))
-
-    contents = hook_results_file.read_text(encoding=sys.getdefaultencoding())
-    hook_results_mapping = plug.json_to_result_mapping(contents)
-    selected_hook_results = _filter_hook_results(
-        hook_results_mapping, args.students, args.master_repo_names
-    )
-    LOGGER.info(formatters.format_hook_results_output(selected_hook_results))
-
-
-@plug.repobee_hook
-def create_extension_command():
-    LOGGER.warning(
-        "query is an experimental plugin and may be altered or removed "
-        "without notice."
-    )
-    parser = plug.ExtensionParser()
-    parser.add_argument(
-        "--hf",
-        "--hook-results-file",
-        help="Path to an existing hook results file.",
-        type=str,
-        required=True,
-        dest="hook_results_file",
-    )
-    return plug.ExtensionCommand(
-        parser=parser,
-        name="query",
+class Query(plug.Plugin, plug.cli.Command):
+    __settings__ = plug.cli.command_settings(
         help="Query a hook results JSON file for information.",
         description="Query a hook results JSON file for information.",
-        callback=callback,
-        requires_base_parsers=[
-            plug.BaseParser.STUDENTS,
-            plug.BaseParser.REPO_NAMES,
-        ],
+        base_parsers=[plug.BaseParser.STUDENTS, plug.BaseParser.REPO_NAMES],
     )
+
+    hook_results_file = plug.cli.option(
+        short_name="--hf",
+        help="Path to an existing hook results file.",
+        required=True,
+    )
+
+    def command(self, api: plug.API) -> None:
+        hook_results_file = pathlib.Path(self.hook_results_file).resolve()
+        if not hook_results_file.exists():
+            raise plug.PlugError(
+                "no such file: {}".format(str(hook_results_file))
+            )
+
+        contents = hook_results_file.read_text(
+            encoding=sys.getdefaultencoding()
+        )
+        hook_results_mapping = plug.json_to_result_mapping(contents)
+        selected_hook_results = _filter_hook_results(
+            hook_results_mapping,
+            self.args.students,
+            self.args.master_repo_names,
+        )
+        LOGGER.info(
+            formatters.format_hook_results_output(selected_hook_results)
+        )
 
 
 def _filter_hook_results(hook_results_mapping, teams, master_repo_names):

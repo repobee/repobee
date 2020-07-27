@@ -7,15 +7,11 @@
 """
 import collections
 import enum
-import argparse
 import pluggy
 
-from typing import Mapping, Any, Optional, Callable, Iterable, List
+from typing import Mapping, Any, Optional
 
 import daiquiri
-
-from repobee_plug import _exceptions
-from repobee_plug import _apimeta
 
 LOGGER = daiquiri.getLogger(__file__)
 
@@ -89,13 +85,6 @@ def HookResult(hook, status, msg, data=None) -> Result:
     return Result(name=hook, status=status, msg=msg, data=data)
 
 
-class ExtensionParser(argparse.ArgumentParser):
-    """An ArgumentParser specialized for RepoBee extension commands."""
-
-    def __init__(self):
-        super().__init__(add_help=False)
-
-
 class BaseParser(enum.Enum):
     """Enumeration of base parsers that an extension command can request to
     have added to it.
@@ -129,118 +118,6 @@ class ImmutableMixin:
 
     def __setattribute__(self, name, value):
         self.__setattr__(name, value)
-
-
-class ExtensionCommand(
-    collections.namedtuple(
-        "ExtensionCommand",
-        (
-            "parser",
-            "name",
-            "help",
-            "description",
-            "callback",
-            "requires_api",
-            "requires_base_parsers",
-            "category",
-        ),
-    )
-):
-    """Class defining an extension command for the RepoBee CLI."""
-
-    def __new__(
-        cls,
-        parser: ExtensionParser,
-        name: str,
-        help: str,
-        description: str,
-        callback: Callable[
-            [argparse.Namespace, Optional[_apimeta.API]],
-            Optional[Mapping[str, Result]],
-        ],
-        requires_api: bool = False,
-        requires_base_parsers: Optional[List[BaseParser]] = None,
-        category: Optional = None,
-    ):
-        if not (isinstance(parser, ExtensionParser) or callable(parser)):
-            raise _exceptions.ExtensionCommandError(
-                "parser must be a {.__name__} or callable".format(
-                    ExtensionParser
-                )
-            )
-        if (
-            BaseParser.REPO_DISCOVERY in (requires_base_parsers or [])
-            and not requires_api
-        ):
-            raise _exceptions.ExtensionCommandError(
-                "must set requires_api=True to use REPO_DISCOVERY base parser"
-            )
-        return super().__new__(
-            cls,
-            parser,
-            name,
-            help,
-            description,
-            callback,
-            requires_api,
-            requires_base_parsers,
-            category,
-        )
-
-    # the init method is just for documentation purposes
-    def __init__(
-        self,
-        parser: ExtensionParser,
-        name: str,
-        help: str,
-        description: str,
-        callback: Callable[
-            [argparse.Namespace, Optional[_apimeta.API]], Optional[Result]
-        ],
-        requires_api: bool = False,
-        requires_base_parsers: Optional[Iterable[BaseParser]] = None,
-        category: Optional = None,
-    ):
-        """
-        Args:
-            parser: The parser to use for the CLI.
-            name: Name of the command.
-            help: Text that will be displayed when running ``repobee -h``
-            description: Text that will be displayed when calling the ``-h``
-                option for this specific command. Should be elaborate in
-                describing the usage of the command.
-            callback: A callback function that is called if this command is
-                used on the CLI. It is passed the parsed namespace and the
-                platform API. It may optionally return a plugin result that's
-                reported by RepoBee's CLI.
-            requires_api: If True, the base arguments required for the platform
-                API are added as options to the extension command, and the
-                platform API is then passed to the callback function. It is
-                then important not to have clashing option names. If False, the
-                base arguments are not added to the CLI, and None is passed in
-                place of the API. If you include ``REPO_DISCOVERY`` in
-                ``requires_base_parsers``, then you *must* set this to True.
-            requires_base_parsers: A list of
-                :py:class:`repobee_plug.BaseParser` that decide which base
-                parsers are added to this command. For example, setting
-                ``requires_base_parsers = [BaseParser.STUDENTS]`` adds the
-                ``--students`` and ``--students-file`` options to this
-                extension command's parser.
-            category: The category to place this parser in. If ``None``, this
-                becomes a top-level command.
-        """
-        super().__init__()
-
-    def __eq__(self, other):
-        """Two ExtensionCommands are equal if they compare equal in all
-        respects except for the parser, as argpars.ArgumentParser instances do
-        not implement __eq__.
-        """
-        if not isinstance(other, self.__class__):
-            return False
-        _, *rest = self
-        _, *other_rest = other
-        return rest == other_rest
 
 
 ReviewAllocation = collections.namedtuple(

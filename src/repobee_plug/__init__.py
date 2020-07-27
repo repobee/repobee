@@ -11,8 +11,6 @@ from repobee_plug._pluginmeta import cli
 from repobee_plug._containers import Review
 from repobee_plug._containers import Result
 from repobee_plug._containers import Status
-from repobee_plug._containers import ExtensionParser
-from repobee_plug._containers import ExtensionCommand
 from repobee_plug._containers import ReviewAllocation
 from repobee_plug._containers import BaseParser
 from repobee_plug._containers import Deprecation
@@ -23,7 +21,6 @@ from repobee_plug._corehooks import PeerReviewHook as _peer_hook
 from repobee_plug._corehooks import APIHook as _api_hook
 from repobee_plug._exthooks import CloneHook as _clone_hook
 from repobee_plug._exthooks import SetupHook as _setup_hook
-from repobee_plug._exthooks import ExtensionCommandHook as _ext_command_hook
 
 # Helpers
 from repobee_plug._deprecation import deprecate, deprecated_hooks
@@ -49,18 +46,13 @@ from repobee_plug._apimeta import (
 )
 
 # Exceptions
-from repobee_plug._exceptions import (
-    ExtensionCommandError,
-    HookNameError,
-    PlugError,
-)
+from repobee_plug._exceptions import HookNameError, PlugError
 
 manager = pluggy.PluginManager(__package__)
 manager.add_hookspecs(_clone_hook)
 manager.add_hookspecs(_setup_hook)
 manager.add_hookspecs(_peer_hook)
 manager.add_hookspecs(_api_hook)
-manager.add_hookspecs(_ext_command_hook)
 
 __all__ = [
     # Plugin stuff
@@ -71,8 +63,6 @@ __all__ = [
     "Result",
     "HookResult",
     "Status",
-    "ExtensionParser",
-    "ExtensionCommand",
     "ReviewAllocation",
     "Review",
     "Deprecation",
@@ -86,7 +76,6 @@ __all__ = [
     "API",
     "APISpec",
     # Exceptions
-    "ExtensionCommandError",
     "HookNameError",
     "PlugError",
     # Helpers

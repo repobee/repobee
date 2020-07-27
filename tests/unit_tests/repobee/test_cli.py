@@ -489,7 +489,6 @@ class TestBaseParsing:
                     "-h",
                 ],
                 show_all_opts=True,
-                ext_commands=[],
             )
 
         captured = capsys.readouterr()
@@ -511,7 +510,6 @@ class TestBaseParsing:
                     "-h",
                 ],
                 show_all_opts=False,
-                ext_commands=[],
             )
 
         captured = capsys.readouterr()
@@ -735,180 +733,6 @@ class TestBaseParsing:
         assert parsed_args.students == list(STUDENTS)
         assert parsed_args.master_repo_names is None
         assert parsed_args.master_repo_urls is None
-
-
-class TestExtensionCommands:
-    """Parsing and dispatch tests for extension commands."""
-
-    @pytest.fixture
-    def mock_callback(self):
-        """Return a mock callback function for use with an extension
-        command.
-        """
-        result = plug.Result(
-            name="mock", msg="Hello!", status=plug.Status.SUCCESS
-        )
-        yield mock.MagicMock(
-            spec=_repobee.ext.defaults.configwizard.callback,
-            return_value=result,
-        )
-
-    @pytest.fixture
-    def ext_command(self, mock_callback):
-        """Return a test extension command with an empty parser and a mocked
-        callback.
-        """
-        return plug.ExtensionCommand(
-            parser=plug.ExtensionParser(),
-            name="test-command",
-            help="help",
-            description="description",
-            callback=mock_callback,
-        )
-
-    @pytest.fixture
-    def parsed_base_args_dict(self):
-        return dict(
-            base_url=BASE_URL,
-            user=USER,
-            org_name=ORG_NAME,
-            token=TOKEN,
-            traceback=False,
-        )
-
-    def test_parse_ext_command_that_does_not_require_api(
-        self, ext_command, api_class_mock
-    ):
-        """If an extension command called does not require the API, then the
-        command should not require the API base arguments, and no API should be
-        created.
-        """
-        option = "--test-option"
-        ext_command.parser.add_argument(option, action="store_true")
-
-        parsed_args, api = _repobee.cli.parsing.handle_args(
-            [ext_command.name, option], ext_commands=[ext_command]
-        )
-
-        assert api is None
-        assert parsed_args == argparse.Namespace(
-            category=ext_command.name,
-            action=ext_command.name,
-            _extension_command=ext_command,
-            test_option=True,
-            traceback=False,
-        )
-
-    def test_parse_ext_command_that_requires_api(
-        self,
-        ext_command,
-        api_class_mock,
-        api_instance_mock,
-        parsed_base_args_dict,
-    ):
-        """If an extension command called requires the API, then the command
-        should automatically get the requisite API arguments added to it
-        """
-        ext_command = plug.ExtensionCommand(
-            *ext_command[: len(ext_command) - 3], requires_api=True
-        )
-        option = "--test-option"
-        ext_command.parser.add_argument(
-            option, action="store_true", required=True
-        )
-
-        parsed_args, api = _repobee.cli.parsing.handle_args(
-            [ext_command.name, *BASE_ARGS, option], ext_commands=[ext_command]
-        )
-
-        assert api is api_instance_mock
-        api_class_mock.assert_called_once_with(BASE_URL, TOKEN, ORG_NAME, USER)
-        assert parsed_args == argparse.Namespace(
-            category=ext_command.name,
-            action=ext_command.name,
-            test_option=True,
-            _extension_command=ext_command,
-            **parsed_base_args_dict
-        )
-
-    def test_dispatch_ext_command_that_does_not_require_api(
-        self, ext_command, mock_callback
-    ):
-        """The callback function should get None for the api argument, as it
-        does not require the API.
-        """
-        option = "--test-option"
-        ext_command.parser.add_argument(
-            option, action="store_true", required=True
-        )
-        parsed_args = argparse.Namespace(
-            action=ext_command.name,
-            _extension_command=ext_command,
-            test_option=True,
-            traceback=False,
-        )
-
-        _repobee.cli.dispatch.dispatch_command(
-            parsed_args, None, EMPTY_PATH, [ext_command]
-        )
-
-        calls = mock_callback.mock_calls
-        assert len(calls) == 1
-        assert calls[0] == mock.call(None)
-
-    def test_dispatch_ext_command_that_requires_api(
-        self,
-        ext_command,
-        mock_callback,
-        api_instance_mock,
-        parsed_base_args_dict,
-    ):
-        """The callback function should get ant api instance for the api
-        argument, as it requires the API.
-        """
-
-        option = "--test-option"
-        ext_command = plug.ExtensionCommand(
-            *ext_command[: len(ext_command) - 3], requires_api=True
-        )
-        ext_command.parser.add_argument(
-            option, action="store_true", required=True
-        )
-        parsed_args = argparse.Namespace(
-            action=ext_command.name,
-            _extension_command=ext_command,
-            test_option=True,
-            **parsed_base_args_dict
-        )
-
-        _repobee.cli.dispatch.dispatch_command(
-            parsed_args, api_instance_mock, EMPTY_PATH, [ext_command]
-        )
-
-        calls = mock_callback.mock_calls
-        assert len(calls) == 1
-        assert calls[0] == mock.call(api_instance_mock)
-
-    def test_parse_ext_command_that_requires_base_parsers(self):
-        """The query command requires the students and repo names parsers."""
-        query_command = _repobee.ext.query.create_extension_command()
-        args = [
-            query_command.name,
-            "--hook-results-file",
-            "some/results/file.json",
-            "--mn",
-            *REPO_NAMES,
-            "-s",
-            *STUDENTS_STRING.split(),
-        ]
-
-        parsed_args, api = _repobee.cli.parsing.handle_args(
-            args, ext_commands=[query_command]
-        )
-
-        assert api is None
-        assert parsed_args.master_repo_names == list(REPO_NAMES)
-        assert sorted(parsed_args.students) == sorted(STUDENTS)
 
 
 class TestStudentParsing:

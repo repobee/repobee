@@ -21,10 +21,7 @@ LOGGER = daiquiri.getLogger(__file__)
 
 
 def dispatch_command(
-    args: argparse.Namespace,
-    api: plug.API,
-    config_file: pathlib.Path,
-    ext_commands: Optional[List[plug.ExtensionCommand]] = None,
+    args: argparse.Namespace, api: plug.API, config_file: pathlib.Path
 ) -> Mapping[str, List[plug.Result]]:
     """Handle parsed CLI arguments and dispatch commands to the appropriate
     functions. Expected exceptions are caught and turned into SystemExit
@@ -34,7 +31,6 @@ def dispatch_command(
         args: A namespace of parsed command line arguments.
         api: An initialized plug.API instance.
         config_file: Path to the config file.
-        ext_commands: A list of active extension commands.
     """
     hook_results = {}
     dispatch_table = {
@@ -47,8 +43,10 @@ def dispatch_command(
     is_ext_command = "_extension_command" in args
     if is_ext_command:
         ext_cmd = args._extension_command
-        res = ext_cmd.callback(api)
-        hook_results = {ext_cmd.name: [res]} if res else hook_results
+        res = ext_cmd.command(api)
+        hook_results = (
+            {str(ext_cmd.__settings__.action): [res]} if res else hook_results
+        )
     else:
         category = args.category
         hook_results = (

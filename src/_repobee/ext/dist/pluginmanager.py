@@ -5,7 +5,6 @@ tooling.
 
     This plugin should only be used when using an installed version of RepoBee.
 """
-import argparse
 import subprocess
 
 import daiquiri
@@ -17,23 +16,39 @@ import _repobee.distinfo
 LOGGER = daiquiri.getLogger(__file__)
 PLUGIN = "pluginmanager"
 
+plugin_category = plug.cli.category(name="plugin", action_names=["install"])
+
 
 class InstallPluginCommand(plug.Plugin):
     """Extension command for installing a plugin."""
 
-    def _install_plugin(
-        self, args: argparse.ArgumentParser, api: None
-    ) -> None:
+    __settings__ = plug.cli.command_settings(
+        action=plugin_category.install,
+        help="Install a plugin.",
+        description="Install a plugin.",
+    )
+
+    version = plug.cli.option(
+        help="The version to install. Should be on the form "
+        "'MAJOR.MINOR.PATCH. Example: '1.2.0'''",
+        converter=str,
+        required=True,
+    )
+    name = plug.cli.option(
+        "--name", help="Name of the plugin.", converter=str, required=True
+    )
+
+    def command(self, api: None) -> None:
         """Install a plugin."""
         version = (
-            args.version
-            if args.version.startswith("v")
-            else f"v{args.version}"
+            self.version
+            if self.version.startswith("v")
+            else f"v{self.version}"
         )
         plugin_name = (
-            args.name
-            if args.name.startswith("repobee-")
-            else f"repobee-{args.name}"
+            self.name
+            if self.name.startswith("repobee-")
+            else f"repobee-{self.name}"
         )
         plugin_url = (
             f"git+https://github.com/repobee/" f"{plugin_name}.git@{version}"
@@ -49,29 +64,9 @@ class InstallPluginCommand(plug.Plugin):
         proc = subprocess.run(cmd)
 
         if proc.returncode != 0:
-            LOGGER.exception(f"Failed to install {args.name} {args.version}")
+            LOGGER.exception(f"Failed to install {self.name} {self.version}")
             raise plug.PlugError(
-                f"could not install {args.name} {args.version}"
+                f"could not install {self.name} {self.version}"
             )
 
-        LOGGER.info(f"Installed {args.name} {args.version}")
-
-    def create_extension_command(self):
-        parser = plug.ExtensionParser()
-        parser.add_argument(
-            "--name", help="Name of the plugin.", type=str, required=True
-        )
-        parser.add_argument(
-            "--version",
-            help="The version to install. Should be on the form "
-            "'MAJOR.MINOR.PATCH'. Example: '1.2.0'",
-            type=str,
-            required=True,
-        )
-        return plug.ExtensionCommand(
-            parser=parser,
-            name="install-plugin",
-            help="Install a plugin.",
-            description="Install a plugin.",
-            callback=self._install_plugin,
-        )
+        LOGGER.info(f"Installed {self.name} {self.version}")

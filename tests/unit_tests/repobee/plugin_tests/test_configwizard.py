@@ -23,13 +23,6 @@ def defaults_options():
     )
 
 
-def test_ext_command_does_not_require_api():
-    ext_command = configwizard.Wizard(
-        "config-wizard"
-    ).create_extension_command()
-    assert not ext_command.requires_api
-
-
 def test_exits_when_config_file_exists_and_user_enters_no(config_mock):
     """If the config file exists, a prompt should appear, and if the user
     enters anything but 'yes' the function should exit and the config file
