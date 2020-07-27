@@ -2,29 +2,19 @@
 
 Public API
 **********
-All of the public functions and classes of ``repobee-plug`` can be imported
-from the top-level package ``repobee_plug``. Only this API is stable, the
-internal modules currently are not. The recommended way to use ``repobee_plug``
-is to import it either as is, or alias it to ``plug``. Typically, I do the
-latter.
+There are two parts to the public API of ``repobee-plug``. First, there's
+the top-level package ``repobee_plug``, which we typically import aliased
+to the name ``plug``.
 
 .. code-block:: python
-    :caption: Example usage of repobee-plug
+    :caption: Common aliasing of the repobee_plug package
 
     import repobee_plug as plug
 
-    def act(path, api):
-        result = plug.Result(
-            name="hello",
-            msg="Hello, world!",
-            status=plug.Status.SUCCESS,
-        )
-        return result
-
-    @plug.repobee_hook
-    def clone_task():
-        """A hello world clone task."""
-        return plug.Task(act=act)
+The second part is functionality specifically aimed at extending the command
+line interface of RepoBee, and is located in ``repobee_plug.cli``. This
+subpackage is imported with ``repobee_plug``, so you can access simply with
+``plug.cli``, assuming you import ``repobee_plug`` with the customary alias.
 
 Hook functions
 ==============
@@ -114,21 +104,11 @@ classes.
 .. autoclass:: repobee_plug.Result
     :members:
 
-.. autoclass:: repobee_plug.Task
-    :members:
-
 .. autoclass:: repobee_plug.Deprecation
     :members:
 
 .. autoclass:: repobee_plug.Status
     :members:
-
-.. autoclass:: repobee_plug.ExtensionCommand
-    :members:
-
-.. autoclass:: repobee_plug.ExtensionParser
-    :members:
-    :inherited-members:
 
 .. autoclass:: repobee_plug.ReviewAllocation
     :members:
@@ -162,8 +142,15 @@ Exceptions
 .. autoexception:: repobee_plug.PlugError
     :members:
 
-.. autoexception:: repobee_plug.ExtensionCommandError
+.. autoexception:: repobee_plug.HookNameError
     :members:
 
-.. autoexception:: repobee_plug.HookNameError
+cli
+===
+
+The ``cli`` subpackage is part of the public API, and it is okay to import
+functionality directly from any of its public modules. Everything you need
+should however be available in the top-level of ``cli``.
+
+.. automodule:: repobee_plug.cli
     :members:
