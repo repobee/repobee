@@ -418,6 +418,7 @@ class GitLabAPI(plug.API):
 
     @staticmethod
     def _create_issue(project, issue_dict, project_name=None):
+        print(issue_dict)
         project_name = project_name or project.name
         issue = project.issues.create(issue_dict)
         LOGGER.info(f"Opened issue {project_name}/#{issue.id}-'{issue.title}'")
