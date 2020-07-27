@@ -503,6 +503,8 @@ class GitLabAPI(plug.API):
                 for member in team.members.list()
                 if member.username != self._actual_user
             ]
+            print(team.members.list())
+            print([m.name for m in team.members.list()])
             for proj_name in team_to_repos[team.name]:
                 lazy_project = projects[proj_name]
                 with _try_api_request(ignore_statuses=[409]):
