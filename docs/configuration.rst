@@ -38,7 +38,7 @@ consequence, a single organization).
 
 .. code-block:: bash
 
-    [DEFAULTS]
+    [repobee]
     base_url = https://some-api-v3-url
     user = YOUR_USERNAME
     org_name = ORGANIZATION_NAME
@@ -48,7 +48,7 @@ consequence, a single organization).
 
 .. important::
 
-    If the configuration file exists, it *must* contain the ``[DEFAULTS]``
+    If the configuration file exists, it *must* contain the ``[repobee]``
     header. This is to minimize the risk of misconfiguration by novice users.
 
 **To find out where to place the configuration file (and what to name it)**,
@@ -65,6 +65,6 @@ details.
 .. note::
 
     You can run ``repobee verify-settings`` to verify the basic configuration.
-    This will check the most important settings configurable in ``DEFAULTS``.
+    This will check the most important settings configurable in ``repobee``.
 
 .. _`GitHub access token docs`: https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/

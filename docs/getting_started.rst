@@ -76,7 +76,7 @@ has defaults for at least the following:
 .. code-block:: bash
    :caption: config.ini
 
-   [DEFAULTS]
+   [repobee]
    base_url = https://some-enterprise-host/api/v3
    user = slarse
    org_name = repobee-demo
@@ -113,7 +113,7 @@ that you got everything correctly.
     [INFO] Found valid config file at /home/slarse/.config/repobee/config.ini
     [INFO]
     ----------------BEGIN CONFIG FILE-----------------
-    [DEFAULTS]
+    [repobee]
     base_url = https://some-enterprise-host/api/v3
     user = slarse
     org_name = repobee-demo

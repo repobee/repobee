@@ -164,7 +164,7 @@ _config_master_org = "master_org_name = {}".format(constants.MASTER_ORG_NAME)
 def config_missing_option(request, empty_config_mock, students_file):
     missing_option = request.param
 
-    config_contents = ["[DEFAULTS]"]
+    config_contents = ["[repobee]"]
     if not missing_option == "--bu":
         config_contents.append(_config_base)
     if not missing_option == "-o":
@@ -186,7 +186,7 @@ def config_mock(empty_config_mock, students_file):
     """Fixture with a pre-filled config file."""
     config_contents = os.linesep.join(
         [
-            "[DEFAULTS]",
+            "[repobee]",
             "base_url = {}".format(constants.BASE_URL),
             "user = {}".format(constants.USER),
             "org_name = {}".format(constants.ORG_NAME),
