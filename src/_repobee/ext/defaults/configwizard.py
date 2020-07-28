@@ -56,8 +56,8 @@ def callback(args: argparse.Namespace, api: plug.API) -> None:
     os.makedirs(
         str(constants.DEFAULT_CONFIG_FILE.parent), mode=0o700, exist_ok=True
     )
-    if constants.repobee_SECTION_HDR not in parser:
-        parser.add_section(constants.repobee_SECTION_HDR)
+    if constants.CORE_SECTION_HDR not in parser:
+        parser.add_section(constants.CORE_SECTION_HDR)
 
     LOGGER.info("Welcome to the configuration wizard!")
     LOGGER.info("Type defaults for the options when prompted.")
@@ -69,11 +69,11 @@ def callback(args: argparse.Namespace, api: plug.API) -> None:
     LOGGER.info("Current defaults are shown in brackets [].")
     for option in constants.ORDERED_CONFIGURABLE_ARGS:
         prompt = "Enter default for '{}': [{}] ".format(
-            option, parser[constants.repobee_SECTION_HDR].get(option, "")
+            option, parser[constants.CORE_SECTION_HDR].get(option, "")
         )
         default = input(prompt)
         if default:
-            parser[constants.repobee_SECTION_HDR][option] = default
+            parser[constants.CORE_SECTION_HDR][option] = default
 
     with open(
         str(constants.DEFAULT_CONFIG_FILE),

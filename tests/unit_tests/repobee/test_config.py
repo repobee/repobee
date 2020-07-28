@@ -61,7 +61,7 @@ class TestGetConfiguredDefaults:
         invalid_key = "not_valid_key"
         config_contents = os.linesep.join(
             [
-                "[{}]".format(_repobee.constants.repobee_SECTION_HDR),
+                "[{}]".format(_repobee.constants.CORE_SECTION_HDR),
                 "base_url = {}".format(BASE_URL),
                 "user = {}".format(USER),
                 "org_name = {}".format(ORG_NAME),
@@ -126,7 +126,7 @@ class TestGetPluginNames:
     ):
         contents = os.linesep.join(
             [
-                "[{}]".format(_repobee.constants.repobee_SECTION_HDR),
+                "[{}]".format(_repobee.constants.CORE_SECTION_HDR),
                 "plugins = " + plugins_string,
             ]
         )
@@ -177,7 +177,7 @@ class TestCheckConfigIntegrity:
         empty_config_mock.write(
             os.linesep.join(
                 [
-                    "[{}]".format(_repobee.constants.repobee_SECTION_HDR),
+                    "[{}]".format(_repobee.constants.CORE_SECTION_HDR),
                     "user = someone",
                     "option = value",
                 ]
@@ -198,7 +198,7 @@ class TestCheckConfigIntegrity:
         empty_config_mock.write(
             os.linesep.join(
                 [
-                    "[{}]".format(_repobee.constants.repobee_SECTION_HDR),
+                    "[{}]".format(_repobee.constants.CORE_SECTION_HDR),
                     "user = someone",
                     "base_url",
                     "org_name = cool",
