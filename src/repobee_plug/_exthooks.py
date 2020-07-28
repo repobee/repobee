@@ -43,7 +43,7 @@ class CloneHook:
         """Do something with the clone repos subparser before it is used used to
         parse CLI options. The typical task is to add options to it.
 
-        .. danger:: 3.0.0
+        .. danger::
 
             This hook no longer has any effect, it is only kept for testing
             purposes.
