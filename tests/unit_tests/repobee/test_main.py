@@ -406,7 +406,7 @@ def test_non_zero_exit_status_on_exception(
 
 def test_show_config_custom_config():
     config_text = """
-[DEFAULTS]
+[repobee]
 user = some-unlikely-user
 """.strip()
     with tempfile.NamedTemporaryFile() as tmpfile, patch(

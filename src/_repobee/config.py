@@ -81,7 +81,7 @@ def get_plugin_names(config_file: Union[str, pathlib.Path]) -> List[str]:
         return []
     config = _read_config(config_file)
     plugin_string = config.get(
-        constants.DEFAULTS_SECTION_HDR, "plugins", fallback=""
+        constants.CORE_SECTION_HDR, "plugins", fallback=""
     )
     return [name.strip() for name in plugin_string.split(",") if name]
 
@@ -132,7 +132,7 @@ def _read_defaults(config_file: pathlib.Path) -> dict:
     token = os.getenv(constants.TOKEN_ENV)
     if not config_file.is_file():
         return {} if not token else dict(token=token)
-    defaults = dict(_read_config(config_file)[constants.DEFAULTS_SECTION_HDR])
+    defaults = dict(_read_config(config_file)[constants.CORE_SECTION_HDR])
     if token:
         if defaults.get("token"):
             LOGGER.warning(
@@ -150,10 +150,10 @@ def _read_config(config_file: pathlib.Path) -> configparser.ConfigParser:
     except configparser.MissingSectionHeaderError:
         pass  # handled by the next check
 
-    if constants.DEFAULTS_SECTION_HDR not in config_parser:
+    if constants.CORE_SECTION_HDR not in config_parser:
         raise exception.FileError(
             "config file at '{!s}' does not contain the required "
-            "[DEFAULTS] header".format(config_file)
+            "[repobee] header".format(config_file)
         )
 
     return config_parser

@@ -436,7 +436,7 @@ class TestDeclarativeCommandExtension:
     @pytest.fixture
     def config_file(self, tmpdir):
         config_file = pathlib.Path(str(tmpdir)) / "config.ini"
-        config_file.write_text("[DEFAULTS]")
+        config_file.write_text("[repobee]")
         return config_file
 
     def test_add_required_option_to_config_show(

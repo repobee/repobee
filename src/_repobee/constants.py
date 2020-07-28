@@ -22,7 +22,7 @@ LOG_DIR = pathlib.Path(
         appname=_repobee._external_package_name, appauthor=_repobee.__author__
     )
 )
-DEFAULTS_SECTION_HDR = "DEFAULTS"
+CORE_SECTION_HDR = "repobee"
 DEFAULT_CONFIG_FILE = CONFIG_DIR / "config.ini"
 assert DEFAULT_CONFIG_FILE.is_absolute()
 
