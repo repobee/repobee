@@ -43,7 +43,7 @@ required = [
     "daiquiri",
     "pygithub",
     "colored",
-    "python-gitlab==1.15.0",
+    "python-gitlab==2.4.0",
     "pluggy>=0.13.1",
 ]
 
