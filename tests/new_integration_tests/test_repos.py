@@ -43,6 +43,24 @@ def platform_dir(tmpdir):
     return pathlib.Path(tmpdir)
 
 
+@pytest.fixture
+def platform_url(platform_dir):
+    """Base url to the platform."""
+    return "https://" + str(platform_dir)
+
+
+@pytest.fixture
+def with_student_repos(platform_url):
+    run_repobee(
+        f"repos setup --mn {TEMPLATE_REPOS_ARG} "
+        f"--students-file {STUDENTS_FILE} "
+        f"--base-url {platform_url} "
+        f"--user {TEACHER} "
+        f"--org-name {TARGET_ORG_NAME} "
+        f"--master-org-name {TEMPLATE_ORG_NAME}"
+    )
+
+
 def hash_directory(dirpath: pathlib.Path) -> str:
     """Compute the directory hash using Git.
 
@@ -85,14 +103,12 @@ def tree_hash(repo_root: pathlib.Path) -> str:
     return repo.head.commit.tree.hexsha
 
 
-@pytest.fixture
-def platform_url(platform_dir):
-    """Base url to the platform."""
-    return "https://" + str(platform_dir)
+def run_repobee(cmd: str, **kwargs):
+    """Helper function to call repobee.run.
 
-
-def run_repobee(cmd: str):
-    repobee.run(cmd.split(), plugins=[fakeapi])
+    Note that ``cmd`` should be a string, and not a list of strings.
+    """
+    repobee.run(cmd.split(), **kwargs, plugins=[fakeapi])
 
 
 def assert_student_repos_match_templates(
@@ -154,3 +170,42 @@ class TestSetup:
         assert_student_repos_match_templates(
             STUDENT_TEAMS, TEMPLATE_REPO_NAMES, platform_dir / TARGET_ORG_NAME
         )
+
+    def test_setup_multiple_template_repos_twice(
+        self, platform_dir, platform_url
+    ):
+        """Running setup command twice should have the same effect as running
+        it once.
+        """
+        for _ in range(2):
+            run_repobee(
+                f"repos setup --mn {TEMPLATE_REPOS_ARG} "
+                f"--students-file {STUDENTS_FILE} "
+                f"--base-url {platform_url} "
+                f"--user {TEACHER} "
+                f"--org-name {TARGET_ORG_NAME} "
+                f"--master-org-name {TEMPLATE_ORG_NAME}"
+            )
+
+        assert_student_repos_match_templates(
+            STUDENT_TEAMS, TEMPLATE_REPO_NAMES, platform_dir / TARGET_ORG_NAME
+        )
+
+
+class TestClone:
+    """Tests for the ``repos clone`` command."""
+
+    def test_clone_all_repos(self, platform_url, with_student_repos):
+        with tempfile.TemporaryDirectory() as tmp:
+            workdir = pathlib.Path(tmp)
+            run_repobee(
+                f"repos clone --mn {TEMPLATE_REPOS_ARG} "
+                f"--students-file {STUDENTS_FILE} "
+                f"--base-url {platform_url} "
+                f"--user {TEACHER} "
+                f"--org-name {TARGET_ORG_NAME} ",
+                workdir=workdir,
+            )
+            assert_student_repos_match_templates(
+                STUDENT_TEAMS, TEMPLATE_REPO_NAMES, workdir
+            )
