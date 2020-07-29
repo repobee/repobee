@@ -77,3 +77,7 @@ class UnexpectedException(APIError):
     """An exception raised when an API request raises an unexpected
     exception.
     """
+
+
+class FileError(PlugError):
+    """Raise if something goes wrong with reading from or writing to a file."""

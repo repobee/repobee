@@ -115,19 +115,14 @@ class FakeAPI(plug.API):
     which emulates a GitHub-like platform.
     """
 
-    def __init__(self, base_url: str, token: str, org_name: str, user: str):
-        self._base_url = base_url
-        self._token = token
+    def __init__(self, base_url: str, org_name: str, user: str):
+        self._repodir = pathlib.Path(base_url[len("https://") :])
         self._org_name = org_name
         self._user = user
 
         self._teams = {}
         self._repos = {}
         self._users = {}
-
-        self.__repodir = None
-        self._set_repodir(pathlib.Path("/home/slarse/tmp/repos"))
-        self._add_users("simon alice eve".split())
 
     def ensure_teams_and_members(
         self,
@@ -214,17 +209,7 @@ class FakeAPI(plug.API):
         pass
 
     def _set_repodir(self, basedir: pathlib.Path) -> None:
-        self.__repodir = basedir
         self._restore_state()
-
-    @property
-    def _repodir(self):
-        if not self.__repodir:
-            raise RuntimeError(
-                f"The '{self.__class__.__name__}' repodir has not been set. "
-                f"Set it with '{self._set_repodir.__name__}'."
-            )
-        return self.__repodir
 
     def __getattribute__(self, key):
         attr = object.__getattribute__(self, key)
@@ -266,6 +251,7 @@ class FakeAPI(plug.API):
             usernames: A list of usernames to add.
         """
         self._users.update({name: _User(name) for name in usernames})
+        self._save_state()
 
     def _get_user(self, username: str) -> _User:
         if username not in self._users:
@@ -342,9 +328,9 @@ class FakeAPI(plug.API):
         return self._repos[repo_id]
 
 
-class FakeApiHooks(plug.Plugin):
+class FakeAPIHooks(plug.Plugin):
     def api_init_requires(self):
-        return ("base_url", "token", "org_name", "user")
+        return ("base_url", "org_name", "user")
 
     def get_api_class(self):
         return FakeAPI
