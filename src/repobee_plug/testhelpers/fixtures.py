@@ -2,6 +2,7 @@
 import pathlib
 import pytest
 import shutil
+import tempfile
 
 from repobee_plug.testhelpers import funcs
 
@@ -16,19 +17,20 @@ from repobee_plug.testhelpers.const import (
 
 
 @pytest.fixture(autouse=True)
-def platform_dir(tmpdir):
+def platform_dir():
     """Setup the platform emulation with a template organization with git
     repositories, the students and teacher as users,  and return the the
     workdirectory for the platform.
     """
-    template_org_dir = pathlib.Path(tmpdir) / TEMPLATE_ORG_NAME
-    shutil.copytree(src=TEMPLATE_REPO_DIR, dst=template_org_dir)
-    for template_repo in template_org_dir.iterdir():
-        if not template_repo.is_dir():
-            continue
-        funcs.initialize_repo(template_repo)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        template_org_dir = pathlib.Path(tmpdir) / TEMPLATE_ORG_NAME
+        shutil.copytree(src=TEMPLATE_REPO_DIR, dst=template_org_dir)
+        for template_repo in template_org_dir.iterdir():
+            if not template_repo.is_dir():
+                continue
+            funcs.initialize_repo(template_repo)
 
-    return pathlib.Path(tmpdir)
+        yield pathlib.Path(tmpdir)
 
 
 @pytest.fixture

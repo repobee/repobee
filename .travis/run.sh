@@ -15,4 +15,7 @@ if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
     pyenv global 3.6.10
 fi
 
-pytest tests/unit_tests tests/new_integration_tests --cov=_repobee --cov=repobee_plug --cov-branch
+coverage run --branch --source _repobee,repobee_plug -m pytest -vv tests/unit_tests tests/new_integration_tests
+test_status=$?
+coverage report
+exit $test_status

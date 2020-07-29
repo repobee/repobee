@@ -70,7 +70,10 @@ setup(
     tests_require=test_requirements,
     install_requires=required,
     extras_require=dict(TEST=test_requirements, DOCS=docs_requirements),
-    entry_points=dict(console_scripts="repobee = repobee:main"),
+    entry_points=dict(
+        console_scripts="repobee = repobee:main",
+        pytest11=["name_of_plugin = repobee_plug.testhelpers.fixtures"],
+    ),
     include_package_data=True,
     zip_safe=False,
     python_requires=">=3.6",
