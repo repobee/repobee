@@ -313,7 +313,7 @@ class FakeAPI(plug.API):
         repo_id = _Repo.gen_id(repo.name, self._org_name)
         if repo_id not in self._repos:
             repo_path = self._repodir / self._org_name / repo.name
-            repo_path.mkdir(parents=True)
+            repo_path.mkdir(parents=True, exist_ok=True)
             git.Repo.init(repo_path, bare=True)
             self._repos[repo_id] = _Repo(
                 name=repo.name,
