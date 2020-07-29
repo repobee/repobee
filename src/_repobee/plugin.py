@@ -104,10 +104,11 @@ def _try_load_module_from_filepath(path: str) -> Optional[ModuleType]:
         The module if loaded successfully, or None if there was no module at
         the path.
     """
+    enc_path = path.encode(sys.getdefaultencoding())
     package_name = (
         # The use of SHA1 here is not a security issue as it is only intended
         # to come up with a (most likely) unique name for the package
-        f"_{hashlib.sha1(path.encode(sys.getdefaultencoding()))}"  # nosec
+        f"_{hashlib.sha1(enc_path).hexdigest()}"  # nosec
     )
     module_name = pathlib.Path(path).stem
     qualname = f"{package_name}.{module_name}"
