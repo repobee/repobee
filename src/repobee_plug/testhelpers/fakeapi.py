@@ -123,6 +123,7 @@ class FakeAPI(plug.API):
         self._teams = {}
         self._repos = {}
         self._users = {}
+        self._restore_state()
 
     def ensure_teams_and_members(
         self,
@@ -208,9 +209,6 @@ class FakeAPI(plug.API):
     ) -> None:
         pass
 
-    def _set_repodir(self, basedir: pathlib.Path) -> None:
-        self._restore_state()
-
     def __getattribute__(self, key):
         attr = object.__getattribute__(self, key)
 
@@ -280,7 +278,7 @@ class FakeAPI(plug.API):
         ignored.
         """
         unfiltered_repos = (
-            self._repos[_Repo.gen_id(name, self._org_name)]
+            self._repos.get(_Repo.gen_id(name, self._org_name))
             for name in repo_names
         )
         return [repo for repo in unfiltered_repos if repo]
