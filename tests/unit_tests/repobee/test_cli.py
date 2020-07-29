@@ -156,7 +156,7 @@ def parsed_args_all_subparsers(request):
         exception.PushFailedError("some message", 128, b"error", "someurl"),
         exception.CloneFailedError("some message", 128, b"error", "someurl"),
         exception.GitError("some message", 128, b"error"),
-        exception.APIError("some message"),
+        plug.APIError("some message"),
     ],
 )
 def command_all_raise_mock(command_mock, api_class_mock, request):
@@ -526,11 +526,11 @@ class TestBaseParsing:
         """
 
         def raise_(*args, **kwargs):
-            raise exception.NotFoundError("Couldn't find the organization.")
+            raise plug.NotFoundError("Couldn't find the organization.")
 
         api_class_mock.side_effect = raise_
 
-        with pytest.raises(exception.NotFoundError) as exc_info:
+        with pytest.raises(plug.NotFoundError) as exc_info:
             _repobee.cli.parsing.handle_args(
                 [
                     *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
@@ -546,11 +546,11 @@ class TestBaseParsing:
 
     def test_raises_on_bad_credentials(self, api_class_mock, students_file):
         def raise_(*args, **kwargs):
-            raise exception.BadCredentials("bad credentials")
+            raise plug.BadCredentials("bad credentials")
 
         api_class_mock.side_effect = raise_
 
-        with pytest.raises(exception.BadCredentials) as exc_info:
+        with pytest.raises(plug.BadCredentials) as exc_info:
             _repobee.cli.parsing.handle_args(
                 [
                     *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
@@ -564,13 +564,13 @@ class TestBaseParsing:
 
     def test_raises_on_invalid_base_url(self, api_class_mock, students_file):
         def raise_(*args, **kwargs):
-            raise exception.ServiceNotFoundError(
+            raise plug.ServiceNotFoundError(
                 "GitHub service could not be found, check the url"
             )
 
         api_class_mock.side_effect = raise_
 
-        with pytest.raises(exception.ServiceNotFoundError) as exc_info:
+        with pytest.raises(plug.ServiceNotFoundError) as exc_info:
             _repobee.cli.parsing.handle_args(
                 [
                     *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),

@@ -6,7 +6,6 @@ import gitlab
 import repobee_plug as plug
 
 import _repobee
-from _repobee import exception
 
 import constants
 
@@ -302,7 +301,7 @@ class TestInit:
     """Tests for the GitLabAPI constructor."""
 
     def test_raises_api_error_when_target_group_cant_be_found(self):
-        with pytest.raises(exception.NotFoundError):
+        with pytest.raises(plug.NotFoundError):
             _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, "fake-name")
 
 
@@ -312,16 +311,13 @@ class TestEnsureTeamsAndMembers:
         [
             (
                 gitlab.exceptions.GitlabAuthenticationError(response_code=401),
-                exception.BadCredentials,
+                plug.BadCredentials,
             ),
             (
                 gitlab.exceptions.GitlabGetError(response_code=404),
-                exception.NotFoundError,
+                plug.NotFoundError,
             ),
-            (
-                gitlab.exceptions.GitlabError(response_code=500),
-                exception.APIError,
-            ),
+            (gitlab.exceptions.GitlabError(response_code=500), plug.APIError,),
         ],
     )
     def test_converts_gitlab_errors_to_repobee_errors(
@@ -577,13 +573,13 @@ class TestCreateRepos:
 
 class TestVerifySettings:
     def test_raises_if_token_is_empty(self):
-        with pytest.raises(exception.BadCredentials):
+        with pytest.raises(plug.BadCredentials):
             _repobee.ext.gitlab.GitLabAPI.verify_settings(
                 user=None, org_name=TARGET_GROUP, base_url=BASE_URL, token=""
             )
 
     def test_raises_on_failed_connection(self):
-        with pytest.raises(exception.APIError) as exc_info:
+        with pytest.raises(plug.APIError) as exc_info:
             _repobee.ext.gitlab.GitLabAPI.verify_settings(
                 user=None,
                 org_name=TARGET_GROUP,
@@ -594,7 +590,7 @@ class TestVerifySettings:
         assert "please check the URL" in str(exc_info.value)
 
     def test_raises_on_bad_token(self):
-        with pytest.raises(exception.BadCredentials) as exc_info:
+        with pytest.raises(plug.BadCredentials) as exc_info:
             _repobee.ext.gitlab.GitLabAPI.verify_settings(
                 user=None,
                 org_name=TARGET_GROUP,
@@ -606,7 +602,7 @@ class TestVerifySettings:
 
     def test_raises_if_group_cant_be_found(self):
         non_existing_group = "some-garbage-group"
-        with pytest.raises(exception.NotFoundError) as exc_info:
+        with pytest.raises(plug.NotFoundError) as exc_info:
             _repobee.ext.gitlab.GitLabAPI.verify_settings(
                 user=None,
                 org_name=non_existing_group,
@@ -620,7 +616,7 @@ class TestVerifySettings:
 
     def test_raises_if_master_group_cant_be_found(self):
         non_existing_group = "some-garbage-group"
-        with pytest.raises(exception.NotFoundError) as exc_info:
+        with pytest.raises(plug.NotFoundError) as exc_info:
             _repobee.ext.gitlab.GitLabAPI.verify_settings(
                 user=None,
                 org_name=TARGET_GROUP,

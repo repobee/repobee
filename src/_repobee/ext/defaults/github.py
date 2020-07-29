@@ -22,8 +22,6 @@ import github
 
 import repobee_plug as plug
 
-from _repobee import exception
-
 REQUIRED_TOKEN_SCOPES = {"admin:org", "repo"}
 ISSUE_GENERATOR = Generator[plug.Issue, None, None]
 
@@ -54,15 +52,15 @@ DEFAULT_REVIEW_ISSUE = plug.Issue(
 @contextlib.contextmanager
 def _convert_404_to_not_found_error(msg):
     """Catch a github.GithubException with status 404 and convert to
-    exception.NotFoundError with the provided message. If the GithubException
-    does not have status 404, instead raise exception.UnexpectedException.
+    plug.NotFoundError with the provided message. If the GithubException
+    does not have status 404, instead raise plug.UnexpectedException.
     """
     try:
         yield
     except github.GithubException as exc:
         if exc.status == 404:
-            raise exception.NotFoundError(msg)
-        raise exception.UnexpectedException(
+            raise plug.NotFoundError(msg)
+        raise plug.UnexpectedException(
             "An unexpected exception occured. {.__name__}: {}".format(
                 type(exc), str(exc)
             )
@@ -78,11 +76,11 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
         applicable if the exception is a github.GithubException).
 
     Raises:
-        exception.NotFoundError
-        exception.BadCredentials
-        exception.APIError
-        exception.ServiceNotFoundError
-        exception.UnexpectedException
+        plug.NotFoundError
+        plug.BadCredentials
+        plug.APIError
+        plug.ServiceNotFoundError
+        plug.UnexpectedException
     """
     try:
         yield
@@ -91,20 +89,20 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
             return
 
         if e.status == 404:
-            raise exception.NotFoundError(str(e), status=404)
+            raise plug.NotFoundError(str(e), status=404)
         elif e.status == 401:
-            raise exception.BadCredentials(
+            raise plug.BadCredentials(
                 "credentials rejected, verify that token has correct access.",
                 status=401,
             )
         else:
-            raise exception.APIError(str(e), status=e.status)
+            raise plug.APIError(str(e), status=e.status)
     except gaierror:
-        raise exception.ServiceNotFoundError(
+        raise plug.ServiceNotFoundError(
             "GitHub service could not be found, check the url"
         )
     except Exception as e:
-        raise exception.UnexpectedException(
+        raise plug.UnexpectedException(
             "a {} occured unexpectedly: {}".format(type(e).__name__, str(e))
         )
 
@@ -222,7 +220,7 @@ class GitHubAPI(plug.API):
                 existing_users.append(self._github.get_user(name))
             except github.GithubException as exc:
                 if exc.status != 404:
-                    raise exception.APIError(
+                    raise plug.APIError(
                         "Got unexpected response code from the GitHub API",
                         status=exc.status,
                     )
@@ -268,7 +266,7 @@ class GitHubAPI(plug.API):
             A list of Team namedtuples representing the teams corresponding to
             the provided team_names.
         Raises:
-            exception.UnexpectedException if anything but a 422 (team already
+            plug.UnexpectedException if anything but a 422 (team already
             exists) is raised when trying to create a team.
         """
         existing_teams = list(self._org.get_teams())
@@ -632,7 +630,7 @@ class GitHubAPI(plug.API):
         """See :py:meth:`repobee_plug.API.verify_settings`."""
         LOGGER.info("Verifying settings ...")
         if not token:
-            raise exception.BadCredentials(
+            raise plug.BadCredentials(
                 msg="token is empty. Check that REPOBEE_TOKEN environment "
                 "variable is properly set, or supply the `--token` option."
             )
@@ -656,13 +654,13 @@ class GitHubAPI(plug.API):
                     "{} Possible reasons: bad api url that points to a "
                     "GitHub instance, but not to the api endpoint."
                 ).format(msg)
-                raise exception.UnexpectedException(msg=msg)
+                raise plug.UnexpectedException(msg=msg)
             elif user_.login != user:
                 msg = (
                     "{} Possible reasons: unknown, rerun with -tb and open an "
                     "issue on GitHub.".format(msg)
                 )
-                raise exception.UnexpectedException(msg=msg)
+                raise plug.UnexpectedException(msg=msg)
         LOGGER.info(
             "SUCCESS: found user {}, "
             "user exists and base url looks okay".format(user)
@@ -671,7 +669,7 @@ class GitHubAPI(plug.API):
         LOGGER.info("Verifying access token scopes ...")
         scopes = g.oauth_scopes
         if not REQUIRED_TOKEN_SCOPES.issubset(scopes):
-            raise exception.BadCredentials(
+            raise plug.BadCredentials(
                 "missing one or more access token scopes. "
                 "Actual: {}. Required {}".format(scopes, REQUIRED_TOKEN_SCOPES)
             )
@@ -705,7 +703,7 @@ class GitHubAPI(plug.API):
             owner.login for owner in org.get_members(role="admin")
         )
         if user not in owner_usernames:
-            raise exception.BadCredentials(
+            raise plug.BadCredentials(
                 "user {} is not an owner of organization {}".format(
                     user, org_name
                 )

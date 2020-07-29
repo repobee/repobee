@@ -8,7 +8,6 @@ import github
 import repobee_plug as plug
 
 import _repobee.ext.defaults.github as github_plugin
-from _repobee import exception
 from _repobee.ext.defaults.github import REQUIRED_TOKEN_SCOPES
 
 import constants
@@ -389,9 +388,9 @@ class TestEnsureTeamsAndMembers:
     @pytest.mark.parametrize(
         "unexpected_exc",
         [
-            exception.APIError("", 404),
-            exception.APIError("", 400),
-            exception.APIError("", 500),
+            plug.APIError("", 404),
+            plug.APIError("", 400),
+            plug.APIError("", 500),
         ],
     )
     def test_raises_on_non_422_exception(
@@ -406,7 +405,7 @@ class TestEnsureTeamsAndMembers:
 
         organization.create_team.side_effect = raise_
 
-        with pytest.raises(exception.UnexpectedException):
+        with pytest.raises(plug.UnexpectedException):
             api.ensure_teams_and_members(team_wrappers)
 
     def test_running_twice_has_no_ill_effects(
@@ -472,7 +471,7 @@ class TestCreateRepos:
         side_effect_github_exception = [unexpected_exception] + side_effect[1:]
 
         create_repo_mock.side_effect = side_effect_github_exception
-        with pytest.raises(exception.APIError):
+        with pytest.raises(plug.APIError):
             api.create_repos(repo_infos)
 
     def test_returns_all_urls(self, mocker, repos, repo_infos, api):
@@ -834,7 +833,7 @@ class TestVerifySettings:
     def test_empty_token_raises_bad_credentials(
         self, happy_github, monkeypatch, api
     ):
-        with pytest.raises(exception.BadCredentials) as exc_info:
+        with pytest.raises(plug.BadCredentials) as exc_info:
             github_plugin.GitHubAPI.verify_settings(
                 USER, ORG_NAME, BASE_URL, ""
             )
@@ -842,7 +841,7 @@ class TestVerifySettings:
         assert "token is empty" in str(exc_info.value)
 
     def test_incorrect_info_raises_not_found_error(self, github_bad_info, api):
-        with pytest.raises(exception.NotFoundError):
+        with pytest.raises(plug.NotFoundError):
             github_plugin.GitHubAPI.verify_settings(
                 USER, ORG_NAME, BASE_URL, TOKEN
             )
@@ -850,14 +849,14 @@ class TestVerifySettings:
     def test_bad_token_scope_raises(self, happy_github, api):
         type(happy_github).oauth_scopes = PropertyMock(return_value=["repo"])
 
-        with pytest.raises(exception.BadCredentials) as exc_info:
+        with pytest.raises(plug.BadCredentials) as exc_info:
             github_plugin.GitHubAPI.verify_settings(
                 USER, ORG_NAME, BASE_URL, TOKEN
             )
         assert "missing one or more access token scopes" in str(exc_info.value)
 
     def test_not_owner_raises(self, happy_github, organization, api):
-        with pytest.raises(exception.BadCredentials) as exc_info:
+        with pytest.raises(plug.BadCredentials) as exc_info:
             github_plugin.GitHubAPI.verify_settings(
                 NOT_OWNER, ORG_NAME, BASE_URL, TOKEN
             )
@@ -870,7 +869,7 @@ class TestVerifySettings:
         self, happy_github, api
     ):
         happy_github.get_user.side_effect = SERVER_ERROR
-        with pytest.raises(exception.UnexpectedException):
+        with pytest.raises(plug.UnexpectedException):
             api.verify_settings(USER, ORG_NAME, BASE_URL, TOKEN)
 
     def test_none_user_raises(self, happy_github, organization, api):
@@ -880,7 +879,7 @@ class TestVerifySettings:
         """
         happy_github.get_user.side_effect = lambda _: User(login=None)
 
-        with pytest.raises(exception.UnexpectedException) as exc_info:
+        with pytest.raises(plug.UnexpectedException) as exc_info:
             github_plugin.GitHubAPI.verify_settings(
                 USER, ORG_NAME, BASE_URL, TOKEN
             )
@@ -904,7 +903,7 @@ class TestVerifySettings:
             "Possible reasons: unknown",
         ]
 
-        with pytest.raises(exception.UnexpectedException) as exc_info:
+        with pytest.raises(plug.UnexpectedException) as exc_info:
             github_plugin.GitHubAPI.verify_settings(
                 USER, ORG_NAME, BASE_URL, TOKEN
             )
