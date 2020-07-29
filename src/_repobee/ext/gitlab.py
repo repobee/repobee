@@ -52,8 +52,8 @@ def _convert_404_to_not_found_error(msg):
         yield
     except gitlab.exceptions.GitlabError as exc:
         if exc.response_code == 404:
-            raise exception.NotFoundError(msg)
-        raise exception.UnexpectedException(
+            raise plug.NotFoundError(msg)
+        raise plug.UnexpectedException(
             f"An unexpected exception occured. {type(exc).__name__}: {exc}"
         )
 
@@ -81,18 +81,18 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
             return
 
         if e.response_code == 404:
-            raise exception.NotFoundError(str(e), status=404) from e
+            raise plug.NotFoundError(str(e), status=404) from e
         elif e.response_code == 401:
-            raise exception.BadCredentials(
+            raise plug.BadCredentials(
                 "credentials rejected, verify that token has correct access.",
                 status=401,
             ) from e
         else:
-            raise exception.APIError(str(e), status=e.response_code) from e
+            raise plug.APIError(str(e), status=e.response_code) from e
     except (exception.RepoBeeException, plug.PlugError):
         raise
     except Exception as e:
-        raise exception.UnexpectedException(
+        raise plug.UnexpectedException(
             f"a {type(e).__name__} occured unexpectedly: {str(e)}"
         ) from e
 
@@ -203,7 +203,7 @@ class GitLabAPI(plug.API):
         ]
 
         if not matches:
-            raise exception.NotFoundError(org_name, status=404)
+            raise plug.NotFoundError(org_name, status=404)
 
         return matches[0]
 
@@ -258,7 +258,7 @@ class GitLabAPI(plug.API):
             A list of Team namedtuples representing the teams corresponding to
             the provided team_names.
         Raises:
-            exception.UnexpectedException if anything but a 422 (team already
+            plug.UnexpectedException if anything but a 422 (team already
             exists) is raised when trying to create a team.
         """
         existing_teams = list(self._gitlab.groups.list(id=self._group.id))
@@ -386,7 +386,7 @@ class GitLabAPI(plug.API):
         if missing:
             msg = f"Can't find repos: {', '.join(missing)}"
             if strict:
-                raise exception.NotFoundError(msg)
+                raise plug.NotFoundError(msg)
             LOGGER.warning(msg)
 
     def delete_teams(self, team_names: Iterable[str]) -> None:
@@ -612,7 +612,7 @@ class GitLabAPI(plug.API):
         """See :py:meth:`repobee_plug.API.verify_settings`."""
         LOGGER.info("GitLabAPI is verifying settings ...")
         if not token:
-            raise exception.BadCredentials(
+            raise plug.BadCredentials(
                 msg="Token is empty. Check that REPOBEE_TOKEN environment "
                 "variable is properly set, or supply the `--token` option."
             )
@@ -624,11 +624,11 @@ class GitLabAPI(plug.API):
         LOGGER.info(f"Authenticating connection to {base_url}...")
         with _convert_error(
             gitlab.exceptions.GitlabAuthenticationError,
-            exception.BadCredentials,
+            plug.BadCredentials,
             "Could not authenticate token",
         ), _convert_error(
             requests.exceptions.ConnectionError,
-            exception.APIError,
+            plug.APIError,
             f"Could not connect to {base_url}, please check the URL",
         ):
             gl.auth()
@@ -654,7 +654,7 @@ class GitLabAPI(plug.API):
             if group.path == group_name
         ]
         if not slug_matched:
-            raise exception.NotFoundError(
+            raise plug.NotFoundError(
                 f"Could not find group with slug {group_name}. Verify that "
                 f"you have access to the group, and that you've provided "
                 f"the slug (the name in the address bar)."
@@ -672,7 +672,7 @@ class GitLabAPI(plug.API):
             and member.access_level == gitlab.OWNER_ACCESS
         ]
         if not matching_members:
-            raise exception.BadCredentials(
+            raise plug.BadCredentials(
                 f"User {user} is not an owner of {group_name}"
             )
         LOGGER.info(f"SUCCESS: User {user} is an owner of group {group_name}")

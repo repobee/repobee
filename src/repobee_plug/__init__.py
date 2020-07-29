@@ -46,7 +46,15 @@ from repobee_plug._apimeta import (
 )
 
 # Exceptions
-from repobee_plug._exceptions import HookNameError, PlugError
+from repobee_plug._exceptions import (
+    HookNameError,
+    PlugError,
+    APIError,
+    NotFoundError,
+    ServiceNotFoundError,
+    BadCredentials,
+    UnexpectedException,
+)
 
 manager = pluggy.PluginManager(__package__)
 manager.add_hookspecs(_clone_hook)
@@ -78,6 +86,11 @@ __all__ = [
     # Exceptions
     "HookNameError",
     "PlugError",
+    "APIError",
+    "NotFoundError",
+    "ServiceNotFoundError",
+    "BadCredentials",
+    "UnexpectedException",
     # Helpers
     "json_to_result_mapping",
     "result_mapping_to_json",

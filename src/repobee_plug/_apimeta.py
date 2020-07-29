@@ -381,7 +381,7 @@ class APISpec:
         organization member list and checking roles)
 
         Should raise an appropriate subclass of
-        :py:class:`_repobee.exception.APIError` when a problem is encountered.
+        :py:class:`_repobee.plug.APIError` when a problem is encountered.
 
         Args:
             user: The username to try to fetch.
@@ -392,7 +392,7 @@ class APISpec:
         Returns:
             True if the connection is well formed.
         Raises:
-            :py:class:`_repobee.exception.APIError`
+            :py:class:`_repobee.plug.APIError`
         """
         _not_implemented()
 
@@ -482,7 +482,7 @@ class API(APISpec, metaclass=APIMeta):
 
     1. Public methods *must* override one of the public methods of
        :py:class:`APISpec`. If an inheriting class defines any other public
-       method, an :py:class:`~_repobee.exception.APIError` is raised when the
+       method, an :py:class:`~_repobee.plug.APIError` is raised when the
        class is defined.
     2. All public methods in :py:class:`APISpec` have a default implementation
        that simply raise a :py:class:`NotImplementedError`. There is no

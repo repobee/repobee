@@ -251,9 +251,9 @@ def _connect_to_api(
     api_class = plug.manager.hook.get_api_class()
     try:
         return api_class(**kwargs)
-    except exception.NotFoundError:
+    except plug.NotFoundError:
         # more informative message
-        raise exception.NotFoundError(
+        raise plug.NotFoundError(
             "either organization {} could not be found, "
             "or the base url '{}' is incorrect".format(org_name, base_url)
         )

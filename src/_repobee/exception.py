@@ -36,32 +36,6 @@ class FileError(RepoBeeException):
     """Raise when reading or writing to a file errors out."""
 
 
-class APIError(RepoBeeException):
-    """An exception raised when the API responds with an error code."""
-
-    def __init__(self, msg="", status=None):
-        super().__init__(msg)
-        self.status = status
-
-
-class NotFoundError(APIError):
-    """An exception raised when a platform API fails to find a resource."""
-
-
-class ServiceNotFoundError(APIError):
-    """Raise if the base url can't be located."""
-
-
-class BadCredentials(APIError):
-    """Raise when credentials are rejected."""
-
-
-class UnexpectedException(APIError):
-    """An exception raised when an API request raises an unexpected
-    exception.
-    """
-
-
 class GitError(RepoBeeException):
     """A generic error to raise when a git command exits with a non-zero exit
     status.
