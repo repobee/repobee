@@ -10,6 +10,7 @@ self-contained program.
 .. moduleauthor:: Simon Larsén
 """
 import os
+import re
 from typing import Iterable, Optional, List, Generator, Tuple, Any, Mapping
 
 import daiquiri
@@ -46,12 +47,9 @@ def list_issues(
     repos = list(repos)
     repo_names = [repo.name for repo in repos]
     max_repo_name_length = max(map(len, repo_names))
+    repos = api.get_repos(repo_names, include_issues=state)
     issues_per_repo = _get_issue_generator(
-        repo_names=repo_names,
-        state=state,
-        title_regex=title_regex,
-        author=author,
-        api=api,
+        repos, title_regex=title_regex, author=author,
     )
 
     # _log_repo_issues exhausts the issues_per_repo iterator and
@@ -87,24 +85,21 @@ def list_issues(
 
 
 def _get_issue_generator(
-    repo_names: List[str],
-    state: plug.IssueState,
-    title_regex: str,
-    author: Optional[str],
-    api: plug.API,
+    repos: Iterable[plug.Repo], title_regex: str, author: str,
 ) -> Generator[
     Tuple[str, Generator[Iterable[plug.Issue], None, None]], None, None
 ]:
     issues_per_repo = (
         (
-            repo_name,
+            repo.name,
             [
                 issue
-                for issue in issues
-                if not author or issue.author == author
+                for issue in repo.issues
+                if re.match(title_regex, issue.title)
+                and (not author or issue.author == author)
             ],
         )
-        for repo_name, issues in api.get_issues(repo_names, state, title_regex)
+        for repo in repos
     )
     return issues_per_repo
 
@@ -199,7 +194,12 @@ def open_issue(
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     repo_names = plug.generate_repo_names(teams, master_repo_names)
-    api.open_issue(issue.title, issue.body, repo_names)
+    repos = api.get_repos(repo_names)
+    for repo in repos:
+        _, issue = api.create_issue(issue.title, issue.body, repo)
+        LOGGER.info(
+            f"Opened issue {repo.name}/#{issue.number}-'{issue.title}'"
+        )
 
 
 def close_issue(
@@ -215,4 +215,13 @@ def close_issue(
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     repo_names = (repo.name for repo in repos)
-    api.close_issue(title_regex, repo_names)
+    repos = api.get_repos(repo_names, include_issues=plug.IssueState.OPEN)
+    for repo in repos:
+        to_close = [
+            issue
+            for issue in repo.issues
+            if re.match(title_regex, issue.title)
+        ]
+        for issue in to_close:
+            closed = api.close_issue_(issue)
+            LOGGER.info(f"Closed {repo.name}/#{closed.number}='{issue.title}'")

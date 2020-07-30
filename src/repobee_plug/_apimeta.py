@@ -20,9 +20,8 @@ NotImplementedError) for any unimplemented API methods.
 """
 import inspect
 import enum
-import collections
 import itertools
-from typing import List, Iterable, Optional, Generator, Tuple, Mapping
+from typing import List, Iterable, Optional, Generator, Tuple, Mapping, Any
 
 from repobee_plug import _exceptions
 
@@ -80,72 +79,57 @@ def _check_name_length(name):
         )
 
 
-class Repo(
-    APIObject,
-    collections.namedtuple(
-        "Repo", "name description private team_id url implementation".split()
-    ),
-):
-    """Wrapper class for a Repo API object."""
-
-    def __new__(
-        cls,
-        name,
-        description,
-        private,
-        team_id=None,
-        url=None,
-        implementation=None,
-    ):
-        _check_name_length(name)
-        return super().__new__(
-            cls, name, description, private, team_id, url, implementation
-        )
-
-
-class Team(
-    APIObject,
-    collections.namedtuple("Team", "name members id implementation".split()),
-):
+class Team(APIObject):
     """Wrapper class for a Team API object."""
 
-    def __new__(cls, members, name=None, id=None, implementation=None):
-        if not name:
-            name = "-".join(sorted(members))
-        _check_name_length(name)
-        return super().__new__(cls, name, members, id, implementation)
+    def __init__(
+        self,
+        members: Iterable[str],
+        name: Optional[str] = None,
+        id: Optional[Any] = None,
+        implementation: Optional[Any] = None,
+    ):
+        self.members = tuple(members)
+        self.name = name if name else "-".join(sorted(members))
+        self.id = id
+        self.implementation = implementation
+
+        _check_name_length(self.name)
 
     def __str__(self):
         return self.name
 
 
-class Issue(
-    APIObject,
-    collections.namedtuple(
-        "Issue", "title body number created_at author implementation".split()
-    ),
-):
+class Issue(APIObject):
     """Wrapper class for an Issue API object."""
 
-    def __new__(
-        cls,
-        title,
-        body,
-        number=None,
-        created_at=None,
-        author=None,
-        implementation=None,
+    def __init__(
+        self,
+        title: str,
+        body: str,
+        number: Optional[int] = None,
+        created_at: Optional[str] = None,
+        author: Optional[str] = None,
+        implementation: Optional[Any] = None,
     ):
-        return super().__new__(
-            cls, title, body, number, created_at, author, implementation
-        )
+        self.title = title
+        self.body = body
+        self.number = number
+        self.created_at = created_at
+        self.author = author
+        self.implementation = implementation
 
     def to_dict(self):
         """Return a dictionary representation of this namedtuple, without
         the ``implementation`` field.
         """
-        asdict = self._asdict()
-        del asdict["implementation"]
+        asdict = {
+            "title": self.title,
+            "body": self.body,
+            "number": self.number,
+            "created_at": self.created_at,
+            "author": self.author,
+        }
         return asdict
 
     @staticmethod
@@ -155,6 +139,29 @@ class Issue(
         to_dict -> from_dict roundtrip.
         """
         return Issue(**asdict)
+
+
+class Repo(APIObject):
+    """Wrapper class for a Repo API object."""
+
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        private: bool,
+        team_id: Optional[Any] = None,
+        url: Optional[str] = None,
+        issues: Optional[Iterable[Issue]] = None,
+        implementation: Optional[Any] = None,
+    ):
+        _check_name_length(name)
+        self.name = name
+        self.description = description
+        self.private = private
+        self.team_id = team_id
+        self.url = url
+        self.issues = issues
+        self.implementation = implementation
 
 
 class APISpec:
@@ -228,11 +235,23 @@ class APISpec:
     def get_repos(
         self,
         repo_names: Optional[List[str]] = None,
-        include_issues: bool = False,
+        include_issues: Optional[IssueState] = None,
     ) -> Iterable[Repo]:
         _not_implemented()
 
     def insert_auth(self, url: str) -> str:
+        _not_implemented()
+
+    def create_issue(
+        self,
+        title: str,
+        body: str,
+        repo: Repo,
+        assignees: Optional[str] = None,
+    ) -> Tuple[Repo, Issue]:
+        _not_implemented()
+
+    def close_issue_(self, issue: Issue) -> Issue:
         _not_implemented()
 
     # END EXPERIMENTAL API

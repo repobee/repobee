@@ -123,7 +123,27 @@ class GitLabAPI(plug.API):
             implementation=group,
         )
 
-    def _wrap_project(self, project) -> plug.Repo:
+    def _wrap_issue(self, issue) -> plug.Issue:
+        return plug.Issue(
+            title=issue.title,
+            body=issue.description,
+            number=issue.iid,
+            created_at=issue.created_at,
+            author=issue.author["username"],
+            implementation=issue,
+        )
+
+    def _wrap_project(self, project, include_issues=None) -> plug.Repo:
+        issues = (
+            [
+                self._wrap_issue(issue)
+                for issue in project.issues.list(
+                    all=True, state=_ISSUE_STATE_MAPPING[include_issues]
+                )
+            ]
+            if include_issues
+            else None
+        )
         return plug.Repo(
             name=project.path,
             description=project.description,
@@ -131,6 +151,7 @@ class GitLabAPI(plug.API):
             team_id=project.namespace,
             url=project.attributes["http_url_to_repo"],
             implementation=project,
+            issues=issues,
         )
 
     # START EXPERIMENTAL API
@@ -212,12 +233,55 @@ class GitLabAPI(plug.API):
     def get_repos(
         self,
         repo_names: Optional[List[str]] = None,
-        include_issues: bool = False,
+        include_issues: Optional[plug.IssueState] = None,
     ) -> Iterable[plug.Repo]:
-        pass
+        projects = []
+        for name in repo_names:
+            candidates = self._group.projects.list(
+                include_subgroups=True, search=name, all=True
+            )
+            for candidate in candidates:
+                if candidate.name == name:
+                    projects.append(candidate.name)
+                    yield self._wrap_project(
+                        self._gitlab.projects.get(candidate.id), include_issues
+                    )
+
+        missing = set(repo_names) - set(projects)
+        if missing:
+            msg = f"Can't find repos: {', '.join(missing)}"
+            LOGGER.warning(msg)
 
     def insert_auth(self, url: str) -> str:
         return self._insert_auth(url)
+
+    def create_issue(
+        self,
+        title: str,
+        body: str,
+        repo: plug.Repo,
+        assignees: Optional[str] = None,
+    ) -> Tuple[plug.Repo, plug.Issue]:
+        project = repo.implementation
+        member_ids = [user.id for user in self._get_users(assignees or [])]
+        issue = self._create_issue(
+            project,
+            dict(title=title, description=body, assignee_ids=member_ids),
+            project.path,
+        )
+        return (
+            self._wrap_project(
+                repo.implementation, include_issues=plug.IssueState.ALL
+            ),
+            self._wrap_issue(issue),
+        )
+
+    def close_issue_(self, issue: plug.Issue) -> plug.Issue:
+        assert issue.implementation
+        issue_impl = issue.implementation
+        issue_impl.state_event = "close"
+        issue_impl.save()
+        return self._wrap_issue(issue_impl)
 
     # END EXPERIMENTAL API
 
@@ -243,64 +307,6 @@ class GitLabAPI(plug.API):
                 team for team in self.get_teams() if team.name in team_names
             )
 
-    def ensure_teams_and_members(
-        self,
-        teams: Iterable[plug.Team],
-        permission: plug.TeamPermission = plug.TeamPermission.PUSH,
-    ) -> List[plug.Team]:
-        """See
-        :py:meth:`repobee_plug.API.ensure_teams_and_members`.
-        """
-        with _try_api_request():
-            member_lists = {team.name: team.members for team in teams}
-            raw_permission = _TEAM_PERMISSION_MAPPING[permission]
-            raw_teams = self._ensure_teams_exist(
-                [str(team_name) for team_name in member_lists.keys()],
-                permission=raw_permission,
-            )
-
-            for team in [
-                team for team in raw_teams if member_lists[team.name]
-            ]:
-                self._ensure_members_in_team(
-                    team, member_lists[team.name], raw_permission
-                )
-
-            return [
-                plug.Team(
-                    name=t.name,
-                    members=member_lists[t.name],
-                    id=t.id,
-                    implementation=t,
-                )
-                for t in raw_teams
-            ]
-
-    def _ensure_members_in_team(
-        self, team, members: Iterable[str], permission: int
-    ):
-        """Add all of the users in ``members`` to a team. Skips any users that
-        don't exist, or are already in the team.
-        """
-        existing_members = set(
-            member.login for member in self._get_members(team)
-        )
-        missing_members = [
-            member for member in members if member not in existing_members
-        ]
-
-        if missing_members:
-            LOGGER.info(
-                f'Adding members {", ".join(missing_members)} '
-                f"to team {team.name}"
-            )
-        if existing_members:
-            LOGGER.info(
-                f'{", ".join(existing_members)} already in team {team.name}, '
-                f"skipping..."
-            )
-        self._add_to_team(missing_members, team, permission)
-
     def _get_organization(self, org_name):
         matches = [
             g
@@ -313,37 +319,6 @@ class GitLabAPI(plug.API):
 
         return matches[0]
 
-    def _get_members(self, group):
-        return [self._User(m.id, m.username) for m in group.members.list()]
-
-    def get_teams(self) -> List[plug.Team]:
-        """See :py:meth:`repobee_plug.API.get_teams`."""
-        with _try_api_request():
-            teams = [
-                plug.Team(
-                    name=t.name,
-                    members=[m.username for m in t.members.list()],
-                    id=t.id,
-                    implementation=t,
-                )
-                for t in self._gitlab.groups.list(id=self._group.id)
-            ]
-            return teams
-
-    def _add_to_team(self, members: Iterable[str], team, permission):
-        """Add members to a team.
-
-        Args:
-            members: _Users to add to the team.
-            team: A Team.
-        """
-        with _try_api_request():
-            users = self._get_users(members)
-            for user in users:
-                team.members.create(
-                    {"user_id": user.id, "access_level": permission}
-                )
-
     def _get_users(self, usernames):
         users = []
         for name in usernames:
@@ -352,81 +327,6 @@ class GitLabAPI(plug.API):
             # LOGGER.warning(f"user {user} could not be found")
             users += user
         return users
-
-    def _ensure_teams_exist(
-        self, team_names: Iterable[str], permission
-    ) -> List[plug.Team]:
-        """Create any teams that do not yet exist.
-
-        Args:
-            team_names: An iterable of team names.
-        Returns:
-            A list of Team namedtuples representing the teams corresponding to
-            the provided team_names.
-        Raises:
-            plug.UnexpectedException if anything but a 422 (team already
-            exists) is raised when trying to create a team.
-        """
-        existing_teams = list(self._gitlab.groups.list(id=self._group.id))
-        existing_team_names = set(team.name for team in existing_teams)
-
-        required_team_names = set(team_names)
-        teams = [
-            team for team in existing_teams if team.name in required_team_names
-        ]
-
-        parent_id = self._group.id
-        for team_name in required_team_names - existing_team_names:
-            with _try_api_request():
-                new_team = self._gitlab.groups.create(
-                    {
-                        "name": team_name,
-                        "path": team_name,
-                        "parent_id": parent_id,
-                    }
-                )
-                LOGGER.info(f"Created team {team_name}")
-                teams.append(new_team)
-        return teams
-
-    def create_repos(self, repos: Iterable[plug.Repo]) -> List[str]:
-        """See :py:meth:`repobee_plug.API.create_repos`."""
-        repo_urls = []
-        for repo in repos:
-            created = False
-            with _try_api_request(ignore_statuses=[400]):
-                repo_urls.append(
-                    self._gitlab.projects.create(
-                        {
-                            "name": repo.name,
-                            "path": repo.name,
-                            "description": repo.description,
-                            "visibility": "private"
-                            if repo.private
-                            else "public",
-                            "namespace_id": repo.team_id
-                            if repo.team_id
-                            else self._group.id,
-                        }
-                    ).attributes["http_url_to_repo"]
-                )
-                LOGGER.info(f"Created {self._group.name}/{repo.name}")
-                created = True
-
-            if not created:
-                with _try_api_request():
-                    # TODO optimize, this team get is redundant
-                    team_name = self._gitlab.groups.get(repo.team_id).path
-                    repo_urls.append(
-                        self._gitlab.projects.get(
-                            "/".join([self._group.path, team_name, repo.name])
-                        ).attributes["http_url_to_repo"]
-                    )
-                    LOGGER.info(
-                        f"{self._group.name}/{repo.name} already exists"
-                    )
-
-        return [self._insert_auth(url) for url in repo_urls]
 
     def get_repo_urls(
         self,
@@ -478,7 +378,7 @@ class GitLabAPI(plug.API):
         projects = []
         for name in repo_names:
             candidates = self._group.projects.list(
-                include_subgroups=True, search=name
+                include_subgroups=True, search=name, all=True
             )
             for candidate in candidates:
                 if candidate.name == name:
@@ -513,23 +413,16 @@ class GitLabAPI(plug.API):
         self, title: str, body: str, repo_names: Iterable[str]
     ) -> None:
         """See :py:meth:`repobee_plug.API.open_issue`."""
-        with _try_api_request():
-            projects = self._get_projects_and_names_by_name(repo_names)
-            for lazy_project, project_name in projects:
-                self._create_issue(
-                    lazy_project,
-                    dict(title=title, description=body),
-                    project_name,
-                )
+        raise NotImplementedError()
 
     @staticmethod
     def _create_issue(project, issue_dict, project_name=None):
         project_name = project_name or project.name
-        issue = project.issues.create(issue_dict)
-        LOGGER.info(f"Opened issue {project_name}/#{issue.id}-'{issue.title}'")
+        return project.issues.create(issue_dict)
 
     def close_issue(self, title_regex: str, repo_names: Iterable[str]) -> None:
         """See :py:meth:`repobee_plug.API.close_issue`."""
+        raise NotImplementedError()
         closed = 0
         with _try_api_request():
             projects = self._get_projects_and_names_by_name(repo_names)
@@ -559,28 +452,7 @@ class GitLabAPI(plug.API):
         title_regex: str = "",
     ) -> Generator[Tuple[str, ISSUE_GENERATOR], None, None]:
         """See :py:meth:`repobee_plug.API.get_issues`."""
-        with _try_api_request():
-            projects = self._get_projects_and_names_by_name(repo_names)
-            raw_state = _ISSUE_STATE_MAPPING[state]
-            name_issues_pairs = (
-                (
-                    project_name,
-                    (
-                        plug.Issue(
-                            title=issue.title,
-                            body=issue.description,
-                            number=issue.iid,
-                            created_at=issue.created_at,
-                            author=issue.author["username"],
-                            implementation=issue,
-                        )
-                        for issue in project.issues.list(state=raw_state)
-                        if re.match(title_regex, issue.title)
-                    ),
-                )
-                for project, project_name in projects
-            )
-            yield from name_issues_pairs
+        raise NotImplementedError()
 
     def add_repos_to_review_teams(
         self,

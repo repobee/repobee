@@ -7,8 +7,6 @@ that can be used to test RepoBee and plugins.
     notice.
 """
 
-import re
-import itertools
 import pathlib
 import collections
 import git
@@ -69,13 +67,19 @@ class Repo:
         self.issues = []
         self.path = path
 
-    def to_plug_repo(self) -> plug.Repo:
+    def to_plug_repo(self, include_issues=None) -> plug.Repo:
+        issues = [
+            issue.to_plug_issue()
+            for issue in self.issues
+            if issue.state == include_issues
+        ] or None
         return plug.Repo(
             name=self.name,
             description=self.description,
             private=self.private,
             team_id=self.team_id,
             url=self.url,
+            issues=issues,
             implementation=self,
         )
 
@@ -190,30 +194,44 @@ class FakeAPI(plug.API):
     def get_repos(
         self,
         repo_names: Optional[List[str]] = None,
-        include_issues: bool = False,
+        include_issues: Optional[plug.IssueState] = None,
     ) -> Iterable[plug.Repo]:
-        raise NotImplementedError()
+        unfiltered_repos = (
+            self._repos[self._org_name].get(name) for name in repo_names
+        )
+        return [
+            repo.to_plug_repo(include_issues)
+            for repo in unfiltered_repos
+            if repo
+        ]
 
     def insert_auth(self, url: str) -> str:
         return url
 
-    # END EXPERIMENTAL API
-
-    def ensure_teams_and_members(
+    def create_issue(
         self,
-        teams: Iterable[plug.Team],
-        permission: plug.TeamPermission = plug.TeamPermission.PUSH,
-    ) -> List[plug.Team]:
-        raise NotImplementedError()
+        title: str,
+        body: str,
+        repo: plug.Repo,
+        assignees: Optional[str] = None,
+    ) -> Tuple[Repo, Issue]:
+        assert not assignees
+        issue = Issue(
+            title=title,
+            body=body,
+            number=len(repo.implementation.issues),
+            created_at=TIME,
+            author=self._user,
+            state=plug.IssueState.OPEN,
+        )
+        repo.implementation.issues.append(issue)
+        return repo.implementation.to_plug_repo(), issue.to_plug_issue()
 
-    def get_teams(self) -> List[plug.Team]:
-        return [
-            team.to_plug_team()
-            for team in self._teams[self._org_name].values()
-        ]
+    def close_issue_(self, issue: Issue) -> Issue:
+        issue.implementation.state = plug.IssueState.CLOSED
+        return issue.implementation.to_plug_issue()
 
-    def create_repos(self, repos: Iterable[plug.Repo]) -> List[str]:
-        raise NotImplementedError()
+    # END EXPERIMENTAL API
 
     def get_repo_urls(
         self,
@@ -231,47 +249,6 @@ class FakeAPI(plug.API):
 
     def extract_repo_name(self, repo_url: str) -> str:
         return pathlib.Path(repo_url).stem
-
-    def get_issues(
-        self,
-        repo_names: Iterable[str],
-        state: plug.IssueState = plug.IssueState.OPEN,
-        title_regex: str = "",
-    ) -> Iterable[Tuple[str, Iterable[plug.Issue]]]:
-        repos = self._get_repos_by_name(repo_names)
-        for repo in repos:
-            issues = [
-                issue.to_plug_issue()
-                for issue in repo.issues
-                if re.match(title_regex, issue.title)
-                and state == plug.IssueState.ALL
-                or issue.state == state
-            ]
-            yield repo.name, issues
-
-    def open_issue(
-        self, title: str, body: str, repo_names: Iterable[str]
-    ) -> None:
-        repos = self._get_repos_by_name(repo_names)
-        for repo in repos:
-            issue = Issue(
-                title=title,
-                body=body,
-                number=len(repo.issues),
-                created_at=TIME,
-                author=self._user,
-                state=plug.IssueState.OPEN,
-            )
-            repo.issues.append(issue)
-
-    def close_issue(self, title_regex: str, repo_names: Iterable[str]):
-        repos = self._get_repos_by_name(repo_names)
-        all_issues = itertools.chain.from_iterable(
-            repo.issues for repo in repos
-        )
-        for issue in all_issues:
-            if re.match(title_regex, issue.title):
-                issue.state = plug.IssueState.CLOSED
 
     @staticmethod
     def verify_settings(
@@ -334,49 +311,6 @@ class FakeAPI(plug.API):
         if team_id not in self._teams[self._org_name]:
             raise plug.NotFoundError(f"invalid team id: {team_id}")
         return self._teams[self._org_name][team_id]
-
-    def _get_repo(
-        self,
-        repo_name: str,
-        org_name: Optional[str] = None,
-        strict: bool = False,
-    ) -> Repo:
-        org_name = org_name or self._org_name
-        if (
-            org_name not in self._repos
-            or repo_name not in self._repos[org_name]
-        ):
-            raise plug.NotFoundError(f"no such repo: {org_name}/{repo_name}")
-        return self._repos[org_name][repo_name]
-
-    def _get_repos_by_name(self, repo_names: Iterable[str]) -> List[Repo]:
-        """Get repos from the current organization that match
-        any of the names in ``repo_names``. Unmatched names are
-        ignored.
-        """
-        unfiltered_repos = (
-            self._repos[self._org_name].get(name) for name in repo_names
-        )
-        return [repo for repo in unfiltered_repos if repo]
-
-    def _ensure_repo_exists(self, repo: plug.Repo) -> Repo:
-        repo_bucket = self._repos.setdefault(self._org_name, {})
-        if repo.name not in repo_bucket:
-            repo_path = self._repodir / self._org_name / repo.name
-            repo_path.mkdir(parents=True, exist_ok=True)
-            git.Repo.init(repo_path, bare=True)
-            repo_bucket[repo.name] = Repo(
-                name=repo.name,
-                description=repo.description,
-                url=repo_path.as_uri(),
-                # call self._get_team to ensure that the team
-                # actually exists
-                team_id=self._get_team(repo.team_id).id,
-                private=repo.private,
-                path=repo_path,
-            )
-
-        return self._repos[self._org_name][repo.name]
 
 
 class FakeAPIHooks(plug.Plugin):
