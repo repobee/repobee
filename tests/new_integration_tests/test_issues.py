@@ -6,7 +6,6 @@ import collections
 
 import repobee_plug as plug
 from repobee_plug.testhelpers import funcs
-from repobee_plug.testhelpers import fakeapi
 from repobee_plug.testhelpers.const import (
     TEMPLATE_REPOS_ARG,
     TEMPLATE_REPO_NAMES,
@@ -48,20 +47,18 @@ class TestOpen:
             f"--issue {issue.path} "
         )
 
-        api = fakeapi.FakeAPI(platform_url, TARGET_ORG_NAME, TEACHER)
-        issues = list(
-            api.get_issues(
-                plug.generate_repo_names(STUDENT_TEAMS, TEMPLATE_REPO_NAMES)
-            )
-        )
-        repo_names, issues = zip(*issues)
+        repos = funcs.get_repos(platform_url, TARGET_ORG_NAME)
+        issues_dict = {repo.name: repo.issues for repo in repos}
 
-        assert set(repo_names) == set(expected_repo_names)
-        assert all(map(lambda repo_issues: len(repo_issues) == 1, issues))
-        first_issues = [repo_issues[0] for repo_issues in issues]
-        assert all(
-            map(
-                lambda i: i.title == issue.title and i.body == issue.body,
-                first_issues,
-            )
-        )
+        num_asserts = 0
+        for name in expected_repo_names:
+            num_asserts += 1
+            issues = issues_dict[name]
+            first_issue = issues[0]
+
+            assert len(issues) == 1
+            assert first_issue.title == issue.title
+            assert first_issue.body == issue.body
+            assert first_issue.state == plug.IssueState.OPEN
+
+        assert num_asserts == len(expected_repo_names)

@@ -23,7 +23,7 @@ TIME = datetime.datetime.now().isoformat()
 _User = collections.namedtuple("_User", "username")
 
 
-class _Issue:
+class Issue:
     def __init__(
         self,
         title: str,
@@ -51,7 +51,7 @@ class _Issue:
         )
 
 
-class _Repo:
+class Repo:
     def __init__(
         self,
         name: str,
@@ -59,6 +59,7 @@ class _Repo:
         team_id: Any,
         url: str,
         private: bool,
+        path: pathlib.Path,
     ):
         self.name = name
         self.description = description
@@ -66,6 +67,7 @@ class _Repo:
         self.team_id = team_id
         self.private = private
         self.issues = []
+        self.path = path
 
     def to_plug_repo(self) -> plug.Repo:
         return plug.Repo(
@@ -77,19 +79,15 @@ class _Repo:
             implementation=self,
         )
 
-    @staticmethod
-    def gen_id(repo_name: str, org_name: str) -> str:
-        return f"{org_name}/{repo_name}"
 
-
-class _Team:
+class Team:
     def __init__(
         self,
         name: str,
         members: List[_User],
         permission: plug.TeamPermission,
         id: str,
-        repos: List[_Repo] = None,
+        repos: List[Repo] = None,
     ):
         self.name = name
         self.members = members
@@ -105,10 +103,6 @@ class _Team:
             implementation=self,
         )
 
-    @staticmethod
-    def gen_id(team_name: str, org_name: str) -> str:
-        return f"{org_name}/{team_name}"
-
 
 class FakeAPI(plug.API):
     """A fake implementation of the :py:class:`repobee_plug.API` specification,
@@ -120,8 +114,8 @@ class FakeAPI(plug.API):
         self._org_name = org_name
         self._user = user
 
-        self._teams = {}
-        self._repos = {}
+        self._teams = {self._org_name: {}}
+        self._repos = {self._org_name: {}}
         self._users = {}
         self._restore_state()
 
@@ -136,7 +130,10 @@ class FakeAPI(plug.API):
         ]
 
     def get_teams(self) -> List[plug.Team]:
-        return [team.to_plug_team() for team in self._teams.values()]
+        return [
+            team.to_plug_team()
+            for team in self._teams[self._org_name].values()
+        ]
 
     def create_repos(self, repos: Iterable[plug.Repo]) -> List[str]:
         return [self._ensure_repo_exists(repo).url for repo in repos]
@@ -180,7 +177,7 @@ class FakeAPI(plug.API):
     ) -> None:
         repos = self._get_repos_by_name(repo_names)
         for repo in repos:
-            issue = _Issue(
+            issue = Issue(
                 title=title,
                 body=body,
                 number=len(repo.issues),
@@ -256,64 +253,65 @@ class FakeAPI(plug.API):
             raise plug.NotFoundError(f"no such user: {username}")
         return self._users[username]
 
-    def _get_team(self, team_id: str) -> _Team:
-        if team_id not in self._teams:
+    def _get_team(self, team_id: str) -> Team:
+        if team_id not in self._teams[self._org_name]:
             raise plug.NotFoundError(f"invalid team id: {team_id}")
-        return self._teams[team_id]
+        return self._teams[self._org_name][team_id]
 
     def _get_repo(
         self,
         repo_name: str,
         org_name: Optional[str] = None,
         strict: bool = False,
-    ) -> _Repo:
-        repo_id = _Repo.gen_id(repo_name, org_name or self._org_name)
-        if repo_id not in self._repos:
-            raise plug.NotFoundError(f"no such repo: {repo_id}")
-        return self._repos[repo_id]
+    ) -> Repo:
+        org_name = org_name or self._org_name
+        if (
+            org_name not in self._repos
+            or repo_name not in self._repos[org_name]
+        ):
+            raise plug.NotFoundError(f"no such repo: {org_name}/{repo_name}")
+        return self._repos[org_name][repo_name]
 
-    def _get_repos_by_name(self, repo_names: Iterable[str]) -> List[_Repo]:
+    def _get_repos_by_name(self, repo_names: Iterable[str]) -> List[Repo]:
         """Get repos from the current organization that match
         any of the names in ``repo_names``. Unmatched names are
         ignored.
         """
         unfiltered_repos = (
-            self._repos.get(_Repo.gen_id(name, self._org_name))
-            for name in repo_names
+            self._repos[self._org_name].get(name) for name in repo_names
         )
         return [repo for repo in unfiltered_repos if repo]
 
     def _ensure_team_exists(
         self, team: plug.Team, permission: plug.TeamPermission
-    ) -> _Team:
-        team_id = _Team.gen_id(team_name=team.name, org_name=self._org_name)
+    ) -> Team:
         requested_members = [
             self._get_user(username)
             for username in team.members
             if username in self._users
         ]
-        stored_team = self._teams.setdefault(
-            team_id,
-            _Team(
+        stored_team = self._teams[self._org_name].setdefault(
+            team.name,
+            Team(
                 name=team.name,
                 members=requested_members,
                 permission=permission,
-                id=team_id,
+                id=team.name,
             ),
         )
         stored_team.members = list(
             set(requested_members) | set(stored_team.members)
         )
 
-        return self._teams[team_id]
+        return self._teams[self._org_name][team.name]
 
-    def _ensure_repo_exists(self, repo: plug.Repo) -> _Repo:
-        repo_id = _Repo.gen_id(repo.name, self._org_name)
-        if repo_id not in self._repos:
+    def _ensure_repo_exists(self, repo: plug.Repo) -> Repo:
+        repo_bucket = self._repos.setdefault(self._org_name, {})
+        if repo.name not in repo_bucket:
             repo_path = self._repodir / self._org_name / repo.name
             repo_path.mkdir(parents=True, exist_ok=True)
             git.Repo.init(repo_path, bare=True)
-            self._repos[repo_id] = _Repo(
+            repo_bucket[repo.name] = Repo(
                 name=repo.name,
                 description=repo.description,
                 url=repo_path.as_uri(),
@@ -321,9 +319,10 @@ class FakeAPI(plug.API):
                 # actually exists
                 team_id=self._get_team(repo.team_id).id,
                 private=repo.private,
+                path=repo_path,
             )
 
-        return self._repos[repo_id]
+        return self._repos[self._org_name][repo.name]
 
 
 class FakeAPIHooks(plug.Plugin):

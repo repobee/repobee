@@ -2,7 +2,7 @@
 import tempfile
 import pathlib
 import shutil
-from typing import Mapping
+from typing import Mapping, List
 
 import repobee
 import git
@@ -70,3 +70,37 @@ def tree_hash(repo_root: pathlib.Path) -> str:
     """
     repo = git.Repo(repo_root)
     return repo.head.commit.tree.hexsha
+
+
+def get_repos(
+    platform_url: str, org_name: str = const.TARGET_ORG_NAME
+) -> List[fakeapi.Repo]:
+    """Get all repos from the given platform and organization.
+
+    Args:
+        platform_url: URL to the directory used by the
+            :py:class:`fakeapi.FakeAPI`.
+        org_name: The organization to get repos from.
+    Returns:
+        A list of fake repos.
+    """
+    api = fakeapi.FakeAPI(
+        base_url=platform_url, user=const.TEACHER, org_name=org_name
+    )
+    return api._repos[org_name].values()
+
+
+def get_teams(platform_url: str, org_name: str) -> List[fakeapi.Team]:
+    """Get all of the teams form the given platform and organization.
+
+    Args:
+        platform_url: URL to the directory used by the
+            :py:class:`fakeapi.FakeAPI`.
+        org_name: The organization to get repos from.
+    Returns:
+        A list of fake teams.
+    """
+    api = fakeapi.FakeAPI(
+        base_url=platform_url, user=const.TEACHER, org_name=org_name
+    )
+    return api._teams[org_name].values()
