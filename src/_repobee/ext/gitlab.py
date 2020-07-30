@@ -115,6 +115,112 @@ class GitLabAPI(plug.API):
             self._actual_user = self._gitlab.user.username
             self._group = self._get_organization(self._group_name)
 
+    def _wrap_group(self, group) -> plug.Team:
+        return plug.Team(
+            name=group.name,
+            members=[m.username for m in group.members.list()],
+            id=group.id,
+            implementation=group,
+        )
+
+    def _wrap_project(self, project) -> plug.Repo:
+        return plug.Repo(
+            name=project.path,
+            description=project.description,
+            private=project.visibility == "private",
+            team_id=project.namespace,
+            url=project.attributes["http_url_to_repo"],
+            implementation=project,
+        )
+
+    # START EXPERIMENTAL API
+    def create_team(
+        self,
+        name: str,
+        members: Optional[List[str]] = None,
+        permission: plug.TeamPermission = plug.TeamPermission.PUSH,
+    ) -> plug.Team:
+        with _try_api_request():
+            team = self._wrap_group(
+                self._gitlab.groups.create(
+                    {"name": name, "path": name, "parent_id": self._group.id}
+                )
+            )
+        return self.assign_members(team, members or [], permission)
+
+    def assign_members(
+        self,
+        team: plug.Team,
+        members: List[str],
+        permission: plug.TeamPermission = plug.TeamPermission.PUSH,
+    ) -> plug.Team:
+        assert team.implementation
+        raw_permission = _TEAM_PERMISSION_MAPPING[permission]
+        group = team.implementation
+
+        with _try_api_request():
+            for user in self._get_users(members):
+                group.members.create(
+                    {"user_id": user.id, "access_level": raw_permission}
+                )
+
+        return self._wrap_group(group)
+
+    def create_repo(
+        self,
+        name: str,
+        description: str,
+        private: bool,
+        team: Optional[plug.Team] = None,
+    ) -> plug.Repo:
+        group = team.implementation if team else self._group
+
+        with _try_api_request(ignore_statuses=[400]):
+            project = self._gitlab.projects.create(
+                {
+                    "name": name,
+                    "path": name,
+                    "description": description,
+                    "visibility": "private" if private else "public",
+                    "namespace_id": group.id,
+                }
+            )
+            return self._wrap_project(project)
+
+        with _try_api_request():
+            path = (
+                [self._group.path]
+                + ([group.path] if group != self._group else [])
+                + [name]
+            )
+            project = self._gitlab.projects.get("/".join(path))
+
+        return self._wrap_project(project)
+
+    def get_teams_(
+        self,
+        team_names: Optional[List[str]] = None,
+        include_repos: bool = False,
+    ) -> Iterable[plug.Team]:
+        team_names = set(team_names or [])
+        return [
+            self._wrap_group(group)
+            for group in self._gitlab.groups.list(id=self._group.id, all=True)
+            if not team_names or group.path in team_names
+        ]
+
+    def get_repos(
+        self,
+        repo_names: Optional[List[str]] = None,
+        include_issues: bool = False,
+    ) -> Iterable[plug.Repo]:
+        pass
+
+    def insert_auth(self, url: str) -> str:
+        return self._insert_auth(url)
+
+    # END EXPERIMENTAL API
+
     @staticmethod
     def _ssl_verify():
         ssl_verify = not os.getenv("REPOBEE_NO_VERIFY_SSL") == "true"

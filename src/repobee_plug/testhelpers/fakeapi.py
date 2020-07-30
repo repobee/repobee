@@ -95,6 +95,9 @@ class Team:
         self.repos = repos or []
         self.id = id
 
+    def add_members(self, users: List[_User]) -> None:
+        self.members = list(set(self.members) | set(users))
+
     def to_plug_team(self) -> plug.Team:
         return plug.Team(
             name=self.name,
@@ -119,15 +122,89 @@ class FakeAPI(plug.API):
         self._users = {}
         self._restore_state()
 
+    # START EXPERIMENTAL API
+    def create_team(
+        self,
+        name: str,
+        members: Optional[List[str]] = None,
+        permission: plug.TeamPermission = plug.TeamPermission.PUSH,
+    ) -> plug.Team:
+        stored_team = self._teams[self._org_name].setdefault(
+            name, Team(name=name, members=[], permission=permission, id=name)
+        )
+        return self.assign_members(
+            stored_team.to_plug_team(), members or [], permission
+        )
+
+    def assign_members(
+        self,
+        team: plug.Team,
+        members: List[str],
+        permission: plug.TeamPermission = plug.TeamPermission.PUSH,
+    ) -> plug.Team:
+        team.implementation.add_members(
+            [self._get_user(m) for m in members or []]
+        )
+        return team.implementation.to_plug_team()
+
+    def create_repo(
+        self,
+        name: str,
+        description: str,
+        private: bool,
+        team: Optional[plug.Team] = None,
+    ) -> plug.Repo:
+        assert not team or team.implementation
+
+        repo_bucket = self._repos.setdefault(self._org_name, {})
+        team_id = self._get_team(team.id).id if team else None
+        if name not in repo_bucket:
+            repo_path = self._repodir / self._org_name / name
+            repo_path.mkdir(parents=True, exist_ok=True)
+            git.Repo.init(repo_path, bare=True)
+            repo_bucket[name] = Repo(
+                name=name,
+                description=description,
+                url=repo_path.as_uri(),
+                # call self._get_team to ensure that the team
+                # actually exists
+                team_id=self._get_team(team_id).id,
+                private=private,
+                path=repo_path,
+            )
+
+        return self._repos[self._org_name][name].to_plug_repo()
+
+    def get_teams_(
+        self,
+        team_names: Optional[List[str]] = None,
+        include_repos: bool = False,
+    ) -> Iterable[plug.Team]:
+        team_names = set(team_names or [])
+        return [
+            team.to_plug_team()
+            for team in self._teams[self._org_name].values()
+            if not team_names or team.name in team_names
+        ]
+
+    def get_repos(
+        self,
+        repo_names: Optional[List[str]] = None,
+        include_issues: bool = False,
+    ) -> Iterable[plug.Repo]:
+        raise NotImplementedError()
+
+    def insert_auth(self, url: str) -> str:
+        return url
+
+    # END EXPERIMENTAL API
+
     def ensure_teams_and_members(
         self,
         teams: Iterable[plug.Team],
         permission: plug.TeamPermission = plug.TeamPermission.PUSH,
     ) -> List[plug.Team]:
-        return [
-            self._ensure_team_exists(team, permission).to_plug_team()
-            for team in teams
-        ]
+        raise NotImplementedError()
 
     def get_teams(self) -> List[plug.Team]:
         return [
@@ -136,7 +213,7 @@ class FakeAPI(plug.API):
         ]
 
     def create_repos(self, repos: Iterable[plug.Repo]) -> List[str]:
-        return [self._ensure_repo_exists(repo).url for repo in repos]
+        raise NotImplementedError()
 
     def get_repo_urls(
         self,
@@ -282,29 +359,6 @@ class FakeAPI(plug.API):
         )
         return [repo for repo in unfiltered_repos if repo]
 
-    def _ensure_team_exists(
-        self, team: plug.Team, permission: plug.TeamPermission
-    ) -> Team:
-        requested_members = [
-            self._get_user(username)
-            for username in team.members
-            if username in self._users
-        ]
-        stored_team = self._teams[self._org_name].setdefault(
-            team.name,
-            Team(
-                name=team.name,
-                members=requested_members,
-                permission=permission,
-                id=team.name,
-            ),
-        )
-        stored_team.members = list(
-            set(requested_members) | set(stored_team.members)
-        )
-
-        return self._teams[self._org_name][team.name]
-
     def _ensure_repo_exists(self, repo: plug.Repo) -> Repo:
         repo_bucket = self._repos.setdefault(self._org_name, {})
         if repo.name not in repo_bucket:
@@ -315,7 +369,7 @@ class FakeAPI(plug.API):
                 name=repo.name,
                 description=repo.description,
                 url=repo_path.as_uri(),
-                # call self._get_team to ensure that the taem
+                # call self._get_team to ensure that the team
                 # actually exists
                 team_id=self._get_team(repo.team_id).id,
                 private=repo.private,

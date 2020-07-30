@@ -61,6 +61,7 @@ def setup_student_repos(
     """
     urls = list(master_repo_urls)  # safe copy
     master_repo_names = [util.repo_name(url) for url in urls]
+    teams = list(teams)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         LOGGER.info("Cloning into master repos ...")
@@ -69,35 +70,43 @@ def setup_student_repos(
             master_repo_names, api, cwd=pathlib.Path(tmpdir)
         )
 
-        teams = api.ensure_teams_and_members(teams)
-        repo_urls = _create_student_repos(urls, teams, api)
+        existing_teams_dict = {
+            existing.name: existing
+            for existing in api.get_teams_({t.name for t in teams})
+        }
 
-        push_tuples = _create_push_tuples(master_repo_paths, repo_urls)
+        teams_with_implementation = []
+        for required_team in teams:
+            existing_team = existing_teams_dict.get(required_team.name)
+            if existing_team:
+                existing_members = set(existing_team.members)
+                new_members = set(required_team.members) - existing_members
+                updated_team = api.assign_members(existing_team, new_members)
+                teams_with_implementation.append(updated_team)
+            else:
+                new_team = api.create_team(
+                    required_team.name, required_team.members
+                )
+                teams_with_implementation.append(new_team)
+
+        repos = list(
+            api.create_repo(
+                plug.generate_repo_name(team, repo_name),
+                description="{} created for {}",
+                private=True,
+                team=team,
+            )
+            for team in teams_with_implementation
+            for repo_name in master_repo_names
+        )
+
+        push_tuples = _create_push_tuples(
+            master_repo_paths, {api.insert_auth(repo.url) for repo in repos}
+        )
         LOGGER.info("Pushing files to student repos ...")
         git.push(push_tuples)
 
     return hook_results
-
-
-def _create_student_repos(
-    master_repo_urls: Iterable[str], teams: Iterable[plug.Team], api: plug.API
-) -> List[str]:
-    """Create student repos. Each team is assigned a single repo per master
-    repo. Repos that already exist are not created, but their urls are returned
-    all the same.
-
-    Args:
-        master_repo_urls: URLs to master repos.
-        teams: An iterable of student teams specifying the teams to be setup.
-        api: An implementation of :py:class:`plug.API` used to interface
-            with the platform (e.g. GitHub or GitLab) instance.
-    Returns:
-        a list of urls to the repos
-    """
-    LOGGER.info("Creating student repos ...")
-    repo_infos = _create_repo_infos(master_repo_urls, teams)
-    repo_urls = api.create_repos(repo_infos)
-    return repo_urls
 
 
 def _clone_all(urls: Iterable[str], cwd: str):

@@ -192,6 +192,51 @@ class APISpec:
         """
         _not_implemented()
 
+    # START EXPERIMENTAL API
+    def create_team(
+        self,
+        name: str,
+        members: Optional[List[str]] = None,
+        permission: TeamPermission = TeamPermission.PUSH,
+    ) -> Team:
+        _not_implemented()
+
+    def assign_members(
+        self,
+        team: Team,
+        members: List[str],
+        permission: TeamPermission = TeamPermission.PUSH,
+    ) -> Team:
+        _not_implemented()
+
+    def create_repo(
+        self,
+        name: str,
+        description: str,
+        private: bool,
+        team: Optional[Team] = None,
+    ) -> Repo:
+        _not_implemented()
+
+    def get_teams_(
+        self,
+        team_names: Optional[List[str]] = None,
+        include_repos: bool = False,
+    ) -> Iterable[Team]:
+        _not_implemented()
+
+    def get_repos(
+        self,
+        repo_names: Optional[List[str]] = None,
+        include_issues: bool = False,
+    ) -> Iterable[Repo]:
+        _not_implemented()
+
+    def insert_auth(self, url: str) -> str:
+        _not_implemented()
+
+    # END EXPERIMENTAL API
+
     def get_teams(self) -> List[Team]:
         """Get all teams related to the target organization.
 
