@@ -191,7 +191,12 @@ def _open_issue_by_urls(
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     repo_names = [util.repo_name(url) for url in repo_urls]
-    api.open_issue(issue.title, issue.body, repo_names)
+    repos = api.get_repos(repo_names)
+    for repo in repos:
+        _, issue = api.create_issue(issue.title, issue.body, repo)
+        LOGGER.info(
+            f"Opened issue {repo.name}/#{issue.number}-'{issue.title}'"
+        )
 
 
 def clone_repos(
@@ -277,60 +282,26 @@ def migrate_repos(master_repo_urls: Iterable[str], api: plug.API) -> None:
     """
     master_names = [util.repo_name(url) for url in master_repo_urls]
 
-    infos = [
-        plug.Repo(
-            name=master_name,
-            description="Master repository {}".format(master_name),
-            private=True,
-        )
-        for master_name in master_names
+    repos = [
+        api.create_repo(name=template_name, description="", private=True)
+        for template_name in master_names
     ]
 
     with tempfile.TemporaryDirectory() as tmpdir:
         _clone_all(master_repo_urls, cwd=tmpdir)
-        repo_urls = api.create_repos(infos)
 
         git.push(
             [
                 git.Push(
-                    local_path=os.path.join(tmpdir, info.name),
-                    repo_url=repo_url,
+                    local_path=os.path.join(tmpdir, repo.name),
+                    repo_url=repo.url,
                     branch="master",
                 )
-                for repo_url, info in zip(repo_urls, infos)
+                for repo in repos
             ]
         )
 
     LOGGER.info("Done!")
-
-
-def _create_repo_infos(
-    urls: Iterable[str], teams: Iterable[plug.Team]
-) -> List[plug.Repo]:
-    """Create Repo namedtuples for all combinations of url and team.
-
-    Args:
-        urls: Master repo urls.
-        teams: Team namedtuples.
-
-    Returns:
-        A list of Repo namedtuples with all (url, team) combinations.
-    """
-    repo_infos = []
-    for url in urls:
-        repo_base_name = util.repo_name(url)
-        repo_infos += [
-            plug.Repo(
-                name=plug.generate_repo_name(team.name, repo_base_name),
-                description="{} created for {}".format(
-                    repo_base_name, team.name
-                ),
-                private=True,
-                team_id=team.id,
-            )
-            for team in teams
-        ]
-    return repo_infos
 
 
 def _create_push_tuples(
