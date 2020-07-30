@@ -59,7 +59,7 @@ function install_repobee() {
     ensure_pip_installed
 
     echo "Installing RepoBee $REPOBEE_VERSION"
-    REPOBEE_PYTHON_INTERPRETER="$REPOBEE_PYTHON" pip_install_quiet_failfast "$REPOBEE_PIP_URL"
+    REPOBEE_INSTALL_DIR="$REPOBEE_INSTALL_DIR" pip_install_quiet_failfast "$REPOBEE_PIP_URL"
     create_repobee_executable
 
     echo "Checking PATH"

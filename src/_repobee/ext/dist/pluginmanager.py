@@ -10,16 +10,20 @@ import subprocess
 import daiquiri
 import repobee_plug as plug
 
-
-import _repobee.distinfo
+from _repobee import disthelpers
 
 LOGGER = daiquiri.getLogger(__file__)
 PLUGIN = "pluginmanager"
 
-plugin_category = plug.cli.category(name="plugin", action_names=["install"])
+plugin_category = plug.cli.category(
+    name="plugin",
+    action_names=["install", "uninstall"],
+    help="Manage plugins.",
+    description="Manage plugins.",
+)
 
 
-class InstallPluginCommand(plug.Plugin):
+class InstallPluginCommand(plug.Plugin, plug.cli.Command):
     """Extension command for installing a plugin."""
 
     __settings__ = plug.cli.command_settings(
@@ -54,7 +58,7 @@ class InstallPluginCommand(plug.Plugin):
             f"git+https://github.com/repobee/" f"{plugin_name}.git@{version}"
         )
         cmd = [
-            str(_repobee.distinfo.PYTHON_INTERPRETER),
+            str(disthelpers.get_interpreter_path()),
             "-m",
             "pip",
             "install",
@@ -70,3 +74,16 @@ class InstallPluginCommand(plug.Plugin):
             )
 
         LOGGER.info(f"Installed {self.name} {self.version}")
+
+
+class UninstallPluginCommand(plug.Plugin, plug.cli.Command):
+    """Extension command for uninstall a plugin."""
+
+    __settings__ = plug.cli.command_settings(
+        action=plugin_category.uninstall,
+        help="Uninstall a plugin.",
+        description="Uninstall a plugin.",
+    )
+
+    def command(self, api: None) -> None:
+        """Uninstall a plugin."""

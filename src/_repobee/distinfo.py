@@ -7,4 +7,4 @@ import pathlib
 import typing
 
 DIST_INSTALL: bool = False
-PYTHON_INTERPRETER: typing.Optional[pathlib.Path] = None
+INSTALL_DIR: typing.Optional[pathlib.Path] = None
