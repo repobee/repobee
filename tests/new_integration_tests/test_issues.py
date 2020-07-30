@@ -61,9 +61,7 @@ class TestOpen:
         first_issues = [repo_issues[0] for repo_issues in issues]
         assert all(
             map(
-                lambda i: i.title == issue.title
-                and i.body == issue.body
-                and i.state == plug.IssueState.OPEN,
+                lambda i: i.title == issue.title and i.body == issue.body,
                 first_issues,
             )
         )
