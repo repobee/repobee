@@ -98,7 +98,7 @@ def run(
             os.chdir(cur_workdir)
 
     def _ensure_is_module(p: Union[ModuleType, plug.Plugin]):
-        if issubclass(p, plug.Plugin):
+        if isinstance(p, type) and issubclass(p, plug.Plugin):
             mod = ModuleType(p.__name__.lower())
             mod.__package__ = f"__{p.__name__}"
             setattr(mod, p.__name__, p)

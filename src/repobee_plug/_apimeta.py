@@ -105,7 +105,7 @@ class Repo(
 
 class Team(
     APIObject,
-    collections.namedtuple("Repo", "name members id implementation".split()),
+    collections.namedtuple("Team", "name members id implementation".split()),
 ):
     """Wrapper class for a Team API object."""
 
