@@ -7,6 +7,7 @@ import pytest
 import repobee_plug as plug
 
 import _repobee.ext
+import _repobee.command.peer
 import _repobee.ext.gitlab
 import _repobee.cli.mainparser
 import repobee_plug.cli
@@ -487,7 +488,7 @@ class TestAssignReviews:
         assert_issues_exist(
             STUDENT_TEAMS,
             [master_repo_name],
-            _repobee.ext.gitlab.DEFAULT_REVIEW_ISSUE,
+            _repobee.command.peer.DEFAULT_REVIEW_ISSUE,
             expected_num_asignees=1,
         )
 

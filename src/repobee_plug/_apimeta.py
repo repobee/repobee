@@ -87,17 +87,22 @@ class Team(APIObject):
         members: Iterable[str],
         name: Optional[str] = None,
         id: Optional[Any] = None,
+        repos: Optional[List["Repo"]] = None,
         implementation: Optional[Any] = None,
     ):
-        self.members = tuple(members)
+        self.members = list(members)
         self.name = name if name else "-".join(sorted(members))
         self.id = id
+        self.repos = repos
         self.implementation = implementation
 
         _check_name_length(self.name)
 
     def __str__(self):
         return self.name
+
+    def __lt__(self, o):
+        return self.name < o.name
 
 
 class Issue(APIObject):
@@ -229,7 +234,13 @@ class APISpec:
         self,
         team_names: Optional[List[str]] = None,
         include_repos: bool = False,
+        include_issues: Optional[IssueState] = None,
     ) -> Iterable[Team]:
+        _not_implemented()
+
+    def assign_repo(
+        self, team: Team, repo: Repo, permission: TeamPermission,
+    ) -> None:
         _not_implemented()
 
     def get_repos(

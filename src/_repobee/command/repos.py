@@ -24,6 +24,8 @@ import daiquiri
 
 import repobee_plug as plug
 
+import _repobee.command.teams
+
 from _repobee import git
 from _repobee import util
 from _repobee import exception
@@ -70,25 +72,6 @@ def setup_student_repos(
             master_repo_names, api, cwd=pathlib.Path(tmpdir)
         )
 
-        existing_teams_dict = {
-            existing.name: existing
-            for existing in api.get_teams_({t.name for t in teams})
-        }
-
-        teams_with_implementation = []
-        for required_team in teams:
-            existing_team = existing_teams_dict.get(required_team.name)
-            if existing_team:
-                existing_members = set(existing_team.members)
-                new_members = set(required_team.members) - existing_members
-                updated_team = api.assign_members(existing_team, new_members)
-                teams_with_implementation.append(updated_team)
-            else:
-                new_team = api.create_team(
-                    required_team.name, required_team.members
-                )
-                teams_with_implementation.append(new_team)
-
         repos = list(
             api.create_repo(
                 plug.generate_repo_name(team, repo_name),
@@ -96,7 +79,9 @@ def setup_student_repos(
                 private=True,
                 team=team,
             )
-            for team in teams_with_implementation
+            for team in _repobee.command.teams.create_teams(
+                teams, plug.TeamPermission.PUSH, api
+            )
             for repo_name in master_repo_names
         )
 

@@ -10,6 +10,7 @@ the primary parser should go int :py:mod:`_repobee.cli.mainparser`.
 .. moduleauthor:: Simon Larsén
 """
 import argparse
+import itertools
 import logging
 import os
 import pathlib
@@ -153,7 +154,10 @@ def _process_args(
 
     repos = master_names = master_urls = None
     if "discover_repos" in args and args.discover_repos:
-        repos = api.discover_repos(args.students)
+        teams = api.get_teams_(
+            [t.name for t in args.students], include_repos=True
+        )
+        repos = itertools.chain.from_iterable(team.repos for team in teams)
     elif "master_repo_names" in args:
         master_names = args.master_repo_names
         master_urls = _repo_names_to_urls(master_names, master_org_name, api)
