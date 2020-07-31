@@ -15,6 +15,8 @@ def initialize_repo(path: pathlib.Path) -> git.Repo:
     """Initialize the directory to a Git repo and commit all files in it.
     """
     repo = git.Repo.init(path)
+    repo.git.config("user.name", const.TEACHER)
+    repo.git.config("user.email", f"{const.TEACHER}@repobee.org")
     repo.git.add(".", "--force")
     repo.git.commit("-m", "Initial commit")
     return repo

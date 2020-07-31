@@ -61,13 +61,13 @@ def setup_student_repos(
         api: An implementation of :py:class:`repobee_plug.API` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
-    urls = list(master_repo_urls)  # safe copy
-    master_repo_names = [util.repo_name(url) for url in urls]
+    authed_urls = [api.insert_auth(url) for url in master_repo_urls]
+    master_repo_names = [util.repo_name(url) for url in authed_urls]
     teams = list(teams)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         LOGGER.info("Cloning into master repos ...")
-        master_repo_paths = _clone_all(urls, cwd=tmpdir)
+        master_repo_paths = _clone_all(authed_urls, cwd=tmpdir)
         hook_results = plugin.execute_setup_tasks(
             master_repo_names, api, cwd=pathlib.Path(tmpdir)
         )
@@ -135,23 +135,25 @@ def update_student_repos(
             interface with the platform (e.g. GitHub or GitLab) instance.
         issue: An optional issue to open in repos to which pushing fails.
     """
-    urls = list(master_repo_urls)  # safe copy
+    authed_template_urls = [api.insert_auth(url) for url in master_repo_urls]
 
-    if len(set(urls)) != len(urls):
+    if len(set(authed_template_urls)) != len(authed_template_urls):
         raise ValueError("master_repo_urls contains duplicates")
 
-    master_repo_names = [util.repo_name(url) for url in urls]
+    master_repo_names = [util.repo_name(url) for url in authed_template_urls]
 
-    repo_urls = api.get_repo_urls(master_repo_names, teams=teams)
+    authed_repo_urls = api.get_repo_urls(
+        master_repo_names, teams=teams, insert_auth=True
+    )
 
     with tempfile.TemporaryDirectory() as tmpdir:
         LOGGER.info("Cloning into master repos ...")
-        master_repo_paths = _clone_all(urls, tmpdir)
+        master_repo_paths = _clone_all(authed_template_urls, tmpdir)
         hook_results = plugin.execute_setup_tasks(
             master_repo_names, api, cwd=pathlib.Path(tmpdir)
         )
 
-        push_tuples = _create_push_tuples(master_repo_paths, repo_urls)
+        push_tuples = _create_push_tuples(master_repo_paths, authed_repo_urls)
 
         LOGGER.info("Pushing files to student repos ...")
         failed_urls = git.push(push_tuples)
@@ -234,7 +236,7 @@ def _clone_repos_no_check(repos, dst_dirpath, api) -> List[str]:
     Return a list of names of the successfully cloned repos.
     """
     repos_iter_a, repos_iter_b = itertools.tee(repos)
-    repo_urls = (repo.url for repo in repos_iter_b)
+    repo_urls = (api.insert_auth(repo.url) for repo in repos_iter_b)
 
     fail_urls = git.clone(repo_urls, cwd=dst_dirpath)
     fail_repo_names = set(api.extract_repo_name(url) for url in fail_urls)
@@ -279,7 +281,7 @@ def migrate_repos(master_repo_urls: Iterable[str], api: plug.API) -> None:
             [
                 git.Push(
                     local_path=os.path.join(tmpdir, repo.name),
-                    repo_url=repo.url,
+                    repo_url=api.insert_auth(repo.url),
                     branch="master",
                 )
                 for repo in repos

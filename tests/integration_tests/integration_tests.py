@@ -299,7 +299,10 @@ class TestMigrate:
             for url in api.get_repo_urls(MASTER_REPO_NAMES)
         ]
         # clone the master repos to disk first first
-        git_commands = ["git clone {}".format(url) for url in master_repo_urls]
+        git_commands = [
+            "git clone {}".format(api.insert_auth(url))
+            for url in master_repo_urls
+        ]
         result = run_in_docker(
             " && ".join(git_commands), extra_args=extra_args
         )

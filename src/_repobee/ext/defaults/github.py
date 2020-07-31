@@ -357,8 +357,10 @@ class GitHubAPI(plug.API):
         master_repo_names: Iterable[str],
         org_name: Optional[str] = None,
         teams: Optional[List[plug.Team]] = None,
+        insert_auth: bool = False,
     ) -> List[str]:
         """See :py:meth:`repobee_plug.API.get_repo_urls`."""
+        assert not insert_auth, "not implemented"
         with _try_api_request():
             org = (
                 self._org

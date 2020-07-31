@@ -128,7 +128,10 @@ def purge_review_teams(
         for student in students
         for master_repo_name in master_repo_names
     ]
-    api.delete_teams(review_team_names)
+    teams = api.get_teams_(review_team_names)
+    for team in teams:
+        api.delete_team(team)
+        LOGGER.info(f"Deleted {team.name}")
 
 
 def check_peer_review_progress(

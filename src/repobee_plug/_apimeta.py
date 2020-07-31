@@ -265,6 +265,9 @@ class APISpec:
     def close_issue_(self, issue: Issue) -> Issue:
         _not_implemented()
 
+    def delete_team(self, team: Team) -> None:
+        _not_implemented()
+
     # END EXPERIMENTAL API
 
     def get_teams(self) -> List[Team]:
@@ -292,6 +295,7 @@ class APISpec:
         master_repo_names: Iterable[str],
         org_name: Optional[str] = None,
         teams: Optional[List[Team]] = None,
+        insert_auth: bool = False,
     ) -> List[str]:
         """Get repo urls for all specified repo names in the organization. As
         checking if every single repo actually exists takes a long time with a

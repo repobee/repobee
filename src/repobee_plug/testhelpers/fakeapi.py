@@ -183,6 +183,7 @@ class FakeAPI(plug.API):
         self,
         team_names: Optional[List[str]] = None,
         include_repos: bool = False,
+        include_issues: Optional[plug.IssueState] = None,
     ) -> Iterable[plug.Team]:
         team_names = set(team_names or [])
         return [
@@ -238,7 +239,9 @@ class FakeAPI(plug.API):
         master_repo_names: Iterable[str],
         org_name: Optional[str] = None,
         teams: Optional[List[plug.Team]] = None,
+        insert_auth: bool = False,
     ) -> List[str]:
+        assert not insert_auth, "not yet implemented"
         base = self._repodir / (org_name or self._org_name)
         repo_names = (
             master_repo_names
