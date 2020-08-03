@@ -6,6 +6,7 @@ from repobee_plug.__version import __version__  # noqa: F401
 from repobee_plug._pluginmeta import Plugin
 from repobee_plug._containers import hookimpl as repobee_hook
 from repobee_plug import cli
+from repobee_plug.io import echo
 
 # Containers
 from repobee_plug._containers import Review
@@ -68,6 +69,7 @@ __all__ = [
     "Plugin",
     "repobee_hook",
     "manager",
+    "echo",
     # Containers
     "Result",
     "HookResult",

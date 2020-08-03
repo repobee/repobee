@@ -7,12 +7,10 @@ tooling.
 """
 import subprocess
 
-import daiquiri
 import repobee_plug as plug
 
 from _repobee import disthelpers
 
-LOGGER = daiquiri.getLogger(__file__)
 PLUGIN = "pluginmanager"
 
 plugin_category = plug.cli.category(
@@ -68,12 +66,11 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
         proc = subprocess.run(cmd)
 
         if proc.returncode != 0:
-            LOGGER.exception(f"Failed to install {self.name} {self.version}")
             raise plug.PlugError(
                 f"could not install {self.name} {self.version}"
             )
 
-        LOGGER.info(f"Installed {self.name} {self.version}")
+        plug.echo(f"Installed {self.name} {self.version}")
 
 
 class UninstallPluginCommand(plug.Plugin, plug.cli.Command):
