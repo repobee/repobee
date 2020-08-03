@@ -193,11 +193,14 @@ class GitLabAPI(plug.API):
         assert not include_issues or include_repos
 
         team_names = set(team_names or [])
-        return [
-            self._wrap_group(group, include_repos, include_issues)
-            for group in self._gitlab.groups.list(id=self._group.id, all=True)
-            if not team_names or group.path in team_names
-        ]
+        with _try_api_request():
+            return (
+                self._wrap_group(group, include_repos, include_issues)
+                for group in self._gitlab.groups.list(
+                    id=self._group.id, all=True
+                )
+                if not team_names or group.path in team_names
+            )
 
     def get_repos(
         self,
@@ -305,7 +308,7 @@ class GitLabAPI(plug.API):
             name=project.path,
             description=project.description,
             private=project.visibility == "private",
-            team_id=project.namespace,
+            team_id=project.namespace_id,
             url=project.attributes["http_url_to_repo"],
             implementation=project,
             issues=issues,

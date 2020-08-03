@@ -10,11 +10,9 @@ GitHubAPI are mostly high-level bulk operations.
 
 .. moduleauthor:: Simon Larsén
 """
-import re
 import pathlib
-from typing import List, Iterable, Mapping, Optional, Generator, Tuple
+from typing import List, Iterable, Optional, Generator, Tuple
 from socket import gaierror
-import collections
 import contextlib
 
 import daiquiri
@@ -159,51 +157,195 @@ class GitHubAPI(plug.API):
     def token(self):
         return self._token
 
-    def _get_teams_in(
-        self, team_names: Iterable[str]
-    ) -> Generator[github.Team.Team, None, None]:
-        """Get all teams that match any team name in the team_names iterable.
+    # START EXPERIMENTAL API
 
-        Args:
-            team_names: An iterable of team names.
-        Returns:
-            An iterable of Team namedtuples of all teams that matched any of
-            the team names.
-        """
+    def create_team(
+        self,
+        name: str,
+        members: Optional[List[str]] = None,
+        permission: plug.TeamPermission = plug.TeamPermission.PUSH,
+    ) -> plug.Team:
+        with _try_api_request():
+            team = self._org.create_team(
+                name, permission=_TEAM_PERMISSION_MAPPING[permission]
+            )
+            # remove the creator from the team
+            team.remove_membership(team.get_members()[0])
+        return self.assign_members(self._wrap_team(team), members, permission)
+
+    def assign_members(
+        self,
+        team: plug.Team,
+        members: List[str],
+        permission: plug.TeamPermission = plug.TeamPermission.PUSH,
+    ) -> plug.Team:
+        assert team.implementation
+
+        with _try_api_request():
+            users = self._get_users(members)
+            for user in users:
+                team.implementation.add_membership(
+                    user,
+                    role="maintainer"
+                    if permission == plug.TeamPermission.PUSH
+                    else "member",
+                )
+
+        return self._wrap_team(team.implementation)
+
+    def assign_repo(
+        self, team: plug.Team, repo: plug.Repo, permission: plug.TeamPermission
+    ) -> None:
+        team.implementation.add_to_repos(repo.implementation)
+        team.implementation.set_repo_permission(
+            repo.implementation, _TEAM_PERMISSION_MAPPING[permission]
+        )
+
+    def create_repo(
+        self,
+        name: str,
+        description: str,
+        private: bool,
+        team: Optional[plug.Team] = None,
+    ) -> plug.Repo:
+        kwargs = dict(description=description, private=private)
+        team_impl = None
+        if team:
+            kwargs["team_id"] = team.id
+            team_impl = team.implementation
+
+        with _try_api_request():
+            try:
+                repo = self._org.create_repo(name, **kwargs)
+                return self._wrap_repo(repo, team=team_impl)
+            except github.GithubException as exc:
+                if exc.status == 422 and team_impl:
+                    repo = self._org.get_repo(name)
+                    team_impl.add_to_repos(repo)
+                    return self._wrap_repo(repo, team=team_impl)
+
+                raise
+
+    def get_teams_(
+        self,
+        team_names: Optional[List[str]] = None,
+        include_repos: bool = False,
+        include_issues: Optional[plug.IssueState] = None,
+    ) -> Iterable[plug.Team]:
+        assert not include_issues or include_repos
+
         team_names = set(team_names)
         with _try_api_request():
-            yield from (
-                team
-                for team in self.org.get_teams()
-                if team.name in team_names
+            return (
+                self._wrap_team(
+                    team,
+                    include_repos=include_repos,
+                    include_issues=include_issues,
+                )
+                for team in self._org.get_teams()
+                if not team_names or team.name in team_names
             )
 
-    def get_teams(self) -> List[plug.Team]:
-        """See :py:meth:`repobee_plug.API.get_teams`."""
-        return [
-            plug.Team(
-                name=t.name,
-                members=[m.login for m in t.get_members()],
-                id=t.id,
-                implementation=t,
-            )
-            for t in self._org.get_teams()
-        ]
+    def get_repos(
+        self,
+        repo_names: Optional[List[str]] = None,
+        include_issues: Optional[plug.IssueState] = None,
+    ) -> Iterable[plug.Repo]:
+        return (
+            self._wrap_repo(repo, include_issues)
+            for repo in self._get_repos_by_name(repo_names or [])
+        )
 
-    def delete_teams(self, team_names: Iterable[str]) -> None:
-        """See :py:meth:`repobee_plug.API.delete_teams`."""
-        deleted = set()  # only for logging
-        for team in self._get_teams_in(team_names):
-            team.delete()
-            deleted.add(team.name)
-            LOGGER.info("Deleted team {}".format(team.name))
+    def create_issue(
+        self,
+        title: str,
+        body: str,
+        repo: plug.Repo,
+        assignees: Optional[str] = None,
+    ) -> Tuple[plug.Repo, plug.Issue]:
+        repo_impl: github.Repository.Repository = repo.implementation
+        repo_impl.create_issue(title, body=body, assignees=assignees)
 
-        # only logging
-        missing = set(team_names) - deleted
-        if missing:
-            LOGGER.warning(
-                "Could not find teams: {}".format(", ".join(missing))
-            )
+    def close_issue_(self, issue: plug.Issue) -> plug.Issue:
+        issue.implementation.edit(state="closed")
+        return self._wrap_issue(issue.implementation)
+
+    def delete_team(self, team: plug.Team) -> None:
+        team.implementation.delete()
+
+    def _wrap_team(
+        self,
+        team: _Team,
+        include_repos: bool = False,
+        include_issues: Optional[plug.TeamPermission] = None,
+    ) -> plug.Team:
+        assert not include_issues or include_repos
+
+        repos = (
+            [
+                self._wrap_repo(repo, include_issues=include_issues, team=team)
+                for repo in team.get_repos()
+            ]
+            if include_repos
+            else None
+        )
+        return plug.Team(
+            name=team.name,
+            members=[m.login for m in team.get_members()],
+            id=team.id,
+            repos=repos,
+            implementation=team,
+        )
+
+    def _wrap_repo(
+        self,
+        repo: _Repo,
+        include_issues: Optional[plug.TeamPermission] = None,
+        team: Optional[_Team] = None,
+    ) -> plug.Repo:
+        issues = (
+            [
+                self._wrap_issue(issue)
+                for issue in repo.get_issues(
+                    state=_ISSUE_STATE_MAPPING[include_issues]
+                )
+            ]
+            if include_issues
+            else None
+        )
+        return plug.Repo(
+            name=repo.name,
+            description=repo.description,
+            private=repo.private,
+            team_id=self._resolve_team_id(repo, team),
+            url=repo.html_url,
+            issues=issues,
+            implementation=repo,
+        )
+
+    def _resolve_team_id(
+        self, repo: _Repo, team: Optional[_Team]
+    ) -> Optional[int]:
+        if team:
+            return team.id
+
+        with _try_api_request():
+            for team in repo.get_teams():
+                return team.id
+
+        return None
+
+    def _wrap_issue(self, issue: github.Issue.Issue) -> plug.Issue:
+        return plug.Issue(
+            title=issue.title,
+            body=issue.body,
+            number=issue.number,
+            created_at=issue.created_at.isoformat(),
+            author=issue.user.login,
+            implementation=issue,
+        )
+
+    # END EXPERIMENTAL API
 
     def _get_users(self, usernames: Iterable[str]) -> List[_User]:
         """Get all existing users corresponding to the usernames.
@@ -227,131 +369,6 @@ class GitHubAPI(plug.API):
                 LOGGER.warning("User {} does not exist".format(name))
         return existing_users
 
-    def ensure_teams_and_members(
-        self,
-        teams: Iterable[plug.Team],
-        permission: plug.TeamPermission = plug.TeamPermission.PUSH,
-    ) -> List[plug.Team]:
-        """See
-        :py:meth:`repobee_plug.API.ensure_teams_and_members`.
-        """
-        raw_permission = _TEAM_PERMISSION_MAPPING[permission]
-        member_lists = {team.name: team.members for team in teams}
-        raw_teams = self._ensure_teams_exist(
-            [team_name for team_name in member_lists.keys()],
-            permission=raw_permission,
-        )
-
-        for team in [team for team in raw_teams if member_lists[team.name]]:
-            self._ensure_members_in_team(team, member_lists[team.name])
-
-        return [
-            plug.Team(
-                name=t.name,
-                members=member_lists[t.name],
-                id=t.id,
-                implementation=t,
-            )
-            for t in raw_teams
-        ]
-
-    def _ensure_teams_exist(
-        self, team_names: Iterable[str], permission: str = "push"
-    ) -> List[github.Team.Team]:
-        """Create any teams that do not yet exist.
-
-        Args:
-            team_names: An iterable of team names.
-        Returns:
-            A list of Team namedtuples representing the teams corresponding to
-            the provided team_names.
-        Raises:
-            plug.UnexpectedException if anything but a 422 (team already
-            exists) is raised when trying to create a team.
-        """
-        existing_teams = list(self._org.get_teams())
-        existing_team_names = set(team.name for team in existing_teams)
-
-        required_team_names = set(team_names)
-        teams = [
-            team for team in existing_teams if team.name in required_team_names
-        ]
-
-        for team_name in required_team_names - existing_team_names:
-            with _try_api_request():
-                new_team = self._org.create_team(
-                    team_name, permission=permission
-                )
-                LOGGER.info("Created team {}".format(team_name))
-                teams.append(new_team)
-        return teams
-
-    def _ensure_members_in_team(
-        self, team: github.Team.Team, members: Iterable[str]
-    ):
-        """Add all of the users in ``members`` to a team. Skips any users that
-        don't exist, or are already in the team.
-
-        Args:
-            team: A _Team object to which members should be added.
-            members: An iterable of usernames.
-        """
-        existing_members = set(member.login for member in team.get_members())
-        missing_members = [
-            member for member in members if member not in existing_members
-        ]
-
-        if missing_members:
-            LOGGER.info(
-                "Adding members {} to team {}".format(
-                    ", ".join(missing_members), team.name
-                )
-            )
-        if existing_members:
-            LOGGER.info(
-                "{} already in team {}, skipping...".format(
-                    ", ".join(existing_members), team.name
-                )
-            )
-        self._add_to_team(missing_members, team)
-
-    def _add_to_team(self, members: Iterable[str], team: github.Team.Team):
-        """Add members to a team.
-
-        Args:
-            members: Users to add to the team.
-            team: A Team.
-        """
-        with _try_api_request():
-            users = self._get_users(members)
-            for user in users:
-                team.add_membership(user)
-
-    def create_repos(self, repos: Iterable[plug.Repo]):
-        """See :py:meth:`repobee_plug.API.create_repos`."""
-        repo_urls = []
-        for info in repos:
-            created = False
-            with _try_api_request(ignore_statuses=[422]):
-                kwargs = dict(
-                    description=info.description, private=info.private
-                )
-                if info.team_id:  # using falsy results in an exception
-                    kwargs["team_id"] = info.team_id
-                repo_urls.append(
-                    self._org.create_repo(info.name, **kwargs).html_url
-                )
-                LOGGER.info("Created {}/{}".format(self._org_name, info.name))
-                created = True
-
-            if not created:
-                repo_urls.append(self._org.get_repo(info.name).html_url)
-                LOGGER.info(
-                    "{}/{} already exists".format(self._org_name, info.name)
-                )
-
-        return [self._insert_auth(url) for url in repo_urls]
-
     def get_repo_urls(
         self,
         master_repo_names: Iterable[str],
@@ -360,7 +377,6 @@ class GitHubAPI(plug.API):
         insert_auth: bool = False,
     ) -> List[str]:
         """See :py:meth:`repobee_plug.API.get_repo_urls`."""
-        assert not insert_auth, "not implemented"
         with _try_api_request():
             org = (
                 self._org
@@ -373,7 +389,7 @@ class GitHubAPI(plug.API):
             else plug.generate_repo_names(teams, master_repo_names)
         )
         return [
-            self._insert_auth(url)
+            self.insert_auth(url) if insert_auth else url
             for url in (
                 "{}/{}".format(org.html_url, repo_name)
                 for repo_name in list(repo_names)
@@ -384,7 +400,7 @@ class GitHubAPI(plug.API):
         """See :py:meth:`repobee_plug.API.extract_repo_name`."""
         return pathlib.Path(repo_url).stem
 
-    def _insert_auth(self, repo_url: str):
+    def insert_auth(self, url: str) -> str:
         """Insert an authentication token into the url.
 
         Args:
@@ -392,192 +408,12 @@ class GitHubAPI(plug.API):
         Returns:
             the input url with an authentication token inserted.
         """
-        if not repo_url.startswith("https://"):
+        if not url.startswith("https://"):
             raise ValueError(
-                "unsupported protocol in '{}', please use https:// ".format(
-                    repo_url
-                )
+                f"unsupported protocol in '{url}', please use https://"
             )
         auth = "{}:{}".format(self._user, self.token)
-        return repo_url.replace("https://", "https://{}@".format(auth))
-
-    def get_issues(
-        self,
-        repo_names: Iterable[str],
-        state: plug.IssueState = plug.IssueState.OPEN,
-        title_regex: str = "",
-    ) -> Generator[Tuple[str, ISSUE_GENERATOR], None, None]:
-        """See :py:meth:`repobee_plug.API.get_issues`."""
-        repos = self._get_repos_by_name(repo_names)
-        raw_state = _ISSUE_STATE_MAPPING[state]
-
-        with _try_api_request():
-            name_issues_pairs = (
-                (
-                    repo.name,
-                    (
-                        plug.Issue(
-                            title=issue.title,
-                            body=issue.body,
-                            number=issue.number,
-                            created_at=issue.created_at.isoformat(),
-                            author=issue.user.login,
-                            implementation=issue,
-                        )
-                        for issue in repo.get_issues(state=raw_state)
-                        if re.match(title_regex or "", issue.title)
-                    ),
-                )
-                for repo in repos
-            )
-        yield from name_issues_pairs
-
-    def open_issue(
-        self, title: str, body: str, repo_names: Iterable[str]
-    ) -> None:
-        """See :py:meth:`repobee_plug.API.open_issue`."""
-        repo_names_set = set(repo_names)
-        repos = list(self._get_repos_by_name(repo_names_set))
-        for repo in repos:
-            with _try_api_request():
-                created_issue = repo.create_issue(title, body=body)
-            LOGGER.info(
-                "Opened issue {}/#{}-'{}'".format(
-                    repo.name, created_issue.number, created_issue.title
-                )
-            )
-
-    def close_issue(self, title_regex: str, repo_names: Iterable[str]) -> None:
-        """See :py:meth:`repobee_plug.API.close_issue`."""
-        repo_names_set = set(repo_names)
-        repos = list(self._get_repos_by_name(repo_names_set))
-
-        issue_repo_gen = (
-            (issue, repo)
-            for repo in repos
-            for issue in repo.get_issues(state="open")
-            if re.match(title_regex, issue.title)
-        )
-        closed = 0
-        for issue, repo in issue_repo_gen:
-            issue.edit(state="closed")
-            LOGGER.info(
-                "Closed issue {}/#{}-'{}'".format(
-                    repo.name, issue.number, issue.title
-                )
-            )
-            closed += 1
-
-        if not closed:
-            LOGGER.warning("Found no matching issues.")
-
-    def add_repos_to_review_teams(
-        self,
-        team_to_repos: Mapping[str, Iterable[str]],
-        issue: Optional[plug.Issue] = None,
-    ) -> None:
-        """See :py:meth:`repobee_plug.API.add_repos_to_review_teams`.
-        """
-        issue = issue or DEFAULT_REVIEW_ISSUE
-        for team, repo in self._add_repos_to_teams(team_to_repos):
-            # TODO team.get_members() api request is a bit redundant, it
-            # can be solved in a more efficient way by passing in the
-            # allocations
-            reviewers = team.get_members()
-            created_issue = repo.create_issue(
-                issue.title, body=issue.body, assignees=reviewers
-            )
-            LOGGER.info(
-                "Opened issue {}/#{}-'{}'".format(
-                    repo.name, created_issue.number, created_issue.title
-                )
-            )
-
-    def get_review_progress(
-        self,
-        review_team_names: Iterable[str],
-        teams: Iterable[plug.Team],
-        title_regex: str,
-    ) -> Mapping[str, List[plug.Review]]:
-        """See :py:meth:`repobee_plug.API.get_review_progress`."""
-        reviews = collections.defaultdict(list)
-        review_team_impls = self._get_teams_in(review_team_names)
-        for review_team_impl in review_team_impls:
-            with _try_api_request():
-                LOGGER.info("Processing {}".format(review_team_impl.name))
-                reviewers = set(
-                    m.login for m in review_team_impl.get_members()
-                )
-                review_teams = self._extract_review_teams(teams, reviewers)
-                repos = list(review_team_impl.get_repos())
-                if len(repos) != 1:
-                    LOGGER.warning(
-                        "Expected {} to have 1 associated repo, found {}."
-                        "Skipping...".format(review_team_impl.name, len(repos))
-                    )
-                    continue
-
-                repo = repos[0]
-                review_issue_authors = {
-                    issue.user.login
-                    for issue in repo.get_issues()
-                    if re.match(title_regex, issue.title)
-                }
-
-                for team in review_teams:
-                    reviews[str(team)].append(
-                        plug.Review(
-                            repo=repo.name,
-                            done=any(
-                                map(
-                                    review_issue_authors.__contains__,
-                                    team.members,
-                                )
-                            ),
-                        )
-                    )
-
-        return reviews
-
-    def _extract_review_teams(self, teams, reviewers):
-        review_teams = []
-        for team in teams:
-            if any(map(team.members.__contains__, reviewers)):
-                review_teams.append(team)
-        return review_teams
-
-    def _add_repos_to_teams(
-        self, team_to_repos: Mapping[str, Iterable[str]]
-    ) -> Generator[
-        Tuple[github.Team.Team, github.Repository.Repository], None, None
-    ]:
-        """Add repos to teams and yield each (team, repo) combination _after_
-        the repo has been added to the team.
-
-        Args:
-            team_to_repos: A mapping from a team name to a sequence of repo
-                names.
-        Returns:
-            a generator yielding each (team, repo) tuple in turn.
-        """
-        team_names = set(team_to_repos.keys())
-        with _try_api_request():
-            teams = (
-                team
-                for team in self._org.get_teams()
-                if team.name in team_names
-            )
-        for team in teams:
-            repos = self._get_repos_by_name(team_to_repos[team.name])
-            for repo in repos:
-                LOGGER.info(
-                    "Adding team {} to repo {} with '{}' permission".format(
-                        team.name, repo.name, team.permission
-                    )
-                )
-                with _try_api_request():
-                    team.add_to_repos(repo)
-                yield team, repo
+        return url.replace("https://", f"https://{auth}@")
 
     def _get_repos_by_name(
         self, repo_names: Iterable[str]
@@ -603,23 +439,6 @@ class GitHubAPI(plug.API):
             LOGGER.warning(
                 "Can't find repos: {}".format(", ".join(missing_repos))
             )
-
-    def discover_repos(
-        self, teams: Iterable[plug.Team]
-    ) -> Generator[plug.Repo, None, None]:
-        """See :py:meth:`repobee_plug.APISpec.discover_repos`."""
-        raw_teams = self._get_teams_in([team.name for team in teams])
-        with _try_api_request():
-            for team in raw_teams:
-                for repo in team.get_repos():
-                    yield plug.Repo(
-                        name=repo.name,
-                        description=repo.description,
-                        private=repo.private,
-                        team_id=team.id,
-                        url=self._insert_auth(repo.html_url),
-                        implementation=repo,
-                    )
 
     @staticmethod
     def verify_settings(

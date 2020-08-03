@@ -72,10 +72,10 @@ def setup_student_repos(
             master_repo_names, api, cwd=pathlib.Path(tmpdir)
         )
 
-        repos = list(
+        repos = _log_repo_creation(
             api.create_repo(
                 plug.generate_repo_name(team, repo_name),
-                description="{} created for {}",
+                description=f"{repo_name} created for {team.name}",
                 private=True,
                 team=team,
             )
@@ -92,6 +92,12 @@ def setup_student_repos(
         git.push(push_tuples)
 
     return hook_results
+
+
+def _log_repo_creation(repos: Iterable[plug.Repo]) -> Iterable[plug.Repo]:
+    for repo in repos:
+        LOGGER.info(f"Created repository {repo.name}")
+        yield repo
 
 
 def _clone_all(urls: Iterable[str], cwd: str):
