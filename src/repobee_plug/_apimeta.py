@@ -237,7 +237,7 @@ class APISpec:
     ) -> Tuple[Repo, Issue]:
         _not_implemented()
 
-    def close_issue_(self, issue: Issue) -> Issue:
+    def close_issue(self, issue: Issue) -> Issue:
         _not_implemented()
 
     def delete_team(self, team: Team) -> None:

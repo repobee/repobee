@@ -266,7 +266,7 @@ class GitHubAPI(plug.API):
         repo_impl: github.Repository.Repository = repo.implementation
         repo_impl.create_issue(title, body=body, assignees=assignees)
 
-    def close_issue_(self, issue: plug.Issue) -> plug.Issue:
+    def close_issue(self, issue: plug.Issue) -> plug.Issue:
         issue.implementation.edit(state="closed")
         return self._wrap_issue(issue.implementation)
 

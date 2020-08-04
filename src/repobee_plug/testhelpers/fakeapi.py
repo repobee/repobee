@@ -8,7 +8,6 @@ that can be used to test RepoBee and plugins.
 """
 
 import pathlib
-import collections
 import git
 import pickle
 import datetime
@@ -20,7 +19,10 @@ import repobee_plug as plug
 
 TIME = datetime.datetime.now().isoformat()
 
-_User = collections.namedtuple("_User", "username")
+
+@dataclasses.dataclass(frozen=True)
+class User:
+    username: str
 
 
 @dataclasses.dataclass(frozen=True)
@@ -31,6 +33,7 @@ class Issue:
     created_at: str
     author: str
     state: plug.IssueState
+    assignees: Set[User]
 
     def to_plug_issue(self):
         return plug.Issue(
@@ -74,13 +77,14 @@ class Repo:
 @dataclasses.dataclass(frozen=True)
 class Team:
     name: str
-    members: List[_User]
+    members: Set[User]
     permission: plug.TeamPermission
     id: str
     repos: Set[Repo] = dataclasses.field(default_factory=set)
 
-    def add_members(self, users: List[_User]) -> None:
-        self.members = list(set(self.members) | set(users))
+    def add_members(self, users: List[User]) -> None:
+        for user in users:
+            self.members.add(user)
 
     def to_plug_team(self) -> plug.Team:
         return plug.Team(
@@ -106,7 +110,6 @@ class FakeAPI(plug.API):
         self._users = {}
         self._restore_state()
 
-    # START EXPERIMENTAL API
     def create_team(
         self,
         name: str,
@@ -114,7 +117,8 @@ class FakeAPI(plug.API):
         permission: plug.TeamPermission = plug.TeamPermission.PUSH,
     ) -> plug.Team:
         stored_team = self._teams[self._org_name].setdefault(
-            name, Team(name=name, members=[], permission=permission, id=name)
+            name,
+            Team(name=name, members=set(), permission=permission, id=name),
         )
         return self.assign_members(
             stored_team.to_plug_team(), members or [], permission
@@ -164,7 +168,7 @@ class FakeAPI(plug.API):
         repo = repo_bucket[name]
 
         if team:
-            self._get_team(team.id).repos.append(repo)
+            self._get_team(team.id).repos.add(repo)
 
         return repo.to_plug_repo()
 
@@ -205,7 +209,10 @@ class FakeAPI(plug.API):
         repo: plug.Repo,
         assignees: Optional[str] = None,
     ) -> Tuple[Repo, Issue]:
-        assert not assignees
+        assignees = {
+            self._get_user(assignee) for assignee in (assignees or [])
+        }
+
         issue = Issue(
             title=title,
             body=body,
@@ -213,15 +220,17 @@ class FakeAPI(plug.API):
             created_at=TIME,
             author=self._user,
             state=plug.IssueState.OPEN,
+            assignees=assignees,
         )
         repo.implementation.issues.append(issue)
         return repo.implementation.to_plug_repo(), issue.to_plug_issue()
 
-    def close_issue_(self, issue: Issue) -> Issue:
+    def close_issue(self, issue: Issue) -> Issue:
         issue.implementation.state = plug.IssueState.CLOSED
         return issue.implementation.to_plug_issue()
 
-    # END EXPERIMENTAL API
+    def delete_team(self, team: plug.Team) -> None:
+        del self._teams[self._org_name][team.implementation.name]
 
     def get_repo_urls(
         self,
@@ -291,10 +300,10 @@ class FakeAPI(plug.API):
         Args:
             usernames: A list of usernames to add.
         """
-        self._users.update({name: _User(name) for name in usernames})
+        self._users.update({name: User(name) for name in usernames})
         self._save_state()
 
-    def _get_user(self, username: str) -> _User:
+    def _get_user(self, username: str) -> User:
         if username not in self._users:
             raise plug.NotFoundError(f"no such user: {username}")
         return self._users[username]

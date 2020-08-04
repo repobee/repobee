@@ -246,7 +246,7 @@ class GitLabAPI(plug.API):
             self._wrap_issue(issue),
         )
 
-    def close_issue_(self, issue: plug.Issue) -> plug.Issue:
+    def close_issue(self, issue: plug.Issue) -> plug.Issue:
         assert issue.implementation
         issue_impl = issue.implementation
         issue_impl.state_event = "close"

@@ -223,5 +223,5 @@ def close_issue(
             if re.match(title_regex, issue.title)
         ]
         for issue in to_close:
-            closed = api.close_issue_(issue)
+            closed = api.close_issue(issue)
             LOGGER.info(f"Closed {repo.name}/#{closed.number}='{issue.title}'")
