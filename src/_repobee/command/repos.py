@@ -186,7 +186,7 @@ def _open_issue_by_urls(
     repo_names = [util.repo_name(url) for url in repo_urls]
     repos = api.get_repos(repo_names)
     for repo in repos:
-        _, issue = api.create_issue(issue.title, issue.body, repo)
+        issue = api.create_issue(issue.title, issue.body, repo)
         LOGGER.info(
             f"Opened issue {repo.name}/#{issue.number}-'{issue.title}'"
         )
