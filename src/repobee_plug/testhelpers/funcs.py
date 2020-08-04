@@ -9,6 +9,7 @@ import git
 
 from repobee_plug.testhelpers import fakeapi
 from repobee_plug.testhelpers import const
+from repobee_plug._containers import Result
 
 
 def initialize_repo(path: pathlib.Path) -> git.Repo:
@@ -37,14 +38,38 @@ def hash_directory(dirpath: pathlib.Path) -> str:
         return repo.head.commit.tree.hexsha
 
 
-def run_repobee(cmd: str, **kwargs):
-    """Helper function to call repobee.run.
+def run_repobee(cmd: str, **kwargs) -> Mapping[str, List[Result]]:
+    """Helper function to call :py:class:`repobee.run`.
 
-    Note that ``cmd`` should be a string, and not a list of strings.
+    This function will by default use a config file that sets appropriate
+    values for ``students_file``, ``user``, ``org_name`` and
+    ``master_org_name`` for use with the :py:class:`~fakeapi.FakeAPI` platform
+    API. It will also always load the :py:class:`~fakeapi.FakeAPI` plugin
+    last, so it is the only platform API that can be used.
+
+    If you require more control, use :py:func:`repobee.run` instead.
+
+    Args:
+        cmd: A string with a RepoBee command.
+        kwargs: Keyword arguments for :py:func:`repobee.run`.
+    Returns:
+        The results mapping returned by :py:func:`repobee.run`
     """
     plugins = (kwargs.get("plugins") or []) + [fakeapi]
     kwargs["plugins"] = plugins
-    repobee.run(cmd.split(), **kwargs)
+
+    with tempfile.NamedTemporaryFile() as tmp:
+        config_file = pathlib.Path(tmp.name)
+        config_file.write_text(
+            f"""[repobee]
+students_file = {pathlib.Path(__file__).parent / "resources" / "students.txt"}
+org_name = {const.TARGET_ORG_NAME}
+user = {const.TEACHER}
+master_org_name = {const.TEMPLATE_ORG_NAME}
+"""
+        )
+
+        return repobee.run(cmd.split(), config_file=config_file, **kwargs)
 
 
 def template_repo_hashes() -> Mapping[str, str]:

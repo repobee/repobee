@@ -9,10 +9,8 @@ from repobee_plug.testhelpers import funcs
 from repobee_plug.testhelpers.const import (
     TEMPLATE_REPOS_ARG,
     TEMPLATE_REPO_NAMES,
-    STUDENTS_FILE,
     STUDENT_TEAMS,
     TARGET_ORG_NAME,
-    TEACHER,
 )
 
 _TestIssue = collections.namedtuple("_TestIssue", "title body path")
@@ -40,10 +38,7 @@ class TestOpen:
 
         funcs.run_repobee(
             f"issues open --master-repo-names {TEMPLATE_REPOS_ARG} "
-            f"--students-file {STUDENTS_FILE} "
             f"--base-url {platform_url} "
-            f"--org-name {TARGET_ORG_NAME} "
-            f"--user {TEACHER} "
             f"--issue {issue.path} "
         )
 

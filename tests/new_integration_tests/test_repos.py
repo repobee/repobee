@@ -10,11 +10,7 @@ from repobee_plug.testhelpers import funcs
 
 
 from repobee_plug.testhelpers.const import (
-    STUDENTS_FILE,
     STUDENT_TEAMS,
-    TARGET_ORG_NAME,
-    TEACHER,
-    TEMPLATE_ORG_NAME,
     TEMPLATE_REPO_NAMES,
     TEMPLATE_REPOS_ARG,
 )
@@ -82,11 +78,7 @@ class TestSetup:
         template_repo_name = TEMPLATE_REPO_NAMES[0]
         funcs.run_repobee(
             f"repos setup --mn {template_repo_name} "
-            f"--students-file {STUDENTS_FILE} "
-            f"--base-url {platform_url} "
-            f"--user {TEACHER} "
-            f"--org-name {TARGET_ORG_NAME} "
-            f"--master-org-name {TEMPLATE_ORG_NAME}"
+            f"--base-url {platform_url}"
         )
 
         assert_student_repos_match_templates(
@@ -96,11 +88,7 @@ class TestSetup:
     def test_setup_multiple_template_repos(self, platform_dir, platform_url):
         funcs.run_repobee(
             f"repos setup --mn {TEMPLATE_REPOS_ARG} "
-            f"--students-file {STUDENTS_FILE} "
-            f"--base-url {platform_url} "
-            f"--user {TEACHER} "
-            f"--org-name {TARGET_ORG_NAME} "
-            f"--master-org-name {TEMPLATE_ORG_NAME}"
+            f"--base-url {platform_url}"
         )
 
         assert_student_repos_match_templates(
@@ -116,11 +104,7 @@ class TestSetup:
         for _ in range(2):
             funcs.run_repobee(
                 f"repos setup --mn {TEMPLATE_REPOS_ARG} "
-                f"--students-file {STUDENTS_FILE} "
                 f"--base-url {platform_url} "
-                f"--user {TEACHER} "
-                f"--org-name {TARGET_ORG_NAME} "
-                f"--master-org-name {TEMPLATE_ORG_NAME}"
             )
 
         assert_student_repos_match_templates(
@@ -136,10 +120,7 @@ class TestClone:
             workdir = pathlib.Path(tmp)
             funcs.run_repobee(
                 f"repos clone --mn {TEMPLATE_REPOS_ARG} "
-                f"--students-file {STUDENTS_FILE} "
-                f"--base-url {platform_url} "
-                f"--user {TEACHER} "
-                f"--org-name {TARGET_ORG_NAME} ",
+                f"--base-url {platform_url}",
                 workdir=workdir,
             )
             assert_cloned_student_repos_match_templates(
@@ -150,11 +131,7 @@ class TestClone:
         with tempfile.TemporaryDirectory() as tmp:
             workdir = pathlib.Path(tmp)
             funcs.run_repobee(
-                f"repos clone --discover-repos "
-                f"--students-file {STUDENTS_FILE} "
-                f"--base-url {platform_url} "
-                f"--user {TEACHER} "
-                f"--org-name {TARGET_ORG_NAME}",
+                f"repos clone --discover-repos " f"--base-url {platform_url} ",
                 workdir=workdir,
             )
             assert_cloned_student_repos_match_templates(
