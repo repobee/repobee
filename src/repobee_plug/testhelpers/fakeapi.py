@@ -86,11 +86,19 @@ class Team:
         for user in users:
             self.members.add(user)
 
-    def to_plug_team(self) -> plug.Team:
+    def to_plug_team(
+        self, include_repos=False, include_issues=None
+    ) -> plug.Team:
+        repos = (
+            [repo.to_plug_repo(include_issues) for repo in self.repos]
+            if include_repos
+            else None
+        )
         return plug.Team(
             name=self.name,
             members=[mem.username for mem in self.members],
             id=self.id,
+            repos=repos,
             implementation=self,
         )
 
@@ -180,7 +188,7 @@ class FakeAPI(plug.API):
     ) -> Iterable[plug.Team]:
         team_names = set(team_names or [])
         return [
-            team.to_plug_team()
+            team.to_plug_team(include_repos, include_issues)
             for team in self._teams[self._org_name].values()
             if not team_names or team.name in team_names
         ]

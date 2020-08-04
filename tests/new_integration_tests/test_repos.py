@@ -154,7 +154,8 @@ class TestClone:
                 f"--students-file {STUDENTS_FILE} "
                 f"--base-url {platform_url} "
                 f"--user {TEACHER} "
-                f"--org-name {TARGET_ORG_NAME}"
+                f"--org-name {TARGET_ORG_NAME}",
+                workdir=workdir,
             )
             assert_cloned_student_repos_match_templates(
                 STUDENT_TEAMS, TEMPLATE_REPO_NAMES, workdir
