@@ -42,14 +42,14 @@ assert os.getenv(
 @pytest.fixture(autouse=True, scope="session")
 def setup_gitlab_instance():
     """Perform first-time setup of the GitLab instance."""
-    gitlabmanager.setup()
+    # gitlabmanager.setup()
 
 
 @pytest.fixture(autouse=True, scope="session")
 def teardown_gitlab_instance():
     """Teardown the GitLab instance after all tests have finished."""
     yield
-    gitlabmanager.teardown()
+    # gitlabmanager.teardown()
 
 
 @pytest.fixture(autouse=True)

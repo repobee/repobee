@@ -154,7 +154,7 @@ def _process_args(
 
     repos = master_names = master_urls = None
     if "discover_repos" in args and args.discover_repos:
-        teams = api.get_teams_(
+        teams = api.get_teams(
             [t.name for t in args.students], include_repos=True
         )
         repos = itertools.chain.from_iterable(team.repos for team in teams)

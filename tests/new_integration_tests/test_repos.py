@@ -145,3 +145,17 @@ class TestClone:
             assert_cloned_student_repos_match_templates(
                 STUDENT_TEAMS, TEMPLATE_REPO_NAMES, workdir
             )
+
+    def test_clone_discover_repos(self, platform_url, with_student_repos):
+        with tempfile.TemporaryDirectory() as tmp:
+            workdir = pathlib.Path(tmp)
+            funcs.run_repobee(
+                f"repos clone --discover-repos "
+                f"--students-file {STUDENTS_FILE} "
+                f"--base-url {platform_url} "
+                f"--user {TEACHER} "
+                f"--org-name {TARGET_ORG_NAME}"
+            )
+            assert_cloned_student_repos_match_templates(
+                STUDENT_TEAMS, TEMPLATE_REPO_NAMES, workdir
+            )

@@ -226,7 +226,7 @@ class GitHubAPI(plug.API):
 
                 raise
 
-    def get_teams_(
+    def get_teams(
         self,
         team_names: Optional[List[str]] = None,
         include_repos: bool = False,

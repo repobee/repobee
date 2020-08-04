@@ -205,7 +205,7 @@ class APISpec:
     ) -> Repo:
         _not_implemented()
 
-    def get_teams_(
+    def get_teams(
         self,
         team_names: Optional[List[str]] = None,
         include_repos: bool = False,

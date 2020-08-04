@@ -56,7 +56,7 @@ def assign_peer_reviews(
     issue = issue or DEFAULT_REVIEW_ISSUE
     expected_repo_names = plug.generate_repo_names(teams, master_repo_names)
 
-    fetched_teams = api.get_teams_([t.name for t in teams], include_repos=True)
+    fetched_teams = api.get_teams([t.name for t in teams], include_repos=True)
     fetched_repos = list(
         itertools.chain.from_iterable([t.repos for t in fetched_teams])
     )
@@ -128,7 +128,7 @@ def purge_review_teams(
         for student in students
         for master_repo_name in master_repo_names
     ]
-    teams = api.get_teams_(review_team_names)
+    teams = api.get_teams(review_team_names)
     for team in teams:
         api.delete_team(team)
         LOGGER.info(f"Deleted {team.name}")
@@ -162,7 +162,7 @@ def check_peer_review_progress(
         for master_name in master_repo_names
     ]
 
-    for review_team in api.get_teams_(
+    for review_team in api.get_teams(
         review_team_names,
         include_repos=True,
         include_issues=plug.IssueState.ALL,

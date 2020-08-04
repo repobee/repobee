@@ -131,6 +131,11 @@ class FakeAPI(plug.API):
         )
         return team.implementation.to_plug_team()
 
+    def assign_repo(
+        self, team: plug.Team, repo: plug.Repo, permission: plug.TeamPermission
+    ) -> None:
+        team.implementation.repos.add(repo)
+
     def create_repo(
         self,
         name: str,

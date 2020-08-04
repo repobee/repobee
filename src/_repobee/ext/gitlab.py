@@ -184,7 +184,7 @@ class GitLabAPI(plug.API):
 
         return self._wrap_project(project)
 
-    def get_teams_(
+    def get_teams(
         self,
         team_names: Optional[List[str]] = None,
         include_repos: bool = False,
