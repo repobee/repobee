@@ -82,7 +82,13 @@ def generate_repo_url(name):
     return generate_team_repo_url(name, "d")[:-2]
 
 
-def get_repo_urls_fake(self, master_repo_names, org_name=None, teams=None):
+def get_repo_urls_fake(
+    self,
+    master_repo_names,
+    org_name=None,
+    teams=None,
+    insert_auth: bool = False,
+):
     return list(
         map(
             generate_repo_url,
