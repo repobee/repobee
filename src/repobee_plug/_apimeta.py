@@ -154,7 +154,6 @@ class Repo(APIObject):
         name: str,
         description: str,
         private: bool,
-        team_id: Optional[Any] = None,
         url: Optional[str] = None,
         issues: Optional[Iterable[Issue]] = None,
         implementation: Optional[Any] = None,
@@ -163,7 +162,6 @@ class Repo(APIObject):
         self.name = name
         self.description = description
         self.private = private
-        self.team_id = team_id
         self.url = url
         self.issues = issues
         self.implementation = implementation

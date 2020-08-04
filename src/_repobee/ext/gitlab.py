@@ -308,7 +308,6 @@ class GitLabAPI(plug.API):
             name=project.path,
             description=project.description,
             private=project.visibility == "private",
-            team_id=None,  # FIXME must find namespace id
             url=project.attributes["http_url_to_repo"],
             implementation=project,
             issues=issues,

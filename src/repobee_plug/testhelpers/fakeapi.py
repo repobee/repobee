@@ -12,7 +12,7 @@ import collections
 import git
 import pickle
 import datetime
-from typing import List, Iterable, Any, Optional, Tuple
+from typing import List, Iterable, Optional, Tuple
 
 import repobee_plug as plug
 
@@ -54,7 +54,6 @@ class Repo:
         self,
         name: str,
         description: str,
-        team_id: Any,
         url: str,
         private: bool,
         path: pathlib.Path,
@@ -62,7 +61,6 @@ class Repo:
         self.name = name
         self.description = description
         self.url = url
-        self.team_id = team_id
         self.private = private
         self.issues = []
         self.path = path
@@ -77,7 +75,6 @@ class Repo:
             name=self.name,
             description=self.description,
             private=self.private,
-            team_id=self.team_id,
             url=self.url,
             issues=issues,
             implementation=self,
@@ -161,7 +158,7 @@ class FakeAPI(plug.API):
         assert not team or team.implementation
 
         repo_bucket = self._repos.setdefault(self._org_name, {})
-        team_id = self._get_team(team.id).id if team else None
+
         if name not in repo_bucket:
             repo_path = self._repodir / self._org_name / name
             repo_path.mkdir(parents=True, exist_ok=True)
@@ -172,12 +169,16 @@ class FakeAPI(plug.API):
                 url=repo_path.as_uri(),
                 # call self._get_team to ensure that the team
                 # actually exists
-                team_id=self._get_team(team_id).id,
                 private=private,
                 path=repo_path,
             )
 
-        return self._repos[self._org_name][name].to_plug_repo()
+        repo = repo_bucket[name]
+
+        if team:
+            self._get_team(team.id).repos.append(repo)
+
+        return repo.to_plug_repo()
 
     def get_teams_(
         self,

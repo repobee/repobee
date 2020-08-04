@@ -217,12 +217,12 @@ class GitHubAPI(plug.API):
         with _try_api_request():
             try:
                 repo = self._org.create_repo(name, **kwargs)
-                return self._wrap_repo(repo, team=team_impl)
+                return self._wrap_repo(repo)
             except github.GithubException as exc:
                 if exc.status == 422 and team_impl:
                     repo = self._org.get_repo(name)
                     team_impl.add_to_repos(repo)
-                    return self._wrap_repo(repo, team=team_impl)
+                    return self._wrap_repo(repo)
 
                 raise
 
@@ -283,7 +283,7 @@ class GitHubAPI(plug.API):
 
         repos = (
             [
-                self._wrap_repo(repo, include_issues=include_issues, team=team)
+                self._wrap_repo(repo, include_issues=include_issues)
                 for repo in team.get_repos()
             ]
             if include_repos
@@ -301,7 +301,6 @@ class GitHubAPI(plug.API):
         self,
         repo: _Repo,
         include_issues: Optional[plug.TeamPermission] = None,
-        team: Optional[_Team] = None,
     ) -> plug.Repo:
         issues = (
             [
@@ -317,23 +316,10 @@ class GitHubAPI(plug.API):
             name=repo.name,
             description=repo.description,
             private=repo.private,
-            team_id=self._resolve_team_id(repo, team),
             url=repo.html_url,
             issues=issues,
             implementation=repo,
         )
-
-    def _resolve_team_id(
-        self, repo: _Repo, team: Optional[_Team]
-    ) -> Optional[int]:
-        if team:
-            return team.id
-
-        with _try_api_request():
-            for team in repo.get_teams():
-                return team.id
-
-        return None
 
     def _wrap_issue(self, issue: github.Issue.Issue) -> plug.Issue:
         return plug.Issue(
