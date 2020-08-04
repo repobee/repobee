@@ -21,7 +21,7 @@ NotImplementedError) for any unimplemented API methods.
 import inspect
 import enum
 import itertools
-from typing import List, Iterable, Optional, Tuple, Any
+from typing import List, Iterable, Optional, Any
 
 from repobee_plug import _exceptions
 
@@ -193,7 +193,7 @@ class APISpec:
         team: Team,
         members: List[str],
         permission: TeamPermission = TeamPermission.PUSH,
-    ) -> Team:
+    ) -> None:
         _not_implemented()
 
     def create_repo(
@@ -234,10 +234,10 @@ class APISpec:
         body: str,
         repo: Repo,
         assignees: Optional[str] = None,
-    ) -> Tuple[Repo, Issue]:
+    ) -> Issue:
         _not_implemented()
 
-    def close_issue(self, issue: Issue) -> Issue:
+    def close_issue(self, issue: Issue) -> None:
         _not_implemented()
 
     def delete_team(self, team: Team) -> None:

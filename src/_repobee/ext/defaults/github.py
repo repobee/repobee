@@ -11,7 +11,7 @@ GitHubAPI are mostly high-level bulk operations.
 .. moduleauthor:: Simon Larsén
 """
 import pathlib
-from typing import List, Iterable, Optional, Generator, Tuple
+from typing import List, Iterable, Optional, Generator
 from socket import gaierror
 import contextlib
 
@@ -262,13 +262,13 @@ class GitHubAPI(plug.API):
         body: str,
         repo: plug.Repo,
         assignees: Optional[str] = None,
-    ) -> Tuple[plug.Repo, plug.Issue]:
+    ) -> plug.Issue:
         repo_impl: github.Repository.Repository = repo.implementation
-        repo_impl.create_issue(title, body=body, assignees=assignees)
+        issue = repo_impl.create_issue(title, body=body, assignees=assignees)
+        return self._wrap_issue(issue)
 
-    def close_issue(self, issue: plug.Issue) -> plug.Issue:
+    def close_issue(self, issue: plug.Issue) -> None:
         issue.implementation.edit(state="closed")
-        return self._wrap_issue(issue.implementation)
 
     def delete_team(self, team: plug.Team) -> None:
         team.implementation.delete()

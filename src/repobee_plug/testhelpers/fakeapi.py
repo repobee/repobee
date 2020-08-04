@@ -13,7 +13,7 @@ import pickle
 import datetime
 import dataclasses
 
-from typing import List, Iterable, Optional, Tuple, Set
+from typing import List, Iterable, Optional, Set
 
 import repobee_plug as plug
 
@@ -128,20 +128,20 @@ class FakeAPI(plug.API):
             name,
             Team(name=name, members=set(), permission=permission, id=name),
         )
-        return self.assign_members(
+        self.assign_members(
             stored_team.to_plug_team(), members or [], permission
         )
+        return stored_team.to_plug_team()
 
     def assign_members(
         self,
         team: plug.Team,
         members: List[str],
         permission: plug.TeamPermission = plug.TeamPermission.PUSH,
-    ) -> plug.Team:
+    ) -> None:
         team.implementation.add_members(
             [self._get_user(m) for m in members or []]
         )
-        return team.implementation.to_plug_team()
 
     def assign_repo(
         self, team: plug.Team, repo: plug.Repo, permission: plug.TeamPermission
@@ -216,7 +216,7 @@ class FakeAPI(plug.API):
         body: str,
         repo: plug.Repo,
         assignees: Optional[str] = None,
-    ) -> Tuple[Repo, Issue]:
+    ) -> plug.Issue:
         assignees = {
             self._get_user(assignee) for assignee in (assignees or [])
         }
@@ -231,11 +231,10 @@ class FakeAPI(plug.API):
             assignees=assignees,
         )
         repo.implementation.issues.append(issue)
-        return repo.implementation.to_plug_repo(), issue.to_plug_issue()
+        return issue.to_plug_issue()
 
-    def close_issue(self, issue: Issue) -> Issue:
+    def close_issue(self, issue: Issue) -> None:
         issue.implementation.state = plug.IssueState.CLOSED
-        return issue.implementation.to_plug_issue()
 
     def delete_team(self, team: plug.Team) -> None:
         del self._teams[self._org_name][team.implementation.name]

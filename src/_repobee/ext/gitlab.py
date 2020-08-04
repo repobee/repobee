@@ -14,7 +14,7 @@ import os
 import collections
 import contextlib
 import pathlib
-from typing import List, Iterable, Optional, Generator, Tuple
+from typing import List, Iterable, Optional, Generator
 
 import daiquiri
 import gitlab
@@ -112,7 +112,6 @@ class GitLabAPI(plug.API):
             self._actual_user = self._gitlab.user.username
             self._group = self._get_organization(self._group_name)
 
-    # START EXPERIMENTAL API
     def create_team(
         self,
         name: str,
@@ -126,14 +125,15 @@ class GitLabAPI(plug.API):
                 )
             )
 
-        return self.assign_members(team, members or [], permission)
+        self.assign_members(team, members or [], permission)
+        return self._wrap_group(team.implementation)
 
     def assign_members(
         self,
         team: plug.Team,
         members: List[str],
         permission: plug.TeamPermission = plug.TeamPermission.PUSH,
-    ) -> plug.Team:
+    ) -> None:
         assert team.implementation
         raw_permission = _TEAM_PERMISSION_MAPPING[permission]
         group = team.implementation
@@ -143,8 +143,6 @@ class GitLabAPI(plug.API):
                 group.members.create(
                     {"user_id": user.id, "access_level": raw_permission}
                 )
-
-        return self._wrap_group(group)
 
     def assign_repo(
         self, team: plug.Team, repo: plug.Repo, permission: plug.TeamPermission
@@ -233,25 +231,19 @@ class GitLabAPI(plug.API):
         body: str,
         repo: plug.Repo,
         assignees: Optional[str] = None,
-    ) -> Tuple[plug.Repo, plug.Issue]:
+    ) -> plug.Issue:
         project = repo.implementation
         member_ids = [user.id for user in self._get_users(assignees or [])]
         issue = project.issues.create(
             dict(title=title, description=body, assignee_ids=member_ids),
         )
-        return (
-            self._wrap_project(
-                repo.implementation, include_issues=plug.IssueState.ALL
-            ),
-            self._wrap_issue(issue),
-        )
+        return self._wrap_issue(issue)
 
-    def close_issue(self, issue: plug.Issue) -> plug.Issue:
+    def close_issue(self, issue: plug.Issue) -> None:
         assert issue.implementation
         issue_impl = issue.implementation
         issue_impl.state_event = "close"
         issue_impl.save()
-        return self._wrap_issue(issue_impl)
 
     def delete_team(self, team: plug.Team) -> None:
         team.implementation.delete()
@@ -312,8 +304,6 @@ class GitLabAPI(plug.API):
             implementation=project,
             issues=issues,
         )
-
-    # END EXPERIMENTAL API
 
     @staticmethod
     def _ssl_verify():

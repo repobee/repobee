@@ -39,15 +39,19 @@ def hash_directory(dirpath: pathlib.Path) -> str:
 
 
 def run_repobee(cmd: str, **kwargs) -> Mapping[str, List[Result]]:
-    """Helper function to call :py:class:`repobee.run`.
+    """Helper function to call :py:class:`repobee.run` when using the
+    :py:class:`fakeapi.FakeAPI` platform API.
 
     This function will by default use a config file that sets appropriate
     values for ``students_file``, ``user``, ``org_name`` and
     ``master_org_name`` for use with the :py:class:`~fakeapi.FakeAPI` platform
-    API. It will also always load the :py:class:`~fakeapi.FakeAPI` plugin
-    last, so it is the only platform API that can be used.
+    API. If you wish to use a different config, simply pass
+    ``config_file="/path/to/your/config"`` to the function, or
+    ``config_file=""`` to not use a config file at all.
 
-    If you require more control, use :py:func:`repobee.run` instead.
+    The :py:class:`~fakeapi.FakeAPI` plugin is always loaded last, so it is the
+    not possible to use another platform API with this function. If you wish
+    to do so, you should use :py:class`repobee.run` directly instead.
 
     Args:
         cmd: A string with a RepoBee command.
@@ -55,21 +59,27 @@ def run_repobee(cmd: str, **kwargs) -> Mapping[str, List[Result]]:
     Returns:
         The results mapping returned by :py:func:`repobee.run`
     """
+    kwargs = dict(kwargs)  # copy to not mutate input
     plugins = (kwargs.get("plugins") or []) + [fakeapi]
     kwargs["plugins"] = plugins
+
+    students_file = (
+        pathlib.Path(__file__).parent / "resources" / "students.txt"
+    )
 
     with tempfile.NamedTemporaryFile() as tmp:
         config_file = pathlib.Path(tmp.name)
         config_file.write_text(
             f"""[repobee]
-students_file = {pathlib.Path(__file__).parent / "resources" / "students.txt"}
+students_file = {students_file}
 org_name = {const.TARGET_ORG_NAME}
 user = {const.TEACHER}
 master_org_name = {const.TEMPLATE_ORG_NAME}
 """
         )
+        kwargs.setdefault("config_file", config_file)
 
-        return repobee.run(cmd.split(), config_file=config_file, **kwargs)
+        return repobee.run(cmd.split(), **kwargs)
 
 
 def template_repo_hashes() -> Mapping[str, str]:

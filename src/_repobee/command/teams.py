@@ -25,10 +25,9 @@ def create_teams(
         if existing_team:
             existing_members = set(existing_team.members)
             new_members = set(required_team.members) - existing_members
-            updated_team = api.assign_members(
-                existing_team, new_members, permission
-            )
-            yield updated_team
+            api.assign_members(existing_team, new_members, permission)
+            # TODO yield refreshed team
+            yield existing_team
         else:
             new_team = api.create_team(
                 required_team.name, required_team.members, permission

@@ -196,7 +196,7 @@ def open_issue(
     repo_names = plug.generate_repo_names(teams, master_repo_names)
     repos = api.get_repos(repo_names)
     for repo in repos:
-        _, issue = api.create_issue(issue.title, issue.body, repo)
+        issue = api.create_issue(issue.title, issue.body, repo)
         LOGGER.info(
             f"Opened issue {repo.name}/#{issue.number}-'{issue.title}'"
         )
