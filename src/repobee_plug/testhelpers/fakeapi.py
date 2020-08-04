@@ -12,7 +12,9 @@ import collections
 import git
 import pickle
 import datetime
-from typing import List, Iterable, Optional, Tuple
+import dataclasses
+
+from typing import List, Iterable, Optional, Tuple, Set
 
 import repobee_plug as plug
 
@@ -21,22 +23,14 @@ TIME = datetime.datetime.now().isoformat()
 _User = collections.namedtuple("_User", "username")
 
 
+@dataclasses.dataclass(frozen=True)
 class Issue:
-    def __init__(
-        self,
-        title: str,
-        body: str,
-        number: int,
-        created_at: str,
-        author: str,
-        state: plug.IssueState,
-    ):
-        self.title = title
-        self.body = body
-        self.number = number
-        self.created_at = created_at
-        self.author = author
-        self.state = state
+    title: str
+    body: str
+    number: int
+    created_at: str
+    author: str
+    state: plug.IssueState
 
     def to_plug_issue(self):
         return plug.Issue(
@@ -49,21 +43,14 @@ class Issue:
         )
 
 
+@dataclasses.dataclass(frozen=True)
 class Repo:
-    def __init__(
-        self,
-        name: str,
-        description: str,
-        url: str,
-        private: bool,
-        path: pathlib.Path,
-    ):
-        self.name = name
-        self.description = description
-        self.url = url
-        self.private = private
-        self.issues = []
-        self.path = path
+    name: str
+    description: str
+    url: str
+    private: bool
+    path: pathlib.Path
+    issues: List[Issue] = dataclasses.field(default_factory=list)
 
     def to_plug_repo(self, include_issues=None) -> plug.Repo:
         issues = [
@@ -80,21 +67,17 @@ class Repo:
             implementation=self,
         )
 
+    def __hash__(self):
+        return hash(self.name)
 
+
+@dataclasses.dataclass(frozen=True)
 class Team:
-    def __init__(
-        self,
-        name: str,
-        members: List[_User],
-        permission: plug.TeamPermission,
-        id: str,
-        repos: List[Repo] = None,
-    ):
-        self.name = name
-        self.members = members
-        self.permission = permission
-        self.repos = repos or []
-        self.id = id
+    name: str
+    members: List[_User]
+    permission: plug.TeamPermission
+    id: str
+    repos: Set[Repo] = dataclasses.field(default_factory=set)
 
     def add_members(self, users: List[_User]) -> None:
         self.members = list(set(self.members) | set(users))
@@ -180,7 +163,7 @@ class FakeAPI(plug.API):
 
         return repo.to_plug_repo()
 
-    def get_teams_(
+    def get_teams(
         self,
         team_names: Optional[List[str]] = None,
         include_repos: bool = False,

@@ -45,6 +45,7 @@ required = [
     "colored",
     "python-gitlab==2.4.0",
     "pluggy>=0.13.1",
+    "dataclasses>='0.7';python_version<'3.7'",
 ]
 
 setup(
