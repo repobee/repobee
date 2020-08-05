@@ -5,8 +5,10 @@ tooling.
 
     This plugin should only be used when using an installed version of RepoBee.
 """
+import logging
 import json
 import subprocess
+import sys
 import textwrap
 
 import tabulate
@@ -35,7 +37,7 @@ class ListPluginsCommand(plug.Plugin, plug.cli.Command):
 
     def command(self, api: None) -> None:
         """List available plugins."""
-        plugins = json.loads(disthelpers.get_plugins_json_path().read_text())
+        plugins = disthelpers.get_plugins_json()
         installed_plugins = json.loads(
             disthelpers.get_installed_plugins_path().read_text()
         )
@@ -57,7 +59,7 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
 
     def command(self, api: None) -> None:
         """Install a plugin."""
-        plugins = json.loads(disthelpers.get_plugins_json_path().read_text())
+        plugins = disthelpers.get_plugins_json()
         installed_plugins_path = disthelpers.get_installed_plugins_path()
         installed_plugins = json.loads(installed_plugins_path.read_text())
 
@@ -79,18 +81,27 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
 
         install_url = f"git+{selected_plugin_attrs['url']}@{selected_version}"
 
+        plug.echo(f"Installing {selected_plugin_name}@{selected_version}")
         cmd = [
             str(disthelpers.get_pip_path()),
             "install",
             "--upgrade",
             install_url,
         ]
-        proc = subprocess.run(cmd)
+        proc = subprocess.run(cmd, capture_output=True)
 
         if proc.returncode != 0:
+            plug.log(
+                proc.stderr.decode(sys.getdefaultencoding()),
+                level=logging.ERROR,
+            )
             raise plug.PlugError(
                 f"could not install {selected_plugin_name} {selected_version}"
             )
+
+        plug.echo(
+            f"Successfully installed {selected_plugin_name}@{selected_version}"
+        )
 
         installed_plugins[selected_plugin_name] = dict(
             version=selected_version
@@ -118,16 +129,23 @@ class UninstallPluginCommand(plug.Plugin, plug.cli.Command):
             choices=list(installed_plugins.keys()),
         ).launch()
 
+        plug.echo(f"Uninstalling {selected_plugin_name} ...")
         cmd = [
             str(disthelpers.get_pip_path()),
             "uninstall",
             "-y",
             f"repobee-{selected_plugin_name}",
         ]
-        proc = subprocess.run(cmd)
+        proc = subprocess.run(cmd, capture_output=True)
 
         if proc.returncode != 0:
+            plug.log(
+                proc.stderr.decode(sys.getdefaultencoding()),
+                level=logging.ERROR,
+            )
             raise plug.PlugError(f"could not uninstall {selected_plugin_name}")
+
+        plug.echo(f"Successfully uninstalled {selected_plugin_name}")
 
         del installed_plugins[selected_plugin_name]
         installed_plugins_path.write_text(json.dumps(installed_plugins))
