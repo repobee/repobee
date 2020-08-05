@@ -7,6 +7,7 @@ REPOBEE_HTTPS_URL="https://github.com/slarse/repobee"
 REPOBEE_EXECUTABLE="$REPOBEE_BIN_DIR/repobee"
 REPOBEE_VERSION="v3.0.0-alpha.3"
 REPOBEE_PIP_URL="git+$REPOBEE_HTTPS_URL.git@$REPOBEE_VERSION"
+REPOBEE_INSTALLED_PLUGINS="$REPOBEE_INSTALL_DIR/installed_plugins.json"
 
 VENV_DIR="$REPOBEE_INSTALL_DIR/env"
 REPOBEE_PIP="$VENV_DIR/bin/pip"
@@ -64,6 +65,10 @@ function install_repobee() {
     echo "Installing RepoBee $REPOBEE_VERSION"
     REPOBEE_INSTALL_DIR="$REPOBEE_INSTALL_DIR" pip_install_quiet_failfast "$REPOBEE_PIP_URL"
     create_repobee_executable
+
+    if [ ! -f "$REPOBEE_INSTALLED_PLUGINS" ]; then
+        echo "{}" > "$REPOBEE_INSTALLED_PLUGINS"
+    fi
 
     echo "Checking PATH"
     pip_install_quiet_failfast userpath
