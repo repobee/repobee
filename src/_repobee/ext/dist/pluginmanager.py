@@ -31,7 +31,12 @@ plugin_category = plug.cli.category(
 class ListPluginsCommand(plug.Plugin, plug.cli.Command):
     """Extension command for listing available plugins."""
 
-    __settings__ = plug.cli.command_settings(action=plugin_category.list)
+    __settings__ = plug.cli.command_settings(
+        action=plugin_category.list,
+        help="list available plugins",
+        description="List available plugins. Available plugins are fetched "
+        "from https://repobee.org.",
+    )
 
     plugin_name = plug.cli.option(help="A plugin to list detailed info for.")
 
