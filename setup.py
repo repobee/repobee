@@ -40,11 +40,13 @@ docs_requirements = [
 ]
 required = [
     "appdirs",
-    "daiquiri",
-    "pygithub",
+    "bullet",
     "colored",
-    "python-gitlab==2.4.0",
+    "daiquiri",
     "pluggy>=0.13.1",
+    "pygithub",
+    "python-gitlab==2.4.0",
+    "tabulate",
 ]
 
 setup(

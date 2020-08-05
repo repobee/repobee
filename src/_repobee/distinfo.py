@@ -6,5 +6,7 @@ RepoBee.
 import pathlib
 import typing
 
-DIST_INSTALL: bool = False
-INSTALL_DIR: typing.Optional[pathlib.Path] = None
+DIST_INSTALL: bool = True
+INSTALL_DIR: typing.Optional[pathlib.Path] = pathlib.Path(
+    "/home/slarse/.repobee"
+)
