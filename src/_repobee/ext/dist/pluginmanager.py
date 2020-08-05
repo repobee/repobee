@@ -127,6 +127,11 @@ class UninstallPluginCommand(plug.Plugin, plug.cli.Command):
         """Uninstall a plugin."""
         installed_plugins_path = disthelpers.get_installed_plugins_path()
         installed_plugins = json.loads(installed_plugins_path.read_text())
+
+        if not installed_plugins:
+            plug.echo("No plugins installed")
+            return
+
         list_installed_plugins(installed_plugins)
 
         selected_plugin_name = bullet.Bullet(
