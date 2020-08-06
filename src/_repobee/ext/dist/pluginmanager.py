@@ -10,6 +10,8 @@ import subprocess
 import sys
 import textwrap
 
+from typing import Tuple
+
 import tabulate
 import bullet
 
@@ -69,45 +71,49 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
 
         plug.echo("Available plugins:")
         _list_all_plugins(plugins, installed_plugins)
+        name, version = _select_plugin(plugins)
 
-        selected_plugin_name = bullet.Bullet(
-            prompt="Select a plugin to install:", choices=list(plugins.keys())
-        ).launch()
+        plug.echo(f"Installing {name}@{version}")
+        _install_plugin(name, version, plugins)
 
-        selected_plugin_attrs = plugins[selected_plugin_name]
+        plug.echo(f"Successfully installed {name}@{version}")
 
-        _list_plugin(selected_plugin_name, plugins)
-
-        selected_version = bullet.Bullet(
-            prompt="Select a version to install:",
-            choices=list(selected_plugin_attrs["versions"].keys()),
-        ).launch()
-
-        install_url = f"git+{selected_plugin_attrs['url']}@{selected_version}"
-
-        plug.echo(f"Installing {selected_plugin_name}@{selected_version}")
-        cmd = [
-            str(disthelpers.get_pip_path()),
-            "install",
-            "--upgrade",
-            install_url,
-        ]
-        proc = subprocess.run(cmd, capture_output=True)
-
-        if proc.returncode != 0:
-            plug.log.error(proc.stderr.decode(sys.getdefaultencoding()))
-            raise plug.PlugError(
-                f"could not install {selected_plugin_name} {selected_version}"
-            )
-
-        plug.echo(
-            f"Successfully installed {selected_plugin_name}@{selected_version}"
-        )
-
-        installed_plugins[selected_plugin_name] = dict(
-            version=selected_version
-        )
+        installed_plugins[name] = dict(version=version)
         installed_plugins_path.write_text(json.dumps(installed_plugins))
+
+
+def _select_plugin(plugins: dict) -> Tuple[str, str]:
+    """Interactively select a plugin."""
+    selected_plugin_name = bullet.Bullet(
+        prompt="Select a plugin to install:", choices=list(plugins.keys())
+    ).launch()
+
+    selected_plugin_attrs = plugins[selected_plugin_name]
+
+    _list_plugin(selected_plugin_name, plugins)
+
+    selected_version = bullet.Bullet(
+        prompt="Select a version to install:",
+        choices=list(selected_plugin_attrs["versions"].keys()),
+    ).launch()
+
+    return selected_plugin_name, selected_version
+
+
+def _install_plugin(name: str, version: str, plugins: dict) -> None:
+    install_url = f"git+{plugins[name]['url']}@{version}"
+
+    cmd = [
+        str(disthelpers.get_pip_path()),
+        "install",
+        "--upgrade",
+        install_url,
+    ]
+    proc = subprocess.run(cmd, capture_output=True)
+
+    if proc.returncode != 0:
+        plug.log.error(proc.stderr.decode(sys.getdefaultencoding()))
+        raise plug.PlugError(f"could not install {name} {version}")
 
 
 class UninstallPluginCommand(plug.Plugin, plug.cli.Command):
@@ -128,6 +134,7 @@ class UninstallPluginCommand(plug.Plugin, plug.cli.Command):
             plug.echo("No plugins installed")
             return
 
+        plug.echo("Installed plugins:")
         _list_installed_plugins(installed_plugins)
 
         selected_plugin_name = bullet.Bullet(
@@ -136,22 +143,25 @@ class UninstallPluginCommand(plug.Plugin, plug.cli.Command):
         ).launch()
 
         plug.echo(f"Uninstalling {selected_plugin_name} ...")
-        cmd = [
-            str(disthelpers.get_pip_path()),
-            "uninstall",
-            "-y",
-            f"repobee-{selected_plugin_name}",
-        ]
-        proc = subprocess.run(cmd, capture_output=True)
-
-        if proc.returncode != 0:
-            plug.log.error(proc.stderr.decode(sys.getdefaultencoding()))
-            raise plug.PlugError(f"could not uninstall {selected_plugin_name}")
 
         plug.echo(f"Successfully uninstalled {selected_plugin_name}")
 
         del installed_plugins[selected_plugin_name]
         installed_plugins_path.write_text(json.dumps(installed_plugins))
+
+
+def _uninstall_plugin(plugin_name: str) -> None:
+    cmd = [
+        str(disthelpers.get_pip_path()),
+        "uninstall",
+        "-y",
+        f"repobee-{plugin_name}",
+    ]
+    proc = subprocess.run(cmd, capture_output=True)
+
+    if proc.returncode != 0:
+        plug.log.error(proc.stderr.decode(sys.getdefaultencoding()))
+        raise plug.PlugError(f"could not uninstall {plugin_name}")
 
 
 def _wrap_cell(text: str, width: int = 40) -> str:
