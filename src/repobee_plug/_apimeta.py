@@ -207,6 +207,61 @@ class APISpec:
         """
         _not_implemented()
 
+    def delete_team(self, team: Team) -> None:
+        """Delete the provided team.
+
+        Args:
+            team: The team to delete.
+        Raises:
+            :py:class:`_exceptions.APIError`: If something goes wrong in
+                communicating with the platform.
+        """
+        _not_implemented()
+
+    def get_teams(
+        self,
+        team_names: Optional[List[str]] = None,
+        include_repos: bool = False,
+        include_issues: Optional[IssueState] = None,
+    ) -> Iterable[Team]:
+        """Get teams from the platform.
+
+        Args:
+            team_names: Team names to filter by. Names that do not exist on the
+                platform are ignored. If ``team_names=None``, all teams are
+                fetched.
+            include_repos: Whether or not to also fetch associated
+                repositories. This results in additional API requests.
+            include_issues: The state of issues to fetch for the associated
+                repos, or ``None`` if no issues should be included. Only makes
+                sense if ``include_repos=True``. This results in additional API
+                requests.
+        Returns:
+            Teams matching the filters.
+        Raises:
+            :py:class:`_exceptions.APIError`: If something goes wrong in
+                communicating with the platform.
+        """
+        _not_implemented()
+
+    def assign_repo(
+        self, team: Team, repo: Repo, permission: TeamPermission,
+    ) -> None:
+        """Assign a repository to a team, granting any members of the team
+        permission to access the repository according to the specified
+        permission.
+
+        Args:
+            team: The team to assign the repository to.
+            repo: The repository to assign to the team.
+            permission: The permission granted to the team's members with
+                respect to accessing the repository.
+        Raises:
+            :py:class:`_exceptions.APIError`: If something goes wrong in
+                communicating with the platform.
+        """
+        _not_implemented()
+
     def assign_members(
         self,
         team: Team,
@@ -253,49 +308,6 @@ class APISpec:
         """
         _not_implemented()
 
-    def get_teams(
-        self,
-        team_names: Optional[List[str]] = None,
-        include_repos: bool = False,
-        include_issues: Optional[IssueState] = None,
-    ) -> Iterable[Team]:
-        """Get teams from the platform.
-
-        Args:
-            team_names: Team names to filter by. Names that do not exist on the
-                platform are ignored. If ``team_names=None``, all teams are
-                fetched.
-            include_repos: Whether or not to also fetch associated
-                repositories. This results in additional API requests.
-            include_issues: Wheter or not to also fetch issues associated with
-                the repositories. Only makes sense if ``include_repos=True``.
-                This results in additional API requests.
-        Returns:
-            Teams matching the filters.
-        Raises:
-            :py:class:`_exceptions.APIError`: If something goes wrong in
-                communicating with the platform.
-        """
-        _not_implemented()
-
-    def assign_repo(
-        self, team: Team, repo: Repo, permission: TeamPermission,
-    ) -> None:
-        """Assign a repository to a team, granting any members of the team
-        permission to access the repository according to the specified
-        permission.
-
-        Args:
-            team: The team to assign the repository to.
-            repo: The repository to assign to the team.
-            permission: The permission granted to the team's members with
-                respect to accessing the repository.
-        Raises:
-            :py:class:`_exceptions.APIError`: If something goes wrong in
-                communicating with the platform.
-        """
-        _not_implemented()
-
     def get_repos(
         self,
         repo_names: Optional[List[str]] = None,
@@ -307,8 +319,10 @@ class APISpec:
             repo_names: Repository names to filter the results by. Names that
                 do not exist on the platform are ignored. If
                 ``repo_names=None``, all repos are fetched.
-            include_issues: Whether or not to also fetch associated issues.
-                This results in additional API requests.
+            include_issues: The state of issues to fetch, or ``None`` if no
+                issues should be included. Only makes sense if
+                ``include_repos=True``. This results in additional API
+                requests.
         Returns:
             Repositories matching the filters.
         Raises:
@@ -329,8 +343,10 @@ class APISpec:
             repo_name: Name of the repository to fetch.
             team_name: Name of the team that owns the repository. If ``None``,
                 the repository is assumed to belong to the target organization.
-            include_issues: Whether or not to also fetch associated issues.
-                This results in additional API requests.
+            include_issues: The state of issues to fetch, or ``None`` if no
+                issues should be included. Only makes sense if
+                ``include_repos=True``. This results in additional API
+                requests.
         Returns:
             The fetched repository.
         Raises:
@@ -383,11 +399,43 @@ class APISpec:
         """
         _not_implemented()
 
-    def delete_team(self, team: Team) -> None:
-        """Delete the provided team.
+    def refresh_repo(
+        self, repo: Repo, include_issues: Optional[IssueState] = None
+    ) -> Repo:
+        """Refresh a repository by re-fetching information from the platform.
 
         Args:
-            team: The team to delete.
+            repo: A repository to refresh.
+            include_issues: The state of issues to fetch, or ``None`` if no
+                issues should be included. Only makes sense if
+                ``include_repos=True``. This results in additional API
+                requests.
+        Returns:
+            A refreshed version of the provided repository.
+        Raises:
+            :py:class:`_exceptions.APIError`: If something goes wrong in
+                communicating with the platform.
+        """
+        _not_implemented()
+
+    def refresh_team(
+        self,
+        team: Team,
+        include_repos: bool = False,
+        include_issues: Optional[IssueState] = None,
+    ) -> Repo:
+        """Refresh a team by re-fetching information from the platform.
+
+        Args:
+            team: A team to refresh.
+            include_repos: Whether or not to also fetch associated
+                repositories. This results in additional API requests.
+            include_issues: The state of issues to fetch for the associated
+                repos, or ``None`` if no issues should be included. Only makes
+                sense if ``include_repos=True``. This results in additional API
+                requests.
+        Returns:
+            A refreshed version of the provided repository.
         Raises:
             :py:class:`_exceptions.APIError`: If something goes wrong in
                 communicating with the platform.

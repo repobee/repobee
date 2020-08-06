@@ -262,6 +262,21 @@ class FakeAPI(plug.API):
     def delete_team(self, team: plug.Team) -> None:
         del self._teams[self._org_name][team.implementation.name]
 
+    def refresh_team(
+        self,
+        team: plug.Team,
+        include_repos: bool = False,
+        include_issues: Optional[plug.IssueState] = None,
+    ) -> plug.Repo:
+        return team.implementation.to_plug_team(
+            include_repos=include_repos, include_issues=include_issues,
+        )
+
+    def refresh_repo(
+        self, repo: plug.Repo, include_issues: Optional[plug.IssueState] = None
+    ) -> plug.Repo:
+        return repo.implementation.to_plug_repo(include_issues=include_issues)
+
     def get_repo_urls(
         self,
         master_repo_names: Iterable[str],

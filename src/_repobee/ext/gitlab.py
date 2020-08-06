@@ -256,6 +256,25 @@ class GitLabAPI(plug.API):
     def delete_team(self, team: plug.Team) -> None:
         team.implementation.delete()
 
+    def refresh_team(
+        self,
+        team: plug.Team,
+        include_repos: bool = False,
+        include_issues: Optional[plug.IssueState] = None,
+    ) -> plug.Repo:
+        return self._wrap_group(
+            team.implementation,
+            include_repos=include_repos,
+            include_issues=include_issues,
+        )
+
+    def refresh_repo(
+        self, repo: plug.Repo, include_issues: Optional[plug.IssueState] = None
+    ) -> plug.Repo:
+        return self._wrap_project(
+            repo.implementation, include_issues=include_issues
+        )
+
     def _wrap_group(
         self, group, include_repos=False, include_issues=None
     ) -> plug.Team:

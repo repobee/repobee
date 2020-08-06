@@ -277,6 +277,25 @@ class GitHubAPI(plug.API):
     def delete_team(self, team: plug.Team) -> None:
         team.implementation.delete()
 
+    def refresh_team(
+        self,
+        team: plug.Team,
+        include_repos: bool = False,
+        include_issues: Optional[plug.IssueState] = None,
+    ) -> plug.Repo:
+        return self._wrap_team(
+            team.implementation,
+            include_repos=include_repos,
+            include_issues=include_issues,
+        )
+
+    def refresh_repo(
+        self, repo: plug.Repo, include_issues: Optional[plug.IssueState] = None
+    ) -> plug.Repo:
+        return self._wrap_repo(
+            repo.implementation, include_issues=include_issues
+        )
+
     def _wrap_team(
         self,
         team: _Team,

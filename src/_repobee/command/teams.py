@@ -29,5 +29,8 @@ def create_teams(
         existing_members = set(team.members)
         new_members = set(required_team.members) - existing_members
         api.assign_members(team, new_members, permission)
-        # TODO return refreshed team if new_members is non-empty
+
+        if new_members:
+            team = api.refresh_team(team)
+
         yield team
