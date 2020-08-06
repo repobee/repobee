@@ -5,21 +5,56 @@ tooling.
 
     This plugin should only be used when using an installed version of RepoBee.
 """
+import json
 import subprocess
+import sys
+import textwrap
 
-import daiquiri
+from typing import Tuple
+
+import tabulate
+import bullet
+
 import repobee_plug as plug
 
+from _repobee import disthelpers
 
-import _repobee.distinfo
-
-LOGGER = daiquiri.getLogger(__file__)
 PLUGIN = "pluginmanager"
 
-plugin_category = plug.cli.category(name="plugin", action_names=["install"])
+plugin_category = plug.cli.category(
+    name="plugin",
+    action_names=["install", "uninstall", "list"],
+    help="Manage plugins.",
+    description="Manage plugins.",
+)
 
 
-class InstallPluginCommand(plug.Plugin):
+class ListPluginsCommand(plug.Plugin, plug.cli.Command):
+    """Extension command for listing available plugins."""
+
+    __settings__ = plug.cli.command_settings(
+        action=plugin_category.list,
+        help="list available plugins",
+        description="List available plugins. Available plugins are fetched "
+        "from https://repobee.org.",
+    )
+
+    plugin_name = plug.cli.option(help="A plugin to list detailed info for.")
+
+    def command(self, api: None) -> None:
+        """List available plugins."""
+        plugins = disthelpers.get_plugins_json()
+        installed_plugins = json.loads(
+            disthelpers.get_installed_plugins_path().read_text()
+        )
+
+        if not self.plugin_name:
+            _list_all_plugins(plugins, installed_plugins)
+        else:
+            _list_plugin(self.plugin_name, plugins)
+
+
+class InstallPluginCommand(plug.Plugin, plug.cli.Command):
     """Extension command for installing a plugin."""
 
     __settings__ = plug.cli.command_settings(
@@ -28,45 +63,153 @@ class InstallPluginCommand(plug.Plugin):
         description="Install a plugin.",
     )
 
-    version = plug.cli.option(
-        help="The version to install. Should be on the form "
-        "'MAJOR.MINOR.PATCH. Example: '1.2.0'''",
-        converter=str,
-        required=True,
-    )
-    name = plug.cli.option(
-        "--name", help="Name of the plugin.", converter=str, required=True
+    def command(self, api: None) -> None:
+        """Install a plugin."""
+        plugins = disthelpers.get_plugins_json()
+        installed_plugins_path = disthelpers.get_installed_plugins_path()
+        installed_plugins = json.loads(installed_plugins_path.read_text())
+
+        plug.echo("Available plugins:")
+        _list_all_plugins(plugins, installed_plugins)
+        name, version = _select_plugin(plugins)
+
+        plug.echo(f"Installing {name}@{version}")
+        _install_plugin(name, version, plugins)
+
+        plug.echo(f"Successfully installed {name}@{version}")
+
+        installed_plugins[name] = dict(version=version)
+        installed_plugins_path.write_text(json.dumps(installed_plugins))
+
+
+def _select_plugin(plugins: dict) -> Tuple[str, str]:
+    """Interactively select a plugin."""
+    selected_plugin_name = bullet.Bullet(
+        prompt="Select a plugin to install:", choices=list(plugins.keys())
+    ).launch()
+
+    selected_plugin_attrs = plugins[selected_plugin_name]
+
+    _list_plugin(selected_plugin_name, plugins)
+
+    selected_version = bullet.Bullet(
+        prompt="Select a version to install:",
+        choices=list(selected_plugin_attrs["versions"].keys()),
+    ).launch()
+
+    return selected_plugin_name, selected_version
+
+
+def _install_plugin(name: str, version: str, plugins: dict) -> None:
+    install_url = f"git+{plugins[name]['url']}@{version}"
+
+    cmd = [
+        str(disthelpers.get_pip_path()),
+        "install",
+        "--upgrade",
+        install_url,
+    ]
+    proc = subprocess.run(cmd, capture_output=True)
+
+    if proc.returncode != 0:
+        plug.log.error(proc.stderr.decode(sys.getdefaultencoding()))
+        raise plug.PlugError(f"could not install {name} {version}")
+
+
+class UninstallPluginCommand(plug.Plugin, plug.cli.Command):
+    """Extension command for uninstall a plugin."""
+
+    __settings__ = plug.cli.command_settings(
+        action=plugin_category.uninstall,
+        help="Uninstall a plugin.",
+        description="Uninstall a plugin.",
     )
 
     def command(self, api: None) -> None:
-        """Install a plugin."""
-        version = (
-            self.version
-            if self.version.startswith("v")
-            else f"v{self.version}"
-        )
-        plugin_name = (
-            self.name
-            if self.name.startswith("repobee-")
-            else f"repobee-{self.name}"
-        )
-        plugin_url = (
-            f"git+https://github.com/repobee/" f"{plugin_name}.git@{version}"
-        )
-        cmd = [
-            str(_repobee.distinfo.PYTHON_INTERPRETER),
-            "-m",
-            "pip",
-            "install",
-            "--upgrade",
-            plugin_url,
-        ]
-        proc = subprocess.run(cmd)
+        """Uninstall a plugin."""
+        installed_plugins_path = disthelpers.get_installed_plugins_path()
+        installed_plugins = json.loads(installed_plugins_path.read_text())
 
-        if proc.returncode != 0:
-            LOGGER.exception(f"Failed to install {self.name} {self.version}")
-            raise plug.PlugError(
-                f"could not install {self.name} {self.version}"
-            )
+        if not installed_plugins:
+            plug.echo("No plugins installed")
+            return
 
-        LOGGER.info(f"Installed {self.name} {self.version}")
+        plug.echo("Installed plugins:")
+        _list_installed_plugins(installed_plugins)
+
+        selected_plugin_name = bullet.Bullet(
+            prompt="Select a plugin to uninstall:",
+            choices=list(installed_plugins.keys()),
+        ).launch()
+
+        plug.echo(f"Uninstalling {selected_plugin_name} ...")
+
+        plug.echo(f"Successfully uninstalled {selected_plugin_name}")
+
+        del installed_plugins[selected_plugin_name]
+        installed_plugins_path.write_text(json.dumps(installed_plugins))
+
+
+def _uninstall_plugin(plugin_name: str) -> None:
+    cmd = [
+        str(disthelpers.get_pip_path()),
+        "uninstall",
+        "-y",
+        f"repobee-{plugin_name}",
+    ]
+    proc = subprocess.run(cmd, capture_output=True)
+
+    if proc.returncode != 0:
+        plug.log.error(proc.stderr.decode(sys.getdefaultencoding()))
+        raise plug.PlugError(f"could not uninstall {plugin_name}")
+
+
+def _wrap_cell(text: str, width: int = 40) -> str:
+    return "\n".join(textwrap.wrap(text, width=width))
+
+
+def _list_all_plugins(plugins: dict, installed_plugins: dict) -> None:
+    headers = ["Name", "Description", "URL", "Latest", "Installed"]
+    plugins_table = []
+    for plugin_name, attrs in plugins.items():
+        latest_version = list(attrs["versions"].keys())[0]
+        installed_version = (
+            installed_plugins[plugin_name]["version"]
+            if plugin_name in installed_plugins
+            else "-"
+        )
+        plugins_table.append(
+            [
+                plugin_name,
+                _wrap_cell(attrs["description"]),
+                attrs["url"],
+                latest_version,
+                installed_version,
+            ]
+        )
+
+    plug.echo(tabulate.tabulate(plugins_table, headers, tablefmt="fancy_grid"))
+
+
+def _list_installed_plugins(installed_plugins: dict) -> None:
+    headers = ["Name", "Installed version"]
+    plugins_table = []
+    for plugin_name, attrs in installed_plugins.items():
+        plugins_table.append([plugin_name, attrs["version"]])
+
+    plug.echo(
+        tabulate.tabulate(
+            plugins_table, headers=headers, tablefmt="fancy_grid"
+        )
+    )
+
+
+def _list_plugin(plugin_name: str, plugins: dict) -> None:
+    attrs = plugins[plugin_name]
+    table = [
+        ["Name", plugin_name],
+        ["Description", _wrap_cell(attrs["description"])],
+        ["Versions", _wrap_cell(" ".join(attrs["versions"].keys()))],
+        ["URL", attrs["url"]],
+    ]
+    plug.echo(tabulate.tabulate(table, tablefmt="fancy_grid"))

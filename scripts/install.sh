@@ -5,10 +5,13 @@ REPOBEE_BIN_DIR="$REPOBEE_INSTALL_DIR/bin"
 REPOBEE_REPO_DIR="$REPOBEE_INSTALL_DIR/repobee_git"
 REPOBEE_HTTPS_URL="https://github.com/slarse/repobee"
 REPOBEE_EXECUTABLE="$REPOBEE_BIN_DIR/repobee"
-REPOBEE_VERSION="issue/420-repobee-installer"
+REPOBEE_VERSION="v3.0.0-alpha.3"
 REPOBEE_PIP_URL="git+$REPOBEE_HTTPS_URL.git@$REPOBEE_VERSION"
+REPOBEE_INSTALLED_PLUGINS="$REPOBEE_INSTALL_DIR/installed_plugins.json"
 
 VENV_DIR="$REPOBEE_INSTALL_DIR/env"
+REPOBEE_PIP="$VENV_DIR/bin/pip"
+REPOBEE_ENV_ACTIVATE="$VENV_DIR/bin/activate"
 REPOBEE_PYTHON="$VENV_DIR/bin/python"
 
 function install() {
@@ -56,15 +59,20 @@ function install_repobee() {
         printf "\nThen re-execute this script."
         exit 1
     }
+    source "$REPOBEE_ENV_ACTIVATE"
     ensure_pip_installed
 
     echo "Installing RepoBee $REPOBEE_VERSION"
-    REPOBEE_PYTHON_INTERPRETER="$REPOBEE_PYTHON" pip_install_quiet_failfast "$REPOBEE_PIP_URL"
+    REPOBEE_INSTALL_DIR="$REPOBEE_INSTALL_DIR" pip_install_quiet_failfast "$REPOBEE_PIP_URL"
     create_repobee_executable
+
+    if [ ! -f "$REPOBEE_INSTALLED_PLUGINS" ]; then
+        echo "{}" > "$REPOBEE_INSTALLED_PLUGINS"
+    fi
 
     echo "Checking PATH"
     pip_install_quiet_failfast userpath
-    "$REPOBEE_PYTHON" -m userpath verify "$REPOBEE_BIN_DIR" &> /dev/null \
+    python -m userpath verify "$REPOBEE_BIN_DIR" &> /dev/null \
     && echo "PATH OK" || add_to_path
 }
 
@@ -80,14 +88,14 @@ function find_python() {
 }
 
 function pip_install_quiet_failfast() {
-    "$REPOBEE_PYTHON" -m pip install --upgrade $1 > /dev/null || {
+    "$REPOBEE_PIP" install --upgrade $1 > /dev/null || {
         echo "There was a problem installing $1"
         exit 1
     }
 }
 
 function ensure_pip_installed() {
-    "$REPOBEE_PYTHON" -m pip install --upgrade pip &> /dev/null || {
+    "$REPOBEE_PIP" install --upgrade pip &> /dev/null || {
         echo "Installing pip"
         get_pip="$REPOBEE_INSTALL_DIR/get-pip.py"
         download https://bootstrap.pypa.io/get-pip.py "$get_pip" || exit 1
@@ -116,7 +124,8 @@ function create_repobee_executable() {
 
     mkdir -p "$REPOBEE_BIN_DIR"
     echo "#! /bin/sh
-\"$REPOBEE_PYTHON\" -m repobee" '$@' > "$REPOBEE_EXECUTABLE"
+source \"$REPOBEE_ENV_ACTIVATE\"
+python -m repobee" '$@' > "$REPOBEE_EXECUTABLE"
     chmod +x "$REPOBEE_EXECUTABLE"
 
     echo "RepoBee exuctable created at $REPOBEE_EXECUTABLE"

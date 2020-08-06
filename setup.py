@@ -12,13 +12,13 @@ with open("src/_repobee/__version.py", mode="r", encoding="utf-8") as f:
     __version__ = line.split("=")[1].strip(" '\"\n")
     assert re.match(r"^\d+(\.\d+){2}(-(alpha|beta|rc)(\.\d+)?)?$", __version__)
 
-python_interpreter = os.getenv("REPOBEE_PYTHON_INTERPRETER")
-if python_interpreter:  # install with RepoBee's install script
+install_dir = os.getenv("REPOBEE_INSTALL_DIR")
+if install_dir:  # install with RepoBee's install script
     pathlib.Path("src/_repobee/distinfo.py").write_text(
         f"""
 import pathlib
 DIST_INSTALL = True
-PYTHON_INTERPRETER = pathlib.Path('{python_interpreter}')
+INSTALL_DIR = pathlib.Path('{install_dir}')
 """
     )
 
@@ -40,12 +40,14 @@ docs_requirements = [
 ]
 required = [
     "appdirs",
+    "bullet",
+    "colored",
     "daiquiri",
     "pygithub",
-    "colored",
     "python-gitlab==2.4.0",
     "pluggy>=0.13.1",
     "dataclasses>='0.7';python_version<'3.7'",
+    "tabulate",
 ]
 
 setup(
