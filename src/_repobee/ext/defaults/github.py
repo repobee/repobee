@@ -171,14 +171,16 @@ class GitHubAPI(plug.API):
             )
             # remove the creator from the team
             team.remove_membership(team.get_members()[0])
-        return self.assign_members(self._wrap_team(team), members, permission)
+        self.assign_members(self._wrap_team(team), members, permission)
+
+        return self._wrap_team(team)
 
     def assign_members(
         self,
         team: plug.Team,
         members: List[str],
         permission: plug.TeamPermission = plug.TeamPermission.PUSH,
-    ) -> plug.Team:
+    ) -> None:
         assert team.implementation
 
         with _try_api_request():
@@ -190,8 +192,6 @@ class GitHubAPI(plug.API):
                     if permission == plug.TeamPermission.PUSH
                     else "member",
                 )
-
-        return self._wrap_team(team.implementation)
 
     def assign_repo(
         self, team: plug.Team, repo: plug.Repo, permission: plug.TeamPermission
