@@ -21,15 +21,13 @@ def create_teams(
         for existing in api.get_teams({t.name for t in teams})
     }
     for required_team in teams:
-        existing_team = existing_teams_dict.get(required_team.name)
-        if existing_team:
-            existing_members = set(existing_team.members)
-            new_members = set(required_team.members) - existing_members
-            api.assign_members(existing_team, new_members, permission)
-            # TODO yield refreshed team
-            yield existing_team
-        else:
-            new_team = api.create_team(
-                required_team.name, required_team.members, permission
-            )
-            yield new_team
+        team = existing_teams_dict.get(required_team.name) or api.create_team(
+            required_team.name,
+            members=required_team.members,
+            permission=permission,
+        )
+        existing_members = set(team.members)
+        new_members = set(required_team.members) - existing_members
+        api.assign_members(team, new_members, permission)
+        # TODO return refreshed team if new_members is non-empty
+        yield team
