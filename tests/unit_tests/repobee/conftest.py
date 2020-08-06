@@ -4,7 +4,6 @@ import pathlib
 import tempfile
 from contextlib import contextmanager
 import os
-from unittest.mock import MagicMock
 import pytest
 
 import _repobee.constants
@@ -12,10 +11,6 @@ import _repobee.config
 import _repobee.plugin
 
 import constants
-
-# mock the PyGithub github module
-sys.modules["github"] = MagicMock()
-
 
 import _repobee  # noqa: E402
 
