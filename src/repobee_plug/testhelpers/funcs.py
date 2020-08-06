@@ -2,7 +2,7 @@
 import tempfile
 import pathlib
 import shutil
-from typing import Mapping, List
+from typing import Mapping, List, Union
 
 import repobee
 import git
@@ -38,7 +38,9 @@ def hash_directory(dirpath: pathlib.Path) -> str:
         return repo.head.commit.tree.hexsha
 
 
-def run_repobee(cmd: str, **kwargs) -> Mapping[str, List[Result]]:
+def run_repobee(
+    cmd: Union[str, List[str]], **kwargs
+) -> Mapping[str, List[Result]]:
     """Helper function to call :py:class:`repobee.run` when using the
     :py:class:`fakeapi.FakeAPI` platform API.
 
@@ -54,11 +56,12 @@ def run_repobee(cmd: str, **kwargs) -> Mapping[str, List[Result]]:
     to do so, you should use :py:class`repobee.run` directly instead.
 
     Args:
-        cmd: A string with a RepoBee command.
+        cmd: A string or list of strings with a RepoBee command.
         kwargs: Keyword arguments for :py:func:`repobee.run`.
     Returns:
         The results mapping returned by :py:func:`repobee.run`
     """
+    cmd = cmd.split() if isinstance(cmd, str) else cmd
     kwargs = dict(kwargs)  # copy to not mutate input
     plugins = (kwargs.get("plugins") or []) + [fakeapi]
     kwargs["plugins"] = plugins
@@ -79,7 +82,7 @@ master_org_name = {const.TEMPLATE_ORG_NAME}
         )
         kwargs.setdefault("config_file", config_file)
 
-        return repobee.run(cmd.split(), **kwargs)
+        return repobee.run(cmd, **kwargs)
 
 
 def template_repo_hashes() -> Mapping[str, str]:
@@ -124,7 +127,7 @@ def get_repos(
     api = fakeapi.FakeAPI(
         base_url=platform_url, user=const.TEACHER, org_name=org_name
     )
-    return api._repos[org_name].values()
+    return list(api._repos[org_name].values())
 
 
 def get_teams(platform_url: str, org_name: str) -> List[fakeapi.Team]:
@@ -140,4 +143,4 @@ def get_teams(platform_url: str, org_name: str) -> List[fakeapi.Team]:
     api = fakeapi.FakeAPI(
         base_url=platform_url, user=const.TEACHER, org_name=org_name
     )
-    return api._teams[org_name].values()
+    return list(api._teams[org_name].values())

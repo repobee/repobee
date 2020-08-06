@@ -56,11 +56,17 @@ class Repo:
     issues: List[Issue] = dataclasses.field(default_factory=list)
 
     def to_plug_repo(self, include_issues=None) -> plug.Repo:
-        issues = [
-            issue.to_plug_issue()
-            for issue in self.issues
-            if issue.state == include_issues
-        ] or None
+        issues = (
+            [
+                issue.to_plug_issue()
+                for issue in self.issues
+                if issue.state == plug.IssueState.ALL
+                or issue.state == include_issues
+            ]
+            if include_issues
+            else None
+        )
+
         return plug.Repo(
             name=self.name,
             description=self.description,
@@ -146,7 +152,7 @@ class FakeAPI(plug.API):
     def assign_repo(
         self, team: plug.Team, repo: plug.Repo, permission: plug.TeamPermission
     ) -> None:
-        team.implementation.repos.add(repo)
+        team.implementation.repos.add(repo.implementation)
 
     def create_repo(
         self,
