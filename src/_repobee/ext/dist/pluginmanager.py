@@ -47,9 +47,9 @@ class ListPluginsCommand(plug.Plugin, plug.cli.Command):
         )
 
         if not self.plugin_name:
-            list_all_plugins(plugins, installed_plugins)
+            _list_all_plugins(plugins, installed_plugins)
         else:
-            list_plugin(self.plugin_name, plugins)
+            _list_plugin(self.plugin_name, plugins)
 
 
 class InstallPluginCommand(plug.Plugin, plug.cli.Command):
@@ -68,7 +68,7 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
         installed_plugins = json.loads(installed_plugins_path.read_text())
 
         plug.echo("Available plugins:")
-        list_all_plugins(plugins, installed_plugins)
+        _list_all_plugins(plugins, installed_plugins)
 
         selected_plugin_name = bullet.Bullet(
             prompt="Select a plugin to install:", choices=list(plugins.keys())
@@ -76,7 +76,7 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
 
         selected_plugin_attrs = plugins[selected_plugin_name]
 
-        list_plugin(selected_plugin_name, plugins)
+        _list_plugin(selected_plugin_name, plugins)
 
         selected_version = bullet.Bullet(
             prompt="Select a version to install:",
@@ -128,7 +128,7 @@ class UninstallPluginCommand(plug.Plugin, plug.cli.Command):
             plug.echo("No plugins installed")
             return
 
-        list_installed_plugins(installed_plugins)
+        _list_installed_plugins(installed_plugins)
 
         selected_plugin_name = bullet.Bullet(
             prompt="Select a plugin to uninstall:",
@@ -154,11 +154,11 @@ class UninstallPluginCommand(plug.Plugin, plug.cli.Command):
         installed_plugins_path.write_text(json.dumps(installed_plugins))
 
 
-def wrap_cell(text: str, width: int = 40) -> str:
+def _wrap_cell(text: str, width: int = 40) -> str:
     return "\n".join(textwrap.wrap(text, width=width))
 
 
-def list_all_plugins(plugins: dict, installed_plugins: dict) -> None:
+def _list_all_plugins(plugins: dict, installed_plugins: dict) -> None:
     headers = ["Name", "Description", "URL", "Latest", "Installed"]
     plugins_table = []
     for plugin_name, attrs in plugins.items():
@@ -171,7 +171,7 @@ def list_all_plugins(plugins: dict, installed_plugins: dict) -> None:
         plugins_table.append(
             [
                 plugin_name,
-                wrap_cell(attrs["description"]),
+                _wrap_cell(attrs["description"]),
                 attrs["url"],
                 latest_version,
                 installed_version,
@@ -181,7 +181,7 @@ def list_all_plugins(plugins: dict, installed_plugins: dict) -> None:
     plug.echo(tabulate.tabulate(plugins_table, headers, tablefmt="fancy_grid"))
 
 
-def list_installed_plugins(installed_plugins: dict) -> None:
+def _list_installed_plugins(installed_plugins: dict) -> None:
     headers = ["Name", "Installed version"]
     plugins_table = []
     for plugin_name, attrs in installed_plugins.items():
@@ -194,12 +194,12 @@ def list_installed_plugins(installed_plugins: dict) -> None:
     )
 
 
-def list_plugin(plugin_name: str, plugins: dict) -> None:
+def _list_plugin(plugin_name: str, plugins: dict) -> None:
     attrs = plugins[plugin_name]
     table = [
         ["Name", plugin_name],
-        ["Description", wrap_cell(attrs["description"])],
-        ["Versions", wrap_cell(" ".join(attrs["versions"].keys()))],
+        ["Description", _wrap_cell(attrs["description"])],
+        ["Versions", _wrap_cell(" ".join(attrs["versions"].keys()))],
         ["URL", attrs["url"]],
     ]
     plug.echo(tabulate.tabulate(table, tablefmt="fancy_grid"))
