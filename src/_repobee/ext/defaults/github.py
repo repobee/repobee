@@ -169,8 +169,11 @@ class GitHubAPI(plug.API):
             team = self._org.create_team(
                 name, permission=_TEAM_PERMISSION_MAPPING[permission]
             )
-            # remove the creator from the team
-            team.remove_membership(team.get_members()[0])
+            # remove the creator and any other default members from the team
+            for member in team.get_members():
+                team.remove_membership(member)
+
+        # TODO optimize, redundant API call when wrapping the team
         self.assign_members(self._wrap_team(team), members, permission)
 
         return self._wrap_team(team)
