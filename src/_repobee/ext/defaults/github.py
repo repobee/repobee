@@ -212,22 +212,23 @@ class GitHubAPI(plug.API):
         team: Optional[plug.Team] = None,
     ) -> plug.Repo:
         kwargs = dict(description=description, private=private)
-        team_impl = None
         if team:
             kwargs["team_id"] = team.id
-            team_impl = team.implementation
 
         with _try_api_request():
-            try:
-                repo = self._org.create_repo(name, **kwargs)
-                return self._wrap_repo(repo)
-            except github.GithubException as exc:
-                if exc.status == 422 and team_impl:
-                    repo = self._org.get_repo(name)
-                    team_impl.add_to_repos(repo)
-                    return self._wrap_repo(repo)
+            repo = self._org.create_repo(name, **kwargs)
+            return self._wrap_repo(repo)
 
-                raise
+    def get_repo(
+        self,
+        repo_name: str,
+        team_name: Optional[str],
+        include_issues: Optional[plug.IssueState] = None,
+    ) -> plug.Repo:
+        # the GitHub API does not need the team name, as teams do not form
+        # namespaces
+        repo = self._org.get_repo(repo_name)
+        return self._wrap_repo(repo, include_issues=include_issues)
 
     def get_teams(
         self,

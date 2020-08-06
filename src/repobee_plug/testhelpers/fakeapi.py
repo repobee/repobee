@@ -165,19 +165,19 @@ class FakeAPI(plug.API):
 
         repo_bucket = self._repos.setdefault(self._org_name, {})
 
-        if name not in repo_bucket:
-            repo_path = self._repodir / self._org_name / name
-            repo_path.mkdir(parents=True, exist_ok=True)
-            git.Repo.init(repo_path, bare=True)
-            repo_bucket[name] = Repo(
-                name=name,
-                description=description,
-                url=repo_path.as_uri(),
-                # call self._get_team to ensure that the team
-                # actually exists
-                private=private,
-                path=repo_path,
-            )
+        if name in repo_bucket:
+            raise plug.APIError(f"{name} already exists")
+
+        repo_path = self._repodir / self._org_name / name
+        repo_path.mkdir(parents=True, exist_ok=True)
+        git.Repo.init(repo_path, bare=True)
+        repo_bucket[name] = Repo(
+            name=name,
+            description=description,
+            url=repo_path.as_uri(),
+            private=private,
+            path=repo_path,
+        )
 
         repo = repo_bucket[name]
 
@@ -212,6 +212,23 @@ class FakeAPI(plug.API):
             for repo in unfiltered_repos
             if repo
         ]
+
+    def get_repo(
+        self,
+        repo_name: str,
+        team_name: Optional[str],
+        include_issues: Optional[plug.IssueState] = None,
+    ) -> plug.Repo:
+        repos = (
+            self._get_team(team_name).repos
+            if team_name
+            else self._repos[self._org_name].values()
+        )
+        for repo in repos:
+            if repo.name == repo_name:
+                return repo.to_plug_repo(include_issues=include_issues)
+
+        raise plug.NotFoundError(f"{team_name} has no repository {repo_name}")
 
     def insert_auth(self, url: str) -> str:
         return url

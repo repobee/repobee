@@ -73,11 +73,12 @@ def setup_student_repos(
         )
 
         repos = _log_repo_creation(
-            api.create_repo(
+            _create_or_fetch_repo(
                 plug.generate_repo_name(team, repo_name),
                 description=f"{repo_name} created for {team.name}",
                 private=True,
                 team=team,
+                api=api,
             )
             for team in _repobee.command.teams.create_teams(
                 teams, plug.TeamPermission.PUSH, api
@@ -92,6 +93,24 @@ def setup_student_repos(
         git.push(push_tuples)
 
     return hook_results
+
+
+def _create_or_fetch_repo(
+    name: str, description: str, private: bool, team: plug.Team, api: plug.API
+) -> plug.Repo:
+    try:
+        return api.create_repo(
+            name,
+            description="f{repo_name} created for {team.name}",
+            private=True,
+            team=team,
+        )
+    except plug.APIError:
+        repo = api.get_repo(repo_name=name, team_name=team.name)
+        api.assign_repo(
+            team=team, repo=repo, permission=plug.TeamPermission.PUSH
+        )
+        return repo
 
 
 def _log_repo_creation(repos: Iterable[plug.Repo]) -> Iterable[plug.Repo]:

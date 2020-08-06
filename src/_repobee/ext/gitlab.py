@@ -160,7 +160,7 @@ class GitLabAPI(plug.API):
     ) -> plug.Repo:
         group = team.implementation if team else self._group
 
-        with _try_api_request(ignore_statuses=[400]):
+        with _try_api_request():
             project = self._gitlab.projects.create(
                 {
                     "name": name,
@@ -172,15 +172,20 @@ class GitLabAPI(plug.API):
             )
             return self._wrap_project(project)
 
+    def get_repo(
+        self,
+        repo_name: str,
+        team_name: Optional[str],
+        include_issues: Optional[plug.IssueState] = None,
+    ) -> plug.Repo:
         with _try_api_request():
             path = (
                 [self._group.path]
-                + ([group.path] if group != self._group else [])
-                + [name]
+                + ([team_name] if team_name is not None else [])
+                + [repo_name]
             )
             project = self._gitlab.projects.get("/".join(path))
-
-        return self._wrap_project(project)
+            return self._wrap_project(project, include_issues=include_issues)
 
     def get_teams(
         self,
@@ -253,16 +258,19 @@ class GitLabAPI(plug.API):
     ) -> plug.Team:
         assert not include_issues or include_repos
 
-        repos = (
-            [
-                self._wrap_project(
-                    self._gitlab.projects.get(gp.id), include_issues
-                )
-                for gp in group.projects.list(all=True, include_subgroups=True)
-            ]
-            if include_repos
-            else None
-        )
+        with _try_api_request():
+            repos = (
+                [
+                    self._wrap_project(
+                        self._gitlab.projects.get(gp.id), include_issues
+                    )
+                    for gp in group.projects.list(
+                        all=True, include_subgroups=True
+                    )
+                ]
+                if include_repos
+                else None
+            )
         return plug.Team(
             name=group.name,
             members=[
@@ -286,16 +294,17 @@ class GitLabAPI(plug.API):
         )
 
     def _wrap_project(self, project, include_issues=None) -> plug.Repo:
-        issues = (
-            [
-                self._wrap_issue(issue)
-                for issue in project.issues.list(
-                    all=True, state=_ISSUE_STATE_MAPPING[include_issues]
-                )
-            ]
-            if include_issues
-            else None
-        )
+        with _try_api_request():
+            issues = (
+                [
+                    self._wrap_issue(issue)
+                    for issue in project.issues.list(
+                        all=True, state=_ISSUE_STATE_MAPPING[include_issues]
+                    )
+                ]
+                if include_issues
+                else None
+            )
         return plug.Repo(
             name=project.path,
             description=project.description,

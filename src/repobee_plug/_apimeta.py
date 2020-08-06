@@ -317,6 +317,29 @@ class APISpec:
         """
         _not_implemented()
 
+    def get_repo(
+        self,
+        repo_name: str,
+        team_name: Optional[str],
+        include_issues: Optional[IssueState] = None,
+    ) -> Repo:
+        """Get a single repository.
+
+        Args:
+            repo_name: Name of the repository to fetch.
+            team_name: Name of the team that owns the repository. If ``None``,
+                the repository is assumed to belong to the target organization.
+            include_issues: Whether or not to also fetch associated issues.
+                This results in additional API requests.
+        Returns:
+            The fetched repository.
+        Raises:
+            :py:class:`_exceptions.APIError`: If something goes wrong in
+                communicating with the platform, in particular if the repo
+                or team does not exist.
+        """
+        _not_implemented()
+
     def insert_auth(self, url: str) -> str:
         """Insert authorization token into the provided URL.
 
