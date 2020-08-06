@@ -179,11 +179,8 @@ def test_no_plugins_arg(
 
     main.main(sys_args)
 
-    init_plugins_mock.assert_has_calls(
-        [
-            call(DEFAULT_PLUGIN_NAMES, allow_qualified=True),
-            call(DIST_PLUGIN_NAMES, allow_qualified=True),
-        ],
+    init_plugins_mock.assert_called_once_with(
+        DEFAULT_PLUGIN_NAMES, allow_qualified=True
     )
     handle_args_mock.assert_called_once_with(
         CLONE_ARGS,
@@ -202,11 +199,8 @@ def test_no_plugins_with_configured_plugins(
 
     main.main(sys_args)
 
-    init_plugins_mock.assert_has_calls(
-        [
-            call(DEFAULT_PLUGIN_NAMES, allow_qualified=True),
-            call(DIST_PLUGIN_NAMES, allow_qualified=True),
-        ]
+    init_plugins_mock.assert_called_once_with(
+        DEFAULT_PLUGIN_NAMES, allow_qualified=True
     )
     handle_args_mock.assert_called_once_with(
         CLONE_ARGS,
