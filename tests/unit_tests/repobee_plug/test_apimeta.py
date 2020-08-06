@@ -5,6 +5,8 @@ from repobee_plug import _exceptions
 import collections
 import datetime
 
+from typing import Optional, List
+
 
 def api_methods():
     methods = _apimeta.methods(_apimeta.APISpec.__dict__)
@@ -81,7 +83,12 @@ class TestAPI:
             def __init__(self, base_url, token, org_name, user):
                 pass
 
-            def get_teams(self):
+            def get_teams(
+                self,
+                team_names: Optional[List[str]] = None,
+                include_repos: bool = False,
+                include_issues: Optional[_apimeta.IssueState] = None,
+            ):
                 return expected
 
         assert API(None, None, None, None).get_teams() == expected
@@ -95,23 +102,6 @@ class TestAPI:
 
                 def ensure_teams_and_members(self, teams, permission="push"):
                     pass
-
-    def test_accepts_correct_default_arg(self):
-        expected = 42
-
-        class API(_apimeta.API):
-            def __init__(self, base_url, token, org_name, user):
-                pass
-
-            def ensure_teams_and_members(
-                self, teams, permission=_apimeta.TeamPermission.PUSH
-            ):
-                return expected
-
-        assert (
-            API(None, None, None, None).ensure_teams_and_members(None, None)
-            == expected
-        )
 
 
 class TestAPIObject:
