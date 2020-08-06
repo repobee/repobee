@@ -18,6 +18,7 @@ NotImplementedError) for any unimplemented API methods.
 
 .. moduleauthor:: Simon Larsén
 """
+import dataclasses
 import inspect
 import enum
 import itertools
@@ -79,6 +80,7 @@ def _check_name_length(name):
         )
 
 
+@dataclasses.dataclass
 class Team(APIObject):
     """Wrapper class for a Team API object."""
 
@@ -105,6 +107,7 @@ class Team(APIObject):
         return self.name < o.name
 
 
+@dataclasses.dataclass
 class Issue(APIObject):
     """Wrapper class for an Issue API object."""
 
@@ -146,6 +149,7 @@ class Issue(APIObject):
         return Issue(**asdict)
 
 
+@dataclasses.dataclass
 class Repo(APIObject):
     """Wrapper class for a Repo API object."""
 
