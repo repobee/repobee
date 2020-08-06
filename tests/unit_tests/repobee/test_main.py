@@ -46,6 +46,7 @@ CLONE_ARGS = "clone --mn week-2 -s slarse".split()
 module = namedtuple("module", ("name",))
 
 DEFAULT_PLUGIN_NAMES = plugin.get_qualified_module_names(_repobee.ext.defaults)
+DIST_PLUGIN_NAMES = plugin.get_qualified_module_names(_repobee.ext.dist)
 
 
 @pytest.fixture
