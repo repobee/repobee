@@ -5,7 +5,6 @@ tooling.
 
     This plugin should only be used when using an installed version of RepoBee.
 """
-import logging
 import json
 import subprocess
 import sys
@@ -96,10 +95,7 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
         proc = subprocess.run(cmd, capture_output=True)
 
         if proc.returncode != 0:
-            plug.log(
-                proc.stderr.decode(sys.getdefaultencoding()),
-                level=logging.ERROR,
-            )
+            plug.log.error(proc.stderr.decode(sys.getdefaultencoding()))
             raise plug.PlugError(
                 f"could not install {selected_plugin_name} {selected_version}"
             )
@@ -149,10 +145,7 @@ class UninstallPluginCommand(plug.Plugin, plug.cli.Command):
         proc = subprocess.run(cmd, capture_output=True)
 
         if proc.returncode != 0:
-            plug.log(
-                proc.stderr.decode(sys.getdefaultencoding()),
-                level=logging.ERROR,
-            )
+            plug.log.error(proc.stderr.decode(sys.getdefaultencoding()))
             raise plug.PlugError(f"could not uninstall {selected_plugin_name}")
 
         plug.echo(f"Successfully uninstalled {selected_plugin_name}")

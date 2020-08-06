@@ -6,8 +6,8 @@ from repobee_plug.__version import __version__  # noqa: F401
 from repobee_plug._pluginmeta import Plugin
 from repobee_plug._containers import hookimpl as repobee_hook
 from repobee_plug import cli
-from repobee_plug.io import echo
-from repobee_plug.io import log
+from repobee_plug.cli.io import echo
+from repobee_plug import log
 
 # Containers
 from repobee_plug._containers import Review
@@ -108,4 +108,5 @@ __all__ = [
     # Modules/Packages
     "cli",
     "fileutils",
+    "log",
 ]
