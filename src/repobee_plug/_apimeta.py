@@ -190,6 +190,21 @@ class APISpec:
         members: Optional[List[str]] = None,
         permission: TeamPermission = TeamPermission.PUSH,
     ) -> Team:
+        """Create a team on the platform.
+
+        Args:
+            name: Name of the team.
+            members: A list of usernames to assign as members to this team.
+                Usernames that don't exist are ignored.
+            permission: The permission the team should have in regards to
+                repository access.
+        Returns:
+            The created team.
+        Raises:
+            :py:class:`_exceptions.APIError`: If something goes wrong in
+                communicating with the platform, in particular if the team
+                already exists.
+        """
         _not_implemented()
 
     def assign_members(
@@ -198,6 +213,17 @@ class APISpec:
         members: List[str],
         permission: TeamPermission = TeamPermission.PUSH,
     ) -> None:
+        """Assign members to a team.
+
+        Args:
+            team: A team to assign members to.
+            members: A list of usernames to assign as members to the team.
+                Usernames that don't exist are ignored.
+            permission: The permission to add users with.
+        Raises:
+            :py:class:`_exceptions.APIError`: If something goes wrong in
+                communicating with the platform.
+        """
         _not_implemented()
 
     def create_repo(
@@ -207,6 +233,24 @@ class APISpec:
         private: bool,
         team: Optional[Team] = None,
     ) -> Repo:
+        """Create a repository.
+
+        If the repository already exists, it is fetched instead of created.
+        This somewhat unintuitive behavior is to speed up repository creation,
+        as first checking if the repository exists can be a bit inconvenient
+        and/or inefficient depending on the platform.
+
+        Args:
+            name: Name of the repository.
+            description: Description of the repository.
+            private: Visibility of the repository.
+            team: The team the repository belongs to.
+        Returns:
+            The created (or fetched) repository.
+        Raises:
+            :py:class:`_exceptions.APIError`: If something goes wrong in
+                communicating with the platform.
+        """
         _not_implemented()
 
     def get_teams(
@@ -215,11 +259,41 @@ class APISpec:
         include_repos: bool = False,
         include_issues: Optional[IssueState] = None,
     ) -> Iterable[Team]:
+        """Get teams from the platform.
+
+        Args:
+            team_names: Team names to filter by. Names that do not exist on the
+                platform are ignored. If ``team_names=None``, all teams are
+                fetched.
+            include_repos: Whether or not to also fetch associated
+                repositories. This results in additional API requests.
+            include_issues: Wheter or not to also fetch issues associated with
+                the repositories. Only makes sense if ``include_repos=True``.
+                This results in additional API requests.
+        Returns:
+            Teams matching the filters.
+        Raises:
+            :py:class:`_exceptions.APIError`: If something goes wrong in
+                communicating with the platform.
+        """
         _not_implemented()
 
     def assign_repo(
         self, team: Team, repo: Repo, permission: TeamPermission,
     ) -> None:
+        """Assign a repository to a team, granting any members of the team
+        permission to access the repository according to the specified
+        permission.
+
+        Args:
+            team: The team to assign the repository to.
+            repo: The repository to assign to the team.
+            permission: The permission granted to the team's members with
+                respect to accessing the repository.
+        Raises:
+            :py:class:`_exceptions.APIError`: If something goes wrong in
+                communicating with the platform.
+        """
         _not_implemented()
 
     def get_repos(
@@ -227,9 +301,30 @@ class APISpec:
         repo_names: Optional[List[str]] = None,
         include_issues: Optional[IssueState] = None,
     ) -> Iterable[Repo]:
+        """Get repositories from the platform.
+
+        Args:
+            repo_names: Repository names to filter the results by. Names that
+                do not exist on the platform are ignored. If
+                ``repo_names=None``, all repos are fetched.
+            include_issues: Whether or not to also fetch associated issues.
+                This results in additional API requests.
+        Returns:
+            Repositories matching the filters.
+        Raises:
+            :py:class:`_exceptions.APIError`: If something goes wrong in
+                communicating with the platform.
+        """
         _not_implemented()
 
     def insert_auth(self, url: str) -> str:
+        """Insert authorization token into the provided URL.
+
+        Args:
+            url: A URL to the platform.
+        Returns:
+            The same url, but with authorization credentials inserted.
+        """
         _not_implemented()
 
     def create_issue(
@@ -237,14 +332,43 @@ class APISpec:
         title: str,
         body: str,
         repo: Repo,
-        assignees: Optional[str] = None,
+        assignees: Optional[Iterable[str]] = None,
     ) -> Issue:
+        """Create an issue in the provided repository.
+
+        Args:
+            title: Title of the issue.
+            body: Body of the issue.
+            repo: The repository in which to open the issue.
+            assignees: Usernames to assign to the issue.
+        Returns:
+            The created issue.
+        Raises:
+            :py:class:`_exceptions.APIError`: If something goes wrong in
+                communicating with the platform.
+        """
         _not_implemented()
 
     def close_issue(self, issue: Issue) -> None:
+        """Close the provided issue.
+
+        Args:
+            issue: The issue to close.
+        Raises:
+            :py:class:`_exceptions.APIError`: If something goes wrong in
+                communicating with the platform.
+        """
         _not_implemented()
 
     def delete_team(self, team: Team) -> None:
+        """Delete the provided team.
+
+        Args:
+            team: The team to delete.
+        Raises:
+            :py:class:`_exceptions.APIError`: If something goes wrong in
+                communicating with the platform.
+        """
         _not_implemented()
 
     def get_repo_urls(
@@ -295,7 +419,7 @@ class APISpec:
         master_org_name: Optional[str] = None,
     ):
         """Verify the following (to the extent that is possible and makes sense
-        for the specifi platform):
+        for the specific platform):
 
         1. Base url is correct
         2. The token has sufficient access privileges
