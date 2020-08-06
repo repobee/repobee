@@ -147,9 +147,12 @@ class GitLabAPI(plug.API):
     def assign_repo(
         self, team: plug.Team, repo: plug.Repo, permission: plug.TeamPermission
     ) -> None:
-        repo.implementation.share(
-            team.id, group_access=_TEAM_PERMISSION_MAPPING[permission]
-        )
+        # ignore 409: Project cannot be shared with the group it is in or one
+        # of its ancestors.
+        with _try_api_request(ignore_statuses=[409]):
+            repo.implementation.share(
+                team.id, group_access=_TEAM_PERMISSION_MAPPING[permission]
+            )
 
     def create_repo(
         self,
