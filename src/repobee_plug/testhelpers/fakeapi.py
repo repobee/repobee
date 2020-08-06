@@ -25,7 +25,7 @@ class User:
     username: str
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass
 class Issue:
     title: str
     body: str
