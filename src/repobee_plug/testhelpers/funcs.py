@@ -7,7 +7,7 @@ from typing import Mapping, List, Union
 import repobee
 import git
 
-from repobee_plug.testhelpers import fakeapi
+from repobee_plug.testhelpers import localapi
 from repobee_plug.testhelpers import const
 from repobee_plug._containers import Result
 
@@ -63,7 +63,7 @@ def run_repobee(
     """
     cmd = cmd.split() if isinstance(cmd, str) else cmd
     kwargs = dict(kwargs)  # copy to not mutate input
-    plugins = (kwargs.get("plugins") or []) + [fakeapi]
+    plugins = (kwargs.get("plugins") or []) + [localapi]
     kwargs["plugins"] = plugins
 
     students_file = (
@@ -118,18 +118,18 @@ def get_api(
     org_name: str = const.TARGET_ORG_NAME,
     user: str = const.TEACHER,
     token: str = const.TOKEN,
-) -> fakeapi.FakeAPI:
+) -> localapi.LocalAPI:
     """Return an instance of the :py:class:`fakeapi.FakeAPI`,
     configured for the tests.
     """
-    return fakeapi.FakeAPI(
+    return localapi.LocalAPI(
         base_url=platform_url, user=user, org_name=org_name, token=token,
     )
 
 
 def get_repos(
     platform_url: str, org_name: str = const.TARGET_ORG_NAME
-) -> List[fakeapi.Repo]:
+) -> List[localapi.Repo]:
     """Get all repos from the given platform and organization.
 
     Args:
@@ -143,7 +143,7 @@ def get_repos(
     return list(api._repos[org_name].values())
 
 
-def get_teams(platform_url: str, org_name: str) -> List[fakeapi.Team]:
+def get_teams(platform_url: str, org_name: str) -> List[localapi.Team]:
     """Get all of the teams form the given platform and organization.
 
     Args:

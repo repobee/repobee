@@ -1,4 +1,4 @@
-"""A faked implementation of the :py:class:`repobee_plug.PlatformAPI`
+"""A local implementation of the :py:class:`repobee_plug.PlatformAPI`
 specification that can be used to test RepoBee and plugins.
 
 .. danger::
@@ -90,9 +90,10 @@ class Team:
         )
 
 
-class FakeAPI(plug.PlatformAPI):
-    """A fake implementation of the :py:class:`repobee_plug.PlatformAPI`
-    specification, which emulates a GitHub-like platform.
+class LocalAPI(plug.PlatformAPI):
+    """A local implementation of the :py:class:`repobee_plug.PlatformAPI`
+    specification, which emulates a GitHub-like platform without accessing
+    any network resources.
     """
 
     def __init__(self, base_url: str, org_name: str, user: str, token: str):
@@ -336,4 +337,4 @@ class FakeAPIHooks(plug.Plugin):
         return ("base_url", "org_name", "user", "token")
 
     def get_api_class(self):
-        return FakeAPI
+        return LocalAPI

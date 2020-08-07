@@ -5,7 +5,7 @@ import tempfile
 from typing import List, Mapping
 
 import repobee_plug as plug
-from repobee_plug.testhelpers import fakeapi
+from repobee_plug.testhelpers import localapi
 from repobee_plug.testhelpers import funcs
 
 
@@ -19,7 +19,7 @@ from repobee_plug.testhelpers.const import (
 def assert_student_repos_match_templates(
     student_teams: List[plug.Team],
     template_repo_names: List[str],
-    repos: List[fakeapi.Repo],
+    repos: List[localapi.Repo],
 ):
     """Assert that the content of the student repos matches the content of the
     respective template repos.
