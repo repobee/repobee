@@ -111,6 +111,7 @@ class FakeAPI(plug.API):
         members: Optional[List[str]] = None,
         permission: plug.TeamPermission = plug.TeamPermission.PUSH,
     ) -> plug.Team:
+        """See :py:meth:`repobee_plug.API.create_team`."""
         stored_team = self._teams[self._org_name].setdefault(
             name,
             Team(name=name, members=set(), permission=permission, id=name),
@@ -120,12 +121,28 @@ class FakeAPI(plug.API):
         )
         return stored_team.to_plug_team()
 
+    def delete_team(self, team: plug.Team) -> None:
+        """See :py:meth:`repobee_plug.API.delete_team`."""
+        del self._teams[self._org_name][team.implementation.name]
+
+    def get_teams(
+        self, team_names: Optional[List[str]] = None,
+    ) -> Iterable[plug.Team]:
+        """See :py:meth:`repobee_plug.API.get_teams`."""
+        team_names = set(team_names or [])
+        return [
+            team.to_plug_team()
+            for team in self._teams[self._org_name].values()
+            if not team_names or team.name in team_names
+        ]
+
     def assign_members(
         self,
         team: plug.Team,
         members: List[str],
         permission: plug.TeamPermission = plug.TeamPermission.PUSH,
     ) -> None:
+        """See :py:meth:`repobee_plug.API.assign_members`."""
         team.implementation.add_members(
             [self._get_user(m) for m in members or []]
         )
@@ -133,6 +150,7 @@ class FakeAPI(plug.API):
     def assign_repo(
         self, team: plug.Team, repo: plug.Repo, permission: plug.TeamPermission
     ) -> None:
+        """See :py:meth:`repobee_plug.API.assign_repo`."""
         team.implementation.repos.add(repo.implementation)
 
     def create_repo(
@@ -142,6 +160,7 @@ class FakeAPI(plug.API):
         private: bool,
         team: Optional[plug.Team] = None,
     ) -> plug.Repo:
+        """See :py:meth:`repobee_plug.API.create_repo`."""
         assert not team or team.implementation
 
         repo_bucket = self._repos.setdefault(self._org_name, {})
@@ -167,25 +186,8 @@ class FakeAPI(plug.API):
 
         return repo.to_plug_repo()
 
-    def get_teams(
-        self, team_names: Optional[List[str]] = None,
-    ) -> Iterable[plug.Team]:
-        team_names = set(team_names or [])
-        return [
-            team.to_plug_team()
-            for team in self._teams[self._org_name].values()
-            if not team_names or team.name in team_names
-        ]
-
-    def get_repos(
-        self, repo_names: Optional[List[str]] = None,
-    ) -> Iterable[plug.Repo]:
-        unfiltered_repos = (
-            self._repos[self._org_name].get(name) for name in repo_names
-        )
-        return [repo.to_plug_repo() for repo in unfiltered_repos if repo]
-
     def get_repo(self, repo_name: str, team_name: Optional[str],) -> plug.Repo:
+        """See :py:meth:`repobee_plug.API.get_repo`."""
         repos = (
             self._get_team(team_name).repos
             if team_name
@@ -197,7 +199,17 @@ class FakeAPI(plug.API):
 
         raise plug.NotFoundError(f"{team_name} has no repository {repo_name}")
 
+    def get_repos(
+        self, repo_names: Optional[List[str]] = None,
+    ) -> Iterable[plug.Repo]:
+        """See :py:meth:`repobee_plug.API.get_repos`."""
+        unfiltered_repos = (
+            self._repos[self._org_name].get(name) for name in repo_names
+        )
+        return [repo.to_plug_repo() for repo in unfiltered_repos if repo]
+
     def insert_auth(self, url: str) -> str:
+        """See :py:meth:`repobee_plug.API.insert_auth`."""
         return url
 
     def create_issue(
@@ -207,6 +219,7 @@ class FakeAPI(plug.API):
         repo: plug.Repo,
         assignees: Optional[str] = None,
     ) -> plug.Issue:
+        """See :py:meth:`repobee_plug.API.create_issue`."""
         assignees = {
             self._get_user(assignee) for assignee in (assignees or [])
         }
@@ -224,16 +237,16 @@ class FakeAPI(plug.API):
         return issue.to_plug_issue()
 
     def close_issue(self, issue: Issue) -> None:
+        """See :py:meth:`repobee_plug.API.close_issue`."""
         issue.implementation.state = plug.IssueState.CLOSED
 
     def get_team_repos(self, team: plug.Team) -> Iterable[plug.Repo]:
+        """See :py:meth:`repobee_plug.API.get_team_repos`."""
         return (repo.to_plug_repo() for repo in team.implementation.repos)
 
     def get_repo_issues(self, repo: plug.Repo) -> Iterable[plug.Issue]:
+        """See :py:meth:`repobee_plug.API.get_repo_issues`."""
         return (issue.to_plug_issue() for issue in repo.implementation.issues)
-
-    def delete_team(self, team: plug.Team) -> None:
-        del self._teams[self._org_name][team.implementation.name]
 
     def get_repo_urls(
         self,

@@ -169,6 +169,7 @@ class GitHubAPI(plug.API):
         members: Optional[List[str]] = None,
         permission: plug.TeamPermission = plug.TeamPermission.PUSH,
     ) -> plug.Team:
+        """See :py:meth:`repobee_plug.API.create_team`."""
         with _try_api_request():
             team = self._org.create_team(
                 name, permission=_TEAM_PERMISSION_MAPPING[permission]
@@ -182,12 +183,29 @@ class GitHubAPI(plug.API):
 
         return self._wrap_team(team)
 
+    def delete_team(self, team: plug.Team) -> None:
+        """See :py:meth:`repobee_plug.API.delete_team`."""
+        team.implementation.delete()
+
+    def get_teams(
+        self, team_names: Optional[List[str]] = None,
+    ) -> Iterable[plug.Team]:
+        """See :py:meth:`repobee_plug.API.get_teams`."""
+        team_names = set(team_names)
+        with _try_api_request():
+            return (
+                self._wrap_team(team,)
+                for team in self._org.get_teams()
+                if not team_names or team.name in team_names
+            )
+
     def assign_members(
         self,
         team: plug.Team,
         members: List[str],
         permission: plug.TeamPermission = plug.TeamPermission.PUSH,
     ) -> None:
+        """See :py:meth:`repobee_plug.API.assign_members`."""
         assert team.implementation
 
         with _try_api_request():
@@ -203,6 +221,7 @@ class GitHubAPI(plug.API):
     def assign_repo(
         self, team: plug.Team, repo: plug.Repo, permission: plug.TeamPermission
     ) -> None:
+        """See :py:meth:`repobee_plug.API.assign_repo`."""
         team.implementation.add_to_repos(repo.implementation)
         team.implementation.set_repo_permission(
             repo.implementation, _TEAM_PERMISSION_MAPPING[permission]
@@ -215,6 +234,7 @@ class GitHubAPI(plug.API):
         private: bool,
         team: Optional[plug.Team] = None,
     ) -> plug.Repo:
+        """See :py:meth:`repobee_plug.API.create_repo`."""
         kwargs = dict(description=description, private=private)
         if team:
             kwargs["team_id"] = team.id
@@ -224,25 +244,16 @@ class GitHubAPI(plug.API):
             return self._wrap_repo(repo)
 
     def get_repo(self, repo_name: str, team_name: Optional[str],) -> plug.Repo:
+        """See :py:meth:`repobee_plug.API.get_repo`."""
         # the GitHub API does not need the team name, as teams do not form
         # namespaces
         repo = self._org.get_repo(repo_name)
         return self._wrap_repo(repo)
 
-    def get_teams(
-        self, team_names: Optional[List[str]] = None,
-    ) -> Iterable[plug.Team]:
-        team_names = set(team_names)
-        with _try_api_request():
-            return (
-                self._wrap_team(team,)
-                for team in self._org.get_teams()
-                if not team_names or team.name in team_names
-            )
-
     def get_repos(
         self, repo_names: Optional[List[str]] = None,
     ) -> Iterable[plug.Repo]:
+        """See :py:meth:`repobee_plug.API.get_repos`."""
         return (
             self._wrap_repo(repo)
             for repo in self._get_repos_by_name(repo_names or [])
@@ -255,23 +266,24 @@ class GitHubAPI(plug.API):
         repo: plug.Repo,
         assignees: Optional[str] = None,
     ) -> plug.Issue:
+        """See :py:meth:`repobee_plug.API.create_issue`."""
         repo_impl: github.Repository.Repository = repo.implementation
         issue = repo_impl.create_issue(title, body=body, assignees=assignees)
         return self._wrap_issue(issue)
 
     def close_issue(self, issue: plug.Issue) -> None:
+        """See :py:meth:`repobee_plug.API.close_issue`."""
         issue.implementation.edit(state="closed")
 
     def get_team_repos(self, team: plug.Team) -> Iterable[plug.Repo]:
+        """See :py:meth:`repobee_plug.API.get_team_repos`."""
         impl: _Team = team.implementation
         return map(self._wrap_repo, impl.get_repos())
 
     def get_repo_issues(self, repo: plug.Repo) -> Iterable[plug.Issue]:
+        """See :py:meth:`repobee_plug.API.get_repo_issues`."""
         impl: _Repo = repo.implementation
         return map(self._wrap_issue, impl.get_issues())
-
-    def delete_team(self, team: plug.Team) -> None:
-        team.implementation.delete()
 
     def _wrap_team(self, team: _Team,) -> plug.Team:
         return plug.Team(
@@ -357,13 +369,7 @@ class GitHubAPI(plug.API):
         return pathlib.Path(repo_url).stem
 
     def insert_auth(self, url: str) -> str:
-        """Insert an authentication token into the url.
-
-        Args:
-            repo_url: A HTTPS url to a repository.
-        Returns:
-            the input url with an authentication token inserted.
-        """
+        """See :py:meth:`repobee_plug.API.insert_auth`."""
         if not url.startswith("https://"):
             raise ValueError(
                 f"unsupported protocol in '{url}', please use https://"
