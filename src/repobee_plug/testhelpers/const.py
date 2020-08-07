@@ -16,3 +16,5 @@ TEMPLATE_REPOS_ARG = " ".join(TEMPLATE_REPO_NAMES)
 TEACHER = "ric"
 STUDENTS_FILE = CUR_DIR / "resources" / "students.txt"
 STUDENT_TEAMS = fileutils.parse_students_file(STUDENTS_FILE)
+
+TOKEN = "123token456"

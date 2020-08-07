@@ -95,10 +95,11 @@ class FakeAPI(plug.API):
     which emulates a GitHub-like platform.
     """
 
-    def __init__(self, base_url: str, org_name: str, user: str):
+    def __init__(self, base_url: str, org_name: str, user: str, token: str):
         self._repodir = pathlib.Path(base_url[len("https://") :])
         self._org_name = org_name
         self._user = user
+        self._token = token
 
         self._teams = {self._org_name: {}}
         self._repos = {self._org_name: {}}
@@ -332,7 +333,7 @@ class FakeAPI(plug.API):
 
 class FakeAPIHooks(plug.Plugin):
     def api_init_requires(self):
-        return ("base_url", "org_name", "user")
+        return ("base_url", "org_name", "user", "token")
 
     def get_api_class(self):
         return FakeAPI

@@ -6,7 +6,6 @@ import shutil
 import tempfile
 
 from repobee_plug.testhelpers import funcs
-from repobee_plug.testhelpers import fakeapi
 
 from repobee_plug.testhelpers.const import (
     STUDENTS_FILE,
@@ -19,7 +18,7 @@ from repobee_plug.testhelpers.const import (
 )
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def platform_dir():
     """Setup the platform emulation with a template organization with git
     repositories, the students and teacher as users,  and return the the
@@ -33,9 +32,7 @@ def platform_dir():
                 continue
             funcs.initialize_repo(template_repo)
 
-        api = fakeapi.FakeAPI(
-            "https://" + str(tmpdir), org_name=TARGET_ORG_NAME, user=TEACHER,
-        )
+        api = funcs.get_api("https://" + str(tmpdir))
         api._add_users(
             itertools.chain.from_iterable([t.members for t in STUDENT_TEAMS])
         )

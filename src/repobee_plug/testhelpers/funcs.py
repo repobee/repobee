@@ -78,6 +78,7 @@ students_file = {students_file}
 org_name = {const.TARGET_ORG_NAME}
 user = {const.TEACHER}
 master_org_name = {const.TEMPLATE_ORG_NAME}
+token = {const.TOKEN}
 """
         )
         kwargs.setdefault("config_file", config_file)
@@ -112,6 +113,20 @@ def tree_hash(repo_root: pathlib.Path) -> str:
     return repo.head.commit.tree.hexsha
 
 
+def get_api(
+    platform_url: str,
+    org_name: str = const.TARGET_ORG_NAME,
+    user: str = const.TEACHER,
+    token: str = const.TOKEN,
+) -> fakeapi.FakeAPI:
+    """Return an instance of the :py:class:`fakeapi.FakeAPI`,
+    configured for the tests.
+    """
+    return fakeapi.FakeAPI(
+        base_url=platform_url, user=user, org_name=org_name, token=token,
+    )
+
+
 def get_repos(
     platform_url: str, org_name: str = const.TARGET_ORG_NAME
 ) -> List[fakeapi.Repo]:
@@ -124,9 +139,7 @@ def get_repos(
     Returns:
         A list of fake repos.
     """
-    api = fakeapi.FakeAPI(
-        base_url=platform_url, user=const.TEACHER, org_name=org_name
-    )
+    api = get_api(platform_url, org_name=org_name)
     return list(api._repos[org_name].values())
 
 
@@ -140,7 +153,5 @@ def get_teams(platform_url: str, org_name: str) -> List[fakeapi.Team]:
     Returns:
         A list of fake teams.
     """
-    api = fakeapi.FakeAPI(
-        base_url=platform_url, user=const.TEACHER, org_name=org_name
-    )
+    api = get_api(platform_url, org_name=org_name)
     return list(api._teams[org_name].values())
