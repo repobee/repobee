@@ -129,6 +129,10 @@ class TestRegisterPlugins:
 class TestTryRegisterPlugin:
     """Tests for try_register_plugin."""
 
+    @pytest.fixture(autouse=True)
+    def unregister_all_plugins(self):
+        plugin.unregister_all_plugins()
+
     def test_modules_unregistered_after_success(self):
         plugin.try_register_plugin(pylint)
         assert not plug.manager.get_plugins()

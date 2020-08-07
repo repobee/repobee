@@ -97,7 +97,7 @@ class TestAPI:
                 def __init__(self, base_url, token, org_name, user):
                     pass
 
-                def ensure_teams_and_members(self, teams, permission="push"):
+                def get_teams(self, team_names="hello"):
                     pass
 
 

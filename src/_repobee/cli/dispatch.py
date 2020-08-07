@@ -87,7 +87,7 @@ def _dispatch_repos_command(
     elif action == repos.clone:
         return command.clone_repos(args.repos, api)
     elif action == repos.create_teams:
-        api.ensure_teams_and_members(args.students)
+        command.create_teams(args.students, plug.TeamPermission.PUSH, api)
         return None
     _raise_illegal_action_error(args)
 

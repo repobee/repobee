@@ -11,6 +11,7 @@ from .repos import (
     migrate_repos,
     show_config,
 )
+from .teams import create_teams
 
 __all__ = [
     "open_issue",
@@ -24,4 +25,5 @@ __all__ = [
     "update_student_repos",
     "migrate_repos",
     "show_config",
+    "create_teams",
 ]
