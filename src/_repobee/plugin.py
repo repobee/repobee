@@ -376,7 +376,9 @@ def get_module_names(pkg: ModuleType) -> List[str]:
 
 
 def execute_clone_tasks(
-    repo_names: List[str], api: plug.API, cwd: Optional[pathlib.Path] = None
+    repo_names: List[str],
+    api: plug.PlatformAPI,
+    cwd: Optional[pathlib.Path] = None,
 ) -> Mapping[str, List[plug.Result]]:
     """Execute clone tasks, if there are any, and return the results.
 
@@ -391,7 +393,9 @@ def execute_clone_tasks(
 
 
 def execute_setup_tasks(
-    repo_names: List[str], api: plug.API, cwd: Optional[pathlib.Path] = None
+    repo_names: List[str],
+    api: plug.PlatformAPI,
+    cwd: Optional[pathlib.Path] = None,
 ) -> Mapping[str, List[plug.Result]]:
     """Execute setup tasks, if there are any, and return the results.
 
@@ -407,8 +411,10 @@ def execute_setup_tasks(
 
 def _execute_tasks(
     repo_names: List[str],
-    hook_function: Callable[[pathlib.Path, plug.API], Optional[plug.Result]],
-    api: plug.API,
+    hook_function: Callable[
+        [pathlib.Path, plug.PlatformAPI], Optional[plug.Result]
+    ],
+    api: plug.PlatformAPI,
     cwd: Optional[pathlib.Path],
 ) -> Mapping[str, List[plug.Result]]:
     """Execute plugin tasks on the provided repos."""

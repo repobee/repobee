@@ -339,7 +339,7 @@ class TestInit:
     def test_accepts_valid_urls(self, url):
         api = github_plugin.GitHubAPI(url, TOKEN, ORG_NAME, USER)
 
-        assert isinstance(api, plug.API)
+        assert isinstance(api, plug.PlatformAPI)
 
 
 class TestGetRepoUrls:

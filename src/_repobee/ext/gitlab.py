@@ -88,7 +88,7 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
                 status=401,
             ) from e
         else:
-            raise plug.APIError(str(e), status=e.response_code) from e
+            raise plug.PlatformAPIError(str(e), status=e.response_code) from e
     except (exception.RepoBeeException, plug.PlugError):
         raise
     except Exception as e:
@@ -97,7 +97,7 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
         ) from e
 
 
-class GitLabAPI(plug.API):
+class GitLabAPI(plug.PlatformAPI):
     _User = collections.namedtuple("_User", ("id", "login"))
 
     def __init__(self, base_url, token, org_name):
@@ -121,7 +121,7 @@ class GitLabAPI(plug.API):
         members: Optional[List[str]] = None,
         permission: plug.TeamPermission = plug.TeamPermission.PUSH,
     ) -> plug.Team:
-        """See :py:meth:`repobee_plug.API.create_team`."""
+        """See :py:meth:`repobee_plug.PlatformAPI.create_team`."""
         with _try_api_request():
             team = self._wrap_group(
                 self._gitlab.groups.create(
@@ -133,13 +133,13 @@ class GitLabAPI(plug.API):
         return self._wrap_group(team.implementation)
 
     def delete_team(self, team: plug.Team) -> None:
-        """See :py:meth:`repobee_plug.API.delete_team`."""
+        """See :py:meth:`repobee_plug.PlatformAPI.delete_team`."""
         team.implementation.delete()
 
     def get_teams(
         self, team_names: Optional[List[str]] = None,
     ) -> Iterable[plug.Team]:
-        """See :py:meth:`repobee_plug.API.get_teams`."""
+        """See :py:meth:`repobee_plug.PlatformAPI.get_teams`."""
         team_names = set(team_names or [])
         with _try_api_request():
             return (
@@ -156,7 +156,7 @@ class GitLabAPI(plug.API):
         members: List[str],
         permission: plug.TeamPermission = plug.TeamPermission.PUSH,
     ) -> None:
-        """See :py:meth:`repobee_plug.API.assign_members`."""
+        """See :py:meth:`repobee_plug.PlatformAPI.assign_members`."""
         assert team.implementation
         raw_permission = _TEAM_PERMISSION_MAPPING[permission]
         group = team.implementation
@@ -170,7 +170,7 @@ class GitLabAPI(plug.API):
     def assign_repo(
         self, team: plug.Team, repo: plug.Repo, permission: plug.TeamPermission
     ) -> None:
-        """See :py:meth:`repobee_plug.API.assign_repo`."""
+        """See :py:meth:`repobee_plug.PlatformAPI.assign_repo`."""
         # ignore 409: Project cannot be shared with the group it is in or one
         # of its ancestors.
         with _try_api_request(ignore_statuses=[409]):
@@ -185,7 +185,7 @@ class GitLabAPI(plug.API):
         private: bool,
         team: Optional[plug.Team] = None,
     ) -> plug.Repo:
-        """See :py:meth:`repobee_plug.API.create_repo`."""
+        """See :py:meth:`repobee_plug.PlatformAPI.create_repo`."""
         group = team.implementation if team else self._group
 
         with _try_api_request():
@@ -201,7 +201,7 @@ class GitLabAPI(plug.API):
             return self._wrap_project(project)
 
     def get_repo(self, repo_name: str, team_name: Optional[str],) -> plug.Repo:
-        """See :py:meth:`repobee_plug.API.get_repo`."""
+        """See :py:meth:`repobee_plug.PlatformAPI.get_repo`."""
         with _try_api_request():
             path = (
                 [self._group.path]
@@ -214,7 +214,7 @@ class GitLabAPI(plug.API):
     def get_repos(
         self, repo_names: Optional[List[str]] = None,
     ) -> Iterable[plug.Repo]:
-        """See :py:meth:`repobee_plug.API.get_repos`."""
+        """See :py:meth:`repobee_plug.PlatformAPI.get_repos`."""
         projects = []
         with _try_api_request():
             for name in repo_names:
@@ -234,7 +234,7 @@ class GitLabAPI(plug.API):
             LOGGER.warning(msg)
 
     def insert_auth(self, url: str) -> str:
-        """See :py:meth:`repobee_plug.API.insert_auth`."""
+        """See :py:meth:`repobee_plug.PlatformAPI.insert_auth`."""
         return self._insert_auth(url)
 
     def create_issue(
@@ -244,7 +244,7 @@ class GitLabAPI(plug.API):
         repo: plug.Repo,
         assignees: Optional[str] = None,
     ) -> plug.Issue:
-        """See :py:meth:`repobee_plug.API.create_issue`."""
+        """See :py:meth:`repobee_plug.PlatformAPI.create_issue`."""
         project = repo.implementation
         member_ids = [user.id for user in self._get_users(assignees or [])]
         issue = project.issues.create(
@@ -253,14 +253,14 @@ class GitLabAPI(plug.API):
         return self._wrap_issue(issue)
 
     def close_issue(self, issue: plug.Issue) -> None:
-        """See :py:meth:`repobee_plug.API.close_issue`."""
+        """See :py:meth:`repobee_plug.PlatformAPI.close_issue`."""
         assert issue.implementation
         issue_impl = issue.implementation
         issue_impl.state_event = "close"
         issue_impl.save()
 
     def get_team_repos(self, team: plug.Team) -> Iterable[plug.Repo]:
-        """See :py:meth:`repobee_plug.API.get_team_repos`."""
+        """See :py:meth:`repobee_plug.PlatformAPI.get_team_repos`."""
         group = team.implementation
         for group_project in group.projects.list(all=True):
             yield self._wrap_project(
@@ -268,7 +268,7 @@ class GitLabAPI(plug.API):
             )
 
     def get_repo_issues(self, repo: plug.Repo) -> Iterable[plug.Issue]:
-        """See :py:meth:`repobee_plug.API.get_repo_issues`."""
+        """See :py:meth:`repobee_plug.PlatformAPI.get_repo_issues`."""
         project = repo.implementation
         return map(self._wrap_issue, project.issues.list(all=True))
 
@@ -345,7 +345,7 @@ class GitLabAPI(plug.API):
         teams: Optional[List[plug.Team]] = None,
         insert_auth: bool = False,
     ) -> List[str]:
-        """See :py:meth:`repobee_plug.API.get_repo_urls`."""
+        """See :py:meth:`repobee_plug.PlatformAPI.get_repo_urls`."""
         group_name = org_name if org_name else self._group_name
         group_url = f"{self._base_url}/{group_name}"
         repo_urls = (
@@ -365,7 +365,7 @@ class GitLabAPI(plug.API):
         )
 
     def extract_repo_name(self, repo_url: str) -> str:
-        """See :py:meth:`repobee_plug.API.extract_repo_name`."""
+        """See :py:meth:`repobee_plug.PlatformAPI.extract_repo_name`."""
         return pathlib.Path(repo_url).stem
 
     def _insert_auth(self, repo_url: str):
@@ -391,7 +391,7 @@ class GitLabAPI(plug.API):
         token: str,
         master_org_name: Optional[str] = None,
     ):
-        """See :py:meth:`repobee_plug.API.verify_settings`."""
+        """See :py:meth:`repobee_plug.PlatformAPI.verify_settings`."""
         LOGGER.info("GitLabAPI is verifying settings ...")
         if not token:
             raise plug.BadCredentials(
@@ -410,7 +410,7 @@ class GitLabAPI(plug.API):
             "Could not authenticate token",
         ), _convert_error(
             requests.exceptions.ConnectionError,
-            plug.APIError,
+            plug.PlatformAPIError,
             f"Could not connect to {base_url}, please check the URL",
         ):
             gl.auth()

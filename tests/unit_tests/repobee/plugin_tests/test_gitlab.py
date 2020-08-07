@@ -397,7 +397,7 @@ class TestVerifySettings:
             )
 
     def test_raises_on_failed_connection(self):
-        with pytest.raises(plug.APIError) as exc_info:
+        with pytest.raises(plug.PlatformAPIError) as exc_info:
             _repobee.ext.gitlab.GitLabAPI.verify_settings(
                 user=None,
                 org_name=TARGET_GROUP,

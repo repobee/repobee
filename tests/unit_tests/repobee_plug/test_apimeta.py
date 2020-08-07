@@ -26,7 +26,7 @@ class TestAPI:
         left undefined.
         """
 
-        class API(_apimeta.API):
+        class API(_apimeta.PlatformAPI):
             pass
 
         name, impl = method
@@ -44,7 +44,7 @@ class TestAPI:
 
         with pytest.raises(_exceptions.APIImplementationError):
 
-            class API(_apimeta.API):
+            class API(_apimeta.PlatformAPI):
                 def get_teams(a):
                     pass
 
@@ -53,12 +53,12 @@ class TestAPI:
         args in APISpec.__init__.
         """
 
-        class API(_apimeta.API):
+        class API(_apimeta.PlatformAPI):
             def __init__(self, base_url):
                 pass
 
         api = API("some-url")
-        assert isinstance(api, _apimeta.API)
+        assert isinstance(api, _apimeta.PlatformAPI)
 
     def test_raises_when_init_has_superset_of_args(self):
         """Test that ``__init__`` cannot be defined with a superset of the args
@@ -67,7 +67,7 @@ class TestAPI:
 
         with pytest.raises(_exceptions.APIImplementationError) as exc_info:
 
-            class API(_apimeta.API):
+            class API(_apimeta.PlatformAPI):
                 def __init__(self, base_url, token, org_name, user, other):
                     pass
 
@@ -79,7 +79,7 @@ class TestAPI:
         """
         expected = 42
 
-        class API(_apimeta.API):
+        class API(_apimeta.PlatformAPI):
             def __init__(self, base_url, token, org_name, user):
                 pass
 
@@ -93,7 +93,7 @@ class TestAPI:
     def test_raises_when_method_has_incorrect_default_arg(self):
         with pytest.raises(_exceptions.APIImplementationError):
 
-            class API(_apimeta.API):
+            class API(_apimeta.PlatformAPI):
                 def __init__(self, base_url, token, org_name, user):
                     pass
 

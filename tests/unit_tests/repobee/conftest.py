@@ -26,7 +26,7 @@ EXPECTED_ENV_VARIABLES = [
 ]
 
 
-class DummyAPI(plug.API):
+class DummyAPI(plug.PlatformAPI):
     """Empty API implementation."""
 
     def __init__(self, base_url: str, token: str, org_name: str, user: str):

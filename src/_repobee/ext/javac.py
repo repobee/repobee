@@ -45,7 +45,9 @@ class JavacCloneHook(plug.Plugin, plug.cli.CommandExtension):
         argparse_kwargs={"nargs": "+"},
     )
 
-    def post_clone(self, path: pathlib.Path, api: plug.API) -> plug.Result:
+    def post_clone(
+        self, path: pathlib.Path, api: plug.PlatformAPI
+    ) -> plug.Result:
         """Run ``javac`` on all .java files in the repo.
 
         Args:

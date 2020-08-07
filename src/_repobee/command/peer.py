@@ -31,7 +31,7 @@ def assign_peer_reviews(
     teams: Iterable[plug.Team],
     num_reviews: int,
     issue: Optional[plug.Issue],
-    api: plug.API,
+    api: plug.PlatformAPI,
 ) -> None:
     """Assign peer reviewers among the students to each student repo. Each
     student is assigned to review num_reviews repos, and consequently, each
@@ -50,7 +50,7 @@ def assign_peer_reviews(
             (consequently, the amount of reviews of each repo)
         issue: An issue with review instructions to be opened in the considered
             repos.
-        api: An implementation of :py:class:`repobee_plug.API` used to
+        api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     issue = issue or DEFAULT_REVIEW_ISSUE
@@ -112,7 +112,7 @@ def assign_peer_reviews(
 def purge_review_teams(
     master_repo_names: Iterable[str],
     students: Iterable[plug.Team],
-    api: plug.API,
+    api: plug.PlatformAPI,
 ) -> None:
     """Delete all review teams associated with the given master repo names and
     students.
@@ -120,7 +120,7 @@ def purge_review_teams(
     Args:
         master_repo_names: Names of master repos.
         students: An iterble of student teams.
-        api: An implementation of :py:class:`repobee_plug.API` used to
+        api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     review_team_names = [
@@ -139,7 +139,7 @@ def check_peer_review_progress(
     teams: Iterable[plug.Team],
     title_regex: str,
     num_reviews: int,
-    api: plug.API,
+    api: plug.PlatformAPI,
 ) -> None:
     """Check which teams have opened peer review issues in their allotted
     review repos
@@ -149,7 +149,7 @@ def check_peer_review_progress(
         teams: An iterable of student teams.
         title_regex: A regex to match against issue titles.
         num_reviews: Amount of reviews each student is expected to have made.
-        api: An implementation of :py:class:`repobee_plug.API` used to
+        api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
 
     """

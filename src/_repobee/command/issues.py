@@ -23,7 +23,7 @@ LOGGER = daiquiri.getLogger(__file__)
 
 def list_issues(
     repos: Iterable[plug.Repo],
-    api: plug.API,
+    api: plug.PlatformAPI,
     state: plug.IssueState = plug.IssueState.OPEN,
     title_regex: str = "",
     show_body: bool = False,
@@ -33,7 +33,7 @@ def list_issues(
 
     Args:
         repos: The repos from which to fetch issues.
-        api: An implementation of :py:class:`repobee_plug.API` used to
+        api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
         state: state of the repo (open or closed). Defaults to open.
         title_regex: If specified, only issues with titles matching the regex
@@ -85,7 +85,10 @@ def list_issues(
 
 
 def _get_issue_generator(
-    repos: Iterable[plug.Repo], title_regex: str, author: str, api: plug.API,
+    repos: Iterable[plug.Repo],
+    title_regex: str,
+    author: str,
+    api: plug.PlatformAPI,
 ) -> Generator[
     Tuple[str, Generator[Iterable[plug.Issue], None, None]], None, None
 ]:
@@ -182,7 +185,7 @@ def open_issue(
     issue: plug.Issue,
     master_repo_names: Iterable[str],
     teams: Iterable[plug.Team],
-    api: plug.API,
+    api: plug.PlatformAPI,
 ) -> None:
     """Open an issue in student repos.
 
@@ -190,7 +193,7 @@ def open_issue(
         master_repo_names: Names of master repositories.
         teams: Team objects specifying student groups.
         issue: An issue to open.
-        api: An implementation of :py:class:`repobee_plug.API` used to
+        api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     repo_names = plug.generate_repo_names(teams, master_repo_names)
@@ -203,7 +206,7 @@ def open_issue(
 
 
 def close_issue(
-    title_regex: str, repos: Iterable[plug.Repo], api: plug.API
+    title_regex: str, repos: Iterable[plug.Repo], api: plug.PlatformAPI
 ) -> None:
     """Close issues whose titles match the title_regex in student repos.
 
@@ -211,7 +214,7 @@ def close_issue(
         title_regex: A regex to match against issue titles.
         master_repo_names: Names of master repositories.
         teams: Team objects specifying student groups.
-        api: An implementation of :py:class:`repobee_plug.API` used to
+        api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     repo_names = (repo.name for repo in repos)

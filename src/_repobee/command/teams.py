@@ -3,7 +3,9 @@ import repobee_plug as plug
 
 
 def create_teams(
-    teams: Iterable[plug.Team], permission: plug.TeamPermission, api: plug.API
+    teams: Iterable[plug.Team],
+    permission: plug.TeamPermission,
+    api: plug.PlatformAPI,
 ) -> Iterable[plug.Team]:
     """Create teams.
 

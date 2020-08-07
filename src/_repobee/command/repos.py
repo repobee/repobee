@@ -37,7 +37,9 @@ LOGGER = daiquiri.getLogger(__file__)
 
 
 def setup_student_repos(
-    master_repo_urls: Iterable[str], teams: Iterable[plug.Team], api: plug.API
+    master_repo_urls: Iterable[str],
+    teams: Iterable[plug.Team],
+    api: plug.PlatformAPI,
 ) -> Mapping[str, List[plug.Result]]:
     """Setup student repositories based on master repo templates. Performs three
     primary tasks:
@@ -58,7 +60,7 @@ def setup_student_repos(
     Args:
         master_repo_urls: URLs to master repos.
         teams: An iterable of student teams specifying the teams to be setup.
-        api: An implementation of :py:class:`repobee_plug.API` used to
+        api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     authed_urls = [api.insert_auth(url) for url in master_repo_urls]
@@ -96,7 +98,11 @@ def setup_student_repos(
 
 
 def _create_or_fetch_repo(
-    name: str, description: str, private: bool, team: plug.Team, api: plug.API
+    name: str,
+    description: str,
+    private: bool,
+    team: plug.Team,
+    api: plug.PlatformAPI,
 ) -> plug.Repo:
     try:
         return api.create_repo(
@@ -105,7 +111,7 @@ def _create_or_fetch_repo(
             private=True,
             team=team,
         )
-    except plug.APIError:
+    except plug.PlatformAPIError:
         repo = api.get_repo(repo_name=name, team_name=team.name)
         api.assign_repo(
             team=team, repo=repo, permission=plug.TeamPermission.PUSH
@@ -147,7 +153,7 @@ def _clone_all(urls: Iterable[str], cwd: str):
 def update_student_repos(
     master_repo_urls: Iterable[str],
     teams: Iterable[plug.Team],
-    api: plug.API,
+    api: plug.PlatformAPI,
     issue: Optional[plug.Issue] = None,
 ) -> Mapping[str, List[plug.Result]]:
     """Attempt to update all student repos related to one of the master repos.
@@ -156,7 +162,7 @@ def update_student_repos(
         master_repo_urls: URLs to master repos. Must be in the organization
             that the api is set up for.
         teams: An iterable of student teams.
-        api: An implementation of :py:class:`repobee_plug.API` used to
+        api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
         issue: An optional issue to open in repos to which pushing fails.
     """
@@ -192,14 +198,14 @@ def update_student_repos(
 
 
 def _open_issue_by_urls(
-    repo_urls: Iterable[str], issue: plug.Issue, api: plug.API
+    repo_urls: Iterable[str], issue: plug.Issue, api: plug.PlatformAPI
 ) -> None:
     """Open issues in the repos designated by the repo_urls.
 
     Args:
         repo_urls: URLs to repos in which to open an issue.
         issue: An issue to open.
-        api: An implementation of :py:class:`repobee_plug.API` used to
+        api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     repo_names = [util.repo_name(url) for url in repo_urls]
@@ -212,7 +218,7 @@ def _open_issue_by_urls(
 
 
 def clone_repos(
-    repos: Iterable[plug.Repo], api: plug.API
+    repos: Iterable[plug.Repo], api: plug.PlatformAPI
 ) -> Mapping[str, List[plug.Result]]:
     """Clone all student repos related to the provided master repos and student
     teams.
@@ -220,7 +226,7 @@ def clone_repos(
     Args:
         repos: The repos to be cloned. This function does not use the
             ``implementation`` attribute, so it does not need to be set.
-        api: An implementation of :py:class:`repobee_plug.API` used to
+        api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     Returns:
         A mapping from repo name to a list of hook results.
@@ -281,7 +287,9 @@ def _clone_repos_no_check(repos, dst_dirpath, api) -> List[str]:
     return [repo.name for repo in cloned_repos]
 
 
-def migrate_repos(master_repo_urls: Iterable[str], api: plug.API) -> None:
+def migrate_repos(
+    master_repo_urls: Iterable[str], api: plug.PlatformAPI
+) -> None:
     """Migrate a repository from an arbitrary URL to the target organization.
     The new repository is added to the master_repos team, which is created if
     it does not already exist.
@@ -289,7 +297,7 @@ def migrate_repos(master_repo_urls: Iterable[str], api: plug.API) -> None:
     Args:
         master_repo_urls: HTTPS URLs to the master repos to migrate.
             the username that is used in the push.
-        api: An implementation of :py:class:`repobee_plug.API` used to
+        api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     master_names = [util.repo_name(url) for url in master_repo_urls]
