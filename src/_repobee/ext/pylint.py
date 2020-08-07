@@ -29,7 +29,7 @@ SECTION = "pylint"
 
 
 @plug.repobee_hook
-def post_clone(path: pathlib.Path, api: plug.API):
+def post_clone(path: pathlib.Path, api: plug.PlatformAPI):
     """Run pylint on all Python files in a repo.
 
     Args:

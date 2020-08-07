@@ -9,6 +9,8 @@ import _repobee
 
 import constants
 
+PAGE_SIZE = 10
+
 
 class Group:
     """Class mimicking a gitlab.Group"""
@@ -51,8 +53,8 @@ class Group:
             )
         )
 
-    def _list_members(self):
-        return list(self._member_list)
+    def _list_members(self, all=False):
+        return list(self._member_list)[: (PAGE_SIZE if not all else None)]
 
     def delete(self):
         self._deleted = True
@@ -244,13 +246,13 @@ class GitLabMock:
         )
         return self._groups[group_id]
 
-    def _list_groups(self, *, id=None, search=None):
+    def _list_groups(self, *, id=None, search=None, all=False):
         groups = self._groups.values()
         if id:
             groups = filter(lambda g: g.parent_id == id, groups)
         if search:
             groups = filter(lambda g: g.name == search, groups)
-        return list(groups)
+        return list(groups)[: (PAGE_SIZE if not all else None)]
 
     def _get_group(self, id):
         if id not in self._groups:
@@ -305,139 +307,6 @@ class TestInit:
             _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, "fake-name")
 
 
-class TestEnsureTeamsAndMembers:
-    @pytest.mark.parametrize(
-        "raised_error,expected_error",
-        [
-            (
-                gitlab.exceptions.GitlabAuthenticationError(response_code=401),
-                plug.BadCredentials,
-            ),
-            (
-                gitlab.exceptions.GitlabGetError(response_code=404),
-                plug.NotFoundError,
-            ),
-            (gitlab.exceptions.GitlabError(response_code=500), plug.APIError,),
-        ],
-    )
-    def test_converts_gitlab_errors_to_repobee_errors(
-        self, api_mock, raised_error, expected_error, monkeypatch
-    ):
-        api_mock.groups.list.side_effect = raise_(raised_error)
-        api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
-
-        monkeypatch.setattr(GitLabMock, "_list_groups", raise_(raised_error))
-        with pytest.raises(expected_error):
-            api.ensure_teams_and_members(constants.STUDENTS)
-
-    def test_with_no_pre_existing_groups(self, api_mock):
-        """Test that all groups are created correctly when the only existing
-        group is the target group.
-        """
-        # arrange
-        api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
-        expected_team_names = [team.name for team in constants.STUDENTS]
-        assert (
-            expected_team_names
-        ), "pre-test assert, expected team names should be non-empty"
-
-        # act
-        api.ensure_teams_and_members(constants.STUDENTS)
-
-        # assert
-        actual_teams = api.get_teams()
-        assert sorted([g.name for g in actual_teams]) == sorted(
-            expected_team_names
-        )
-        for team in actual_teams:
-            if team.name != TARGET_GROUP:
-                assert team.members == [constants.USER, team.name]
-            else:
-                assert not team.members
-
-    def test_with_multi_student_groups(self, api_mock):
-        # arrange
-        api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
-        num_students = len(constants.STUDENTS)
-        teams = [
-            plug.Team(members=g1.members + g2.members)
-            for g1, g2 in zip(
-                constants.STUDENTS[: num_students // 2],
-                constants.STUDENTS[num_students // 2 :],
-            )
-        ]
-        expected_teams = [
-            plug.Team(
-                members=[constants.USER] + t.members,
-                # the owner should not be included in the generated name
-                name=plug.Team(members=t.members).name,
-            )
-            for t in teams
-        ]
-
-        # act
-        api.ensure_teams_and_members(teams)
-
-        # assert
-        actual_teams = api.get_teams()
-        assert len(actual_teams) == len(expected_teams)
-        assert sorted([t.name for t in actual_teams]) == sorted(
-            t.name for t in expected_teams
-        )
-        for actual_team, expected_team in zip(
-            sorted(actual_teams), sorted(expected_teams)
-        ):
-            assert sorted(actual_team.members) == sorted(expected_team.members)
-
-    def test_run_twice(self, team_names):
-        """Running the function twice should have the same effect as
-        running it once.
-        """
-        # arrange
-        api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
-        expected_team_names = [t.name for t in constants.STUDENTS]
-        assert (
-            expected_team_names
-        ), "pre-test assert, expected team names should be non-empty"
-
-        # act
-        api.ensure_teams_and_members(constants.STUDENTS)
-        api.ensure_teams_and_members(constants.STUDENTS)
-
-        # assert
-        actual_teams = api.get_teams()
-        assert sorted([g.name for g in actual_teams]) == sorted(
-            expected_team_names
-        )
-        for team in actual_teams:
-            if team.name != TARGET_GROUP:
-                assert team.members == [constants.USER, team.name]
-            else:
-                assert not team.members
-
-    def test_respects_permission(self):
-        """Test that the permission is correctly decoded into a GitLab-specific
-        access level.
-        """
-        api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
-
-        api.ensure_teams_and_members(
-            constants.STUDENTS, permission=plug.TeamPermission.PULL
-        )
-
-        actual_teams = api.get_teams()
-        member_access_levels = [
-            member.access_level
-            for team in actual_teams
-            for member in team.implementation.members.list()
-            if member.username != constants.USER
-        ]
-
-        assert member_access_levels
-        for access_level in member_access_levels:
-            assert access_level == gitlab.REPORTER_ACCESS
-
-
 @pytest.fixture
 def master_repo_names():
     return ["task-1", "task-2", "task-3"]
@@ -460,7 +329,7 @@ class TestGetRepoUrls:
         ), "there must be at least some urls for this test to make sense"
 
         # act
-        actual_urls = api.get_repo_urls(master_repo_names)
+        actual_urls = api.get_repo_urls(master_repo_names, insert_auth=True)
 
         # assert
         assert sorted(actual_urls) == sorted(expected_urls)
@@ -483,7 +352,7 @@ class TestGetRepoUrls:
 
         # act
         actual_urls = api.get_repo_urls(
-            master_repo_names, org_name=master_group
+            master_repo_names, org_name=master_group, insert_auth=True
         )
 
         # assert
@@ -513,62 +382,11 @@ class TestGetRepoUrls:
 
         # act
         actual_urls = api.get_repo_urls(
-            master_repo_names, teams=constants.STUDENTS
+            master_repo_names, teams=constants.STUDENTS, insert_auth=True
         )
 
         # assert
         assert sorted(actual_urls) == sorted(expected_urls)
-
-
-class TestCreateRepos:
-    @pytest.fixture
-    def repos(self, api, master_repo_names):
-        """Setup repo tuples along with groups for the repos to be created
-        in.
-        """
-        target_group_id = api._gitlab.tests_only_target_group_id
-        groups = [
-            api._gitlab.groups.create(
-                dict(
-                    name=str(group), path=str(group), parent_id=target_group_id
-                )
-            )
-            for group in constants.STUDENTS
-        ]
-        yield [
-            plug.Repo(
-                name=plug.generate_repo_name(group.name, master_name),
-                description="Student repo",
-                private=True,
-                team_id=group.id,
-            )
-            for group in groups
-            for master_name in master_repo_names
-        ]
-
-    def test_run_once_for_valid_repos(self, api, master_repo_names, repos):
-        """Test creating projects directly in the target group, when there are
-        no pre-existing projects. Should just succeed.
-        """
-        expected_urls = api.get_repo_urls(
-            master_repo_names, teams=constants.STUDENTS
-        )
-
-        actual_urls = api.create_repos(repos)
-
-        assert sorted(expected_urls) == sorted(actual_urls)
-
-    def test_run_twice_for_valid_repos(self, api, master_repo_names, repos):
-        """Running create_repos twice should have precisely the same effect as
-        runing it once."""
-        expected_urls = api.get_repo_urls(
-            master_repo_names, teams=constants.STUDENTS
-        )
-
-        api.create_repos(repos)
-        actual_urls = api.create_repos(repos)
-
-        assert sorted(expected_urls) == sorted(actual_urls)
 
 
 class TestVerifySettings:
@@ -579,7 +397,7 @@ class TestVerifySettings:
             )
 
     def test_raises_on_failed_connection(self):
-        with pytest.raises(plug.APIError) as exc_info:
+        with pytest.raises(plug.PlatformError) as exc_info:
             _repobee.ext.gitlab.GitLabAPI.verify_settings(
                 user=None,
                 org_name=TARGET_GROUP,
@@ -652,54 +470,3 @@ class TestVerifySettings:
         log_mock.info.assert_called_with(
             "GREAT SUCCESS: All settings check out!"
         )
-
-
-class TestDeleteTeams:
-    @pytest.fixture
-    def groups(self, api):
-        api.ensure_teams_and_members(constants.STUDENTS)
-        return [g for g in api._gitlab.groups.list() if g.name != TARGET_GROUP]
-
-    def test_delete_teams_that_dont_exist(self, api, groups):
-        """It should have no effect."""
-
-        api.delete_teams(["some", "non-existing", "teams"])
-
-        num_deleted = 0
-        for group in groups:
-            assert not group.tests_only_deleted
-            num_deleted += 1
-        assert num_deleted == len(groups)
-
-    def test_delete_all_existing_teams(self, api, groups):
-        team_names = [g.name for g in groups]
-
-        api.delete_teams(team_names)
-
-        for group in groups:
-            assert group.tests_only_deleted
-
-    def test_delete_some_existing_teams(self, api, groups):
-        team_names = [
-            g.name for g in groups[len(groups) // 3 : len(groups) // 2]
-        ]
-        expected_num_deleted = len(team_names)
-        # +1 for the target group
-        expected_num_not_deleted = len(constants.STUDENTS) - len(team_names)
-
-        api.delete_teams(team_names)
-
-        deleted = 0
-        not_deleted = 0
-        for group in groups:
-            if group.name == TARGET_GROUP:
-                continue
-            elif group.name in team_names:
-                assert group.tests_only_deleted
-                deleted += 1
-            else:
-                assert not group.tests_only_deleted
-                not_deleted += 1
-
-        assert deleted == expected_num_deleted
-        assert not_deleted == expected_num_not_deleted

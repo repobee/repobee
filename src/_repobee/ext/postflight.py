@@ -11,7 +11,7 @@ import repobee_plug as plug
 
 
 @plug.repobee_hook
-def post_clone(path: pathlib.Path, api: plug.API):
+def post_clone(path: pathlib.Path, api: plug.PlatformAPI):
     return plug.Result(
         name="postflight",
         msg="Successful postflight on {}".format(path),

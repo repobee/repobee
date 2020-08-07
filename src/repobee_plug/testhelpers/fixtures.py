@@ -1,4 +1,5 @@
 """Fixtures for use with pytest."""
+import itertools
 import pathlib
 import pytest
 import shutil
@@ -7,16 +8,17 @@ import tempfile
 from repobee_plug.testhelpers import funcs
 
 from repobee_plug.testhelpers.const import (
-    TEMPLATE_ORG_NAME,
-    TEMPLATE_REPO_DIR,
-    TEMPLATE_REPOS_ARG,
     STUDENTS_FILE,
-    TEACHER,
+    STUDENT_TEAMS,
     TARGET_ORG_NAME,
+    TEACHER,
+    TEMPLATE_ORG_NAME,
+    TEMPLATE_REPOS_ARG,
+    TEMPLATE_REPO_DIR,
 )
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def platform_dir():
     """Setup the platform emulation with a template organization with git
     repositories, the students and teacher as users,  and return the the
@@ -29,6 +31,11 @@ def platform_dir():
             if not template_repo.is_dir():
                 continue
             funcs.initialize_repo(template_repo)
+
+        api = funcs.get_api("https://" + str(tmpdir))
+        api._add_users(
+            itertools.chain.from_iterable([t.members for t in STUDENT_TEAMS])
+        )
 
         yield pathlib.Path(tmpdir)
 

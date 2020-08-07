@@ -15,7 +15,7 @@ import argparse
 import configparser
 from typing import Union, Optional
 
-from repobee_plug._apimeta import API
+from repobee_plug._apimeta import PlatformAPI
 from repobee_plug._containers import hookspec
 from repobee_plug._containers import Result
 from repobee_plug._deprecation import deprecate
@@ -25,7 +25,9 @@ class CloneHook:
     """Hook functions related to cloning repos."""
 
     @hookspec
-    def post_clone(self, path: pathlib.Path, api: API) -> Optional[Result]:
+    def post_clone(
+        self, path: pathlib.Path, api: PlatformAPI
+    ) -> Optional[Result]:
         """Operate on a student repository after it has been cloned.
 
         Args:
@@ -93,7 +95,7 @@ class SetupHook:
 
     @hookspec
     def pre_setup(
-        self, path: Union[str, pathlib.Path], api: API
+        self, path: Union[str, pathlib.Path], api: PlatformAPI
     ) -> Optional[Result]:
         """Operate on a template repository before it is distributed to
         students.

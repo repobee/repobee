@@ -1,7 +1,6 @@
-import random
 import itertools
 import pytest
-from unittest.mock import MagicMock, PropertyMock, call
+from unittest.mock import MagicMock, PropertyMock
 
 import github
 
@@ -87,6 +86,11 @@ def review_student_teams():
         plug.Team(members=[student])
         for student in ("ham", "spam", "bacon", "eggs")
     ]
+
+
+@pytest.fixture(autouse=True)
+def mock_github(mocker):
+    return mocker.patch("github.Github", autospec=True)
 
 
 @pytest.fixture
@@ -271,9 +275,7 @@ def no_repos(teams_and_members, teams, organization):
 @pytest.fixture
 def repos(organization, no_repos, repo_infos):
     for ri in repo_infos:
-        organization.create_repo(
-            ri.name, ri.description, ri.private, ri.team_id
-        )
+        organization.create_repo(ri.name, ri.description, ri.private)
 
     return organization.get_repos()
 
@@ -337,174 +339,7 @@ class TestInit:
     def test_accepts_valid_urls(self, url):
         api = github_plugin.GitHubAPI(url, TOKEN, ORG_NAME, USER)
 
-        assert isinstance(api, plug.API)
-
-
-class TestEnsureTeamsAndMembers:
-    @staticmethod
-    def assert_teams_equal(actual_teams, expected_teams):
-        """Assert that the teams are equal, except for the implementation and
-        id.
-        """
-        assert len(actual_teams) == len(expected_teams)
-        for actual, expected in zip(
-            sorted(actual_teams), sorted(expected_teams)
-        ):
-            assert (actual.name, sorted(actual.members)) == (
-                expected.name,
-                sorted(expected.members),
-            )
-
-    @pytest.fixture
-    def team_wrappers(self, teams_and_members):
-        """Wrap the teams_and_members dictionaries into plug.Team classes.
-
-        TODO: Remove this when this test suite is rewritten.
-        """
-        return [
-            plug.Team(name=team_name, members=members)
-            for team_name, members in teams_and_members.items()
-        ]
-
-    def test_no_previous_teams(self, api, team_wrappers, no_teams):
-        """Test that ensure_teams_and_members works as expected when there are
-        no previous teams, and all users exist. This is a massive end-to-end
-        test of the function with only the lower level API's mocked out.
-        """
-        expected_teams = list(team_wrappers)
-        api.ensure_teams_and_members(expected_teams)
-        self.assert_teams_equal(api.get_teams(), expected_teams)
-
-    def test_all_teams_exist_but_without_members(
-        self, api, team_wrappers, teams
-    ):
-        """Test that ensure_teams_and_members works as expected when all of
-        the teams already exist, but have no members in them.
-        """
-        expected_teams = list(team_wrappers)
-        api.ensure_teams_and_members(expected_teams)
-        self.assert_teams_equal(api.get_teams(), expected_teams)
-
-    @pytest.mark.parametrize(
-        "unexpected_exc",
-        [
-            plug.APIError("", 404),
-            plug.APIError("", 400),
-            plug.APIError("", 500),
-        ],
-    )
-    def test_raises_on_non_422_exception(
-        self, api, organization, team_wrappers, unexpected_exc
-    ):
-        """Should raise if anything but a 422 http error is raised when
-        creating the team.
-        """
-
-        def raise_(*args, **kwargs):
-            raise unexpected_exc
-
-        organization.create_team.side_effect = raise_
-
-        with pytest.raises(plug.UnexpectedException):
-            api.ensure_teams_and_members(team_wrappers)
-
-    def test_running_twice_has_no_ill_effects(
-        self, api, no_teams, team_wrappers
-    ):
-        """Tests that add_to_team is not called if all members are already
-        in it."""
-        expected_teams = list(team_wrappers)
-        api.ensure_teams_and_members(expected_teams)
-        api.ensure_teams_and_members(expected_teams)
-        self.assert_teams_equal(api.get_teams(), expected_teams)
-
-
-class TestCreateRepos:
-    def test_creates_correct_repos(self, no_repos, repo_infos, api):
-        """Assert that org.create_repo is called with the correct arguments."""
-        # expect (self, repo_info) call args
-        expected_calls = [
-            call(
-                info.name,
-                description=info.description,
-                private=info.private,
-                team_id=info.team_id,
-            )
-            for info in repo_infos
-        ]
-
-        api.create_repos(repo_infos)
-
-        assert repos
-        api.org.create_repo.assert_has_calls(expected_calls)
-
-    def test_skips_existing_repos(self, no_repos, repo_infos, api):
-        """Assert that create_repo is called with all repos even when there are
-        exceptions.
-        """
-        expected_calls = [
-            call(
-                info.name,
-                description=info.description,
-                private=info.private,
-                team_id=info.team_id,
-            )
-            for info in repo_infos
-        ]
-        # create one repo in advance
-        api.create_repos(repo_infos[:1])
-
-        # start test
-        api.create_repos(repo_infos)
-
-        api.org.create_repo.assert_has_calls(expected_calls)
-
-    @pytest.mark.parametrize(
-        "unexpected_exception",
-        (SERVER_ERROR, RuntimeError(), NOT_FOUND_EXCEPTION),
-    )
-    def test_raises_on_unexpected_error(
-        self, no_repos, repo_infos, api, unexpected_exception
-    ):
-        create_repo_mock = api.org.create_repo
-        side_effect = [create_repo_mock] * len(repo_infos)
-        side_effect_github_exception = [unexpected_exception] + side_effect[1:]
-
-        create_repo_mock.side_effect = side_effect_github_exception
-        with pytest.raises(plug.APIError):
-            api.create_repos(repo_infos)
-
-    def test_returns_all_urls(self, mocker, repos, repo_infos, api):
-        """Assert that create_repo returns the urls for all repos, even if there
-        are validation errors.
-        """
-        expected_urls = [
-            api._insert_auth(generate_repo_url(info.name, ORG_NAME))
-            for info in repo_infos
-        ]
-
-        actual_urls = api.create_repos(repo_infos)
-        assert actual_urls == expected_urls
-        for url in actual_urls:
-            assert TOKEN in url
-
-    def test_create_repos_without_team_id(self, api):
-        """If there is no team id specified for the repo, then
-        github.Organization.create_repo must be called without the team_id
-        argument (because if it is called with team_id=None, there is a crash).
-        """
-        repo = plug.Repo(
-            name="repo",
-            description="Some description",
-            private=True,
-            team_id=None,  # this is the important part!
-        )
-
-        api.create_repos([repo])
-
-        api._org.create_repo.assert_called_once_with(
-            repo.name, description=repo.description, private=repo.private
-        )
+        assert isinstance(api, plug.PlatformAPI)
 
 
 class TestGetRepoUrls:
@@ -513,9 +348,9 @@ class TestGetRepoUrls:
     def test_with_token_and_user(self, repos, api):
         repo_names = [repo.name for repo in repos]
         api._user = USER
-        expected_urls = [api._insert_auth(repo.html_url) for repo in repos]
+        expected_urls = [api.insert_auth(repo.html_url) for repo in repos]
 
-        urls = api.get_repo_urls(repo_names)
+        urls = api.get_repo_urls(repo_names, insert_auth=True)
 
         assert sorted(urls) == sorted(expected_urls)
         for url in urls:
@@ -538,278 +373,6 @@ class TestGetRepoUrls:
 
         assert len(actual_urls) == len(students) * len(master_repo_names)
         assert sorted(expected_urls) == sorted(actual_urls)
-
-
-class TestOpenIssue:
-    """Tests for open_issue."""
-
-    def test_on_existing_repos(self, api, repos, issues):
-        repo_names = [repo.name for repo in repos]
-
-        api.open_issue(ISSUE.title, ISSUE.body, repo_names)
-
-        for repo in repos:
-            repo.create_issue.assert_called_once_with(
-                ISSUE.title, body=ISSUE.body
-            )
-
-    def test_on_some_non_existing_repos(self, api, repos):
-        """Assert that repos that do not exist are simply skipped."""
-
-        repo_names = [
-            "repo-that-does-not-exist-{}".format(i) for i in range(10)
-        ] + [repo.name for repo in repos]
-
-        api.open_issue(ISSUE.title, ISSUE.body, repo_names)
-
-        for repo in repos:
-            repo.create_issue.assert_called_once_with(
-                ISSUE.title, body=ISSUE.body
-            )
-
-    def test_no_crash_when_no_repos_are_found(self, api, repos, happy_github):
-        repo_names = [
-            "repo-that-does-not-exist-{}".format(i) for i in range(10)
-        ]
-
-        api.open_issue(ISSUE.title, ISSUE.body, repo_names)
-
-
-class TestCloseIssue:
-    """Tests for close_issue."""
-
-    def test_closes_correct_issues(self, repos, issues, api):
-        """Given repos with existing issues, assert that the corect issues are
-        closed.
-        """
-        repo_names = [repo.name for repo in repos]
-        expected_closed = [
-            issue for issue in issues if issue.title == CLOSE_ISSUE.title
-        ]
-        expected_not_closed = [
-            issue for issue in issues if issue.title == DONT_CLOSE_ISSUE.title
-        ]
-        assert expected_closed, "pre-test assert"
-        assert expected_not_closed, "pre-test assert"
-        regex = "^{}$".format(CLOSE_ISSUE.title)
-
-        api.close_issue(regex, repo_names)
-
-        for issue in expected_not_closed:
-            assert not issue.edit.called
-        for issue in expected_closed:
-            # issue.edit.assert_called_once_with(state='closed')
-            assert issue.edit.called
-
-    def test_no_crash_if_no_repos_found(self, api, repos, issues):
-        """Tests that there is no crash if no repos are found."""
-        repo_names = [
-            "repo-that-does-not-exist-{}".format(i) for i in range(10)
-        ]
-
-        regex = "^{}$".format(CLOSE_ISSUE.title)
-        api.close_issue(regex, repo_names)
-
-        for issue in issues:
-            assert not issue.edit.called
-
-    def test_no_crash_if_no_issues_found(self, api, repos, issues):
-        """Tests that there is no crash if repos are found, but no matching
-        issues.
-        """
-        repo_names = [repo.name for repo in repos]
-        regex = "^{}$".format("non-matching-regex")
-
-        api.close_issue(regex, repo_names)
-
-        for issue in issues:
-            assert not issue.edit.called
-
-
-class TestGetIssues:
-    """Tests for get_issues."""
-
-    @staticmethod
-    def assert_issues_equal(actual_issues, expected_issues):
-        """The expected issues don't have the mocked implementation, while the
-        actual issues all should have it.
-        """
-        actual_issues, expected_issues = (
-            list(actual_issues),
-            [
-                plug.Issue(
-                    title, body, number, created_at.isoformat(), author, impl
-                )
-                for title, body, number, created_at, author, impl in iter(
-                    expected_issues
-                )
-            ],
-        )
-        assert len(actual_issues) == len(expected_issues)
-        for act, exp in zip(sorted(actual_issues), sorted(expected_issues)):
-            assert act.implementation
-            for field_name in plug.Issue._fields:
-                if field_name == "implementation":
-                    continue
-                assert getattr(act, field_name) == getattr(exp, field_name)
-
-    def test_get_all_open_issues(self, repos, issues, api):
-        repo_names = [repo.name for repo in repos]
-
-        name_issues_pairs = api.get_issues(
-            repo_names, state=plug.IssueState.OPEN
-        )
-
-        found_repos = []
-        for repo_name, issue_gen in name_issues_pairs:
-            found_repos.append(repo_name)
-
-            self.assert_issues_equal(
-                actual_issues=issue_gen, expected_issues=OPEN_ISSUES
-            )
-
-        assert sorted(found_repos) == sorted(repo_names)
-
-    def test_get_all_closed_issues(self, repos, issues, api):
-        repo_names = [repo.name for repo in repos]
-
-        name_issues_pairs = api.get_issues(
-            repo_names, state=plug.IssueState.CLOSED
-        )
-
-        found_repos = []
-        for repo_name, issue_gen in name_issues_pairs:
-            found_repos.append(repo_name)
-
-            self.assert_issues_equal(
-                actual_issues=issue_gen, expected_issues=CLOSED_ISSUES
-            )
-
-        assert sorted(found_repos) == sorted(repo_names)
-
-    def test_get_issues_when_one_repo_doesnt_exist(self, repos, issues, api):
-        """It should just ignore the repo that does not exist (and log the
-        error)."""
-        non_existing = "definitely-non-existing-repo"
-        repo_names = [repo.name for repo in repos] + [non_existing]
-        random.shuffle(repo_names)
-
-        name_issues_pairs = api.get_issues(
-            repo_names, state=plug.IssueState.OPEN
-        )
-
-        found_repos = []
-        for repo_name, issue_gen in name_issues_pairs:
-            found_repos.append(repo_name)
-
-            self.assert_issues_equal(
-                actual_issues=issue_gen, expected_issues=OPEN_ISSUES
-            )
-
-        assert len(found_repos) + 1 == len(repo_names)
-        assert set(found_repos) == set(repo_names) - {non_existing}
-
-    def test_get_open_issues_by_regex(self, repos, issues, api):
-        """Should filter by regex."""
-        sought_issue = OPEN_ISSUES[1]
-        repo_names = [repo.name for repo in repos]
-        regex = "^{}$".format(sought_issue.title)
-
-        name_issues_pairs = api.get_issues(
-            repo_names, state=plug.IssueState.OPEN, title_regex=regex
-        )
-
-        found_repos = []
-        for repo_name, issue_gen in name_issues_pairs:
-            found_repos.append(repo_name)
-
-            self.assert_issues_equal(
-                actual_issues=issue_gen, expected_issues=[sought_issue]
-            )
-
-        assert sorted(found_repos) == sorted(repo_names)
-
-
-@pytest.fixture
-def team_to_repos(api, no_repos, organization):
-    """Create a team_to_repos mapping for use in _add_repos_to_teams, anc create
-    each team and repo. Return the team_to_repos mapping.
-    """
-    num_teams = 10
-    # arrange
-    team_names = ["team-{}".format(i) for i in range(num_teams)]
-    repo_names = ["some-repo-{}".format(i) for i in range(num_teams)]
-    for name in team_names:
-        organization.create_team(name, permission="pull")
-    for name in repo_names:
-        organization.create_repo(name)
-    team_to_repos = {
-        team_name: [repo_name]
-        for team_name, repo_name in zip(team_names, repo_names)
-    }
-    return team_to_repos
-
-
-class TestAddReposToReviewTeams:
-    def test_with_default_issue(self, team_to_repos, organization, api):
-        num_teams = len(team_to_repos)
-        default_issue = github_plugin.DEFAULT_REVIEW_ISSUE
-        assert num_teams, "pre-test assert"
-        team_repo_tuples = [
-            (team, *repos) for team, repos in team_to_repos.items()
-        ]
-        assert len(team_repo_tuples) == num_teams, "pre-test assert"
-
-        api.add_repos_to_review_teams(team_to_repos, None)
-
-        for team_name, repo_name in team_repo_tuples:
-            team = organization.get_team(
-                hash(team_name)
-            )  # hash(team_name) is the id, see the fixture!
-            repo = organization.get_repo(repo_name)
-            assert team.add_to_repos.called_once_with(repo)
-
-            repo.create_issue.assert_called_once_with(
-                default_issue.title,
-                body=default_issue.body,
-                assignees=team.get_members(),
-            )
-
-
-class TestAddReposToTeams:
-    def test_happy_path(self, team_to_repos, api):
-        num_teams = len(team_to_repos)
-        expected_tups = sorted(team_to_repos.items())
-
-        # act
-        result = list(api._add_repos_to_teams(team_to_repos))
-        result.sort(key=lambda tup: tup[0].name)
-
-        # assert
-        assert len(result) == len(team_to_repos) == num_teams
-        for res_tup, expected_tup in zip(result, expected_tups):
-            expected_team_name, expected_repo_names = expected_tup
-            expected_repo_name = expected_repo_names[0]
-
-            actual_team, actual_repo = res_tup
-
-            actual_team.add_to_repos.assert_called_once_with(actual_repo)
-            assert actual_team.name == expected_team_name
-            assert actual_repo.name == expected_repo_name
-
-
-class TestDeleteTeams:
-    def test_delete_non_existing_teams_does_not_crash(self, no_teams, api):
-        team_names = ["week-{}".format(i) for i in range(10)]
-
-        api.delete_teams(team_names)
-
-    def test_delete_existing_teams(self, teams, api):
-        team_names = [team.name for team in teams]
-
-        api.delete_teams(team_names)
-
-        assert all(map(lambda t: t.delete.called, teams))
 
 
 @pytest.fixture(params=["get_user", "get_organization"])
@@ -910,27 +473,3 @@ class TestVerifySettings:
 
         for msg in expected_messages:
             assert msg in str(exc_info.value)
-
-
-class TestGetPeerReviewProgress:
-    """Tests for get_peer_review_progress
-
-    TODO: These tests need to be expanded. A lot.
-    """
-
-    def test_nothing_returns(self, review_student_teams, review_teams, api):
-        """Test calling the function when none of the functions return
-        iterables.
-        """
-        review_team_names = list(review_teams.keys())
-        api.get_review_progress(
-            review_team_names, review_student_teams, "peer"
-        )
-
-    def test_with_review_teams_but_no_repos(
-        self, review_student_teams, review_teams, teams, api
-    ):
-        review_team_names = list(review_teams.keys())
-        api.get_review_progress(
-            review_team_names, review_student_teams, "peer"
-        )

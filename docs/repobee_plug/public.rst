@@ -79,7 +79,7 @@ API Wrappers
 The API wrappers in ``repobee-plug`` provide a level of abstraction from the
 the underlying platform API (e.g. GitHub or GitLab), and allows RepoBee to work
 with different platforms. To fully support a new platform, the
-:py:class:`~repobee_plug.API` must be subclassed an all of its functions
+:py:class:`~repobee_plug.PlatformAPI` must be subclassed an all of its functions
 implemented. It is possible to support a subset of the functionality as well,
 but you will need to look into the RepoBee implementation to see which
 API methods are required for which commands.
@@ -100,7 +100,7 @@ API methods are required for which commands.
 .. autoclass:: repobee_plug.Repo
     :members:
 
-.. autoclass:: repobee_plug.API
+.. autoclass:: repobee_plug.PlatformAPI
     :members:
     :inherited-members:
 

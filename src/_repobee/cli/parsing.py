@@ -10,6 +10,7 @@ the primary parser should go int :py:mod:`_repobee.cli.mainparser`.
 .. moduleauthor:: Simon Larsén
 """
 import argparse
+import itertools
 import logging
 import os
 import pathlib
@@ -42,7 +43,7 @@ def handle_args(
     sys_args: Iterable[str],
     show_all_opts: bool = False,
     config_file: pathlib.Path = constants.DEFAULT_CONFIG_FILE,
-) -> Tuple[argparse.Namespace, Optional[plug.API]]:
+) -> Tuple[argparse.Namespace, Optional[plug.PlatformAPI]]:
     """Parse and process command line arguments and instantiate the platform
     API (if it's needed).
 
@@ -140,7 +141,7 @@ def _resolve_requires_processing(args: argparse.Namespace) -> _ArgsProcessing:
 
 def _process_args(
     args: argparse.Namespace,
-) -> Tuple[argparse.Namespace, plug.API]:
+) -> Tuple[argparse.Namespace, plug.PlatformAPI]:
     """Process parsed command line arguments.
 
     Args:
@@ -153,7 +154,8 @@ def _process_args(
 
     repos = master_names = master_urls = None
     if "discover_repos" in args and args.discover_repos:
-        repos = api.discover_repos(args.students)
+        teams = api.get_teams([t.name for t in args.students])
+        repos = itertools.chain.from_iterable(map(api.get_team_repos, teams))
     elif "master_repo_names" in args:
         master_names = args.master_repo_names
         master_urls = _repo_names_to_urls(master_names, master_org_name, api)
@@ -171,7 +173,7 @@ def _process_args(
 
 
 def _repo_tuple_generator(
-    master_repo_names: List[str], teams: List[plug.Team], api: plug.API
+    master_repo_names: List[str], teams: List[plug.Team], api: plug.PlatformAPI
 ) -> Generator[plug.Repo, None, None]:
     for master_repo_name in master_repo_names:
         for team in teams:
@@ -236,7 +238,7 @@ def _extract_groups(args: argparse.Namespace) -> List[str]:
 
 def _connect_to_api(
     base_url: str, token: str, org_name: str, user: str
-) -> plug.API:
+) -> plug.PlatformAPI:
     """Return an API instance connected to the specified API endpoint."""
     required_args = plug.manager.hook.api_init_requires()
     kwargs = {}
@@ -260,7 +262,7 @@ def _connect_to_api(
 
 
 def _repo_names_to_urls(
-    repo_names: Iterable[str], org_name: str, api: plug.API
+    repo_names: Iterable[str], org_name: str, api: plug.PlatformAPI
 ) -> List[str]:
     """Use the repo_names to extract urls to the repos. Look for git
     repos with the correct names in the local directory and create local uris
@@ -293,7 +295,7 @@ def _repo_names_to_urls(
 
 def _process_ext_args(
     args: argparse.Namespace,
-) -> Tuple[argparse.Namespace, Optional[plug.API]]:
+) -> Tuple[argparse.Namespace, Optional[plug.PlatformAPI]]:
     ext_cmd = args._extension_command
     assert ext_cmd
     settings = ext_cmd.__settings__

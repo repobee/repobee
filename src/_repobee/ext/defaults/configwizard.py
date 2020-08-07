@@ -30,11 +30,11 @@ class Wizard(plug.Plugin, plug.cli.Command):
         ),
     )
 
-    def command(self, api: plug.API) -> None:
+    def command(self, api: plug.PlatformAPI) -> None:
         return callback(self.args, api)
 
 
-def callback(args: argparse.Namespace, api: plug.API) -> None:
+def callback(args: argparse.Namespace, api: plug.PlatformAPI) -> None:
     """Run through a configuration wizard."""
     parser = configparser.ConfigParser()
 

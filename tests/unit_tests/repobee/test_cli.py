@@ -13,7 +13,6 @@ import _repobee
 import _repobee.cli.dispatch
 import _repobee.cli.parsing
 import _repobee.ext
-import _repobee.ext.defaults.github
 import _repobee.ext.query
 import _repobee.constants
 import _repobee.plugin
@@ -78,29 +77,6 @@ VALID_PARSED_ARGS = dict(
 
 
 @pytest.fixture(autouse=True)
-def api_instance_mock():
-    instance_mock = mock.MagicMock(spec=_repobee.ext.defaults.github.GitHubAPI)
-
-    def _get_repo_urls(repo_names, org_name=None, teams=None):
-        return [generate_repo_url(name, org_name) for name in repo_names]
-
-    instance_mock.get_repo_urls.side_effect = _get_repo_urls
-    instance_mock.ensure_teams_and_members.side_effect = lambda teams: [
-        plug.Team(name=team.name, members=team.members, id=0) for team in teams
-    ]
-    return instance_mock
-
-
-@pytest.fixture(autouse=True)
-def api_class_mock(mocker, api_instance_mock):
-    class_mock = mocker.patch(
-        "_repobee.ext.defaults.github.GitHubAPI", autospec=True
-    )
-    class_mock.return_value = api_instance_mock
-    return class_mock
-
-
-@pytest.fixture(autouse=True)
 def load_default_plugins_auto(load_default_plugins):
     """The only point of this fixture is to make load_default_plugins
     autouse=True.
@@ -156,10 +132,10 @@ def parsed_args_all_subparsers(request):
         exception.PushFailedError("some message", 128, b"error", "someurl"),
         exception.CloneFailedError("some message", 128, b"error", "someurl"),
         exception.GitError("some message", 128, b"error"),
-        plug.APIError("some message"),
+        plug.PlatformError("some message"),
     ],
 )
-def command_all_raise_mock(command_mock, api_class_mock, request):
+def command_all_raise_mock(command_mock, dummyapi_instance, request):
     """Mock of _repobee.command where all functions raise expected exceptions
     (i.e. those caught in _sys_exit_on_expected_error)
     """
@@ -178,7 +154,7 @@ def command_all_raise_mock(command_mock, api_class_mock, request):
     command_mock.purge_review_teams.side_effect = raise_
     command_mock.assign_peer_reviews.side_effect = raise_
     command_mock.list_issues.side_effect = raise_
-    api_class_mock.verify_settings.side_effect = raise_
+    dummyapi_instance.verify_settings = raise_
     return command_mock
 
 
@@ -237,7 +213,7 @@ class TestDispatchCommand:
         self,
         tmpdir,
         hook_result_mapping,
-        api_instance_mock,
+        dummyapi_instance,
         action,
         command_func,
     ):
@@ -252,13 +228,13 @@ class TestDispatchCommand:
         ):
             args = argparse.Namespace(**action.asdict(), **args_dict)
             _repobee.cli.dispatch.dispatch_command(
-                args, api_instance_mock, EMPTY_PATH
+                args, dummyapi_instance, EMPTY_PATH
             )
 
         write.assert_called_once_with(expected_json, expected_filepath)
 
     def test_does_not_write_hook_results_if_there_are_none(
-        self, tmpdir, api_instance_mock
+        self, tmpdir, dummyapi_instance
     ):
         """Test that no file is created if there are no hook results, even if
         --hook-results-file is specified.
@@ -275,23 +251,22 @@ class TestDispatchCommand:
         ):
             args = argparse.Namespace(**action.asdict(), **args_dict)
             _repobee.cli.dispatch.dispatch_command(
-                args, api_instance_mock, EMPTY_PATH
+                args, dummyapi_instance, EMPTY_PATH
             )
 
         assert not write.called
 
     def test_no_crash_on_valid_args(
-        self, parsed_args_all_subparsers, api_instance_mock, command_mock
+        self, parsed_args_all_subparsers, dummyapi_instance, command_mock
     ):
         """Test that valid arguments does not result in crash. Only validates
         that there are no crashes, does not validate any other behavior!"""
-        print(parsed_args_all_subparsers)
         _repobee.cli.dispatch.dispatch_command(
-            parsed_args_all_subparsers, api_instance_mock, EMPTY_PATH
+            parsed_args_all_subparsers, dummyapi_instance, EMPTY_PATH
         )
 
     def test_setup_student_repos_called_with_correct_args(
-        self, command_mock, api_instance_mock
+        self, command_mock, dummyapi_instance
     ):
         args = argparse.Namespace(
             **repobee_plug.cli.CoreCommand.repos.setup.asdict(),
@@ -299,15 +274,15 @@ class TestDispatchCommand:
         )
 
         _repobee.cli.dispatch.dispatch_command(
-            args, api_instance_mock, EMPTY_PATH
+            args, dummyapi_instance, EMPTY_PATH
         )
 
         command_mock.setup_student_repos.assert_called_once_with(
-            args.master_repo_urls, args.students, api_instance_mock
+            args.master_repo_urls, args.students, dummyapi_instance
         )
 
     def test_update_student_repos_called_with_correct_args(
-        self, command_mock, api_instance_mock
+        self, command_mock, dummyapi_instance
     ):
         args = argparse.Namespace(
             **repobee_plug.cli.CoreCommand.repos.update.asdict(),
@@ -315,33 +290,34 @@ class TestDispatchCommand:
         )
 
         _repobee.cli.dispatch.dispatch_command(
-            args, api_instance_mock, EMPTY_PATH
+            args, dummyapi_instance, EMPTY_PATH
         )
 
         command_mock.update_student_repos.assert_called_once_with(
             args.master_repo_urls,
             args.students,
-            api_instance_mock,
+            dummyapi_instance,
             issue=args.issue,
         )
 
-    def test_create_teams_called_with_correct_args(self, api_instance_mock):
+    def test_create_teams_called_with_correct_args(
+        self, dummyapi_instance, command_mock
+    ):
         args = argparse.Namespace(
             **repobee_plug.cli.CoreCommand.repos.create_teams.asdict(),
             **VALID_PARSED_ARGS
         )
-        expected_arg = list(args.students)
 
         _repobee.cli.dispatch.dispatch_command(
-            args, api_instance_mock, EMPTY_PATH
+            args, dummyapi_instance, EMPTY_PATH
         )
 
-        api_instance_mock.ensure_teams_and_members.assert_called_once_with(
-            expected_arg
+        command_mock.create_teams.assert_called_once_with(
+            list(args.students), plug.TeamPermission.PUSH, dummyapi_instance
         )
 
     def test_open_issue_called_with_correct_args(
-        self, command_mock, api_instance_mock
+        self, command_mock, dummyapi_instance
     ):
         args = argparse.Namespace(
             **repobee_plug.cli.CoreCommand.issues.open.asdict(),
@@ -349,18 +325,18 @@ class TestDispatchCommand:
         )
 
         _repobee.cli.dispatch.dispatch_command(
-            args, api_instance_mock, EMPTY_PATH
+            args, dummyapi_instance, EMPTY_PATH
         )
 
         command_mock.open_issue.assert_called_once_with(
             args.issue,
             args.master_repo_names,
             args.students,
-            api_instance_mock,
+            dummyapi_instance,
         )
 
     def test_close_issue_called_with_correct_args(
-        self, command_mock, api_instance_mock
+        self, command_mock, dummyapi_instance
     ):
         args = argparse.Namespace(
             **repobee_plug.cli.CoreCommand.issues.close.asdict(),
@@ -368,15 +344,15 @@ class TestDispatchCommand:
         )
 
         _repobee.cli.dispatch.dispatch_command(
-            args, api_instance_mock, EMPTY_PATH
+            args, dummyapi_instance, EMPTY_PATH
         )
 
         command_mock.close_issue.assert_called_once_with(
-            args.title_regex, args.repos, api_instance_mock
+            args.title_regex, args.repos, dummyapi_instance
         )
 
     def test_migrate_repos_called_with_correct_args(
-        self, command_mock, api_instance_mock
+        self, command_mock, dummyapi_instance
     ):
         args = argparse.Namespace(
             **repobee_plug.cli.CoreCommand.repos.migrate.asdict(),
@@ -384,15 +360,15 @@ class TestDispatchCommand:
         )
 
         _repobee.cli.dispatch.dispatch_command(
-            args, api_instance_mock, EMPTY_PATH
+            args, dummyapi_instance, EMPTY_PATH
         )
 
         command_mock.migrate_repos.assert_called_once_with(
-            args.master_repo_urls, api_instance_mock
+            args.master_repo_urls, dummyapi_instance
         )
 
     def test_clone_repos_called_with_correct_args(
-        self, command_mock, api_instance_mock
+        self, command_mock, dummyapi_instance
     ):
         args = argparse.Namespace(
             **repobee_plug.cli.CoreCommand.repos.clone.asdict(),
@@ -400,14 +376,16 @@ class TestDispatchCommand:
         )
 
         _repobee.cli.dispatch.dispatch_command(
-            args, api_instance_mock, EMPTY_PATH
+            args, dummyapi_instance, EMPTY_PATH
         )
 
         command_mock.clone_repos.assert_called_once_with(
-            args.repos, api_instance_mock
+            args.repos, dummyapi_instance
         )
 
-    def test_verify_settings_called_with_correct_args(self, api_class_mock):
+    def test_verify_settings_called_with_correct_args(
+        self, monkeypatch, dummyapi_class
+    ):
         # regular mockaing is broken for static methods, it seems, produces
         # non-callable so using monkeypatch instead
         args = argparse.Namespace(
@@ -418,14 +396,22 @@ class TestDispatchCommand:
             org_name=ORG_NAME,
             master_org_name=None
         )
+        mock_verify_settings = mock.MagicMock(
+            spec=dummyapi_class.verify_settings
+        )
+        monkeypatch.setattr(
+            dummyapi_class, "verify_settings", mock_verify_settings
+        )
 
         _repobee.cli.dispatch.dispatch_command(args, None, EMPTY_PATH)
 
-        api_class_mock.verify_settings.assert_called_once_with(
+        mock_verify_settings.assert_called_once_with(
             args.user, args.org_name, args.base_url, TOKEN, None
         )
 
-    def test_verify_settings_called_with_master_org_name(self, api_class_mock):
+    def test_verify_settings_called_with_master_org_name(
+        self, dummyapi_class, monkeypatch
+    ):
         args = argparse.Namespace(
             **repobee_plug.cli.CoreCommand.config.verify.asdict(),
             user=USER,
@@ -434,10 +420,16 @@ class TestDispatchCommand:
             token=TOKEN,
             master_org_name=MASTER_ORG_NAME
         )
+        mock_verify_settings = mock.MagicMock(
+            spec=dummyapi_class.verify_settings
+        )
+        monkeypatch.setattr(
+            dummyapi_class, "verify_settings", mock_verify_settings
+        )
 
         _repobee.cli.dispatch.dispatch_command(args, None, EMPTY_PATH)
 
-        api_class_mock.verify_settings.assert_called_once_with(
+        mock_verify_settings.assert_called_once_with(
             args.user, args.org_name, args.base_url, TOKEN, MASTER_ORG_NAME
         )
 
@@ -520,70 +512,6 @@ class TestBaseParsing:
         assert "--students-file" not in captured.out
         assert "--token" not in captured.out
 
-    def test_raises_on_invalid_org(self, api_class_mock, students_file):
-        """Test that an appropriate error is raised when the organization is
-        not found.
-        """
-
-        def raise_(*args, **kwargs):
-            raise plug.NotFoundError("Couldn't find the organization.")
-
-        api_class_mock.side_effect = raise_
-
-        with pytest.raises(plug.NotFoundError) as exc_info:
-            _repobee.cli.parsing.handle_args(
-                [
-                    *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
-                    *COMPLETE_PUSH_ARGS,
-                    "--sf",
-                    str(students_file),
-                ]
-            )
-
-        assert "organization {} could not be found".format(ORG_NAME) in str(
-            exc_info.value
-        )
-
-    def test_raises_on_bad_credentials(self, api_class_mock, students_file):
-        def raise_(*args, **kwargs):
-            raise plug.BadCredentials("bad credentials")
-
-        api_class_mock.side_effect = raise_
-
-        with pytest.raises(plug.BadCredentials) as exc_info:
-            _repobee.cli.parsing.handle_args(
-                [
-                    *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
-                    *COMPLETE_PUSH_ARGS,
-                    "--sf",
-                    str(students_file),
-                ]
-            )
-
-        assert "bad credentials" in str(exc_info.value)
-
-    def test_raises_on_invalid_base_url(self, api_class_mock, students_file):
-        def raise_(*args, **kwargs):
-            raise plug.ServiceNotFoundError(
-                "GitHub service could not be found, check the url"
-            )
-
-        api_class_mock.side_effect = raise_
-
-        with pytest.raises(plug.ServiceNotFoundError) as exc_info:
-            _repobee.cli.parsing.handle_args(
-                [
-                    *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
-                    *COMPLETE_PUSH_ARGS,
-                    "--sf",
-                    str(students_file),
-                ]
-            )
-
-        assert "GitHub service could not be found, check the url" in str(
-            exc_info.value
-        )
-
     @pytest.mark.parametrize(
         "action",
         [
@@ -592,8 +520,9 @@ class TestBaseParsing:
         ],
     )
     def test_master_org_overrides_target_org_for_master_repos(
-        self, command_mock, api_instance_mock, students_file, action
+        self, command_mock, dummyapi_instance, students_file, action
     ):
+        print(plug.manager.get_plugins())
         parsed_args, _ = _repobee.cli.parsing.handle_args(
             [
                 *action.as_name_tuple(),
@@ -620,7 +549,7 @@ class TestBaseParsing:
         ],
     )
     def test_master_org_name_defaults_to_org_name(
-        self, api_instance_mock, students_file, action
+        self, dummyapi_instance, students_file, action
     ):
         parsed_args, _ = _repobee.cli.parsing.handle_args(
             [
@@ -646,7 +575,7 @@ class TestBaseParsing:
         ],
     )
     def test_token_env_variable_picked_up(
-        self, api_instance_mock, students_file, action
+        self, dummyapi_instance, students_file, action
     ):
         parsed_args, _ = _repobee.cli.parsing.handle_args(
             [
@@ -667,7 +596,7 @@ class TestBaseParsing:
         ],
     )
     def test_token_cli_arg_picked_up(
-        self, mocker, api_instance_mock, students_file, action
+        self, mocker, dummyapi_instance, students_file, action
     ):
         mocker.patch("os.getenv", return_value="")
         token = "supersecretothertoken"
@@ -692,7 +621,7 @@ class TestBaseParsing:
         ],
     )
     def test_raises_on_non_tls_api_url(
-        self, api_instance_mock, students_file, url
+        self, dummyapi_instance, students_file, url
     ):
         """Test that a non https url causes parse-args to raise. Sending the token
         over an unencrypted connection would be a security risk, so https is
@@ -717,7 +646,7 @@ class TestBaseParsing:
         assert "unsupported protocol in {}".format(url) in str(exc_info.value)
 
     def test_correctly_parses_create_teams(
-        self, api_instance_mock, students_file
+        self, dummyapi_instance, students_file
     ):
         """Test that the create-teams command is correctly parsed."""
         sys_args = [
@@ -729,7 +658,7 @@ class TestBaseParsing:
 
         parsed_args, api = _repobee.cli.parsing.handle_args(sys_args)
 
-        assert api == api_instance_mock
+        assert api == dummyapi_instance
         assert parsed_args.students == list(STUDENTS)
         assert parsed_args.master_repo_names is None
         assert parsed_args.master_repo_urls is None
@@ -921,7 +850,7 @@ class TestStudentParsing:
         )
 
 
-def assert_base_push_args(parsed_args, api):
+def assert_base_push_args(parsed_args):
     """Assert that the parsed arguments are consistend with the
     BASE_PUSH_ARGS.
     """
@@ -932,7 +861,10 @@ def assert_base_push_args(parsed_args, api):
     assert parsed_args.master_repo_urls == [
         generate_repo_url(rn, ORG_NAME) for rn in REPO_NAMES
     ]
-    api.assert_called_once_with(BASE_URL, TOKEN, ORG_NAME, USER)
+    assert parsed_args.base_url == BASE_URL
+    assert parsed_args.token == TOKEN
+    assert parsed_args.org_name == ORG_NAME
+    assert parsed_args.user == USER
 
 
 def assert_config_args(action, parsed_args):
@@ -1031,7 +963,7 @@ class TestConfig:
 class TestSetupAndUpdateParsers:
     """Tests that are in common for setup and update."""
 
-    def test_happy_path(self, api_class_mock, action):
+    def test_happy_path(self, action):
         """Tests standard operation of the parsers."""
         sys_args = [
             *action.as_name_tuple(),
@@ -1042,9 +974,9 @@ class TestSetupAndUpdateParsers:
 
         parsed_args, _ = _repobee.cli.parsing.handle_args(sys_args)
 
-        assert_base_push_args(parsed_args, api_class_mock)
+        assert_base_push_args(parsed_args)
 
-    def test_finds_local_repo(self, mocker, api_instance_mock, action):
+    def test_finds_local_repo(self, mocker, dummyapi_instance, action):
         """Tests that the parsers pick up local repos when they are not
         found in the organization.
         """
@@ -1060,9 +992,6 @@ class TestSetupAndUpdateParsers:
         ]
         expected_uris = [pathlib.Path(os.path.abspath(local_repo)).as_uri()]
         expected = expected_urls + expected_uris
-        api_instance_mock.get_repo_urls.side_effect = lambda repo_names, _: [
-            generate_repo_url(name, ORG_NAME) for name in repo_names
-        ]
 
         sys_args = [
             *action.as_name_tuple(),

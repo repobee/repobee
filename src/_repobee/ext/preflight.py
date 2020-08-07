@@ -11,7 +11,7 @@ import repobee_plug as plug
 
 
 @plug.repobee_hook
-def pre_setup(path: pathlib.Path, api: plug.API):
+def pre_setup(path: pathlib.Path, api: plug.PlatformAPI):
     return plug.Result(
         name="preflight",
         msg="Successful preflight on {}".format(path),

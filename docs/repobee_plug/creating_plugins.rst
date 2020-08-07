@@ -387,7 +387,7 @@ any work. This is only semi-well documented at the moment, but it's easy enough
 to simply try passing different base parsers to the ``requires_base_parsers``.
 
 The ``callback`` should be a function that accepts the parsed arguments from the
-extension command's parser, as well as an :py:class:`~repobee_plug.API`
+extension command's parser, as well as an :py:class:`~repobee_plug.PlatformAPI`
 instance. Again, if the command requires any base parsers, the arguments from
 these will be both parsed and processed. The ``api`` argument is only passed a
 meaningful value if ``requires_api=True``, otherwise ``None`` is passed.

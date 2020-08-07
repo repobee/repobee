@@ -1,11 +1,16 @@
 """Test setup."""
-import sys
-import pathlib
-import tempfile
-from contextlib import contextmanager
 import os
-from unittest.mock import MagicMock
+import pathlib
+import sys
+import tempfile
+import types
+
+from typing import Iterable, Optional, List
+from contextlib import contextmanager
+
 import pytest
+
+import repobee_plug as plug
 
 import _repobee.constants
 import _repobee.config
@@ -13,16 +18,66 @@ import _repobee.plugin
 
 import constants
 
-# mock the PyGithub github module
-sys.modules["github"] = MagicMock()
-
-
 import _repobee  # noqa: E402
 
 EXPECTED_ENV_VARIABLES = [
     _repobee.constants.TOKEN_ENV,
     "REPOBEE_NO_VERIFY_SSL",
 ]
+
+
+class DummyAPI(plug.PlatformAPI):
+    """Empty API implementation."""
+
+    def __init__(self, base_url: str, token: str, org_name: str, user: str):
+        self.base_url = base_url
+        self.token = token
+        self.org_name = org_name
+        self.user = user
+
+    def get_repo_urls(
+        self,
+        master_repo_names: Iterable[str],
+        org_name: Optional[str] = None,
+        teams: Optional[List[plug.Team]] = None,
+        insert_auth: bool = False,
+    ) -> List[str]:
+        repo_names = (
+            master_repo_names
+            if not teams
+            else plug.generate_repo_names(teams, master_repo_names)
+        )
+        return [
+            f"{constants.HOST_URL}/{org_name or self.org_name}/{repo_name}"
+            for repo_name in repo_names
+        ]
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, DummyAPI)
+            and self.base_url == other.base_url
+            and self.token == other.token
+            and self.org_name == other.org_name
+            and self.user == other.user
+        )
+
+    @staticmethod
+    def verify_settings(
+        user: str,
+        org_name: str,
+        base_url: str,
+        token: str,
+        master_org_name: Optional[str] = None,
+    ) -> None:
+        pass
+
+
+class DummyAPIHooks(plug.Plugin):
+    def api_init_requires(self):
+        return ("base_url", "token", "org_name", "user")
+
+    def get_api_class(self):
+        return DummyAPI
 
 
 @contextmanager
@@ -48,6 +103,32 @@ def _students_file(populate: bool = True):
                 )
                 file.flush()
         yield file
+
+
+@pytest.fixture
+def dummyapi_instance():
+    return DummyAPI(
+        base_url=constants.BASE_URL,
+        user=constants.USER,
+        token=constants.TOKEN,
+        org_name=constants.ORG_NAME,
+    )
+
+
+@pytest.fixture
+def dummyapi_class():
+    return DummyAPI
+
+
+@pytest.fixture(autouse=True)
+def use_dummy_api(load_default_plugins):
+    # IMPORTANT: must run after load_default_plugins fixture
+    # to ensure that the fakeapi overrides the GitHub API
+    mod = types.ModuleType("dummyapi")
+    mod.__package__ = "dummyapi"
+    setattr(mod, "DummyAPIHooks", DummyAPIHooks)
+
+    _repobee.plugin.register_plugins([mod])
 
 
 @pytest.fixture

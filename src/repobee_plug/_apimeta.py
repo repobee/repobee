@@ -18,11 +18,11 @@ NotImplementedError) for any unimplemented API methods.
 
 .. moduleauthor:: Simon Larsén
 """
+import dataclasses
 import inspect
 import enum
-import collections
 import itertools
-from typing import List, Iterable, Optional, Generator, Tuple, Mapping
+from typing import List, Iterable, Optional, Any
 
 from repobee_plug import _exceptions
 
@@ -80,72 +80,63 @@ def _check_name_length(name):
         )
 
 
-class Repo(
-    APIObject,
-    collections.namedtuple(
-        "Repo", "name description private team_id url implementation".split()
-    ),
-):
-    """Wrapper class for a Repo API object."""
-
-    def __new__(
-        cls,
-        name,
-        description,
-        private,
-        team_id=None,
-        url=None,
-        implementation=None,
-    ):
-        _check_name_length(name)
-        return super().__new__(
-            cls, name, description, private, team_id, url, implementation
-        )
-
-
-class Team(
-    APIObject,
-    collections.namedtuple("Team", "name members id implementation".split()),
-):
+@dataclasses.dataclass
+class Team(APIObject):
     """Wrapper class for a Team API object."""
 
-    def __new__(cls, members, name=None, id=None, implementation=None):
-        if not name:
-            name = "-".join(sorted(members))
-        _check_name_length(name)
-        return super().__new__(cls, name, members, id, implementation)
+    def __init__(
+        self,
+        members: Iterable[str],
+        name: Optional[str] = None,
+        id: Optional[Any] = None,
+        implementation: Optional[Any] = None,
+    ):
+        self.members = list(members)
+        self.name = name if name else "-".join(sorted(members))
+        self.id = id
+        self.implementation = implementation
+
+        _check_name_length(self.name)
 
     def __str__(self):
         return self.name
 
+    def __lt__(self, o):
+        return self.name < o.name
 
-class Issue(
-    APIObject,
-    collections.namedtuple(
-        "Issue", "title body number created_at author implementation".split()
-    ),
-):
+
+@dataclasses.dataclass
+class Issue(APIObject):
     """Wrapper class for an Issue API object."""
 
-    def __new__(
-        cls,
-        title,
-        body,
-        number=None,
-        created_at=None,
-        author=None,
-        implementation=None,
+    def __init__(
+        self,
+        title: str,
+        body: str,
+        number: Optional[int] = None,
+        created_at: Optional[str] = None,
+        author: Optional[str] = None,
+        state: Optional[IssueState] = None,
+        implementation: Optional[Any] = None,
     ):
-        return super().__new__(
-            cls, title, body, number, created_at, author, implementation
-        )
+        self.title = title
+        self.body = body
+        self.number = number
+        self.created_at = created_at
+        self.author = author
+        self.implementation = implementation
 
     def to_dict(self):
         """Return a dictionary representation of this namedtuple, without
         the ``implementation`` field.
         """
-        asdict = self._asdict()
-        del asdict["implementation"]
+        asdict = {
+            "title": self.title,
+            "body": self.body,
+            "number": self.number,
+            "created_at": self.created_at,
+            "author": self.author,
+        }
         return asdict
 
     @staticmethod
@@ -155,6 +146,26 @@ class Issue(
         to_dict -> from_dict roundtrip.
         """
         return Issue(**asdict)
+
+
+@dataclasses.dataclass
+class Repo(APIObject):
+    """Wrapper class for a Repo API object."""
+
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        private: bool,
+        url: Optional[str] = None,
+        implementation: Optional[Any] = None,
+    ):
+        _check_name_length(name)
+        self.name = name
+        self.description = description
+        self.private = private
+        self.url = url
+        self.implementation = implementation
 
 
 class APISpec:
@@ -170,45 +181,220 @@ class APISpec:
     def __init__(self, base_url, token, org_name, user):
         _not_implemented()
 
-    def ensure_teams_and_members(
+    def create_team(
         self,
-        teams: Iterable[Team],
+        name: str,
+        members: Optional[List[str]] = None,
         permission: TeamPermission = TeamPermission.PUSH,
-    ) -> List[Team]:
-        """Ensure that the teams exist, and that their members are added to the
-        teams.
-
-        Teams that do not exist are created, teams that already exist are
-        fetched. Members that are not in their teams are added, members that do
-        not exist or are already in their teams are skipped.
+    ) -> Team:
+        """Create a team on the platform.
 
         Args:
-            teams: A list of teams specifying student groups.
-            permission: The permission these teams (or members of them) should
-                be given in regards to associated repositories.
+            name: Name of the team.
+            members: A list of usernames to assign as members to this team.
+                Usernames that don't exist are ignored.
+            permission: The permission the team should have in regards to
+                repository access.
         Returns:
-            A list of Team API objects of the teams provided to the function,
-            both those that were created and those that already existed.
+            The created team.
+        Raises:
+            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+                communicating with the platform, in particular if the team
+                already exists.
         """
         _not_implemented()
 
-    def get_teams(self) -> List[Team]:
-        """Get all teams related to the target organization.
+    def delete_team(self, team: Team) -> None:
+        """Delete the provided team.
 
-        Returns:
-            A list of Team API object.
+        Args:
+            team: The team to delete.
+        Raises:
+            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+                communicating with the platform.
         """
         _not_implemented()
 
-    def create_repos(self, repos: Iterable[Repo]) -> List[str]:
-        """Create repos in the target organization according the those specced
-        by the ``repos`` argument. Repos that already exist are skipped.
+    def get_teams(
+        self, team_names: Optional[List[str]] = None,
+    ) -> Iterable[Team]:
+        """Get teams from the platform.
 
         Args:
-            repos: Repos to be created.
+            team_names: Team names to filter by. Names that do not exist on the
+                platform are ignored. If ``team_names=None``, all teams are
+                fetched.
         Returns:
-            A list of urls to the repos specified by the ``repos`` argument,
-            both those that were created and those that already existed.
+            Teams matching the filters.
+        Raises:
+            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+                communicating with the platform.
+        """
+        _not_implemented()
+
+    def assign_repo(
+        self, team: Team, repo: Repo, permission: TeamPermission,
+    ) -> None:
+        """Assign a repository to a team, granting any members of the team
+        permission to access the repository according to the specified
+        permission.
+
+        Args:
+            team: The team to assign the repository to.
+            repo: The repository to assign to the team.
+            permission: The permission granted to the team's members with
+                respect to accessing the repository.
+        Raises:
+            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+                communicating with the platform.
+        """
+        _not_implemented()
+
+    def assign_members(
+        self,
+        team: Team,
+        members: List[str],
+        permission: TeamPermission = TeamPermission.PUSH,
+    ) -> None:
+        """Assign members to a team.
+
+        Args:
+            team: A team to assign members to.
+            members: A list of usernames to assign as members to the team.
+                Usernames that don't exist are ignored.
+            permission: The permission to add users with.
+        Raises:
+            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+                communicating with the platform.
+        """
+        _not_implemented()
+
+    def create_repo(
+        self,
+        name: str,
+        description: str,
+        private: bool,
+        team: Optional[Team] = None,
+    ) -> Repo:
+        """Create a repository.
+
+        If the repository already exists, it is fetched instead of created.
+        This somewhat unintuitive behavior is to speed up repository creation,
+        as first checking if the repository exists can be a bit inconvenient
+        and/or inefficient depending on the platform.
+
+        Args:
+            name: Name of the repository.
+            description: Description of the repository.
+            private: Visibility of the repository.
+            team: The team the repository belongs to.
+        Returns:
+            The created (or fetched) repository.
+        Raises:
+            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+                communicating with the platform.
+        """
+        _not_implemented()
+
+    def get_repos(
+        self, repo_names: Optional[List[str]] = None,
+    ) -> Iterable[Repo]:
+        """Get repositories from the platform.
+
+        Args:
+            repo_names: Repository names to filter the results by. Names that
+                do not exist on the platform are ignored. If
+                ``repo_names=None``, all repos are fetched.
+        Returns:
+            Repositories matching the filters.
+        Raises:
+            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+                communicating with the platform.
+        """
+        _not_implemented()
+
+    def get_repo(self, repo_name: str, team_name: Optional[str],) -> Repo:
+        """Get a single repository.
+
+        Args:
+            repo_name: Name of the repository to fetch.
+            team_name: Name of the team that owns the repository. If ``None``,
+                the repository is assumed to belong to the target organization.
+        Returns:
+            The fetched repository.
+        Raises:
+            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+                communicating with the platform, in particular if the repo
+                or team does not exist.
+        """
+        _not_implemented()
+
+    def insert_auth(self, url: str) -> str:
+        """Insert authorization token into the provided URL.
+
+        Args:
+            url: A URL to the platform.
+        Returns:
+            The same url, but with authorization credentials inserted.
+        """
+        _not_implemented()
+
+    def create_issue(
+        self,
+        title: str,
+        body: str,
+        repo: Repo,
+        assignees: Optional[Iterable[str]] = None,
+    ) -> Issue:
+        """Create an issue in the provided repository.
+
+        Args:
+            title: Title of the issue.
+            body: Body of the issue.
+            repo: The repository in which to open the issue.
+            assignees: Usernames to assign to the issue.
+        Returns:
+            The created issue.
+        Raises:
+            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+                communicating with the platform.
+        """
+        _not_implemented()
+
+    def close_issue(self, issue: Issue) -> None:
+        """Close the provided issue.
+
+        Args:
+            issue: The issue to close.
+        Raises:
+            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+                communicating with the platform.
+        """
+        _not_implemented()
+
+    def get_team_repos(self, team: Team) -> Iterable[Repo]:
+        """Get all repos related to a team.
+
+        Args:
+            team: The team to fetch repos from.
+        Returns:
+            The repos related to the provided team.
+        Raises:
+            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+                communicating with the platform.
+        """
+        _not_implemented()
+
+    def get_repo_issues(self, repo: Repo) -> Iterable[Issue]:
+        """Get all issues related to a repo.
+
+        Args:
+            repo: The repo to fetch issues from.
+        Returns:
+            The issues related to the provided repo.
+        Raises:
+            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+                communicating with the platform.
         """
         _not_implemented()
 
@@ -217,6 +403,7 @@ class APISpec:
         master_repo_names: Iterable[str],
         org_name: Optional[str] = None,
         teams: Optional[List[Team]] = None,
+        insert_auth: bool = False,
     ) -> List[str]:
         """Get repo urls for all specified repo names in the organization. As
         checking if every single repo actually exists takes a long time with a
@@ -250,115 +437,6 @@ class APISpec:
         """
         _not_implemented()
 
-    def get_issues(
-        self,
-        repo_names: Iterable[str],
-        state: IssueState = IssueState.OPEN,
-        title_regex: str = "",
-    ) -> Generator[Tuple[str, Generator[Issue, None, None]], None, None]:
-        """Get all issues for the repos in repo_names an return a generator
-        that yields (repo_name, issue generator) tuples. Will by default only
-        get open issues.
-
-        Args:
-            repo_names: An iterable of repo names.
-            state: Specifies the state of the issue.
-            title_regex: If specified, only issues matching this regex are
-            returned. Defaults to the empty string (which matches anything).
-        Returns:
-            A generator that yields (repo_name, issue_generator) tuples.
-        """
-        _not_implemented()
-
-    def open_issue(
-        self, title: str, body: str, repo_names: Iterable[str]
-    ) -> None:
-        """Open the specified issue in all repos with the given names, in the
-        target organization.
-
-        Args:
-            title: Title of the issue.
-            body: Body of the issue.
-            repo_names: Names of repos to open the issue in.
-        """
-        _not_implemented()
-
-    def close_issue(self, title_regex: str, repo_names: Iterable[str]) -> None:
-        """Close any issues in the given repos in the target organization,
-        whose titles match the title_regex.
-
-        Args:
-            title_regex: A regex to match against issue titles.
-            repo_names: Names of repositories to close issues in.
-        """
-        _not_implemented()
-
-    def add_repos_to_review_teams(
-        self,
-        team_to_repos: Mapping[str, Iterable[str]],
-        issue: Optional[Issue] = None,
-    ) -> None:
-        """Add repos to review teams. For each repo, an issue is opened, and
-        every user in the review team is assigned to it. If no issue is
-        specified, sensible defaults for title and body are used.
-
-        Args:
-            team_to_repos: A mapping from a team name to an iterable of repo
-                names.
-            issue: An optional Issue tuple to override the default issue.
-        """
-        _not_implemented()
-
-    def get_review_progress(
-        self,
-        review_team_names: Iterable[str],
-        teams: Iterable[Team],
-        title_regex: str,
-    ) -> Mapping[str, List]:
-        """Get the peer review progress for the specified review teams and
-        student teams by checking which review team members have opened issues
-        in their assigned repos. Only issues matching the title regex will be
-        considered peer review issues. If a reviewer has opened an issue in the
-        assigned repo with a title matching the regex, the review will be
-        considered done.
-
-        Note that reviews only count if the student is in the review team for
-        that repo. Review teams must only have one associated repo, or the repo
-        is skipped.
-
-        Args:
-            review_team_names: Names of review teams.
-            teams: Team API objects specifying student groups.
-            title_regex: If an issue title matches this regex, the issue is
-                considered a potential peer review issue.
-        Returns:
-            a mapping (reviewer -> assigned_repos), where reviewer is a str and
-            assigned_repos is a :py:class:`_repobee.tuples.Review`.
-        """
-        _not_implemented()
-
-    def delete_teams(self, team_names: Iterable[str]) -> None:
-        """Delete all teams in the target organizatoin that exactly match one
-        of the provided ``team_names``. Skip any team name for which no match
-        is found.
-
-        Args:
-            team_names: A list of team names for teams to be deleted.
-        """
-        _not_implemented()
-
-    def discover_repos(
-        self, teams: Iterable[Team]
-    ) -> Generator[Repo, None, None]:
-        """Return all repositories related to the provided teams.
-
-        Args:
-            teams: Team tuples.
-        Returns:
-            A list of Repo tuples.
-        """
-        _not_implemented()
-
     @staticmethod
     def verify_settings(
         user: str,
@@ -368,7 +446,7 @@ class APISpec:
         master_org_name: Optional[str] = None,
     ):
         """Verify the following (to the extent that is possible and makes sense
-        for the specifi platform):
+        for the specific platform):
 
         1. Base url is correct
         2. The token has sufficient access privileges
@@ -381,7 +459,8 @@ class APISpec:
         organization member list and checking roles)
 
         Should raise an appropriate subclass of
-        :py:class:`_repobee.plug.APIError` when a problem is encountered.
+        :py:class:`~repobee_plug.PlatformError` when a problem is
+        encountered.
 
         Args:
             user: The username to try to fetch.
@@ -392,7 +471,7 @@ class APISpec:
         Returns:
             True if the connection is well formed.
         Raises:
-            :py:class:`_repobee.plug.APIError`
+            :py:class:`~repobee_plug.PlatformError`
         """
         _not_implemented()
 
@@ -475,14 +554,14 @@ class APIMeta(type):
         return super().__new__(mcs, name, bases, attrdict)
 
 
-class API(APISpec, metaclass=APIMeta):
+class PlatformAPI(APISpec, metaclass=APIMeta):
     """API base class that all API implementations should inherit from. This
     class functions similarly to an abstract base class, but with a few key
     distinctions that affect the inheriting class.
 
     1. Public methods *must* override one of the public methods of
        :py:class:`APISpec`. If an inheriting class defines any other public
-       method, an :py:class:`~_repobee.plug.APIError` is raised when the
+       method, an :py:class:`~repobee_plug.PlatformError` is raised when the
        class is defined.
     2. All public methods in :py:class:`APISpec` have a default implementation
        that simply raise a :py:class:`NotImplementedError`. There is no

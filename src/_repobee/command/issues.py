@@ -10,6 +10,7 @@ self-contained program.
 .. moduleauthor:: Simon Larsén
 """
 import os
+import re
 from typing import Iterable, Optional, List, Generator, Tuple, Any, Mapping
 
 import daiquiri
@@ -22,7 +23,7 @@ LOGGER = daiquiri.getLogger(__file__)
 
 def list_issues(
     repos: Iterable[plug.Repo],
-    api: plug.API,
+    api: plug.PlatformAPI,
     state: plug.IssueState = plug.IssueState.OPEN,
     title_regex: str = "",
     show_body: bool = False,
@@ -32,7 +33,7 @@ def list_issues(
 
     Args:
         repos: The repos from which to fetch issues.
-        api: An implementation of :py:class:`repobee_plug.API` used to
+        api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
         state: state of the repo (open or closed). Defaults to open.
         title_regex: If specified, only issues with titles matching the regex
@@ -46,12 +47,9 @@ def list_issues(
     repos = list(repos)
     repo_names = [repo.name for repo in repos]
     max_repo_name_length = max(map(len, repo_names))
+    repos = api.get_repos(repo_names)
     issues_per_repo = _get_issue_generator(
-        repo_names=repo_names,
-        state=state,
-        title_regex=title_regex,
-        author=author,
-        api=api,
+        repos, title_regex=title_regex, author=author, api=api
     )
 
     # _log_repo_issues exhausts the issues_per_repo iterator and
@@ -87,24 +85,24 @@ def list_issues(
 
 
 def _get_issue_generator(
-    repo_names: List[str],
-    state: plug.IssueState,
+    repos: Iterable[plug.Repo],
     title_regex: str,
-    author: Optional[str],
-    api: plug.API,
+    author: str,
+    api: plug.PlatformAPI,
 ) -> Generator[
     Tuple[str, Generator[Iterable[plug.Issue], None, None]], None, None
 ]:
     issues_per_repo = (
         (
-            repo_name,
+            repo.name,
             [
                 issue
-                for issue in issues
-                if not author or issue.author == author
+                for issue in api.get_repo_issues(repo)
+                if re.match(title_regex, issue.title)
+                and (not author or issue.author == author)
             ],
         )
-        for repo_name, issues in api.get_issues(repo_names, state, title_regex)
+        for repo in repos
     )
     return issues_per_repo
 
@@ -187,7 +185,7 @@ def open_issue(
     issue: plug.Issue,
     master_repo_names: Iterable[str],
     teams: Iterable[plug.Team],
-    api: plug.API,
+    api: plug.PlatformAPI,
 ) -> None:
     """Open an issue in student repos.
 
@@ -195,15 +193,20 @@ def open_issue(
         master_repo_names: Names of master repositories.
         teams: Team objects specifying student groups.
         issue: An issue to open.
-        api: An implementation of :py:class:`repobee_plug.API` used to
+        api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     repo_names = plug.generate_repo_names(teams, master_repo_names)
-    api.open_issue(issue.title, issue.body, repo_names)
+    repos = api.get_repos(repo_names)
+    for repo in repos:
+        issue = api.create_issue(issue.title, issue.body, repo)
+        LOGGER.info(
+            f"Opened issue {repo.name}/#{issue.number}-'{issue.title}'"
+        )
 
 
 def close_issue(
-    title_regex: str, repos: Iterable[plug.Repo], api: plug.API
+    title_regex: str, repos: Iterable[plug.Repo], api: plug.PlatformAPI
 ) -> None:
     """Close issues whose titles match the title_regex in student repos.
 
@@ -211,8 +214,17 @@ def close_issue(
         title_regex: A regex to match against issue titles.
         master_repo_names: Names of master repositories.
         teams: Team objects specifying student groups.
-        api: An implementation of :py:class:`repobee_plug.API` used to
+        api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     repo_names = (repo.name for repo in repos)
-    api.close_issue(title_regex, repo_names)
+    repos = api.get_repos(repo_names)
+    for repo in repos:
+        to_close = [
+            issue
+            for issue in api.get_repo_issues(repo)
+            if re.match(title_regex, issue.title)
+        ]
+        for issue in to_close:
+            api.close_issue(issue)
+            LOGGER.info(f"Closed {repo.name}/#{issue.number}='{issue.title}'")

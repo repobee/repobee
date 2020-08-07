@@ -9,20 +9,29 @@ self-contained program.
 
 .. moduleauthor:: Simon Larsén
 """
+import itertools
+import collections
+import re
 from typing import Iterable, Optional
 
 import repobee_plug as plug
 
+import _repobee.command.teams
 from _repobee import formatters
 from _repobee.command.repos import LOGGER
+
+DEFAULT_REVIEW_ISSUE = plug.Issue(
+    title="Peer review",
+    body="You have been assigned to peer review this repo.",
+)
 
 
 def assign_peer_reviews(
     master_repo_names: Iterable[str],
-    teams: Iterable[plug.Status],
+    teams: Iterable[plug.Team],
     num_reviews: int,
     issue: Optional[plug.Issue],
-    api: plug.API,
+    api: plug.PlatformAPI,
 ) -> None:
     """Assign peer reviewers among the students to each student repo. Each
     student is assigned to review num_reviews repos, and consequently, each
@@ -41,15 +50,28 @@ def assign_peer_reviews(
             (consequently, the amount of reviews of each repo)
         issue: An issue with review instructions to be opened in the considered
             repos.
-        api: An implementation of :py:class:`repobee_plug.API` used to
+        api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
+    issue = issue or DEFAULT_REVIEW_ISSUE
+    expected_repo_names = plug.generate_repo_names(teams, master_repo_names)
+
+    fetched_teams = api.get_teams([t.name for t in teams])
+    fetched_repos = list(
+        itertools.chain.from_iterable(map(api.get_team_repos, fetched_teams))
+    )
+    fetched_repo_dict = {r.name: r for r in fetched_repos}
+
+    missing = set(expected_repo_names) - set(fetched_repo_dict.keys())
+    if missing:
+        raise plug.NotFoundError(f"Can't find repos: {', '.join(missing)}")
+
     for master_name in master_repo_names:
         allocations = plug.manager.hook.generate_review_allocations(
             teams=teams, num_reviews=num_reviews
         )
         # adjust names of review teams
-        review_teams, reviewed_teams = list(
+        review_team_specs, reviewed_team_names = list(
             zip(
                 *[
                     (
@@ -65,26 +87,32 @@ def assign_peer_reviews(
                 ]
             )
         )
-        api.ensure_teams_and_members(
-            review_teams, permission=plug.TeamPermission.PULL
+
+        review_teams = _repobee.command.teams.create_teams(
+            review_team_specs, plug.TeamPermission.PULL, api
         )
-        api.add_repos_to_review_teams(
-            {
-                review_team.name: [
-                    plug.generate_repo_name(reviewed_team, master_name)
-                ]
-                for review_team, reviewed_team in zip(
-                    review_teams, reviewed_teams
-                )
-            },
-            issue=issue,
-        )
+
+        for review_team, reviewed_team_name in zip(
+            review_teams, reviewed_team_names
+        ):
+            reviewed_repo = fetched_repo_dict[
+                plug.generate_repo_name(reviewed_team_name, master_name)
+            ]
+            api.assign_repo(
+                review_team, reviewed_repo, plug.TeamPermission.PULL
+            )
+            api.create_issue(
+                issue.title,
+                issue.body,
+                reviewed_repo,
+                assignees=review_team.members,
+            )
 
 
 def purge_review_teams(
     master_repo_names: Iterable[str],
     students: Iterable[plug.Team],
-    api: plug.API,
+    api: plug.PlatformAPI,
 ) -> None:
     """Delete all review teams associated with the given master repo names and
     students.
@@ -92,7 +120,7 @@ def purge_review_teams(
     Args:
         master_repo_names: Names of master repos.
         students: An iterble of student teams.
-        api: An implementation of :py:class:`repobee_plug.API` used to
+        api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     review_team_names = [
@@ -100,7 +128,10 @@ def purge_review_teams(
         for student in students
         for master_repo_name in master_repo_names
     ]
-    api.delete_teams(review_team_names)
+    teams = api.get_teams(review_team_names)
+    for team in teams:
+        api.delete_team(team)
+        LOGGER.info(f"Deleted {team.name}")
 
 
 def check_peer_review_progress(
@@ -108,7 +139,7 @@ def check_peer_review_progress(
     teams: Iterable[plug.Team],
     title_regex: str,
     num_reviews: int,
-    api: plug.API,
+    api: plug.PlatformAPI,
 ) -> None:
     """Check which teams have opened peer review issues in their allotted
     review repos
@@ -118,19 +149,59 @@ def check_peer_review_progress(
         teams: An iterable of student teams.
         title_regex: A regex to match against issue titles.
         num_reviews: Amount of reviews each student is expected to have made.
-        api: An implementation of :py:class:`repobee_plug.API` used to
+        api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
 
     """
+    teams = list(teams)
+    reviews = collections.defaultdict(list)
+
     review_team_names = [
         plug.generate_review_team_name(team, master_name)
         for team in teams
         for master_name in master_repo_names
     ]
-    reviews = api.get_review_progress(review_team_names, teams, title_regex)
+
+    for review_team in api.get_teams(review_team_names):
+        repos = list(api.get_team_repos(review_team))
+        if len(repos) != 1:
+            LOGGER.warning(
+                f"Expected {review_team.name} to have 1 associated "
+                f"repo, found {len(review_team.repos)}. "
+                f"Skipping..."
+            )
+            continue
+
+        reviewed_repo = repos[0]
+        expected_reviewers = set(review_team.members)
+        reviewing_teams = _extract_reviewing_teams(teams, expected_reviewers)
+
+        review_issue_authors = {
+            issue.author
+            for issue in api.get_repo_issues(reviewed_repo)
+            if re.match(title_regex, issue.title)
+        }
+
+        for team in reviewing_teams:
+            reviews[str(team)].append(
+                plug.Review(
+                    repo=reviewed_repo.name,
+                    done=any(
+                        map(review_issue_authors.__contains__, team.members,)
+                    ),
+                )
+            )
 
     LOGGER.info(
         formatters.format_peer_review_progress_output(
             reviews, teams, num_reviews
         )
     )
+
+
+def _extract_reviewing_teams(teams, reviewers):
+    review_teams = []
+    for team in teams:
+        if any(map(team.members.__contains__, reviewers)):
+            review_teams.append(team)
+    return review_teams
