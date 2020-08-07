@@ -459,7 +459,7 @@ class APISpec:
         organization member list and checking roles)
 
         Should raise an appropriate subclass of
-        :py:class:`~repobee_plug.PlatformAPIError` when a problem is
+        :py:class:`~repobee_plug.PlatformError` when a problem is
         encountered.
 
         Args:
@@ -471,7 +471,7 @@ class APISpec:
         Returns:
             True if the connection is well formed.
         Raises:
-            :py:class:`~repobee_plug.PlatformAPIError`
+            :py:class:`~repobee_plug.PlatformError`
         """
         _not_implemented()
 
@@ -561,7 +561,7 @@ class PlatformAPI(APISpec, metaclass=APIMeta):
 
     1. Public methods *must* override one of the public methods of
        :py:class:`APISpec`. If an inheriting class defines any other public
-       method, an :py:class:`~repobee_plug.PlatformAPIError` is raised when the
+       method, an :py:class:`~repobee_plug.PlatformError` is raised when the
        class is defined.
     2. All public methods in :py:class:`APISpec` have a default implementation
        that simply raise a :py:class:`NotImplementedError`. There is no

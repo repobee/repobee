@@ -98,7 +98,7 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
                 status=401,
             )
         else:
-            raise plug.PlatformAPIError(str(e), status=e.status)
+            raise plug.PlatformError(str(e), status=e.status)
     except gaierror:
         raise plug.ServiceNotFoundError(
             "GitHub service could not be found, check the url"
@@ -330,7 +330,7 @@ class GitHubAPI(plug.PlatformAPI):
                 existing_users.append(self._github.get_user(name))
             except github.GithubException as exc:
                 if exc.status != 404:
-                    raise plug.PlatformAPIError(
+                    raise plug.PlatformError(
                         "Got unexpected response code from the GitHub API",
                         status=exc.status,
                     )

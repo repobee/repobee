@@ -111,7 +111,7 @@ def _create_or_fetch_repo(
             private=True,
             team=team,
         )
-    except plug.PlatformAPIError:
+    except plug.PlatformError:
         repo = api.get_repo(repo_name=name, team_name=team.name)
         api.assign_repo(
             team=team, repo=repo, permission=plug.TeamPermission.PUSH

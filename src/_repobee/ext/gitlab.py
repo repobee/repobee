@@ -88,7 +88,7 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
                 status=401,
             ) from e
         else:
-            raise plug.PlatformAPIError(str(e), status=e.response_code) from e
+            raise plug.PlatformError(str(e), status=e.response_code) from e
     except (exception.RepoBeeException, plug.PlugError):
         raise
     except Exception as e:
@@ -410,7 +410,7 @@ class GitLabAPI(plug.PlatformAPI):
             "Could not authenticate token",
         ), _convert_error(
             requests.exceptions.ConnectionError,
-            plug.PlatformAPIError,
+            plug.PlatformError,
             f"Could not connect to {base_url}, please check the URL",
         ):
             gl.auth()

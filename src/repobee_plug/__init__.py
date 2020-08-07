@@ -52,7 +52,7 @@ from repobee_plug._apimeta import (
 from repobee_plug._exceptions import (
     HookNameError,
     PlugError,
-    PlatformAPIError,
+    PlatformError,
     NotFoundError,
     ServiceNotFoundError,
     BadCredentials,
@@ -91,7 +91,7 @@ __all__ = [
     # Exceptions
     "HookNameError",
     "PlugError",
-    "PlatformAPIError",
+    "PlatformError",
     "NotFoundError",
     "ServiceNotFoundError",
     "BadCredentials",

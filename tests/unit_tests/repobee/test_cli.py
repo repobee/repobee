@@ -132,7 +132,7 @@ def parsed_args_all_subparsers(request):
         exception.PushFailedError("some message", 128, b"error", "someurl"),
         exception.CloneFailedError("some message", 128, b"error", "someurl"),
         exception.GitError("some message", 128, b"error"),
-        plug.PlatformAPIError("some message"),
+        plug.PlatformError("some message"),
     ],
 )
 def command_all_raise_mock(command_mock, dummyapi_instance, request):

@@ -53,7 +53,7 @@ class APIImplementationError(PlugError):
     """Raise when an API is defined incorrectly."""
 
 
-class PlatformAPIError(PlugError):
+class PlatformError(PlugError):
     """An exception raised when the API responds with an error code."""
 
     def __init__(self, msg="", status=None):
@@ -61,19 +61,19 @@ class PlatformAPIError(PlugError):
         self.status = status
 
 
-class NotFoundError(PlatformAPIError):
+class NotFoundError(PlatformError):
     """An exception raised when a platform API fails to find a resource."""
 
 
-class ServiceNotFoundError(PlatformAPIError):
+class ServiceNotFoundError(PlatformError):
     """Raise if the base url can't be located."""
 
 
-class BadCredentials(PlatformAPIError):
+class BadCredentials(PlatformError):
     """Raise when credentials are rejected."""
 
 
-class UnexpectedException(PlatformAPIError):
+class UnexpectedException(PlatformError):
     """An exception raised when an API request raises an unexpected
     exception.
     """

@@ -168,7 +168,7 @@ class LocalAPI(plug.PlatformAPI):
         repo_bucket = self._repos.setdefault(self._org_name, {})
 
         if name in repo_bucket:
-            raise plug.PlatformAPIError(f"{name} already exists")
+            raise plug.PlatformError(f"{name} already exists")
 
         repo_path = self._repodir / self._org_name / name
         repo_path.mkdir(parents=True, exist_ok=True)
