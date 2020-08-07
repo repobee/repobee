@@ -80,7 +80,7 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
     Raises:
         plug.NotFoundError
         plug.BadCredentials
-        plug.APIError
+        plug.PlatformError
         plug.ServiceNotFoundError
         plug.UnexpectedException
     """
