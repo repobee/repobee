@@ -42,6 +42,7 @@ class Issue:
             number=self.number,
             created_at=self.created_at,
             author=self.author,
+            state=self.state,
             implementation=self,
         )
 
@@ -55,24 +56,12 @@ class Repo:
     path: pathlib.Path
     issues: List[Issue] = dataclasses.field(default_factory=list)
 
-    def to_plug_repo(self, include_issues=None) -> plug.Repo:
-        issues = (
-            [
-                issue.to_plug_issue()
-                for issue in self.issues
-                if issue.state == plug.IssueState.ALL
-                or issue.state == include_issues
-            ]
-            if include_issues
-            else None
-        )
-
+    def to_plug_repo(self) -> plug.Repo:
         return plug.Repo(
             name=self.name,
             description=self.description,
             private=self.private,
             url=self.url,
-            issues=issues,
             implementation=self,
         )
 
@@ -92,19 +81,11 @@ class Team:
         for user in users:
             self.members.add(user)
 
-    def to_plug_team(
-        self, include_repos=False, include_issues=None
-    ) -> plug.Team:
-        repos = (
-            [repo.to_plug_repo(include_issues) for repo in self.repos]
-            if include_repos
-            else None
-        )
+    def to_plug_team(self) -> plug.Team:
         return plug.Team(
             name=self.name,
             members=[mem.username for mem in self.members],
             id=self.id,
-            repos=repos,
             implementation=self,
         )
 
@@ -187,38 +168,24 @@ class FakeAPI(plug.API):
         return repo.to_plug_repo()
 
     def get_teams(
-        self,
-        team_names: Optional[List[str]] = None,
-        include_repos: bool = False,
-        include_issues: Optional[plug.IssueState] = None,
+        self, team_names: Optional[List[str]] = None,
     ) -> Iterable[plug.Team]:
         team_names = set(team_names or [])
         return [
-            team.to_plug_team(include_repos, include_issues)
+            team.to_plug_team()
             for team in self._teams[self._org_name].values()
             if not team_names or team.name in team_names
         ]
 
     def get_repos(
-        self,
-        repo_names: Optional[List[str]] = None,
-        include_issues: Optional[plug.IssueState] = None,
+        self, repo_names: Optional[List[str]] = None,
     ) -> Iterable[plug.Repo]:
         unfiltered_repos = (
             self._repos[self._org_name].get(name) for name in repo_names
         )
-        return [
-            repo.to_plug_repo(include_issues)
-            for repo in unfiltered_repos
-            if repo
-        ]
+        return [repo.to_plug_repo() for repo in unfiltered_repos if repo]
 
-    def get_repo(
-        self,
-        repo_name: str,
-        team_name: Optional[str],
-        include_issues: Optional[plug.IssueState] = None,
-    ) -> plug.Repo:
+    def get_repo(self, repo_name: str, team_name: Optional[str],) -> plug.Repo:
         repos = (
             self._get_team(team_name).repos
             if team_name
@@ -226,7 +193,7 @@ class FakeAPI(plug.API):
         )
         for repo in repos:
             if repo.name == repo_name:
-                return repo.to_plug_repo(include_issues=include_issues)
+                return repo.to_plug_repo()
 
         raise plug.NotFoundError(f"{team_name} has no repository {repo_name}")
 
@@ -259,23 +226,14 @@ class FakeAPI(plug.API):
     def close_issue(self, issue: Issue) -> None:
         issue.implementation.state = plug.IssueState.CLOSED
 
+    def get_team_repos(self, team: plug.Team) -> Iterable[plug.Repo]:
+        return (repo.to_plug_repo() for repo in team.implementation.repos)
+
+    def get_repo_issues(self, repo: plug.Repo) -> Iterable[plug.Issue]:
+        return (issue.to_plug_issue() for issue in repo.implementation.issues)
+
     def delete_team(self, team: plug.Team) -> None:
         del self._teams[self._org_name][team.implementation.name]
-
-    def refresh_team(
-        self,
-        team: plug.Team,
-        include_repos: bool = False,
-        include_issues: Optional[plug.IssueState] = None,
-    ) -> plug.Repo:
-        return team.implementation.to_plug_team(
-            include_repos=include_repos, include_issues=include_issues,
-        )
-
-    def refresh_repo(
-        self, repo: plug.Repo, include_issues: Optional[plug.IssueState] = None
-    ) -> plug.Repo:
-        return repo.implementation.to_plug_repo(include_issues=include_issues)
 
     def get_repo_urls(
         self,

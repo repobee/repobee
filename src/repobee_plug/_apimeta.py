@@ -89,13 +89,11 @@ class Team(APIObject):
         members: Iterable[str],
         name: Optional[str] = None,
         id: Optional[Any] = None,
-        repos: Optional[List["Repo"]] = None,
         implementation: Optional[Any] = None,
     ):
         self.members = list(members)
         self.name = name if name else "-".join(sorted(members))
         self.id = id
-        self.repos = repos
         self.implementation = implementation
 
         _check_name_length(self.name)
@@ -118,6 +116,7 @@ class Issue(APIObject):
         number: Optional[int] = None,
         created_at: Optional[str] = None,
         author: Optional[str] = None,
+        state: Optional[IssueState] = None,
         implementation: Optional[Any] = None,
     ):
         self.title = title
@@ -159,7 +158,6 @@ class Repo(APIObject):
         description: str,
         private: bool,
         url: Optional[str] = None,
-        issues: Optional[Iterable[Issue]] = None,
         implementation: Optional[Any] = None,
     ):
         _check_name_length(name)
@@ -167,7 +165,6 @@ class Repo(APIObject):
         self.description = description
         self.private = private
         self.url = url
-        self.issues = issues
         self.implementation = implementation
 
 
@@ -219,10 +216,7 @@ class APISpec:
         _not_implemented()
 
     def get_teams(
-        self,
-        team_names: Optional[List[str]] = None,
-        include_repos: bool = False,
-        include_issues: Optional[IssueState] = None,
+        self, team_names: Optional[List[str]] = None,
     ) -> Iterable[Team]:
         """Get teams from the platform.
 
@@ -230,12 +224,6 @@ class APISpec:
             team_names: Team names to filter by. Names that do not exist on the
                 platform are ignored. If ``team_names=None``, all teams are
                 fetched.
-            include_repos: Whether or not to also fetch associated
-                repositories. This results in additional API requests.
-            include_issues: The state of issues to fetch for the associated
-                repos, or ``None`` if no issues should be included. Only makes
-                sense if ``include_repos=True``. This results in additional API
-                requests.
         Returns:
             Teams matching the filters.
         Raises:
@@ -309,9 +297,7 @@ class APISpec:
         _not_implemented()
 
     def get_repos(
-        self,
-        repo_names: Optional[List[str]] = None,
-        include_issues: Optional[IssueState] = None,
+        self, repo_names: Optional[List[str]] = None,
     ) -> Iterable[Repo]:
         """Get repositories from the platform.
 
@@ -319,10 +305,6 @@ class APISpec:
             repo_names: Repository names to filter the results by. Names that
                 do not exist on the platform are ignored. If
                 ``repo_names=None``, all repos are fetched.
-            include_issues: The state of issues to fetch, or ``None`` if no
-                issues should be included. Only makes sense if
-                ``include_repos=True``. This results in additional API
-                requests.
         Returns:
             Repositories matching the filters.
         Raises:
@@ -331,22 +313,13 @@ class APISpec:
         """
         _not_implemented()
 
-    def get_repo(
-        self,
-        repo_name: str,
-        team_name: Optional[str],
-        include_issues: Optional[IssueState] = None,
-    ) -> Repo:
+    def get_repo(self, repo_name: str, team_name: Optional[str],) -> Repo:
         """Get a single repository.
 
         Args:
             repo_name: Name of the repository to fetch.
             team_name: Name of the team that owns the repository. If ``None``,
                 the repository is assumed to belong to the target organization.
-            include_issues: The state of issues to fetch, or ``None`` if no
-                issues should be included. Only makes sense if
-                ``include_repos=True``. This results in additional API
-                requests.
         Returns:
             The fetched repository.
         Raises:
@@ -399,43 +372,26 @@ class APISpec:
         """
         _not_implemented()
 
-    def refresh_repo(
-        self, repo: Repo, include_issues: Optional[IssueState] = None
-    ) -> Repo:
-        """Refresh a repository by re-fetching information from the platform.
+    def get_team_repos(self, team: Team) -> Iterable[Repo]:
+        """Get all repos related to a team.
 
         Args:
-            repo: A repository to refresh.
-            include_issues: The state of issues to fetch, or ``None`` if no
-                issues should be included. Only makes sense if
-                ``include_repos=True``. This results in additional API
-                requests.
+            team: The team to fetch repos from.
         Returns:
-            A refreshed version of the provided repository.
+            The repos related to the provided team.
         Raises:
             :py:class:`_exceptions.APIError`: If something goes wrong in
                 communicating with the platform.
         """
         _not_implemented()
 
-    def refresh_team(
-        self,
-        team: Team,
-        include_repos: bool = False,
-        include_issues: Optional[IssueState] = None,
-    ) -> Repo:
-        """Refresh a team by re-fetching information from the platform.
+    def get_repo_issues(self, repo: Repo) -> Iterable[Issue]:
+        """Get all issues related to a repo.
 
         Args:
-            team: A team to refresh.
-            include_repos: Whether or not to also fetch associated
-                repositories. This results in additional API requests.
-            include_issues: The state of issues to fetch for the associated
-                repos, or ``None`` if no issues should be included. Only makes
-                sense if ``include_repos=True``. This results in additional API
-                requests.
+            repo: The repo to fetch issues from.
         Returns:
-            A refreshed version of the provided repository.
+            The issues related to the provided repo.
         Raises:
             :py:class:`_exceptions.APIError`: If something goes wrong in
                 communicating with the platform.

@@ -47,9 +47,9 @@ def list_issues(
     repos = list(repos)
     repo_names = [repo.name for repo in repos]
     max_repo_name_length = max(map(len, repo_names))
-    repos = api.get_repos(repo_names, include_issues=state)
+    repos = api.get_repos(repo_names)
     issues_per_repo = _get_issue_generator(
-        repos, title_regex=title_regex, author=author,
+        repos, title_regex=title_regex, author=author, api=api
     )
 
     # _log_repo_issues exhausts the issues_per_repo iterator and
@@ -85,7 +85,7 @@ def list_issues(
 
 
 def _get_issue_generator(
-    repos: Iterable[plug.Repo], title_regex: str, author: str,
+    repos: Iterable[plug.Repo], title_regex: str, author: str, api: plug.API,
 ) -> Generator[
     Tuple[str, Generator[Iterable[plug.Issue], None, None]], None, None
 ]:
@@ -94,7 +94,7 @@ def _get_issue_generator(
             repo.name,
             [
                 issue
-                for issue in repo.issues
+                for issue in api.get_repo_issues(repo)
                 if re.match(title_regex, issue.title)
                 and (not author or issue.author == author)
             ],
@@ -215,11 +215,11 @@ def close_issue(
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     repo_names = (repo.name for repo in repos)
-    repos = api.get_repos(repo_names, include_issues=plug.IssueState.OPEN)
+    repos = api.get_repos(repo_names)
     for repo in repos:
         to_close = [
             issue
-            for issue in repo.issues
+            for issue in api.get_repo_issues(repo)
             if re.match(title_regex, issue.title)
         ]
         for issue in to_close:

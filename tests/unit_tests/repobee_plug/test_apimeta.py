@@ -84,10 +84,7 @@ class TestAPI:
                 pass
 
             def get_teams(
-                self,
-                team_names: Optional[List[str]] = None,
-                include_repos: bool = False,
-                include_issues: Optional[_apimeta.IssueState] = None,
+                self, team_names: Optional[List[str]] = None,
             ):
                 return expected
 

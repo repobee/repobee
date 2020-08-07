@@ -36,6 +36,9 @@ _ISSUE_STATE_MAPPING = {
     plug.IssueState.CLOSED: "closed",
     plug.IssueState.ALL: "all",
 }
+_REVERSE_ISSUE_STATE_MAPPING = {
+    value: key for key, value in _ISSUE_STATE_MAPPING.items()
+}
 # see https://docs.gitlab.com/ee/user/permissions.html for permission details
 _TEAM_PERMISSION_MAPPING = {
     plug.TeamPermission.PULL: gitlab.REPORTER_ACCESS,
@@ -175,12 +178,7 @@ class GitLabAPI(plug.API):
             )
             return self._wrap_project(project)
 
-    def get_repo(
-        self,
-        repo_name: str,
-        team_name: Optional[str],
-        include_issues: Optional[plug.IssueState] = None,
-    ) -> plug.Repo:
+    def get_repo(self, repo_name: str, team_name: Optional[str],) -> plug.Repo:
         with _try_api_request():
             path = (
                 [self._group.path]
@@ -188,20 +186,15 @@ class GitLabAPI(plug.API):
                 + [repo_name]
             )
             project = self._gitlab.projects.get("/".join(path))
-            return self._wrap_project(project, include_issues=include_issues)
+            return self._wrap_project(project)
 
     def get_teams(
-        self,
-        team_names: Optional[List[str]] = None,
-        include_repos: bool = False,
-        include_issues: Optional[plug.IssueState] = None,
+        self, team_names: Optional[List[str]] = None,
     ) -> Iterable[plug.Team]:
-        assert not include_issues or include_repos
-
         team_names = set(team_names or [])
         with _try_api_request():
             return (
-                self._wrap_group(group, include_repos, include_issues)
+                self._wrap_group(group)
                 for group in self._gitlab.groups.list(
                     id=self._group.id, all=True
                 )
@@ -209,9 +202,7 @@ class GitLabAPI(plug.API):
             )
 
     def get_repos(
-        self,
-        repo_names: Optional[List[str]] = None,
-        include_issues: Optional[plug.IssueState] = None,
+        self, repo_names: Optional[List[str]] = None,
     ) -> Iterable[plug.Repo]:
         projects = []
         for name in repo_names:
@@ -222,7 +213,7 @@ class GitLabAPI(plug.API):
                 if candidate.name == name:
                     projects.append(candidate.name)
                     yield self._wrap_project(
-                        self._gitlab.projects.get(candidate.id), include_issues
+                        self._gitlab.projects.get(candidate.id)
                     )
 
         missing = set(repo_names) - set(projects)
@@ -253,88 +244,57 @@ class GitLabAPI(plug.API):
         issue_impl.state_event = "close"
         issue_impl.save()
 
+    def get_team_repos(self, team: plug.Team) -> Iterable[plug.Repo]:
+        group = team.implementation
+        for group_project in group.projects.list(all=True):
+            yield self._wrap_project(
+                self._gitlab.projects.get(group_project.id)
+            )
+
+    def get_repo_issues(self, repo: plug.Repo) -> Iterable[plug.Issue]:
+        project = repo.implementation
+        return map(self._wrap_issue, project.issues.list(all=True))
+
     def delete_team(self, team: plug.Team) -> None:
         team.implementation.delete()
 
-    def refresh_team(
-        self,
-        team: plug.Team,
-        include_repos: bool = False,
-        include_issues: Optional[plug.IssueState] = None,
-    ) -> plug.Repo:
-        return self._wrap_group(
-            team.implementation,
-            include_repos=include_repos,
-            include_issues=include_issues,
-        )
-
-    def refresh_repo(
-        self, repo: plug.Repo, include_issues: Optional[plug.IssueState] = None
-    ) -> plug.Repo:
-        return self._wrap_project(
-            repo.implementation, include_issues=include_issues
-        )
-
-    def _wrap_group(
-        self, group, include_repos=False, include_issues=None
-    ) -> plug.Team:
-        assert not include_issues or include_repos
-
+    def _wrap_group(self, group) -> plug.Team:
         with _try_api_request():
-            repos = (
-                [
-                    self._wrap_project(
-                        self._gitlab.projects.get(gp.id), include_issues
-                    )
-                    for gp in group.projects.list(
-                        all=True, include_subgroups=True
-                    )
-                ]
-                if include_repos
-                else None
+            return plug.Team(
+                name=group.name,
+                members=[
+                    m.username
+                    for m in group.members.list(all=True)
+                    # we do not include the owner, as this is the person who
+                    # created the group (typically the teacher). Including
+                    # the creator of the group breaks RepoBee.
+                    if m.access_level != gitlab.OWNER_ACCESS
+                ],
+                id=group.id,
+                implementation=group,
             )
-        return plug.Team(
-            name=group.name,
-            members=[
-                m.username
-                for m in group.members.list()
-                if m.access_level != gitlab.OWNER_ACCESS
-            ],
-            id=group.id,
-            repos=repos,
-            implementation=group,
-        )
 
     def _wrap_issue(self, issue) -> plug.Issue:
-        return plug.Issue(
-            title=issue.title,
-            body=issue.description,
-            number=issue.iid,
-            created_at=issue.created_at,
-            author=issue.author["username"],
-            implementation=issue,
-        )
-
-    def _wrap_project(self, project, include_issues=None) -> plug.Repo:
         with _try_api_request():
-            issues = (
-                [
-                    self._wrap_issue(issue)
-                    for issue in project.issues.list(
-                        all=True, state=_ISSUE_STATE_MAPPING[include_issues]
-                    )
-                ]
-                if include_issues
-                else None
+            return plug.Issue(
+                title=issue.title,
+                body=issue.description,
+                number=issue.iid,
+                created_at=issue.created_at,
+                author=issue.author["username"],
+                state=_REVERSE_ISSUE_STATE_MAPPING[issue.state],
+                implementation=issue,
             )
-        return plug.Repo(
-            name=project.path,
-            description=project.description,
-            private=project.visibility == "private",
-            url=project.attributes["http_url_to_repo"],
-            implementation=project,
-            issues=issues,
-        )
+
+    def _wrap_project(self, project) -> plug.Repo:
+        with _try_api_request():
+            return plug.Repo(
+                name=project.path,
+                description=project.description,
+                private=project.visibility == "private",
+                url=project.attributes["http_url_to_repo"],
+                implementation=project,
+            )
 
     @staticmethod
     def _ssl_verify():
@@ -475,7 +435,7 @@ class GitLabAPI(plug.API):
         )
         matching_members = [
             member
-            for member in group.members.list()
+            for member in group.members.list(all=True)
             if member.username == user
             and member.access_level == gitlab.OWNER_ACCESS
         ]

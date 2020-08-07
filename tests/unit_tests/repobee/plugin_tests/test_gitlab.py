@@ -9,6 +9,8 @@ import _repobee
 
 import constants
 
+PAGE_SIZE = 10
+
 
 class Group:
     """Class mimicking a gitlab.Group"""
@@ -51,8 +53,8 @@ class Group:
             )
         )
 
-    def _list_members(self):
-        return list(self._member_list)
+    def _list_members(self, all=False):
+        return list(self._member_list)[: (PAGE_SIZE if not all else None)]
 
     def delete(self):
         self._deleted = True
@@ -244,13 +246,13 @@ class GitLabMock:
         )
         return self._groups[group_id]
 
-    def _list_groups(self, *, id=None, search=None):
+    def _list_groups(self, *, id=None, search=None, all=False):
         groups = self._groups.values()
         if id:
             groups = filter(lambda g: g.parent_id == id, groups)
         if search:
             groups = filter(lambda g: g.name == search, groups)
-        return list(groups)
+        return list(groups)[: (PAGE_SIZE if not all else None)]
 
     def _get_group(self, id):
         if id not in self._groups:

@@ -56,9 +56,9 @@ def assign_peer_reviews(
     issue = issue or DEFAULT_REVIEW_ISSUE
     expected_repo_names = plug.generate_repo_names(teams, master_repo_names)
 
-    fetched_teams = api.get_teams([t.name for t in teams], include_repos=True)
+    fetched_teams = api.get_teams([t.name for t in teams])
     fetched_repos = list(
-        itertools.chain.from_iterable([t.repos for t in fetched_teams])
+        itertools.chain.from_iterable(map(api.get_team_repos, fetched_teams))
     )
     fetched_repo_dict = {r.name: r for r in fetched_repos}
 
@@ -162,12 +162,9 @@ def check_peer_review_progress(
         for master_name in master_repo_names
     ]
 
-    for review_team in api.get_teams(
-        review_team_names,
-        include_repos=True,
-        include_issues=plug.IssueState.ALL,
-    ):
-        if len(review_team.repos) != 1:
+    for review_team in api.get_teams(review_team_names):
+        repos = list(api.get_team_repos(review_team))
+        if len(repos) != 1:
             LOGGER.warning(
                 f"Expected {review_team.name} to have 1 associated "
                 f"repo, found {len(review_team.repos)}. "
@@ -175,13 +172,13 @@ def check_peer_review_progress(
             )
             continue
 
-        reviewed_repo = review_team.repos[0]
+        reviewed_repo = repos[0]
         expected_reviewers = set(review_team.members)
         reviewing_teams = _extract_reviewing_teams(teams, expected_reviewers)
 
         review_issue_authors = {
             issue.author
-            for issue in reviewed_repo.issues
+            for issue in api.get_repo_issues(reviewed_repo)
             if re.match(title_regex, issue.title)
         }
 

@@ -29,10 +29,14 @@ _TEAM_PERMISSION_MAPPING = {
     plug.TeamPermission.PUSH: "push",
     plug.TeamPermission.PULL: "pull",
 }
+
 _ISSUE_STATE_MAPPING = {
     plug.IssueState.OPEN: "open",
     plug.IssueState.CLOSED: "closed",
     plug.IssueState.ALL: "all",
+}
+_REVERSE_ISSUE_STATE_MAPPING = {
+    value: key for key, value in _ISSUE_STATE_MAPPING.items()
 }
 
 
@@ -219,44 +223,28 @@ class GitHubAPI(plug.API):
             repo = self._org.create_repo(name, **kwargs)
             return self._wrap_repo(repo)
 
-    def get_repo(
-        self,
-        repo_name: str,
-        team_name: Optional[str],
-        include_issues: Optional[plug.IssueState] = None,
-    ) -> plug.Repo:
+    def get_repo(self, repo_name: str, team_name: Optional[str],) -> plug.Repo:
         # the GitHub API does not need the team name, as teams do not form
         # namespaces
         repo = self._org.get_repo(repo_name)
-        return self._wrap_repo(repo, include_issues=include_issues)
+        return self._wrap_repo(repo)
 
     def get_teams(
-        self,
-        team_names: Optional[List[str]] = None,
-        include_repos: bool = False,
-        include_issues: Optional[plug.IssueState] = None,
+        self, team_names: Optional[List[str]] = None,
     ) -> Iterable[plug.Team]:
-        assert not include_issues or include_repos
-
         team_names = set(team_names)
         with _try_api_request():
             return (
-                self._wrap_team(
-                    team,
-                    include_repos=include_repos,
-                    include_issues=include_issues,
-                )
+                self._wrap_team(team,)
                 for team in self._org.get_teams()
                 if not team_names or team.name in team_names
             )
 
     def get_repos(
-        self,
-        repo_names: Optional[List[str]] = None,
-        include_issues: Optional[plug.IssueState] = None,
+        self, repo_names: Optional[List[str]] = None,
     ) -> Iterable[plug.Repo]:
         return (
-            self._wrap_repo(repo, include_issues)
+            self._wrap_repo(repo)
             for repo in self._get_repos_by_name(repo_names or [])
         )
 
@@ -274,73 +262,31 @@ class GitHubAPI(plug.API):
     def close_issue(self, issue: plug.Issue) -> None:
         issue.implementation.edit(state="closed")
 
+    def get_team_repos(self, team: plug.Team) -> Iterable[plug.Repo]:
+        impl: _Team = team.implementation
+        return map(self._wrap_repo, impl.get_repos())
+
+    def get_repo_issues(self, repo: plug.Repo) -> Iterable[plug.Issue]:
+        impl: _Repo = repo.implementation
+        return map(self._wrap_issue, impl.get_issues())
+
     def delete_team(self, team: plug.Team) -> None:
         team.implementation.delete()
 
-    def refresh_team(
-        self,
-        team: plug.Team,
-        include_repos: bool = False,
-        include_issues: Optional[plug.IssueState] = None,
-    ) -> plug.Repo:
-        return self._wrap_team(
-            team.implementation,
-            include_repos=include_repos,
-            include_issues=include_issues,
-        )
-
-    def refresh_repo(
-        self, repo: plug.Repo, include_issues: Optional[plug.IssueState] = None
-    ) -> plug.Repo:
-        return self._wrap_repo(
-            repo.implementation, include_issues=include_issues
-        )
-
-    def _wrap_team(
-        self,
-        team: _Team,
-        include_repos: bool = False,
-        include_issues: Optional[plug.TeamPermission] = None,
-    ) -> plug.Team:
-        assert not include_issues or include_repos
-
-        repos = (
-            [
-                self._wrap_repo(repo, include_issues=include_issues)
-                for repo in team.get_repos()
-            ]
-            if include_repos
-            else None
-        )
+    def _wrap_team(self, team: _Team,) -> plug.Team:
         return plug.Team(
             name=team.name,
             members=[m.login for m in team.get_members()],
             id=team.id,
-            repos=repos,
             implementation=team,
         )
 
-    def _wrap_repo(
-        self,
-        repo: _Repo,
-        include_issues: Optional[plug.TeamPermission] = None,
-    ) -> plug.Repo:
-        issues = (
-            [
-                self._wrap_issue(issue)
-                for issue in repo.get_issues(
-                    state=_ISSUE_STATE_MAPPING[include_issues]
-                )
-            ]
-            if include_issues
-            else None
-        )
+    def _wrap_repo(self, repo: _Repo,) -> plug.Repo:
         return plug.Repo(
             name=repo.name,
             description=repo.description,
             private=repo.private,
             url=repo.html_url,
-            issues=issues,
             implementation=repo,
         )
 
@@ -351,6 +297,7 @@ class GitHubAPI(plug.API):
             number=issue.number,
             created_at=issue.created_at.isoformat(),
             author=issue.user.login,
+            state=_REVERSE_ISSUE_STATE_MAPPING[issue.state],
             implementation=issue,
         )
 

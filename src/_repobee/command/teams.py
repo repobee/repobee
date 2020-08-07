@@ -30,7 +30,8 @@ def create_teams(
         new_members = set(required_team.members) - existing_members
         api.assign_members(team, new_members, permission)
 
-        if new_members:
-            team = api.refresh_team(team)
+        # FIXME the returned team won't have the correct members if any new
+        # ones are added. This should be fixed by disconnecting members
+        # from teams, and having an api call "get_team_members"
 
         yield team

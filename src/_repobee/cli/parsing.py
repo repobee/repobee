@@ -154,10 +154,8 @@ def _process_args(
 
     repos = master_names = master_urls = None
     if "discover_repos" in args and args.discover_repos:
-        teams = api.get_teams(
-            [t.name for t in args.students], include_repos=True
-        )
-        repos = itertools.chain.from_iterable(team.repos for team in teams)
+        teams = api.get_teams([t.name for t in args.students])
+        repos = itertools.chain.from_iterable(map(api.get_team_repos, teams))
     elif "master_repo_names" in args:
         master_names = args.master_repo_names
         master_urls = _repo_names_to_urls(master_names, master_org_name, api)
