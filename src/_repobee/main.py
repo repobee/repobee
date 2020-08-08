@@ -13,7 +13,6 @@ import os
 from typing import List, Optional, Union, Mapping
 from types import ModuleType
 
-import daiquiri
 import repobee_plug as plug
 
 import _repobee.cli.dispatch
@@ -25,7 +24,6 @@ from _repobee import exception
 from _repobee import config
 from _repobee.cli.preparser import separate_args
 
-LOGGER = daiquiri.getLogger(__file__)
 
 _PRE_INIT_ERROR_MESSAGE = """exception was raised before pre-initialization was
 complete. This is usually due to incorrect settings.
@@ -145,14 +143,14 @@ def main(sys_args: List[str], unload_plugins: bool = True):
         # IMPORTANT: the default plugins must be loaded before user-defined
         # plugins to ensure that the user-defined plugins override the defaults
         # in firstresult hooks
-        LOGGER.debug("Initializing default plugins")
+        plug.log.debug("Initializing default plugins")
         plugin.initialize_default_plugins()
         if _repobee.distinfo.DIST_INSTALL:
-            LOGGER.debug("Initializing dist plugins")
+            plug.log.debug("Initializing dist plugins")
             plugin.initialize_dist_plugins()
 
         if not parsed_preparser_args.no_plugins:
-            LOGGER.debug("Initializing user plugins")
+            plug.log.debug("Initializing user plugins")
             plugin_names = (
                 parsed_preparser_args.plug
                 or config.get_plugin_names(config_file)
@@ -166,8 +164,8 @@ def main(sys_args: List[str], unload_plugins: bool = True):
         pre_init = False
         _repobee.cli.dispatch.dispatch_command(parsed_args, api, config_file)
     except exception.PluginLoadError as exc:
-        LOGGER.error("{.__class__.__name__}: {}".format(exc, str(exc)))
-        LOGGER.error(
+        plug.log.error("{.__class__.__name__}: {}".format(exc, str(exc)))
+        plug.log.error(
             "The plugin may not be installed, or it may not exist. If the "
             "plugin is defined in the config file, try running `repobee "
             "--no-plugins config-wizard` to remove any offending plugins."
@@ -179,12 +177,12 @@ def main(sys_args: List[str], unload_plugins: bool = True):
         if traceback or (
             pre_init and not isinstance(exc, exception.FileError)
         ):
-            LOGGER.error(str(exc))
+            plug.log.error(str(exc))
             if pre_init:
-                LOGGER.info(_PRE_INIT_ERROR_MESSAGE)
-            LOGGER.exception("Critical exception")
+                plug.log.info(_PRE_INIT_ERROR_MESSAGE)
+            plug.log.exception("Critical exception")
         else:
-            LOGGER.error("{.__class__.__name__}: {}".format(exc, str(exc)))
+            plug.log.error("{.__class__.__name__}: {}".format(exc, str(exc)))
         sys.exit(1)
     finally:
         if unload_plugins:

@@ -16,15 +16,12 @@ import contextlib
 import pathlib
 from typing import List, Iterable, Optional, Generator
 
-import daiquiri
 import gitlab
 import requests.exceptions
 
 import repobee_plug as plug
 
 from _repobee import exception
-
-LOGGER = daiquiri.getLogger(__file__)
 
 
 ISSUE_GENERATOR = Generator[plug.Issue, None, None]
@@ -231,7 +228,7 @@ class GitLabAPI(plug.PlatformAPI):
         missing = set(repo_names) - set(projects)
         if missing:
             msg = f"Can't find repos: {', '.join(missing)}"
-            LOGGER.warning(msg)
+            plug.log.warning(msg)
 
     def insert_auth(self, url: str) -> str:
         """See :py:meth:`repobee_plug.PlatformAPI.insert_auth`."""
@@ -314,7 +311,7 @@ class GitLabAPI(plug.PlatformAPI):
     def _ssl_verify():
         ssl_verify = not os.getenv("REPOBEE_NO_VERIFY_SSL") == "true"
         if not ssl_verify:
-            LOGGER.warning("SSL verification turned off, only for testing")
+            plug.log.warning("SSL verification turned off, only for testing")
         return ssl_verify
 
     def _get_organization(self, org_name):
@@ -334,7 +331,7 @@ class GitLabAPI(plug.PlatformAPI):
         for name in usernames:
             user = self._gitlab.users.list(username=name)
             # if not user:
-            # LOGGER.warning(f"user {user} could not be found")
+            # plug.log.warning(f"user {user} could not be found")
             users += user
         return users
 
@@ -392,7 +389,7 @@ class GitLabAPI(plug.PlatformAPI):
         master_org_name: Optional[str] = None,
     ):
         """See :py:meth:`repobee_plug.PlatformAPI.verify_settings`."""
-        LOGGER.info("GitLabAPI is verifying settings ...")
+        plug.log.info("GitLabAPI is verifying settings ...")
         if not token:
             raise plug.BadCredentials(
                 msg="Token is empty. Check that REPOBEE_TOKEN environment "
@@ -403,7 +400,7 @@ class GitLabAPI(plug.PlatformAPI):
             base_url, private_token=token, ssl_verify=GitLabAPI._ssl_verify()
         )
 
-        LOGGER.info(f"Authenticating connection to {base_url}...")
+        plug.log.info(f"Authenticating connection to {base_url}...")
         with _convert_error(
             gitlab.exceptions.GitlabAuthenticationError,
             plug.BadCredentials,
@@ -414,7 +411,7 @@ class GitLabAPI(plug.PlatformAPI):
             f"Could not connect to {base_url}, please check the URL",
         ):
             gl.auth()
-        LOGGER.info(
+        plug.log.info(
             f"SUCCESS: Authenticated as {gl.user.username} at {base_url}"
         )
 
@@ -422,14 +419,14 @@ class GitLabAPI(plug.PlatformAPI):
         if master_org_name:
             GitLabAPI._verify_group(master_org_name, gl)
 
-        LOGGER.info("GREAT SUCCESS: All settings check out!")
+        plug.log.info("GREAT SUCCESS: All settings check out!")
 
     @staticmethod
     def _verify_group(group_name: str, gl: gitlab.Gitlab) -> None:
         """Check that the group exists and that the user is an owner."""
         user = gl.user.username
 
-        LOGGER.info(f"Trying to fetch group {group_name}")
+        plug.log.info(f"Trying to fetch group {group_name}")
         slug_matched = [
             group
             for group in gl.groups.list(search=group_name)
@@ -442,9 +439,9 @@ class GitLabAPI(plug.PlatformAPI):
                 f"the slug (the name in the address bar)."
             )
         group = slug_matched[0]
-        LOGGER.info(f"SUCCESS: Found group {group.name}")
+        plug.log.info(f"SUCCESS: Found group {group.name}")
 
-        LOGGER.info(
+        plug.log.info(
             f"Verifying that user {user} is an owner of group {group_name}"
         )
         matching_members = [
@@ -457,7 +454,9 @@ class GitLabAPI(plug.PlatformAPI):
             raise plug.BadCredentials(
                 f"User {user} is not an owner of {group_name}"
             )
-        LOGGER.info(f"SUCCESS: User {user} is an owner of group {group_name}")
+        plug.log.info(
+            f"SUCCESS: User {user} is an owner of group {group_name}"
+        )
 
 
 class GitLabAPIHook(plug.Plugin):

@@ -13,14 +13,10 @@ import pathlib
 import configparser
 from typing import Union, List, Mapping
 
-import daiquiri
 import repobee_plug as plug
 
 from _repobee import exception
 from _repobee import constants
-
-
-LOGGER = daiquiri.getLogger(__file__)
 
 
 def get_configured_defaults(config_file: Union[str, pathlib.Path]) -> dict:
@@ -135,7 +131,7 @@ def _read_defaults(config_file: pathlib.Path) -> dict:
     defaults = dict(_read_config(config_file)[constants.CORE_SECTION_HDR])
     if token:
         if defaults.get("token"):
-            LOGGER.warning(
+            plug.log.warning(
                 "REPOBEE_TOKEN environment variable overrides token in "
                 "config file"
             )

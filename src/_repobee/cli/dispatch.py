@@ -13,11 +13,8 @@ import pathlib
 from typing import Optional, List, Mapping
 
 import repobee_plug as plug
-import daiquiri
 
 from _repobee import command, exception, formatters, util
-
-LOGGER = daiquiri.getLogger(__file__)
 
 
 def dispatch_command(
@@ -58,7 +55,7 @@ def dispatch_command(
         plug.cli.CoreCommand.repos.update,
         plug.cli.CoreCommand.repos.clone,
     ]:
-        LOGGER.info(formatters.format_hook_results_output(hook_results))
+        plug.log.info(formatters.format_hook_results_output(hook_results))
     if hook_results and "hook_results_file" in args and args.hook_results_file:
         _handle_hook_results(
             hook_results=hook_results, filepath=args.hook_results_file
@@ -173,10 +170,10 @@ def _raise_illegal_action_error(args: argparse.Namespace) -> None:
 
 
 def _handle_hook_results(hook_results, filepath):
-    LOGGER.warning(
+    plug.log.warning(
         "Storing hook results to file is an alpha feature, the file format "
         "is not final"
     )
     output_file = pathlib.Path(filepath)
     util.atomic_write(plug.result_mapping_to_json(hook_results), output_file)
-    LOGGER.info("Hook results stored to {}".format(filepath))
+    plug.log.info("Hook results stored to {}".format(filepath))

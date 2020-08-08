@@ -457,7 +457,7 @@ class TestVerifySettings:
             "_repobee.ext.gitlab.gitlab.Gitlab",
             side_effect=lambda base_url, private_token, ssl_verify: gl,
         )
-        log_mock = mocker.patch("_repobee.ext.gitlab.LOGGER")
+        log_mock = mocker.patch("repobee_plug.log.info")
 
         _repobee.ext.gitlab.GitLabAPI.verify_settings(
             user=None,
@@ -467,6 +467,4 @@ class TestVerifySettings:
             master_org_name=MASTER_GROUP,
         )
 
-        log_mock.info.assert_called_with(
-            "GREAT SUCCESS: All settings check out!"
-        )
+        log_mock.assert_called_with("GREAT SUCCESS: All settings check out!")

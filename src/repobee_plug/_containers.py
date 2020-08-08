@@ -11,9 +11,7 @@ import pluggy
 
 from typing import Mapping, Any, Optional
 
-import daiquiri
-
-LOGGER = daiquiri.getLogger(__file__)
+from repobee_plug import log
 
 hookspec = pluggy.HookspecMarker(__package__)
 hookimpl = pluggy.HookimplMarker(__package__)
@@ -68,7 +66,7 @@ class Result(
 
     @property
     def hook(self) -> str:
-        LOGGER.warning(
+        log.warning(
             "the Result.hook attribute is deprecated, use Result.name instead"
         )
         return self.name
@@ -81,7 +79,7 @@ def HookResult(hook, status, msg, data=None) -> Result:
 
         Replaced by :py:class:`Result`.
     """
-    LOGGER.warning("HookResult is deprecated and has been replaced by Result")
+    log.warning("HookResult is deprecated and has been replaced by Result")
     return Result(name=hook, status=status, msg=msg, data=data)
 
 

@@ -13,12 +13,9 @@ import os
 import re
 from typing import Iterable, Optional, List, Generator, Tuple, Any, Mapping
 
-import daiquiri
 
 import repobee_plug as plug
 from colored import bg, fg, style
-
-LOGGER = daiquiri.getLogger(__file__)
 
 
 def list_issues(
@@ -127,7 +124,7 @@ def _log_repo_issues(
         persistent_issues_per_repo.append((repo_name, issues))
 
         if not issues:
-            LOGGER.warning("{}: No matching issues".format(repo_name))
+            plug.log.warning("{}: No matching issues".format(repo_name))
 
         for issue in issues:
             color = (bg("grey_30") if even else bg("grey_15")) + fg("white")
@@ -149,7 +146,7 @@ def _log_repo_issues(
             )
             if show_body:
                 out += os.linesep * 2 + _limit_line_length(issue.body)
-            LOGGER.info(out)
+            plug.log.info(out)
 
     return persistent_issues_per_repo
 
@@ -200,7 +197,7 @@ def open_issue(
     repos = api.get_repos(repo_names)
     for repo in repos:
         issue = api.create_issue(issue.title, issue.body, repo)
-        LOGGER.info(
+        plug.log.info(
             f"Opened issue {repo.name}/#{issue.number}-'{issue.title}'"
         )
 
@@ -227,4 +224,6 @@ def close_issue(
         ]
         for issue in to_close:
             api.close_issue(issue)
-            LOGGER.info(f"Closed {repo.name}/#{issue.number}='{issue.title}'")
+            plug.log.info(
+                f"Closed {repo.name}/#{issue.number}='{issue.title}'"
+            )

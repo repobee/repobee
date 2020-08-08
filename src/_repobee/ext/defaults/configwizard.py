@@ -11,12 +11,9 @@ import configparser
 import sys
 import os
 
-import daiquiri
 import repobee_plug as plug
 
 from _repobee import constants
-
-LOGGER = daiquiri.getLogger(__file__)
 
 
 class Wizard(plug.Plugin, plug.cli.Command):
@@ -39,17 +36,17 @@ def callback(args: argparse.Namespace, api: plug.PlatformAPI) -> None:
     parser = configparser.ConfigParser()
 
     if constants.DEFAULT_CONFIG_FILE.exists():
-        LOGGER.warning(
+        plug.log.warning(
             "A configuration file was found at {}".format(
                 str(constants.DEFAULT_CONFIG_FILE)
             )
         )
-        LOGGER.warning(
+        plug.log.warning(
             "Continuing this wizard will OVERWRITE any options you enter "
             "values for"
         )
         if input("Continue anyway? (yes/no): ") != "yes":
-            LOGGER.info("User-prompted exit")
+            plug.log.info("User-prompted exit")
             return
         parser.read(str(constants.DEFAULT_CONFIG_FILE))
 
@@ -59,14 +56,14 @@ def callback(args: argparse.Namespace, api: plug.PlatformAPI) -> None:
     if constants.CORE_SECTION_HDR not in parser:
         parser.add_section(constants.CORE_SECTION_HDR)
 
-    LOGGER.info("Welcome to the configuration wizard!")
-    LOGGER.info("Type defaults for the options when prompted.")
-    LOGGER.info("Press ENTER to end an option.")
-    LOGGER.info(
+    plug.log.info("Welcome to the configuration wizard!")
+    plug.log.info("Type defaults for the options when prompted.")
+    plug.log.info("Press ENTER to end an option.")
+    plug.log.info(
         "Press ENTER without inputing a value to pick existing "
         "default, or skip if no default exists."
     )
-    LOGGER.info("Current defaults are shown in brackets [].")
+    plug.log.info("Current defaults are shown in brackets [].")
     for option in constants.ORDERED_CONFIGURABLE_ARGS:
         prompt = "Enter default for '{}': [{}] ".format(
             option, parser[constants.CORE_SECTION_HDR].get(option, "")
@@ -82,7 +79,7 @@ def callback(args: argparse.Namespace, api: plug.PlatformAPI) -> None:
     ) as f:
         parser.write(f)
 
-    LOGGER.info(
+    plug.log.info(
         "Configuration file written to {}".format(
             str(constants.DEFAULT_CONFIG_FILE)
         )

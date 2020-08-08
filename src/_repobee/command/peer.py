@@ -18,7 +18,6 @@ import repobee_plug as plug
 
 import _repobee.command.teams
 from _repobee import formatters
-from _repobee.command.repos import LOGGER
 
 DEFAULT_REVIEW_ISSUE = plug.Issue(
     title="Peer review",
@@ -131,7 +130,7 @@ def purge_review_teams(
     teams = api.get_teams(review_team_names)
     for team in teams:
         api.delete_team(team)
-        LOGGER.info(f"Deleted {team.name}")
+        plug.log.info(f"Deleted {team.name}")
 
 
 def check_peer_review_progress(
@@ -165,7 +164,7 @@ def check_peer_review_progress(
     for review_team in api.get_teams(review_team_names):
         repos = list(api.get_team_repos(review_team))
         if len(repos) != 1:
-            LOGGER.warning(
+            plug.log.warning(
                 f"Expected {review_team.name} to have 1 associated "
                 f"repo, found {len(review_team.repos)}. "
                 f"Skipping..."
@@ -192,7 +191,7 @@ def check_peer_review_progress(
                 )
             )
 
-    LOGGER.info(
+    plug.log.info(
         formatters.format_peer_review_progress_output(
             reviews, teams, num_reviews
         )
