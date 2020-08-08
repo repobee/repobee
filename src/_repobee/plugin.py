@@ -20,7 +20,6 @@ import sys
 from types import ModuleType
 from typing import List, Optional, Iterable, Mapping, Union, Callable
 
-import daiquiri
 
 import _repobee
 import _repobee.ext.defaults
@@ -29,8 +28,6 @@ import _repobee.distinfo
 from _repobee import exception
 
 import repobee_plug as plug
-
-LOGGER = daiquiri.getLogger(__file__)
 
 
 def _plugin_qualname(plugin_name):
@@ -77,7 +74,7 @@ def load_plugin_modules(
         a list of loaded modules.
     """
     loaded_modules = []
-    LOGGER.debug("Loading plugins: " + ", ".join(plugin_names))
+    plug.log.debug("Loading plugins: " + ", ".join(plugin_names))
 
     for name in plugin_names:
         plug_mod = (
@@ -429,10 +426,10 @@ def _execute_tasks(
             shutil.copytree(str(path), str(copy))
             repo_copies.append(copy)
 
-        LOGGER.info("Executing tasks ...")
+        plug.log.info("Executing tasks ...")
         results = collections.defaultdict(list)
         for path in repo_copies:
-            LOGGER.info("Processing {}".format(path.name))
+            plug.log.info("Processing {}".format(path.name))
 
             for result in hook_function(path=path, api=api):
                 if result:
@@ -483,4 +480,4 @@ def _handle_deprecation():
                     msg += " '{}' should be used instead.".format(
                         deprecation.replacement
                     )
-                LOGGER.warning(msg)
+                plug.log.warning(msg)

@@ -186,9 +186,7 @@ class TestInitializePlugins:
             "_repobee.plugin.load_plugin_modules",
             autospec=True,
             return_value=[mod],
-        ), patch(
-            "_repobee.plugin.LOGGER.warning", autospec=True
-        ) as warning_mock:
+        ), patch("repobee_plug.log.warning", autospec=True) as warning_mock:
             plugin.initialize_plugins([mod_name])
 
         assert warning_mock.called

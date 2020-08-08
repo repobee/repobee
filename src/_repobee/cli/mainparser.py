@@ -10,10 +10,8 @@ import types
 import argparse
 import pathlib
 
-import logging
 from typing import Union, Mapping
 
-import daiquiri
 
 import repobee_plug as plug
 from repobee_plug.cli import categorization
@@ -24,7 +22,6 @@ from _repobee import config
 from _repobee import constants
 from _repobee.cli.preparser import PRE_PARSER_SHOW_ALL_OPTS
 
-LOGGER = daiquiri.getLogger(__file__)
 
 CATEGORY = "category"
 ACTION = "action"
@@ -79,7 +76,6 @@ def create_parser_for_docs() -> argparse.ArgumentParser:
     Returns:
         The primary parser, specifically for generating documentation.
     """
-    daiquiri.setup(level=logging.FATAL)
     # load default plugins
     plugin.initialize_default_plugins()
     return create_parser(

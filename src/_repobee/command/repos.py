@@ -20,7 +20,6 @@ import sys
 import tempfile
 from typing import Iterable, List, Optional, Mapping, Generator
 
-import daiquiri
 
 import repobee_plug as plug
 
@@ -32,8 +31,6 @@ from _repobee import exception
 from _repobee import config
 from _repobee import plugin
 from _repobee.git import Push
-
-LOGGER = daiquiri.getLogger(__file__)
 
 
 def setup_student_repos(
@@ -68,7 +65,7 @@ def setup_student_repos(
     teams = list(teams)
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        LOGGER.info("Cloning into master repos ...")
+        plug.log.info("Cloning into master repos ...")
         master_repo_paths = _clone_all(authed_urls, cwd=tmpdir)
         hook_results = plugin.execute_setup_tasks(
             master_repo_names, api, cwd=pathlib.Path(tmpdir)
@@ -91,7 +88,7 @@ def setup_student_repos(
         push_tuples = _create_push_tuples(
             master_repo_paths, {api.insert_auth(repo.url) for repo in repos}
         )
-        LOGGER.info("Pushing files to student repos ...")
+        plug.log.info("Pushing files to student repos ...")
         git.push(push_tuples)
 
     return hook_results
@@ -121,7 +118,7 @@ def _create_or_fetch_repo(
 
 def _log_repo_creation(repos: Iterable[plug.Repo]) -> Iterable[plug.Repo]:
     for repo in repos:
-        LOGGER.info(f"Created repository {repo.name}")
+        plug.log.info(f"Created repository {repo.name}")
         yield repo
 
 
@@ -140,10 +137,10 @@ def _clone_all(urls: Iterable[str], cwd: str):
         raise ValueError("master_repo_urls contains duplicates")
     try:
         for url in urls:
-            LOGGER.info("Cloning into {}".format(url))
+            plug.log.info("Cloning into {}".format(url))
             git.clone_single(url, cwd=cwd)
     except exception.CloneFailedError:
-        LOGGER.error("Error cloning into {}, aborting ...".format(url))
+        plug.log.error("Error cloning into {}, aborting ...".format(url))
         raise
     paths = [os.path.join(cwd, util.repo_name(url)) for url in urls]
     assert all(map(util.is_git_repo, paths)), "all repos must be git repos"
@@ -178,7 +175,7 @@ def update_student_repos(
     )
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        LOGGER.info("Cloning into master repos ...")
+        plug.log.info("Cloning into master repos ...")
         master_repo_paths = _clone_all(authed_template_urls, tmpdir)
         hook_results = plugin.execute_setup_tasks(
             master_repo_names, api, cwd=pathlib.Path(tmpdir)
@@ -186,14 +183,14 @@ def update_student_repos(
 
         push_tuples = _create_push_tuples(master_repo_paths, authed_repo_urls)
 
-        LOGGER.info("Pushing files to student repos ...")
+        plug.log.info("Pushing files to student repos ...")
         failed_urls = git.push(push_tuples)
 
     if failed_urls and issue:
-        LOGGER.info("Opening issue in repos to which push failed")
+        plug.log.info("Opening issue in repos to which push failed")
         _open_issue_by_urls(failed_urls, issue, api)
 
-    LOGGER.info("Done!")
+    plug.log.info("Done!")
     return hook_results
 
 
@@ -212,7 +209,7 @@ def _open_issue_by_urls(
     repos = api.get_repos(repo_names)
     for repo in repos:
         issue = api.create_issue(issue.title, issue.body, repo)
-        LOGGER.info(
+        plug.log.info(
             f"Opened issue {repo.name}/#{issue.number}-'{issue.title}'"
         )
 
@@ -234,7 +231,7 @@ def clone_repos(
     repos_for_tasks, repos_for_clone = itertools.tee(repos)
     non_local_repos = _non_local_repos(repos_for_clone)
 
-    LOGGER.info("Cloning into student repos ...")
+    plug.log.info("Cloning into student repos ...")
     with tempfile.TemporaryDirectory() as tmpdir:
         _clone_repos_no_check(non_local_repos, tmpdir, api)
 
@@ -257,7 +254,7 @@ def _non_local_repos(
         if repo.name not in local_files:
             yield repo
         else:
-            LOGGER.warning("{} already on disk, skipping".format(repo.name))
+            plug.log.warning("{} already on disk, skipping".format(repo.name))
 
 
 def _clone_repos_no_check(repos, dst_dirpath, api) -> List[str]:
@@ -321,7 +318,7 @@ def migrate_repos(
             ]
         )
 
-    LOGGER.info("Done!")
+    plug.log.info("Done!")
 
 
 def _create_push_tuples(
@@ -354,7 +351,7 @@ def show_config(config_file: pathlib.Path) -> None:
     """Print the configuration file to the log."""
     config.check_config_integrity(config_file)
 
-    LOGGER.info(f"Found valid config file at {config_file}")
+    plug.log.info(f"Found valid config file at {config_file}")
     with config_file.open(encoding=sys.getdefaultencoding()) as f:
         config_contents = "".join(f.readlines())
 
@@ -366,4 +363,4 @@ def show_config(config_file: pathlib.Path) -> None:
         + "END CONFIG FILE".center(50, "-")
     )
 
-    LOGGER.info(output)
+    plug.log.info(output)

@@ -14,7 +14,7 @@ def log(msg: str, level: int) -> None:
         msg: A message to log.
         level: The logging level.
     """
-    _LOG.log(msg, level=level)
+    _LOG.log(msg=msg, level=level)
 
 
 def debug(msg: str) -> None:
@@ -51,3 +51,12 @@ def error(msg: str) -> None:
         msg: A message to log.
     """
     log(msg, level=logging.ERROR)
+
+
+def exception(msg: str) -> None:
+    """Log an exception.
+
+    Args:
+        msg: A message to log.
+    """
+    _LOG.exception(msg)

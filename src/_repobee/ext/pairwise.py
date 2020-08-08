@@ -15,11 +15,8 @@ If N is odd, the students are split into (N-1)/2 groups, in which one group has
 import random
 from typing import List
 
-import daiquiri
 
 import repobee_plug as plug
-
-LOGGER = daiquiri.getLogger(name=__file__)
 
 
 @plug.repobee_hook
@@ -39,7 +36,7 @@ def generate_review_allocations(
     """
     teams = list(teams)
     if num_reviews != 1:
-        LOGGER.warning(
+        plug.log.warning(
             "num_reviews specified to {}, but in pairwise assignment "
             "num_reviews is ignored".format(num_reviews)
         )

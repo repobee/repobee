@@ -10,12 +10,9 @@ import pathlib
 import sys
 import collections
 
-import daiquiri
 import repobee_plug as plug
 
 from _repobee import formatters
-
-LOGGER = daiquiri.getLogger(__file__)
 
 
 class Query(plug.Plugin, plug.cli.Command):
@@ -47,7 +44,7 @@ class Query(plug.Plugin, plug.cli.Command):
             self.args.students,
             self.args.master_repo_names,
         )
-        LOGGER.info(
+        plug.log.info(
             formatters.format_hook_results_output(selected_hook_results)
         )
 
@@ -68,7 +65,7 @@ def _filter_hook_results(hook_results_mapping, teams, master_repo_names):
 
 def _log_missing_repo_names(missing_repo_names):
     if missing_repo_names:
-        LOGGER.warning(
+        plug.log.warning(
             "No hook results found for {}".format(
                 ", ".join(missing_repo_names)
             )

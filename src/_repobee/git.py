@@ -10,15 +10,15 @@ import os
 import subprocess
 import collections
 import pathlib
-import daiquiri
 from typing import Iterable, List, Any, Callable
+
+import repobee_plug as plug
 
 from _repobee import exception
 from _repobee import util
 
 CONCURRENT_TASKS = 20
 
-LOGGER = daiquiri.getLogger(__file__)
 
 Push = collections.namedtuple("Push", ("local_path", "repo_url", "branch"))
 
@@ -109,7 +109,7 @@ async def _clone_async(repo_url: str, branch: str = "", cwd="."):
             url=repo_url,
         )
     else:
-        LOGGER.info("Cloned into {}".format(repo_url))
+        plug.log.info("Cloned into {}".format(repo_url))
 
 
 def clone(repo_urls: Iterable[str], cwd: str = ".") -> List[Exception]:
@@ -153,9 +153,9 @@ async def _push_async(pt: Push):
             pt.repo_url,
         )
     elif b"Everything up-to-date" in stderr:
-        LOGGER.info("{} is up-to-date".format(pt.repo_url))
+        plug.log.info("{} is up-to-date".format(pt.repo_url))
     else:
-        LOGGER.info("Pushed files to {} {}".format(pt.repo_url, pt.branch))
+        plug.log.info("Pushed files to {} {}".format(pt.repo_url, pt.branch))
 
 
 def _push_no_retry(push_tuples: Iterable[Push]) -> List[str]:
@@ -197,12 +197,12 @@ def push(push_tuples: Iterable[Push], tries: int = 3) -> List[str]:
     # confusing, but failed_pts needs an initial value
     failed_pts = list(push_tuples)
     for i in range(tries):
-        LOGGER.info("Pushing, attempt {}/{}".format(i + 1, tries))
+        plug.log.info("Pushing, attempt {}/{}".format(i + 1, tries))
         failed_urls = set(_push_no_retry(failed_pts))
         failed_pts = [pt for pt in push_tuples if pt.repo_url in failed_urls]
         if not failed_pts:
             break
-        LOGGER.warning("{} pushes failed ...".format(len(failed_pts)))
+        plug.log.warning("{} pushes failed ...".format(len(failed_pts)))
 
     return [pt.repo_url for pt in failed_pts]
 
@@ -261,6 +261,6 @@ def _batch_execution(
         task.exception() for task in completed_tasks if task.exception()
     ]
     for exc in exceptions:
-        LOGGER.error(str(exc))
+        plug.log.error(str(exc))
 
     return exceptions

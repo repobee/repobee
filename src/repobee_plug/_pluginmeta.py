@@ -1,6 +1,5 @@
 import argparse
 import itertools
-import daiquiri
 
 from typing import List, Tuple, Union
 
@@ -11,8 +10,6 @@ from repobee_plug import _containers
 from repobee_plug import cli
 
 from repobee_plug.cli.args import Option, MutuallyExclusiveGroup
-
-LOGGER = daiquiri.getLogger(__name__)
 
 _HOOK_METHODS = {
     key: value

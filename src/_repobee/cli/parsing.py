@@ -28,9 +28,6 @@ import _repobee.cli.mainparser
 from _repobee import util, exception, constants, cli
 
 
-LOGGER = daiquiri.getLogger(__file__)
-
-
 class _ArgsProcessing(enum.Enum):
     """Enum for selecting the type of processing for args."""
 

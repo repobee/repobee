@@ -19,11 +19,9 @@ import subprocess
 import pathlib
 from typing import Tuple, Union, Iterable
 
-import daiquiri
 
 import repobee_plug as plug
 
-LOGGER = daiquiri.getLogger(name=__file__)
 
 SECTION = "pylint"
 
@@ -60,7 +58,7 @@ def _pylint(python_files: Iterable[Union[pathlib.Path]]) -> Tuple[str, str]:
     """
     linted_files = []
     for py_file in python_files:
-        LOGGER.info("Running pylint on {!s}".format(py_file))
+        plug.log.info("Running pylint on {!s}".format(py_file))
         command = "pylint {!s}".format(py_file).split()
         proc = subprocess.run(
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
