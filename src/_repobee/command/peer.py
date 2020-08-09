@@ -183,7 +183,7 @@ def check_peer_review_progress(
         if len(repos) != 1:
             plug.log.warning(
                 f"Expected {review_team.name} to have 1 associated "
-                f"repo, found {len(review_team.repos)}. "
+                f"repo, found {len(repos)}. "
                 f"Skipping..."
             )
             continue
