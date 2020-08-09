@@ -43,10 +43,11 @@ required = [
     "bullet",
     "colored",
     "daiquiri",
+    "dataclasses>='0.7';python_version<'3.7'",
+    "more-itertools>=8.4.0",
+    "pluggy>=0.13.1",
     "pygithub",
     "python-gitlab==2.4.0",
-    "pluggy>=0.13.1",
-    "dataclasses>='0.7';python_version<'3.7'",
     "tabulate",
     "tqdm>=4.48.2",
 ]
