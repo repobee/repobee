@@ -54,8 +54,9 @@ def assign_peer_reviews(
     """
     issue = issue or DEFAULT_REVIEW_ISSUE
     expected_repo_names = plug.generate_repo_names(teams, master_repo_names)
-
-    fetched_teams = api.get_teams([t.name for t in teams])
+    fetched_teams = _repobee.command.teams.get_teams_progress(
+        teams, api, desc="Fetching teams and repos"
+    )
     fetched_repos = list(
         itertools.chain.from_iterable(map(api.get_team_repos, fetched_teams))
     )
@@ -66,6 +67,7 @@ def assign_peer_reviews(
         raise plug.NotFoundError(f"Can't find repos: {', '.join(missing)}")
 
     for master_name in master_repo_names:
+        plug.echo("Allocating reviews")
         allocations = plug.manager.hook.generate_review_allocations(
             teams=teams, num_reviews=num_reviews
         )
@@ -90,13 +92,22 @@ def assign_peer_reviews(
         review_teams = _repobee.command.teams.create_teams(
             review_team_specs, plug.TeamPermission.PULL, api
         )
+        review_teams_progress = plug.cli.io.progress_bar(
+            review_teams,
+            desc="Creating review teams",
+            total=len(review_team_specs),
+        )
 
         for review_team, reviewed_team_name in zip(
-            review_teams, reviewed_team_names
+            review_teams_progress, reviewed_team_names
         ):
             reviewed_repo = fetched_repo_dict[
                 plug.generate_repo_name(reviewed_team_name, master_name)
             ]
+            review_teams_progress.write(
+                f"Assigning {' and '.join(review_team.members)} "
+                f"to review {reviewed_repo.name}"
+            )
             api.assign_repo(
                 review_team, reviewed_repo, plug.TeamPermission.PULL
             )
@@ -127,7 +138,9 @@ def purge_review_teams(
         for student in students
         for master_repo_name in master_repo_names
     ]
-    teams = api.get_teams(review_team_names)
+    teams = _repobee.command.teams.get_teams_progress(
+        review_team_names, api, desc="Deleting review teams"
+    )
     for team in teams:
         api.delete_team(team)
         plug.log.info(f"Deleted {team.name}")
@@ -161,7 +174,9 @@ def check_peer_review_progress(
         for master_name in master_repo_names
     ]
 
-    for review_team in api.get_teams(review_team_names):
+    for review_team in _repobee.command.teams.get_teams_progress(
+        review_team_names, api, desc="Processing review teams"
+    ):
         repos = list(api.get_team_repos(review_team))
         if len(repos) != 1:
             plug.log.warning(
@@ -191,7 +206,7 @@ def check_peer_review_progress(
                 )
             )
 
-    plug.log.info(
+    plug.echo(
         formatters.format_peer_review_progress_output(
             reviews, teams, num_reviews
         )
