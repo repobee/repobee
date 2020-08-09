@@ -13,6 +13,8 @@ from .repos import (
 )
 from .teams import create_teams
 
+from . import progresswrappers
+
 __all__ = [
     "open_issue",
     "close_issue",
@@ -26,4 +28,5 @@ __all__ = [
     "migrate_repos",
     "show_config",
     "create_teams",
+    "progresswrappers",
 ]
