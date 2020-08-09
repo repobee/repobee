@@ -31,6 +31,8 @@ from _repobee import config
 from _repobee import plugin
 from _repobee.git import Push
 
+from . import progresswrappers
+
 
 def setup_student_repos(
     master_repo_urls: Iterable[str],
@@ -220,9 +222,7 @@ def update_student_repos(
 
         # we want to exhaust this iterator immediately to not have progress
         # bars overlap
-        fetched_teams = list(
-            _repobee.command.teams.get_teams_progress(teams, api)
-        )
+        fetched_teams = list(progresswrappers.get_teams(teams, api))
 
         push_tuple_iter = _create_push_tuples(
             fetched_teams, authed_template_urls, master_repo_paths, api
@@ -255,7 +255,7 @@ def _open_issue_by_urls(
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     repo_names = [util.repo_name(url) for url in repo_urls]
-    repos = api.get_repos(repo_names)
+    repos = progresswrappers.get_repos(repo_names, api)
     for repo in repos:
         issue = api.create_issue(issue.title, issue.body, repo)
         plug.log.info(

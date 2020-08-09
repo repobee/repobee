@@ -19,6 +19,8 @@ import repobee_plug as plug
 import _repobee.command.teams
 from _repobee import formatters
 
+from . import progresswrappers
+
 DEFAULT_REVIEW_ISSUE = plug.Issue(
     title="Peer review",
     body="You have been assigned to peer review this repo.",
@@ -54,7 +56,7 @@ def assign_peer_reviews(
     """
     issue = issue or DEFAULT_REVIEW_ISSUE
     expected_repo_names = plug.generate_repo_names(teams, master_repo_names)
-    fetched_teams = _repobee.command.teams.get_teams_progress(
+    fetched_teams = progresswrappers.get_teams(
         teams, api, desc="Fetching teams and repos"
     )
     fetched_repos = list(
@@ -138,7 +140,7 @@ def purge_review_teams(
         for student in students
         for master_repo_name in master_repo_names
     ]
-    teams = _repobee.command.teams.get_teams_progress(
+    teams = progresswrappers.get_teams(
         review_team_names, api, desc="Deleting review teams"
     )
     for team in teams:
@@ -174,7 +176,7 @@ def check_peer_review_progress(
         for master_name in master_repo_names
     ]
 
-    for review_team in _repobee.command.teams.get_teams_progress(
+    for review_team in progresswrappers.get_teams(
         review_team_names, api, desc="Processing review teams"
     ):
         repos = list(api.get_team_repos(review_team))

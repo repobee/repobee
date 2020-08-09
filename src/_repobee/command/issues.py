@@ -13,9 +13,11 @@ import os
 import re
 from typing import Iterable, Optional, List, Generator, Tuple, Any, Mapping
 
+from colored import bg, fg, style
 
 import repobee_plug as plug
-from colored import bg, fg, style
+
+from . import progresswrappers
 
 
 def list_issues(
@@ -44,7 +46,9 @@ def list_issues(
     repos = list(repos)
     repo_names = [repo.name for repo in repos]
     max_repo_name_length = max(map(len, repo_names))
-    repos = api.get_repos(repo_names)
+
+    repos = progresswrappers.get_repos(repo_names, api)
+
     issues_per_repo = _get_issue_generator(
         repos, title_regex=title_regex, author=author, api=api
     )
@@ -194,7 +198,7 @@ def open_issue(
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     repo_names = plug.generate_repo_names(teams, master_repo_names)
-    repos = api.get_repos(repo_names)
+    repos = progresswrappers.get_repos(repo_names, api)
     for repo in repos:
         issue = api.create_issue(issue.title, issue.body, repo)
         plug.log.info(
@@ -215,7 +219,7 @@ def close_issue(
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     repo_names = (repo.name for repo in repos)
-    repos = api.get_repos(repo_names)
+    repos = progresswrappers.get_repos(repo_names, api)
     for repo in repos:
         to_close = [
             issue
