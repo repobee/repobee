@@ -124,6 +124,7 @@ class Issue(APIObject):
         self.number = number
         self.created_at = created_at
         self.author = author
+        self.state = state
         self.implementation = implementation
 
     def to_dict(self):
