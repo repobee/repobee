@@ -23,6 +23,7 @@ from _repobee import plugin
 from _repobee import exception
 from _repobee import config
 from _repobee.cli.preparser import separate_args
+from _repobee import disthelpers
 
 
 _PRE_INIT_ERROR_MESSAGE = """exception was raised before pre-initialization was
@@ -154,7 +155,7 @@ def main(sys_args: List[str], unload_plugins: bool = True):
             plugin_names = (
                 parsed_preparser_args.plug
                 or config.get_plugin_names(config_file)
-            ) or []
+            ) or disthelpers.read_active_plugins()
             plugin.initialize_plugins(plugin_names, allow_filepath=True)
 
         parsed_args, api = _parse_args(

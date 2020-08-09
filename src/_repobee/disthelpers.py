@@ -1,6 +1,9 @@
 """Helper functions for the distribution."""
 import pathlib
 import logging
+import json
+
+from typing import Optional, List
 
 import requests
 import repobee_plug as plug
@@ -11,6 +14,20 @@ from _repobee import distinfo
 def get_installed_plugins_path() -> pathlib.Path:
     """Return the path to the installed_plugins.json file."""
     return distinfo.INSTALL_DIR / "installed_plugins.json"
+
+
+def read_active_plugins(
+    installed_plugins_path: Optional[pathlib.Path] = None,
+) -> List[str]:
+    """Read active plugins from the installed_plugins.json file."""
+    installed_plugins = json.loads(
+        installed_plugins_path or get_installed_plugins_path()
+    )
+    return [
+        name
+        for name, attrs in installed_plugins.items()
+        if attrs.get("active")
+    ]
 
 
 def get_pip_path() -> pathlib.Path:
