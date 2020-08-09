@@ -352,7 +352,7 @@ def setup_logging() -> None:
                 formatter=daiquiri.formatter.ColorFormatter(
                     fmt="%(color)s[%(levelname)s] %(message)s%(color_stop)s"
                 ),
-                level=logging.INFO,
+                level=logging.WARNING,
             ),
             daiquiri.output.File(
                 filename=str(

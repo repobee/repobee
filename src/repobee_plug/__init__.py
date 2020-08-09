@@ -71,7 +71,6 @@ __all__ = [
     "repobee_hook",
     "manager",
     "echo",
-    "log",
     # Containers
     "Result",
     "HookResult",
