@@ -236,7 +236,7 @@ def update_student_repos(
         failed_urls = git.push(push_tuples=push_tuple_iter_progress)
 
     if failed_urls and issue:
-        plug.log.info("Opening issue in repos to which push failed")
+        plug.echo("Opening issue in repos to which push failed")
         _open_issue_by_urls(failed_urls, issue, api)
 
     plug.log.info("Done!")
@@ -258,9 +258,9 @@ def _open_issue_by_urls(
     repos = progresswrappers.get_repos(repo_names, api)
     for repo in repos:
         issue = api.create_issue(issue.title, issue.body, repo)
-        plug.log.info(
-            f"Opened issue {repo.name}/#{issue.number}-'{issue.title}'"
-        )
+        msg = f"Opened issue {repo.name}/#{issue.number}-'{issue.title}'"
+        repos.write(msg)
+        plug.log.info(msg)
 
 
 def clone_repos(
