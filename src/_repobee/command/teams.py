@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Iterable, Union, Any
 import repobee_plug as plug
 
 
@@ -37,3 +37,28 @@ def create_teams(
         # from teams, and having an api call "get_team_members"
 
         yield team
+
+
+def get_teams_progress(
+    teams: Iterable[Union[plug.Team, str]],
+    api: plug.PlatformAPI,
+    desc: str = "Fetching teams",
+    **kwargs: Any,
+) -> Iterable[plug.Team]:
+    """Wrapper around :py:meth:`repobee_plug.PlatformAPI.get_teams` that also
+    displays a progress bar.
+
+    Args:
+        teams: An iterable of teams or team names.
+        api: An instance of the platform API.
+        desc: Description of the action.
+        args: Keyword arguments for the underlying implementation of the
+            progress bar.
+    Returns:
+        An iterable of fetched teams that also updates a CLI progress bar.
+    """
+    teams = list(teams)
+    fetched_teams = api.get_teams(str(t) for t in teams)
+    return plug.cli.io.progress_bar(
+        fetched_teams, desc=desc, total=len(teams), **kwargs
+    )

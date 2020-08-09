@@ -221,11 +221,7 @@ def update_student_repos(
         # we want to exhaust this iterator immediately to not have progress
         # bars overlap
         fetched_teams = list(
-            plug.cli.io.progress_bar(
-                api.get_teams({team.name for team in teams}),
-                desc="Fetching teams",
-                total=len(teams),
-            )
+            _repobee.command.teams.get_teams_progress(teams, api)
         )
 
         push_tuple_iter = _create_push_tuples(
