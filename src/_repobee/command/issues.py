@@ -11,7 +11,7 @@ self-contained program.
 """
 import os
 import re
-from typing import Iterable, Optional, List, Generator, Tuple, Any, Mapping
+from typing import Iterable, Optional, List, Tuple, Any, Mapping
 
 from colored import bg, fg, style
 
@@ -91,9 +91,7 @@ def _get_issue_generator(
     author: str,
     state: plug.IssueState,
     api: plug.PlatformAPI,
-) -> Generator[
-    Tuple[str, Generator[Iterable[plug.Issue], None, None]], None, None
-]:
+) -> Iterable[Tuple[str, Iterable[plug.Issue]]]:
     issues_per_repo = (
         (
             repo.name,
@@ -101,8 +99,7 @@ def _get_issue_generator(
                 issue
                 for issue in api.get_repo_issues(repo)
                 if re.match(title_regex, issue.title)
-                and state == plug.IssueState.ALL
-                or state == issue.state
+                and (state == plug.IssueState.ALL or state == issue.state)
                 and (not author or issue.author == author)
             ],
         )
