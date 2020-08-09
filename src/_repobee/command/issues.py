@@ -50,7 +50,7 @@ def list_issues(
     repos = api.get_repos(repo_names)
 
     issues_per_repo = _get_issue_generator(
-        repos, title_regex=title_regex, author=author, api=api
+        repos, title_regex=title_regex, author=author, state=state, api=api
     )
 
     # _log_repo_issues exhausts the issues_per_repo iterator and
@@ -89,6 +89,7 @@ def _get_issue_generator(
     repos: Iterable[plug.Repo],
     title_regex: str,
     author: str,
+    state: plug.IssueState,
     api: plug.PlatformAPI,
 ) -> Generator[
     Tuple[str, Generator[Iterable[plug.Issue], None, None]], None, None
@@ -100,6 +101,8 @@ def _get_issue_generator(
                 issue
                 for issue in api.get_repo_issues(repo)
                 if re.match(title_regex, issue.title)
+                and state == plug.IssueState.ALL
+                or state == issue.state
                 and (not author or issue.author == author)
             ],
         )
