@@ -44,7 +44,7 @@ def post_clone(path: pathlib.Path, api: plug.PlatformAPI):
         return plug.Result(SECTION, plug.Status.WARNING, msg)
 
     status, msg = _pylint(python_files)
-    return plug.Result(name=SECTION, status=plug.Status.SUCCESS, msg=msg)
+    return plug.Result(name=SECTION, status=status, msg=msg)
 
 
 def _pylint(python_files: Iterable[Union[pathlib.Path]]) -> Tuple[str, str]:
@@ -58,7 +58,7 @@ def _pylint(python_files: Iterable[Union[pathlib.Path]]) -> Tuple[str, str]:
     """
     linted_files = []
     for py_file in python_files:
-        plug.log.info("Running pylint on {!s}".format(py_file))
+        plug.echo("Running pylint on {!s}".format(py_file))
         command = "pylint {!s}".format(py_file).split()
         proc = subprocess.run(
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
