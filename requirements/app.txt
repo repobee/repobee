@@ -7,3 +7,4 @@ pygithub
 python-gitlab==2.4.0
 dataclasses>='0.7';python_version<'3.7'
 tabulate
+tqdm>=4.48.2

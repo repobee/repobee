@@ -48,6 +48,7 @@ required = [
     "pluggy>=0.13.1",
     "dataclasses>='0.7';python_version<'3.7'",
     "tabulate",
+    "tqdm>=4.48.2",
 ]
 
 setup(
