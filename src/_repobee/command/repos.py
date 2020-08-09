@@ -284,7 +284,7 @@ def clone_repos(
     repos_for_tasks, repos_for_clone = itertools.tee(repos)
     non_local_repos = _non_local_repos(repos_for_clone)
 
-    plug.log.info("Cloning into student repos ...")
+    plug.echo("Cloning into student repos ...")
     with tempfile.TemporaryDirectory() as tmpdir:
         _clone_repos_no_check(non_local_repos, tmpdir, api)
 
@@ -371,14 +371,14 @@ def migrate_repos(
             ]
         )
 
-    plug.log.info("Done!")
+    plug.echo("Done!")
 
 
 def show_config(config_file: pathlib.Path) -> None:
     """Print the configuration file to the log."""
     config.check_config_integrity(config_file)
 
-    plug.log.info(f"Found valid config file at {config_file}")
+    plug.echo(f"Found valid config file at {config_file}")
     with config_file.open(encoding=sys.getdefaultencoding()) as f:
         config_contents = "".join(f.readlines())
 
@@ -390,4 +390,4 @@ def show_config(config_file: pathlib.Path) -> None:
         + "END CONFIG FILE".center(50, "-")
     )
 
-    plug.log.info(output)
+    plug.echo(output)
