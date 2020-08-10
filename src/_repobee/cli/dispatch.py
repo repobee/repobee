@@ -55,7 +55,7 @@ def dispatch_command(
         plug.cli.CoreCommand.repos.update,
         plug.cli.CoreCommand.repos.clone,
     ]:
-        plug.log.info(formatters.format_hook_results_output(hook_results))
+        plug.echo(formatters.format_hook_results_output(hook_results))
     if hook_results and "hook_results_file" in args and args.hook_results_file:
         _handle_hook_results(
             hook_results=hook_results, filepath=args.hook_results_file
@@ -176,4 +176,4 @@ def _handle_hook_results(hook_results, filepath):
     )
     output_file = pathlib.Path(filepath)
     util.atomic_write(plug.result_mapping_to_json(hook_results), output_file)
-    plug.log.info("Hook results stored to {}".format(filepath))
+    plug.echo("Hook results stored to {}".format(filepath))

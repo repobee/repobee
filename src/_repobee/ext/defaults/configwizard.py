@@ -46,7 +46,7 @@ def callback(args: argparse.Namespace, api: plug.PlatformAPI) -> None:
             "values for"
         )
         if input("Continue anyway? (yes/no): ") != "yes":
-            plug.log.info("User-prompted exit")
+            plug.echo("User-prompted exit")
             return
         parser.read(str(constants.DEFAULT_CONFIG_FILE))
 
@@ -56,14 +56,14 @@ def callback(args: argparse.Namespace, api: plug.PlatformAPI) -> None:
     if constants.CORE_SECTION_HDR not in parser:
         parser.add_section(constants.CORE_SECTION_HDR)
 
-    plug.log.info("Welcome to the configuration wizard!")
-    plug.log.info("Type defaults for the options when prompted.")
-    plug.log.info("Press ENTER to end an option.")
-    plug.log.info(
+    plug.echo("Welcome to the configuration wizard!")
+    plug.echo("Type defaults for the options when prompted.")
+    plug.echo("Press ENTER to end an option.")
+    plug.echo(
         "Press ENTER without inputing a value to pick existing "
         "default, or skip if no default exists."
     )
-    plug.log.info("Current defaults are shown in brackets [].")
+    plug.echo("Current defaults are shown in brackets [].")
     for option in constants.ORDERED_CONFIGURABLE_ARGS:
         prompt = "Enter default for '{}': [{}] ".format(
             option, parser[constants.CORE_SECTION_HDR].get(option, "")
@@ -79,7 +79,7 @@ def callback(args: argparse.Namespace, api: plug.PlatformAPI) -> None:
     ) as f:
         parser.write(f)
 
-    plug.log.info(
+    plug.echo(
         "Configuration file written to {}".format(
             str(constants.DEFAULT_CONFIG_FILE)
         )

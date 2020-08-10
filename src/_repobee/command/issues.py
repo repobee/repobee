@@ -11,11 +11,13 @@ self-contained program.
 """
 import os
 import re
-from typing import Iterable, Optional, List, Generator, Tuple, Any, Mapping
+from typing import Iterable, Optional, List, Tuple, Any, Mapping
 
+from colored import bg, fg, style
 
 import repobee_plug as plug
-from colored import bg, fg, style
+
+from . import progresswrappers
 
 
 def list_issues(
@@ -44,9 +46,11 @@ def list_issues(
     repos = list(repos)
     repo_names = [repo.name for repo in repos]
     max_repo_name_length = max(map(len, repo_names))
+
     repos = api.get_repos(repo_names)
+
     issues_per_repo = _get_issue_generator(
-        repos, title_regex=title_regex, author=author, api=api
+        repos, title_regex=title_regex, author=author, state=state, api=api
     )
 
     # _log_repo_issues exhausts the issues_per_repo iterator and
@@ -85,10 +89,9 @@ def _get_issue_generator(
     repos: Iterable[plug.Repo],
     title_regex: str,
     author: str,
+    state: plug.IssueState,
     api: plug.PlatformAPI,
-) -> Generator[
-    Tuple[str, Generator[Iterable[plug.Issue], None, None]], None, None
-]:
+) -> Iterable[Tuple[str, Iterable[plug.Issue]]]:
     issues_per_repo = (
         (
             repo.name,
@@ -96,6 +99,7 @@ def _get_issue_generator(
                 issue
                 for issue in api.get_repo_issues(repo)
                 if re.match(title_regex, issue.title)
+                and (state == plug.IssueState.ALL or state == issue.state)
                 and (not author or issue.author == author)
             ],
         )
@@ -105,7 +109,7 @@ def _get_issue_generator(
 
 
 def _log_repo_issues(
-    issues_per_repo: Tuple[str, Generator[plug.Issue, None, None]],
+    issues_per_repo: Tuple[str, Iterable[plug.Issue]],
     show_body: bool,
     title_alignment: int,
 ) -> List[Tuple[Any, list]]:
@@ -146,7 +150,7 @@ def _log_repo_issues(
             )
             if show_body:
                 out += os.linesep * 2 + _limit_line_length(issue.body)
-            plug.log.info(out)
+            plug.echo(out)
 
     return persistent_issues_per_repo
 
@@ -194,12 +198,12 @@ def open_issue(
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     repo_names = plug.generate_repo_names(teams, master_repo_names)
-    repos = api.get_repos(repo_names)
+    repos = progresswrappers.get_repos(repo_names, api)
     for repo in repos:
         issue = api.create_issue(issue.title, issue.body, repo)
-        plug.log.info(
-            f"Opened issue {repo.name}/#{issue.number}-'{issue.title}'"
-        )
+        msg = f"Opened issue {repo.name}/#{issue.number}-'{issue.title}'"
+        repos.write(msg)
+        plug.log.info(msg)
 
 
 def close_issue(
@@ -215,15 +219,16 @@ def close_issue(
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     repo_names = (repo.name for repo in repos)
-    repos = api.get_repos(repo_names)
+    repos = progresswrappers.get_repos(repo_names, api)
     for repo in repos:
         to_close = [
             issue
             for issue in api.get_repo_issues(repo)
             if re.match(title_regex, issue.title)
+            and issue.state == plug.IssueState.OPEN
         ]
         for issue in to_close:
             api.close_issue(issue)
-            plug.log.info(
-                f"Closed {repo.name}/#{issue.number}='{issue.title}'"
-            )
+            msg = f"Closed {repo.name}/#{issue.number}='{issue.title}'"
+            repos.write(msg)
+            plug.log.info(msg)
