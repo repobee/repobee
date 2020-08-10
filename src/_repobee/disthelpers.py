@@ -45,10 +45,13 @@ def write_installed_plugins(
 ) -> None:
     """Write the installed_plugins.json file."""
     path = installed_plugins_path or get_installed_plugins_path()
-    current_installed_plugins = _get_installed_plugins(path)
-    current_installed_plugins.update(installed_plugins)
+    metainfo = _get_installed_plugins(path).get("_metainfo") or {}
+    metainfo.update(installed_plugins.get("_metainfo") or {})
+
+    installed_plugins_write = dict(installed_plugins)
+    installed_plugins_write["_metainfo"] = metainfo
     path.write_text(
-        json.dumps(current_installed_plugins, indent=4), encoding="utf8"
+        json.dumps(installed_plugins_write, indent=4), encoding="utf8"
     )
 
 
@@ -71,7 +74,6 @@ def write_active_plugins(
     installed_plugins.setdefault("_metainfo", {})[
         "active_plugins"
     ] = active_plugins
-    print(installed_plugins)
     write_installed_plugins(installed_plugins, installed_plugins_path)
 
 

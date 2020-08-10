@@ -63,23 +63,38 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
         description="Install a plugin.",
     )
 
+    single_file = plug.cli.option(
+        converter=pathlib.Path, help="path to a single-file plugin to activate"
+    )
+
     def command(self, api: None) -> None:
         """Install a plugin."""
         plugins = disthelpers.get_plugins_json()
         installed_plugins = disthelpers.get_installed_plugins()
         active_plugins = disthelpers.get_active_plugins()
 
-        plug.echo("Available plugins:")
-        _list_all_plugins(plugins, installed_plugins, active_plugins)
-        name, version = _select_plugin(plugins)
+        if self.single_file:
+            abspath = self.single_file.resolve(strict=True)
+            installed_plugins[str(abspath)] = dict(
+                version="local", single_file=True,
+            )
+            disthelpers.write_installed_plugins(installed_plugins)
+            plug.echo(f"Installed {abspath}")
+        else:
+            plug.echo("Available plugins:")
+            _list_all_plugins(plugins, installed_plugins, active_plugins)
+            name, version = _select_plugin(plugins)
 
-        plug.echo(f"Installing {name}@{version}")
-        _install_plugin(name, version, plugins)
+            if name in installed_plugins:
+                _uninstall_plugin(name, installed_plugins)
 
-        plug.echo(f"Successfully installed {name}@{version}")
+            plug.echo(f"Installing {name}@{version}")
+            _install_plugin(name, version, plugins)
 
-        installed_plugins[name] = dict(version=version)
-        disthelpers.write_installed_plugins(installed_plugins)
+            plug.echo(f"Successfully installed {name}@{version}")
+
+            installed_plugins[name] = dict(version=version)
+            disthelpers.write_installed_plugins(installed_plugins)
 
 
 def _select_plugin(plugins: dict) -> ty.Tuple[str, str]:
@@ -145,15 +160,27 @@ class UninstallPluginCommand(plug.Plugin, plug.cli.Command):
             choices=list(installed_plugins.keys()),
         ).launch()
 
-        plug.echo(f"Uninstalling {selected_plugin_name} ...")
-
         plug.echo(f"Successfully uninstalled {selected_plugin_name}")
 
-        del installed_plugins[selected_plugin_name]
-        disthelpers.write_installed_plugins(installed_plugins)
+
+def _uninstall_plugin(plugin_name: str, installed_plugins: dict):
+    plugin_version = installed_plugins[plugin_name]["version"]
+    plug.echo(f"Uninstalling {plugin_name}@{plugin_version}")
+    if not installed_plugins[plugin_name].get("single_file"):
+        _pip_uninstall_plugin(plugin_name)
+
+    del installed_plugins[plugin_name]
+    disthelpers.write_installed_plugins(installed_plugins)
+    disthelpers.write_active_plugins(
+        [
+            name
+            for name in disthelpers.get_active_plugins()
+            if name != plugin_name
+        ]
+    )
 
 
-def _uninstall_plugin(plugin_name: str) -> None:
+def _pip_uninstall_plugin(plugin_name: str) -> None:
     cmd = [
         str(disthelpers.get_pip_path()),
         "uninstall",
@@ -176,34 +203,23 @@ class ActivatePluginCommand(plug.Plugin, plug.cli.Command):
         description="Activate a plugin.",
     )
 
-    single_file_plugin = plug.cli.option(
-        converter=pathlib.Path, help="path to a single-file plugin to activate"
-    )
-
     def command(self, api: None) -> None:
         """Activate a plugin."""
         installed_plugins = disthelpers.get_installed_plugins()
+        active = disthelpers.get_active_plugins()
 
-        if self.single_file_plugin:
-            abspath = self.single_file_plugin.resolve(strict=True)
-            installed_plugins[str(abspath)] = dict(
-                version="local", single_file=True,
-            )
-            disthelpers.write_installed_plugins(installed_plugins)
-        else:
-            names = list(installed_plugins.keys()) + list(
-                disthelpers.get_builtin_plugins().keys()
-            )
-            active = disthelpers.get_active_plugins()
+        names = list(installed_plugins.keys()) + list(
+            disthelpers.get_builtin_plugins().keys()
+        )
 
-            default = [i for i, name in enumerate(names) if name in active]
-            selection = bullet.Check(
-                choices=names,
-                prompt="Select plugins to activate (space to check/un-check, "
-                "enter to confirm selection):",
-            ).launch(default=default)
+        default = [i for i, name in enumerate(names) if name in active]
+        selection = bullet.Check(
+            choices=names,
+            prompt="Select plugins to activate (space to check/un-check, "
+            "enter to confirm selection):",
+        ).launch(default=default)
 
-            disthelpers.write_active_plugins(selection)
+        disthelpers.write_active_plugins(selection)
 
 
 def _wrap_cell(text: str, width: int = 40) -> str:
