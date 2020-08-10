@@ -10,6 +10,12 @@ class CommandExtension:
 
     args: argparse.Namespace
 
+    def __getattr__(self, key):
+        """We implement getattr such that linters won't complain about
+        dynamically added members.
+        """
+        return object.__getattribute__(self, key)
+
 
 class Command:
     """Mixin class for use with the Plugin class. Explicitly marks a class as
@@ -66,3 +72,9 @@ class Command:
     """
 
     args: argparse.Namespace
+
+    def __getattr__(self, key):
+        """We implement getattr such that linters won't complain about
+        dynamically added members.
+        """
+        return object.__getattribute__(self, key)
