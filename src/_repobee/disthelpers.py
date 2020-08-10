@@ -1,6 +1,5 @@
 """Helper functions for the distribution."""
 import pathlib
-import logging
 import json
 
 from typing import Optional, List
@@ -21,7 +20,9 @@ def read_active_plugins(
 ) -> List[str]:
     """Read active plugins from the installed_plugins.json file."""
     installed_plugins = json.loads(
-        installed_plugins_path or get_installed_plugins_path()
+        (installed_plugins_path or get_installed_plugins_path()).read_text(
+            "utf8"
+        )
     )
     return [
         name
@@ -45,6 +46,6 @@ def get_plugins_json(url: str = "https://repobee.org/plugins.json") -> dict:
     """
     resp = requests.get(url)
     if resp.status_code != 200:
-        plug.log(resp.content.decode("utf8"), level=logging.ERROR)
+        plug.log.error(resp.content.decode("utf8"))
         raise plug.PlugError(f"could not fetch plugins.json from '{url}'")
     return resp.json()
