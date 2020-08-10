@@ -639,7 +639,7 @@ class TestCheckReviews:
         num_expected_reviews = 2
         master_repo_name = MASTER_REPO_NAMES[1]
         warning_template = (
-            r"^\[WARNING\] Expected {} to be assigned to {} review teams, but "
+            r"\[WARNING\] Expected {} to be assigned to {} review teams, but "
             "found {}. Review teams may have been tampered with."
         )
         pattern_template = r"{}.*{}.*{}.*\w+-{}.*"
