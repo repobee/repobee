@@ -312,7 +312,7 @@ class GitHubAPI(plug.PlatformAPI):
             number=issue.number,
             created_at=issue.created_at.isoformat(),
             author=issue.user.login,
-            state="all",
+            state=_REVERSE_ISSUE_STATE_MAPPING[issue.state],
             implementation=issue,
         )
 
