@@ -1,17 +1,17 @@
-from .issues import open_issue, close_issue, list_issues
-from .peer import (
+from _repobee.command.issues import open_issue, close_issue, list_issues
+from _repobee.command.peer import (
     assign_peer_reviews,
     purge_review_teams,
     check_peer_review_progress,
 )
-from .repos import (
+from _repobee.command.repos import (
     setup_student_repos,
     clone_repos,
     update_student_repos,
     migrate_repos,
     show_config,
 )
-from .teams import create_teams
+from _repobee.command.teams import create_teams
 
 from . import progresswrappers
 
