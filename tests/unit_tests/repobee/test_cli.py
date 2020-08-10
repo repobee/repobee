@@ -304,7 +304,7 @@ class TestDispatchCommand:
         self, dummyapi_instance, command_mock
     ):
         args = argparse.Namespace(
-            **repobee_plug.cli.CoreCommand.repos.create_teams.asdict(),
+            **repobee_plug.cli.CoreCommand.teams.create.asdict(),
             **VALID_PARSED_ARGS
         )
 
@@ -645,12 +645,12 @@ class TestBaseParsing:
 
         assert "unsupported protocol in {}".format(url) in str(exc_info.value)
 
-    def test_correctly_parses_create_teams(
+    def test_correctly_parsers_teams_create(
         self, dummyapi_instance, students_file
     ):
-        """Test that the create-teams command is correctly parsed."""
+        """Test that the ``teams create`` command is correctly parsed."""
         sys_args = [
-            *repobee_plug.cli.CoreCommand.repos.create_teams.as_name_tuple(),
+            *repobee_plug.cli.CoreCommand.teams.create.as_name_tuple(),
             *BASE_ARGS,
             "--sf",
             str(students_file),

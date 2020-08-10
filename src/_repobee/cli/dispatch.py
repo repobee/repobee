@@ -35,6 +35,7 @@ def dispatch_command(
         plug.cli.CoreCommand.issues: _dispatch_issues_command,
         plug.cli.CoreCommand.config: _dispatch_config_command,
         plug.cli.CoreCommand.reviews: _dispatch_reviews_command,
+        plug.cli.CoreCommand.teams: _dispatch_teams_command,
     }
 
     is_ext_command = "_extension_command" in args
@@ -83,9 +84,6 @@ def _dispatch_repos_command(
         return None
     elif action == repos.clone:
         return command.clone_repos(args.repos, api)
-    elif action == repos.create_teams:
-        command.create_teams(args.students, plug.TeamPermission.PUSH, api)
-        return None
     _raise_illegal_action_error(args)
 
 
@@ -159,6 +157,17 @@ def _dispatch_reviews_command(
             args.num_reviews,
             api,
         )
+        return None
+    _raise_illegal_action_error(args)
+
+
+def _dispatch_teams_command(
+    args: argparse.Namespace, config_file: pathlib.Path, api: plug.PlatformAPI
+) -> Optional[Mapping[str, List[plug.Result]]]:
+    teams = plug.cli.CoreCommand.teams
+    action = args.action
+    if action == teams.create:
+        command.create_teams(args.students, plug.TeamPermission.PUSH, api)
         return None
     _raise_illegal_action_error(args)
 
