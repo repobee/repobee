@@ -23,6 +23,7 @@ from typing import Tuple, Union, Iterable
 import repobee_plug as plug
 
 
+PLUGIN_DESCRIPTION = "Runs pylint on student repos after cloning"
 SECTION = "pylint"
 
 

@@ -18,6 +18,11 @@ from typing import List
 
 import repobee_plug as plug
 
+PLUGIN_DESCRIPTION = (
+    "Makes peer review allocation pairwise (if student A reviews student B, "
+    "then student B reviews student A)"
+)
+
 
 @plug.repobee_hook
 def generate_review_allocations(

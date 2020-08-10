@@ -103,12 +103,17 @@ def get_builtin_plugins(ext_pkg: types.ModuleType = _repobee.ext) -> dict:
     plugins.json dict.
     """
 
-    def _get_module_doc(name):
-        return importlib.import_module(f"{ext_pkg.__name__}.{name}").__doc__
+    def _get_plugin_description(name):
+        return (
+            importlib.import_module(f"{ext_pkg.__name__}.{name}").__dict__.get(
+                "PLUGIN_DESCRIPTION"
+            )
+            or "-"
+        )
 
     return {
         name: dict(
-            description=_get_module_doc(name),
+            description=_get_plugin_description(name),
             url="https://repobee.readthedocs.io/en/stable/plugins.html",
             versions={"N/A": {}},
             builtin=True,
