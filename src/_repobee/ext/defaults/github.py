@@ -281,7 +281,10 @@ class GitHubAPI(plug.PlatformAPI):
     def get_repo_issues(self, repo: plug.Repo) -> Iterable[plug.Issue]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repo_issues`."""
         impl: _Repo = repo.implementation
-        return map(self._wrap_issue, impl.get_issues())
+        return map(
+            self._wrap_issue,
+            impl.get_issues(state=_ISSUE_STATE_MAPPING[plug.IssueState.ALL]),
+        )
 
     def _wrap_team(self, team: _Team,) -> plug.Team:
         return plug.Team(

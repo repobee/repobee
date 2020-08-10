@@ -473,3 +473,15 @@ class TestVerifySettings:
 
         for msg in expected_messages:
             assert msg in str(exc_info.value)
+
+
+class TestGetRepoIssues:
+    """Tests for the get_repo_issues function."""
+
+    def test_fetches_all_issues(self, happy_github, api):
+        repo_mock = MagicMock(spec=plug.Repo)
+        api.get_repo_issues(repo_mock)
+
+        repo_mock.implementation.get_issues.assert_called_once_with(
+            state="all"
+        )
