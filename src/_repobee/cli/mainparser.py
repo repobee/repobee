@@ -176,6 +176,11 @@ def _add_subparsers(parser, show_all_opts, config_file):
         description="Manage repositories.",
         help="Manage repositories.",
     )
+    teams_parsers = _create_category_parsers(
+        plug.cli.CoreCommand.teams,
+        description="Manage teams.",
+        help="manage teams",
+    )
     issues_parsers = _create_category_parsers(
         plug.cli.CoreCommand.issues,
         description="Manage issues.",
@@ -206,6 +211,12 @@ def _add_subparsers(parser, show_all_opts, config_file):
         base_student_parser,
         master_org_parser,
         _add_action_parser(repo_parsers),
+    )
+    _add_teams_parsers(
+        base_parser,
+        base_student_parser,
+        master_org_parser,
+        _add_action_parser(teams_parsers),
     )
     _add_issue_parsers(
         [base_parser, base_student_parser, _REPO_NAME_PARSER],
@@ -297,7 +308,24 @@ def _add_repo_parsers(
     )
 
     add_parser(
-        plug.cli.CoreCommand.repos.create_teams,
+        plug.cli.CoreCommand.repos.migrate,
+        help="Migrate repositories into the target organization.",
+        description=(
+            "Migrate repositories into the target organization. "
+            "The repos must be local on disk to be migrated. Note that "
+            "migrated repos will be private."
+        ),
+        parents=[_REPO_NAME_PARSER, base_parser],
+        formatter_class=_OrderedFormatter,
+    )
+
+
+def _add_teams_parsers(
+    base_parser, base_student_parser, master_org_parser, add_parser
+):
+
+    add_parser(
+        plug.cli.CoreCommand.teams.create,
         help="Create student teams without creating repos.",
         description=(
             "Only create student teams. This is intended for when you want to "
@@ -307,18 +335,6 @@ def _add_repo_parsers(
             "this command AND `setup`."
         ),
         parents=[base_parser, base_student_parser],
-        formatter_class=_OrderedFormatter,
-    )
-
-    add_parser(
-        plug.cli.CoreCommand.repos.migrate,
-        help="Migrate repositories into the target organization.",
-        description=(
-            "Migrate repositories into the target organization. "
-            "The repos must be local on disk to be migrated. Note that "
-            "migrated repos will be private."
-        ),
-        parents=[_REPO_NAME_PARSER, base_parser],
         formatter_class=_OrderedFormatter,
     )
 
