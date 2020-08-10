@@ -31,6 +31,7 @@ test_requirements = [
     "bandit",
     "flake8",
     "black",
+    "pylint",
 ]
 docs_requirements = [
     "sphinx>=1.8.2",

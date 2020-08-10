@@ -19,7 +19,7 @@ import repobee_plug as plug
 import _repobee.command.teams
 from _repobee import formatters
 
-from . import progresswrappers
+from _repobee.command import progresswrappers
 
 DEFAULT_REVIEW_ISSUE = plug.Issue(
     title="Peer review",

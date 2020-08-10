@@ -24,6 +24,8 @@ jobs:
         pip install -e .[TEST]
     - name: Lint with flake8
       run: flake8 . --statistics
+    - name: Lin with pylint
+      run: pylint --ignored-classes=_HookRelay,style --errors-only src/
     - name: Lint with Bandit
       run: bandit -r src/ --skip B322 -ll --exclude src/repobee_plug/testhelpers
     - name: Check with Black
