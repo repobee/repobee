@@ -17,7 +17,7 @@ from colored import bg, fg, style
 
 import repobee_plug as plug
 
-from . import progresswrappers
+from _repobee.command import progresswrappers
 
 
 def list_issues(
