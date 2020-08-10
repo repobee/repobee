@@ -44,9 +44,7 @@ class Query(plug.Plugin, plug.cli.Command):
             self.args.students,
             self.args.master_repo_names,
         )
-        plug.log.info(
-            formatters.format_hook_results_output(selected_hook_results)
-        )
+        plug.echo(formatters.format_hook_results_output(selected_hook_results))
 
 
 def _filter_hook_results(hook_results_mapping, teams, master_repo_names):

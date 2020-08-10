@@ -412,7 +412,7 @@ class TestListIssues:
         unmatched = open_issues[1]
         repo_names = plug.generate_repo_names(STUDENT_TEAMS, MASTER_REPO_NAMES)
 
-        issue_pattern_template = r"^\[INFO\].*{}/#\d:\s+{}.*by {}.?$"
+        issue_pattern_template = r"^.*{}/#\d:\s+{}.*by {}.?$"
         expected_issue_output_patterns = [
             issue_pattern_template.format(repo_name, matched.title, TEACHER)
             for repo_name in repo_names
@@ -639,7 +639,7 @@ class TestCheckReviews:
         num_expected_reviews = 2
         master_repo_name = MASTER_REPO_NAMES[1]
         warning_template = (
-            r"^\[WARNING\] Expected {} to be assigned to {} review teams, but "
+            r"\[WARNING\] Expected {} to be assigned to {} review teams, but "
             "found {}. Review teams may have been tampered with."
         )
         pattern_template = r"{}.*{}.*{}.*\w+-{}.*"

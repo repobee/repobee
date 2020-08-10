@@ -27,6 +27,8 @@ import _repobee
 import _repobee.cli.mainparser
 from _repobee import util, exception, constants, cli
 
+from _repobee.command import progresswrappers
+
 
 class _ArgsProcessing(enum.Enum):
     """Enum for selecting the type of processing for args."""
@@ -151,7 +153,9 @@ def _process_args(
 
     repos = master_names = master_urls = None
     if "discover_repos" in args and args.discover_repos:
-        teams = api.get_teams([t.name for t in args.students])
+        teams = progresswrappers.get_teams(
+            args.students, api, desc="Discovering team repos"
+        )
         repos = itertools.chain.from_iterable(map(api.get_team_repos, teams))
     elif "master_repo_names" in args:
         master_names = args.master_repo_names
@@ -352,7 +356,7 @@ def setup_logging() -> None:
                 formatter=daiquiri.formatter.ColorFormatter(
                     fmt="%(color)s[%(levelname)s] %(message)s%(color_stop)s"
                 ),
-                level=logging.INFO,
+                level=logging.WARNING,
             ),
             daiquiri.output.File(
                 filename=str(

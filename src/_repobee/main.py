@@ -179,7 +179,7 @@ def main(sys_args: List[str], unload_plugins: bool = True):
         ):
             plug.log.error(str(exc))
             if pre_init:
-                plug.log.info(_PRE_INIT_ERROR_MESSAGE)
+                plug.echo(_PRE_INIT_ERROR_MESSAGE)
             plug.log.exception("Critical exception")
         else:
             plug.log.error("{.__class__.__name__}: {}".format(exc, str(exc)))
