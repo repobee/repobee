@@ -31,7 +31,7 @@ from _repobee import config
 from _repobee import plugin
 from _repobee.git import Push
 
-from . import progresswrappers
+from _repobee.command import progresswrappers
 
 
 def setup_student_repos(

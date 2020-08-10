@@ -61,6 +61,7 @@ class _Deprecations:
     """
 
     _instance = None
+    deprecated_hooks: dict
 
     def __new__(cls):
         if cls._instance is None:
