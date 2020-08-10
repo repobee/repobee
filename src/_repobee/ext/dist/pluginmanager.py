@@ -18,6 +18,7 @@ import bullet
 import repobee_plug as plug
 
 from _repobee import disthelpers
+from _repobee import __version
 
 PLUGIN = "pluginmanager"
 
@@ -240,9 +241,11 @@ def _list_all_plugins(
     for plugin_name, attrs in plugins.items():
         latest_version = list(attrs["versions"].keys())[0]
         installed = installed_plugins.get(plugin_name) or {}
-        installed_version = (installed.get("version") or "-") + (
-            " √" if plugin_name in active_plugins else ""
-        )
+        installed_version = (
+            __version.__version__
+            if attrs.get("builtin")
+            else (installed.get("version") or "-")
+        ) + (" √" if plugin_name in active_plugins else "")
         plugins_table.append(
             [
                 plugin_name,
