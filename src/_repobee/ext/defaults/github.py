@@ -409,7 +409,7 @@ class GitHubAPI(plug.PlatformAPI):
         master_org_name: Optional[str] = None,
     ) -> None:
         """See :py:meth:`repobee_plug.PlatformAPI.verify_settings`."""
-        plug.log.info("Verifying settings ...")
+        plug.echo("Verifying settings ...")
         if not token:
             raise plug.BadCredentials(
                 msg="token is empty. Check that REPOBEE_TOKEN environment "
@@ -418,7 +418,7 @@ class GitHubAPI(plug.PlatformAPI):
 
         g = github.Github(login_or_token=token, base_url=base_url)
 
-        plug.log.info("Trying to fetch user information ...")
+        plug.echo("Trying to fetch user information ...")
 
         user_not_found_msg = (
             "user {} could not be found. Possible reasons: "
@@ -442,30 +442,30 @@ class GitHubAPI(plug.PlatformAPI):
                     "issue on GitHub.".format(msg)
                 )
                 raise plug.UnexpectedException(msg=msg)
-        plug.log.info(
+        plug.echo(
             "SUCCESS: found user {}, "
             "user exists and base url looks okay".format(user)
         )
 
-        plug.log.info("Verifying access token scopes ...")
+        plug.echo("Verifying access token scopes ...")
         scopes = g.oauth_scopes
         if not REQUIRED_TOKEN_SCOPES.issubset(scopes):
             raise plug.BadCredentials(
                 "missing one or more access token scopes. "
                 "Actual: {}. Required {}".format(scopes, REQUIRED_TOKEN_SCOPES)
             )
-        plug.log.info("SUCCESS: access token scopes look okay")
+        plug.echo("SUCCESS: access token scopes look okay")
 
         GitHubAPI._verify_org(org_name, user, g)
         if master_org_name:
             GitHubAPI._verify_org(master_org_name, user, g)
 
-        plug.log.info("GREAT SUCCESS: all settings check out!")
+        plug.echo("GREAT SUCCESS: all settings check out!")
 
     @staticmethod
     def _verify_org(org_name: str, user: str, g: github.MainClass.Github):
         """Check that the organization exists and that the user is an owner."""
-        plug.log.info("Trying to fetch organization {} ...".format(org_name))
+        plug.echo("Trying to fetch organization {} ...".format(org_name))
         org_not_found_msg = (
             "organization {} could not be found. Possible "
             "reasons: org does not exist, user does not have "
@@ -473,9 +473,9 @@ class GitHubAPI(plug.PlatformAPI):
         ).format(org_name)
         with _convert_404_to_not_found_error(org_not_found_msg):
             org = g.get_organization(org_name)
-        plug.log.info("SUCCESS: found organization {}".format(org_name))
+        plug.echo("SUCCESS: found organization {}".format(org_name))
 
-        plug.log.info(
+        plug.echo(
             "Verifying that user {} is an owner of organization {}".format(
                 user, org_name
             )
@@ -489,7 +489,7 @@ class GitHubAPI(plug.PlatformAPI):
                     user, org_name
                 )
             )
-        plug.log.info(
+        plug.echo(
             "SUCCESS: user {} is an owner of organization {}".format(
                 user, org_name
             )

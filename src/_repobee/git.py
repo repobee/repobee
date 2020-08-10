@@ -12,6 +12,8 @@ import collections
 import pathlib
 from typing import Iterable, List, Any, Callable
 
+import more_itertools
+
 import repobee_plug as plug
 
 from _repobee import exception
@@ -122,7 +124,6 @@ def clone(repo_urls: Iterable[str], cwd: str = ".") -> List[Exception]:
     Returns:
         URLs from which cloning failed.
     """
-    # TODO valdate repo_urls
     return [
         exc.url
         for exc in _batch_execution(_clone_async, repo_urls, cwd=cwd)
@@ -199,7 +200,7 @@ def push(push_tuples: Iterable[Push], tries: int = 3) -> List[str]:
     for i in range(tries):
         plug.log.info("Pushing, attempt {}/{}".format(i + 1, tries))
         failed_urls = set(_push_no_retry(failed_pts))
-        failed_pts = [pt for pt in push_tuples if pt.repo_url in failed_urls]
+        failed_pts = [pt for pt in failed_pts if pt.repo_url in failed_urls]
         if not failed_pts:
             break
         plug.log.warning("{} pushes failed ...".format(len(failed_pts)))
@@ -219,8 +220,7 @@ def _batch_execution(
 
     Args:
         batch_func: A function that takes an iterable as a first argument and
-            returns
-        a list of asyncio.Task objects.
+            returns a list of asyncio.Task objects.
         arg_list: A list of objects that are of the same type as the
         batch_func's first argument.
         batch_func_kwargs: Additional keyword arguments to the batch_func.
@@ -229,37 +229,42 @@ def _batch_execution(
         a list of exceptions raised in the tasks returned by the batch
         function.
     """
-    completed_tasks = []
-    args_iter = iter(arg_list)
-
     loop = asyncio.get_event_loop()
-    has_more_jobs = True
-    while has_more_jobs:
-        args = []
-        for _ in range(CONCURRENT_TASKS):
-            try:
-                args.append(next(args_iter))
-            except StopIteration:
-                has_more_jobs = False
+    return loop.run_until_complete(
+        _batch_execution_async(
+            batch_func, arg_list, *batch_func_args, **batch_func_kwargs
+        )
+    )
 
+
+async def _batch_execution_async(
+    batch_func: Callable[[Iterable[Any], Any], List[asyncio.Task]],
+    arg_list: Iterable[Any],
+    *batch_func_args,
+    **batch_func_kwargs
+) -> List[Exception]:
+
+    import tqdm.asyncio
+
+    exceptions = []
+    loop = asyncio.get_event_loop()
+    for batch, args_chunk in enumerate(
+        more_itertools.ichunked(arg_list, CONCURRENT_TASKS), start=1
+    ):
         tasks = [
             loop.create_task(
                 batch_func(arg, *batch_func_args, **batch_func_kwargs)
             )
-            for arg in args
+            for arg in args_chunk
         ]
-        # if
-        # a) arg_list was empty
-        # or
-        # b) len(arg_list) % CONCURRENT_TASKS == 0
-        # the last iteration will have no tasks
-        if tasks:
-            loop.run_until_complete(asyncio.wait(tasks))
-            completed_tasks += tasks
+        for coro in tqdm.asyncio.tqdm_asyncio.as_completed(
+            tasks, desc=f"Progress batch {batch}"
+        ):
+            try:
+                await coro
+            except exception.GitError as exc:
+                exceptions.append(exc)
 
-    exceptions = [
-        task.exception() for task in completed_tasks if task.exception()
-    ]
     for exc in exceptions:
         plug.log.error(str(exc))
 

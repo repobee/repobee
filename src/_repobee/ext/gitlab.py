@@ -389,7 +389,7 @@ class GitLabAPI(plug.PlatformAPI):
         master_org_name: Optional[str] = None,
     ):
         """See :py:meth:`repobee_plug.PlatformAPI.verify_settings`."""
-        plug.log.info("GitLabAPI is verifying settings ...")
+        plug.echo("GitLabAPI is verifying settings ...")
         if not token:
             raise plug.BadCredentials(
                 msg="Token is empty. Check that REPOBEE_TOKEN environment "
@@ -400,7 +400,7 @@ class GitLabAPI(plug.PlatformAPI):
             base_url, private_token=token, ssl_verify=GitLabAPI._ssl_verify()
         )
 
-        plug.log.info(f"Authenticating connection to {base_url}...")
+        plug.echo(f"Authenticating connection to {base_url}...")
         with _convert_error(
             gitlab.exceptions.GitlabAuthenticationError,
             plug.BadCredentials,
@@ -411,7 +411,7 @@ class GitLabAPI(plug.PlatformAPI):
             f"Could not connect to {base_url}, please check the URL",
         ):
             gl.auth()
-        plug.log.info(
+        plug.echo(
             f"SUCCESS: Authenticated as {gl.user.username} at {base_url}"
         )
 
@@ -419,14 +419,14 @@ class GitLabAPI(plug.PlatformAPI):
         if master_org_name:
             GitLabAPI._verify_group(master_org_name, gl)
 
-        plug.log.info("GREAT SUCCESS: All settings check out!")
+        plug.echo("GREAT SUCCESS: All settings check out!")
 
     @staticmethod
     def _verify_group(group_name: str, gl: gitlab.Gitlab) -> None:
         """Check that the group exists and that the user is an owner."""
         user = gl.user.username
 
-        plug.log.info(f"Trying to fetch group {group_name}")
+        plug.echo(f"Trying to fetch group {group_name}")
         slug_matched = [
             group
             for group in gl.groups.list(search=group_name)
@@ -439,9 +439,9 @@ class GitLabAPI(plug.PlatformAPI):
                 f"the slug (the name in the address bar)."
             )
         group = slug_matched[0]
-        plug.log.info(f"SUCCESS: Found group {group.name}")
+        plug.echo(f"SUCCESS: Found group {group.name}")
 
-        plug.log.info(
+        plug.echo(
             f"Verifying that user {user} is an owner of group {group_name}"
         )
         matching_members = [
@@ -454,9 +454,7 @@ class GitLabAPI(plug.PlatformAPI):
             raise plug.BadCredentials(
                 f"User {user} is not an owner of {group_name}"
             )
-        plug.log.info(
-            f"SUCCESS: User {user} is an owner of group {group_name}"
-        )
+        plug.echo(f"SUCCESS: User {user} is an owner of group {group_name}")
 
 
 class GitLabAPIHook(plug.Plugin):
