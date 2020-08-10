@@ -176,9 +176,10 @@ def check_peer_review_progress(
         for master_name in master_repo_names
     ]
 
-    for review_team in progresswrappers.get_teams(
+    review_teams = progresswrappers.get_teams(
         review_team_names, api, desc="Processing review teams"
-    ):
+    )
+    for review_team in review_teams:
         repos = list(api.get_team_repos(review_team))
         if len(repos) != 1:
             plug.log.warning(
