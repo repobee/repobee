@@ -84,48 +84,41 @@ def _check_name_length(name):
 class Team(APIObject):
     """Wrapper class for a Team API object."""
 
-    def __init__(
-        self,
-        members: Iterable[str],
-        name: Optional[str] = None,
-        id: Optional[Any] = None,
-        implementation: Optional[Any] = None,
-    ):
-        self.members = list(members)
-        self.name = name if name else "-".join(sorted(members))
-        self.id = id
-        self.implementation = implementation
+    members: Iterable[str] = dataclasses.field(compare=False)
+    name: Optional[str] = dataclasses.field(compare=True, default=None)
+    id: Optional[Any] = dataclasses.field(compare=False, default=None)
+    implementation: Optional[Any] = dataclasses.field(
+        compare=False, repr=False, default=None
+    )
 
+    def __post_init__(self):
+        self.members = list(self.members)
+        self.name = self.name or "-".join(sorted(self.members))
         _check_name_length(self.name)
 
     def __str__(self):
         return self.name
 
     def __lt__(self, o):
-        return self.name < o.name
+        return isinstance(o, Team) and self.name < o.name
+
+    def __eq__(self, o):
+        return isinstance(o, Team) and self.name == o.name
 
 
 @dataclasses.dataclass
 class Issue(APIObject):
     """Wrapper class for an Issue API object."""
 
-    def __init__(
-        self,
-        title: str,
-        body: str,
-        number: Optional[int] = None,
-        created_at: Optional[str] = None,
-        author: Optional[str] = None,
-        state: Optional[IssueState] = None,
-        implementation: Optional[Any] = None,
-    ):
-        self.title = title
-        self.body = body
-        self.number = number
-        self.created_at = created_at
-        self.author = author
-        self.state = state
-        self.implementation = implementation
+    title: str
+    body: str
+    number: Optional[int] = None
+    created_at: Optional[str] = None
+    author: Optional[str] = None
+    state: Optional[IssueState] = None
+    implementation: Optional[Any] = dataclasses.field(
+        compare=False, repr=False, default=None
+    )
 
     def to_dict(self):
         """Return a dictionary representation of this namedtuple, without
@@ -153,20 +146,16 @@ class Issue(APIObject):
 class Repo(APIObject):
     """Wrapper class for a Repo API object."""
 
-    def __init__(
-        self,
-        name: str,
-        description: str,
-        private: bool,
-        url: Optional[str] = None,
-        implementation: Optional[Any] = None,
-    ):
-        _check_name_length(name)
-        self.name = name
-        self.description = description
-        self.private = private
-        self.url = url
-        self.implementation = implementation
+    name: str
+    description: str
+    private: bool
+    url: Optional[str] = None
+    implementation: Optional[Any] = dataclasses.field(
+        compare=False, repr=False, default=None
+    )
+
+    def __post_init__(self):
+        _check_name_length(self.name)
 
 
 class APISpec:

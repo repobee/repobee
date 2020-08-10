@@ -1,6 +1,6 @@
 import itertools
 import pytest
-from unittest.mock import MagicMock, PropertyMock
+from unittest.mock import MagicMock, PropertyMock, patch
 
 import github
 
@@ -473,3 +473,32 @@ class TestVerifySettings:
 
         for msg in expected_messages:
             assert msg in str(exc_info.value)
+
+
+class TestGetRepoIssues:
+    """Tests for the get_repo_issues function."""
+
+    def test_fetches_all_issues(self, happy_github, api):
+        repo_mock = MagicMock(spec=plug.Repo)
+        api.get_repo_issues(repo_mock)
+
+        repo_mock.implementation.get_issues.assert_called_once_with(
+            state="all"
+        )
+
+
+class TestCreateIssue:
+    """Tests for the create_issue function."""
+
+    def test_sets_assignees_defaults_to_notset(self, happy_github, api):
+        """Assert that ``assignees = None`` is replaced with ``NotSet``."""
+        repo_mock = MagicMock(spec=plug.Repo)
+
+        with patch(
+            "_repobee.ext.defaults.github.GitHubAPI._wrap_issue", autospec=True
+        ):
+            api.create_issue("Title", "Body", repo_mock)
+
+        repo_mock.implementation.create_issue.assert_called_once_with(
+            "Title", body="Body", assignees=github.GithubObject.NotSet
+        )

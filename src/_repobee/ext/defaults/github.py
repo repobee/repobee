@@ -266,7 +266,9 @@ class GitHubAPI(plug.PlatformAPI):
     ) -> plug.Issue:
         """See :py:meth:`repobee_plug.PlatformAPI.create_issue`."""
         repo_impl: github.Repository.Repository = repo.implementation
-        issue = repo_impl.create_issue(title, body=body, assignees=assignees)
+        issue = repo_impl.create_issue(
+            title, body=body, assignees=assignees or github.GithubObject.NotSet
+        )
         return self._wrap_issue(issue)
 
     def close_issue(self, issue: plug.Issue) -> None:
@@ -281,7 +283,10 @@ class GitHubAPI(plug.PlatformAPI):
     def get_repo_issues(self, repo: plug.Repo) -> Iterable[plug.Issue]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repo_issues`."""
         impl: _Repo = repo.implementation
-        return map(self._wrap_issue, impl.get_issues())
+        return map(
+            self._wrap_issue,
+            impl.get_issues(state=_ISSUE_STATE_MAPPING[plug.IssueState.ALL]),
+        )
 
     def _wrap_team(self, team: _Team,) -> plug.Team:
         return plug.Team(
