@@ -200,7 +200,7 @@ def push(push_tuples: Iterable[Push], tries: int = 3) -> List[str]:
     for i in range(tries):
         plug.log.info("Pushing, attempt {}/{}".format(i + 1, tries))
         failed_urls = set(_push_no_retry(failed_pts))
-        failed_pts = [pt for pt in push_tuples if pt.repo_url in failed_urls]
+        failed_pts = [pt for pt in failed_pts if pt.repo_url in failed_urls]
         if not failed_pts:
             break
         plug.log.warning("{} pushes failed ...".format(len(failed_pts)))
