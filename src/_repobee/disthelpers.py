@@ -2,6 +2,7 @@
 import pathlib
 import json
 import types
+import importlib
 
 from typing import Optional, List
 
@@ -101,9 +102,13 @@ def get_builtin_plugins(ext_pkg: types.ModuleType = _repobee.ext) -> dict:
     """Returns a dictionary of builting plugins on the same form as the
     plugins.json dict.
     """
+
+    def _get_module_doc(name):
+        return importlib.import_module(f"{ext_pkg.__name__}.{name}").__doc__
+
     return {
         name: dict(
-            description="Builtin plugin",
+            description=_get_module_doc(name),
             url="https://repobee.readthedocs.io/en/stable/plugins.html",
             versions={"N/A": {}},
             builtin=True,
