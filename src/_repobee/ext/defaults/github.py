@@ -266,7 +266,9 @@ class GitHubAPI(plug.PlatformAPI):
     ) -> plug.Issue:
         """See :py:meth:`repobee_plug.PlatformAPI.create_issue`."""
         repo_impl: github.Repository.Repository = repo.implementation
-        issue = repo_impl.create_issue(title, body=body, assignees=assignees)
+        issue = repo_impl.create_issue(
+            title, body=body, assignees=assignees or github.GithubObject.NotSet
+        )
         return self._wrap_issue(issue)
 
     def close_issue(self, issue: plug.Issue) -> None:
@@ -310,7 +312,7 @@ class GitHubAPI(plug.PlatformAPI):
             number=issue.number,
             created_at=issue.created_at.isoformat(),
             author=issue.user.login,
-            state=_REVERSE_ISSUE_STATE_MAPPING[issue.state],
+            state="all",
             implementation=issue,
         )
 
