@@ -160,8 +160,7 @@ class UninstallPluginCommand(plug.Plugin, plug.cli.Command):
             prompt="Select a plugin to uninstall:",
             choices=list(installed_plugins.keys()),
         ).launch()
-
-        plug.echo(f"Successfully uninstalled {selected_plugin_name}")
+        _uninstall_plugin(selected_plugin_name, installed_plugins)
 
 
 def _uninstall_plugin(plugin_name: str, installed_plugins: dict):
@@ -179,6 +178,7 @@ def _uninstall_plugin(plugin_name: str, installed_plugins: dict):
             if name != plugin_name
         ]
     )
+    plug.echo(f"Successfully uninstalled {plugin_name}")
 
 
 def _pip_uninstall_plugin(plugin_name: str) -> None:
