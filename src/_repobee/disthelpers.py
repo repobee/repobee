@@ -1,13 +1,16 @@
 """Helper functions for the distribution."""
 import pathlib
 import json
+import types
 
 from typing import Optional, List
 
 import requests
 import repobee_plug as plug
 
+import _repobee.ext
 from _repobee import distinfo
+from _repobee import plugin
 
 
 def get_installed_plugins_path() -> pathlib.Path:
@@ -15,20 +18,61 @@ def get_installed_plugins_path() -> pathlib.Path:
     return distinfo.INSTALL_DIR / "installed_plugins.json"
 
 
-def read_active_plugins(
+def get_installed_plugins(
     installed_plugins_path: Optional[pathlib.Path] = None,
-) -> List[str]:
-    """Read active plugins from the installed_plugins.json file."""
-    installed_plugins = json.loads(
+) -> dict:
+    """Return the public content of the installed_plugins.json file."""
+    installed_plugins = _get_installed_plugins(installed_plugins_path)
+    if "_metainfo" in installed_plugins:
+        del installed_plugins["_metainfo"]
+    return installed_plugins
+
+
+def _get_installed_plugins(
+    installed_plugins_path: Optional[pathlib.Path] = None,
+):
+    """Return the content of the installed_plugins.json file, with metainfo."""
+    return json.loads(
         (installed_plugins_path or get_installed_plugins_path()).read_text(
             "utf8"
         )
     )
-    return [
-        name
-        for name, attrs in installed_plugins.items()
-        if attrs.get("active")
-    ]
+
+
+def write_installed_plugins(
+    installed_plugins: dict,
+    installed_plugins_path: Optional[pathlib.Path] = None,
+) -> None:
+    """Write the installed_plugins.json file."""
+    path = installed_plugins_path or get_installed_plugins_path()
+    current_installed_plugins = _get_installed_plugins(path)
+    current_installed_plugins.update(installed_plugins)
+    path.write_text(
+        json.dumps(current_installed_plugins, indent=4), encoding="utf8"
+    )
+
+
+def get_active_plugins(
+    installed_plugins_path: Optional[pathlib.Path] = None,
+) -> List[str]:
+    """Read active plugins from the installed_plugins.json file."""
+    installed_plugins = _get_installed_plugins(installed_plugins_path)
+    return (installed_plugins.get("_metainfo") or {}).get(
+        "active_plugins"
+    ) or []
+
+
+def write_active_plugins(
+    active_plugins: List[str],
+    installed_plugins_path: Optional[pathlib.Path] = None,
+) -> None:
+    """Write the active plugins."""
+    installed_plugins = _get_installed_plugins(installed_plugins_path)
+    installed_plugins.setdefault("_metainfo", {})[
+        "active_plugins"
+    ] = active_plugins
+    print(installed_plugins)
+    write_installed_plugins(installed_plugins, installed_plugins_path)
 
 
 def get_pip_path() -> pathlib.Path:
@@ -49,3 +93,18 @@ def get_plugins_json(url: str = "https://repobee.org/plugins.json") -> dict:
         plug.log.error(resp.content.decode("utf8"))
         raise plug.PlugError(f"could not fetch plugins.json from '{url}'")
     return resp.json()
+
+
+def get_builtin_plugins(ext_pkg: types.ModuleType = _repobee.ext) -> dict:
+    """Returns a dictionary of builting plugins on the same form as the
+    plugins.json dict.
+    """
+    return {
+        name: dict(
+            description="Builtin plugin",
+            url="https://repobee.readthedocs.io/en/stable/plugins.html",
+            versions={"N/A": {}},
+            builtin=True,
+        )
+        for name in plugin.get_module_names(ext_pkg)
+    }

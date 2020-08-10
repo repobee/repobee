@@ -192,7 +192,7 @@ def _initialize_plugins(parsed_preparser_args: argparse.Namespace) -> None:
             plug.log.debug("Initializing dist plugins")
             plugin.initialize_dist_plugins()
             plugin.initialize_plugins(
-                disthelpers.read_active_plugins(), allow_filepath=True
+                disthelpers.get_active_plugins(), allow_filepath=True
             )
 
         plug.log.debug("Initializing user plugins")
