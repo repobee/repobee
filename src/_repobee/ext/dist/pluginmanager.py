@@ -5,12 +5,12 @@ tooling.
 
     This plugin should only be used when using an installed version of RepoBee.
 """
-import json
+import pathlib
 import subprocess
 import sys
 import textwrap
 
-from typing import Tuple
+import typing as ty
 
 import tabulate
 import bullet
@@ -18,13 +18,14 @@ import bullet
 import repobee_plug as plug
 
 from _repobee import disthelpers
+from _repobee import __version
 
 PLUGIN = "pluginmanager"
 
 plugin_category = plug.cli.category(
     name="plugin",
-    action_names=["install", "uninstall", "list"],
-    help="Manage plugins.",
+    action_names=["install", "uninstall", "list", "activate"],
+    help="manage plugins",
     description="Manage plugins.",
 )
 
@@ -44,12 +45,12 @@ class ListPluginsCommand(plug.Plugin, plug.cli.Command):
     def command(self, api: None) -> None:
         """List available plugins."""
         plugins = disthelpers.get_plugins_json()
-        installed_plugins = json.loads(
-            disthelpers.get_installed_plugins_path().read_text()
-        )
+        plugins.update(disthelpers.get_builtin_plugins())
+        installed_plugins = disthelpers.get_installed_plugins()
+        active_plugins = disthelpers.get_active_plugins()
 
         if not self.plugin_name:
-            _list_all_plugins(plugins, installed_plugins)
+            _list_all_plugins(plugins, installed_plugins, active_plugins)
         else:
             _list_plugin(self.plugin_name, plugins)
 
@@ -59,30 +60,45 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
 
     __settings__ = plug.cli.command_settings(
         action=plugin_category.install,
-        help="Install a plugin.",
+        help="install a plugin",
         description="Install a plugin.",
+    )
+
+    single_file = plug.cli.option(
+        converter=pathlib.Path, help="path to a single-file plugin to activate"
     )
 
     def command(self, api: None) -> None:
         """Install a plugin."""
         plugins = disthelpers.get_plugins_json()
-        installed_plugins_path = disthelpers.get_installed_plugins_path()
-        installed_plugins = json.loads(installed_plugins_path.read_text())
+        installed_plugins = disthelpers.get_installed_plugins()
+        active_plugins = disthelpers.get_active_plugins()
 
-        plug.echo("Available plugins:")
-        _list_all_plugins(plugins, installed_plugins)
-        name, version = _select_plugin(plugins)
+        if self.single_file:
+            abspath = self.single_file.resolve(strict=True)
+            installed_plugins[str(abspath)] = dict(
+                version="local", single_file=True,
+            )
+            disthelpers.write_installed_plugins(installed_plugins)
+            plug.echo(f"Installed {abspath}")
+        else:
+            plug.echo("Available plugins:")
+            _list_all_plugins(plugins, installed_plugins, active_plugins)
+            name, version = _select_plugin(plugins)
 
-        plug.echo(f"Installing {name}@{version}")
-        _install_plugin(name, version, plugins)
+            if name in installed_plugins:
+                _uninstall_plugin(name, installed_plugins)
 
-        plug.echo(f"Successfully installed {name}@{version}")
+            plug.echo(f"Installing {name}@{version}")
+            _install_plugin(name, version, plugins)
 
-        installed_plugins[name] = dict(version=version)
-        installed_plugins_path.write_text(json.dumps(installed_plugins))
+            plug.echo(f"Successfully installed {name}@{version}")
+
+            installed_plugins[name] = dict(version=version)
+            disthelpers.write_installed_plugins(installed_plugins)
 
 
-def _select_plugin(plugins: dict) -> Tuple[str, str]:
+def _select_plugin(plugins: dict) -> ty.Tuple[str, str]:
     """Interactively select a plugin."""
     selected_plugin_name = bullet.Bullet(
         prompt="Select a plugin to install:", choices=list(plugins.keys())
@@ -121,14 +137,17 @@ class UninstallPluginCommand(plug.Plugin, plug.cli.Command):
 
     __settings__ = plug.cli.command_settings(
         action=plugin_category.uninstall,
-        help="Uninstall a plugin.",
+        help="uninstall a plugin",
         description="Uninstall a plugin.",
     )
 
     def command(self, api: None) -> None:
         """Uninstall a plugin."""
-        installed_plugins_path = disthelpers.get_installed_plugins_path()
-        installed_plugins = json.loads(installed_plugins_path.read_text())
+        installed_plugins = {
+            name: attrs
+            for name, attrs in disthelpers.get_installed_plugins().items()
+            if not attrs.get("builtin")
+        }
 
         if not installed_plugins:
             plug.echo("No plugins installed")
@@ -141,16 +160,28 @@ class UninstallPluginCommand(plug.Plugin, plug.cli.Command):
             prompt="Select a plugin to uninstall:",
             choices=list(installed_plugins.keys()),
         ).launch()
-
-        plug.echo(f"Uninstalling {selected_plugin_name} ...")
-
-        plug.echo(f"Successfully uninstalled {selected_plugin_name}")
-
-        del installed_plugins[selected_plugin_name]
-        installed_plugins_path.write_text(json.dumps(installed_plugins))
+        _uninstall_plugin(selected_plugin_name, installed_plugins)
 
 
-def _uninstall_plugin(plugin_name: str) -> None:
+def _uninstall_plugin(plugin_name: str, installed_plugins: dict):
+    plugin_version = installed_plugins[plugin_name]["version"]
+    plug.echo(f"Uninstalling {plugin_name}@{plugin_version}")
+    if not installed_plugins[plugin_name].get("single_file"):
+        _pip_uninstall_plugin(plugin_name)
+
+    del installed_plugins[plugin_name]
+    disthelpers.write_installed_plugins(installed_plugins)
+    disthelpers.write_active_plugins(
+        [
+            name
+            for name in disthelpers.get_active_plugins()
+            if name != plugin_name
+        ]
+    )
+    plug.echo(f"Successfully uninstalled {plugin_name}")
+
+
+def _pip_uninstall_plugin(plugin_name: str) -> None:
     cmd = [
         str(disthelpers.get_pip_path()),
         "uninstall",
@@ -164,20 +195,57 @@ def _uninstall_plugin(plugin_name: str) -> None:
         raise plug.PlugError(f"could not uninstall {plugin_name}")
 
 
+class ActivatePluginCommand(plug.Plugin, plug.cli.Command):
+    """Extension command for activating and deactivating plugins."""
+
+    __settings__ = plug.cli.command_settings(
+        action=plugin_category.activate,
+        help="activate a plugin",
+        description="Activate a plugin.",
+    )
+
+    def command(self, api: None) -> None:
+        """Activate a plugin."""
+        installed_plugins = disthelpers.get_installed_plugins()
+        active = disthelpers.get_active_plugins()
+
+        names = list(installed_plugins.keys()) + list(
+            disthelpers.get_builtin_plugins().keys()
+        )
+
+        default = [i for i, name in enumerate(names) if name in active]
+        selection = bullet.Check(
+            choices=names,
+            prompt="Select plugins to activate (space to check/un-check, "
+            "enter to confirm selection):",
+        ).launch(default=default)
+
+        disthelpers.write_active_plugins(selection)
+
+
 def _wrap_cell(text: str, width: int = 40) -> str:
     return "\n".join(textwrap.wrap(text, width=width))
 
 
-def _list_all_plugins(plugins: dict, installed_plugins: dict) -> None:
-    headers = ["Name", "Description", "URL", "Latest", "Installed"]
+def _list_all_plugins(
+    plugins: dict, installed_plugins: dict, active_plugins: ty.List[str]
+) -> None:
+    headers = [
+        "Name",
+        "Description",
+        "URL",
+        "Latest",
+        "Installed (√ = active)",
+    ]
     plugins_table = []
     for plugin_name, attrs in plugins.items():
         latest_version = list(attrs["versions"].keys())[0]
+        installed = installed_plugins.get(plugin_name) or {}
         installed_version = (
-            installed_plugins[plugin_name]["version"]
-            if plugin_name in installed_plugins
-            else "-"
-        )
+            __version.__version__
+            if attrs.get("builtin")
+            else (installed.get("version") or "-")
+        ) + (" √" if plugin_name in active_plugins else "")
         plugins_table.append(
             [
                 plugin_name,
@@ -192,10 +260,12 @@ def _list_all_plugins(plugins: dict, installed_plugins: dict) -> None:
 
 
 def _list_installed_plugins(installed_plugins: dict) -> None:
-    headers = ["Name", "Installed version"]
+    headers = ["Name", "Installed version", "Active"]
     plugins_table = []
     for plugin_name, attrs in installed_plugins.items():
-        plugins_table.append([plugin_name, attrs["version"]])
+        plugins_table.append(
+            [plugin_name, attrs["version"], attrs.get("active")]
+        )
 
     plug.echo(
         tabulate.tabulate(

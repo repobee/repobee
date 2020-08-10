@@ -28,6 +28,7 @@ from _repobee import util
 import repobee_plug as plug
 
 PLUGIN_NAME = "javac"
+PLUGIN_DESCRIPTION = "Runs javac on student repos after cloning"
 
 
 class JavacCloneHook(plug.Plugin, plug.cli.CommandExtension):

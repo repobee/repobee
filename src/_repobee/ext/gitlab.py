@@ -23,6 +23,7 @@ import repobee_plug as plug
 
 from _repobee import exception
 
+PLUGIN_DESCRIPTION = "Makes RepoBee compatible with GitLab"
 
 ISSUE_GENERATOR = Generator[plug.Issue, None, None]
 

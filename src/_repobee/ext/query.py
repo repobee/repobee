@@ -14,6 +14,11 @@ import repobee_plug as plug
 
 from _repobee import formatters
 
+PLUGIN_DESCRIPTION = (
+    "An experimental query command for querying the hooks results file "
+    "(NOTE: This plugin is not stable)"
+)
+
 
 class Query(plug.Plugin, plug.cli.Command):
     __settings__ = plug.cli.command_settings(
