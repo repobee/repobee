@@ -199,6 +199,10 @@ class ActivatePluginCommand(plug.Plugin, plug.cli.Command):
         else:
             names = list(installed_plugins.keys())
 
+            if not names:
+                plug.echo("No plugins installed")
+                return
+
             default = [
                 names.index(name)
                 for name, attrs in installed_plugins.items()
