@@ -170,6 +170,29 @@ class TestDeclarativeExtensionCommand:
 
         assert args.name == configured_name
 
+    def test_configurable_arguments_hook_correctly_implemented(self):
+        """Only configurable arguments should be returned by the
+        configurable_arguments hook.
+        """
+
+        class Greeting(plug.Plugin, plug.cli.Command):
+            name = plug.cli.option(
+                help="your name", required=True, configurable=True
+            )
+            age = plug.cli.option(help="your age", configurable=True)
+            nationality = plug.cli.option(help="your nationality")
+
+            def command(self, api):
+                pass
+
+        plugin_name = "greeting"
+        plugin_instance = Greeting(plugin_name)
+
+        configurable_args = plugin_instance.configurable_arguments()
+
+        assert configurable_args.config_section_name == plugin_name
+        assert sorted(configurable_args.argnames) == sorted(["name", "age"])
+
     def test_raises_when_non_configurable_value_is_configured(self):
         """It shouldn't be allowed to have a configuration value for an
         option that is not marked configurable. This is to avoid accidental

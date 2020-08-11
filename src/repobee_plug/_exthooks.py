@@ -13,7 +13,8 @@ cloning repos.
 import pathlib
 import argparse
 import configparser
-from typing import Union, Optional
+import dataclasses
+from typing import Union, Optional, List
 
 from repobee_plug._apimeta import PlatformAPI
 from repobee_plug._containers import hookspec
@@ -115,3 +116,19 @@ class SetupHook:
             May also return None, in which case no reporting will be performed
             for the hook.
         """
+
+
+@dataclasses.dataclass(frozen=True)
+class ConfigurableArguments:
+    """A container for holding a plugin's configurable arguments."""
+
+    config_section_name: str
+    argnames: List[str]
+
+
+class ConfigHook:
+    """Hook functions related to configuration."""
+
+    @hookspec
+    def configurable_arguments(self) -> ConfigurableArguments:
+        """Returns the configurable arguments of a plugin."""
