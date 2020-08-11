@@ -54,6 +54,10 @@ required = [
     "tqdm>=4.48.2",
 ]
 
+testhelper_resources = (
+    pathlib.Path(__file__).parent / "src/repobee_plug/testhelpers/resources"
+)
+
 setup(
     name="repobee",
     version=__version__,
@@ -73,6 +77,9 @@ setup(
     license="MIT",
     package_dir={"": "src"},
     packages=find_packages(where="src", exclude=("tests", "docs")),
+    data_files=[
+        (str(testhelper_resources), map(str, testhelper_resources.rglob("*")))
+    ],
     py_modules=["repobee"],
     tests_require=test_requirements,
     install_requires=required,
