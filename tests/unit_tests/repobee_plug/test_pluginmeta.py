@@ -193,6 +193,24 @@ class TestDeclarativeExtensionCommand:
         assert configurable_args.config_section_name == plugin_name
         assert sorted(configurable_args.argnames) == sorted(["name", "age"])
 
+    def test_get_configurable_args_when_no_args_configurable(self):
+        """get_configurable_args should not be implemented if no args are
+        configurable.
+        """
+
+        class Greeting(plug.Plugin, plug.cli.Command):
+            name = plug.cli.option(help="your name")
+
+            def command(self, api):
+                pass
+
+        plugin_instance = Greeting("greeting")
+
+        assert not hasattr(
+            plugin_instance,
+            plug._exthooks.ConfigHook.get_configurable_args.__name__,
+        )
+
     def test_raises_when_non_configurable_value_is_configured(self):
         """It shouldn't be allowed to have a configuration value for an
         option that is not marked configurable. This is to avoid accidental
