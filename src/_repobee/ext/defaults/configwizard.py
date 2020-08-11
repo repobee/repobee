@@ -8,8 +8,10 @@ a short configuration wizard that lets the user set RepoBee's defaults.
 """
 import argparse
 import configparser
-import sys
+import collections
 import os
+
+import bullet
 
 import repobee_plug as plug
 
@@ -56,31 +58,46 @@ def callback(args: argparse.Namespace, api: plug.PlatformAPI) -> None:
     if constants.CORE_SECTION_HDR not in parser:
         parser.add_section(constants.CORE_SECTION_HDR)
 
-    plug.echo("Welcome to the configuration wizard!")
-    plug.echo("Type defaults for the options when prompted.")
-    plug.echo("Press ENTER to end an option.")
+    configurable_args = [
+        plug.ConfigurableArguments(
+            config_section_name=constants.CORE_SECTION_HDR,
+            argnames=list(constants.ORDERED_CONFIGURABLE_ARGS),
+        )
+    ] + plug.manager.hook.get_configurable_args()
+
+    configurable_args_dict = collections.defaultdict(list)
+    for ca in configurable_args:
+        configurable_args_dict[ca.config_section_name] += ca.argnames
+
+    section = bullet.Bullet(
+        prompt="Select a section to configure:",
+        choices=list(configurable_args_dict.keys()),
+    ).launch()
+
+    plug.echo("")
     plug.echo(
-        "Press ENTER without inputing a value to pick existing "
-        "default, or skip if no default exists."
+        f"""Configuring section: {section}
+Type config values for the options when prompted.
+Press ENTER without inputing a value to pick existing default.
+
+Current defaults are shown in brackets [].
+"""
     )
-    plug.echo("Current defaults are shown in brackets [].")
-    for option in constants.ORDERED_CONFIGURABLE_ARGS:
+    for option in configurable_args_dict[section]:
         prompt = "Enter default for '{}': [{}] ".format(
-            option, parser[constants.CORE_SECTION_HDR].get(option, "")
+            option, parser.get(section, option, fallback="")
         )
         default = input(prompt)
         if default:
-            parser[constants.CORE_SECTION_HDR][option] = default
+            if section not in parser:
+                parser.add_section(section)
+            parser[section][option] = default
 
-    with open(
-        str(constants.DEFAULT_CONFIG_FILE),
-        "w",
-        encoding=sys.getdefaultencoding(),
-    ) as f:
+    with open(str(constants.DEFAULT_CONFIG_FILE), "w", encoding="utf8",) as f:
         parser.write(f)
 
     plug.echo(
         "Configuration file written to {}".format(
-            str(constants.DEFAULT_CONFIG_FILE)
+            constants.DEFAULT_CONFIG_FILE
         )
     )
