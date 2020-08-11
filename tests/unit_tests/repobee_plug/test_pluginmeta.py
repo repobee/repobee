@@ -170,9 +170,9 @@ class TestDeclarativeExtensionCommand:
 
         assert args.name == configured_name
 
-    def test_configurable_arguments_hook_correctly_implemented(self):
+    def test_get_configurable_args_hook_correctly_implemented(self):
         """Only configurable arguments should be returned by the
-        configurable_arguments hook.
+        get_configurable_args hook.
         """
 
         class Greeting(plug.Plugin, plug.cli.Command):
@@ -188,7 +188,7 @@ class TestDeclarativeExtensionCommand:
         plugin_name = "greeting"
         plugin_instance = Greeting(plugin_name)
 
-        configurable_args = plugin_instance.configurable_arguments()
+        configurable_args = plugin_instance.get_configurable_args()
 
         assert configurable_args.config_section_name == plugin_name
         assert sorted(configurable_args.argnames) == sorted(["name", "age"])

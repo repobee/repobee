@@ -99,7 +99,7 @@ def _process_cli_plugin(bases, attrdict) -> dict:
     attrdict_copy[handle_processed_args.__name__] = handle_processed_args
     attrdict_copy["attach_options"] = _attach_options
 
-    def configurable_arguments(self) -> _exthooks.ConfigurableArguments:
+    def get_configurable_args(self) -> _exthooks.ConfigurableArguments:
         return _exthooks.ConfigurableArguments(
             config_section_name=self.__settings__.config_section_name
             or self.plugin_name,
@@ -108,7 +108,7 @@ def _process_cli_plugin(bases, attrdict) -> dict:
             ),
         )
 
-    attrdict_copy[configurable_arguments.__name__] = configurable_arguments
+    attrdict_copy[get_configurable_args.__name__] = get_configurable_args
 
     return attrdict_copy
 

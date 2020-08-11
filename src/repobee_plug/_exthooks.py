@@ -130,5 +130,5 @@ class ConfigHook:
     """Hook functions related to configuration."""
 
     @hookspec
-    def configurable_arguments(self) -> ConfigurableArguments:
+    def get_configurable_args(self) -> ConfigurableArguments:
         """Returns the configurable arguments of a plugin."""
