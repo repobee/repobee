@@ -102,8 +102,8 @@ def _process_cli_plugin(bases, attrdict) -> dict:
     configurable_argnames = list(_get_configurable_arguments(attrdict))
     if configurable_argnames:
 
-        def get_configurable_args(self) -> _exthooks.ConfigurableArguments:
-            return _exthooks.ConfigurableArguments(
+        def get_configurable_args(self) -> _containers.ConfigurableArguments:
+            return _containers.ConfigurableArguments(
                 config_section_name=self.__settings__.config_section_name
                 or self.plugin_name,
                 argnames=list(

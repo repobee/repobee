@@ -13,12 +13,11 @@ cloning repos.
 import pathlib
 import argparse
 import configparser
-import dataclasses
-from typing import Union, Optional, List
+from typing import Union, Optional
 
 from repobee_plug._apimeta import PlatformAPI
 from repobee_plug._containers import hookspec
-from repobee_plug._containers import Result
+from repobee_plug._containers import Result, ConfigurableArguments
 from repobee_plug._deprecation import deprecate
 
 
@@ -118,17 +117,17 @@ class SetupHook:
         """
 
 
-@dataclasses.dataclass(frozen=True)
-class ConfigurableArguments:
-    """A container for holding a plugin's configurable arguments."""
-
-    config_section_name: str
-    argnames: List[str]
-
-
 class ConfigHook:
     """Hook functions related to configuration."""
 
     @hookspec
     def get_configurable_args(self) -> ConfigurableArguments:
-        """Returns the configurable arguments of a plugin."""
+        """Get the configurable arguments for a plugin.
+
+        .. danger::
+
+            This is not a public hook, don't implement this manually!
+
+        Returns:
+            The configurable arguments of a plugin.
+        """

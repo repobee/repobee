@@ -17,6 +17,7 @@ from repobee_plug._containers import ReviewAllocation
 from repobee_plug._containers import BaseParser
 from repobee_plug._containers import Deprecation
 from repobee_plug._containers import HookResult
+from repobee_plug._containers import ConfigurableArguments
 
 # Hook functions
 from repobee_plug._corehooks import PeerReviewHook as _peer_hook
@@ -80,6 +81,7 @@ __all__ = [
     "ReviewAllocation",
     "Review",
     "Deprecation",
+    "ConfigurableArguments",
     # API wrappers
     "Team",
     "TeamPermission",
