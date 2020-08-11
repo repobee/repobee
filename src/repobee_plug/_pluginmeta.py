@@ -107,10 +107,19 @@ def _extract_cli_options(
 
 
 def _attach_options(self, config, show_all_opts, parser):
+    parser = (
+        parser
+        if not isinstance(self, cli.CommandExtension)
+        else parser.add_argument_group(
+            title=self.plugin_name,
+            description=f"Arguments for the {self.plugin_name} plugin",
+        )
+    )
     config_name = self.__settings__.config_section_name or self.plugin_name
     config_section = dict(config[config_name]) if config_name in config else {}
 
     opts = _extract_cli_options(self.__class__.__dict__)
+
     for (name, opt) in opts:
         configured_value = config_section.get(name)
         if configured_value and not (
