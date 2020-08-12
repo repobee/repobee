@@ -93,7 +93,7 @@ Current defaults are shown in brackets [].
                 parser.add_section(section)
             parser[section][option] = default
 
-    with open(str(constants.DEFAULT_CONFIG_FILE), "w", encoding="utf8",) as f:
+    with open(str(constants.DEFAULT_CONFIG_FILE), "w", encoding="utf8") as f:
         parser.write(f)
 
     plug.echo(
