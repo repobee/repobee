@@ -8,9 +8,10 @@
 import collections
 import dataclasses
 import enum
-import pluggy
 
 from typing import Mapping, Any, Optional, List
+
+import pluggy
 
 from repobee_plug import log
 

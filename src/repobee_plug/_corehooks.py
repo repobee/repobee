@@ -13,7 +13,7 @@ to allow for this dynamic override.
 
 from typing import List, Tuple
 
-from repobee_plug import _apimeta
+from repobee_plug import localreps
 from repobee_plug import _containers
 from repobee_plug._containers import hookspec
 
@@ -23,7 +23,7 @@ class PeerReviewHook:
 
     @hookspec(firstresult=True)
     def generate_review_allocations(
-        self, teams: List[_apimeta.Team], num_reviews: int
+        self, teams: List[localreps.StudentTeam], num_reviews: int
     ) -> List[_containers.ReviewAllocation]:
         """Generate :py:class:`~repobee_plug.containers.ReviewAllocation`
         tuples from the provided teams, given that this concerns reviews for a
@@ -36,7 +36,7 @@ class PeerReviewHook:
 
         .. code-block:: python
 
-            team_c = apimeta.Team(members=team_a.members + team_b.members)
+            team_c = plug.StudentTeam(members=team_a.members + team_b.members)
 
         This can be scaled to however many teams you would like to merge. As a
         practical example, if teams ``team_a`` and ``team_b`` are to review
@@ -46,7 +46,9 @@ class PeerReviewHook:
 
         .. code-block:: python
 
-            review_team = apimeta.Team(members=team_a.members + team_b.members)
+            review_team = plug.StudentTeam(
+                members=team_a.members + team_b.members
+            )
             allocation = containers.ReviewAllocation(
                 review_team=review_team,
                 reviewed_team=team_c,
@@ -59,12 +61,11 @@ class PeerReviewHook:
             num_reviews is ignored, however.
 
         Args:
-            team: A list of :py:class:`~repobee_plug.apimeta.Team` tuples.
+            team: A list of student teams.
             num_reviews: Amount of reviews each student should perform (and
                 consequently amount of reviewers per repo)
         Returns:
-            A list of :py:class:`~repobee_plug.containers.ReviewAllocation`
-                tuples.
+            A list of review allocations tuples.
         """
 
 

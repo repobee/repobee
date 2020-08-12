@@ -4,11 +4,12 @@ import sys
 import os
 from typing import List
 
-from repobee_plug import _apimeta
 from repobee_plug import _exceptions
 
+from repobee_plug.localreps import StudentTeam
 
-def parse_students_file(path: pathlib.Path) -> List[_apimeta.Team]:
+
+def parse_students_file(path: pathlib.Path) -> List[StudentTeam]:
     """Parse the students file.
 
     Args:
@@ -23,7 +24,7 @@ def parse_students_file(path: pathlib.Path) -> List[_apimeta.Team]:
     if not path.stat().st_size:
         raise _exceptions.FileError("'{!s}' is empty".format(path))
     return [
-        _apimeta.Team(members=[s for s in group.strip().split()])
+        StudentTeam(members=[s for s in group.strip().split()])
         for group in path.read_text(encoding=sys.getdefaultencoding()).split(
             os.linesep
         )

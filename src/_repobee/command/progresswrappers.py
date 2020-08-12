@@ -32,7 +32,7 @@ def get_repos(
 
 
 def get_teams(
-    teams: Iterable[Union[plug.Team, str]],
+    teams: Iterable[Union[plug.StudentTeam, str]],
     api: plug.PlatformAPI,
     desc: str = "Fetching teams",
     **kwargs: Any,

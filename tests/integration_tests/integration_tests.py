@@ -457,7 +457,7 @@ class TestAssignReviews:
     def test_assign_one_review(self, with_student_repos, extra_args):
         master_repo_name = MASTER_REPO_NAMES[1]
         expected_review_teams = [
-            plug.Team(
+            plug.StudentTeam(
                 members=[],
                 name=plug.generate_review_team_name(
                     student_team_name, master_repo_name

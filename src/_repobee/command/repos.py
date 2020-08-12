@@ -36,7 +36,7 @@ from _repobee.command import progresswrappers
 
 def setup_student_repos(
     master_repo_urls: Iterable[str],
-    teams: Iterable[plug.Team],
+    teams: Iterable[plug.StudentTeam],
     api: plug.PlatformAPI,
 ) -> Mapping[str, List[plug.Result]]:
     """Setup student repositories based on master repo templates. Performs three
