@@ -23,6 +23,15 @@ def defaults_options():
     )
 
 
+@pytest.fixture
+def select_repobee_section(mocker):
+    mocker.patch(
+        "bullet.Bullet.launch",
+        autospec=True,
+        return_value=_repobee.constants.CORE_SECTION_HDR,
+    )
+
+
 def test_exits_when_config_file_exists_and_user_enters_no(config_mock):
     """If the config file exists, a prompt should appear, and if the user
     enters anything but 'yes' the function should exit and the config file
@@ -39,7 +48,7 @@ def test_exits_when_config_file_exists_and_user_enters_no(config_mock):
 
 
 def test_enters_values_if_config_file_exists_and_user_enters_yes(
-    config_mock, defaults_options
+    config_mock, defaults_options, select_repobee_section
 ):
     """If the config file exists, a prompt should appear, and if the user
     enters yes the wizard should proceed as usuall.
@@ -57,7 +66,7 @@ def test_enters_values_if_config_file_exists_and_user_enters_yes(
 
 
 def test_enters_values_without_continue_prompt_if_no_config_exists(
-    config_mock, defaults_options
+    config_mock, defaults_options, select_repobee_section
 ):
     """If no config mock can be found (ensured by the nothing_exists fixture),
     then the config wizard chould proceed without prompting for a continue.
@@ -74,7 +83,9 @@ def test_enters_values_without_continue_prompt_if_no_config_exists(
         assert confparser[_repobee.constants.CORE_SECTION_HDR][key] == value
 
 
-def test_skips_empty_values(empty_config_mock, defaults_options):
+def test_skips_empty_values(
+    empty_config_mock, defaults_options, select_repobee_section
+):
     """Test that empty values are not written to the configuration file."""
     defaults_options = collections.OrderedDict(
         (option, c * 10)
@@ -100,7 +111,9 @@ def test_skips_empty_values(empty_config_mock, defaults_options):
         assert confparser[_repobee.constants.CORE_SECTION_HDR][key] == value
 
 
-def test_retains_values_that_are_not_specified(config_mock, defaults_options):
+def test_retains_values_that_are_not_specified(
+    config_mock, defaults_options, select_repobee_section
+):
     """Test that previous default values are retained if the option is skipped,
     and that plugin sections are not touched.
     """
@@ -153,7 +166,9 @@ def test_retains_values_that_are_not_specified(config_mock, defaults_options):
         assert parser[plugin_section][option] == value
 
 
-def test_creates_directory(config_mock, tmpdir, defaults_options):
+def test_creates_directory(
+    config_mock, tmpdir, defaults_options, select_repobee_section
+):
     with patch(
         "builtins.input", side_effect=["yes"] + list(defaults_options.values())
     ), patch("os.makedirs", autospec=True) as makedirs_mock, patch(

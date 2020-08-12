@@ -16,6 +16,7 @@ _HOOK_METHODS = {
     for key, value in [
         *_exthooks.CloneHook.__dict__.items(),
         *_exthooks.SetupHook.__dict__.items(),
+        *_exthooks.ConfigHook.__dict__.items(),
         *_corehooks.PeerReviewHook.__dict__.items(),
         *_corehooks.APIHook.__dict__.items(),
     ]
@@ -40,25 +41,8 @@ class _PluginMeta(type):
         Checking signatures is delegated to ``pluggy`` during registration of
         the hook.
         """
-        if cli.Command in bases and cli.CommandExtension in bases:
-            raise _exceptions.PlugError(
-                "A plugin cannot be both a Command and a CommandExtension"
-            )
-
-        if cli.Command in bases:
-            if "__settings__" not in attrdict:
-                attrdict["__settings__"] = cli.command_settings()
-            handle_processed_args = _generate_handle_processed_args_func()
-            attrdict[handle_processed_args.__name__] = handle_processed_args
-            attrdict["attach_options"] = _attach_options
-        elif cli.CommandExtension in bases:
-            if "__settings__" not in attrdict:
-                raise _exceptions.PlugError(
-                    "CommandExtension must have a '__settings__' attribute"
-                )
-            handle_processed_args = _generate_handle_processed_args_func()
-            attrdict[handle_processed_args.__name__] = handle_processed_args
-            attrdict["attach_options"] = _attach_options
+        if cli.Command in bases or cli.CommandExtension in bases:
+            attrdict = _process_cli_plugin(bases, attrdict)
 
         methods = cls._extract_public_methods(attrdict)
         cls._check_names(methods)
@@ -92,18 +76,77 @@ class _PluginMeta(type):
         }
 
 
+def _process_cli_plugin(bases, attrdict) -> dict:
+    """Process a CLI plugin, generate its hook functions, and return a new
+    attrdict with all attributes set correctly.
+    """
+    attrdict_copy = dict(attrdict)  # copy to avoid mutating original
+    if cli.Command in bases and cli.CommandExtension in bases:
+        raise _exceptions.PlugError(
+            "A plugin cannot be both a Command and a CommandExtension"
+        )
+
+    if cli.Command in bases:
+        if "__settings__" not in attrdict_copy:
+            attrdict_copy["__settings__"] = cli.command_settings()
+    elif cli.CommandExtension in bases:
+        if "__settings__" not in attrdict_copy:
+            raise _exceptions.PlugError(
+                "CommandExtension must have a '__settings__' attribute"
+            )
+
+    handle_processed_args = _generate_handle_processed_args_func()
+    attrdict_copy[handle_processed_args.__name__] = handle_processed_args
+    attrdict_copy["attach_options"] = _attach_options
+
+    configurable_argnames = list(_get_configurable_arguments(attrdict))
+    if configurable_argnames:
+
+        def get_configurable_args(self) -> _containers.ConfigurableArguments:
+            return _containers.ConfigurableArguments(
+                config_section_name=self.__settings__.config_section_name
+                or self.plugin_name,
+                argnames=list(
+                    _get_configurable_arguments(self.__class__.__dict__)
+                ),
+            )
+
+        attrdict_copy[get_configurable_args.__name__] = get_configurable_args
+
+    return attrdict_copy
+
+
+def _get_configurable_arguments(attrdict: dict) -> List[str]:
+    """Returns a list of configurable argument names."""
+    cli_args = _extract_flat_cli_options(attrdict)
+    return [
+        arg_name
+        for arg_name, arg in cli_args
+        if hasattr(arg, "configurable") and arg.configurable
+    ]
+
+
 def _extract_cli_options(
     attrdict,
 ) -> List[Tuple[str, Union[Option, MutuallyExclusiveGroup]]]:
-    """Return any members that are CLI options as a list of tuples on the form
-    (member_name, option). Other types of CLI arguments, such as positionals,
-    are converted to :py:class:`~cli.Option`s.
+    """Returns any members that are CLI options as a list of tuples on the form
+    (member_name, option).
     """
     return [
         (key, value)
         for key, value in attrdict.items()
-        if isinstance(value, (Option, MutuallyExclusiveGroup))
+        if cli.is_cli_arg(value)
     ]
+
+
+def _extract_flat_cli_options(
+    attrdict,
+) -> List[Tuple[str, Union[Option, MutuallyExclusiveGroup]]]:
+    """Like _extract_cli_options, but flattens nested options such as mutex
+    groups.
+    """
+    cli_args = _extract_cli_options(attrdict)
+    return itertools.chain.from_iterable(map(_flatten_arg, cli_args))
 
 
 def _attach_options(self, config, show_all_opts, parser):
@@ -137,14 +180,7 @@ def _attach_options(self, config, show_all_opts, parser):
 def _generate_handle_processed_args_func():
     def handle_processed_args(self, args):
         self.args = args
-        cli_args = [
-            (k, v)
-            for k, v in self.__class__.__dict__.items()
-            if cli.is_cli_arg(v)
-        ]
-        flattened_args = itertools.chain.from_iterable(
-            map(_flatten_arg, cli_args)
-        )
+        flattened_args = _extract_flat_cli_options(self.__class__.__dict__)
 
         for name, arg in flattened_args:
             dest = (

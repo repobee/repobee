@@ -17,7 +17,7 @@ from typing import Union, Optional
 
 from repobee_plug._apimeta import PlatformAPI
 from repobee_plug._containers import hookspec
-from repobee_plug._containers import Result
+from repobee_plug._containers import Result, ConfigurableArguments
 from repobee_plug._deprecation import deprecate
 
 
@@ -114,4 +114,20 @@ class SetupHook:
             Optionally returns a Result for reporting the outcome of the hook.
             May also return None, in which case no reporting will be performed
             for the hook.
+        """
+
+
+class ConfigHook:
+    """Hook functions related to configuration."""
+
+    @hookspec
+    def get_configurable_args(self) -> ConfigurableArguments:
+        """Get the configurable arguments for a plugin.
+
+        .. danger::
+
+            This is not a public hook, don't implement this manually!
+
+        Returns:
+            The configurable arguments of a plugin.
         """

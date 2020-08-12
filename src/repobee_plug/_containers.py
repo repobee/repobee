@@ -6,10 +6,11 @@
 .. moduleauthor:: Simon Larsén
 """
 import collections
+import dataclasses
 import enum
 import pluggy
 
-from typing import Mapping, Any, Optional
+from typing import Mapping, Any, Optional, List
 
 from repobee_plug import log
 
@@ -145,3 +146,11 @@ Args:
         ``MAJOR.MINOR.PATCH`` by which the deprecated functionality will be
         removed.
 """
+
+
+@dataclasses.dataclass(frozen=True)
+class ConfigurableArguments:
+    """A container for holding a plugin's configurable arguments."""
+
+    config_section_name: str
+    argnames: List[str]
