@@ -39,13 +39,13 @@ class DummyAPI(plug.PlatformAPI):
         self,
         master_repo_names: Iterable[str],
         org_name: Optional[str] = None,
-        teams: Optional[List[plug.Team]] = None,
+        team_names: Optional[List[str]] = None,
         insert_auth: bool = False,
     ) -> List[str]:
         repo_names = (
             master_repo_names
-            if not teams
-            else plug.generate_repo_names(teams, master_repo_names)
+            if not team_names
+            else plug.generate_repo_names(team_names, master_repo_names)
         )
         return [
             f"{constants.HOST_URL}/{org_name or self.org_name}/{repo_name}"

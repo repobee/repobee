@@ -26,8 +26,6 @@ from typing import List, Iterable, Optional, Any
 
 from repobee_plug import _exceptions
 
-MAX_NAME_LENGTH = 100
-
 
 class APIObject:
     """Base wrapper class for platform API objects."""
@@ -69,32 +67,14 @@ class IssueState(enum.Enum):
     ALL = "all"
 
 
-def _check_name_length(name):
-    """Check that a Team/Repository name does not exceed the maximum GitHub
-    allows (100 characters)
-    """
-    if len(name) > MAX_NAME_LENGTH:
-        raise ValueError(
-            "generated Team/Repository name is too long, was {} chars, "
-            "max is {} chars".format(len(name), MAX_NAME_LENGTH)
-        )
-
-
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class Team(APIObject):
     """Wrapper class for a Team API object."""
 
     members: Iterable[str] = dataclasses.field(compare=False)
-    name: Optional[str] = dataclasses.field(compare=True, default=None)
-    id: Optional[Any] = dataclasses.field(compare=False, default=None)
-    implementation: Optional[Any] = dataclasses.field(
-        compare=False, repr=False, default=None
-    )
-
-    def __post_init__(self):
-        self.members = list(self.members)
-        self.name = self.name or "-".join(sorted(self.members))
-        _check_name_length(self.name)
+    name: str = dataclasses.field(compare=True)
+    id: Any = dataclasses.field(compare=False)
+    implementation: Any = dataclasses.field(compare=False, repr=False)
 
     def __str__(self):
         return self.name
@@ -149,13 +129,8 @@ class Repo(APIObject):
     name: str
     description: str
     private: bool
-    url: Optional[str] = None
-    implementation: Optional[Any] = dataclasses.field(
-        compare=False, repr=False, default=None
-    )
-
-    def __post_init__(self):
-        _check_name_length(self.name)
+    url: str
+    implementation: Any = dataclasses.field(compare=False, repr=False)
 
 
 class APISpec:
@@ -303,7 +278,7 @@ class APISpec:
         """
         _not_implemented()
 
-    def get_repo(self, repo_name: str, team_name: Optional[str],) -> Repo:
+    def get_repo(self, repo_name: str, team_name: Optional[str]) -> Repo:
         """Get a single repository.
 
         Args:
@@ -392,7 +367,7 @@ class APISpec:
         self,
         master_repo_names: Iterable[str],
         org_name: Optional[str] = None,
-        teams: Optional[List[Team]] = None,
+        team_names: Optional[List[str]] = None,
         insert_auth: bool = False,
     ) -> List[str]:
         """Get repo urls for all specified repo names in the organization. As
@@ -411,7 +386,7 @@ class APISpec:
             master_repo_names: A list of master repository names.
             org_name: Organization in which repos are expected. Defaults to the
                 target organization of the API instance.
-            teams: A list of teams specifying student groups. Defaults to None.
+            team_names: A list of team names specifying student groups.
         Returns:
             a list of urls corresponding to the repo names.
         """

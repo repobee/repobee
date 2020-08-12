@@ -17,7 +17,7 @@ from repobee_plug.testhelpers.const import (
 
 
 def assert_student_repos_match_templates(
-    student_teams: List[plug.Team],
+    student_teams: List[plug.StudentTeam],
     template_repo_names: List[str],
     repos: List[localapi.Repo],
 ):
@@ -31,7 +31,7 @@ def assert_student_repos_match_templates(
 
 
 def assert_cloned_student_repos_match_templates(
-    student_teams: List[plug.Team],
+    student_teams: List[plug.StudentTeam],
     template_repo_names: List[str],
     workdir: pathlib.Path,
 ):
@@ -47,7 +47,7 @@ def assert_cloned_student_repos_match_templates(
 
 
 def _assert_repos_match_templates(
-    student_teams: List[plug.Team],
+    student_teams: List[plug.StudentTeam],
     template_repo_names: List[str],
     repos_dict: Mapping[str, pathlib.Path],
 ):

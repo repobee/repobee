@@ -14,7 +14,7 @@ BASE_URL = "{}/api/v3".format(HOST_URL)
 
 # 5! = 120 different students
 STUDENTS = tuple(
-    plug.Team(members=["".join(perm)])
+    plug.StudentTeam(members=["".join(perm)])
     for perm in permutations(string.ascii_lowercase[:5])
 )
 ISSUE_PATH = "some/issue/path"

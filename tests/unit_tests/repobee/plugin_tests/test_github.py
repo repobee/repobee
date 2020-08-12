@@ -83,7 +83,7 @@ def raise_401(*args, **kwargs):
 @pytest.fixture
 def review_student_teams():
     return [
-        plug.Team(members=[student])
+        plug.StudentTeam(members=[student])
         for student in ("ham", "spam", "bacon", "eggs")
     ]
 
@@ -241,16 +241,6 @@ def mock_repo(name, description, private, team_id):
 
 
 @pytest.fixture
-def repo_infos(teams_and_members, teams):
-    descriptions = ["A nice repo for {}".format(team.name) for team in teams]
-    repo_names = ["{}-week-2".format(team.name) for team in teams]
-    return [
-        plug.Repo(name, description, True, team.id)
-        for name, description, team in zip(repo_names, descriptions, teams)
-    ]
-
-
-@pytest.fixture
 def no_repos(teams_and_members, teams, organization):
     repos_in_org = {}
 
@@ -273,10 +263,13 @@ def no_repos(teams_and_members, teams, organization):
 
 
 @pytest.fixture
-def repos(organization, no_repos, repo_infos):
-    for ri in repo_infos:
-        organization.create_repo(ri.name, ri.description, ri.private)
-
+def repos(organization, no_repos, teams_and_members, teams):
+    for team in teams:
+        organization.create_repo(
+            f"{team.name}-week-2",
+            description=f"A nice repo for {team.name}",
+            private=True,
+        )
     return organization.get_repos()
 
 
@@ -369,7 +362,9 @@ class TestGetRepoUrls:
         # assume works correctly when called with just repo names
         expected_urls = api.get_repo_urls(expected_repo_names)
 
-        actual_urls = api.get_repo_urls(master_repo_names, teams=students)
+        actual_urls = api.get_repo_urls(
+            master_repo_names, team_names=[t.name for t in students]
+        )
 
         assert len(actual_urls) == len(students) * len(master_repo_names)
         assert sorted(expected_urls) == sorted(actual_urls)
@@ -479,12 +474,18 @@ class TestGetRepoIssues:
     """Tests for the get_repo_issues function."""
 
     def test_fetches_all_issues(self, happy_github, api):
-        repo_mock = MagicMock(spec=plug.Repo)
-        api.get_repo_issues(repo_mock)
-
-        repo_mock.implementation.get_issues.assert_called_once_with(
-            state="all"
+        impl_mock = MagicMock(spec=github.Repository.Repository)
+        repo = plug.Repo(
+            name="name",
+            description="descr",
+            private=True,
+            url="bla",
+            implementation=impl_mock,
         )
+
+        api.get_repo_issues(repo)
+
+        impl_mock.get_issues.assert_called_once_with(state="all")
 
 
 class TestCreateIssue:
@@ -492,13 +493,20 @@ class TestCreateIssue:
 
     def test_sets_assignees_defaults_to_notset(self, happy_github, api):
         """Assert that ``assignees = None`` is replaced with ``NotSet``."""
-        repo_mock = MagicMock(spec=plug.Repo)
+        impl_mock = MagicMock(spec=github.Repository.Repository)
+        repo = plug.Repo(
+            name="name",
+            description="descr",
+            private=True,
+            url="bla",
+            implementation=impl_mock,
+        )
 
         with patch(
             "_repobee.ext.defaults.github.GitHubAPI._wrap_issue", autospec=True
         ):
-            api.create_issue("Title", "Body", repo_mock)
+            api.create_issue("Title", "Body", repo)
 
-        repo_mock.implementation.create_issue.assert_called_once_with(
+        impl_mock.create_issue.assert_called_once_with(
             "Title", body="Body", assignees=github.GithubObject.NotSet
         )

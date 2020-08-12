@@ -26,7 +26,7 @@ PLUGIN_DESCRIPTION = (
 
 @plug.repobee_hook
 def generate_review_allocations(
-    teams: List[plug.Team], num_reviews: int = 1
+    teams: List[plug.StudentTeam], num_reviews: int = 1
 ) -> List[plug.ReviewAllocation]:
     """Generate peer review allocations such that if team_a reviews team_b,
     then team_b reviews team_a, and no others!

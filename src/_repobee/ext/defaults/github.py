@@ -344,7 +344,7 @@ class GitHubAPI(plug.PlatformAPI):
         self,
         master_repo_names: Iterable[str],
         org_name: Optional[str] = None,
-        teams: Optional[List[plug.Team]] = None,
+        team_names: Optional[List[str]] = None,
         insert_auth: bool = False,
     ) -> List[str]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repo_urls`."""
@@ -356,8 +356,8 @@ class GitHubAPI(plug.PlatformAPI):
             )
         repo_names = (
             master_repo_names
-            if not teams
-            else plug.generate_repo_names(teams, master_repo_names)
+            if not team_names
+            else plug.generate_repo_names(team_names, master_repo_names)
         )
         return [
             self.insert_auth(url) if insert_auth else url

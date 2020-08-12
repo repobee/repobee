@@ -21,7 +21,7 @@ MASTER_REPO_NAMES = [
     if p.is_dir()
 ]
 STUDENT_TEAMS = [
-    plug.Team(members=[s.strip()])
+    plug.StudentTeam(members=[s.strip()])
     for s in (DIR.parent / "students.txt").read_text().strip().split("\n")
 ]
 STUDENT_TEAM_NAMES = [str(t) for t in STUDENT_TEAMS]

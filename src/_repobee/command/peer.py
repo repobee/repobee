@@ -29,7 +29,7 @@ DEFAULT_REVIEW_ISSUE = plug.Issue(
 
 def assign_peer_reviews(
     master_repo_names: Iterable[str],
-    teams: Iterable[plug.Team],
+    teams: Iterable[plug.StudentTeam],
     num_reviews: int,
     issue: Optional[plug.Issue],
     api: plug.PlatformAPI,
@@ -78,7 +78,7 @@ def assign_peer_reviews(
             zip(
                 *[
                     (
-                        plug.Team(
+                        plug.StudentTeam(
                             members=alloc.review_team.members,
                             name=plug.generate_review_team_name(
                                 str(alloc.reviewed_team), master_name

@@ -10,14 +10,13 @@ the primary parser should go int :py:mod:`_repobee.cli.mainparser`.
 .. moduleauthor:: Simon Larsén
 """
 import argparse
-import itertools
 import logging
 import os
 import pathlib
 import re
 import sys
 import enum
-from typing import Iterable, Optional, List, Tuple, Generator
+from typing import Iterable, Optional, List, Tuple
 
 import daiquiri
 import repobee_plug as plug
@@ -153,10 +152,7 @@ def _process_args(
 
     repos = master_names = master_urls = None
     if "discover_repos" in args and args.discover_repos:
-        teams = progresswrappers.get_teams(
-            args.students, api, desc="Discovering team repos"
-        )
-        repos = itertools.chain.from_iterable(map(api.get_team_repos, teams))
+        repos = _discover_repos(args.students, api)
     elif "master_repo_names" in args:
         master_names = args.master_repo_names
         master_urls = _repo_names_to_urls(master_names, master_org_name, api)
@@ -173,14 +169,37 @@ def _process_args(
     return argparse.Namespace(**args_dict), api
 
 
+def _discover_repos(
+    student_teams: plug.StudentTeam, api: plug.PlatformAPI
+) -> Iterable[plug.StudentRepo]:
+    student_teams_dict = {t.name: t for t in student_teams}
+    fetched_teams = progresswrappers.get_teams(
+        student_teams, api, desc="Discovering team repos"
+    )
+    for team in fetched_teams:
+        repos = api.get_team_repos(team)
+        yield from (
+            plug.StudentRepo(
+                name=repo.name,
+                url=repo.url,
+                team=student_teams_dict[team.name],
+            )
+            for repo in repos
+        )
+
+
 def _repo_tuple_generator(
-    master_repo_names: List[str], teams: List[plug.Team], api: plug.PlatformAPI
-) -> Generator[plug.Repo, None, None]:
+    master_repo_names: List[str],
+    teams: List[plug.StudentTeam],
+    api: plug.PlatformAPI,
+) -> Iterable[plug.StudentRepo]:
     for master_repo_name in master_repo_names:
         for team in teams:
-            url, *_ = api.get_repo_urls([master_repo_name], teams=[team])
+            url, *_ = api.get_repo_urls(
+                [master_repo_name], team_names=[team.name]
+            )
             name = plug.generate_repo_name(team, master_repo_name)
-            yield plug.Repo(name=name, url=url, private=True, description="")
+            yield plug.StudentRepo(name=name, url=url, team=team)
 
 
 def _validate_tls_url(url):
@@ -204,7 +223,7 @@ def _handle_deprecation(sys_args: List[str]) -> List[str]:
     return sys_args
 
 
-def _extract_groups(args: argparse.Namespace) -> List[str]:
+def _extract_groups(args: argparse.Namespace) -> List[plug.StudentTeam]:
     """Extract groups from args namespace.`
 
     Args:
@@ -215,7 +234,7 @@ def _extract_groups(args: argparse.Namespace) -> List[str]:
         `students_file` is in the namespace.
     """
     if "students" in args and args.students:
-        students = [plug.Team(members=[s]) for s in args.students]
+        students = [plug.StudentTeam(members=[s]) for s in args.students]
     elif "students_file" in args and args.students_file:
         students_file = pathlib.Path(args.students_file).resolve()
         if not students_file.is_file():
@@ -225,7 +244,7 @@ def _extract_groups(args: argparse.Namespace) -> List[str]:
         if not students_file.stat().st_size:
             raise exception.FileError("'{!s}' is empty".format(students_file))
         students = [
-            plug.Team(members=[s for s in group.strip().split()])
+            plug.StudentTeam(members=[s for s in group.strip().split()])
             for group in students_file.read_text(
                 encoding=sys.getdefaultencoding()
             ).split(os.linesep)
@@ -317,7 +336,7 @@ def _process_ext_args(
     if bp.STUDENTS in req_parsers:
         args_dict["students"] = _extract_groups(args)
     if bp.REPO_DISCOVERY in req_parsers:
-        args_dict["repos"] = api.discover_repos(args_dict["students"])
+        args_dict["repos"] = _discover_repos(args_dict["students"], api)
 
     return argparse.Namespace(**args_dict), api
 

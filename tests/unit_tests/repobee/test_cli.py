@@ -62,17 +62,16 @@ VALID_PARSED_ARGS = dict(
     token=TOKEN,
     num_reviews=1,
     hook_results_file=None,
-    repos=(
-        plug.Repo(
+    repos=[
+        plug.StudentRepo(
             name=plug.generate_repo_name(team, master_name),
+            team=team,
             url=generate_repo_url(
                 plug.generate_repo_name(team, master_name), ORG_NAME
             ),
-            description="",
-            private=True,
         )
         for team, master_name in itertools.product(STUDENTS, REPO_NAMES)
-    ),
+    ],
 )
 
 
@@ -796,7 +795,7 @@ class TestStudentParsing:
             ["cat", "dog", "mouse"],
         )
         expected_groups = sorted(
-            plug.Team(members=group) for group in groupings
+            plug.StudentTeam(members=group) for group in groupings
         )
         empty_students_file.write(
             os.linesep.join([" ".join(group) for group in groupings])
@@ -826,7 +825,7 @@ class TestStudentParsing:
         groupings = (
             ["buddy", "shuddy"],
             # TODO remove dependency on _apimeta, it's private!
-            ["a" * plug._apimeta.MAX_NAME_LENGTH, "b"],
+            ["a" * plug.localreps.MAX_NAME_LENGTH, "b"],
             ["cat", "dog", "mouse"],
         )
         empty_students_file.write(

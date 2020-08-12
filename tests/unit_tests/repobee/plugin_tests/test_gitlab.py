@@ -382,7 +382,9 @@ class TestGetRepoUrls:
 
         # act
         actual_urls = api.get_repo_urls(
-            master_repo_names, teams=constants.STUDENTS, insert_auth=True
+            master_repo_names,
+            team_names=[t.name for t in constants.STUDENTS],
+            insert_auth=True,
         )
 
         # assert

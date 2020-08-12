@@ -14,7 +14,7 @@ import repobee_plug as plug
 
 @plug.repobee_hook
 def generate_review_allocations(
-    teams: List[plug.Team], num_reviews: int
+    teams: List[plug.StudentTeam], num_reviews: int
 ) -> List[plug.ReviewAllocation]:
     if num_reviews >= len(teams):
         raise ValueError("num_reviews must be less than len(teams)")
@@ -43,7 +43,7 @@ def generate_review_allocations(
         members = list(
             itertools.chain.from_iterable([team.members for team in teams])
         )
-        return plug.Team(members=members)
+        return plug.StudentTeam(members=members)
 
     transposed_allocations = zip(*allocations)
     review_allocations = [

@@ -340,7 +340,7 @@ class GitLabAPI(plug.PlatformAPI):
         self,
         master_repo_names: Iterable[str],
         org_name: Optional[str] = None,
-        teams: Optional[List[plug.Team]] = None,
+        team_names: Optional[List[str]] = None,
         insert_auth: bool = False,
     ) -> List[str]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repo_urls`."""
@@ -348,11 +348,11 @@ class GitLabAPI(plug.PlatformAPI):
         group_url = f"{self._base_url}/{group_name}"
         repo_urls = (
             [f"{group_url}/{repo_name}.git" for repo_name in master_repo_names]
-            if not teams
+            if not team_names
             else [
                 f"{group_url}/{team}/"
                 f"{plug.generate_repo_name(str(team), master_repo_name)}.git"
-                for team in teams
+                for team in team_names
                 for master_repo_name in master_repo_names
             ]
         )

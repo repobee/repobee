@@ -3,7 +3,7 @@ import repobee_plug as plug
 
 
 def create_teams(
-    teams: Iterable[plug.Team],
+    teams: Iterable[plug.StudentTeam],
     permission: plug.TeamPermission,
     api: plug.PlatformAPI,
 ) -> Iterable[plug.Team]:
