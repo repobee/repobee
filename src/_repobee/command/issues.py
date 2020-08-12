@@ -21,7 +21,7 @@ from _repobee.command import progresswrappers
 
 
 def list_issues(
-    repos: Iterable[plug.Repo],
+    repos: Iterable[plug.StudentRepo],
     api: plug.PlatformAPI,
     state: plug.IssueState = plug.IssueState.OPEN,
     title_regex: str = "",
@@ -207,7 +207,7 @@ def open_issue(
 
 
 def close_issue(
-    title_regex: str, repos: Iterable[plug.Repo], api: plug.PlatformAPI
+    title_regex: str, repos: Iterable[plug.StudentRepo], api: plug.PlatformAPI
 ) -> None:
     """Close issues whose titles match the title_regex in student repos.
 

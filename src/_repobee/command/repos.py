@@ -18,7 +18,7 @@ import shutil
 import os
 import sys
 import tempfile
-from typing import Iterable, List, Optional, Mapping, Generator
+from typing import Iterable, List, Optional, Mapping
 
 import repobee_plug as plug
 
@@ -192,7 +192,7 @@ def _clone_all(urls: Iterable[str], cwd: str):
 
 def update_student_repos(
     master_repo_urls: Iterable[str],
-    teams: Iterable[plug.Team],
+    teams: Iterable[plug.StudentTeam],
     api: plug.PlatformAPI,
     issue: Optional[plug.Issue] = None,
 ) -> Mapping[str, List[plug.Result]]:
@@ -264,7 +264,7 @@ def _open_issue_by_urls(
 
 
 def clone_repos(
-    repos: Iterable[plug.Repo], api: plug.PlatformAPI
+    repos: Iterable[plug.StudentRepo], api: plug.PlatformAPI
 ) -> Mapping[str, List[plug.Result]]:
     """Clone all student repos related to the provided master repos and student
     teams.
@@ -294,7 +294,7 @@ def clone_repos(
 
 def _non_local_repos(
     repos, cwd=pathlib.Path(".")
-) -> Generator[plug.Repo, None, None]:
+) -> Iterable[plug.StudentRepo]:
     """Yield repos with names that do not clash with any of the files present
     in cwd.
     """
