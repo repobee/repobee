@@ -62,15 +62,16 @@ VALID_PARSED_ARGS = dict(
     token=TOKEN,
     num_reviews=1,
     hook_results_file=None,
-    repos=(
+    repos=[
         plug.StudentRepo(
             name=plug.generate_repo_name(team, master_name),
+            team=team,
             url=generate_repo_url(
                 plug.generate_repo_name(team, master_name), ORG_NAME
             ),
         )
         for team, master_name in itertools.product(STUDENTS, REPO_NAMES)
-    ),
+    ],
 )
 
 
