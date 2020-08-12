@@ -185,7 +185,7 @@ def _limit_line_length(s: str, max_line_length: int = 100) -> str:
 def open_issue(
     issue: plug.Issue,
     master_repo_names: Iterable[str],
-    teams: Iterable[plug.Team],
+    teams: Iterable[plug.StudentTeam],
     api: plug.PlatformAPI,
 ) -> None:
     """Open an issue in student repos.
