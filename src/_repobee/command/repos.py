@@ -344,7 +344,7 @@ def migrate_repos(
     ]
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        _clone_all(master_repo_urls, cwd=tmpdir)
+        _clone_all(master_repo_urls, api=api, cwd=tmpdir)
 
         git.push(
             [
