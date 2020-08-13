@@ -62,7 +62,7 @@ from repobee_plug._exceptions import (
 )
 
 # Local representations
-from repobee_plug.localreps import StudentTeam, StudentRepo
+from repobee_plug.localreps import StudentTeam, StudentRepo, TemplateRepo
 
 manager = pluggy.PluginManager(__package__)
 manager.add_hookspecs(_clone_hook)
@@ -85,8 +85,10 @@ __all__ = [
     "Review",
     "Deprecation",
     "ConfigurableArguments",
+    # Local representations
     "StudentTeam",
     "StudentRepo",
+    "TemplateRepo",
     # API wrappers
     "Team",
     "TeamPermission",

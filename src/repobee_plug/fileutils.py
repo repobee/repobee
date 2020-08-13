@@ -2,11 +2,14 @@
 import pathlib
 import sys
 import os
-from typing import List
+import hashlib
+from typing import List, Union
 
 from repobee_plug import _exceptions
 
 from repobee_plug.localreps import StudentTeam
+
+__all__ = ["parse_students_file", "hash_path"]
 
 
 def parse_students_file(path: pathlib.Path) -> List[StudentTeam]:
@@ -30,3 +33,19 @@ def parse_students_file(path: pathlib.Path) -> List[StudentTeam]:
         )
         if group  # skip blank lines
     ]
+
+
+def hash_path(path: Union[str, pathlib.Path]) -> str:
+    """Hash the path with SHA1.
+
+    .. important::
+
+        This is not a security function, it's just to avoid name collisions in.
+
+    Args:
+        path: A path to hash.
+    Returns:
+        The hexdigest of the SHA1 hash of the path.
+    """
+    enc = sys.getdefaultencoding()
+    return hashlib.sha1(str(path).encode(enc)).hexdigest()  # nosec

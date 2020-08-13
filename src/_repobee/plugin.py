@@ -14,9 +14,7 @@ import tempfile
 import pkgutil
 import pathlib
 import importlib
-import hashlib
 import os
-import sys
 from types import ModuleType
 from typing import List, Optional, Iterable, Mapping, Union, Callable
 
@@ -101,12 +99,7 @@ def _try_load_module_from_filepath(path: str) -> Optional[ModuleType]:
         The module if loaded successfully, or None if there was no module at
         the path.
     """
-    enc_path = path.encode(sys.getdefaultencoding())
-    package_name = (
-        # The use of SHA1 here is not a security issue as it is only intended
-        # to come up with a (most likely) unique name for the package
-        f"_{hashlib.sha1(enc_path).hexdigest()}"  # nosec
-    )
+    package_name = plug.fileutils.hash_path(path)
     module_name = pathlib.Path(path).stem
     qualname = f"{package_name}.{module_name}"
     spec = importlib.util.spec_from_file_location(qualname, path)
@@ -373,7 +366,7 @@ def get_module_names(pkg: ModuleType) -> List[str]:
 
 
 def execute_clone_tasks(
-    repo_names: List[str],
+    repos: Iterable[plug.StudentRepo],
     api: plug.PlatformAPI,
     cwd: Optional[pathlib.Path] = None,
 ) -> Mapping[str, List[plug.Result]]:
@@ -386,28 +379,28 @@ def execute_clone_tasks(
     Returns:
         A mapping from repo name to hook result.
     """
-    return _execute_tasks(repo_names, plug.manager.hook.post_clone, api, cwd)
+    return _execute_tasks(repos, plug.manager.hook.post_clone, api, cwd)
 
 
 def execute_setup_tasks(
-    repo_names: List[str],
+    repos: Iterable[plug.TemplateRepo],
     api: plug.PlatformAPI,
     cwd: Optional[pathlib.Path] = None,
 ) -> Mapping[str, List[plug.Result]]:
     """Execute setup tasks, if there are any, and return the results.
 
     Args:
-        repo_names: Names of the repositories to execute setup tasks on.
+        repos: Template repos.
         api: An instance of the platform API.
         cwd: Directory in which to find the repos.
     Returns:
         A mapping from repo name to hook result.
     """
-    return _execute_tasks(repo_names, plug.manager.hook.pre_setup, api, cwd)
+    return _execute_tasks(repos, plug.manager.hook.pre_setup, api, cwd)
 
 
 def _execute_tasks(
-    repo_names: List[str],
+    repos: List[Union[plug.StudentRepo, plug.TemplateRepo]],
     hook_function: Callable[
         [pathlib.Path, plug.PlatformAPI], Optional[plug.Result]
     ],
@@ -416,24 +409,23 @@ def _execute_tasks(
 ) -> Mapping[str, List[plug.Result]]:
     """Execute plugin tasks on the provided repos."""
     cwd = cwd or pathlib.Path(".")
-    repo_paths = [f.absolute() for f in cwd.glob("*") if f.name in repo_names]
 
     with tempfile.TemporaryDirectory() as tmpdir:
         copies_root = pathlib.Path(tmpdir)
         repo_copies = []
-        for path in repo_paths:
-            copy = copies_root / path.name
-            shutil.copytree(str(path), str(copy))
-            repo_copies.append(copy)
+        for repo in repos:
+            copy_path = copies_root / plug.fileutils.hash_path(repo.path)
+            shutil.copytree(repo.path, copy_path)
+            repo_copies.append(repo.with_path(copy_path))
 
         plug.log.info("Executing tasks ...")
         results = collections.defaultdict(list)
-        for path in repo_copies:
-            plug.log.info("Processing {}".format(path.name))
+        for repo in repo_copies:
+            plug.log.info("Processing {}".format(repo.path.name))
 
-            for result in hook_function(path=path, api=api):
+            for result in hook_function(path=repo.path, api=api):
                 if result:
-                    results[path.name].append(result)
+                    results[repo.path.name].append(result)
     return results
 
 

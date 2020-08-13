@@ -10,7 +10,9 @@ import os
 import subprocess
 import collections
 import pathlib
-from typing import Iterable, List, Any, Callable
+import enum
+import shutil
+from typing import Iterable, List, Any, Callable, Tuple
 
 import more_itertools
 
@@ -114,7 +116,46 @@ async def _clone_async(repo_url: str, branch: str = "", cwd="."):
         plug.log.info("Cloned into {}".format(repo_url))
 
 
-def clone(repo_urls: Iterable[str], cwd: str = ".") -> List[Exception]:
+class CloneStatus(enum.Enum):
+    CLONED = enum.auto()
+    EXISTED = enum.auto()
+    FAILED = enum.auto()
+
+
+def clone_student_repos(
+    repos: List[plug.StudentRepo],
+    clone_dir: pathlib.Path,
+    api: plug.PlatformAPI,
+) -> Iterable[Tuple[CloneStatus, plug.StudentRepo]]:
+    assert all(map(lambda r: r.path is not None, repos))
+
+    local = [repo for repo in repos if repo.path.exists()]
+    if local:
+        local_repo_ids = [f"{repo.team.name}/{repo.name}" for repo in local]
+        plug.log.warning(
+            f"Found local repos, skipping: {', '.join(local_repo_ids)}"
+        )
+
+    non_local = [repo for repo in repos if not repo.path.exists()]
+    plug.log.info(f"Cloning into {non_local}")
+
+    url_to_non_local = {api.insert_auth(repo.url): repo for repo in non_local}
+    failed_urls = clone(url_to_non_local.keys(), cwd=str(clone_dir))
+
+    failed_repos = {url_to_non_local[url] for url in failed_urls}
+    success_repos = {repo for repo in non_local if repo not in failed_repos}
+
+    for repo in success_repos:
+        shutil.copytree(src=clone_dir / repo.name, dst=repo.path)
+
+    return (
+        [(CloneStatus.EXISTED, repo) for repo in local]
+        + [(CloneStatus.CLONED, repo) for repo in success_repos]
+        + [(CloneStatus.FAILED, repo) for repo in failed_repos]
+    )
+
+
+def clone(repo_urls: Iterable[str], cwd: str = ".") -> List[str]:
     """Clone all repos asynchronously.
 
     Args:

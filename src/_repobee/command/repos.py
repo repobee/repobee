@@ -14,7 +14,6 @@ program.
 """
 import itertools
 import pathlib
-import shutil
 import os
 import sys
 import tempfile
@@ -61,15 +60,19 @@ def setup_student_repos(
         api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
-    authed_urls = [api.insert_auth(url) for url in master_repo_urls]
-    master_repo_names = [util.repo_name(url) for url in authed_urls]
+    template_repos = [
+        plug.TemplateRepo(name=util.repo_name(url), url=url)
+        for url in master_repo_urls
+    ]
     teams = list(teams)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         plug.log.info("Cloning into master repos ...")
-        master_repo_paths = _clone_all(authed_urls, cwd=tmpdir)
+        pathed_template_repos = list(
+            _clone_all(template_repos, api=api, cwd=tmpdir)
+        )
         hook_results = plugin.execute_setup_tasks(
-            master_repo_names, api, cwd=pathlib.Path(tmpdir)
+            pathed_template_repos, api, cwd=pathlib.Path(tmpdir)
         )
 
         created_teams = list(
@@ -83,12 +86,12 @@ def setup_student_repos(
         )
 
         push_tuple_iter = _create_push_tuples(
-            created_teams, authed_urls, master_repo_paths, api
+            created_teams, pathed_template_repos, api
         )
         push_tuple_iter_progress = plug.cli.io.progress_bar(
             push_tuple_iter,
             desc="Setting up student repos",
-            total=len(teams) * len(authed_urls),
+            total=len(teams) * len(pathed_template_repos),
         )
         git.push(push_tuples=push_tuple_iter_progress)
 
@@ -97,8 +100,7 @@ def setup_student_repos(
 
 def _create_push_tuples(
     teams: Iterable[plug.Team],
-    authed_master_urls: Iterable[str],
-    master_repo_paths: Mapping[str, str],
+    template_repos: Iterable[plug.TemplateRepo],
     api: plug.PlatformAPI,
 ) -> Iterable[Push]:
     """
@@ -111,22 +113,18 @@ def _create_push_tuples(
         A list of Push namedtuples for all student repo urls that relate to
         any of the master repo urls.
     """
-    for team, authed_master_url in itertools.product(
-        teams, authed_master_urls
-    ):
-        master_repo_name = api.extract_repo_name(authed_master_url)
-        repo_name = plug.generate_repo_name(team, master_repo_name)
+    for team, template_repo in itertools.product(teams, template_repos):
+        repo_name = plug.generate_repo_name(team, template_repo.name)
         repo = _create_or_fetch_repo(
-            plug.generate_repo_name(team, master_repo_name),
+            name=repo_name,
             description=f"{repo_name} created for {team.name}",
             private=True,
             team=team,
             api=api,
         )
-        local_path = master_repo_paths[authed_master_url]
 
         yield git.Push(
-            local_path=local_path,
+            local_path=template_repo.path,
             repo_url=api.insert_auth(repo.url),
             branch="master",
         )
@@ -164,30 +162,33 @@ def _log_repo_creation(
         yield repo
 
 
-def _clone_all(urls: Iterable[str], cwd: str):
-    """Attempts to clone all urls, sequentially. If a repo is already present,
-    it is skipped.  If any one clone fails (except for fails because the repo
-    is local), all cloned repos are removed
+def _clone_all(
+    template_repos: Iterable[plug.TemplateRepo],
+    api: plug.PlatformAPI,
+    cwd: str,
+) -> Iterable[plug.TemplateRepo]:
+    """Attempts to clone all template repos sequentially. If a repo is already
+    present, it is skipped.  If any one clone fails (except for fails because
+    the repo is local), all cloned repos are removed
 
     Args:
-        urls: HTTPS urls to git repositories.
+        template_repos: Template repositories.
         cwd: Working directory. Use temporary directory for automatic cleanup.
     Returns:
-        local paths to the cloned repos.
+        The template repos with updated paths.
     """
-    if len(set(urls)) != len(urls):
-        raise ValueError("master_repo_urls contains duplicates")
+    if len(set(template_repos)) != len(template_repos):
+        raise ValueError("duplicated tepmlate repo")
     try:
-        for url in plug.cli.io.progress_bar(
-            urls, desc="Cloning template repositories", unit="repos"
+        for repo in plug.cli.io.progress_bar(
+            template_repos, desc="Cloning template repositories", unit="repos"
         ):
-            plug.log.info(f"Cloning into '{url}'")
-            git.clone_single(url, cwd=cwd)
+            plug.log.info(f"Cloning into '{repo.url}'")
+            git.clone_single(api.insert_auth(repo.url), cwd=cwd)
+            yield repo.with_path(pathlib.Path(cwd) / repo.name)
     except exception.CloneFailedError:
-        plug.log.error("Error cloning into {}, aborting ...".format(url))
+        plug.log.error("Error cloning into {}, aborting ...".format(repo.url))
         raise
-    paths = {url: os.path.join(cwd, util.repo_name(url)) for url in urls}
-    return paths
 
 
 def update_student_repos(
@@ -206,18 +207,19 @@ def update_student_repos(
             interface with the platform (e.g. GitHub or GitLab) instance.
         issue: An optional issue to open in repos to which pushing fails.
     """
-    authed_template_urls = [api.insert_auth(url) for url in master_repo_urls]
-
-    if len(set(authed_template_urls)) != len(authed_template_urls):
+    if len(set(master_repo_urls)) != len(master_repo_urls):
         raise ValueError("master_repo_urls contains duplicates")
 
-    master_repo_names = [util.repo_name(url) for url in authed_template_urls]
+    template_repos = [
+        plug.TemplateRepo(name=util.repo_name(url), url=url)
+        for url in master_repo_urls
+    ]
 
     with tempfile.TemporaryDirectory() as tmpdir:
         plug.log.info("Cloning into master repos ...")
-        master_repo_paths = _clone_all(authed_template_urls, tmpdir)
+        pathed_template_repos = list(_clone_all(template_repos, api, tmpdir))
         hook_results = plugin.execute_setup_tasks(
-            master_repo_names, api, cwd=pathlib.Path(tmpdir)
+            pathed_template_repos, api, cwd=pathlib.Path(tmpdir)
         )
 
         # we want to exhaust this iterator immediately to not have progress
@@ -225,13 +227,13 @@ def update_student_repos(
         fetched_teams = list(progresswrappers.get_teams(teams, api))
 
         push_tuple_iter = _create_push_tuples(
-            fetched_teams, authed_template_urls, master_repo_paths, api
+            fetched_teams, pathed_template_repos, api
         )
 
         push_tuple_iter_progress = plug.cli.io.progress_bar(
             push_tuple_iter,
             desc="Setting up student repos",
-            total=len(teams) * len(authed_template_urls),
+            total=len(teams) * len(template_repos),
         )
         failed_urls = git.push(push_tuples=push_tuple_iter_progress)
 
@@ -277,18 +279,14 @@ def clone_repos(
     Returns:
         A mapping from repo name to a list of hook results.
     """
-    repos_for_tasks, repos_for_clone = itertools.tee(repos)
-    non_local_repos = _non_local_repos(repos_for_clone)
 
     plug.echo("Cloning into student repos ...")
     with tempfile.TemporaryDirectory() as tmpdir:
-        _clone_repos_no_check(non_local_repos, tmpdir, api)
+        local_repos = _clone_repos_no_check(repos, pathlib.Path(tmpdir), api)
 
     for p in plug.manager.get_plugins():
         if "post_clone" in dir(p):
-            return plugin.execute_clone_tasks(
-                [repo.name for repo in repos_for_tasks], api
-            )
+            return plugin.execute_clone_tasks(local_repos, api)
     return {}
 
 
@@ -306,31 +304,23 @@ def _non_local_repos(
             plug.log.warning("{} already on disk, skipping".format(repo.name))
 
 
-def _clone_repos_no_check(repos, dst_dirpath, api) -> List[str]:
+def _clone_repos_no_check(
+    repos: Iterable[plug.StudentRepo],
+    dst_dirpath: pathlib.Path,
+    api: plug.PlatformAPI,
+) -> Iterable[plug.StudentRepo]:
     """Clone the specified repo urls into the destination directory without
     making any sanity checks; they must be done in advance.
 
-    Return a list of names of the successfully cloned repos.
+    Return a list of cloned and previously existing repos.
     """
-    repos_iter_a, repos_iter_b = itertools.tee(repos)
-    repo_urls = (api.insert_auth(repo.url) for repo in repos_iter_b)
-
-    fail_urls = git.clone(repo_urls, cwd=dst_dirpath)
-    fail_repo_names = set(api.extract_repo_name(url) for url in fail_urls)
-    repo_names = set(repo.name for repo in repos_iter_a)
-    cloned_repos = [
-        path
-        for path in pathlib.Path(dst_dirpath).iterdir()
-        if path.is_dir()
-        and util.is_git_repo(str(path))
-        and path.name not in fail_repo_names
-        and path.name in repo_names
+    cur_dir = pathlib.Path(".").resolve()
+    pathed_repos = [
+        repo.with_path(cur_dir / repo.team.name / repo.name) for repo in repos
     ]
 
-    cur_dir = pathlib.Path(".").resolve()
-    for repo in cloned_repos:
-        shutil.copytree(src=str(repo), dst=str(cur_dir / repo.name))
-    return [repo.name for repo in cloned_repos]
+    cloned_repos = git.clone_student_repos(pathed_repos, dst_dirpath, api)
+    return [repo for _, repo in cloned_repos]
 
 
 def migrate_repos(
