@@ -7,9 +7,10 @@ from typing import Mapping, List, Union
 import repobee
 import git
 
-from repobee_plug.testhelpers import localapi
-from repobee_plug.testhelpers import const
-from repobee_plug._containers import Result
+import repobee_plug as plug
+
+from repobee_testhelpers import localapi
+from repobee_testhelpers import const
 
 
 def initialize_repo(path: pathlib.Path) -> git.Repo:
@@ -40,7 +41,7 @@ def hash_directory(dirpath: pathlib.Path) -> str:
 
 def run_repobee(
     cmd: Union[str, List[str]], **kwargs
-) -> Mapping[str, List[Result]]:
+) -> Mapping[str, List[plug.Result]]:
     """Helper function to call :py:class:`repobee.run` when using the
     :py:class:`fakeapi.FakeAPI` platform API.
 
