@@ -11,17 +11,15 @@ from repobee_plug import cli
 
 from repobee_plug.cli.args import Option, MutuallyExclusiveGroup
 
-# This fails type checking in CI, and I can't figure out why It doesn't fail
-# locally. Hence, the ignore markers.
 _HOOK_METHODS = {
     key: value  # type: ignore
-    for key, value in [
-        *_exthooks.CloneHook.__dict__.items(),
-        *_exthooks.SetupHook.__dict__.items(),
-        *_exthooks.ConfigHook.__dict__.items(),
-        *_corehooks.PeerReviewHook.__dict__.items(),
-        *_corehooks.APIHook.__dict__.items(),
-    ]  # type: ignore
+    for key, value in itertools.chain(
+        _exthooks.CloneHook.__dict__.items(),
+        _exthooks.SetupHook.__dict__.items(),
+        _exthooks.ConfigHook.__dict__.items(),
+        _corehooks.PeerReviewHook.__dict__.items(),
+        _corehooks.APIHook.__dict__.items(),
+    )
     if callable(value) and not key.startswith("_")
 }
 
