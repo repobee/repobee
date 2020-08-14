@@ -1,3 +1,5 @@
+# mypy: ignore-errors
+
 """Metaclass for API implementations.
 
 :py:class:`APIMeta` defines the behavior required of platform API
