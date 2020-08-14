@@ -23,7 +23,7 @@ jobs:
         pip install -r requirements/app.txt -r requirements/test.txt
         pip install -e .[TEST]
     - name: Lint repobee-plug with MyPy
-        mypy src/repobee_plug
+      run: mypy src/repobee_plug
     - name: Lint with flake8
       run: flake8 . --statistics
     - name: Lin with pylint
