@@ -135,7 +135,7 @@ class TestClone:
             new_dir.mkdir(parents=True)
             new_file = new_dir / "file"
             new_file.write_text(str(new_dir), encoding="utf-8")
-            expected_dir_hashes.append(new_dir, hash_directory(new_dir))
+            expected_dir_hashes.append((new_dir, hash_directory(new_dir)))
 
         command = " ".join(
             [

@@ -103,8 +103,15 @@ class TemplateRepo(_RepoPathMixin):
         name: Name of this repository.
         url: URL to the platform repository.
         path: Path to the local copy of this repository.
+        file_uri: File URI to the local copy of this repository.
     """
 
     name: str
     url: str
     _path: Optional[pathlib.Path] = None
+
+    @property
+    def file_uri(self):
+        p = f"file://{self.path}"
+        print(p)
+        return f"file://{self.path}"

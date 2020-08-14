@@ -60,19 +60,25 @@ def setup_student_repos(
         api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
-    template_repos = [
-        plug.TemplateRepo(name=util.repo_name(url), url=url)
-        for url in master_repo_urls
-    ]
     teams = list(teams)
 
     with tempfile.TemporaryDirectory() as tmpdir:
+        workdir = pathlib.Path(tmpdir)
+        template_repos = [
+            plug.TemplateRepo(
+                name=util.repo_name(url),
+                url=url,
+                _path=workdir / api.extract_repo_name(url),
+            )
+            for url in master_repo_urls
+        ]
+
         plug.log.info("Cloning into master repos ...")
-        pathed_template_repos = list(
-            _clone_all(template_repos, api=api, cwd=tmpdir)
+        _clone_all(
+            [api.insert_auth(r.url) for r in template_repos], cwd=tmpdir
         )
         hook_results = plugin.execute_setup_tasks(
-            pathed_template_repos, api, cwd=pathlib.Path(tmpdir)
+            template_repos, api, cwd=pathlib.Path(tmpdir)
         )
 
         created_teams = list(
@@ -86,12 +92,12 @@ def setup_student_repos(
         )
 
         push_tuple_iter = _create_push_tuples(
-            created_teams, pathed_template_repos, api
+            created_teams, template_repos, api
         )
         push_tuple_iter_progress = plug.cli.io.progress_bar(
             push_tuple_iter,
             desc="Setting up student repos",
-            total=len(teams) * len(pathed_template_repos),
+            total=len(teams) * len(template_repos),
         )
         git.push(push_tuples=push_tuple_iter_progress)
 
@@ -134,18 +140,21 @@ def _create_or_fetch_repo(
     name: str,
     description: str,
     private: bool,
-    team: plug.Team,
     api: plug.PlatformAPI,
+    team: Optional[plug.Team] = None,
 ) -> plug.Repo:
     try:
         return api.create_repo(
             name, description=description, private=private, team=team,
         )
     except plug.PlatformError:
-        repo = api.get_repo(repo_name=name, team_name=team.name)
-        api.assign_repo(
-            team=team, repo=repo, permission=plug.TeamPermission.PUSH
-        )
+        team_name = team.name if team else None
+        repo = api.get_repo(repo_name=name, team_name=team_name)
+
+        if team:
+            api.assign_repo(
+                team=team, repo=repo, permission=plug.TeamPermission.PUSH
+            )
         return repo
 
 
@@ -162,32 +171,25 @@ def _log_repo_creation(
         yield repo
 
 
-def _clone_all(
-    template_repos: Iterable[plug.TemplateRepo],
-    api: plug.PlatformAPI,
-    cwd: str,
-) -> Iterable[plug.TemplateRepo]:
-    """Attempts to clone all template repos sequentially. If a repo is already
-    present, it is skipped.  If any one clone fails (except for fails because
-    the repo is local), all cloned repos are removed
+def _clone_all(repo_urls: str, cwd: pathlib.Path):
+    """Attempts to clone all repos sequentially.
 
     Args:
-        template_repos: Template repositories.
+        repo_urls: URLs to clone.
         cwd: Working directory. Use temporary directory for automatic cleanup.
     Returns:
         The template repos with updated paths.
     """
-    if len(set(template_repos)) != len(template_repos):
-        raise ValueError("duplicated tepmlate repo")
+    if len(set(repo_urls)) != len(repo_urls):
+        raise ValueError("duplicated repo url repo")
     try:
-        for repo in plug.cli.io.progress_bar(
-            template_repos, desc="Cloning template repositories", unit="repos"
+        for url in plug.cli.io.progress_bar(
+            repo_urls, desc="Cloning template repositories", unit="repos"
         ):
-            plug.log.info(f"Cloning into '{repo.url}'")
-            git.clone_single(api.insert_auth(repo.url), cwd=cwd)
-            yield repo.with_path(pathlib.Path(cwd) / repo.name)
+            plug.log.info(f"Cloning into '{url}'")
+            git.clone_single(url, cwd=str(cwd))
     except exception.CloneFailedError:
-        plug.log.error("Error cloning into {}, aborting ...".format(repo.url))
+        plug.log.error(f"Error cloning into {url}, aborting ...")
         raise
 
 
@@ -210,16 +212,23 @@ def update_student_repos(
     if len(set(master_repo_urls)) != len(master_repo_urls):
         raise ValueError("master_repo_urls contains duplicates")
 
-    template_repos = [
-        plug.TemplateRepo(name=util.repo_name(url), url=url)
-        for url in master_repo_urls
-    ]
-
     with tempfile.TemporaryDirectory() as tmpdir:
+        workdir = pathlib.Path(tmpdir)
+        template_repos = [
+            plug.TemplateRepo(
+                name=util.repo_name(url),
+                url=url,
+                _path=workdir / api.extract_repo_name(url),
+            )
+            for url in master_repo_urls
+        ]
+
         plug.log.info("Cloning into master repos ...")
-        pathed_template_repos = list(_clone_all(template_repos, api, tmpdir))
+        _clone_all(
+            [api.insert_auth(r.url) for r in template_repos], cwd=tmpdir
+        )
         hook_results = plugin.execute_setup_tasks(
-            pathed_template_repos, api, cwd=pathlib.Path(tmpdir)
+            template_repos, api, cwd=pathlib.Path(tmpdir)
         )
 
         # we want to exhaust this iterator immediately to not have progress
@@ -227,7 +236,7 @@ def update_student_repos(
         fetched_teams = list(progresswrappers.get_teams(teams, api))
 
         push_tuple_iter = _create_push_tuples(
-            fetched_teams, pathed_template_repos, api
+            fetched_teams, template_repos, api
         )
 
         push_tuple_iter_progress = plug.cli.io.progress_bar(
@@ -336,24 +345,40 @@ def migrate_repos(
         api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
-    master_names = [util.repo_name(url) for url in master_repo_urls]
-
-    repos = [
-        api.create_repo(name=template_name, description="", private=True)
-        for template_name in master_names
-    ]
-
+    template_names = [util.repo_name(url) for url in master_repo_urls]
+    create_repo_it = plug.cli.io.progress_bar(
+        (
+            _create_or_fetch_repo(name, description="", private=True, api=api)
+            for name in template_names
+        ),
+        desc="Creating remote repos",
+        total=len(master_repo_urls),
+    )
     with tempfile.TemporaryDirectory() as tmpdir:
-        _clone_all(master_repo_urls, api=api, cwd=tmpdir)
+        workdir = pathlib.Path(tmpdir)
+        template_repos = [
+            plug.TemplateRepo(
+                name=repo.name, url=repo.url, _path=workdir / repo.name
+            )
+            for repo in create_repo_it
+        ]
+
+        _clone_all(
+            [
+                api.insert_auth(url) if url.startswith("https") else url
+                for url in master_repo_urls
+            ],
+            cwd=workdir,
+        )
 
         git.push(
             [
                 git.Push(
-                    local_path=os.path.join(tmpdir, repo.name),
-                    repo_url=api.insert_auth(repo.url),
+                    local_path=template_repo.path,
+                    repo_url=api.insert_auth(template_repo.url),
                     branch="master",
                 )
-                for repo in repos
+                for template_repo in template_repos
             ]
         )
 
