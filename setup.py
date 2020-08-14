@@ -24,14 +24,15 @@ INSTALL_DIR = pathlib.Path('{install_dir}')
 
 
 test_requirements = [
-    "pytest>=4.0.0",
+    "bandit",
+    "black",
+    "codecov",
+    "flake8",
+    "mypy",
+    "pylint",
     "pytest-cov>=2.6.1",
     "pytest-mock",
-    "codecov",
-    "bandit",
-    "flake8",
-    "black",
-    "pylint",
+    "pytest>=4.0.0",
 ]
 docs_requirements = [
     "sphinx>=1.8.2",
