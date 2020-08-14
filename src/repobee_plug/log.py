@@ -2,7 +2,7 @@
 
 import logging
 
-import daiquiri
+import daiquiri  # type: ignore
 
 _LOG = daiquiri.getLogger(__file__)
 

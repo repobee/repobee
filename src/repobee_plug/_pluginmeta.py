@@ -1,7 +1,7 @@
 import argparse
 import itertools
 
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Iterator
 
 from repobee_plug import _exceptions
 from repobee_plug import _corehooks
@@ -122,7 +122,7 @@ def _get_configurable_arguments(attrdict: dict) -> List[str]:
     return [
         arg_name
         for arg_name, arg in cli_args
-        if hasattr(arg, "configurable") and arg.configurable
+        if hasattr(arg, "configurable") and getattr(arg, "configurable")
     ]
 
 
@@ -141,7 +141,7 @@ def _extract_cli_options(
 
 def _extract_flat_cli_options(
     attrdict,
-) -> List[Tuple[str, Union[Option, MutuallyExclusiveGroup]]]:
+) -> Iterator[Tuple[str, Union[Option, MutuallyExclusiveGroup]]]:
     """Like _extract_cli_options, but flattens nested options such as mutex
     groups.
     """
@@ -210,7 +210,7 @@ def _add_option(
     opt: Union[Option, MutuallyExclusiveGroup],
     configured_value: str,
     show_all_opts: bool,
-    parser: argparse.ArgumentParser,
+    parser: Union[argparse.ArgumentParser, argparse._MutuallyExclusiveGroup],
 ) -> None:
     """Add an option to the parser based on the cli option."""
     if isinstance(opt, MutuallyExclusiveGroup):
@@ -229,7 +229,7 @@ def _add_option(
 
     assert isinstance(opt, Option)
     args = []
-    kwargs = opt.argparse_kwargs
+    kwargs = dict(opt.argparse_kwargs or {})
 
     if opt.converter:
         kwargs["type"] = opt.converter
