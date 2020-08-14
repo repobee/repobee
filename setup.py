@@ -91,6 +91,7 @@ setup(
         console_scripts="repobee = repobee:main",
         pytest11=["name_of_plugin = repobee_testhelpers.fixtures"],
     ),
+    package_data={"repobee_plug": ["py.typed"]},
     include_package_data=True,
     zip_safe=False,
     python_requires=">=3.6",
