@@ -423,7 +423,7 @@ def _execute_tasks(
         for repo in repo_copies:
             plug.log.info("Processing {}".format(repo.path.name))
 
-            for result in hook_function(path=repo.path, api=api):
+            for result in hook_function(repo=repo, api=api):
                 if result:
                     results[repo.path.name].append(result)
     return results

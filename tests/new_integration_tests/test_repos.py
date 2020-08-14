@@ -112,6 +112,27 @@ class TestSetup:
             STUDENT_TEAMS, TEMPLATE_REPO_NAMES, funcs.get_repos(platform_url)
         )
 
+    def test_pre_setup_hook(self, platform_url):
+        """Test that the pre-setup hook is run for each template repo."""
+        expected_repo_names = set(TEMPLATE_REPO_NAMES)
+
+        class PreSetupPlugin(plug.Plugin):
+            def pre_setup(
+                self, repo: plug.TemplateRepo, api: plug.PlatformAPI
+            ):
+                expected_repo_names.remove(repo.name)
+
+                assert isinstance(api, localapi.LocalAPI)
+                assert repo.path.exists
+
+        funcs.run_repobee(
+            f"repos setup --mn {TEMPLATE_REPOS_ARG} "
+            f"--base-url {platform_url}",
+            plugins=[PreSetupPlugin],
+        )
+
+        assert not expected_repo_names
+
 
 class TestClone:
     """Tests for the ``repos clone`` command."""
@@ -138,3 +159,31 @@ class TestClone:
             assert_cloned_student_repos_match_templates(
                 STUDENT_TEAMS, TEMPLATE_REPO_NAMES, workdir
             )
+
+    def test_post_clone_hook_invoked_on_all_student_repos(
+        self, platform_url, with_student_repos
+    ):
+        """Test that the post_clone hook is called with the expected
+        repositories.
+        """
+        expected_repo_names = set(
+            plug.generate_repo_names(STUDENT_TEAMS, TEMPLATE_REPO_NAMES)
+        )
+
+        class PostClonePlugin(plug.Plugin):
+            def post_clone(
+                self, repo: plug.StudentRepo, api: plug.PlatformAPI
+            ):
+                # remove repo names one by one, in the end none should remain
+                expected_repo_names.remove(repo.name)
+
+                assert isinstance(api, localapi.LocalAPI)
+                assert repo.path.is_dir()
+
+        funcs.run_repobee(
+            f"repos clone --mn {TEMPLATE_REPOS_ARG} "
+            f"--base-url {platform_url}",
+            plugins=[PostClonePlugin],
+        )
+
+        assert not expected_repo_names
