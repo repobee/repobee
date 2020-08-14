@@ -12,7 +12,7 @@ from repobee_plug import cli
 from repobee_plug.cli.args import Option, MutuallyExclusiveGroup
 
 _HOOK_METHODS = {
-    key: value  # type: ignore
+    key: value
     for key, value in itertools.chain(
         _exthooks.CloneHook.__dict__.items(),
         _exthooks.SetupHook.__dict__.items(),
