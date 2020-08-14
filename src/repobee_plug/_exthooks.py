@@ -10,15 +10,16 @@ cloning repos.
 .. moduleauthor:: Simon Larsén
 """
 
-import pathlib
 import argparse
 import configparser
-from typing import Union, Optional
+from typing import Optional
 
 from repobee_plug._apimeta import PlatformAPI
 from repobee_plug._containers import hookspec
 from repobee_plug._containers import Result, ConfigurableArguments
 from repobee_plug._deprecation import deprecate
+
+from repobee_plug.localreps import StudentRepo, TemplateRepo
 
 
 class CloneHook:
@@ -26,13 +27,15 @@ class CloneHook:
 
     @hookspec
     def post_clone(
-        self, path: pathlib.Path, api: PlatformAPI
+        self, repo: StudentRepo, api: PlatformAPI
     ) -> Optional[Result]:
         """Operate on a student repository after it has been cloned.
 
         Args:
-            path: Path to the student repository.
-            api: An instance of :py:class:`repobee.github_api.GitHubAPI`.
+            repo: A local representation of a student repo. The ``path``
+                attribute is always set to a valid directory containing the
+                repo.
+            api: An instance of the platform API.
         Returns:
             Optionally returns a Result for reporting the outcome of the hook.
             May also return None, in which case no reporting will be performed
@@ -95,7 +98,7 @@ class SetupHook:
 
     @hookspec
     def pre_setup(
-        self, path: Union[str, pathlib.Path], api: PlatformAPI
+        self, repo: TemplateRepo, api: PlatformAPI
     ) -> Optional[Result]:
         """Operate on a template repository before it is distributed to
         students.
@@ -108,8 +111,8 @@ class SetupHook:
             planned as it is technically difficult to implement.
 
         Args:
-            path: Path to the template repo.
-            api: An instance of :py:class:`repobee.github_api.GitHubAPI`.
+            repo: Representation of a local template repo.
+            api: An instance of the platform API.
         Returns:
             Optionally returns a Result for reporting the outcome of the hook.
             May also return None, in which case no reporting will be performed

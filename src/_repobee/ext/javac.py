@@ -47,12 +47,12 @@ class JavacCloneHook(plug.Plugin, plug.cli.CommandExtension):
     )
 
     def post_clone(
-        self, path: pathlib.Path, api: plug.PlatformAPI
+        self, repo: plug.StudentRepo, api: plug.PlatformAPI
     ) -> plug.Result:
         """Run ``javac`` on all .java files in the repo.
 
         Args:
-            path: Path to the repo.
+            repo: A student repo.
             api: A platform API class instance.
         Returns:
             a Result specifying the outcome.
@@ -60,7 +60,7 @@ class JavacCloneHook(plug.Plugin, plug.cli.CommandExtension):
         ignore = self.javac_ignore or []
         java_files = [
             str(file)
-            for file in util.find_files_by_extension(path, ".java")
+            for file in util.find_files_by_extension(repo.path, ".java")
             if file.name not in ignore
         ]
 

@@ -28,7 +28,7 @@ SECTION = "pylint"
 
 
 @plug.repobee_hook
-def post_clone(path: pathlib.Path, api: plug.PlatformAPI):
+def post_clone(repo: plug.StudentRepo, api: plug.PlatformAPI):
     """Run pylint on all Python files in a repo.
 
     Args:
@@ -37,7 +37,7 @@ def post_clone(path: pathlib.Path, api: plug.PlatformAPI):
     Returns:
         a plug.Result specifying the outcome.
     """
-    path = pathlib.Path(path)
+    path = repo.path
     python_files = list(path.rglob("*.py"))
 
     if not python_files:

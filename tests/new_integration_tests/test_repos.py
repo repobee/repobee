@@ -36,10 +36,11 @@ def assert_cloned_student_repos_match_templates(
     workdir: pathlib.Path,
 ):
     repos_dict = {
-        repo_name: workdir / repo_name
-        for repo_name in plug.generate_repo_names(
-            student_teams, template_repo_names
-        )
+        plug.generate_repo_name(team.name, template_repo_name): workdir
+        / team.name
+        / plug.generate_repo_name(team.name, template_repo_name)
+        for team in student_teams
+        for template_repo_name in template_repo_names
     }
     _assert_repos_match_templates(
         student_teams, template_repo_names, repos_dict
