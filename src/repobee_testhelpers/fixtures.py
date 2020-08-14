@@ -5,9 +5,9 @@ import pytest
 import shutil
 import tempfile
 
-from repobee_plug.testhelpers import funcs
+from repobee_testhelpers import funcs
 
-from repobee_plug.testhelpers.const import (
+from repobee_testhelpers.const import (
     STUDENTS_FILE,
     STUDENT_TEAMS,
     TARGET_ORG_NAME,

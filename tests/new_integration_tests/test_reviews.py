@@ -3,8 +3,8 @@ import re
 
 import repobee_plug as plug
 
-from repobee_plug.testhelpers import funcs
-from repobee_plug.testhelpers import const
+from repobee_testhelpers import funcs
+from repobee_testhelpers import const
 
 
 class TestAssign:

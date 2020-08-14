@@ -55,7 +55,7 @@ required = [
 ]
 
 testhelper_resources = (
-    pathlib.Path(__file__).parent / "src/repobee_plug/testhelpers/resources"
+    pathlib.Path(__file__).parent / "src/repobee_testhelpers/resources"
 )
 
 setup(
@@ -86,7 +86,7 @@ setup(
     extras_require=dict(TEST=test_requirements, DOCS=docs_requirements),
     entry_points=dict(
         console_scripts="repobee = repobee:main",
-        pytest11=["name_of_plugin = repobee_plug.testhelpers.fixtures"],
+        pytest11=["name_of_plugin = repobee_testhelpers.fixtures"],
     ),
     include_package_data=True,
     zip_safe=False,

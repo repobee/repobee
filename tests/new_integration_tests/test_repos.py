@@ -5,11 +5,11 @@ import tempfile
 from typing import List, Mapping
 
 import repobee_plug as plug
-from repobee_plug.testhelpers import localapi
-from repobee_plug.testhelpers import funcs
+from repobee_testhelpers import localapi
+from repobee_testhelpers import funcs
 
 
-from repobee_plug.testhelpers.const import (
+from repobee_testhelpers.const import (
     STUDENT_TEAMS,
     TEMPLATE_REPO_NAMES,
     TEMPLATE_REPOS_ARG,
