@@ -4,7 +4,7 @@ import pathlib
 
 from typing import Optional, List
 
-from repobee_plug import _exceptions
+from repobee_plug import exceptions
 
 MAX_NAME_LENGTH = 100
 
@@ -71,7 +71,7 @@ class _RepoPathMixin:
     @property
     def path(self) -> pathlib.Path:
         if not self._path:
-            raise _exceptions.PlugError("path not set")
+            raise exceptions.PlugError("path not set")
         return self._path
 
 

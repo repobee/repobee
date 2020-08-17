@@ -9,7 +9,7 @@ import enum
 import itertools
 from typing import List, Iterable, Optional, Any
 
-from repobee_plug import _exceptions
+from repobee_plug import exceptions
 
 
 class APIObject:
@@ -456,7 +456,7 @@ def check_init_params(reference_params, compare_params):
     """
     extra = set(compare_params) - set(reference_params)
     if extra:
-        raise _exceptions.APIImplementationError(
+        raise exceptions.APIImplementationError(
             "unexpected arguments to __init__: {}".format(extra)
         )
 
@@ -476,7 +476,7 @@ def check_parameters(reference, compare):
 
     for ref, cmp in itertools.zip_longest(reference_params, compare_params):
         if ref != cmp:
-            raise _exceptions.APIImplementationError(
+            raise exceptions.APIImplementationError(
                 "{}: expected parameter '{}', found '{}'".format(
                     reference.__name__, ref, cmp
                 )
@@ -495,7 +495,7 @@ class APIMeta(type):
             api_methods.keys()
         )
         if non_api_methods:
-            raise _exceptions.APIImplementationError(
+            raise exceptions.APIImplementationError(
                 "non-API methods may not be public: {}".format(non_api_methods)
             )
         for method_name, method in api_methods.items():

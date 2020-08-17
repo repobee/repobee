@@ -1,6 +1,6 @@
 import pytest
 from repobee_plug import platform
-from repobee_plug import _exceptions
+from repobee_plug import exceptions
 
 import collections
 import datetime
@@ -42,7 +42,7 @@ class TestAPI:
         different argument should raise.
         """
 
-        with pytest.raises(_exceptions.APIImplementationError):
+        with pytest.raises(exceptions.APIImplementationError):
 
             class API(platform.PlatformAPI):
                 def get_teams(a):
@@ -65,7 +65,7 @@ class TestAPI:
         in _APISpec.__init__.
         """
 
-        with pytest.raises(_exceptions.APIImplementationError) as exc_info:
+        with pytest.raises(exceptions.APIImplementationError) as exc_info:
 
             class API(platform.PlatformAPI):
                 def __init__(self, base_url, token, org_name, user, other):
@@ -91,7 +91,7 @@ class TestAPI:
         assert API(None, None, None, None).get_teams() == expected
 
     def test_raises_when_method_has_incorrect_default_arg(self):
-        with pytest.raises(_exceptions.APIImplementationError):
+        with pytest.raises(exceptions.APIImplementationError):
 
             class API(platform.PlatformAPI):
                 def __init__(self, base_url, token, org_name, user):

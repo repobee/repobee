@@ -5,7 +5,7 @@ import os
 import hashlib
 from typing import List, Union
 
-from repobee_plug import _exceptions
+from repobee_plug import exceptions
 from repobee_plug.name import generate_repo_name
 
 from repobee_plug.localreps import StudentTeam
@@ -24,9 +24,9 @@ def parse_students_file(path: pathlib.Path) -> List[StudentTeam]:
         :py:class:`_exceptions.FileError`
     """
     if not path.is_file():
-        raise _exceptions.FileError("'{!s}' is not a file".format(path))
+        raise exceptions.FileError("'{!s}' is not a file".format(path))
     if not path.stat().st_size:
-        raise _exceptions.FileError("'{!s}' is empty".format(path))
+        raise exceptions.FileError("'{!s}' is empty".format(path))
     return [
         StudentTeam(members=[s for s in group.strip().split()])
         for group in path.read_text(encoding=sys.getdefaultencoding()).split(

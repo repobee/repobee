@@ -51,7 +51,7 @@ from repobee_plug.platform import (
 )
 
 # Exceptions
-from repobee_plug._exceptions import (
+from repobee_plug.exceptions import (
     HookNameError,
     PlugError,
     PlatformError,

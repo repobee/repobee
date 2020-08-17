@@ -6,14 +6,14 @@ import pytest
 import repobee_plug as plug
 
 from repobee_plug import _pluginmeta
-from repobee_plug import _exceptions
+from repobee_plug import exceptions
 
 import repobee
 
 
 class TestPluginInheritance:
     def test_raises_on_non_hook_public_method(self):
-        with pytest.raises(_exceptions.HookNameError) as exc_info:
+        with pytest.raises(exceptions.HookNameError) as exc_info:
 
             class Derived(_pluginmeta.Plugin):
                 """Has the hook method config_hook and a non-hook method called
