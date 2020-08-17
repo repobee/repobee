@@ -47,7 +47,7 @@ from repobee_plug.platform import (
     IssueState,
     Repo,
     PlatformAPI,
-    APISpec,
+    _APISpec,
 )
 
 # Exceptions
@@ -97,7 +97,7 @@ __all__ = [
     "Issue",
     "IssueState",
     "PlatformAPI",
-    "APISpec",
+    "_APISpec",
     # Exceptions
     "HookNameError",
     "PlugError",

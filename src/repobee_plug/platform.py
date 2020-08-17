@@ -1,7 +1,7 @@
 """Metaclass for API implementations.
 
 :py:class:`APIMeta` defines the behavior required of platform API
-implementations, based on the methods in :py:class:`APISpec`. With platform
+implementations, based on the methods in :py:class:`_APISpec`. With platform
 API, we mean for example the GitHub REST API, and the GitLab REST API. The
 point is to introduce another layer of indirection such that higher levels of
 RepoBee can use different platforms in a platform-independent way.
@@ -10,7 +10,7 @@ metaclass directly.
 
 Any class implementing a platform API should derive from :py:class:`API`. It
 will enforce that all public methods are one of the method defined py
-:py:class:`APISpec`, and give a default implementation (that just raises
+:py:class:`_APISpec`, and give a default implementation (that just raises
 NotImplementedError) for any unimplemented API methods.
 
 .. module:: apimeta
@@ -133,7 +133,7 @@ class Repo(APIObject):
     implementation: Any = dataclasses.field(compare=False, repr=False)
 
 
-class APISpec:
+class _APISpec:
     """Wrapper class for API method stubs.
 
     .. important::
@@ -504,7 +504,7 @@ class APIMeta(type):
     """
 
     def __new__(mcs, name, bases, attrdict):
-        api_methods = methods(APISpec.__dict__)
+        api_methods = methods(_APISpec.__dict__)
         implemented_methods = methods(attrdict)
         non_api_methods = set(implemented_methods.keys()) - set(
             api_methods.keys()
@@ -519,16 +519,16 @@ class APIMeta(type):
         return super().__new__(mcs, name, bases, attrdict)
 
 
-class PlatformAPI(APISpec, metaclass=APIMeta):
+class PlatformAPI(_APISpec, metaclass=APIMeta):
     """API base class that all API implementations should inherit from. This
     class functions similarly to an abstract base class, but with a few key
     distinctions that affect the inheriting class.
 
     1. Public methods *must* override one of the public methods of
-       :py:class:`APISpec`. If an inheriting class defines any other public
+       :py:class:`_APISpec`. If an inheriting class defines any other public
        method, an :py:class:`~repobee_plug.PlatformError` is raised when the
        class is defined.
-    2. All public methods in :py:class:`APISpec` have a default implementation
+    2. All public methods in :py:class:`_APISpec` have a default implementation
        that simply raise a :py:class:`NotImplementedError`. There is no
        requirement to implement any of them.
     """

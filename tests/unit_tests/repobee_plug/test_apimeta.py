@@ -9,13 +9,13 @@ from typing import Optional, List
 
 
 def api_methods():
-    methods = platform.methods(platform.APISpec.__dict__)
+    methods = platform.methods(platform._APISpec.__dict__)
     assert methods, "there must be api methods"
     return methods.items()
 
 
 def api_method_ids():
-    methods = platform.methods(platform.APISpec.__dict__)
+    methods = platform.methods(platform._APISpec.__dict__)
     return list(methods.keys())
 
 
@@ -50,7 +50,7 @@ class TestAPI:
 
     def test_accepts_init_with_strict_subset_of_args(self):
         """Test that ``__init__`` can be defined with a strict subset of the
-        args in APISpec.__init__.
+        args in _APISpec.__init__.
         """
 
         class API(platform.PlatformAPI):
@@ -62,7 +62,7 @@ class TestAPI:
 
     def test_raises_when_init_has_superset_of_args(self):
         """Test that ``__init__`` cannot be defined with a superset of the args
-        in APISpec.__init__.
+        in _APISpec.__init__.
         """
 
         with pytest.raises(_exceptions.APIImplementationError) as exc_info:
