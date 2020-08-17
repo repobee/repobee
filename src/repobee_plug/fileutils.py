@@ -6,7 +6,7 @@ import hashlib
 from typing import List, Union
 
 from repobee_plug import _exceptions
-from repobee_plug._name import generate_repo_name
+from repobee_plug.name import generate_repo_name
 
 from repobee_plug.localreps import StudentTeam
 

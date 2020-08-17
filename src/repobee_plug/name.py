@@ -2,8 +2,6 @@
 
 .. module:: name
     :synopsis: Utility functions relating to RepoBee's naming conventions.
-
-.. moduleauthor:: Simon Larsén
 """
 from typing import Iterable
 

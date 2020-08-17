@@ -32,7 +32,7 @@ from repobee_plug._serialize import (
     json_to_result_mapping,
     result_mapping_to_json,
 )
-from repobee_plug._name import (
+from repobee_plug.name import (
     generate_repo_name,
     generate_repo_names,
     generate_review_team_name,
