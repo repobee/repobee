@@ -41,6 +41,12 @@ name
 .. automodule:: repobee_plug.name
     :members:
 
+cli
+===
+
+.. automodule:: repobee_plug.cli
+    :members:
+
 _corehooks
 ==========
 
