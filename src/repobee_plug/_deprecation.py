@@ -2,8 +2,6 @@
 
 .. module:: _deprecation
     :synopsis: Module with functions for dealing with deprecation.
-
-.. moduleauthor:: Simon Larsén
 """
 from typing import Optional, Mapping, Callable, Any, TypeVar
 from repobee_plug import _containers

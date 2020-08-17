@@ -7,8 +7,6 @@ to allow for this dynamic override.
 
 .. module:: corehooks
     :synopsis: Hookspecs for repobee core hooks.
-
-.. moduleauthor:: Simon Larsén
 """
 
 from typing import List, Tuple

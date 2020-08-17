@@ -2,8 +2,6 @@
 
 .. module:: serialize
     :synopsis: JSON serialization/deserialization functions.
-
-.. moduleauthor:: Simon Larsén
 """
 import json
 from typing import Mapping, List

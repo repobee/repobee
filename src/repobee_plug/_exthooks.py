@@ -6,8 +6,6 @@ cloning repos.
 
 .. module:: exthooks
     :synopsis: Hookspecs for repobee extension hooks.
-
-.. moduleauthor:: Simon Larsén
 """
 
 import argparse
