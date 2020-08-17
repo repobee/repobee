@@ -484,7 +484,7 @@ def check_parameters(reference, compare):
             )
 
 
-class APIMeta(type):
+class _APIMeta(type):
     """Metaclass for an API implementation. All public methods must be a
     specified api method, but all api methods do not need to be implemented.
     """
@@ -505,7 +505,7 @@ class APIMeta(type):
         return super().__new__(mcs, name, bases, attrdict)
 
 
-class PlatformAPI(_APISpec, metaclass=APIMeta):
+class PlatformAPI(_APISpec, metaclass=_APIMeta):
     """API base class that all API implementations should inherit from. This
     class functions similarly to an abstract base class, but with a few key
     distinctions that affect the inheriting class.
