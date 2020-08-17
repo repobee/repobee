@@ -33,7 +33,7 @@ class Query(plug.Plugin, plug.cli.Command):
         required=True,
     )
 
-    def command(self, api: plug.PlatformAPI) -> None:
+    def command(self) -> None:
         hook_results_file = pathlib.Path(self.hook_results_file).resolve()
         if not hook_results_file.exists():
             raise plug.PlugError(

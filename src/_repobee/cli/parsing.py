@@ -318,10 +318,9 @@ def _process_ext_args(
 ) -> Tuple[argparse.Namespace, Optional[plug.PlatformAPI]]:
     ext_cmd = args._extension_command
     assert ext_cmd
-    settings = ext_cmd.__settings__
 
     api = None
-    if settings.requires_api:
+    if ext_cmd.__requires_api__():
         _validate_tls_url(args.base_url)
         api = _connect_to_api(
             args.base_url,
@@ -331,7 +330,7 @@ def _process_ext_args(
         )
 
     args_dict = vars(args)
-    req_parsers = settings.base_parsers or []
+    req_parsers = ext_cmd.__settings__.base_parsers or []
     bp = plug.BaseParser
     if bp.STUDENTS in req_parsers:
         args_dict["students"] = _extract_groups(args)

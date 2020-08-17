@@ -29,7 +29,7 @@ class UpgradeCommand(plug.Plugin, plug.cli.Command):
         description="Upgrade RepoBee to the latest version.",
     )
 
-    def command(self, api: None) -> None:
+    def command(self) -> None:
         """Upgrade RepoBee to the latest version."""
         cmd = [
             str(disthelpers.get_pip_path()),

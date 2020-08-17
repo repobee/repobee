@@ -19,14 +19,14 @@ into a file called ``hello.py``.
 
     class HelloWorld(plug.Plugin, plug.cli.Command):
 
-        def command(self, api):
+        def command(self):
             plug.echo("Hello, world!")
 
 This plugin will add a command called ``helloworld`` to the command line. As we
 haven't specified a category nor action, it will simply be a top-level command.
 You can call it like this:
 
-.. code-block:: raw
+.. code-block:: bash
 
     $ repobee --plug hello.py helloworld
     Hello, world!
@@ -80,10 +80,10 @@ help text and the name of the action itself.
             description="Say hello to the world. And in style.",
         )
 
-        def command(self, api):
+        def command(self):
             plug.echo("Hello, world!")
 
-.. code-block:: raw
+.. code-block:: bash
 
     $ repobee -p hello.py config -h
     usage: repobee config [-h] {show,verify,hello,wizard} ...
@@ -136,7 +136,7 @@ That looks something like this.
 			description="Say hello to the world. And in style.",
 		)
 
-		def command(self, api):
+		def command(self):
 			plug.echo("Hello, world!")
 
 The command is now accessible from ``repobee -p hello.py greetings
@@ -160,7 +160,7 @@ Options
 You can add command line options with the :py:func:`repobee_plug.cli.option`
 function. An option is a key-value pair, typically used like so:
 
-.. code-block:: raw
+.. code-block:: bash
 
     --option-name value
 
@@ -181,7 +181,7 @@ Flags
 A flag is a special case of an option that can be added with the
 :py:func:`repobee_plug.cli.flag` function. Usage looks like this.
 
-.. code-block:: raw
+.. code-block:: bash
 
     --flag-name
 
@@ -226,13 +226,13 @@ plugin.
 
         is_fantastic = plug.cli.flag(help="set if you think this is fantastic")
 
-        def command(self, api):
+        def command(self):
             world_state = "fantastic" if self.is_fantastic else "awful"
             plug.echo(f"Hello, {world_state} {self.world}, at {self.date}")
 
 Usage then looks like so:
 
-.. code-block:: raw
+.. code-block:: bash
 
     $ repobee -p hello.py greetings hello --help
     usage: repobee greetings hello [-h] [--tb] [--date DATE] [--is-fantastic] world
@@ -260,7 +260,7 @@ a CLI argument is ``str``, but it can be converted to any type using a
 that the converter also doubles as a validator. For example, where I to enter
 a date on the wrong format, it would look something like this:
 
-.. code-block:: raw
+.. code-block:: bash
 
     $ repobee -p hello.py greetings hello mundo --is-fantastic --date 2020-08
     usage: repobee greetings hello [-h] [--tb] [--date DATE] [--is-fantastic] world
@@ -313,7 +313,7 @@ option configurable.
 
         is_fantastic = plug.cli.flag(help="set if you think this is fantastic")
 
-        def command(self, api):
+        def command(self):
             world_state = "fantastic" if self.is_fantastic else "awful"
             plug.echo(f"Hello, {world_state} {self.world}, at {self.date}")
 
@@ -328,7 +328,7 @@ that **the plugin must be active** in order to be configurable, so don't forget
 ``-p hello.py``. Then, simply select the correct section (``hello``) and
 configure the value.
 
-.. code-block:: raw
+.. code-block:: bash
 
     $ repobee -p hello.py config wizard
     Select a section to configure:
@@ -357,6 +357,51 @@ There are two things to be aware of with configured values.
 And that's more or less all there is to it for basic command plugins. See the
 :py:mod:`repobee_plug.cli` reference for a complete documentation of the ``cli``
 package.
+
+Making use of the platform API
+------------------------------
+
+RepoBee provides an abstraction layer against the hosting platform (currently
+GitHub or GitLab) in the form of the :py:class:`~repobee_plug.PlatformAPI`.
+A plugin command can make use of it by adding an ``api`` argument to the
+``command`` function. Here is a simple example of a plugin command that
+creates a single repository for a given team.
+
+
+.. code-block:: python
+    :caption: single.py
+
+    class CreateSingle(plug.Plugin, plug.cli.Command):
+        __settings__ = plug.cli.command_settings(
+            category=plug.cli.CoreCommand.repos, action="create-single"
+        )
+        team_name = plug.cli.option()
+        repo_name = plug.cli.option()
+
+        def command(self, api: plug.PlatformAPI):
+            team = api.get_teams(team_names=[self.team_name])[0]
+
+            try:
+                repo = api.create_repo(
+                    self.repo_name,
+                    description=description,
+                    private=private,
+                    team=team,
+                )
+                plug.echo(f"Created {repo.name} for {team.name}")
+            except plug.PlatformError:
+                # this typically happens if the repo already exists
+                plug.log.error(f"failed to create {self.team_name}/{self.repo_name}")
+
+.. code-block:: bash
+
+    $ repobee -p single.py repos create-single --team-name slarse --repo-name epic-repo
+    Created epic-repo for slarse
+    $ repobee -p single.py repos create-single --team-name slarse --repo-name epic-repo
+    [ERROR] failed to create slarse/epic-repo
+
+For a full listing of what can be done with the platform API, refer to the
+documentation for :py:class:`repobee_plug.PlatformAPI`.
 
 Hooks and command extensions
 ============================

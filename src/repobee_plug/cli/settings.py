@@ -14,7 +14,6 @@ CommandSettings = collections.namedtuple(
         "category",
         "help",
         "description",
-        "requires_api",
         "base_parsers",
         "config_section_name",
     ],
@@ -31,7 +30,6 @@ def command_settings(
     category: Optional[Category] = None,
     help: str = "",
     description: str = "",
-    requires_api: bool = False,
     base_parsers: Optional[List[_containers.BaseParser]] = None,
     config_section_name: Optional[str] = None,
 ) -> CommandSettings:
@@ -50,7 +48,7 @@ def command_settings(
                 category=plug.cli.CoreCommand.config,
             )
 
-            def command(self, args, api):
+            def command(self):
                 print("Hello, world!")
 
     This can then be called with:
@@ -72,8 +70,6 @@ def command_settings(
             help section of the command's category.
         description: A help section for the command. This appears when
             listing the help section for the command itself.
-        requires_api: If True, a platform API will be insantiated and
-            passed to the command function.
         base_parsers: A list of base parsers to add to the command.
         config_section_name: The name of the configuration section the
             command should look for configurable options in. Defaults
@@ -94,7 +90,6 @@ def command_settings(
         category=category,
         help=help,
         description=description,
-        requires_api=requires_api,
         base_parsers=base_parsers,
         config_section_name=config_section_name,
     )

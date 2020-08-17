@@ -42,7 +42,7 @@ class ListPluginsCommand(plug.Plugin, plug.cli.Command):
 
     plugin_name = plug.cli.option(help="A plugin to list detailed info for.")
 
-    def command(self, api: None) -> None:
+    def command(self) -> None:
         """List available plugins."""
         plugins = disthelpers.get_plugins_json()
         plugins.update(disthelpers.get_builtin_plugins())
@@ -68,7 +68,7 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
         converter=pathlib.Path, help="path to a single-file plugin to activate"
     )
 
-    def command(self, api: None) -> None:
+    def command(self) -> None:
         """Install a plugin."""
         plugins = disthelpers.get_plugins_json()
         installed_plugins = disthelpers.get_installed_plugins()
@@ -141,7 +141,7 @@ class UninstallPluginCommand(plug.Plugin, plug.cli.Command):
         description="Uninstall a plugin.",
     )
 
-    def command(self, api: None) -> None:
+    def command(self) -> None:
         """Uninstall a plugin."""
         installed_plugins = {
             name: attrs
@@ -204,7 +204,7 @@ class ActivatePluginCommand(plug.Plugin, plug.cli.Command):
         description="Activate a plugin.",
     )
 
-    def command(self, api: None) -> None:
+    def command(self) -> None:
         """Activate a plugin."""
         installed_plugins = disthelpers.get_installed_plugins()
         active = disthelpers.get_active_plugins()
