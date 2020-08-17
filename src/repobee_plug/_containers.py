@@ -11,7 +11,7 @@ import enum
 
 from typing import Mapping, Any, Optional, List
 
-import pluggy
+import pluggy  # type: ignore
 
 from repobee_plug import log
 

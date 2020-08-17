@@ -3,7 +3,7 @@
 from typing import Iterable
 from typing import TypeVar
 
-import tqdm
+import tqdm  # type: ignore
 
 from repobee_plug import log
 
