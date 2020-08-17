@@ -19,7 +19,7 @@ into a file called ``hello.py``.
 
     class HelloWorld(plug.Plugin, plug.cli.Command):
 
-        def command(self, api):
+        def command(self):
             plug.echo("Hello, world!")
 
 This plugin will add a command called ``helloworld`` to the command line. As we
@@ -80,7 +80,7 @@ help text and the name of the action itself.
             description="Say hello to the world. And in style.",
         )
 
-        def command(self, api):
+        def command(self):
             plug.echo("Hello, world!")
 
 .. code-block:: raw
@@ -136,7 +136,7 @@ That looks something like this.
 			description="Say hello to the world. And in style.",
 		)
 
-		def command(self, api):
+		def command(self):
 			plug.echo("Hello, world!")
 
 The command is now accessible from ``repobee -p hello.py greetings
@@ -226,7 +226,7 @@ plugin.
 
         is_fantastic = plug.cli.flag(help="set if you think this is fantastic")
 
-        def command(self, api):
+        def command(self):
             world_state = "fantastic" if self.is_fantastic else "awful"
             plug.echo(f"Hello, {world_state} {self.world}, at {self.date}")
 
@@ -313,7 +313,7 @@ option configurable.
 
         is_fantastic = plug.cli.flag(help="set if you think this is fantastic")
 
-        def command(self, api):
+        def command(self):
             world_state = "fantastic" if self.is_fantastic else "awful"
             plug.echo(f"Hello, {world_state} {self.world}, at {self.date}")
 
