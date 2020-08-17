@@ -27,9 +27,7 @@ class Command:
 
     .. code-block:: python
 
-        def command(
-            self, api: plug.API
-        ) -> Optional[plug.Result]:
+        def command(self) -> Optional[plug.Result]:
             pass
 
     Note that the type hints are not required, so the callback can be defined
@@ -37,7 +35,7 @@ class Command:
 
     .. code-block:: python
 
-        def command(self, args, api):
+        def command(self):
             pass
 
     Example usage:
@@ -56,7 +54,7 @@ class Command:
                 converter=int, help="your age", default=30
             )
 
-            def command(self, api):
+            def command(self):
                 print(f"Hello, my name is {self.name} and I am {self.age}")
 
     Note that the file is called ``command.py``. We can run this command with
@@ -66,6 +64,16 @@ class Command:
 
         $ repobee -p command.py greeting -n Alice
         Hello, my name is Alice and I am 30
+
+    If your command requires the platform api, simply add an argument called
+    ``api`` to the ``command`` function.
+
+    .. code-block:: python
+        :caption: Command function that requires the platform API
+
+        def command(self, api: plug.PlatformAPI):
+            pass
+
     """
 
     args: argparse.Namespace
