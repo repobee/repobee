@@ -20,15 +20,15 @@ class CommandExtension:
 
 class Command:
     """Mixin class for use with the Plugin class. Explicitly marks a class as
-    an extension command.
+    a plugin command.
 
-    An extension command must have an callback defined in the class on the
+    A plugin command must have a command function defined in the class on the
     following form:
 
     .. code-block:: python
 
         def command(
-            self, args: argparse.Namespace, api: plug.API
+            self, api: plug.API
         ) -> Optional[plug.Result]:
             pass
 
@@ -39,10 +39,6 @@ class Command:
 
         def command(self, args, api):
             pass
-
-    Declaring static members of type :py:class:`Option` will add command line
-    options to the command, and these are then parsed and passed to the
-    callback in the ``args`` object.
 
     Example usage:
 
@@ -60,8 +56,8 @@ class Command:
                 converter=int, help="your age", default=30
             )
 
-            def command(self, args, api):
-                print(f"Hello, my name is {args.name} and I am {args.age}")
+            def command(self, api):
+                print(f"Hello, my name is {self.name} and I am {self.age}")
 
     Note that the file is called ``command.py``. We can run this command with
     RepoBee like so:

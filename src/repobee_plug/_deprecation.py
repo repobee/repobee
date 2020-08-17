@@ -2,12 +2,10 @@
 
 .. module:: _deprecation
     :synopsis: Module with functions for dealing with deprecation.
-
-.. moduleauthor:: Simon Larsén
 """
 from typing import Optional, Mapping, Callable, Any, TypeVar
 from repobee_plug import _containers
-from repobee_plug import _exceptions
+from repobee_plug import exceptions
 
 AnyFunction = Callable[..., Any]
 
@@ -35,7 +33,7 @@ def deprecate(
 
     def _inner(func):
         if "repobee_plug_spec" not in dir(func):
-            raise _exceptions.PlugError(
+            raise exceptions.PlugError(
                 "can't deprecate non-hook function", func=func
             )
         deprs = _Deprecations()

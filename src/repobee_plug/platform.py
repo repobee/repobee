@@ -1,24 +1,8 @@
 # mypy: ignore-errors
+"""Platform API specifications and wrappers.
 
-"""Metaclass for API implementations.
-
-:py:class:`APIMeta` defines the behavior required of platform API
-implementations, based on the methods in :py:class:`APISpec`. With platform
-API, we mean for example the GitHub REST API, and the GitLab REST API. The
-point is to introduce another layer of indirection such that higher levels of
-RepoBee can use different platforms in a platform-independent way.
-:py:class:`API` is a convenience class so consumers don't have to use the
-metaclass directly.
-
-Any class implementing a platform API should derive from :py:class:`API`. It
-will enforce that all public methods are one of the method defined py
-:py:class:`APISpec`, and give a default implementation (that just raises
-NotImplementedError) for any unimplemented API methods.
-
-.. module:: apimeta
-    :synopsis: Metaclass for API implementations.
-
-.. moduleauthor:: Simon Larsén
+.. module:: platform
+    :synopsis: Platform API specifications and wrappers.
 """
 import dataclasses
 import inspect
@@ -26,7 +10,7 @@ import enum
 import itertools
 from typing import List, Iterable, Optional, Any
 
-from repobee_plug import _exceptions
+from repobee_plug import exceptions
 
 
 class APIObject:
@@ -135,7 +119,7 @@ class Repo(APIObject):
     implementation: Any = dataclasses.field(compare=False, repr=False)
 
 
-class APISpec:
+class _APISpec:
     """Wrapper class for API method stubs.
 
     .. important::
@@ -165,7 +149,7 @@ class APISpec:
         Returns:
             The created team.
         Raises:
-            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
                 communicating with the platform, in particular if the team
                 already exists.
         """
@@ -177,7 +161,7 @@ class APISpec:
         Args:
             team: The team to delete.
         Raises:
-            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
                 communicating with the platform.
         """
         _not_implemented()
@@ -194,7 +178,7 @@ class APISpec:
         Returns:
             Teams matching the filters.
         Raises:
-            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
                 communicating with the platform.
         """
         _not_implemented()
@@ -212,7 +196,7 @@ class APISpec:
             permission: The permission granted to the team's members with
                 respect to accessing the repository.
         Raises:
-            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
                 communicating with the platform.
         """
         _not_implemented()
@@ -231,7 +215,7 @@ class APISpec:
                 Usernames that don't exist are ignored.
             permission: The permission to add users with.
         Raises:
-            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
                 communicating with the platform.
         """
         _not_implemented()
@@ -258,7 +242,7 @@ class APISpec:
         Returns:
             The created (or fetched) repository.
         Raises:
-            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
                 communicating with the platform.
         """
         _not_implemented()
@@ -275,7 +259,7 @@ class APISpec:
         Returns:
             Repositories matching the filters.
         Raises:
-            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
                 communicating with the platform.
         """
         _not_implemented()
@@ -290,7 +274,7 @@ class APISpec:
         Returns:
             The fetched repository.
         Raises:
-            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
                 communicating with the platform, in particular if the repo
                 or team does not exist.
         """
@@ -323,7 +307,7 @@ class APISpec:
         Returns:
             The created issue.
         Raises:
-            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
                 communicating with the platform.
         """
         _not_implemented()
@@ -334,7 +318,7 @@ class APISpec:
         Args:
             issue: The issue to close.
         Raises:
-            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
                 communicating with the platform.
         """
         _not_implemented()
@@ -347,7 +331,7 @@ class APISpec:
         Returns:
             The repos related to the provided team.
         Raises:
-            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
                 communicating with the platform.
         """
         _not_implemented()
@@ -360,7 +344,7 @@ class APISpec:
         Returns:
             The issues related to the provided repo.
         Raises:
-            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
                 communicating with the platform.
         """
         _not_implemented()
@@ -473,7 +457,7 @@ def check_init_params(reference_params, compare_params):
     """
     extra = set(compare_params) - set(reference_params)
     if extra:
-        raise _exceptions.APIImplementationError(
+        raise exceptions.APIImplementationError(
             "unexpected arguments to __init__: {}".format(extra)
         )
 
@@ -493,26 +477,26 @@ def check_parameters(reference, compare):
 
     for ref, cmp in itertools.zip_longest(reference_params, compare_params):
         if ref != cmp:
-            raise _exceptions.APIImplementationError(
+            raise exceptions.APIImplementationError(
                 "{}: expected parameter '{}', found '{}'".format(
                     reference.__name__, ref, cmp
                 )
             )
 
 
-class APIMeta(type):
+class _APIMeta(type):
     """Metaclass for an API implementation. All public methods must be a
     specified api method, but all api methods do not need to be implemented.
     """
 
     def __new__(mcs, name, bases, attrdict):
-        api_methods = methods(APISpec.__dict__)
+        api_methods = methods(_APISpec.__dict__)
         implemented_methods = methods(attrdict)
         non_api_methods = set(implemented_methods.keys()) - set(
             api_methods.keys()
         )
         if non_api_methods:
-            raise _exceptions.APIImplementationError(
+            raise exceptions.APIImplementationError(
                 "non-API methods may not be public: {}".format(non_api_methods)
             )
         for method_name, method in api_methods.items():
@@ -521,16 +505,16 @@ class APIMeta(type):
         return super().__new__(mcs, name, bases, attrdict)
 
 
-class PlatformAPI(APISpec, metaclass=APIMeta):
+class PlatformAPI(_APISpec, metaclass=_APIMeta):
     """API base class that all API implementations should inherit from. This
     class functions similarly to an abstract base class, but with a few key
     distinctions that affect the inheriting class.
 
     1. Public methods *must* override one of the public methods of
-       :py:class:`APISpec`. If an inheriting class defines any other public
+       :py:class:`_APISpec`. If an inheriting class defines any other public
        method, an :py:class:`~repobee_plug.PlatformError` is raised when the
        class is defined.
-    2. All public methods in :py:class:`APISpec` have a default implementation
+    2. All public methods in :py:class:`_APISpec` have a default implementation
        that simply raise a :py:class:`NotImplementedError`. There is no
        requirement to implement any of them.
     """

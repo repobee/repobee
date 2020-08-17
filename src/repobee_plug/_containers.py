@@ -2,8 +2,6 @@
 
 .. module:: containers
     :synopsis: Container classes and enums.
-
-.. moduleauthor:: Simon Larsén
 """
 import collections
 import dataclasses
