@@ -45,13 +45,17 @@ class StudentTeam:
         _check_name_length(self.name)
 
 
-@dataclasses.dataclass(frozen=True)
 class _RepoPathMixin:
     """Mixin class for local repo representations that provides a path
     attribute, which may not be set.
     """
 
-    def with_path(self, path: pathlib.Path) -> "StudentRepo":
+    _path: Optional[pathlib.Path]
+
+    def __init__(self, *ars, **kwargs):
+        pass
+
+    def with_path(self, path: pathlib.Path) -> "_RepoPathMixin":
         """Return a copy of this repo, with a different path.
 
         Args:

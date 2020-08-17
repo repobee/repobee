@@ -1,7 +1,7 @@
 """Specification for RepoBee's core CLI categories and actions."""
 import itertools
 
-from typing import Iterable
+from typing import Iterator
 
 from .categorization import Category, Action
 from repobee_plug._containers import ImmutableMixin
@@ -12,7 +12,7 @@ class _CoreCommand(ImmutableMixin):
     their actions.
     """
 
-    def iter_actions(self) -> Iterable[Action]:
+    def iter_actions(self) -> Iterator[Action]:
         """Iterate over all command actions."""
         return iter(self)
 
@@ -22,7 +22,7 @@ class _CoreCommand(ImmutableMixin):
             raise ValueError(f"No such category: '{key}'")
         return category_map[key]
 
-    def __iter__(self) -> Iterable[Action]:
+    def __iter__(self) -> Iterator[Action]:
         return itertools.chain.from_iterable(map(iter, self._categories))
 
     def __len__(self):

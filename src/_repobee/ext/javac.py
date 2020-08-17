@@ -57,7 +57,7 @@ class JavacCloneHook(plug.Plugin, plug.cli.CommandExtension):
         Returns:
             a Result specifying the outcome.
         """
-        ignore = self.javac_ignore or []
+        ignore = list(self.javac_ignore) or []
         java_files = [
             str(file)
             for file in util.find_files_by_extension(repo.path, ".java")

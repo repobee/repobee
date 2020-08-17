@@ -67,7 +67,7 @@ class Category(ImmutableMixin, abc.ABC):
         object.__setattr__(self, "actions", tuple(actions))
         object.__setattr__(self, "_action_table", {a.name: a for a in actions})
 
-    def get(self, key: str) -> "Action":
+    def get(self, key: str) -> Optional["Action"]:
         return self._action_table.get(key)
 
     def __getitem__(self, key: str) -> "Action":
@@ -187,10 +187,9 @@ def category(
     Returns:
         A CLI category.
     """
-    action_names = set(action_names)
     return Category(
         name=name,
-        action_names=action_names,
+        action_names=set(action_names),
         help=help,
         description=description,
     )

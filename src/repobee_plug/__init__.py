@@ -1,4 +1,4 @@
-import pluggy
+import pluggy  # type: ignore
 
 from repobee_plug.__version import __version__  # noqa: F401
 

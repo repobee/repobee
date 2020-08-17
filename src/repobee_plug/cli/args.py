@@ -1,7 +1,7 @@
 """Command line options for extension commands."""
-import collections
+import dataclasses
 import enum
-from typing import Optional, Any, Callable, Mapping
+from typing import Optional, Any, Callable, Mapping, List, Tuple
 
 
 class ArgumentType(enum.Enum):
@@ -11,25 +11,35 @@ class ArgumentType(enum.Enum):
     FLAG = "flag"
 
 
-Option = collections.namedtuple(
-    "Option",
-    [
-        "short_name",
-        "long_name",
-        "configurable",
-        "help",
-        "converter",
-        "required",
-        "default",
-        "argument_type",
-        "argparse_kwargs",
-    ],
-)
-Option.__new__.__defaults__ = (None,) * len(Option._fields)
+@dataclasses.dataclass(frozen=True)
+class Option:
+    short_name: Optional[str] = None
+    long_name: Optional[str] = None
+    configurable: Optional[bool] = None
+    help: Optional[str] = None
+    converter: Optional[Callable[[str], Any]] = None
+    required: Optional[bool] = None
+    default: Optional[Any] = None
+    argument_type: ArgumentType = ArgumentType.OPTION
+    argparse_kwargs: Optional[Mapping[str, Any]] = None
 
-MutuallyExclusiveGroup = collections.namedtuple(
-    "MutuallyExclusiveGroup", ["options", "required"]
-)
+
+@dataclasses.dataclass(frozen=True)
+class MutuallyExclusiveGroup:
+    options: List[Tuple[str, Option]]
+    required: bool = False
+
+    def __post_init__(self):
+        for name, opt in self.options:
+            self._check_arg_type(name, opt)
+
+    def _check_arg_type(self, name: str, opt: Option):
+        allowed_types = (ArgumentType.OPTION, ArgumentType.FLAG)
+
+        if opt.argument_type not in allowed_types:
+            raise ValueError(
+                f"{opt.argument_type.value} not allowed in mutex group"
+            )
 
 
 def is_cli_arg(obj: Any) -> bool:
@@ -251,18 +261,5 @@ def mutually_exclusive_group(*, __required__: bool = False, **kwargs):
         __required__: Whether or not this mutex group is required.
         kwargs: Keyword arguments on the form ``name=plug.cli.option()``.
     """
-    allowed_types = (ArgumentType.OPTION, ArgumentType.FLAG)
-
-    def _check_arg_type(name, opt):
-        if opt.argument_type not in allowed_types:
-            raise ValueError(
-                f"{opt.argument_type.value} not allowed in mutex group"
-            )
-        return True
-
-    options = [
-        (key, value)
-        for key, value in kwargs.items()
-        if _check_arg_type(key, value)
-    ]
+    options = [(key, value) for key, value in kwargs.items()]
     return MutuallyExclusiveGroup(required=__required__, options=options)

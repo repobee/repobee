@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """Platform API specifications and wrappers.
 
 .. module:: platform
