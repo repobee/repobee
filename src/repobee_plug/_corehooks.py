@@ -7,8 +7,6 @@ to allow for this dynamic override.
 
 .. module:: corehooks
     :synopsis: Hookspecs for repobee core hooks.
-
-.. moduleauthor:: Simon Larsén
 """
 
 from typing import List, Tuple
@@ -82,7 +80,7 @@ class APIHook:
 
     @hookspec(firstresult=True)
     def api_init_requires(self) -> Tuple[str]:
-        """Return which of the arguments to apimeta.APISpec.__init__ that the
+        """Return which of the arguments to apimeta._APISpec.__init__ that the
         given API requires. For example, the GitHubAPI requires all, but the
         GitLabAPI does not require ``user``.
 

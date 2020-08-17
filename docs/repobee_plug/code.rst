@@ -2,67 +2,71 @@
 
 ``repobee_plug`` Module Reference
 **********************************
-This is the internal API of ``repobee_plug``, which is not stable.
 
-_apimeta
-========
 
-.. automodule:: repobee_plug._apimeta
-   :members:
-   :noindex:
+platform
+==========
 
-_pluginmeta
-===========
+.. automodule:: repobee_plug.platform
+    :members:
+    :inherited-members:
 
-.. automodule:: repobee_plug._pluginmeta
-   :members:
-   :noindex:
+localreps
+==========
 
-_containers
-===========
+.. automodule:: repobee_plug.localreps
+    :members:
 
-.. automodule:: repobee_plug._containers
-   :members:
-   :noindex:
+exceptions
+==========
+
+.. automodule:: repobee_plug.exceptions
+    :members:
+
+fileutils
+==========
+
+.. automodule:: repobee_plug.fileutils
+    :members:
+
+log
+==========
+
+.. automodule:: repobee_plug.log
+    :members:
+
+name
+====
+
+.. automodule:: repobee_plug.name
+    :members:
+
+cli
+===
+
+.. automodule:: repobee_plug.cli
+    :members:
 
 _corehooks
 ==========
 
+ .. important::
+
+    The ``_corehooks`` module is part of the module reference only for
+    specification purposes. Plugin developers should never try to import from
+    this module.
+
 .. automodule:: repobee_plug._corehooks
-   :members:
-   :noindex:
+    :members:
 
 _exthooks
-=========
-
-.. automodule:: repobee_plug._exthooks
-   :members:
-   :noindex:
-
-_exceptions
-===========
-
-.. automodule:: repobee_plug._exceptions
-   :members:
-   :noindex:
-
-_name
-=====
-
-.. automodule:: repobee_plug._name
-   :members:
-   :noindex:
-
-_serialize
 ==========
 
-.. automodule:: repobee_plug._serialize
-   :members:
-   :noindex:
+ .. important::
 
-_deprecation
-============
+    The ``_exthooks`` module is part of the module reference only for
+    specification purposes. Plugin developers should never try to import from
+    this module.
 
-.. automodule:: repobee_plug._deprecation
-   :members:
-   :noindex:
+.. automodule:: repobee_plug._exthooks
+    :members:

@@ -2,8 +2,6 @@
 
 .. module:: exception
     :synopsis: Exceptions for repobee_plug.
-
-.. moduleauthor:: Simon Larsén
 """
 
 

@@ -3,7 +3,7 @@ import itertools
 
 from typing import List, Tuple, Union, Iterator
 
-from repobee_plug import _exceptions
+from repobee_plug import exceptions
 from repobee_plug import _corehooks
 from repobee_plug import _exthooks
 from repobee_plug import _containers
@@ -59,7 +59,7 @@ class _PluginMeta(type):
         hook_names = set(_HOOK_METHODS.keys())
         method_names = set(methods.keys())
         if not method_names.issubset(hook_names):
-            raise _exceptions.HookNameError(
+            raise exceptions.HookNameError(
                 "public method(s) with non-hook name: {}".format(
                     ", ".join(method_names - hook_names)
                 )
@@ -82,7 +82,7 @@ def _process_cli_plugin(bases, attrdict) -> dict:
     """
     attrdict_copy = dict(attrdict)  # copy to avoid mutating original
     if cli.Command in bases and cli.CommandExtension in bases:
-        raise _exceptions.PlugError(
+        raise exceptions.PlugError(
             "A plugin cannot be both a Command and a CommandExtension"
         )
 
@@ -91,7 +91,7 @@ def _process_cli_plugin(bases, attrdict) -> dict:
             attrdict_copy["__settings__"] = cli.command_settings()
     elif cli.CommandExtension in bases:
         if "__settings__" not in attrdict_copy:
-            raise _exceptions.PlugError(
+            raise exceptions.PlugError(
                 "CommandExtension must have a '__settings__' attribute"
             )
 
@@ -168,7 +168,7 @@ def _attach_options(self, config, show_all_opts, parser):
         if configured_value and not (
             hasattr(opt, "configurable") and opt.configurable
         ):
-            raise _exceptions.PlugError(
+            raise exceptions.PlugError(
                 f"Plugin '{self.plugin_name}' does not allow "
                 f"'{name}' to be configured"
             )

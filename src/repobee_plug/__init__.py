@@ -32,7 +32,7 @@ from repobee_plug._serialize import (
     json_to_result_mapping,
     result_mapping_to_json,
 )
-from repobee_plug._name import (
+from repobee_plug.name import (
     generate_repo_name,
     generate_repo_names,
     generate_review_team_name,
@@ -40,18 +40,18 @@ from repobee_plug._name import (
 from repobee_plug import fileutils
 
 # API wrappers
-from repobee_plug._apimeta import (
+from repobee_plug.platform import (
     Team,
     TeamPermission,
     Issue,
     IssueState,
     Repo,
     PlatformAPI,
-    APISpec,
+    _APISpec,
 )
 
 # Exceptions
-from repobee_plug._exceptions import (
+from repobee_plug.exceptions import (
     HookNameError,
     PlugError,
     PlatformError,
@@ -97,7 +97,7 @@ __all__ = [
     "Issue",
     "IssueState",
     "PlatformAPI",
-    "APISpec",
+    "_APISpec",
     # Exceptions
     "HookNameError",
     "PlugError",

@@ -6,15 +6,13 @@ cloning repos.
 
 .. module:: exthooks
     :synopsis: Hookspecs for repobee extension hooks.
-
-.. moduleauthor:: Simon Larsén
 """
 
 import argparse
 import configparser
 from typing import Optional
 
-from repobee_plug._apimeta import PlatformAPI
+from repobee_plug.platform import PlatformAPI
 from repobee_plug._containers import hookspec
 from repobee_plug._containers import Result, ConfigurableArguments
 from repobee_plug._deprecation import deprecate
@@ -48,7 +46,7 @@ class CloneHook:
         """Do something with the clone repos subparser before it is used used to
         parse CLI options. The typical task is to add options to it.
 
-        .. danger:: 3.0.0
+        .. danger::
 
             This hook no longer has any effect, it is only kept for testing
             purposes.

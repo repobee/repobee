@@ -1,5 +1,7 @@
 Plugin system overview
 **********************
+Creating plugins for RepoBee is not difficult, and you do not need to be a
+seasoned Python developer in order to make something that is genuinely useful.
 
 .. _conventions:
 
@@ -35,50 +37,21 @@ hooks*.
 
 Core hooks
 ----------
-Core hooks provide core functionality for RepoBee, and always have a
-default implementation in :py:mod:`repobee.ext.defaults`. Providing a
-different plugin implementation will override this behavior, thereby
-changing some core part of RepoBee. In general, only one implementation
-of a core hook will run per invocation of RepoBee. All core hooks are
-defined in :py:mod:`repobee_plug._corehooks`.
-
-.. important::
-
-   Note that the default implementations in :py:mod:`repobee.ext.defaults` may
-   simply be *imported* into the module. They are not necessarily defined
-   there.
+Core hooks provide core functionality for RepoBee, and always have a default
+implementation. Providing a different plugin implementation will override this
+behavior, thereby changing some core part of RepoBee. In general, only one
+implementation of a core hook will run per invocation of RepoBee. All core hooks
+are defined in :py:mod:`repobee_plug._corehooks`.
 
 Extension hooks
 ---------------
-Extension hooks extend the functionality of RepoBee in various ways. These are
-probably of most interest to most people looking to create plugins for RepoBee.
-Unlike the core hooks, there are no default implementations of the extension
-hooks, and multiple implementations can be run on each invocation of
-RepoBee. All extension hooks are defined in :py:mod:`repobee_plug._exthooks`.
-
-Tasks
-+++++
-RepoBee has a notion of a *task*, which is a collection of one or more
-interdependent functions. The purpose of all tasks is to *act* on repositories.
-For example, the built-in :ref:`pylint-plugin` plugin is a task
-whose act consists of running static analysis on all Python files in a
-repository. The `repobee-junit4
-plugin <https://github.com/repobee/repobee-junit4>`_ is another task plugin whose
-act consists of running JUnit4 unit tests on production code in the repository.
-Tasks can run on master repos before they are pushed to student repos, or on
-student repos after they have been cloned.
-
-Extension commands
-++++++++++++++++++
-An *extension command* is a top level command that's added to the RepoBee
-command line interface. The built-in ``config-wizard`` command is implemented as
-an extension command, and allows a user of RepoBee to edit the configuration
-file. The `repobee-feedback plugin
-<https://github.com/repobee/repobee-feedback>`_ provides the ``issue-feedback``
-command, which opens feedback issues in student repositories based on local
-text files. Extension commands are pretty awesome because they integrate
-seamlessly with RepoBee, can leverage some of RepoBee's powerful CLI
-functionality and can do pretty much whatever they want on top of that.
+Extension hooks extend the functionality of RepoBee in various ways, for example
+by extending the existing commands in RepoBee, or by creating entirely new
+commands. These are probably of most interest to most people looking to create
+plugins for RepoBee. Unlike the core hooks, there are no default
+implementations of the extension hooks, and multiple implementations can be run
+on each invocation of RepoBee. All extension hooks are defined in
+:py:mod:`repobee_plug._exthooks`.
 
 .. _implementing hooks:
 
@@ -95,7 +68,7 @@ Standalone hook functions
 +++++++++++++++++++++++++
 Hook functions can be implemented as standalone functions by decorating them
 with the :py:func:`~repobee_plug.repobee_hook` decorator. For example, if we
-wanted to implement the ``clone_task`` hook, we could do it like this:
+wanted to implement the ``post_clone`` hook, we could do it like this:
 
 .. code-block:: python
     :caption: exampleplug.py
@@ -103,17 +76,13 @@ wanted to implement the ``clone_task`` hook, we could do it like this:
     import repobee_plug as plug
 
     @plug.repobee_hook
-    def clone_task():
+    def post_clone(path, api):
         """Return a useless Task."""
-        return plug.Task(act=act)
+        print(path)
 
-    def act(path, api):
-        return plug.Result(
-            name="exampleplug",
-            msg="This is a useless plugin!",
-            status=plug.Status.SUCCESS,
-        )
-
+This function will be called once for each cloned repository after RepoBee has
+finished cloning all repositories with the ``clone`` command. This particular
+implementation will simply print the path to each cloned repository.
 
 The ``clone_task`` hook is described in more detail in :ref:`creating plugins`.
 For a complete plugin written with this approach, see the `repobee-gofmt plugin
@@ -128,10 +97,10 @@ Wrapping hook implementations in a class inheriting from
 RepoBee that are in any way complicated. A plugin class is instantiated exactly
 once, and that instance then persists throughout the execution of one RepoBee
 command, making it a convenient way to implement plugins that require command
-line options or config values. The :py:class:`~repobee_plug.Plugin`
-class also performs some sanity checks when a subclass is defined to make sure
-that all public functions have hook function names, which comes in handy if you
-are in the habit of misspelling stuff (aren't we all?). Doing it this way,
+line options or any form of state. The :py:class:`~repobee_plug.Plugin` class
+also performs some sanity checks when a subclass is defined to make sure that
+all public functions have hook function names, which comes in handy if you are
+in the habit of misspelling stuff (aren't we all?). Doing it this way,
 ``exampleplug.py`` would look like this:
 
 .. code-block:: python
@@ -144,24 +113,14 @@ are in the habit of misspelling stuff (aren't we all?). Doing it this way,
     class ExamplePlugin(plug.Plugin):
         """Example plugin that implements the clone_task hook."""
 
-        def clone_task(self):
+        def post_clone(self, path, api):
             """Return a useless Task."""
-            return plug.Task(act=self._act)
+            print(path)
 
-        def _act(self, path, api):
-            return plug.Result(
-                name="exampleplug",
-                msg="This is a useless plugin!",
-                status=plug.Status.SUCCESS,
-            )
-
-Note how the ``clone_task`` function now does not have the `@plug.repobee_hook`
-decorator, that we prefixed ``act`` with an underscore to signify that it's not
-a public method (there is no hook function called ``act``, so
-:py:class:`~repobee_plug.Plugin` will raise if we forget the leading
-underscore), and that the ``self`` argument was added to all functions. For a
-complete example of a plugin written with this approach, see the
-`repobee-junit4`_ plugin.
+Note how the ``post_clone`` function now does not have the `@plug.repobee_hook`
+decorator and that the ``self`` argument was added to it, as it is now a method
+of the ``ExamplePlugin`` class. For a complete example of a plugin written with
+this approach, see the `repobee-junit4`_ plugin.
 
 .. _repobee-junit4: https://github.com/repobee/repobee-junit4
 .. _javac plugin: https://github.com/repobee/repobee/blob/master/repobee/ext/javac.py
