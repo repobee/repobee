@@ -85,7 +85,7 @@ help text and the name of the action itself.
 
 .. code-block:: bash
 
-	$ repobee -p hello.py config -h
+    $ repobee -p hello.py config -h
     usage: repobee config [-h] {show,verify,hello,wizard} ...
 
     Configure RepoBee.
@@ -333,7 +333,7 @@ configure the value.
     $ repobee -p hello.py config wizard
     Select a section to configure:
      repobee
-    ●hello
+    *hello
 
     Configuring section: hello
     Type config values for the options when prompted.
