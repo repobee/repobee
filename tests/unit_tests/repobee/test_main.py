@@ -433,7 +433,7 @@ class TestRun:
     """Tests for the run function."""
 
     class Workdir(plug.Plugin, plug.cli.Command):
-        def command(self, api):
+        def command(self):
             return plug.Result(
                 name="workdir",
                 msg="workdir",

@@ -1,6 +1,7 @@
 """Mixin classes for marking plugins as CLI commands/extensions."""
 
 import argparse
+import inspect
 
 
 class CommandExtension:
@@ -78,3 +79,7 @@ class Command:
         dynamically added members.
         """
         return object.__getattribute__(self, key)
+
+    def __requires_api__(self) -> bool:
+        """Returns ``True`` if this command requires the platform API."""
+        return "api" in inspect.signature(self.command).parameters

@@ -78,7 +78,7 @@ def option(
             name = plug.cli.option(help="Your name.")
             age = plug.cli.option(converter=int, help="Your age.")
 
-            def command(self, api):
+            def command(self):
                 print(
                     f"Hello, my name is {self.name} "
                     f"and I am {self.age} years old"
@@ -144,7 +144,7 @@ def positional(
             name = plug.cli.positional(help="Your name.")
             age = plug.cli.positional(converter=int, help="Your age.")
 
-            def command(self, api):
+            def command(self):
                 print(
                     f"Hello, my name is {self.name} "
                     f"and I am {self.age} years old"
@@ -214,7 +214,7 @@ def flag(
             # a flag that stores a constant and defaults to another constant
             approve = plug.cli.flag(const="yes", default="no")
 
-            def command(self, api):
+            def command(self):
                 print("is_great", self.is_great)
                 print("not_great", self.not_great)
                 print("meaning", self.meaning)

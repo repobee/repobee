@@ -634,7 +634,7 @@ def _add_extension_parsers(
         parents = []
         bp = plug.BaseParser
         req_parsers = settings.base_parsers or []
-        if settings.requires_api or bp.BASE in req_parsers:
+        if cmd.__requires_api__() or bp.BASE in req_parsers:
             parents.append(base_parser)
         if bp.STUDENTS in req_parsers:
             parents.append(base_student_parser)

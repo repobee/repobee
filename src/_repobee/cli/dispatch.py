@@ -41,7 +41,11 @@ def dispatch_command(
     is_ext_command = "_extension_command" in args
     if is_ext_command:
         ext_cmd = args._extension_command
-        res = ext_cmd.command(api)
+        res = (
+            ext_cmd.command(api=api)
+            if ext_cmd.__requires_api__()
+            else ext_cmd.command()
+        )
         hook_results = (
             {str(ext_cmd.__settings__.action): [res]} if res else hook_results
         )

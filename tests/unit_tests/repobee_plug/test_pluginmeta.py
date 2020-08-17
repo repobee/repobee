@@ -117,7 +117,7 @@ class TestDeclarativeExtensionCommand:
             name = plug.cli.option(help="your name", required=True)
             age = plug.cli.option(converter=int, help="your age", default=30)
 
-            def command(self, api):
+            def command(self):
                 print(f"My name is {self.name} and I am {self.age} years old")
 
         return Greeting
@@ -131,7 +131,6 @@ class TestDeclarativeExtensionCommand:
 
         assert settings.help == ""
         assert settings.description == ""
-        assert settings.requires_api is False
         assert settings.base_parsers is None
         assert settings.category is None
 
@@ -155,7 +154,7 @@ class TestDeclarativeExtensionCommand:
                 help="Your name.", required=True, configurable=True
             )
 
-            def command(self, api):
+            def command(self):
                 pass
 
         plugin_name = "greeting"
@@ -182,7 +181,7 @@ class TestDeclarativeExtensionCommand:
             age = plug.cli.option(help="your age", configurable=True)
             nationality = plug.cli.option(help="your nationality")
 
-            def command(self, api):
+            def command(self):
                 pass
 
         plugin_name = "greeting"
@@ -201,7 +200,7 @@ class TestDeclarativeExtensionCommand:
         class Greeting(plug.Plugin, plug.cli.Command):
             name = plug.cli.option(help="your name")
 
-            def command(self, api):
+            def command(self):
                 pass
 
         plugin_instance = Greeting("greeting")
@@ -220,7 +219,7 @@ class TestDeclarativeExtensionCommand:
         class Greeting(plug.Plugin, plug.cli.Command):
             name = plug.cli.option(help="Your name.", required=True)
 
-            def command(self, api):
+            def command(self):
                 pass
 
         plugin_name = "greeting"
@@ -252,7 +251,7 @@ class TestDeclarativeExtensionCommand:
                 required=True,
             )
 
-            def command(self, api):
+            def command(self):
                 pass
 
         plugin_instance = Greeting("g")
@@ -273,7 +272,7 @@ class TestDeclarativeExtensionCommand:
             name = plug.cli.positional()
             age = plug.cli.positional(converter=int)
 
-            def command(self, api):
+            def command(self):
                 pass
 
         plugin_instance = Greeting("g")
@@ -301,7 +300,7 @@ class TestDeclarativeExtensionCommand:
                 __required__=True,
             )
 
-            def command(self, api):
+            def command(self):
                 pass
 
         plugin_instance = Greeting("g")
@@ -344,7 +343,7 @@ class TestDeclarativeExtensionCommand:
                 __required__=True,
             )
 
-            def command(self, api):
+            def command(self):
                 pass
 
         plugin_instance = Greeting("g")
@@ -367,7 +366,7 @@ class TestDeclarativeExtensionCommand:
             name = plug.cli.positional()
             age = plug.cli.positional(converter=int)
 
-            def command(self, api):
+            def command(self):
                 return plug.Result(
                     name=self.plugin_name,
                     msg="Nice!",
@@ -402,7 +401,7 @@ class TestDeclarativeExtensionCommand:
             __settings__ = plug.cli.command_settings(action=category.hello)
             name = plug.cli.positional()
 
-            def command(self, api):
+            def command(self):
                 nonlocal hello_instance
                 hello_instance = self
 
@@ -410,7 +409,7 @@ class TestDeclarativeExtensionCommand:
             __settings__ = plug.cli.command_settings(action=category.bye)
             name = plug.cli.positional()
 
-            def command(self, api):
+            def command(self):
                 nonlocal bye_instance
                 bye_instance = self
 
@@ -435,7 +434,7 @@ class TestDeclarativeExtensionCommand:
                     action=category.greetings, category=category
                 )
 
-                def command(self, api):
+                def command(self):
                     pass
 
         assert (
@@ -456,7 +455,7 @@ class TestDeclarativeExtensionCommand:
                 high=plug.cli.flag(), low=plug.cli.flag(), __required__=True,
             )
 
-            def command(self, api):
+            def command(self):
                 nonlocal instance
                 instance = self
 
