@@ -40,7 +40,7 @@ def test_exits_when_config_file_exists_and_user_enters_no(config_mock):
     contents_before = config_mock.read()
 
     with patch("builtins.input", side_effect=["no"]):
-        configwizard.callback(None, None)
+        configwizard.callback(None)
 
     contents_after = config_mock.read()
 
@@ -56,7 +56,7 @@ def test_enters_values_if_config_file_exists_and_user_enters_yes(
     with patch(
         "builtins.input", side_effect=["yes"] + list(defaults_options.values())
     ):
-        configwizard.callback(None, None)
+        configwizard.callback(None)
 
     confparser = configparser.ConfigParser()
     confparser.read(str(config_mock))
@@ -74,7 +74,7 @@ def test_enters_values_without_continue_prompt_if_no_config_exists(
     with patch(
         "builtins.input", side_effect=list(defaults_options.values())
     ), patch("pathlib.Path.exists", autospec=True, return_value=False):
-        configwizard.callback(None, None)
+        configwizard.callback(None)
 
     confparser = configparser.ConfigParser()
     confparser.read(str(config_mock))
@@ -100,7 +100,7 @@ def test_skips_empty_values(
     with patch(
         "builtins.input", side_effect=list(defaults_options.values())
     ), patch("pathlib.Path.exists", autospec=True, return_value=False):
-        configwizard.callback(None, None)
+        configwizard.callback(None)
 
     del defaults_options[empty_option]
     confparser = configparser.ConfigParser()
@@ -149,7 +149,7 @@ def test_retains_values_that_are_not_specified(
     with patch(
         "builtins.input", side_effect=["yes"] + list(defaults_options.values())
     ):
-        configwizard.callback(None, None)
+        configwizard.callback(None)
 
     # assert
     del defaults_options[empty_option]
@@ -174,7 +174,7 @@ def test_creates_directory(
     ), patch("os.makedirs", autospec=True) as makedirs_mock, patch(
         "pathlib.Path.exists", autospec=True, return_value=False
     ):
-        configwizard.callback(None, None)
+        configwizard.callback(None)
 
     makedirs_mock.assert_called_once_with(
         os.path.dirname(str(config_mock)), mode=0o700, exist_ok=True
