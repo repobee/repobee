@@ -1,22 +1,7 @@
-"""Metaclass for API implementations.
+"""Platform API specifications and wrappers.
 
-:py:class:`APIMeta` defines the behavior required of platform API
-implementations, based on the methods in :py:class:`_APISpec`. With platform
-API, we mean for example the GitHub REST API, and the GitLab REST API. The
-point is to introduce another layer of indirection such that higher levels of
-RepoBee can use different platforms in a platform-independent way.
-:py:class:`API` is a convenience class so consumers don't have to use the
-metaclass directly.
-
-Any class implementing a platform API should derive from :py:class:`API`. It
-will enforce that all public methods are one of the method defined py
-:py:class:`_APISpec`, and give a default implementation (that just raises
-NotImplementedError) for any unimplemented API methods.
-
-.. module:: apimeta
-    :synopsis: Metaclass for API implementations.
-
-.. moduleauthor:: Simon Larsén
+.. module:: platform
+    :synopsis: Platform API specifications and wrappers.
 """
 import dataclasses
 import inspect
