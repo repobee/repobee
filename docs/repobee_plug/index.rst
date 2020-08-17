@@ -25,7 +25,6 @@ web site <https://repobee.org/contact.html>`_.
 
    overview
    creating_plugins
-   public
    code
 
 Indices and tables
