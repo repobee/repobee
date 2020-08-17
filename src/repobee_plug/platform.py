@@ -148,7 +148,7 @@ class _APISpec:
         Returns:
             The created team.
         Raises:
-            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
                 communicating with the platform, in particular if the team
                 already exists.
         """
@@ -160,7 +160,7 @@ class _APISpec:
         Args:
             team: The team to delete.
         Raises:
-            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
                 communicating with the platform.
         """
         _not_implemented()
@@ -177,7 +177,7 @@ class _APISpec:
         Returns:
             Teams matching the filters.
         Raises:
-            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
                 communicating with the platform.
         """
         _not_implemented()
@@ -195,7 +195,7 @@ class _APISpec:
             permission: The permission granted to the team's members with
                 respect to accessing the repository.
         Raises:
-            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
                 communicating with the platform.
         """
         _not_implemented()
@@ -214,7 +214,7 @@ class _APISpec:
                 Usernames that don't exist are ignored.
             permission: The permission to add users with.
         Raises:
-            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
                 communicating with the platform.
         """
         _not_implemented()
@@ -241,7 +241,7 @@ class _APISpec:
         Returns:
             The created (or fetched) repository.
         Raises:
-            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
                 communicating with the platform.
         """
         _not_implemented()
@@ -258,7 +258,7 @@ class _APISpec:
         Returns:
             Repositories matching the filters.
         Raises:
-            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
                 communicating with the platform.
         """
         _not_implemented()
@@ -273,7 +273,7 @@ class _APISpec:
         Returns:
             The fetched repository.
         Raises:
-            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
                 communicating with the platform, in particular if the repo
                 or team does not exist.
         """
@@ -306,7 +306,7 @@ class _APISpec:
         Returns:
             The created issue.
         Raises:
-            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
                 communicating with the platform.
         """
         _not_implemented()
@@ -317,7 +317,7 @@ class _APISpec:
         Args:
             issue: The issue to close.
         Raises:
-            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
                 communicating with the platform.
         """
         _not_implemented()
@@ -330,7 +330,7 @@ class _APISpec:
         Returns:
             The repos related to the provided team.
         Raises:
-            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
                 communicating with the platform.
         """
         _not_implemented()
@@ -343,7 +343,7 @@ class _APISpec:
         Returns:
             The issues related to the provided repo.
         Raises:
-            :py:class:`_exceptions.PlatformError`: If something goes wrong in
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
                 communicating with the platform.
         """
         _not_implemented()

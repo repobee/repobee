@@ -21,7 +21,7 @@ def parse_students_file(path: pathlib.Path) -> List[StudentTeam]:
     Returns:
         A list of teams.
     Raises:
-        :py:class:`_exceptions.FileError`
+        :py:class:`exceptions.FileError`
     """
     if not path.is_file():
         raise exceptions.FileError("'{!s}' is not a file".format(path))
