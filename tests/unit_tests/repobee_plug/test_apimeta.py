@@ -1,5 +1,5 @@
 import pytest
-from repobee_plug import _apimeta
+from repobee_plug import platform
 from repobee_plug import _exceptions
 
 import collections
@@ -9,13 +9,13 @@ from typing import Optional, List
 
 
 def api_methods():
-    methods = _apimeta.methods(_apimeta.APISpec.__dict__)
+    methods = platform.methods(platform.APISpec.__dict__)
     assert methods, "there must be api methods"
     return methods.items()
 
 
 def api_method_ids():
-    methods = _apimeta.methods(_apimeta.APISpec.__dict__)
+    methods = platform.methods(platform.APISpec.__dict__)
     return list(methods.keys())
 
 
@@ -26,11 +26,11 @@ class TestAPI:
         left undefined.
         """
 
-        class API(_apimeta.PlatformAPI):
+        class API(platform.PlatformAPI):
             pass
 
         name, impl = method
-        params = _apimeta.parameters(impl)
+        params = platform.parameters(impl)
 
         with pytest.raises(NotImplementedError):
             m = getattr(API, name)
@@ -44,7 +44,7 @@ class TestAPI:
 
         with pytest.raises(_exceptions.APIImplementationError):
 
-            class API(_apimeta.PlatformAPI):
+            class API(platform.PlatformAPI):
                 def get_teams(a):
                     pass
 
@@ -53,12 +53,12 @@ class TestAPI:
         args in APISpec.__init__.
         """
 
-        class API(_apimeta.PlatformAPI):
+        class API(platform.PlatformAPI):
             def __init__(self, base_url):
                 pass
 
         api = API("some-url")
-        assert isinstance(api, _apimeta.PlatformAPI)
+        assert isinstance(api, platform.PlatformAPI)
 
     def test_raises_when_init_has_superset_of_args(self):
         """Test that ``__init__`` cannot be defined with a superset of the args
@@ -67,7 +67,7 @@ class TestAPI:
 
         with pytest.raises(_exceptions.APIImplementationError) as exc_info:
 
-            class API(_apimeta.PlatformAPI):
+            class API(platform.PlatformAPI):
                 def __init__(self, base_url, token, org_name, user, other):
                     pass
 
@@ -79,7 +79,7 @@ class TestAPI:
         """
         expected = 42
 
-        class API(_apimeta.PlatformAPI):
+        class API(platform.PlatformAPI):
             def __init__(self, base_url, token, org_name, user):
                 pass
 
@@ -93,7 +93,7 @@ class TestAPI:
     def test_raises_when_method_has_incorrect_default_arg(self):
         with pytest.raises(_exceptions.APIImplementationError):
 
-            class API(_apimeta.PlatformAPI):
+            class API(platform.PlatformAPI):
                 def __init__(self, base_url, token, org_name, user):
                     pass
 
@@ -108,7 +108,7 @@ class TestAPIObject:
         """
 
         class APIObj(
-            _apimeta.APIObject,
+            platform.APIObject,
             collections.namedtuple("APIObj", "implementation"),
         ):
             def __new__(cls):
@@ -128,7 +128,7 @@ class TestAPIObject:
         implementation = 42
 
         class APIObj(
-            _apimeta.APIObject,
+            platform.APIObject,
             collections.namedtuple("APIObj", "implementation"),
         ):
             def __new__(cls):
@@ -145,7 +145,7 @@ class TestIssue:
         dict results in the original Issue instance, minus the implementation
         field (which should always be None in a reconstructed instance).
         """
-        issue = _apimeta.Issue(
+        issue = platform.Issue(
             title="Some title",
             body="Some body",
             number=3,
@@ -155,6 +155,6 @@ class TestIssue:
         )
 
         asdict = issue.to_dict()
-        reconstructed = _apimeta.Issue.from_dict(asdict)
+        reconstructed = platform.Issue.from_dict(asdict)
 
         assert reconstructed == issue

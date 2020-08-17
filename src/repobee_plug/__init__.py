@@ -40,7 +40,7 @@ from repobee_plug._name import (
 from repobee_plug import fileutils
 
 # API wrappers
-from repobee_plug._apimeta import (
+from repobee_plug.platform import (
     Team,
     TeamPermission,
     Issue,

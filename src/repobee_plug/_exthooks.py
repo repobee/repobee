@@ -14,7 +14,7 @@ import argparse
 import configparser
 from typing import Optional
 
-from repobee_plug._apimeta import PlatformAPI
+from repobee_plug.platform import PlatformAPI
 from repobee_plug._containers import hookspec
 from repobee_plug._containers import Result, ConfigurableArguments
 from repobee_plug._deprecation import deprecate
