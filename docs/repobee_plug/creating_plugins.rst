@@ -26,7 +26,7 @@ This plugin will add a command called ``helloworld`` to the command line. As we
 haven't specified a category nor action, it will simply be a top-level command.
 You can call it like this:
 
-.. code-block:: bash
+.. code-block:: raw
 
     $ repobee --plug hello.py helloworld
     Hello, world!
@@ -83,7 +83,7 @@ help text and the name of the action itself.
         def command(self, api):
             plug.echo("Hello, world!")
 
-.. code-block:: bash
+.. code-block:: raw
 
     $ repobee -p hello.py config -h
     usage: repobee config [-h] {show,verify,hello,wizard} ...
@@ -232,7 +232,7 @@ plugin.
 
 Usage then looks like so:
 
-.. code-block:: bash
+.. code-block:: raw
 
     $ repobee -p hello.py greetings hello --help
     usage: repobee greetings hello [-h] [--tb] [--date DATE] [--is-fantastic] world
@@ -357,3 +357,7 @@ There are two things to be aware of with configured values.
 And that's more or less all there is to it for basic command plugins. See the
 :py:mod:`repobee_plug.cli` reference for a complete documentation of the ``cli``
 package.
+
+Hooks and command extensions
+============================
+TODO
