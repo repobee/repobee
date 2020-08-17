@@ -37,7 +37,7 @@ class TestPluginInheritance:
         class Derived(_pluginmeta.Plugin):
             """Has all hook methods defined."""
 
-            def post_clone(self, path):
+            def post_clone(self, repo, api):
                 pass
 
             def clone_parser_hook(self, clone_parser):
@@ -70,7 +70,7 @@ class TestPluginInheritance:
         class Derived(_pluginmeta.Plugin):
             """Has all hook methods defined."""
 
-            def post_clone(self, path, api):
+            def post_clone(self, repo, api):
                 pass
 
             def clone_parser_hook(self, clone_parser):
@@ -170,6 +170,47 @@ class TestDeclarativeExtensionCommand:
 
         assert args.name == configured_name
 
+    def test_get_configurable_args_hook_correctly_implemented(self):
+        """Only configurable arguments should be returned by the
+        get_configurable_args hook.
+        """
+
+        class Greeting(plug.Plugin, plug.cli.Command):
+            name = plug.cli.option(
+                help="your name", required=True, configurable=True
+            )
+            age = plug.cli.option(help="your age", configurable=True)
+            nationality = plug.cli.option(help="your nationality")
+
+            def command(self, api):
+                pass
+
+        plugin_name = "greeting"
+        plugin_instance = Greeting(plugin_name)
+
+        configurable_args = plugin_instance.get_configurable_args()
+
+        assert configurable_args.config_section_name == plugin_name
+        assert sorted(configurable_args.argnames) == sorted(["name", "age"])
+
+    def test_get_configurable_args_when_no_args_configurable(self):
+        """get_configurable_args should not be implemented if no args are
+        configurable.
+        """
+
+        class Greeting(plug.Plugin, plug.cli.Command):
+            name = plug.cli.option(help="your name")
+
+            def command(self, api):
+                pass
+
+        plugin_instance = Greeting("greeting")
+
+        assert not hasattr(
+            plugin_instance,
+            plug._exthooks.ConfigHook.get_configurable_args.__name__,
+        )
+
     def test_raises_when_non_configurable_value_is_configured(self):
         """It shouldn't be allowed to have a configuration value for an
         option that is not marked configurable. This is to avoid accidental
@@ -256,9 +297,7 @@ class TestDeclarativeExtensionCommand:
         class Greeting(plug.Plugin, plug.cli.Command):
             age_mutex = plug.cli.mutually_exclusive_group(
                 age=plug.cli.option(converter=int),
-                old=plug.cli.option(
-                    argparse_kwargs=dict(action="store_const", const=1337)
-                ),
+                old=plug.cli.flag(const=1337),
                 __required__=True,
             )
 
@@ -285,13 +324,14 @@ class TestDeclarativeExtensionCommand:
         with pytest.raises(ValueError) as exc_info:
             plug.cli.mutually_exclusive_group(
                 age=plug.cli.positional(converter=int),
-                old=plug.cli.option(
-                    argparse_kwargs=dict(action="store_const", const=1337)
-                ),
+                old=plug.cli.flag(const=1337),
                 __required__=True,
             )
 
-        assert "Positional not allowed in mutex group" in str(exc_info.value)
+        assert (
+            f"{plug.cli.ArgumentType.POSITIONAL.value} not allowed in mutex"
+            in str(exc_info.value)
+        )
 
     def test_mutex_group_allows_one_argument(self):
         """Test that a mutex group allows one argument to be specified."""
@@ -300,9 +340,7 @@ class TestDeclarativeExtensionCommand:
         class Greeting(plug.Plugin, plug.cli.Command):
             age_mutex = plug.cli.mutually_exclusive_group(
                 age=plug.cli.option(converter=int),
-                old=plug.cli.option(
-                    argparse_kwargs=dict(action="store_const", const=old)
-                ),
+                old=plug.cli.flag(const=1337),
                 __required__=True,
             )
 
@@ -415,11 +453,7 @@ class TestDeclarativeExtensionCommand:
             name = plug.cli.option()
             age = plug.cli.positional(converter=int)
             tolerance = plug.cli.mutually_exclusive_group(
-                high=plug.cli.option(
-                    argparse_kwargs=dict(action="store_true")
-                ),
-                low=plug.cli.option(argparse_kwargs=dict(action="store_true")),
-                __required__=True,
+                high=plug.cli.flag(), low=plug.cli.flag(), __required__=True,
             )
 
             def command(self, api):
@@ -443,7 +477,7 @@ class TestDeclarativeCommandExtension:
     @pytest.fixture
     def config_file(self, tmpdir):
         config_file = pathlib.Path(str(tmpdir)) / "config.ini"
-        config_file.write_text("[DEFAULTS]")
+        config_file.write_text("[repobee]")
         return config_file
 
     def test_add_required_option_to_config_show(

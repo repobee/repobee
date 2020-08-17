@@ -16,7 +16,7 @@ import pathlib
 import re
 import sys
 import enum
-from typing import Iterable, Optional, List, Tuple, Generator
+from typing import Iterable, Optional, List, Tuple
 
 import daiquiri
 import repobee_plug as plug
@@ -26,8 +26,7 @@ import _repobee
 import _repobee.cli.mainparser
 from _repobee import util, exception, constants, cli
 
-
-LOGGER = daiquiri.getLogger(__file__)
+from _repobee.command import progresswrappers
 
 
 class _ArgsProcessing(enum.Enum):
@@ -42,7 +41,7 @@ def handle_args(
     sys_args: Iterable[str],
     show_all_opts: bool = False,
     config_file: pathlib.Path = constants.DEFAULT_CONFIG_FILE,
-) -> Tuple[argparse.Namespace, Optional[plug.API]]:
+) -> Tuple[argparse.Namespace, Optional[plug.PlatformAPI]]:
     """Parse and process command line arguments and instantiate the platform
     API (if it's needed).
 
@@ -140,7 +139,7 @@ def _resolve_requires_processing(args: argparse.Namespace) -> _ArgsProcessing:
 
 def _process_args(
     args: argparse.Namespace,
-) -> Tuple[argparse.Namespace, plug.API]:
+) -> Tuple[argparse.Namespace, plug.PlatformAPI]:
     """Process parsed command line arguments.
 
     Args:
@@ -153,7 +152,7 @@ def _process_args(
 
     repos = master_names = master_urls = None
     if "discover_repos" in args and args.discover_repos:
-        repos = api.discover_repos(args.students)
+        repos = _discover_repos(args.students, api)
     elif "master_repo_names" in args:
         master_names = args.master_repo_names
         master_urls = _repo_names_to_urls(master_names, master_org_name, api)
@@ -170,14 +169,37 @@ def _process_args(
     return argparse.Namespace(**args_dict), api
 
 
+def _discover_repos(
+    student_teams: plug.StudentTeam, api: plug.PlatformAPI
+) -> Iterable[plug.StudentRepo]:
+    student_teams_dict = {t.name: t for t in student_teams}
+    fetched_teams = progresswrappers.get_teams(
+        student_teams, api, desc="Discovering team repos"
+    )
+    for team in fetched_teams:
+        repos = api.get_team_repos(team)
+        yield from (
+            plug.StudentRepo(
+                name=repo.name,
+                url=repo.url,
+                team=student_teams_dict[team.name],
+            )
+            for repo in repos
+        )
+
+
 def _repo_tuple_generator(
-    master_repo_names: List[str], teams: List[plug.Team], api: plug.API
-) -> Generator[plug.Repo, None, None]:
+    master_repo_names: List[str],
+    teams: List[plug.StudentTeam],
+    api: plug.PlatformAPI,
+) -> Iterable[plug.StudentRepo]:
     for master_repo_name in master_repo_names:
         for team in teams:
-            url, *_ = api.get_repo_urls([master_repo_name], teams=[team])
+            url, *_ = api.get_repo_urls(
+                [master_repo_name], team_names=[team.name]
+            )
             name = plug.generate_repo_name(team, master_repo_name)
-            yield plug.Repo(name=name, url=url, private=True, description="")
+            yield plug.StudentRepo(name=name, url=url, team=team)
 
 
 def _validate_tls_url(url):
@@ -201,7 +223,7 @@ def _handle_deprecation(sys_args: List[str]) -> List[str]:
     return sys_args
 
 
-def _extract_groups(args: argparse.Namespace) -> List[str]:
+def _extract_groups(args: argparse.Namespace) -> List[plug.StudentTeam]:
     """Extract groups from args namespace.`
 
     Args:
@@ -212,7 +234,7 @@ def _extract_groups(args: argparse.Namespace) -> List[str]:
         `students_file` is in the namespace.
     """
     if "students" in args and args.students:
-        students = [plug.Team(members=[s]) for s in args.students]
+        students = [plug.StudentTeam(members=[s]) for s in args.students]
     elif "students_file" in args and args.students_file:
         students_file = pathlib.Path(args.students_file).resolve()
         if not students_file.is_file():
@@ -222,7 +244,7 @@ def _extract_groups(args: argparse.Namespace) -> List[str]:
         if not students_file.stat().st_size:
             raise exception.FileError("'{!s}' is empty".format(students_file))
         students = [
-            plug.Team(members=[s for s in group.strip().split()])
+            plug.StudentTeam(members=[s for s in group.strip().split()])
             for group in students_file.read_text(
                 encoding=sys.getdefaultencoding()
             ).split(os.linesep)
@@ -236,7 +258,7 @@ def _extract_groups(args: argparse.Namespace) -> List[str]:
 
 def _connect_to_api(
     base_url: str, token: str, org_name: str, user: str
-) -> plug.API:
+) -> plug.PlatformAPI:
     """Return an API instance connected to the specified API endpoint."""
     required_args = plug.manager.hook.api_init_requires()
     kwargs = {}
@@ -251,16 +273,16 @@ def _connect_to_api(
     api_class = plug.manager.hook.get_api_class()
     try:
         return api_class(**kwargs)
-    except exception.NotFoundError:
+    except plug.NotFoundError:
         # more informative message
-        raise exception.NotFoundError(
+        raise plug.NotFoundError(
             "either organization {} could not be found, "
             "or the base url '{}' is incorrect".format(org_name, base_url)
         )
 
 
 def _repo_names_to_urls(
-    repo_names: Iterable[str], org_name: str, api: plug.API
+    repo_names: Iterable[str], org_name: str, api: plug.PlatformAPI
 ) -> List[str]:
     """Use the repo_names to extract urls to the repos. Look for git
     repos with the correct names in the local directory and create local uris
@@ -293,7 +315,7 @@ def _repo_names_to_urls(
 
 def _process_ext_args(
     args: argparse.Namespace,
-) -> Tuple[argparse.Namespace, Optional[plug.API]]:
+) -> Tuple[argparse.Namespace, Optional[plug.PlatformAPI]]:
     ext_cmd = args._extension_command
     assert ext_cmd
     settings = ext_cmd.__settings__
@@ -314,7 +336,7 @@ def _process_ext_args(
     if bp.STUDENTS in req_parsers:
         args_dict["students"] = _extract_groups(args)
     if bp.REPO_DISCOVERY in req_parsers:
-        args_dict["repos"] = api.discover_repos(args_dict["students"])
+        args_dict["repos"] = _discover_repos(args_dict["students"], api)
 
     return argparse.Namespace(**args_dict), api
 
@@ -353,7 +375,7 @@ def setup_logging() -> None:
                 formatter=daiquiri.formatter.ColorFormatter(
                     fmt="%(color)s[%(levelname)s] %(message)s%(color_stop)s"
                 ),
-                level=logging.INFO,
+                level=logging.WARNING,
             ),
             daiquiri.output.File(
                 filename=str(

@@ -8,15 +8,14 @@ a short configuration wizard that lets the user set RepoBee's defaults.
 """
 import argparse
 import configparser
-import sys
+import collections
 import os
 
-import daiquiri
+import bullet
+
 import repobee_plug as plug
 
 from _repobee import constants
-
-LOGGER = daiquiri.getLogger(__file__)
 
 
 class Wizard(plug.Plugin, plug.cli.Command):
@@ -30,60 +29,75 @@ class Wizard(plug.Plugin, plug.cli.Command):
         ),
     )
 
-    def command(self, api: plug.API) -> None:
+    def command(self, api: plug.PlatformAPI) -> None:
         return callback(self.args, api)
 
 
-def callback(args: argparse.Namespace, api: plug.API) -> None:
+def callback(args: argparse.Namespace, api: plug.PlatformAPI) -> None:
     """Run through a configuration wizard."""
     parser = configparser.ConfigParser()
 
     if constants.DEFAULT_CONFIG_FILE.exists():
-        LOGGER.warning(
+        plug.log.warning(
             "A configuration file was found at {}".format(
                 str(constants.DEFAULT_CONFIG_FILE)
             )
         )
-        LOGGER.warning(
+        plug.log.warning(
             "Continuing this wizard will OVERWRITE any options you enter "
             "values for"
         )
         if input("Continue anyway? (yes/no): ") != "yes":
-            LOGGER.info("User-prompted exit")
+            plug.echo("User-prompted exit")
             return
         parser.read(str(constants.DEFAULT_CONFIG_FILE))
 
     os.makedirs(
         str(constants.DEFAULT_CONFIG_FILE.parent), mode=0o700, exist_ok=True
     )
-    if constants.DEFAULTS_SECTION_HDR not in parser:
-        parser.add_section(constants.DEFAULTS_SECTION_HDR)
+    if constants.CORE_SECTION_HDR not in parser:
+        parser.add_section(constants.CORE_SECTION_HDR)
 
-    LOGGER.info("Welcome to the configuration wizard!")
-    LOGGER.info("Type defaults for the options when prompted.")
-    LOGGER.info("Press ENTER to end an option.")
-    LOGGER.info(
-        "Press ENTER without inputing a value to pick existing "
-        "default, or skip if no default exists."
+    configurable_args = [
+        plug.ConfigurableArguments(
+            config_section_name=constants.CORE_SECTION_HDR,
+            argnames=list(constants.ORDERED_CONFIGURABLE_ARGS),
+        )
+    ] + plug.manager.hook.get_configurable_args()
+
+    configurable_args_dict = collections.defaultdict(list)
+    for ca in configurable_args:
+        configurable_args_dict[ca.config_section_name] += ca.argnames
+
+    section = bullet.Bullet(
+        prompt="Select a section to configure:",
+        choices=list(configurable_args_dict.keys()),
+    ).launch()
+
+    plug.echo("")
+    plug.echo(
+        f"""Configuring section: {section}
+Type config values for the options when prompted.
+Press ENTER without inputing a value to pick existing default.
+
+Current defaults are shown in brackets [].
+"""
     )
-    LOGGER.info("Current defaults are shown in brackets [].")
-    for option in constants.ORDERED_CONFIGURABLE_ARGS:
+    for option in configurable_args_dict[section]:
         prompt = "Enter default for '{}': [{}] ".format(
-            option, parser[constants.DEFAULTS_SECTION_HDR].get(option, "")
+            option, parser.get(section, option, fallback="")
         )
         default = input(prompt)
         if default:
-            parser[constants.DEFAULTS_SECTION_HDR][option] = default
+            if section not in parser:
+                parser.add_section(section)
+            parser[section][option] = default
 
-    with open(
-        str(constants.DEFAULT_CONFIG_FILE),
-        "w",
-        encoding=sys.getdefaultencoding(),
-    ) as f:
+    with open(str(constants.DEFAULT_CONFIG_FILE), "w", encoding="utf8") as f:
         parser.write(f)
 
-    LOGGER.info(
+    plug.echo(
         "Configuration file written to {}".format(
-            str(constants.DEFAULT_CONFIG_FILE)
+            constants.DEFAULT_CONFIG_FILE
         )
     )

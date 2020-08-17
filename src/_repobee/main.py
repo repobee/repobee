@@ -6,26 +6,26 @@
 .. moduleauthor:: Simon Larsén
 """
 
-import pathlib
+import argparse
 import contextlib
-import sys
 import os
+import pathlib
+import sys
 from typing import List, Optional, Union, Mapping
 from types import ModuleType
 
-import daiquiri
 import repobee_plug as plug
 
 import _repobee.cli.dispatch
 import _repobee.cli.parsing
 import _repobee.cli.preparser
-import _repobee.distinfo
 from _repobee import plugin
 from _repobee import exception
 from _repobee import config
 from _repobee.cli.preparser import separate_args
+from _repobee import distinfo
+from _repobee import disthelpers
 
-LOGGER = daiquiri.getLogger(__file__)
 
 _PRE_INIT_ERROR_MESSAGE = """exception was raised before pre-initialization was
 complete. This is usually due to incorrect settings.
@@ -98,7 +98,7 @@ def run(
             os.chdir(cur_workdir)
 
     def _ensure_is_module(p: Union[ModuleType, plug.Plugin]):
-        if issubclass(p, plug.Plugin):
+        if isinstance(p, type) and issubclass(p, plug.Plugin):
             mod = ModuleType(p.__name__.lower())
             mod.__package__ = f"__{p.__name__}"
             setattr(mod, p.__name__, p)
@@ -140,34 +140,22 @@ def main(sys_args: List[str], unload_plugins: bool = True):
         parsed_preparser_args = _repobee.cli.preparser.parse_args(
             preparser_args
         )
-        config_file = parsed_preparser_args.config_file
 
-        # IMPORTANT: the default plugins must be loaded before user-defined
-        # plugins to ensure that the user-defined plugins override the defaults
-        # in firstresult hooks
-        LOGGER.debug("Initializing default plugins")
-        plugin.initialize_default_plugins()
-        if _repobee.distinfo.DIST_INSTALL:
-            LOGGER.debug("Initializing dist plugins")
-            plugin.initialize_dist_plugins()
-
-        if not parsed_preparser_args.no_plugins:
-            LOGGER.debug("Initializing user plugins")
-            plugin_names = (
-                parsed_preparser_args.plug
-                or config.get_plugin_names(config_file)
-            ) or []
-            plugin.initialize_plugins(plugin_names, allow_filepath=True)
+        _initialize_plugins(parsed_preparser_args)
 
         parsed_args, api = _parse_args(
-            app_args, config_file, parsed_preparser_args.show_all_opts
+            app_args,
+            parsed_preparser_args.config_file,
+            parsed_preparser_args.show_all_opts,
         )
         traceback = parsed_args.traceback
         pre_init = False
-        _repobee.cli.dispatch.dispatch_command(parsed_args, api, config_file)
+        _repobee.cli.dispatch.dispatch_command(
+            parsed_args, api, parsed_preparser_args.config_file
+        )
     except exception.PluginLoadError as exc:
-        LOGGER.error("{.__class__.__name__}: {}".format(exc, str(exc)))
-        LOGGER.error(
+        plug.log.error("{.__class__.__name__}: {}".format(exc, str(exc)))
+        plug.log.error(
             "The plugin may not be installed, or it may not exist. If the "
             "plugin is defined in the config file, try running `repobee "
             "--no-plugins config-wizard` to remove any offending plugins."
@@ -179,16 +167,40 @@ def main(sys_args: List[str], unload_plugins: bool = True):
         if traceback or (
             pre_init and not isinstance(exc, exception.FileError)
         ):
-            LOGGER.error(str(exc))
+            plug.log.error(str(exc))
             if pre_init:
-                LOGGER.info(_PRE_INIT_ERROR_MESSAGE)
-            LOGGER.exception("Critical exception")
+                plug.echo(_PRE_INIT_ERROR_MESSAGE)
+            plug.log.exception("Critical exception")
         else:
-            LOGGER.error("{.__class__.__name__}: {}".format(exc, str(exc)))
+            plug.log.error("{.__class__.__name__}: {}".format(exc, str(exc)))
         sys.exit(1)
     finally:
         if unload_plugins:
             plugin.unregister_all_plugins()
+
+
+def _initialize_plugins(parsed_preparser_args: argparse.Namespace) -> None:
+    # IMPORTANT: the default plugins must be loaded before user-defined
+    # plugins to ensure that the user-defined plugins override the defaults
+    # in firstresult hooks
+    plug.log.debug("Initializing default plugins")
+    plugin.initialize_default_plugins()
+
+    if not parsed_preparser_args.no_plugins:
+
+        if distinfo.DIST_INSTALL:
+            plug.log.debug("Initializing dist plugins")
+            plugin.initialize_dist_plugins()
+            plugin.initialize_plugins(
+                disthelpers.get_active_plugins(), allow_filepath=True
+            )
+
+        plug.log.debug("Initializing user plugins")
+        plugin_names = (
+            parsed_preparser_args.plug
+            or config.get_plugin_names(parsed_preparser_args.config_file)
+        ) or []
+        plugin.initialize_plugins(plugin_names, allow_filepath=True)
 
 
 def _parse_args(args, config_file, show_all_opts):

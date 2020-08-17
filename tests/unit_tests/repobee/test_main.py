@@ -46,11 +46,12 @@ CLONE_ARGS = "clone --mn week-2 -s slarse".split()
 module = namedtuple("module", ("name",))
 
 DEFAULT_PLUGIN_NAMES = plugin.get_qualified_module_names(_repobee.ext.defaults)
+DIST_PLUGIN_NAMES = plugin.get_qualified_module_names(_repobee.ext.dist)
 
 
 @pytest.fixture
 def logger_exception_mock(mocker):
-    return mocker.patch("_repobee.main.LOGGER.exception", autospec=True)
+    return mocker.patch("repobee_plug.log.exception", autospec=True)
 
 
 @pytest.fixture
@@ -406,7 +407,7 @@ def test_non_zero_exit_status_on_exception(
 
 def test_show_config_custom_config():
     config_text = """
-[DEFAULTS]
+[repobee]
 user = some-unlikely-user
 """.strip()
     with tempfile.NamedTemporaryFile() as tmpfile, patch(

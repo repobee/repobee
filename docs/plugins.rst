@@ -105,7 +105,7 @@ example of using the builtins_ ``javac`` and ``pylint``.
 
 .. code-block:: bash
 
-    [DEFAULTS]
+    [repobee]
     plugins = javac, pylint
 
 Like with all other configuration values, they are only used if no command line
@@ -198,7 +198,7 @@ the ``[javac]`` section. Example:
 
 .. code-block:: bash
 
-    [DEFAULTS]
+    [repobee]
     plugins = javac
 
     [javac]
@@ -231,7 +231,7 @@ define some defaults:
 
 .. code-block:: bash
 
-    [DEFAULTS]
+    [repobee]
     plugins = junit4
 
     [junit4]
@@ -241,10 +241,10 @@ define some defaults:
 
 .. important::
 
-    If the configuration file exists, it *must* contain the ``[DEFAULTS]``
+    If the configuration file exists, it *must* contain the ``[repobee]``
     header, even if you don't put anything in that section. This is to minimize
     the risk of subtle misconfiguration errors by novice users. If you only
-    want to configure plugins, just add the ``[DEFAULTS]`` header by itself,
+    want to configure plugins, just add the ``[repobee]`` header by itself,
     without options, to meet this requirement.
 
 .. _repobee-junit4: https://github.com/repobee/repobee-junit4

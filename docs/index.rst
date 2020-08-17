@@ -39,6 +39,7 @@ rest of the guide assumes a configuration as described there.
    cli
    contributing
    repobee_plug/index
+   repobee_testhelpers/index
    code
 
 

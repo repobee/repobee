@@ -7,6 +7,7 @@ import pytest
 import repobee_plug as plug
 
 import _repobee.ext
+import _repobee.command.peer
 import _repobee.ext.gitlab
 import _repobee.cli.mainparser
 import repobee_plug.cli
@@ -29,7 +30,6 @@ from _helpers.const import (
     MASTER_REPO_NAMES,
     STUDENT_TEAMS,
     STUDENT_TEAM_NAMES,
-    STUDENT_REPO_NAMES,
     REPOBEE_GITLAB,
     BASE_ARGS_NO_TB,
     BASE_ARGS,
@@ -69,7 +69,7 @@ class TestClone:
         result = run_in_docker_with_coverage(command, extra_args=extra_args)
 
         assert result.returncode == 0
-        assert_cloned_repos(STUDENT_REPO_NAMES, tmpdir)
+        assert_cloned_repos(STUDENT_TEAMS, MASTER_REPO_NAMES, tmpdir)
 
     def test_clone_twice(self, with_student_repos, tmpdir, extra_args):
         """Cloning twice in a row should have the same effect as cloning once.
@@ -93,7 +93,7 @@ class TestClone:
 
         assert first_result.returncode == 0
         assert second_result.returncode == 0
-        assert_cloned_repos(STUDENT_REPO_NAMES, tmpdir)
+        assert_cloned_repos(STUDENT_TEAMS, MASTER_REPO_NAMES, tmpdir)
 
     def test_clone_does_not_create_dirs_on_fail(
         self, with_student_repos, tmpdir, extra_args
@@ -126,19 +126,16 @@ class TestClone:
         """Test that clone does not clobber existing directories."""
         team_with_local_repos = STUDENT_TEAMS[0]
         teams_without_local_repos = STUDENT_TEAMS[1:]
-        pre_existing_dirnames = plug.generate_repo_names(
-            [team_with_local_repos], MASTER_REPO_NAMES
-        )
-        non_pre_existing_dirnames = plug.generate_repo_names(
-            teams_without_local_repos, MASTER_REPO_NAMES
-        )
 
-        expected_dir_hashes = dict()
-        for dirname in pre_existing_dirnames:
-            new_dir = tmpdir.mkdir(dirname)
-            new_file = new_dir.join("file")
-            new_file.write_text(dirname, encoding="utf-8")
-            expected_dir_hashes[dirname] = hash_directory(new_dir)
+        expected_dir_hashes = []
+        for template_repo_name in MASTER_REPO_NAMES:
+            new_dir = plug.fileutils.generate_repo_path(
+                str(tmpdir), team_with_local_repos.name, template_repo_name
+            )
+            new_dir.mkdir(parents=True)
+            new_file = new_dir / "file"
+            new_file.write_text(str(new_dir), encoding="utf-8")
+            expected_dir_hashes.append((new_dir, hash_directory(new_dir)))
 
         command = " ".join(
             [
@@ -153,12 +150,12 @@ class TestClone:
         result = run_in_docker_with_coverage(command, extra_args=extra_args)
 
         assert result.returncode == 0
-        assert_cloned_repos(non_pre_existing_dirnames, tmpdir)
-        for dirname in pre_existing_dirnames:
-            dirhash = hash_directory(pathlib.Path(str(tmpdir)) / dirname)
-            assert dirhash == expected_dir_hashes[dirname], (
-                "hash mismatch for " + dirname
-            )
+        assert_cloned_repos(
+            teams_without_local_repos, MASTER_REPO_NAMES, tmpdir
+        )
+        for dirpath, expected_hash in expected_dir_hashes:
+            dirhash = hash_directory(dirpath)
+            assert dirhash == expected_hash, "hash mismatch for " + dirpath
 
     def test_discover_repos(self, with_student_repos, tmpdir, extra_args):
         """Test that the --discover-repos option finds all student repos."""
@@ -175,7 +172,7 @@ class TestClone:
         result = run_in_docker_with_coverage(command, extra_args=extra_args)
 
         assert result.returncode == 0
-        assert_cloned_repos(STUDENT_REPO_NAMES, tmpdir)
+        assert_cloned_repos(STUDENT_TEAMS, MASTER_REPO_NAMES, tmpdir)
 
 
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
@@ -298,7 +295,10 @@ class TestMigrate:
             for url in api.get_repo_urls(MASTER_REPO_NAMES)
         ]
         # clone the master repos to disk first first
-        git_commands = ["git clone {}".format(url) for url in master_repo_urls]
+        git_commands = [
+            "git clone {}".format(api.insert_auth(url))
+            for url in master_repo_urls
+        ]
         result = run_in_docker(
             " && ".join(git_commands), extra_args=extra_args
         )
@@ -408,7 +408,7 @@ class TestListIssues:
         unmatched = open_issues[1]
         repo_names = plug.generate_repo_names(STUDENT_TEAMS, MASTER_REPO_NAMES)
 
-        issue_pattern_template = r"^\[INFO\].*{}/#\d:\s+{}.*by {}.?$"
+        issue_pattern_template = r"^.*{}/#\d:\s+{}.*by {}.?$"
         expected_issue_output_patterns = [
             issue_pattern_template.format(repo_name, matched.title, TEACHER)
             for repo_name in repo_names
@@ -453,7 +453,7 @@ class TestAssignReviews:
     def test_assign_one_review(self, with_student_repos, extra_args):
         master_repo_name = MASTER_REPO_NAMES[1]
         expected_review_teams = [
-            plug.Team(
+            plug.StudentTeam(
                 members=[],
                 name=plug.generate_review_team_name(
                     student_team_name, master_repo_name
@@ -487,7 +487,7 @@ class TestAssignReviews:
         assert_issues_exist(
             STUDENT_TEAMS,
             [master_repo_name],
-            _repobee.ext.gitlab.DEFAULT_REVIEW_ISSUE,
+            _repobee.command.peer.DEFAULT_REVIEW_ISSUE,
             expected_num_asignees=1,
         )
 
@@ -635,7 +635,7 @@ class TestCheckReviews:
         num_expected_reviews = 2
         master_repo_name = MASTER_REPO_NAMES[1]
         warning_template = (
-            r"^\[WARNING\] Expected {} to be assigned to {} review teams, but "
+            r"\[WARNING\] Expected {} to be assigned to {} review teams, but "
             "found {}. Review teams may have been tampered with."
         )
         pattern_template = r"{}.*{}.*{}.*\w+-{}.*"

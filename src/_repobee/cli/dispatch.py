@@ -13,15 +13,12 @@ import pathlib
 from typing import Optional, List, Mapping
 
 import repobee_plug as plug
-import daiquiri
 
 from _repobee import command, exception, formatters, util
 
-LOGGER = daiquiri.getLogger(__file__)
-
 
 def dispatch_command(
-    args: argparse.Namespace, api: plug.API, config_file: pathlib.Path
+    args: argparse.Namespace, api: plug.PlatformAPI, config_file: pathlib.Path
 ) -> Mapping[str, List[plug.Result]]:
     """Handle parsed CLI arguments and dispatch commands to the appropriate
     functions. Expected exceptions are caught and turned into SystemExit
@@ -38,6 +35,7 @@ def dispatch_command(
         plug.cli.CoreCommand.issues: _dispatch_issues_command,
         plug.cli.CoreCommand.config: _dispatch_config_command,
         plug.cli.CoreCommand.reviews: _dispatch_reviews_command,
+        plug.cli.CoreCommand.teams: _dispatch_teams_command,
     }
 
     is_ext_command = "_extension_command" in args
@@ -58,7 +56,7 @@ def dispatch_command(
         plug.cli.CoreCommand.repos.update,
         plug.cli.CoreCommand.repos.clone,
     ]:
-        LOGGER.info(formatters.format_hook_results_output(hook_results))
+        plug.echo(formatters.format_hook_results_output(hook_results))
     if hook_results and "hook_results_file" in args and args.hook_results_file:
         _handle_hook_results(
             hook_results=hook_results, filepath=args.hook_results_file
@@ -68,7 +66,7 @@ def dispatch_command(
 
 
 def _dispatch_repos_command(
-    args: argparse.Namespace, config_file: pathlib.Path, api: plug.API
+    args: argparse.Namespace, config_file: pathlib.Path, api: plug.PlatformAPI
 ) -> Optional[Mapping[str, List[plug.Result]]]:
     repos = plug.cli.CoreCommand.repos
     action = args.action
@@ -86,14 +84,11 @@ def _dispatch_repos_command(
         return None
     elif action == repos.clone:
         return command.clone_repos(args.repos, api)
-    elif action == repos.create_teams:
-        api.ensure_teams_and_members(args.students)
-        return None
     _raise_illegal_action_error(args)
 
 
 def _dispatch_issues_command(
-    args: argparse.Namespace, config_file: pathlib.Path, api: plug.API
+    args: argparse.Namespace, config_file: pathlib.Path, api: plug.PlatformAPI
 ) -> Optional[Mapping[str, List[plug.Result]]]:
     issues = plug.cli.CoreCommand.issues
     action = args.action
@@ -118,7 +113,7 @@ def _dispatch_issues_command(
 
 
 def _dispatch_config_command(
-    args: argparse.Namespace, config_file: pathlib.Path, api: plug.API
+    args: argparse.Namespace, config_file: pathlib.Path, api: plug.PlatformAPI
 ) -> Optional[Mapping[str, List[plug.Result]]]:
     config = plug.cli.CoreCommand.config
     action = args.action
@@ -138,7 +133,7 @@ def _dispatch_config_command(
 
 
 def _dispatch_reviews_command(
-    args: argparse.Namespace, config_file: pathlib.Path, api: plug.API
+    args: argparse.Namespace, config_file: pathlib.Path, api: plug.PlatformAPI
 ) -> Optional[Mapping[str, List[plug.Result]]]:
     reviews = plug.cli.CoreCommand.reviews
     action = args.action
@@ -166,6 +161,17 @@ def _dispatch_reviews_command(
     _raise_illegal_action_error(args)
 
 
+def _dispatch_teams_command(
+    args: argparse.Namespace, config_file: pathlib.Path, api: plug.PlatformAPI
+) -> Optional[Mapping[str, List[plug.Result]]]:
+    teams = plug.cli.CoreCommand.teams
+    action = args.action
+    if action == teams.create:
+        command.create_teams(args.students, plug.TeamPermission.PUSH, api)
+        return None
+    _raise_illegal_action_error(args)
+
+
 def _raise_illegal_action_error(args: argparse.Namespace) -> None:
     raise exception.ParseError(
         f"Unknown action {args.action} for category {args.category}"
@@ -173,10 +179,10 @@ def _raise_illegal_action_error(args: argparse.Namespace) -> None:
 
 
 def _handle_hook_results(hook_results, filepath):
-    LOGGER.warning(
+    plug.log.warning(
         "Storing hook results to file is an alpha feature, the file format "
         "is not final"
     )
     output_file = pathlib.Path(filepath)
     util.atomic_write(plug.result_mapping_to_json(hook_results), output_file)
-    LOGGER.info("Hook results stored to {}".format(filepath))
+    plug.echo("Hook results stored to {}".format(filepath))

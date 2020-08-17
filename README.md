@@ -9,6 +9,16 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
+> **PSA:** Big changes are coming in RepoBee 3, which is slated for release
+> August 31st. We are overhauling both the CLI and the plugin system to
+> dramatically simplify both. Many of these changes are **breaking** in regards
+> to RepoBee 2.4. It is unfortunate, but we need to make a clean break with
+> RepoBee 2 in order to create a much better solution for all users.
+>
+> In conjunction with the release of RepoBee 3, we will publish a 2-to-3 guide
+> for those who are familiar with RepoBee 2. The core concepts all remain the
+> same, so the transition should not be difficult.
+
 ## Overview
 RepoBee is a command line tool that allows teachers and teaching assistants
 to administrate large amounts of Git repositories on the GitHub and GitLab

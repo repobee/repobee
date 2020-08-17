@@ -15,16 +15,18 @@ If N is odd, the students are split into (N-1)/2 groups, in which one group has
 import random
 from typing import List
 
-import daiquiri
 
 import repobee_plug as plug
 
-LOGGER = daiquiri.getLogger(name=__file__)
+PLUGIN_DESCRIPTION = (
+    "Makes peer review allocation pairwise (if student A reviews student B, "
+    "then student B reviews student A)"
+)
 
 
 @plug.repobee_hook
 def generate_review_allocations(
-    teams: List[plug.Team], num_reviews: int = 1
+    teams: List[plug.StudentTeam], num_reviews: int = 1
 ) -> List[plug.ReviewAllocation]:
     """Generate peer review allocations such that if team_a reviews team_b,
     then team_b reviews team_a, and no others!
@@ -39,7 +41,7 @@ def generate_review_allocations(
     """
     teams = list(teams)
     if num_reviews != 1:
-        LOGGER.warning(
+        plug.log.warning(
             "num_reviews specified to {}, but in pairwise assignment "
             "num_reviews is ignored".format(num_reviews)
         )

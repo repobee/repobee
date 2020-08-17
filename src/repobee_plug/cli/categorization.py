@@ -93,6 +93,12 @@ class Category(ImmutableMixin, abc.ABC):
     def __hash__(self):
         return hash(repr(self))
 
+    def __getattr__(self, key):
+        """We implement getattr such that linters won't complain about
+        dynamically added members.
+        """
+        return object.__getattribute__(self, key)
+
 
 class Action(ImmutableMixin):
     """Class describing a RepoBee CLI action.

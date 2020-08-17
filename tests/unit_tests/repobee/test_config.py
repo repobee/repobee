@@ -30,7 +30,7 @@ class TestGetConfiguredDefaults:
     def test_get_configured_defaults_empty_file(self, empty_config_mock):
         with pytest.raises(exception.FileError) as exc_info:
             config.get_configured_defaults(str(empty_config_mock))
-        assert "does not contain the required [DEFAULTS] header" in str(
+        assert "does not contain the required [repobee] header" in str(
             exc_info.value
         )
 
@@ -61,7 +61,7 @@ class TestGetConfiguredDefaults:
         invalid_key = "not_valid_key"
         config_contents = os.linesep.join(
             [
-                "[{}]".format(_repobee.constants.DEFAULTS_SECTION_HDR),
+                "[{}]".format(_repobee.constants.CORE_SECTION_HDR),
                 "base_url = {}".format(BASE_URL),
                 "user = {}".format(USER),
                 "org_name = {}".format(ORG_NAME),
@@ -98,7 +98,7 @@ class TestGetConfiguredDefaults:
         with pytest.raises(exception.FileError) as exc_info:
             config.get_configured_defaults(str(empty_config_mock))
 
-        assert "does not contain the required [DEFAULTS] header" in str(
+        assert "does not contain the required [repobee] header" in str(
             exc_info.value
         )
 
@@ -126,7 +126,7 @@ class TestGetPluginNames:
     ):
         contents = os.linesep.join(
             [
-                "[{}]".format(_repobee.constants.DEFAULTS_SECTION_HDR),
+                "[{}]".format(_repobee.constants.CORE_SECTION_HDR),
                 "plugins = " + plugins_string,
             ]
         )
@@ -177,7 +177,7 @@ class TestCheckConfigIntegrity:
         empty_config_mock.write(
             os.linesep.join(
                 [
-                    "[{}]".format(_repobee.constants.DEFAULTS_SECTION_HDR),
+                    "[{}]".format(_repobee.constants.CORE_SECTION_HDR),
                     "user = someone",
                     "option = value",
                 ]
@@ -198,7 +198,7 @@ class TestCheckConfigIntegrity:
         empty_config_mock.write(
             os.linesep.join(
                 [
-                    "[{}]".format(_repobee.constants.DEFAULTS_SECTION_HDR),
+                    "[{}]".format(_repobee.constants.CORE_SECTION_HDR),
                     "user = someone",
                     "base_url",
                     "org_name = cool",

@@ -23,6 +23,15 @@ def defaults_options():
     )
 
 
+@pytest.fixture
+def select_repobee_section(mocker):
+    mocker.patch(
+        "bullet.Bullet.launch",
+        autospec=True,
+        return_value=_repobee.constants.CORE_SECTION_HDR,
+    )
+
+
 def test_exits_when_config_file_exists_and_user_enters_no(config_mock):
     """If the config file exists, a prompt should appear, and if the user
     enters anything but 'yes' the function should exit and the config file
@@ -39,7 +48,7 @@ def test_exits_when_config_file_exists_and_user_enters_no(config_mock):
 
 
 def test_enters_values_if_config_file_exists_and_user_enters_yes(
-    config_mock, defaults_options
+    config_mock, defaults_options, select_repobee_section
 ):
     """If the config file exists, a prompt should appear, and if the user
     enters yes the wizard should proceed as usuall.
@@ -53,13 +62,11 @@ def test_enters_values_if_config_file_exists_and_user_enters_yes(
     confparser.read(str(config_mock))
 
     for key, value in defaults_options.items():
-        assert (
-            confparser[_repobee.constants.DEFAULTS_SECTION_HDR][key] == value
-        )
+        assert confparser[_repobee.constants.CORE_SECTION_HDR][key] == value
 
 
 def test_enters_values_without_continue_prompt_if_no_config_exists(
-    config_mock, defaults_options
+    config_mock, defaults_options, select_repobee_section
 ):
     """If no config mock can be found (ensured by the nothing_exists fixture),
     then the config wizard chould proceed without prompting for a continue.
@@ -73,12 +80,12 @@ def test_enters_values_without_continue_prompt_if_no_config_exists(
     confparser.read(str(config_mock))
 
     for key, value in defaults_options.items():
-        assert (
-            confparser[_repobee.constants.DEFAULTS_SECTION_HDR][key] == value
-        )
+        assert confparser[_repobee.constants.CORE_SECTION_HDR][key] == value
 
 
-def test_skips_empty_values(empty_config_mock, defaults_options):
+def test_skips_empty_values(
+    empty_config_mock, defaults_options, select_repobee_section
+):
     """Test that empty values are not written to the configuration file."""
     defaults_options = collections.OrderedDict(
         (option, c * 10)
@@ -99,16 +106,14 @@ def test_skips_empty_values(empty_config_mock, defaults_options):
     confparser = configparser.ConfigParser()
     confparser.read(str(empty_config_mock))
 
-    assert (
-        empty_option not in confparser[_repobee.constants.DEFAULTS_SECTION_HDR]
-    )
+    assert empty_option not in confparser[_repobee.constants.CORE_SECTION_HDR]
     for key, value in defaults_options.items():
-        assert (
-            confparser[_repobee.constants.DEFAULTS_SECTION_HDR][key] == value
-        )
+        assert confparser[_repobee.constants.CORE_SECTION_HDR][key] == value
 
 
-def test_retains_values_that_are_not_specified(config_mock, defaults_options):
+def test_retains_values_that_are_not_specified(
+    config_mock, defaults_options, select_repobee_section
+):
     """Test that previous default values are retained if the option is skipped,
     and that plugin sections are not touched.
     """
@@ -137,7 +142,7 @@ def test_retains_values_that_are_not_specified(config_mock, defaults_options):
     empty_option = list(defaults_options.keys())[3]
     defaults_options[empty_option] = ""
     expected_retained_default = confparser[
-        _repobee.constants.DEFAULTS_SECTION_HDR
+        _repobee.constants.CORE_SECTION_HDR
     ][empty_option]
 
     # act
@@ -152,16 +157,18 @@ def test_retains_values_that_are_not_specified(config_mock, defaults_options):
     parser.read(str(config_mock))
 
     assert (
-        parser[_repobee.constants.DEFAULTS_SECTION_HDR][empty_option]
+        parser[_repobee.constants.CORE_SECTION_HDR][empty_option]
         == expected_retained_default
     )
     for option, value in defaults_options.items():
-        assert parser[_repobee.constants.DEFAULTS_SECTION_HDR][option] == value
+        assert parser[_repobee.constants.CORE_SECTION_HDR][option] == value
     for option, value in plugin_options.items():
         assert parser[plugin_section][option] == value
 
 
-def test_creates_directory(config_mock, tmpdir, defaults_options):
+def test_creates_directory(
+    config_mock, tmpdir, defaults_options, select_repobee_section
+):
     with patch(
         "builtins.input", side_effect=["yes"] + list(defaults_options.values())
     ), patch("os.makedirs", autospec=True) as makedirs_mock, patch(

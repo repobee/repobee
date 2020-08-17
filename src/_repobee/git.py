@@ -10,15 +10,19 @@ import os
 import subprocess
 import collections
 import pathlib
-import daiquiri
-from typing import Iterable, List, Any, Callable
+import enum
+import shutil
+from typing import Iterable, List, Any, Callable, Tuple
+
+import more_itertools
+
+import repobee_plug as plug
 
 from _repobee import exception
 from _repobee import util
 
 CONCURRENT_TASKS = 20
 
-LOGGER = daiquiri.getLogger(__file__)
 
 Push = collections.namedtuple("Push", ("local_path", "repo_url", "branch"))
 
@@ -109,10 +113,49 @@ async def _clone_async(repo_url: str, branch: str = "", cwd="."):
             url=repo_url,
         )
     else:
-        LOGGER.info("Cloned into {}".format(repo_url))
+        plug.log.info("Cloned into {}".format(repo_url))
 
 
-def clone(repo_urls: Iterable[str], cwd: str = ".") -> List[Exception]:
+class CloneStatus(enum.Enum):
+    CLONED = enum.auto()
+    EXISTED = enum.auto()
+    FAILED = enum.auto()
+
+
+def clone_student_repos(
+    repos: List[plug.StudentRepo],
+    clone_dir: pathlib.Path,
+    api: plug.PlatformAPI,
+) -> Iterable[Tuple[CloneStatus, plug.StudentRepo]]:
+    assert all(map(lambda r: r.path is not None, repos))
+
+    local = [repo for repo in repos if repo.path.exists()]
+    if local:
+        local_repo_ids = [f"{repo.team.name}/{repo.name}" for repo in local]
+        plug.log.warning(
+            f"Found local repos, skipping: {', '.join(local_repo_ids)}"
+        )
+
+    non_local = [repo for repo in repos if not repo.path.exists()]
+    plug.log.info(f"Cloning into {non_local}")
+
+    url_to_non_local = {api.insert_auth(repo.url): repo for repo in non_local}
+    failed_urls = clone(url_to_non_local.keys(), cwd=str(clone_dir))
+
+    failed_repos = {url_to_non_local[url] for url in failed_urls}
+    success_repos = {repo for repo in non_local if repo not in failed_repos}
+
+    for repo in success_repos:
+        shutil.copytree(src=clone_dir / repo.name, dst=repo.path)
+
+    return (
+        [(CloneStatus.EXISTED, repo) for repo in local]
+        + [(CloneStatus.CLONED, repo) for repo in success_repos]
+        + [(CloneStatus.FAILED, repo) for repo in failed_repos]
+    )
+
+
+def clone(repo_urls: Iterable[str], cwd: str = ".") -> List[str]:
     """Clone all repos asynchronously.
 
     Args:
@@ -122,7 +165,6 @@ def clone(repo_urls: Iterable[str], cwd: str = ".") -> List[Exception]:
     Returns:
         URLs from which cloning failed.
     """
-    # TODO valdate repo_urls
     return [
         exc.url
         for exc in _batch_execution(_clone_async, repo_urls, cwd=cwd)
@@ -153,9 +195,9 @@ async def _push_async(pt: Push):
             pt.repo_url,
         )
     elif b"Everything up-to-date" in stderr:
-        LOGGER.info("{} is up-to-date".format(pt.repo_url))
+        plug.log.info("{} is up-to-date".format(pt.repo_url))
     else:
-        LOGGER.info("Pushed files to {} {}".format(pt.repo_url, pt.branch))
+        plug.log.info("Pushed files to {} {}".format(pt.repo_url, pt.branch))
 
 
 def _push_no_retry(push_tuples: Iterable[Push]) -> List[str]:
@@ -197,12 +239,12 @@ def push(push_tuples: Iterable[Push], tries: int = 3) -> List[str]:
     # confusing, but failed_pts needs an initial value
     failed_pts = list(push_tuples)
     for i in range(tries):
-        LOGGER.info("Pushing, attempt {}/{}".format(i + 1, tries))
+        plug.log.info("Pushing, attempt {}/{}".format(i + 1, tries))
         failed_urls = set(_push_no_retry(failed_pts))
-        failed_pts = [pt for pt in push_tuples if pt.repo_url in failed_urls]
+        failed_pts = [pt for pt in failed_pts if pt.repo_url in failed_urls]
         if not failed_pts:
             break
-        LOGGER.warning("{} pushes failed ...".format(len(failed_pts)))
+        plug.log.warning("{} pushes failed ...".format(len(failed_pts)))
 
     return [pt.repo_url for pt in failed_pts]
 
@@ -219,8 +261,7 @@ def _batch_execution(
 
     Args:
         batch_func: A function that takes an iterable as a first argument and
-            returns
-        a list of asyncio.Task objects.
+            returns a list of asyncio.Task objects.
         arg_list: A list of objects that are of the same type as the
         batch_func's first argument.
         batch_func_kwargs: Additional keyword arguments to the batch_func.
@@ -229,38 +270,43 @@ def _batch_execution(
         a list of exceptions raised in the tasks returned by the batch
         function.
     """
-    completed_tasks = []
-    args_iter = iter(arg_list)
-
     loop = asyncio.get_event_loop()
-    has_more_jobs = True
-    while has_more_jobs:
-        args = []
-        for _ in range(CONCURRENT_TASKS):
-            try:
-                args.append(next(args_iter))
-            except StopIteration:
-                has_more_jobs = False
+    return loop.run_until_complete(
+        _batch_execution_async(
+            batch_func, arg_list, *batch_func_args, **batch_func_kwargs
+        )
+    )
 
+
+async def _batch_execution_async(
+    batch_func: Callable[[Iterable[Any], Any], List[asyncio.Task]],
+    arg_list: Iterable[Any],
+    *batch_func_args,
+    **batch_func_kwargs
+) -> List[Exception]:
+
+    import tqdm.asyncio
+
+    exceptions = []
+    loop = asyncio.get_event_loop()
+    for batch, args_chunk in enumerate(
+        more_itertools.ichunked(arg_list, CONCURRENT_TASKS), start=1
+    ):
         tasks = [
             loop.create_task(
                 batch_func(arg, *batch_func_args, **batch_func_kwargs)
             )
-            for arg in args
+            for arg in args_chunk
         ]
-        # if
-        # a) arg_list was empty
-        # or
-        # b) len(arg_list) % CONCURRENT_TASKS == 0
-        # the last iteration will have no tasks
-        if tasks:
-            loop.run_until_complete(asyncio.wait(tasks))
-            completed_tasks += tasks
+        for coro in tqdm.asyncio.tqdm_asyncio.as_completed(
+            tasks, desc=f"Progress batch {batch}"
+        ):
+            try:
+                await coro
+            except exception.GitError as exc:
+                exceptions.append(exc)
 
-    exceptions = [
-        task.exception() for task in completed_tasks if task.exception()
-    ]
     for exc in exceptions:
-        LOGGER.error(str(exc))
+        plug.log.error(str(exc))
 
     return exceptions

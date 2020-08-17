@@ -12,13 +12,13 @@ with open("src/_repobee/__version.py", mode="r", encoding="utf-8") as f:
     __version__ = line.split("=")[1].strip(" '\"\n")
     assert re.match(r"^\d+(\.\d+){2}(-(alpha|beta|rc)(\.\d+)?)?$", __version__)
 
-python_interpreter = os.getenv("REPOBEE_PYTHON_INTERPRETER")
-if python_interpreter:  # install with RepoBee's install script
+install_dir = os.getenv("REPOBEE_INSTALL_DIR")
+if install_dir:  # install with RepoBee's install script
     pathlib.Path("src/_repobee/distinfo.py").write_text(
         f"""
 import pathlib
 DIST_INSTALL = True
-PYTHON_INTERPRETER = pathlib.Path('{python_interpreter}')
+INSTALL_DIR = pathlib.Path('{install_dir}')
 """
     )
 
@@ -31,6 +31,7 @@ test_requirements = [
     "bandit",
     "flake8",
     "black",
+    "pylint",
 ]
 docs_requirements = [
     "sphinx>=1.8.2",
@@ -40,12 +41,22 @@ docs_requirements = [
 ]
 required = [
     "appdirs",
-    "daiquiri",
-    "pygithub",
+    "bullet",
     "colored",
-    "python-gitlab==1.15.0",
+    "daiquiri",
+    "dataclasses>='0.7';python_version<'3.7'",
+    "git-python",
+    "more-itertools>=8.4.0",
     "pluggy>=0.13.1",
+    "pygithub",
+    "python-gitlab==2.4.0",
+    "tabulate",
+    "tqdm>=4.48.2",
 ]
+
+testhelper_resources = (
+    pathlib.Path(__file__).parent / "src/repobee_testhelpers/resources"
+)
 
 setup(
     name="repobee",
@@ -66,11 +77,17 @@ setup(
     license="MIT",
     package_dir={"": "src"},
     packages=find_packages(where="src", exclude=("tests", "docs")),
+    data_files=[
+        (str(testhelper_resources), map(str, testhelper_resources.rglob("*")))
+    ],
     py_modules=["repobee"],
     tests_require=test_requirements,
     install_requires=required,
     extras_require=dict(TEST=test_requirements, DOCS=docs_requirements),
-    entry_points=dict(console_scripts="repobee = repobee:main"),
+    entry_points=dict(
+        console_scripts="repobee = repobee:main",
+        pytest11=["name_of_plugin = repobee_testhelpers.fixtures"],
+    ),
     include_package_data=True,
     zip_safe=False,
     python_requires=">=3.6",

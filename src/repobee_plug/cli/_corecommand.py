@@ -41,7 +41,6 @@ class _CoreCommand(ImmutableMixin):
         update: Action
         clone: Action
         migrate: Action
-        create_teams: Action
 
     class _Issues(Category):
         open: Action
@@ -57,7 +56,11 @@ class _CoreCommand(ImmutableMixin):
         check: Action
         end: Action
 
+    class _Teams(Category):
+        create: Action
+
     repos = _Repos()
     issues = _Issues()
     config = _Config()
     reviews = _Reviews()
+    teams = _Teams()

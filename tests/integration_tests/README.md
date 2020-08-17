@@ -83,7 +83,7 @@ connect to the GitLab instance at `https://gitlab.integrationtest.local`.
 Replace `<TOKEN>` with [this token](token).
 
 ```
-[DEFAULTS]
+[repobee]
 base_url = https://gitlab.integrationtest.local
 token = <TOKEN>
 org_name = repobee-testing

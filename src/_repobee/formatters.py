@@ -11,11 +11,8 @@ import os
 from typing import Mapping, List
 
 from colored import fg, bg, style
-import daiquiri
 
 import repobee_plug as plug
-
-LOGGER = daiquiri.getLogger(__name__)
 
 
 def format_peer_review_progress_output(
@@ -60,7 +57,7 @@ def _format_reviewer(
     if len(performed_reviews) == num_reviews and not remaining_reviews:
         color = bg("dark_green")
     elif len(review_list) != num_reviews:
-        LOGGER.warning(
+        plug.log.warning(
             (
                 "Expected {} to be assigned to {} review teams, but found {}. "
                 "Review teams may have been tampered with."

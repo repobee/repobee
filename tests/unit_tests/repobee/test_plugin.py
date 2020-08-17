@@ -129,6 +129,10 @@ class TestRegisterPlugins:
 class TestTryRegisterPlugin:
     """Tests for try_register_plugin."""
 
+    @pytest.fixture(autouse=True)
+    def unregister_all_plugins(self):
+        plugin.unregister_all_plugins()
+
     def test_modules_unregistered_after_success(self):
         plugin.try_register_plugin(pylint)
         assert not plug.manager.get_plugins()
@@ -182,9 +186,7 @@ class TestInitializePlugins:
             "_repobee.plugin.load_plugin_modules",
             autospec=True,
             return_value=[mod],
-        ), patch(
-            "_repobee.plugin.LOGGER.warning", autospec=True
-        ) as warning_mock:
+        ), patch("repobee_plug.log.warning", autospec=True) as warning_mock:
             plugin.initialize_plugins([mod_name])
 
         assert warning_mock.called

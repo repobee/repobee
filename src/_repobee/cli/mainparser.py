@@ -10,10 +10,8 @@ import types
 import argparse
 import pathlib
 
-import logging
 from typing import Union, Mapping
 
-import daiquiri
 
 import repobee_plug as plug
 from repobee_plug.cli import categorization
@@ -24,7 +22,6 @@ from _repobee import config
 from _repobee import constants
 from _repobee.cli.preparser import PRE_PARSER_SHOW_ALL_OPTS
 
-LOGGER = daiquiri.getLogger(__file__)
 
 CATEGORY = "category"
 ACTION = "action"
@@ -32,8 +29,7 @@ ACTION = "action"
 _HOOK_RESULTS_PARSER = argparse.ArgumentParser(add_help=False)
 _HOOK_RESULTS_PARSER.add_argument(
     "--hook-results-file",
-    help="Path to a file to store results from plugin hooks in. The "
-    "results are stored as JSON, regardless of file extension.",
+    help="path to a .json file to store results from plugin hooks in",
     type=str,
     default=None,
 )
@@ -41,9 +37,8 @@ _REPO_NAME_PARSER = argparse.ArgumentParser(add_help=False)
 _REPO_NAME_PARSER.add_argument(
     "--mn",
     "--master-repo-names",
-    help="One or more names of master repositories. Names must either "
-    "refer to local directories, or to master repositories in the "
-    "target organization.",
+    help="one or more names of master repositories, referring either to local "
+    "directories or repos in the master organization",
     type=str,
     required=True,
     nargs="+",
@@ -56,18 +51,16 @@ _DISCOVERY_MUTEX_GRP = _REPO_DISCOVERY_PARSER.add_mutually_exclusive_group(
 _DISCOVERY_MUTEX_GRP.add_argument(
     "--mn",
     "--master-repo-names",
-    help="One or more names of master repositories. Names must either "
-    "refer to local directories, or to master repositories in the "
-    "target organization.",
+    help="one or more names of master repositories, referring either to local "
+    "directories or repos in the master organization",
     type=str,
     nargs="+",
     dest="master_repo_names",
 )
 _DISCOVERY_MUTEX_GRP.add_argument(
     "--discover-repos",
-    help="Discover all repositories for the specified students. NOTE: This "
-    "is expensive in terms of API requests, if you have a rate limit you "
-    "may want to avoid this option.",
+    help="discover all repositories for the specified students (NOTE: "
+    "expensive in terms of API calls)",
     action="store_true",
 )
 
@@ -79,7 +72,6 @@ def create_parser_for_docs() -> argparse.ArgumentParser:
     Returns:
         The primary parser, specifically for generating documentation.
     """
-    daiquiri.setup(level=logging.FATAL)
     # load default plugins
     plugin.initialize_default_plugins()
     return create_parser(
@@ -139,7 +131,7 @@ def create_parser(
     parser.add_argument(
         "-v",
         "--version",
-        help="Display version info",
+        help="display version info",
         action="version",
         version="{}".format(_repobee.__version__),
     )
@@ -178,21 +170,26 @@ def _add_subparsers(parser, show_all_opts, config_file):
     repo_parsers = _create_category_parsers(
         plug.cli.CoreCommand.repos,
         description="Manage repositories.",
-        help="Manage repositories.",
+        help="manage repositories",
+    )
+    teams_parsers = _create_category_parsers(
+        plug.cli.CoreCommand.teams,
+        description="Manage teams.",
+        help="manage teams",
     )
     issues_parsers = _create_category_parsers(
         plug.cli.CoreCommand.issues,
         description="Manage issues.",
-        help="Manage issues.",
+        help="manage issues",
     )
     review_parsers = _create_category_parsers(
         plug.cli.CoreCommand.reviews,
-        help="Manage peer reviews.",
+        help="manage peer reviews",
         description="Manage peer reviews.",
     )
     config_parsers = _create_category_parsers(
         plug.cli.CoreCommand.config,
-        help="Configure RepoBee.",
+        help="configure RepoBee",
         description="Configure RepoBee.",
     )
 
@@ -210,6 +207,12 @@ def _add_subparsers(parser, show_all_opts, config_file):
         base_student_parser,
         master_org_parser,
         _add_action_parser(repo_parsers),
+    )
+    _add_teams_parsers(
+        base_parser,
+        base_student_parser,
+        master_org_parser,
+        _add_action_parser(teams_parsers),
     )
     _add_issue_parsers(
         [base_parser, base_student_parser, _REPO_NAME_PARSER],
@@ -240,7 +243,7 @@ def _add_repo_parsers(
 ):
     add_parser(
         plug.cli.CoreCommand.repos.setup,
-        help="Setup student repos.",
+        help="setup student repos and associated teams",
         description=(
             "Setup student repositories based on master repositories. "
             "This command performs three primary actions: sets up the "
@@ -262,7 +265,7 @@ def _add_repo_parsers(
 
     update = add_parser(
         plug.cli.CoreCommand.repos.update,
-        help="Update existing student repos.",
+        help="update existing student repos",
         description=(
             "Push changes from master repos to student repos. If the "
             "`--issue` option is provided, the specified issue is opened in "
@@ -280,16 +283,14 @@ def _add_repo_parsers(
     update.add_argument(
         "-i",
         "--issue",
-        help=(
-            "Path to issue to open in repos to which pushes fail. "
-            "Assumes that the first line is the title of the issue."
-        ),
+        help="path to issue file to open in repos to which pushes fail "
+        "(NOTE: first line is assumed to be the title)",
         type=str,
     )
 
     add_parser(
         plug.cli.CoreCommand.repos.clone,
-        help="Clone student repos.",
+        help="clone student repos",
         description="Clone student repos asynchronously in bulk.",
         parents=[
             base_parser,
@@ -301,8 +302,25 @@ def _add_repo_parsers(
     )
 
     add_parser(
-        plug.cli.CoreCommand.repos.create_teams,
-        help="Create student teams without creating repos.",
+        plug.cli.CoreCommand.repos.migrate,
+        help="migrate repositories into the target organization",
+        description=(
+            "Migrate repositories into the target organization. "
+            "The repos must be local on disk to be migrated. Note that "
+            "migrated repos will be private."
+        ),
+        parents=[_REPO_NAME_PARSER, base_parser],
+        formatter_class=_OrderedFormatter,
+    )
+
+
+def _add_teams_parsers(
+    base_parser, base_student_parser, master_org_parser, add_parser
+):
+
+    add_parser(
+        plug.cli.CoreCommand.teams.create,
+        help="create student teams without creating repos",
         description=(
             "Only create student teams. This is intended for when you want to "
             "use RepoBee for management, but don't want to dictate the names "
@@ -314,23 +332,11 @@ def _add_repo_parsers(
         formatter_class=_OrderedFormatter,
     )
 
-    add_parser(
-        plug.cli.CoreCommand.repos.migrate,
-        help="Migrate repositories into the target organization.",
-        description=(
-            "Migrate repositories into the target organization. "
-            "The repos must be local on disk to be migrated. Note that "
-            "migrated repos will be private."
-        ),
-        parents=[_REPO_NAME_PARSER, base_parser],
-        formatter_class=_OrderedFormatter,
-    )
-
 
 def _add_config_parsers(base_parser, master_org_parser, add_parser):
     show_config = add_parser(
         plug.cli.CoreCommand.config.show,
-        help="Show the configuration file",
+        help="show the configuration file",
         description=(
             "Show the contents of the configuration file. If no configuration "
             "file can be found, show the path where repobee expectes to find "
@@ -342,7 +348,7 @@ def _add_config_parsers(base_parser, master_org_parser, add_parser):
 
     add_parser(
         plug.cli.CoreCommand.config.verify,
-        help="Verify core settings.",
+        help="verify core settings",
         description="Verify core settings by trying various API requests.",
         parents=[base_parser, master_org_parser],
         formatter_class=_OrderedFormatter,
@@ -361,7 +367,7 @@ def _add_peer_review_parsers(base_parsers, add_parser):
             "students. Note that review allocation strategy may be altered "
             "by plugins."
         ),
-        help="Assign students to peer review each others' repos.",
+        help="assign students to peer review each others' repos",
         parents=base_parsers,
         formatter_class=_OrderedFormatter,
     )
@@ -369,21 +375,15 @@ def _add_peer_review_parsers(base_parsers, add_parser):
         "-n",
         "--num-reviews",
         metavar="N",
-        help="Assign each student to review n repos (consequently, each repo "
-        "is reviewed by n students). n must be strictly smaller than the "
-        "amount of students.",
+        help="assign each student to review n repos, n < amount of students",
         type=int,
         default=1,
     )
     assign_parser.add_argument(
         "-i",
         "--issue",
-        help=(
-            "Path to an issue to open in student repos. If specified, this "
-            "issue will be opened in each student repo, and the body will be "
-            "prepended with user mentions of all students assigned to review "
-            "the repo. NOTE: The first line is assumed to be the title."
-        ),
+        help="path to an issue file with review instructions to open in "
+        "student repos (NOTE: first line is assumed to be the title)",
         type=str,
     )
     check_review_progress = add_parser(
@@ -396,28 +396,22 @@ def _add_peer_review_parsers(base_parsers, add_parser):
             "no way to check if students have been swapped around, so using "
             "this command fow grading purposes is not recommended."
         ),
-        help="Check which students have opened peer review issues.",
+        help="check which students have opened peer review issues",
         parents=base_parsers,
         formatter_class=_OrderedFormatter,
     )
     check_review_progress.add_argument(
         "-r",
         "--title-regex",
-        help=(
-            "Regex to match against titles. Only issues matching this regex "
-            "will count as review issues."
-        ),
+        help="issues matching this regex will count as review issues.",
         required=True,
     )
     check_review_progress.add_argument(
         "-n",
         "--num-reviews",
         metavar="N",
-        help=(
-            "The expected amount of reviews each student should be assigned "
-            "to perform. If a student is not assigned to `num_reviews` "
-            "review teams, warnings will be displayed."
-        ),
+        help="the expected amount of reviews each student should be assigned,"
+        " used to check for team tampering",
         type=int,
         required=True,
     )
@@ -435,10 +429,8 @@ def _add_peer_review_parsers(base_parsers, add_parser):
             "needs the allocations to function properly. Use this command "
             "only when reviews are done."
         ),
-        help=(
-            "Delete review allocations created by `assign-reviews`. "
-            "DESTRUCTIVE ACTION: read help section before using."
-        ),
+        help="delete review allocations created by `assign-reviews` "
+        "(DESTRUCTIVE ACTION: read help section before using)",
         parents=base_parsers,
         formatter_class=_OrderedFormatter,
     )
@@ -455,14 +447,15 @@ def _add_issue_parsers(base_parsers, add_parser):
             "NOTE: The first line of the issue file is assumed to be the "
             "issue title!"
         ),
-        help="Open issues in student repos.",
+        help="open issues in student repos",
         parents=base_parsers,
         formatter_class=_OrderedFormatter,
     )
     open_parser.add_argument(
         "-i",
         "--issue",
-        help="Path to an issue. The first line is assumed to be the title.",
+        help="path to an issue file (NOTE: first line is assumed to be the "
+        "title)",
         type=str,
         required=True,
     )
@@ -475,17 +468,14 @@ def _add_issue_parsers(base_parsers, add_parser):
             "student repo found, any open issues matching the `--title-regex` "
             "are closed."
         ),
-        help="Close issues in student repos.",
+        help="close issues in student repos",
         parents=[base_parser, base_student_parser, _REPO_DISCOVERY_PARSER],
         formatter_class=_OrderedFormatter,
     )
     close_parser.add_argument(
         "-r",
         "--title-regex",
-        help=(
-            "Regex to match titles against. Any issue whose title matches the "
-            "regex will be closed."
-        ),
+        help="regex to filter issues by",
         type=str,
         required=True,
     )
@@ -503,44 +493,39 @@ def _add_issue_parsers(base_parsers, add_parser):
         formatter_class=_OrderedFormatter,
     )
     list_parser.add_argument(
-        "-r",
-        "--title-regex",
-        help=(
-            "Regex to match against titles. Only issues matching this regex "
-            "will be listed."
-        ),
+        "-r", "--title-regex", help="regex to filter issues by",
     )
     list_parser.add_argument(
         "-b",
         "--show-body",
         action="store_true",
-        help="Show the body of the issue, alongside the default info.",
+        help="show the body of the issue, alongside the default info",
     )
     list_parser.add_argument(
         "-a",
         "--author",
-        help="Only show issues by this author.",
+        help="only show issues by this author",
         type=str,
         default=None,
     )
     state = list_parser.add_mutually_exclusive_group()
     state.add_argument(
         "--open",
-        help="List open issues (default).",
+        help="list open issues (default)",
         action="store_const",
         dest="state",
         const=plug.IssueState.OPEN,
     )
     state.add_argument(
         "--closed",
-        help="List closed issues.",
+        help="list closed issues",
         action="store_const",
         dest="state",
         const=plug.IssueState.CLOSED,
     )
     state.add_argument(
         "--all",
-        help="List all issues (open and closed).",
+        help="list all issues (open and closed)",
         action="store_const",
         dest="state",
         const=plug.IssueState.ALL,
