@@ -275,7 +275,7 @@ class LocalAPI(plug.PlatformAPI):
         org_name: str,
         base_url: str,
         token: str,
-        master_org_name: Optional[str] = None,
+        template_org_name: Optional[str] = None,
     ) -> None:
         pass
 

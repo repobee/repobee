@@ -19,7 +19,7 @@ from _helpers.const import (
     COVERAGE_VOLUME_DST,
     REPOBEE_GITLAB,
     BASE_ARGS,
-    MASTER_ORG_ARG,
+    TEMPLATE_ORG_ARG,
     MASTER_REPOS_ARG,
     STUDENTS_ARG,
     STUDENT_TEAMS,
@@ -124,7 +124,7 @@ def with_student_repos(restore):
             REPOBEE_GITLAB,
             *str(repobee_plug.cli.CoreCommand.repos.setup).split(),
             *BASE_ARGS,
-            *MASTER_ORG_ARG,
+            *TEMPLATE_ORG_ARG,
             *MASTER_REPOS_ARG,
             *STUDENTS_ARG,
         ]

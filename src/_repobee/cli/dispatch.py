@@ -125,7 +125,7 @@ def _dispatch_config_command(
             args.org_name,
             args.base_url,
             args.token,
-            args.master_org_name,
+            args.template_org_name,
         )
         return None
     elif action == config.show:

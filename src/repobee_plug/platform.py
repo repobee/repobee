@@ -394,7 +394,7 @@ class _APISpec:
         org_name: str,
         base_url: str,
         token: str,
-        master_org_name: Optional[str] = None,
+        template_org_name: Optional[str] = None,
     ):
         """Verify the following (to the extent that is possible and makes sense
         for the specific platform):
@@ -402,10 +402,10 @@ class _APISpec:
         1. Base url is correct
         2. The token has sufficient access privileges
         3. Target organization (specifiend by ``org_name``) exists
-            - If master_org_name is supplied, this is also checked to
+            - If template_org_name is supplied, this is also checked to
               exist.
         4. User is owner in organization (verify by getting
-            - If master_org_name is supplied, user is also checked to be an
+            - If template_org_name is supplied, user is also checked to be an
               owner of it.
         organization member list and checking roles)
 

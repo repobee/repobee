@@ -47,8 +47,8 @@ def run_repobee(
 
     This function will by default use a config file that sets appropriate
     values for ``students_file``, ``user``, ``org_name`` and
-    ``master_org_name`` for use with the :py:class:`~fakeapi.FakeAPI` platform
-    API. If you wish to use a different config, simply pass
+    ``template_org_name`` for use with the :py:class:`~fakeapi.FakeAPI`
+    platform API. If you wish to use a different config, simply pass
     ``config_file="/path/to/your/config"`` to the function, or
     ``config_file=""`` to not use a config file at all.
 
@@ -78,7 +78,7 @@ def run_repobee(
 students_file = {students_file}
 org_name = {const.TARGET_ORG_NAME}
 user = {const.TEACHER}
-master_org_name = {const.TEMPLATE_ORG_NAME}
+template_org_name = {const.TEMPLATE_ORG_NAME}
 token = {const.TOKEN}
 """
         )

@@ -102,7 +102,7 @@ def _parse_args(
     args_dict["issue"] = (
         util.read_issue(args.issue) if "issue" in args and args.issue else None
     )
-    args_dict.setdefault("master_org_name", None)
+    args_dict.setdefault("template_org_name", None)
     args_dict.setdefault("title_regex", None)
     args_dict.setdefault("state", None)
     args_dict.setdefault("show_body", None)
@@ -146,16 +146,16 @@ def _process_args(
     """
     api = _connect_to_api(args.base_url, args.token, args.org_name, args.user)
 
-    master_org_name = args.org_name
-    if "master_org_name" in args and args.master_org_name is not None:
-        master_org_name = args.master_org_name
+    template_org_name = args.org_name
+    if "template_org_name" in args and args.template_org_name is not None:
+        template_org_name = args.template_org_name
 
     repos = master_names = master_urls = None
     if "discover_repos" in args and args.discover_repos:
         repos = _discover_repos(args.students, api)
     elif "assignments" in args:
         master_names = args.assignments
-        master_urls = _repo_names_to_urls(master_names, master_org_name, api)
+        master_urls = _repo_names_to_urls(master_names, template_org_name, api)
         repos = _repo_tuple_generator(master_names, args.students, api)
         assert master_urls and master_names
 

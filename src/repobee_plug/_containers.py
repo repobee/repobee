@@ -97,7 +97,7 @@ class BaseParser(enum.Enum):
         REPO_DISCOVERY: Represents the repo discovery parser, which adds
             both the ``--assignments`` and the ``--discover-repos``
             arguments.
-        MASTER_ORG: Represents the master organization parser, which includes
+        TEMPLATE_ORG: Represents the master organization parser, which includes
             the ``--master-org`` argument.
     """
 

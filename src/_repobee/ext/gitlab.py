@@ -387,7 +387,7 @@ class GitLabAPI(plug.PlatformAPI):
         org_name: str,
         base_url: str,
         token: str,
-        master_org_name: Optional[str] = None,
+        template_org_name: Optional[str] = None,
     ):
         """See :py:meth:`repobee_plug.PlatformAPI.verify_settings`."""
         plug.echo("GitLabAPI is verifying settings ...")
@@ -417,8 +417,8 @@ class GitLabAPI(plug.PlatformAPI):
         )
 
         GitLabAPI._verify_group(org_name, gl)
-        if master_org_name:
-            GitLabAPI._verify_group(master_org_name, gl)
+        if template_org_name:
+            GitLabAPI._verify_group(template_org_name, gl)
 
         plug.echo("GREAT SUCCESS: All settings check out!")
 

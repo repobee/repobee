@@ -13,7 +13,7 @@ from .const import (
     ORG_NAME,
     LOCAL_BASE_URL,
     TOKEN,
-    MASTER_ORG_NAME,
+    TEMPLATE_ORG_NAME,
     BASE_DOMAIN,
     LOCAL_DOMAIN,
     TEACHER,
@@ -30,7 +30,7 @@ def gitlab_and_groups():
     target group.
     """
     gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
-    master_group = gl.groups.list(search=MASTER_ORG_NAME)[0]
+    master_group = gl.groups.list(search=TEMPLATE_ORG_NAME)[0]
     target_group = gl.groups.list(search=ORG_NAME)[0]
     return gl, master_group, target_group
 
