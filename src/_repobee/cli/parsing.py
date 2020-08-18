@@ -160,7 +160,7 @@ def _process_args(
         assert master_urls and master_names
 
     args_dict = vars(args)
-    args_dict["master_repo_urls"] = master_urls
+    args_dict["template_repo_urls"] = master_urls
     args_dict["assignments"] = master_names
     args_dict["repos"] = repos
     # marker for functionality that relies on fully processed args
