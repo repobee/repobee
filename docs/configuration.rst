@@ -42,7 +42,7 @@ consequence, a single organization).
     base_url = https://some-api-v3-url
     user = YOUR_USERNAME
     org_name = ORGANIZATION_NAME
-    master_org_name = TEMPLATE_ORGANIZATION_NAME
+    template_org_name = TEMPLATE_ORGANIZATION_NAME
     students_file = STUDENTS_FILE_ABSOLUTE_PATH
     token = SUPER_SECRET_TOKEN
 

@@ -67,7 +67,7 @@ class DummyAPI(plug.PlatformAPI):
         org_name: str,
         base_url: str,
         token: str,
-        master_org_name: Optional[str] = None,
+        template_org_name: Optional[str] = None,
     ) -> None:
         pass
 
@@ -238,7 +238,9 @@ def empty_config_mock(mocker, isfile_mock, tmpdir, monkeypatch):
 _config_user = "user = {}".format(constants.USER)
 _config_base = "base_url = {}".format(constants.BASE_URL)
 _config_org = "org_name = {}".format(constants.ORG_NAME)
-_config_master_org = "master_org_name = {}".format(constants.TEMPLATE_ORG_NAME)
+_config_template_org = "template_org_name = {}".format(
+    constants.TEMPLATE_ORG_NAME
+)
 
 
 @pytest.fixture(params=["--bu", "-u", "--sf", "-o", "--mo"])
@@ -255,7 +257,7 @@ def config_missing_option(request, empty_config_mock, students_file):
     if not missing_option == "-u":
         config_contents.append(_config_user)
     if not missing_option == "--mo":
-        config_contents.append(_config_master_org)
+        config_contents.append(_config_template_org)
 
     empty_config_mock.write(os.linesep.join(config_contents))
 
@@ -271,7 +273,7 @@ def config_mock(empty_config_mock, students_file):
             "base_url = {}".format(constants.BASE_URL),
             "user = {}".format(constants.USER),
             "org_name = {}".format(constants.ORG_NAME),
-            "master_org_name = {}".format(constants.TEMPLATE_ORG_NAME),
+            "template_org_name = {}".format(constants.TEMPLATE_ORG_NAME),
             "students_file = {!s}".format(students_file),
             "plugins = {!s}".format(",".join(constants.PLUGINS)),
             "token = {}".format(constants.CONFIG_TOKEN),

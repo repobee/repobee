@@ -80,7 +80,7 @@ has defaults for at least the following:
    base_url = https://some-enterprise-host/api/v3
    user = slarse
    org_name = repobee-demo
-   master_org_name = master-repos
+   template_org_name = master-repos
    token = SUPER_SECRET_TOKEN
 
 Now, run ``repobee config-wizard`` and enter your own values for the options
@@ -95,7 +95,7 @@ value. Here are some pointers regarding the different values:
 * Replace ``slarse`` with your GitHub username.
 * Replace ``repobee-demo`` with whatever you named your target organization.
 * Replace ``SUPER_SECRET_TOKEN`` with your access token.
-* Replace ``master_org_name`` with the name of the organization with your master repos.
+* Replace ``template_org_name`` with the name of the organization with your master repos.
     - It you keep the master repos in the target organization or locally, **skip
       this option**.
 * **If you are using GitLab**:
@@ -117,7 +117,7 @@ that you got everything correctly.
     base_url = https://some-enterprise-host/api/v3
     user = slarse
     org_name = repobee-demo
-    master_org_name = master-repos
+    template_org_name = master-repos
     token = SUPER_SECRET_TOKEN
     -----------------END CONFIG FILE------------------
 
@@ -162,7 +162,7 @@ Set up master repos
 How you do this will depend on where you want to have your master repos. I
 recommend having a separate, persistent organization so that you can work on
 repos across course rounds. If you already have a master organization with your
-master repos set up somewhere, and ``master_org_name`` is specified in the
+master repos set up somewhere, and ``template_org_name`` is specified in the
 config, you're good to go. If you need to migrate repos into the target
 organization (e.g. if you keep master repos in the target organization), see
 the :ref:`migrate` section. For all commands but the ``migrate`` command, the

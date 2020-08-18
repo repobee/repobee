@@ -49,7 +49,7 @@ COMPLETE_PUSH_ARGS = [*BASE_ARGS, *BASE_PUSH_ARGS]
 # parsed args without subparser
 VALID_PARSED_ARGS = dict(
     org_name=ORG_NAME,
-    master_org_name=TEMPLATE_ORG_NAME,
+    template_org_name=TEMPLATE_ORG_NAME,
     base_url=BASE_URL,
     user=USER,
     master_repo_urls=REPO_URLS,
@@ -392,7 +392,7 @@ class TestDispatchCommand:
             base_url=BASE_URL,
             token=TOKEN,
             org_name=ORG_NAME,
-            master_org_name=None
+            template_org_name=None
         )
         mock_verify_settings = mock.MagicMock(
             spec=dummyapi_class.verify_settings
@@ -407,7 +407,7 @@ class TestDispatchCommand:
             args.user, args.org_name, args.base_url, TOKEN, None
         )
 
-    def test_verify_settings_called_with_master_org_name(
+    def test_verify_settings_called_with_template_org_name(
         self, dummyapi_class, monkeypatch
     ):
         args = argparse.Namespace(
@@ -416,7 +416,7 @@ class TestDispatchCommand:
             base_url=BASE_URL,
             org_name=ORG_NAME,
             token=TOKEN,
-            master_org_name=TEMPLATE_ORG_NAME
+            template_org_name=TEMPLATE_ORG_NAME
         )
         mock_verify_settings = mock.MagicMock(
             spec=dummyapi_class.verify_settings
@@ -517,7 +517,7 @@ class TestBaseParsing:
             repobee_plug.cli.CoreCommand.repos.update,
         ],
     )
-    def test_master_org_overrides_target_org_for_master_repos(
+    def test_template_org_overrides_target_org_for_master_repos(
         self, command_mock, dummyapi_instance, students_file, action
     ):
         print(plug.manager.get_plugins())
@@ -546,7 +546,7 @@ class TestBaseParsing:
             repobee_plug.cli.CoreCommand.repos.update,
         ],
     )
-    def test_master_org_name_defaults_to_org_name(
+    def test_template_org_name_defaults_to_org_name(
         self, dummyapi_instance, students_file, action
     ):
         parsed_args, _ = _repobee.cli.parsing.handle_args(

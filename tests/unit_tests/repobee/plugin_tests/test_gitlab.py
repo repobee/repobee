@@ -442,7 +442,7 @@ class TestVerifySettings:
                 org_name=TARGET_GROUP,
                 base_url=BASE_URL,
                 token=TOKEN,
-                master_org_name=non_existing_group,
+                template_org_name=non_existing_group,
             )
 
         assert "Could not find group with slug {}".format(
@@ -466,7 +466,7 @@ class TestVerifySettings:
             org_name=TARGET_GROUP,
             base_url=BASE_URL,
             token=TOKEN,
-            master_org_name=MASTER_GROUP,
+            template_org_name=MASTER_GROUP,
         )
 
         log_mock.assert_called_with("GREAT SUCCESS: All settings check out!")

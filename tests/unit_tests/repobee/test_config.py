@@ -46,7 +46,7 @@ class TestGetConfiguredDefaults:
         assert defaults["org_name"] == ORG_NAME
         assert defaults["students_file"] == str(students_file)
         assert defaults["plugins"] == ",".join(PLUGINS)
-        assert defaults["master_org_name"] == TEMPLATE_ORG_NAME
+        assert defaults["template_org_name"] == TEMPLATE_ORG_NAME
         assert defaults["token"] == CONFIG_TOKEN
 
     def test_token_in_env_variable_overrides_configuration_file(
@@ -65,7 +65,7 @@ class TestGetConfiguredDefaults:
                 "base_url = {}".format(BASE_URL),
                 "user = {}".format(USER),
                 "org_name = {}".format(ORG_NAME),
-                "master_org_name = {}".format(TEMPLATE_ORG_NAME),
+                "template_org_name = {}".format(TEMPLATE_ORG_NAME),
                 "students_file = {!s}".format(students_file),
                 "plugins = {!s}".format(PLUGINS),
                 "{} = whatever".format(invalid_key),
