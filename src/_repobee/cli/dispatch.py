@@ -76,15 +76,15 @@ def _dispatch_repos_command(
     action = args.action
     if action == repos.setup:
         return command.setup_student_repos(
-            args.master_repo_urls, args.students, api
+            args.template_repo_urls, args.students, api
         )
     elif action == repos.update:
         command.update_student_repos(
-            args.master_repo_urls, args.students, api, issue=args.issue
+            args.template_repo_urls, args.students, api, issue=args.issue
         )
         return None
     elif action == repos.migrate:
-        command.migrate_repos(args.master_repo_urls, api)
+        command.migrate_repos(args.template_repo_urls, api)
         return None
     elif action == repos.clone:
         return command.clone_repos(args.repos, api)

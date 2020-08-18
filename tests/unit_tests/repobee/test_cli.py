@@ -52,7 +52,7 @@ VALID_PARSED_ARGS = dict(
     template_org_name=TEMPLATE_ORG_NAME,
     base_url=BASE_URL,
     user=USER,
-    master_repo_urls=REPO_URLS,
+    template_repo_urls=REPO_URLS,
     assignments=ASSIGNMENT_NAMES,
     students=list(STUDENTS),
     issue=ISSUE,
@@ -279,7 +279,7 @@ class TestDispatchCommand:
         )
 
         command_mock.setup_student_repos.assert_called_once_with(
-            args.master_repo_urls, args.students, dummyapi_instance
+            args.template_repo_urls, args.students, dummyapi_instance
         )
 
     def test_update_student_repos_called_with_correct_args(
@@ -295,7 +295,7 @@ class TestDispatchCommand:
         )
 
         command_mock.update_student_repos.assert_called_once_with(
-            args.master_repo_urls,
+            args.template_repo_urls,
             args.students,
             dummyapi_instance,
             issue=args.issue,
@@ -362,7 +362,7 @@ class TestDispatchCommand:
         )
 
         command_mock.migrate_repos.assert_called_once_with(
-            args.master_repo_urls, dummyapi_instance
+            args.template_repo_urls, dummyapi_instance
         )
 
     def test_clone_repos_called_with_correct_args(
@@ -535,7 +535,7 @@ class TestBaseParsing:
         assert all(
             [
                 "/" + TEMPLATE_ORG_NAME + "/" in url
-                for url in parsed_args.master_repo_urls
+                for url in parsed_args.template_repo_urls
             ]
         )
 
@@ -561,7 +561,7 @@ class TestBaseParsing:
         assert all(
             [
                 "/" + ORG_NAME + "/" in url
-                for url in parsed_args.master_repo_urls
+                for url in parsed_args.template_repo_urls
             ]
         )
 
@@ -659,7 +659,7 @@ class TestBaseParsing:
         assert api == dummyapi_instance
         assert parsed_args.students == list(STUDENTS)
         assert parsed_args.assignments is None
-        assert parsed_args.master_repo_urls is None
+        assert parsed_args.template_repo_urls is None
 
 
 class TestStudentParsing:
@@ -856,7 +856,7 @@ def assert_base_push_args(parsed_args):
     assert parsed_args.base_url == BASE_URL
     assert parsed_args.user == USER
     assert parsed_args.assignments == list(ASSIGNMENT_NAMES)
-    assert parsed_args.master_repo_urls == [
+    assert parsed_args.template_repo_urls == [
         generate_repo_url(rn, ORG_NAME) for rn in ASSIGNMENT_NAMES
     ]
     assert parsed_args.base_url == BASE_URL
@@ -1006,7 +1006,7 @@ class TestSetupAndUpdateParsers:
 
         parsed_args, _ = _repobee.cli.parsing.handle_args(sys_args)
 
-        assert sorted(parsed_args.master_repo_urls) == sorted(expected)
+        assert sorted(parsed_args.template_repo_urls) == sorted(expected)
 
 
 class TestMigrateParser:
@@ -1028,7 +1028,7 @@ class TestMigrateParser:
         assert parsed_args.org_name == ORG_NAME
         assert parsed_args.base_url == BASE_URL
         assert parsed_args.assignments == self.NAMES
-        assert parsed_args.master_repo_urls == self.LOCAL_URIS
+        assert parsed_args.template_repo_urls == self.LOCAL_URIS
 
     def test_happy_path(self):
         sys_args = [

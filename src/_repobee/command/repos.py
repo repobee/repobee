@@ -34,7 +34,7 @@ from _repobee.command import progresswrappers
 
 
 def setup_student_repos(
-    master_repo_urls: Iterable[str],
+    template_repo_urls: Iterable[str],
     teams: Iterable[plug.StudentTeam],
     api: plug.PlatformAPI,
 ) -> Mapping[str, List[plug.Result]]:
@@ -55,7 +55,7 @@ def setup_student_repos(
         3. Push files from the master repos to the corresponding student repos.
 
     Args:
-        master_repo_urls: URLs to master repos.
+        template_repo_urls: URLs to master repos.
         teams: An iterable of student teams specifying the teams to be setup.
         api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
@@ -70,7 +70,7 @@ def setup_student_repos(
                 url=url,
                 _path=workdir / api.extract_repo_name(url),
             )
-            for url in master_repo_urls
+            for url in template_repo_urls
         ]
 
         plug.log.info("Cloning into master repos ...")
@@ -194,7 +194,7 @@ def _clone_all(repo_urls: str, cwd: pathlib.Path):
 
 
 def update_student_repos(
-    master_repo_urls: Iterable[str],
+    template_repo_urls: Iterable[str],
     teams: Iterable[plug.StudentTeam],
     api: plug.PlatformAPI,
     issue: Optional[plug.Issue] = None,
@@ -202,15 +202,15 @@ def update_student_repos(
     """Attempt to update all student repos related to one of the master repos.
 
     Args:
-        master_repo_urls: URLs to master repos. Must be in the organization
+        template_repo_urls: URLs to master repos. Must be in the organization
             that the api is set up for.
         teams: An iterable of student teams.
         api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
         issue: An optional issue to open in repos to which pushing fails.
     """
-    if len(set(master_repo_urls)) != len(master_repo_urls):
-        raise ValueError("master_repo_urls contains duplicates")
+    if len(set(template_repo_urls)) != len(template_repo_urls):
+        raise ValueError("template_repo_urls contains duplicates")
 
     with tempfile.TemporaryDirectory() as tmpdir:
         workdir = pathlib.Path(tmpdir)
@@ -220,7 +220,7 @@ def update_student_repos(
                 url=url,
                 _path=workdir / api.extract_repo_name(url),
             )
-            for url in master_repo_urls
+            for url in template_repo_urls
         ]
 
         plug.log.info("Cloning into master repos ...")
@@ -333,26 +333,26 @@ def _clone_repos_no_check(
 
 
 def migrate_repos(
-    master_repo_urls: Iterable[str], api: plug.PlatformAPI
+    template_repo_urls: Iterable[str], api: plug.PlatformAPI
 ) -> None:
     """Migrate a repository from an arbitrary URL to the target organization.
     The new repository is added to the master_repos team, which is created if
     it does not already exist.
 
     Args:
-        master_repo_urls: HTTPS URLs to the master repos to migrate.
+        template_repo_urls: HTTPS URLs to the master repos to migrate.
             the username that is used in the push.
         api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
-    template_names = [util.repo_name(url) for url in master_repo_urls]
+    template_names = [util.repo_name(url) for url in template_repo_urls]
     create_repo_it = plug.cli.io.progress_bar(
         (
             _create_or_fetch_repo(name, description="", private=True, api=api)
             for name in template_names
         ),
         desc="Creating remote repos",
-        total=len(master_repo_urls),
+        total=len(template_repo_urls),
     )
     with tempfile.TemporaryDirectory() as tmpdir:
         workdir = pathlib.Path(tmpdir)
@@ -366,7 +366,7 @@ def migrate_repos(
         _clone_all(
             [
                 api.insert_auth(url) if url.startswith("https") else url
-                for url in master_repo_urls
+                for url in template_repo_urls
             ],
             cwd=workdir,
         )
