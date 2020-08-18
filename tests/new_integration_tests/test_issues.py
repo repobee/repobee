@@ -32,7 +32,7 @@ class TestOpen:
         )
 
         funcs.run_repobee(
-            f"issues open --master-repo-names {const.TEMPLATE_REPOS_ARG} "
+            f"issues open --assignments {const.TEMPLATE_REPOS_ARG} "
             f"--base-url {platform_url} "
             f"--issue {issue.path} "
         )
@@ -75,7 +75,7 @@ class TestClose:
             for issue in [open_issue, issue_to_close]:
                 funcs.run_repobee(
                     f"issues open "
-                    f"--master-repo-names {const.TEMPLATE_REPOS_ARG} "
+                    f"--assignments {const.TEMPLATE_REPOS_ARG} "
                     f"--base-url {platform_url} "
                     f"--issue {issue.path}"
                 )
@@ -84,7 +84,7 @@ class TestClose:
             funcs.run_repobee(
                 [
                     *f"issues close --base-url {platform_url} "
-                    f"--master-repo-names {const.TEMPLATE_REPOS_ARG} ".split(),
+                    f"--assignments {const.TEMPLATE_REPOS_ARG} ".split(),
                     "--title-regex",
                     issue_to_close_title,
                 ]

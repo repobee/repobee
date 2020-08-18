@@ -351,7 +351,7 @@ class _APISpec:
 
     def get_repo_urls(
         self,
-        master_repo_names: Iterable[str],
+        assignment_names: Iterable[str],
         org_name: Optional[str] = None,
         team_names: Optional[List[str]] = None,
         insert_auth: bool = False,
@@ -369,7 +369,7 @@ class _APISpec:
         computed instead of master repo urls.
 
         Args:
-            master_repo_names: A list of master repository names.
+            assignment_names: A list of master repository names.
             org_name: Organization in which repos are expected. Defaults to the
                 target organization of the API instance.
             team_names: A list of team names specifying student groups.

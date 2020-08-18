@@ -153,15 +153,15 @@ def _process_args(
     repos = master_names = master_urls = None
     if "discover_repos" in args and args.discover_repos:
         repos = _discover_repos(args.students, api)
-    elif "master_repo_names" in args:
-        master_names = args.master_repo_names
+    elif "assignments" in args:
+        master_names = args.assignments
         master_urls = _repo_names_to_urls(master_names, master_org_name, api)
         repos = _repo_tuple_generator(master_names, args.students, api)
         assert master_urls and master_names
 
     args_dict = vars(args)
     args_dict["master_repo_urls"] = master_urls
-    args_dict["master_repo_names"] = master_names
+    args_dict["assignments"] = master_names
     args_dict["repos"] = repos
     # marker for functionality that relies on fully processed args
     args_dict["_repobee_processed"] = True
@@ -189,16 +189,16 @@ def _discover_repos(
 
 
 def _repo_tuple_generator(
-    master_repo_names: List[str],
+    assignment_names: List[str],
     teams: List[plug.StudentTeam],
     api: plug.PlatformAPI,
 ) -> Iterable[plug.StudentRepo]:
-    for master_repo_name in master_repo_names:
+    for assignment_name in assignment_names:
         for team in teams:
             url, *_ = api.get_repo_urls(
-                [master_repo_name], team_names=[team.name]
+                [assignment_name], team_names=[team.name]
             )
-            name = plug.generate_repo_name(team, master_repo_name)
+            name = plug.generate_repo_name(team, assignment_name)
             yield plug.StudentRepo(name=name, url=url, team=team)
 
 

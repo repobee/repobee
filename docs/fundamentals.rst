@@ -65,14 +65,17 @@ the :ref:`gitlab` section.
   installation is another.
 * *Target organization*: The GitHub Organization_ related to the current course
   round.
-* *Master repository*: Or *master repo*, is a template repository upon which
-  student repositories are based.
+* *Assignment*: What you would expect; an assignment to be handed in.
+* *Template repository*: Or *template repo*, is a template from which student
+  repositories are created for a given assignment. Each assignment has one
+  associated template repo. Template repos share the name of their associated
+  assignment.
 * *Master organization*: The master organization is an optional organization to
-  keep master repos in. The idea is to be able to have the master repos in this
+  keep template repos in. The idea is to be able to have the template repos in this
   organization to avoid having to migrate them to the target organization for
   each course round. It is highly recommended to use a master organization if
-  master repos are being worked on across course rounds.
-* *Student repository*: Or *student repo*, refers to a *copy* of a master repo
+  template repos are being worked on across course rounds.
+* *Student repository*: Or *student repo*, refers to a *copy* of a template repo
   for some specific student or group of students.
 
 .. _conventions:
@@ -85,21 +88,21 @@ The following conventions are fundamental to working with RepoBee.
 * Any user of RepoBee has unrestricted access to the target organization
   (i.e. is an owner). If the user has limited access, some features may work,
   while others may not.
-* Master repos should be available as private repos in one of three places:
+* Template repos should be available as private repos in one of three places:
 
-  - The master organization (recommended if the master repos are being
+  - The master organization (recommended if the template repos are being
     maintained and improved across course rounds).
   - The target organization. If you are doing a trial run or for some reason
     can't have multiple organizations, this may be a good option.
-  - Locally in the current working directory. If your master repos are trivial
+  - Locally in the current working directory. If your template repos are trivial
     (e.g. empty), this may be a good option.
 * Student repositories are copies of the default branches of the master
   repositories (i.e. ``--single-branch`` cloning is used by default). That is,
   until students make modifications.
-* Student repositories are named *<username>-<master_repo_name>* to guarantee
+* Student repositories are named *<username>-<assignment-name>* to guarantee
   unique repo names.
   - Student repositories belonging to groups of students are named
-  *<username-1>-<username-2>-...-<master-repo-name>*.
+  *<username-1>-<username-2>-...-<assignment-name>*.
 * Each student is assigned to a team with the same name as the student's
   username (or a concatenation of usernames for groups). It is the team that is
   granted access to the repositories, not the student's actual user.

@@ -97,9 +97,7 @@ def _dispatch_issues_command(
     issues = plug.cli.CoreCommand.issues
     action = args.action
     if action == issues.open:
-        command.open_issue(
-            args.issue, args.master_repo_names, args.students, api
-        )
+        command.open_issue(args.issue, args.assignments, args.students, api)
         return None
     elif action == issues.close:
         command.close_issue(args.title_regex, args.repos, api)
@@ -143,19 +141,15 @@ def _dispatch_reviews_command(
     action = args.action
     if action == reviews.assign:
         command.assign_peer_reviews(
-            args.master_repo_names,
-            args.students,
-            args.num_reviews,
-            args.issue,
-            api,
+            args.assignments, args.students, args.num_reviews, args.issue, api,
         )
         return None
     elif action == reviews.end:
-        command.purge_review_teams(args.master_repo_names, args.students, api)
+        command.purge_review_teams(args.assignments, args.students, api)
         return None
     elif action == reviews.check:
         command.check_peer_review_progress(
-            args.master_repo_names,
+            args.assignments,
             args.students,
             args.title_regex,
             args.num_reviews,

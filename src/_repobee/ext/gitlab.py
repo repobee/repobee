@@ -338,7 +338,7 @@ class GitLabAPI(plug.PlatformAPI):
 
     def get_repo_urls(
         self,
-        master_repo_names: Iterable[str],
+        assignment_names: Iterable[str],
         org_name: Optional[str] = None,
         team_names: Optional[List[str]] = None,
         insert_auth: bool = False,
@@ -347,13 +347,13 @@ class GitLabAPI(plug.PlatformAPI):
         group_name = org_name if org_name else self._group_name
         group_url = f"{self._base_url}/{group_name}"
         repo_urls = (
-            [f"{group_url}/{repo_name}.git" for repo_name in master_repo_names]
+            [f"{group_url}/{repo_name}.git" for repo_name in assignment_names]
             if not team_names
             else [
                 f"{group_url}/{team}/"
-                f"{plug.generate_repo_name(str(team), master_repo_name)}.git"
+                f"{plug.generate_repo_name(str(team), assignment_name)}.git"
                 for team in team_names
-                for master_repo_name in master_repo_names
+                for assignment_name in assignment_names
             ]
         )
         return (

@@ -49,7 +49,7 @@ def platform_url(platform_dir):
 @pytest.fixture
 def with_student_repos(platform_url):
     funcs.run_repobee(
-        f"repos setup --mn {TEMPLATE_REPOS_ARG} "
+        f"repos setup -a {TEMPLATE_REPOS_ARG} "
         f"--students-file {STUDENTS_FILE} "
         f"--base-url {platform_url} "
         f"--user {TEACHER} "

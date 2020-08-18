@@ -78,7 +78,7 @@ class TestSetup:
     def test_setup_single_template_repo(self, platform_dir, platform_url):
         template_repo_name = TEMPLATE_REPO_NAMES[0]
         funcs.run_repobee(
-            f"repos setup --mn {template_repo_name} "
+            f"repos setup -a {template_repo_name} "
             f"--base-url {platform_url}"
         )
 
@@ -88,7 +88,7 @@ class TestSetup:
 
     def test_setup_multiple_template_repos(self, platform_dir, platform_url):
         funcs.run_repobee(
-            f"repos setup --mn {TEMPLATE_REPOS_ARG} "
+            f"repos setup -a {TEMPLATE_REPOS_ARG} "
             f"--base-url {platform_url}"
         )
 
@@ -104,7 +104,7 @@ class TestSetup:
         """
         for _ in range(2):
             funcs.run_repobee(
-                f"repos setup --mn {TEMPLATE_REPOS_ARG} "
+                f"repos setup -a {TEMPLATE_REPOS_ARG} "
                 f"--base-url {platform_url} "
             )
 
@@ -126,7 +126,7 @@ class TestSetup:
                 assert repo.path.exists
 
         funcs.run_repobee(
-            f"repos setup --mn {TEMPLATE_REPOS_ARG} "
+            f"repos setup -a {TEMPLATE_REPOS_ARG} "
             f"--base-url {platform_url}",
             plugins=[PreSetupPlugin],
         )
@@ -141,7 +141,7 @@ class TestClone:
         with tempfile.TemporaryDirectory() as tmp:
             workdir = pathlib.Path(tmp)
             funcs.run_repobee(
-                f"repos clone --mn {TEMPLATE_REPOS_ARG} "
+                f"repos clone -a {TEMPLATE_REPOS_ARG} "
                 f"--base-url {platform_url}",
                 workdir=workdir,
             )
@@ -181,7 +181,7 @@ class TestClone:
                 assert repo.path.is_dir()
 
         funcs.run_repobee(
-            f"repos clone --mn {TEMPLATE_REPOS_ARG} "
+            f"repos clone -a {TEMPLATE_REPOS_ARG} "
             f"--base-url {platform_url}",
             plugins=[PostClonePlugin],
         )
