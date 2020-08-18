@@ -105,7 +105,7 @@ class BaseParser(enum.Enum):
     STUDENTS = "students"
     REPO_NAMES = "repo-names"
     REPO_DISCOVERY = "repo-discovery"
-    TEMPLATE_ORG = "master-org"
+    MASTER_ORG = "master-org"
 
 
 class ImmutableMixin:
