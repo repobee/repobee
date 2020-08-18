@@ -32,7 +32,7 @@ STUDENTS_STRING = " ".join([str(s) for s in STUDENTS])
 ISSUE_PATH = constants.ISSUE_PATH
 ISSUE = constants.ISSUE
 generate_repo_url = functions.generate_repo_url
-MASTER_ORG_NAME = constants.MASTER_ORG_NAME
+TEMPLATE_ORG_NAME = constants.TEMPLATE_ORG_NAME
 TOKEN = constants.TOKEN
 
 EMPTY_PATH = pathlib.Path(".")
@@ -49,7 +49,7 @@ COMPLETE_PUSH_ARGS = [*BASE_ARGS, *BASE_PUSH_ARGS]
 # parsed args without subparser
 VALID_PARSED_ARGS = dict(
     org_name=ORG_NAME,
-    master_org_name=MASTER_ORG_NAME,
+    master_org_name=TEMPLATE_ORG_NAME,
     base_url=BASE_URL,
     user=USER,
     master_repo_urls=REPO_URLS,
@@ -416,7 +416,7 @@ class TestDispatchCommand:
             base_url=BASE_URL,
             org_name=ORG_NAME,
             token=TOKEN,
-            master_org_name=MASTER_ORG_NAME
+            master_org_name=TEMPLATE_ORG_NAME
         )
         mock_verify_settings = mock.MagicMock(
             spec=dummyapi_class.verify_settings
@@ -428,7 +428,7 @@ class TestDispatchCommand:
         _repobee.cli.dispatch.dispatch_command(args, None, EMPTY_PATH)
 
         mock_verify_settings.assert_called_once_with(
-            args.user, args.org_name, args.base_url, TOKEN, MASTER_ORG_NAME
+            args.user, args.org_name, args.base_url, TOKEN, TEMPLATE_ORG_NAME
         )
 
 
@@ -528,13 +528,13 @@ class TestBaseParsing:
                 "--sf",
                 str(students_file),
                 "--mo",
-                MASTER_ORG_NAME,
+                TEMPLATE_ORG_NAME,
             ]
         )
 
         assert all(
             [
-                "/" + MASTER_ORG_NAME + "/" in url
+                "/" + TEMPLATE_ORG_NAME + "/" in url
                 for url in parsed_args.master_repo_urls
             ]
         )

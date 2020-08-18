@@ -26,7 +26,7 @@ from _helpers.const import (
     BASE_DOMAIN,
     LOCAL_DOMAIN,
     ORG_NAME,
-    MASTER_ORG_NAME,
+    TEMPLATE_ORG_NAME,
     assignment_names,
     STUDENT_TEAMS,
     STUDENT_TEAM_NAMES,
@@ -35,7 +35,7 @@ from _helpers.const import (
     BASE_ARGS,
     STUDENTS_ARG,
     MASTER_REPOS_ARG,
-    MASTER_ORG_ARG,
+    TEMPLATE_ORG_ARG,
     TEACHER,
 )
 from _helpers.helpers import (
@@ -186,7 +186,7 @@ class TestSetup:
                 REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
                 *BASE_ARGS,
-                *MASTER_ORG_ARG,
+                *TEMPLATE_ORG_ARG,
                 *MASTER_REPOS_ARG,
                 *STUDENTS_ARG,
             ]
@@ -204,7 +204,7 @@ class TestSetup:
                 REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
                 *BASE_ARGS,
-                *MASTER_ORG_ARG,
+                *TEMPLATE_ORG_ARG,
                 *MASTER_REPOS_ARG,
                 *STUDENTS_ARG,
             ]
@@ -231,7 +231,7 @@ class TestUpdate:
             [
                 REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.repos.update.as_name_tuple(),
-                *MASTER_ORG_ARG,
+                *TEMPLATE_ORG_ARG,
                 *BASE_ARGS,
                 "-a",
                 master_repo,
@@ -263,7 +263,7 @@ class TestUpdate:
             [
                 REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.repos.update.as_name_tuple(),
-                *MASTER_ORG_ARG,
+                *TEMPLATE_ORG_ARG,
                 *BASE_ARGS,
                 "-a",
                 master_repo,
@@ -289,7 +289,7 @@ class TestMigrate:
         """Clone the master repos to disk. The restore fixture is explicitly
         included as it must be run before this fixture.
         """
-        api = api_instance(MASTER_ORG_NAME)
+        api = api_instance(TEMPLATE_ORG_NAME)
         master_repo_urls = [
             url.replace(LOCAL_DOMAIN, BASE_DOMAIN)
             for url in api.get_repo_urls(assignment_names)
