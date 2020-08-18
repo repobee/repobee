@@ -13,7 +13,7 @@ import _repobee.cli.mainparser
 import repobee_plug.cli
 
 from _helpers.asserts import (
-    assert_master_repos_exist,
+    assert_template_repos_exist,
     assert_repos_exist,
     assert_repos_contain,
     assert_on_groups,
@@ -322,7 +322,7 @@ class TestMigrate:
         result = run_in_docker_with_coverage(command, extra_args=extra_args)
 
         assert result.returncode == 0
-        assert_master_repos_exist(local_master_repos, ORG_NAME)
+        assert_template_repos_exist(local_master_repos, ORG_NAME)
 
 
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
