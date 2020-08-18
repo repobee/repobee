@@ -5,8 +5,8 @@ function run_flake8() {
     flake8 --ignore=W503,E203
 }
 
-if [[ $INTEGRATION_TEST == "true" ]]; then
-    ./.travis/integration_test.sh
+if [[ $SYSTEM_TEST == "true" ]]; then
+    ./.travis/system_test.sh
     exit $?
 fi
 

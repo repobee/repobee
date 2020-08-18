@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ $INTEGRATION_TEST == "true" ]];
+if [[ $SYSTEM_TEST == "true" ]];
 then
     cd tests/integration_tests
     rm -f .coverage_files/.coverage

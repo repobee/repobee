@@ -10,7 +10,7 @@ matrix:
     dist: xenial
     sudo: true
     env:
-      - INTEGRATION_TEST=true
+      - SYSTEM_TEST=true
   - os: linux
     python: 3.6
   - os: linux
