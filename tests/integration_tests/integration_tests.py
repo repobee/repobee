@@ -290,14 +290,14 @@ class TestMigrate:
         included as it must be run before this fixture.
         """
         api = api_instance(MASTER_ORG_NAME)
-        master_repo_urls = [
+        template_repo_urls = [
             url.replace(LOCAL_DOMAIN, BASE_DOMAIN)
             for url in api.get_repo_urls(assignment_names)
         ]
         # clone the master repos to disk first first
         git_commands = [
             "git clone {}".format(api.insert_auth(url))
-            for url in master_repo_urls
+            for url in template_repo_urls
         ]
         result = run_in_docker(
             " && ".join(git_commands), extra_args=extra_args

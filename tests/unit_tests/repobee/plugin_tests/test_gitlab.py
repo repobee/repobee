@@ -313,7 +313,7 @@ def assignment_names():
 
 
 class TestGetRepoUrls:
-    def test_get_master_repo_urls(self, assignment_names):
+    def test_get_template_repo_urls(self, assignment_names):
         """When supplied with only assignment_names, get_repo_urls should
         return urls for those master repos, expecting them to be in the target
         group.
@@ -334,7 +334,7 @@ class TestGetRepoUrls:
         # assert
         assert sorted(actual_urls) == sorted(expected_urls)
 
-    def test_get_master_repo_urls_in_master_group(self, assignment_names):
+    def test_get_template_repo_urls_in_master_group(self, assignment_names):
         """When supplied with assignment_names and org_name, the urls
         generated should go to the group named org_name instead of the default
         target group.
