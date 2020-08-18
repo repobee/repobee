@@ -786,7 +786,7 @@ def _create_base_parsers(show_all_opts, config_file):
         argparse.SUPPRESS
         if hide_configurable_arg("template_org_name")
         else (
-            "Name of the organization containing the master repos. "
+            "Name of the organization containing the template repos. "
             "Defaults to the same value as `-o|--org-name` if left "
             "unspecified. Note that config values take precedence "
             "over this default."
@@ -853,8 +853,8 @@ def _create_base_parsers(show_all_opts, config_file):
 
     template_org_parser = argparse.ArgumentParser(add_help=False)
     template_org_parser.add_argument(
-        "--mo",
-        "--master-org-name",
+        "--to",
+        "--template-org-name",
         help=template_org_help,
         default=default("template_org_name"),
         dest="template_org_name",

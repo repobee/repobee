@@ -243,7 +243,7 @@ _config_template_org = "template_org_name = {}".format(
 )
 
 
-@pytest.fixture(params=["--bu", "-u", "--sf", "-o", "--mo"])
+@pytest.fixture(params=["--bu", "-u", "--sf", "-o", "--to"])
 def config_missing_option(request, empty_config_mock, students_file):
     missing_option = request.param
 
@@ -256,7 +256,7 @@ def config_missing_option(request, empty_config_mock, students_file):
         config_contents.append("students_file = {!s}".format(students_file))
     if not missing_option == "-u":
         config_contents.append(_config_user)
-    if not missing_option == "--mo":
+    if not missing_option == "--to":
         config_contents.append(_config_template_org)
 
     empty_config_mock.write(os.linesep.join(config_contents))

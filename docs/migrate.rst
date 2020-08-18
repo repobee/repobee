@@ -1,10 +1,10 @@
 .. _migrate:
 
-Migrate repositories into the target (or master) organization (``migrate`` command)
-***********************************************************************************
+Migrate repositories into the target (or template) organization (``migrate`` command)
+*************************************************************************************
 Migrating repositories into an organization can be useful in a few cases. You
 may have repos that should be accessible to students and need to be moved
-across course rounds, or you might be storing your master repos in the target
+across course rounds, or you might be storing your template repos in the target
 organization and need to migrate them for each new course round. To migrate
 repos into the target organization, they must be local on disc. Assuming we
 have the repos ``task-1`` and ``task-2`` in the current working
@@ -33,7 +33,7 @@ directory (i.e. local repos), all we have to do is this:
 
     If you want to use this command to migrate repos into a master organization,
     you must specify it with the ``--org-name`` option here (instead of the
-    ``--master-org-name``).
+    ``--template-org-name``).
 
 What happens here is pretty straightforward, except for the local repos being
 cloned, which is an implementation detail that does not need to be thought

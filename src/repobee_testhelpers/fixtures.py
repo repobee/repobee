@@ -54,5 +54,5 @@ def with_student_repos(platform_url):
         f"--base-url {platform_url} "
         f"--user {TEACHER} "
         f"--org-name {TARGET_ORG_NAME} "
-        f"--master-org-name {TEMPLATE_ORG_NAME}"
+        f"--template-org-name {TEMPLATE_ORG_NAME}"
     )

@@ -485,7 +485,7 @@ class TestBaseParsing:
         assert "--user" in captured.out
         assert "--base-url" in captured.out
         assert "--org-name" in captured.out
-        assert "--master-org-name" in captured.out
+        assert "--template-org-name" in captured.out
         assert "--students-file" in captured.out
         assert "--token" in captured.out
 
@@ -506,7 +506,7 @@ class TestBaseParsing:
         assert "--user" not in captured.out
         assert "--base-url" not in captured.out
         assert "--org-name" not in captured.out
-        assert "--master-org-name" not in captured.out
+        assert "--template-org-name" not in captured.out
         assert "--students-file" not in captured.out
         assert "--token" not in captured.out
 
@@ -527,7 +527,7 @@ class TestBaseParsing:
                 *COMPLETE_PUSH_ARGS,
                 "--sf",
                 str(students_file),
-                "--mo",
+                "--to",
                 TEMPLATE_ORG_NAME,
             ]
         )
@@ -917,8 +917,8 @@ class TestConfig:
         """Test that a config that is missing one option (that is not
         specified on the command line) causes a SystemExit on parsing.
         """
-        # --mo is not required
-        if config_missing_option == "--mo":
+        # --to is not required
+        if config_missing_option == "--to":
             return
 
         sys_args = [
