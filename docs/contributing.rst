@@ -75,12 +75,12 @@ in the virtual environment shell. In the root of the project, run:
 
 And that's it, the environment is all set up!
 
-Full Environment to Run Integration/System Tests
+Full Environment to Run System Tests
 ------------------------------------------------
-To also run the integration/system tests located in ``tests/integration_tests``,
-you need to have Docker and Docker Compose installed, and the Docker daemon
-(service) must be running. Installing these utilities will vary by distribution,
-here are a few examples:
+To also run the system tests located in ``system_tests``, you need to have
+Docker and Docker Compose installed, and the Docker daemon (service) must be
+running. Installing these utilities will vary by distribution, here are a few
+examples:
 
 .. code-block:: bash
 
@@ -100,54 +100,8 @@ Activating the Docker daemon also differs by distribution, but if you have
    sudo systemctl start docker   # start ASAP
    sudo systemctl enable docker  # start automatically on startup
 
-Then, enter the ``tests/integration_tests`` directory
-and run the ``startup.sh`` script (you must be run **in** that directory and
-run the scrip, it's not a very robust script :D).
-
-.. code-block:: bash
-
-   $ cd tests/integration_tests
-   $ ./startup.sh
-
-This may take a long time to complete the first time, but there should always be
-output indicating that something is happening. This whole thing starts a local
-GitLab instance to run tests against.
-
-.. important::
-
-   The GitLab instance may start automatically on startup after running the
-   ``startup.sh`` script. To turn it off permanently, run ``docker-compose
-   down`` in the ``tests/integration_tests`` directory.
-
-Now the infrastructure needed for the integration tests is there. To actually
-run the integration tests, you first need to build the test container. In the
-root of the project, run:
-
-.. code-block:: bash
-
-   $ sudo docker build -t repobee:test -f Dockerfile.test .
-
-.. important::
-
-   Every time you change something in the production code, the test container
-   must be rebuilt!
-
-Then it's just a matter of running the integration tests (also from the root of
-the project).
-
-.. code-block:: bash
-
-   $ sudo REPOBEE_NO_VERIFY_SSL='true' pytest tests/integration_tests/integration_tests.py
-
-This usually takes 10-20 minutes, depending on your hardware. To run just a
-subset of the tests, specify the ``-k`` option at the end, and follow with the
-name of a test class or a specific test. For example, to *only* run the
-TestUpdate class, you add ``-k TestUpdate`` to the end of the above command.
-
-.. note::
-
-   If your user is part of the docker group, you do not need ``sudo`` for the
-   ``docker`` and ``docker-compose`` commands.
+Further instructions are available in the ``README.md`` file in the
+``system_tests`` directory.
 
 Code Style
 ==========
