@@ -54,7 +54,7 @@ differences between GitHub and GitLab that the user should be aware of.
   and not to any specific endpoint (as is the case when using GitHub). When
   using ``github.com`` for example, the url should be provided as
   ``base_url = https://gitlab.com`` in the config.
-* The ``org-name`` and ``master-org-name`` arguments should be given the *path*
+* The ``org-name`` and ``template-org-name`` arguments should be given the *path*
   of the respective groups. If you create a group with a long name, GitLab may
   shorten the path automatically. For example, I created the group
   ``repobee-master-repos``, and it got the path ``repobee-master``. You can find

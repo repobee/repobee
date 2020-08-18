@@ -31,7 +31,7 @@ ORDERED_CONFIGURABLE_ARGS = (
     "user",
     "base_url",
     "org_name",
-    "master_org_name",
+    "template_org_name",
     "token",
     "students_file",
     "plugins",

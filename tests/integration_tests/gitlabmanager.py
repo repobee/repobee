@@ -10,7 +10,7 @@ from typing import List
 import gitlab
 
 from _helpers.const import (
-    MASTER_ORG_NAME,
+    TEMPLATE_ORG_NAME,
     ORG_NAME,
     TEACHER,
     STUDENT_TEAM_NAMES,
@@ -92,7 +92,7 @@ def restore():
     create_groups_and_projects(
         local_master_repos=LOCAL_MASTER_REPOS,
         teacher=TEACHER,
-        master_group_name=MASTER_ORG_NAME,
+        master_group_name=TEMPLATE_ORG_NAME,
         course_round_group_name=ORG_NAME,
         token=TOKEN,
     )

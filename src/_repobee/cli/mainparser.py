@@ -145,9 +145,11 @@ def _add_subparsers(parser, show_all_opts, config_file):
     `base_` prefixed parser, of course).
     """
 
-    base_parser, base_student_parser, master_org_parser = _create_base_parsers(
-        show_all_opts, config_file
-    )
+    (
+        base_parser,
+        base_student_parser,
+        template_org_parser,
+    ) = _create_base_parsers(show_all_opts, config_file)
 
     subparsers = parser.add_subparsers(dest=CATEGORY)
     subparsers.required = True
@@ -203,13 +205,13 @@ def _add_subparsers(parser, show_all_opts, config_file):
     _add_repo_parsers(
         base_parser,
         base_student_parser,
-        master_org_parser,
+        template_org_parser,
         _add_action_parser(repo_parsers),
     )
     _add_teams_parsers(
         base_parser,
         base_student_parser,
-        master_org_parser,
+        template_org_parser,
         _add_action_parser(teams_parsers),
     )
     _add_issue_parsers(
@@ -221,14 +223,14 @@ def _add_subparsers(parser, show_all_opts, config_file):
         _add_action_parser(review_parsers),
     )
     _add_config_parsers(
-        base_parser, master_org_parser, _add_action_parser(config_parsers)
+        base_parser, template_org_parser, _add_action_parser(config_parsers)
     )
 
     _add_extension_parsers(
         subparsers,
         base_parser,
         base_student_parser,
-        master_org_parser,
+        template_org_parser,
         _REPO_NAME_PARSER,
         parsers,
         config._read_config(config_file) if config_file.is_file() else {},
@@ -237,7 +239,7 @@ def _add_subparsers(parser, show_all_opts, config_file):
 
 
 def _add_repo_parsers(
-    base_parser, base_student_parser, master_org_parser, add_parser
+    base_parser, base_student_parser, template_org_parser, add_parser
 ):
     add_parser(
         plug.cli.CoreCommand.repos.setup,
@@ -254,7 +256,7 @@ def _add_repo_parsers(
         parents=[
             base_parser,
             base_student_parser,
-            master_org_parser,
+            template_org_parser,
             _REPO_NAME_PARSER,
             _HOOK_RESULTS_PARSER,
         ],
@@ -273,7 +275,7 @@ def _add_repo_parsers(
         parents=[
             base_parser,
             base_student_parser,
-            master_org_parser,
+            template_org_parser,
             _REPO_NAME_PARSER,
         ],
         formatter_class=_OrderedFormatter,
@@ -313,7 +315,7 @@ def _add_repo_parsers(
 
 
 def _add_teams_parsers(
-    base_parser, base_student_parser, master_org_parser, add_parser
+    base_parser, base_student_parser, template_org_parser, add_parser
 ):
 
     add_parser(
@@ -331,7 +333,7 @@ def _add_teams_parsers(
     )
 
 
-def _add_config_parsers(base_parser, master_org_parser, add_parser):
+def _add_config_parsers(base_parser, template_org_parser, add_parser):
     show_config = add_parser(
         plug.cli.CoreCommand.config.show,
         help="show the configuration file",
@@ -348,7 +350,7 @@ def _add_config_parsers(base_parser, master_org_parser, add_parser):
         plug.cli.CoreCommand.config.verify,
         help="verify core settings",
         description="Verify core settings by trying various API requests.",
-        parents=[base_parser, master_org_parser],
+        parents=[base_parser, template_org_parser],
         formatter_class=_OrderedFormatter,
     )
 
@@ -435,7 +437,7 @@ def _add_peer_review_parsers(base_parsers, add_parser):
 
 
 def _add_issue_parsers(base_parsers, add_parser):
-    base_parser, base_student_parser, master_org_parser = base_parsers
+    base_parser, base_student_parser, template_org_parser = base_parsers
     open_parser = add_parser(
         plug.cli.CoreCommand.issues.open,
         description=(
@@ -579,7 +581,7 @@ def _add_extension_parsers(
     subparsers,
     base_parser,
     base_student_parser,
-    master_org_parser,
+    template_org_parser,
     repo_name_parser,
     parsers_mapping,
     parsed_config,
@@ -636,7 +638,7 @@ def _add_extension_parsers(
         if bp.STUDENTS in req_parsers:
             parents.append(base_student_parser)
         if bp.MASTER_ORG in req_parsers:
-            parents.append(master_org_parser)
+            parents.append(template_org_parser)
 
         if bp.REPO_DISCOVERY in req_parsers:
             parents.append(_REPO_DISCOVERY_PARSER)
@@ -780,11 +782,11 @@ def _create_base_parsers(show_all_opts, config_file):
             "each line to form groups."
         )
     )
-    master_org_help = (
+    template_org_help = (
         argparse.SUPPRESS
-        if hide_configurable_arg("master_org_name")
+        if hide_configurable_arg("template_org_name")
         else (
-            "Name of the organization containing the master repos. "
+            "Name of the organization containing the template repos. "
             "Defaults to the same value as `-o|--org-name` if left "
             "unspecified. Note that config values take precedence "
             "over this default."
@@ -849,16 +851,16 @@ def _create_base_parsers(show_all_opts, config_file):
         nargs="+",
     )
 
-    master_org_parser = argparse.ArgumentParser(add_help=False)
-    master_org_parser.add_argument(
-        "--mo",
-        "--master-org-name",
-        help=master_org_help,
-        default=default("master_org_name"),
-        dest="master_org_name",
+    template_org_parser = argparse.ArgumentParser(add_help=False)
+    template_org_parser.add_argument(
+        "--to",
+        "--template-org-name",
+        help=template_org_help,
+        default=default("template_org_name"),
+        dest="template_org_name",
     )
 
-    return (base_parser, base_student_parser, master_org_parser)
+    return (base_parser, base_student_parser, template_org_parser)
 
 
 def _add_traceback_arg(parser):

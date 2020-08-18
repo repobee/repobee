@@ -86,8 +86,8 @@ Replace `<TOKEN>` with [this token](token).
 [repobee]
 base_url = https://gitlab.integrationtest.local
 token = <TOKEN>
-org_name = repobee-testing
-master_org_name = repobee-master
+org_name = dd1337-fall2020
+template_org_name = dd1337-master
 user = oauth2
 plugins = gitlab
 ```

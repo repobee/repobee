@@ -411,7 +411,7 @@ class GitHubAPI(plug.PlatformAPI):
         org_name: str,
         base_url: str,
         token: str,
-        master_org_name: Optional[str] = None,
+        template_org_name: Optional[str] = None,
     ) -> None:
         """See :py:meth:`repobee_plug.PlatformAPI.verify_settings`."""
         plug.echo("Verifying settings ...")
@@ -462,8 +462,8 @@ class GitHubAPI(plug.PlatformAPI):
         plug.echo("SUCCESS: access token scopes look okay")
 
         GitHubAPI._verify_org(org_name, user, g)
-        if master_org_name:
-            GitHubAPI._verify_org(master_org_name, user, g)
+        if template_org_name:
+            GitHubAPI._verify_org(template_org_name, user, g)
 
         plug.echo("GREAT SUCCESS: all settings check out!")
 
