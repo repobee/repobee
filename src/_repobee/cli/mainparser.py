@@ -37,8 +37,7 @@ _REPO_NAME_PARSER = argparse.ArgumentParser(add_help=False)
 _REPO_NAME_PARSER.add_argument(
     "-a",
     "--assignments",
-    help="one or more names of master repositories, referring either to local "
-    "directories or repos in the master organization",
+    help="one or more names of assignments",
     type=str,
     required=True,
     nargs="+",
@@ -51,8 +50,7 @@ _DISCOVERY_MUTEX_GRP = _REPO_DISCOVERY_PARSER.add_mutually_exclusive_group(
 _DISCOVERY_MUTEX_GRP.add_argument(
     "-a",
     "--assignments",
-    help="one or more names of master repositories, referring either to local "
-    "directories or repos in the master organization",
+    help="one or more names of assignments",
     type=str,
     nargs="+",
     dest="assignments",
