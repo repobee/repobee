@@ -21,7 +21,7 @@ class TestAssign:
 
         funcs.run_repobee(
             f"reviews assign -n 1 --base-url {platform_url} "
-            f"--master-repo-names {const.TEMPLATE_REPOS_ARG}",
+            f"--assignments {const.TEMPLATE_REPOS_ARG}",
         )
 
         review_teams = [
@@ -45,12 +45,12 @@ class TestEnd:
         }
         funcs.run_repobee(
             f"reviews assign -n 1 --base-url {platform_url} "
-            f"--master-repo-names {const.TEMPLATE_REPOS_ARG}",
+            f"--assignments {const.TEMPLATE_REPOS_ARG}",
         )
 
         funcs.run_repobee(
             f"reviews end --base-url {platform_url} "
-            f"--master-repo-names {const.TEMPLATE_REPOS_ARG}"
+            f"--assignments {const.TEMPLATE_REPOS_ARG}"
         )
 
         platform_teams = funcs.get_teams(platform_url, const.TARGET_ORG_NAME)
@@ -71,13 +71,13 @@ class TestCheck:
         template_repo_name = const.TEMPLATE_REPO_NAMES[0]
         funcs.run_repobee(
             f"reviews assign -n 1 --base-url {platform_url} "
-            f"--master-repo-names {template_repo_name}",
+            f"--assignments {template_repo_name}",
         )
 
         funcs.run_repobee(
             [
                 *f"reviews check -n 1 --base-url {platform_url} "
-                f"--master-repo-names {const.TEMPLATE_REPOS_ARG} ".split(),
+                f"--assignments {const.TEMPLATE_REPOS_ARG} ".split(),
                 "--title-regex",
                 "Peer review",
             ]

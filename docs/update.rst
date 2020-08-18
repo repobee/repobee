@@ -18,7 +18,7 @@ Let's say that we've updated ``task-1``, and that users ``slarse``,
 
 .. code-block:: bash
 
-    $ repobee update --mn task-1 -s slarse glennol glassey
+    $ repobee update -a task-1 -s slarse glennol glassey
     [INFO] Cloning into master repos ...
     [INFO] Cloning into https://some-enterprise-host/repobee-demo/task-1
     [INFO] Pushing files to student repos ...
@@ -75,7 +75,7 @@ students, plain text is more helpful. Now it's just a matter of using
 
 .. code-block:: bash
 
-    $ repobee update --mn task-1 -s slarse glennol glassey -i issue.md
+    $ repobee update -a task-1 -s slarse glennol glassey -i issue.md
     [INFO] Cloning into master repos ...
     [INFO] Cloning into https://some-enterprise-host/repobee-demo/task-1
     [INFO] Pushing files to student repos ...

@@ -308,13 +308,13 @@ class TestInit:
 
 
 @pytest.fixture
-def master_repo_names():
+def assignment_names():
     return ["task-1", "task-2", "task-3"]
 
 
 class TestGetRepoUrls:
-    def test_get_master_repo_urls(self, master_repo_names):
-        """When supplied with only master_repo_names, get_repo_urls should
+    def test_get_master_repo_urls(self, assignment_names):
+        """When supplied with only assignment_names, get_repo_urls should
         return urls for those master repos, expecting them to be in the target
         group.
         """
@@ -322,20 +322,20 @@ class TestGetRepoUrls:
         api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
         expected_urls = [
             api._insert_auth("{}/{}/{}.git".format(BASE_URL, TARGET_GROUP, mn))
-            for mn in master_repo_names
+            for mn in assignment_names
         ]
         assert (
             expected_urls
         ), "there must be at least some urls for this test to make sense"
 
         # act
-        actual_urls = api.get_repo_urls(master_repo_names, insert_auth=True)
+        actual_urls = api.get_repo_urls(assignment_names, insert_auth=True)
 
         # assert
         assert sorted(actual_urls) == sorted(expected_urls)
 
-    def test_get_master_repo_urls_in_master_group(self, master_repo_names):
-        """When supplied with master_repo_names and org_name, the urls
+    def test_get_master_repo_urls_in_master_group(self, assignment_names):
+        """When supplied with assignment_names and org_name, the urls
         generated should go to the group named org_name instead of the default
         target group.
         """
@@ -344,7 +344,7 @@ class TestGetRepoUrls:
         api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
         expected_urls = [
             api._insert_auth("{}/{}/{}.git".format(BASE_URL, master_group, mn))
-            for mn in master_repo_names
+            for mn in assignment_names
         ]
         assert (
             expected_urls
@@ -352,13 +352,13 @@ class TestGetRepoUrls:
 
         # act
         actual_urls = api.get_repo_urls(
-            master_repo_names, org_name=master_group, insert_auth=True
+            assignment_names, org_name=master_group, insert_auth=True
         )
 
         # assert
         assert sorted(actual_urls) == sorted(expected_urls)
 
-    def test_get_student_repo_urls(self, master_repo_names):
+    def test_get_student_repo_urls(self, assignment_names):
         """When supplied with the students argument, the generated urls should
         go to the student repos related to the supplied master repos.
         """
@@ -374,7 +374,7 @@ class TestGetRepoUrls:
                 )
             )
             for student_group in constants.STUDENTS
-            for mn in master_repo_names
+            for mn in assignment_names
         ]
         assert (
             expected_urls
@@ -382,7 +382,7 @@ class TestGetRepoUrls:
 
         # act
         actual_urls = api.get_repo_urls(
-            master_repo_names,
+            assignment_names,
             team_names=[t.name for t in constants.STUDENTS],
             insert_auth=True,
         )

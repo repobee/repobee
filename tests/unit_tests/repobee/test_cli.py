@@ -37,11 +37,13 @@ TOKEN = constants.TOKEN
 
 EMPTY_PATH = pathlib.Path(".")
 
-REPO_NAMES = ("week-1", "week-2", "week-3")
-REPO_URLS = tuple(map(lambda rn: generate_repo_url(rn, ORG_NAME), REPO_NAMES))
+ASSIGNMENT_NAMES = ("week-1", "week-2", "week-3")
+REPO_URLS = tuple(
+    map(lambda rn: generate_repo_url(rn, ORG_NAME), ASSIGNMENT_NAMES)
+)
 
 BASE_ARGS = ["-u", USER, "--bu", BASE_URL, "-o", ORG_NAME, "-t", TOKEN]
-BASE_PUSH_ARGS = ["--mn", *REPO_NAMES]
+BASE_PUSH_ARGS = ["-a", *ASSIGNMENT_NAMES]
 COMPLETE_PUSH_ARGS = [*BASE_ARGS, *BASE_PUSH_ARGS]
 
 # parsed args without subparser
@@ -51,7 +53,7 @@ VALID_PARSED_ARGS = dict(
     base_url=BASE_URL,
     user=USER,
     master_repo_urls=REPO_URLS,
-    master_repo_names=REPO_NAMES,
+    assignments=ASSIGNMENT_NAMES,
     students=list(STUDENTS),
     issue=ISSUE,
     title_regex="some regex",
@@ -70,7 +72,7 @@ VALID_PARSED_ARGS = dict(
                 plug.generate_repo_name(team, master_name), ORG_NAME
             ),
         )
-        for team, master_name in itertools.product(STUDENTS, REPO_NAMES)
+        for team, master_name in itertools.product(STUDENTS, ASSIGNMENT_NAMES)
     ],
 )
 
@@ -328,10 +330,7 @@ class TestDispatchCommand:
         )
 
         command_mock.open_issue.assert_called_once_with(
-            args.issue,
-            args.master_repo_names,
-            args.students,
-            dummyapi_instance,
+            args.issue, args.assignments, args.students, dummyapi_instance,
         )
 
     def test_close_issue_called_with_correct_args(
@@ -659,7 +658,7 @@ class TestBaseParsing:
 
         assert api == dummyapi_instance
         assert parsed_args.students == list(STUDENTS)
-        assert parsed_args.master_repo_names is None
+        assert parsed_args.assignments is None
         assert parsed_args.master_repo_urls is None
 
 
@@ -675,11 +674,11 @@ class TestStudentParsing:
             (repobee_plug.cli.CoreCommand.repos.update, BASE_PUSH_ARGS),
             (
                 repobee_plug.cli.CoreCommand.issues.close,
-                ["--mn", *REPO_NAMES, "-r", "some-regex"],
+                ["-a", *ASSIGNMENT_NAMES, "-r", "some-regex"],
             ),
             (
                 repobee_plug.cli.CoreCommand.issues.open,
-                ["--mn", *REPO_NAMES, "-i", ISSUE_PATH],
+                ["-a", *ASSIGNMENT_NAMES, "-i", ISSUE_PATH],
             ),
         ],
     )
@@ -856,9 +855,9 @@ def assert_base_push_args(parsed_args):
     assert parsed_args.org_name == ORG_NAME
     assert parsed_args.base_url == BASE_URL
     assert parsed_args.user == USER
-    assert parsed_args.master_repo_names == list(REPO_NAMES)
+    assert parsed_args.assignments == list(ASSIGNMENT_NAMES)
     assert parsed_args.master_repo_urls == [
-        generate_repo_url(rn, ORG_NAME) for rn in REPO_NAMES
+        generate_repo_url(rn, ORG_NAME) for rn in ASSIGNMENT_NAMES
     ]
     assert parsed_args.base_url == BASE_URL
     assert parsed_args.token == TOKEN
@@ -885,11 +884,17 @@ class TestConfig:
     @pytest.mark.parametrize(
         "action, extra_args",
         [
-            (repobee_plug.cli.CoreCommand.repos.setup, ["--mn", *REPO_NAMES]),
-            (repobee_plug.cli.CoreCommand.repos.update, ["--mn", *REPO_NAMES]),
+            (
+                repobee_plug.cli.CoreCommand.repos.setup,
+                ["-a", *ASSIGNMENT_NAMES],
+            ),
+            (
+                repobee_plug.cli.CoreCommand.repos.update,
+                ["-a", *ASSIGNMENT_NAMES],
+            ),
             (
                 repobee_plug.cli.CoreCommand.issues.open,
-                ["--mn", *REPO_NAMES, "-i", ISSUE_PATH],
+                ["-a", *ASSIGNMENT_NAMES, "-i", ISSUE_PATH],
             ),
         ],
     )
@@ -918,8 +923,8 @@ class TestConfig:
 
         sys_args = [
             *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
-            "--mn",
-            *REPO_NAMES,
+            "-a",
+            *ASSIGNMENT_NAMES,
         ]
 
         with pytest.raises(SystemExit):
@@ -942,8 +947,8 @@ class TestConfig:
 
         sys_args = [
             *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
-            "--mn",
-            *REPO_NAMES,
+            "-a",
+            *ASSIGNMENT_NAMES,
             config_missing_option,
             missing_arg,
         ]
@@ -979,14 +984,14 @@ class TestSetupAndUpdateParsers:
         """Tests that the parsers pick up local repos when they are not
         found in the organization.
         """
-        local_repo = REPO_NAMES[-1]
+        local_repo = ASSIGNMENT_NAMES[-1]
         mocker.patch(
             "_repobee.util.is_git_repo",
             side_effect=lambda path: path.endswith(local_repo),
         )
         expected_urls = [
             generate_repo_url(name, ORG_NAME)
-            for name in REPO_NAMES
+            for name in ASSIGNMENT_NAMES
             if name != local_repo
         ]
         expected_uris = [pathlib.Path(os.path.abspath(local_repo)).as_uri()]
@@ -1022,14 +1027,14 @@ class TestMigrateParser:
         assert parsed_args.user == USER
         assert parsed_args.org_name == ORG_NAME
         assert parsed_args.base_url == BASE_URL
-        assert parsed_args.master_repo_names == self.NAMES
+        assert parsed_args.assignments == self.NAMES
         assert parsed_args.master_repo_urls == self.LOCAL_URIS
 
     def test_happy_path(self):
         sys_args = [
             *repobee_plug.cli.CoreCommand.repos.migrate.as_name_tuple(),
             *BASE_ARGS,
-            "--mn",
+            "-a",
             *self.NAMES,
         ]
 
@@ -1061,8 +1066,8 @@ class TestCloneParser:
         sys_args = [
             *action.as_name_tuple(),
             *BASE_ARGS,
-            "--mn",
-            *REPO_NAMES,
+            "-a",
+            *ASSIGNMENT_NAMES,
             "--sf",
             str(students_file),
         ]

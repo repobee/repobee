@@ -26,7 +26,7 @@ the following result:
 
 .. code-block:: bash
 
-    $ repobee setup --mn task-1 task-2 --sf students.txt
+    $ repobee setup -a task-1 task-2 --sf students.txt
     [INFO] cloning into master repos ...
     [INFO] cloning into file:///home/slarse/tmp/task-1
     [INFO] cloning into file:///home/slarse/tmp/task-2

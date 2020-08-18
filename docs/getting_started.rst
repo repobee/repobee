@@ -220,7 +220,7 @@ simple as issuing a single command with RepoBee.
 
 .. code-block:: bash
 
-    $ repobee setup --mn task-1 task-2 --sf students.txt
+    $ repobee setup -a task-1 task-2 --sf students.txt
     [INFO] Cloning into master repos ...
     [INFO] Cloning into file:///home/slarse/tmp/task-1
     [INFO] Cloning into file:///home/slarse/tmp/task-2

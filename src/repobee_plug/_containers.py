@@ -93,9 +93,9 @@ class BaseParser(enum.Enum):
         STUDENTS: Represents the students parser, which includes the
             ``--students`` and `--students-file`` arguments.
         REPO_NAMES: Represents the repo names parser, which includes the
-            ``--master-repo-names`` argument.
+            ``--assignments`` argument.
         REPO_DISCOVERY: Represents the repo discovery parser, which adds
-            both the ``--master-repo-names`` and the ``--discover-repos``
+            both the ``--assignments`` and the ``--discover-repos``
             arguments.
         MASTER_ORG: Represents the master organization parser, which includes
             the ``--master-org`` argument.

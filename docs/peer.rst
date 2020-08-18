@@ -32,7 +32,7 @@ that ``students.txt`` lists our three favorite students slarse, glassey and glen
 
 .. code-block:: bash
 
-    $ repobee assign-reviews --mn task-1 --sf students.txt --num-reviews 2
+    $ repobee assign-reviews -a task-1 --sf students.txt --num-reviews 2
     # step 1
     [INFO] Created team slarse-task-1-review
     [INFO] Created team glennol-task-1-review
@@ -112,7 +112,7 @@ specifying the issue like this:
 
 .. code-block:: bash
 
-   $ repobee assign-reviews --mn task-2 --sf students.txt --num-reviews 2 --issue issue.md
+   $ repobee assign-reviews -a task-2 --sf students.txt --num-reviews 2 --issue issue.md
    [INFO] Created team slarse-task-2-review
    [INFO] Created team glennol-task-2-review
    [INFO] Created team glassey-task-2-review
@@ -146,7 +146,7 @@ teams. Here's an example call:
 
 .. code-block:: bash
 
-   $ repobee check-reviews --mn task-2 --sf students.txt --num-reviews 2 --title-regex '\APeer review\Z'
+   $ repobee check-reviews -a task-2 --sf students.txt --num-reviews 2 --title-regex '\APeer review\Z'
    [INFO] Processing glassey-task-2-review
    [INFO] Processing glennol-task-2-review
    [INFO] Processing slarse-task-2-review
@@ -178,7 +178,7 @@ review teams. It's as simple as:
 
 .. code-block:: bash
 
-    $ repobee end-reviews --mn task-1 --sf students.txt
+    $ repobee end-reviews -a task-1 --sf students.txt
     [INFO] Deleted team glennol-task-1-review
     [INFO] Deleted team glassey-task-1-review
     [INFO] Deleted team slarse-task-1-review
@@ -209,14 +209,14 @@ the student ``cabbage`` in the reviews for ``task-2`` back at
 :ref:`assign reviews`. We then do the following:
 
 1. Check if any reviews have already been posted. This can easily be performed
-   with ``repobee list-issues --mn task-2 --sf students.txt -r '^Peer
+   with ``repobee list-issues -a task-2 --sf students.txt -r '^Peer
    review$'`` (assuming the naming conventions were followed!). Take appropriate
    action if you find any reviews already posted (appropriate being anything you
    see fit to alleviate the situation of affected students possibly being
    assigned new repos to review).
-2. Purge the review teams with ``repobee end-reviews --mn task-2
+2. Purge the review teams with ``repobee end-reviews -a task-2
    --sf students.txt``
-3. Close all review issues with ``repobee close-issues --mn task-2 --sf
+3. Close all review issues with ``repobee close-issues -a task-2 --sf
    students.txt -r '^Review of task-2$'``
 4. Create a new ``issue.md`` file apologetically explaining that you messed up:
 
@@ -228,7 +228,7 @@ the student ``cabbage`` in the reviews for ``task-2`` back at
     allocations (repo access has been revoked anyway).
 
 5. Assign peer reviews again, with the new issue, with ``repobee
-   assign-reviews --mn task-2 --sf students.txt --num-reviews 2
+   assign-reviews -a task-2 --sf students.txt --num-reviews 2
    --issue issue.md``
 
 And that's it! Disaster averted.
@@ -251,7 +251,7 @@ scheme, you add ``-p pairwise`` in front of the command.
 
 .. code-block:: bash
 
-    $ repobee -p pairwise assign-reviews --mn task-1 --sf students.txt
+    $ repobee -p pairwise assign-reviews -a task-1 --sf students.txt
 
 Note that the pairwise algorithm ignores the ``--num-reviews`` argument, and
 will issue a warning if this is set (to anything but 1, but you should just not

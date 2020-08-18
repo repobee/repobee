@@ -35,27 +35,27 @@ _HOOK_RESULTS_PARSER.add_argument(
 )
 _REPO_NAME_PARSER = argparse.ArgumentParser(add_help=False)
 _REPO_NAME_PARSER.add_argument(
-    "--mn",
-    "--master-repo-names",
+    "-a",
+    "--assignments",
     help="one or more names of master repositories, referring either to local "
     "directories or repos in the master organization",
     type=str,
     required=True,
     nargs="+",
-    dest="master_repo_names",
+    dest="assignments",
 )
 _REPO_DISCOVERY_PARSER = argparse.ArgumentParser(add_help=False)
 _DISCOVERY_MUTEX_GRP = _REPO_DISCOVERY_PARSER.add_mutually_exclusive_group(
     required=True
 )
 _DISCOVERY_MUTEX_GRP.add_argument(
-    "--mn",
-    "--master-repo-names",
+    "-a",
+    "--assignments",
     help="one or more names of master repositories, referring either to local "
     "directories or repos in the master organization",
     type=str,
     nargs="+",
-    dest="master_repo_names",
+    dest="assignments",
 )
 _DISCOVERY_MUTEX_GRP.add_argument(
     "--discover-repos",
@@ -502,7 +502,6 @@ def _add_issue_parsers(base_parsers, add_parser):
         help="show the body of the issue, alongside the default info",
     )
     list_parser.add_argument(
-        "-a",
         "--author",
         help="only show issues by this author",
         type=str,

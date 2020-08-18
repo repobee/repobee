@@ -19,7 +19,7 @@ directory (i.e. local repos), all we have to do is this:
 
 .. code-block:: bash
 
-    $ repobee migrate --mn task-1 task-2
+    $ repobee migrate -a task-1 task-2
     [INFO] cloning into file:///some/directory/path/task-1
     [INFO] cloning into file:///some/directory/path/task-2
     [INFO] created repobee-demo/task-1
@@ -48,7 +48,7 @@ changing the local repos yields the following output:
 
 .. code-block:: bash
 
-    $ repobee migrate --mn task-1 task-2
+    $ repobee migrate -a task-1 task-2
     [INFO] cloning into file:///some/directory/path/task-1
     [INFO] cloning into file:///some/directory/path/task-2
     [INFO] repobee-demo/task-1 already exists

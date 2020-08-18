@@ -51,7 +51,7 @@ class TestPluginInheritance:
 
             def generate_review_allocations(
                 self,
-                master_repo_name,
+                assignment_name,
                 students,
                 num_reviews,
                 review_team_name_function,
@@ -84,7 +84,7 @@ class TestPluginInheritance:
 
             def generate_review_allocations(
                 self,
-                master_repo_name,
+                assignment_name,
                 students,
                 num_reviews,
                 review_team_name_function,

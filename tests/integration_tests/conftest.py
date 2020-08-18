@@ -23,7 +23,7 @@ from _helpers.const import (
     MASTER_REPOS_ARG,
     STUDENTS_ARG,
     STUDENT_TEAMS,
-    MASTER_REPO_NAMES,
+    assignment_names,
     LOCAL_BASE_URL,
     TOKEN,
     ORG_NAME,
@@ -134,7 +134,7 @@ def with_student_repos(restore):
 
     # pre-test asserts
     assert result.returncode == 0
-    assert_repos_exist(STUDENT_TEAMS, MASTER_REPO_NAMES)
+    assert_repos_exist(STUDENT_TEAMS, assignment_names)
     assert_on_groups(STUDENT_TEAMS)
 
 
@@ -164,23 +164,21 @@ def open_issues(with_student_repos):
             )
         )
 
-    assert_num_issues(STUDENT_TEAM_NAMES, MASTER_REPO_NAMES, len(issues))
-    assert_issues_exist(STUDENT_TEAM_NAMES, MASTER_REPO_NAMES, task_issue)
-    assert_issues_exist(
-        STUDENT_TEAM_NAMES, MASTER_REPO_NAMES, correction_issue
-    )
+    assert_num_issues(STUDENT_TEAM_NAMES, assignment_names, len(issues))
+    assert_issues_exist(STUDENT_TEAM_NAMES, assignment_names, task_issue)
+    assert_issues_exist(STUDENT_TEAM_NAMES, assignment_names, correction_issue)
 
     return issues
 
 
 @pytest.fixture
 def with_reviews(with_student_repos):
-    master_repo_name = MASTER_REPO_NAMES[1]
+    assignment_name = assignment_names[1]
     expected_review_teams = [
         plug.StudentTeam(
             members=[],
             name=plug.generate_review_team_name(
-                student_team_name, master_repo_name
+                student_team_name, assignment_name
             ),
         )
         for student_team_name in STUDENT_TEAM_NAMES
@@ -190,8 +188,8 @@ def with_reviews(with_student_repos):
             REPOBEE_GITLAB,
             *str(repobee_plug.cli.CoreCommand.reviews.assign).split(),
             *BASE_ARGS,
-            "--mn",
-            master_repo_name,
+            "-a",
+            assignment_name,
             *STUDENTS_ARG,
             "-n",
             "1",
@@ -205,4 +203,4 @@ def with_reviews(with_student_repos):
         expected_review_teams,
         single_group_assertion=expected_num_members_group_assertion(1),
     )
-    return (master_repo_name, expected_review_teams)
+    return (assignment_name, expected_review_teams)

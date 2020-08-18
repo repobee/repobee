@@ -30,7 +30,7 @@ VALID_PARSED_ARGS = dict(
     base_url=BASE_URL,
     user=USER,
     master_repo_urls="url-1 url-2 url-3".split(),
-    master_repo_names="1 2 3".split(),
+    assignements="1 2 3".split(),
     students=constants.STUDENTS,
     issue=constants.ISSUE,
     title_regex="some regex",
@@ -41,7 +41,7 @@ PARSED_ARGS = argparse.Namespace(
     **repobee_plug.cli.CoreCommand.repos.setup.asdict(), **VALID_PARSED_ARGS
 )
 
-CLONE_ARGS = "clone --mn week-2 -s slarse".split()
+CLONE_ARGS = "clone -a week-2 -s slarse".split()
 
 module = namedtuple("module", ("name",))
 

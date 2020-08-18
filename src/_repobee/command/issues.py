@@ -184,20 +184,20 @@ def _limit_line_length(s: str, max_line_length: int = 100) -> str:
 
 def open_issue(
     issue: plug.Issue,
-    master_repo_names: Iterable[str],
+    assignment_names: Iterable[str],
     teams: Iterable[plug.StudentTeam],
     api: plug.PlatformAPI,
 ) -> None:
     """Open an issue in student repos.
 
     Args:
-        master_repo_names: Names of master repositories.
+        assignment_names: Names of assignments.
         teams: Team objects specifying student groups.
         issue: An issue to open.
         api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
-    repo_names = plug.generate_repo_names(teams, master_repo_names)
+    repo_names = plug.generate_repo_names(teams, assignment_names)
     repos = progresswrappers.get_repos(repo_names, api)
     for repo in repos:
         issue = api.create_issue(issue.title, issue.body, repo)
@@ -213,7 +213,7 @@ def close_issue(
 
     Args:
         title_regex: A regex to match against issue titles.
-        master_repo_names: Names of master repositories.
+        assignment_names: Names of assignments.
         teams: Team objects specifying student groups.
         api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.

@@ -28,7 +28,7 @@ DEFAULT_REVIEW_ISSUE = plug.Issue(
 
 
 def assign_peer_reviews(
-    master_repo_names: Iterable[str],
+    assignment_names: Iterable[str],
     teams: Iterable[plug.StudentTeam],
     num_reviews: int,
     issue: Optional[plug.Issue],
@@ -45,7 +45,7 @@ def assign_peer_reviews(
     contents of the repo.
 
     Args:
-        master_repo_names: Names of master repos.
+        assignment_names: Names of assginments.
         teams: Team objects specifying student groups.
         num_reviews: Amount of reviews each student should perform
             (consequently, the amount of reviews of each repo)
@@ -55,7 +55,7 @@ def assign_peer_reviews(
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     issue = issue or DEFAULT_REVIEW_ISSUE
-    expected_repo_names = plug.generate_repo_names(teams, master_repo_names)
+    expected_repo_names = plug.generate_repo_names(teams, assignment_names)
     fetched_teams = progresswrappers.get_teams(
         teams, api, desc="Fetching teams and repos"
     )
@@ -68,7 +68,7 @@ def assign_peer_reviews(
     if missing:
         raise plug.NotFoundError(f"Can't find repos: {', '.join(missing)}")
 
-    for master_name in master_repo_names:
+    for assignment_name in assignment_names:
         plug.echo("Allocating reviews")
         allocations = plug.manager.hook.generate_review_allocations(
             teams=teams, num_reviews=num_reviews
@@ -81,7 +81,7 @@ def assign_peer_reviews(
                         plug.StudentTeam(
                             members=alloc.review_team.members,
                             name=plug.generate_review_team_name(
-                                str(alloc.reviewed_team), master_name
+                                str(alloc.reviewed_team), assignment_name
                             ),
                         ),
                         alloc.reviewed_team,
@@ -104,7 +104,7 @@ def assign_peer_reviews(
             review_teams_progress, reviewed_team_names
         ):
             reviewed_repo = fetched_repo_dict[
-                plug.generate_repo_name(reviewed_team_name, master_name)
+                plug.generate_repo_name(reviewed_team_name, assignment_name)
             ]
             review_teams_progress.write(
                 f"Assigning {' and '.join(review_team.members)} "
@@ -122,23 +122,23 @@ def assign_peer_reviews(
 
 
 def purge_review_teams(
-    master_repo_names: Iterable[str],
+    assignment_names: Iterable[str],
     students: Iterable[plug.Team],
     api: plug.PlatformAPI,
 ) -> None:
-    """Delete all review teams associated with the given master repo names and
-    students.
+    """Delete all review teams associated with the given assignment names and
+    student teams.
 
     Args:
-        master_repo_names: Names of master repos.
+        assignment_names: Names of assignments.
         students: An iterble of student teams.
         api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     review_team_names = [
-        plug.generate_review_team_name(student, master_repo_name)
+        plug.generate_review_team_name(student, assignment_name)
         for student in students
-        for master_repo_name in master_repo_names
+        for assignment_name in assignment_names
     ]
     teams = progresswrappers.get_teams(
         review_team_names, api, desc="Deleting review teams"
@@ -149,7 +149,7 @@ def purge_review_teams(
 
 
 def check_peer_review_progress(
-    master_repo_names: Iterable[str],
+    assignment_names: Iterable[str],
     teams: Iterable[plug.Team],
     title_regex: str,
     num_reviews: int,
@@ -159,7 +159,7 @@ def check_peer_review_progress(
     review repos
 
     Args:
-        master_repo_names: Names of master repos.
+        assignment_names: Names of assignments.
         teams: An iterable of student teams.
         title_regex: A regex to match against issue titles.
         num_reviews: Amount of reviews each student is expected to have made.
@@ -171,9 +171,9 @@ def check_peer_review_progress(
     reviews = collections.defaultdict(list)
 
     review_team_names = [
-        plug.generate_review_team_name(team, master_name)
+        plug.generate_review_team_name(team, assignment_name)
         for team in teams
-        for master_name in master_repo_names
+        for assignment_name in assignment_names
     ]
 
     review_teams = progresswrappers.get_teams(

@@ -342,7 +342,7 @@ class GitHubAPI(plug.PlatformAPI):
 
     def get_repo_urls(
         self,
-        master_repo_names: Iterable[str],
+        assignment_names: Iterable[str],
         org_name: Optional[str] = None,
         team_names: Optional[List[str]] = None,
         insert_auth: bool = False,
@@ -355,9 +355,9 @@ class GitHubAPI(plug.PlatformAPI):
                 else self._github.get_organization(org_name)
             )
         repo_names = (
-            master_repo_names
+            assignment_names
             if not team_names
-            else plug.generate_repo_names(team_names, master_repo_names)
+            else plug.generate_repo_names(team_names, assignment_names)
         )
         return [
             self.insert_auth(url) if insert_auth else url

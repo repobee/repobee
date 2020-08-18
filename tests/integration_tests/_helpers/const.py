@@ -15,7 +15,7 @@ LOCAL_BASE_URL = "https://" + LOCAL_DOMAIN
 ORG_NAME = "dd1337-fall2020"
 MASTER_ORG_NAME = "dd1337-master"
 TEACHER = "ric"
-MASTER_REPO_NAMES = [
+assignment_names = [
     p.name
     for p in (DIR.parent / "dd1337-master-repos").iterdir()
     if p.is_dir()
@@ -25,12 +25,12 @@ STUDENT_TEAMS = [
     for s in (DIR.parent / "students.txt").read_text().strip().split("\n")
 ]
 STUDENT_TEAM_NAMES = [str(t) for t in STUDENT_TEAMS]
-STUDENT_REPO_NAMES = plug.generate_repo_names(STUDENT_TEAMS, MASTER_REPO_NAMES)
+STUDENT_REPO_NAMES = plug.generate_repo_names(STUDENT_TEAMS, assignment_names)
 REPOBEE_GITLAB = "repobee -p gitlab"
 BASE_ARGS_NO_TB = ["--bu", BASE_URL, "-o", ORG_NAME, "-t", TOKEN]
 BASE_ARGS = [*BASE_ARGS_NO_TB, "--tb"]
 STUDENTS_ARG = ["-s", " ".join(STUDENT_TEAM_NAMES)]
-MASTER_REPOS_ARG = ["--mn", " ".join(MASTER_REPO_NAMES)]
+MASTER_REPOS_ARG = ["-a", " ".join(assignment_names)]
 MASTER_ORG_ARG = ["--mo", MASTER_ORG_NAME]
 TASK_CONTENTS_SHAS = {
     "task-1": b"\xb0\xb0,t\xd1\xe9a bu\xdfX\xcf,\x98\xd2\x04\x1a\xe8\x88",

@@ -27,7 +27,7 @@ from _helpers.const import (
     LOCAL_DOMAIN,
     ORG_NAME,
     MASTER_ORG_NAME,
-    MASTER_REPO_NAMES,
+    assignment_names,
     STUDENT_TEAMS,
     STUDENT_TEAM_NAMES,
     REPOBEE_GITLAB,
@@ -69,7 +69,7 @@ class TestClone:
         result = run_in_docker_with_coverage(command, extra_args=extra_args)
 
         assert result.returncode == 0
-        assert_cloned_repos(STUDENT_TEAMS, MASTER_REPO_NAMES, tmpdir)
+        assert_cloned_repos(STUDENT_TEAMS, assignment_names, tmpdir)
 
     def test_clone_twice(self, with_student_repos, tmpdir, extra_args):
         """Cloning twice in a row should have the same effect as cloning once.
@@ -93,7 +93,7 @@ class TestClone:
 
         assert first_result.returncode == 0
         assert second_result.returncode == 0
-        assert_cloned_repos(STUDENT_TEAMS, MASTER_REPO_NAMES, tmpdir)
+        assert_cloned_repos(STUDENT_TEAMS, assignment_names, tmpdir)
 
     def test_clone_does_not_create_dirs_on_fail(
         self, with_student_repos, tmpdir, extra_args
@@ -101,15 +101,15 @@ class TestClone:
         """Test that no local directories are created for repos that RepoBee
         fails to pull.
         """
-        non_existing_master_repo_names = ["non-existing-1", "non-existing-2"]
+        non_existing_assignment_names = ["non-existing-1", "non-existing-2"]
         command = " ".join(
             [
                 REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.repos.clone.as_name_tuple(),
                 *BASE_ARGS,
                 *STUDENTS_ARG,
-                "--mn",
-                " ".join(non_existing_master_repo_names),
+                "-a",
+                " ".join(non_existing_assignment_names),
             ]
         )
 
@@ -128,7 +128,7 @@ class TestClone:
         teams_without_local_repos = STUDENT_TEAMS[1:]
 
         expected_dir_hashes = []
-        for template_repo_name in MASTER_REPO_NAMES:
+        for template_repo_name in assignment_names:
             new_dir = plug.fileutils.generate_repo_path(
                 str(tmpdir), team_with_local_repos.name, template_repo_name
             )
@@ -151,7 +151,7 @@ class TestClone:
 
         assert result.returncode == 0
         assert_cloned_repos(
-            teams_without_local_repos, MASTER_REPO_NAMES, tmpdir
+            teams_without_local_repos, assignment_names, tmpdir
         )
         for dirpath, expected_hash in expected_dir_hashes:
             dirhash = hash_directory(dirpath)
@@ -172,7 +172,7 @@ class TestClone:
         result = run_in_docker_with_coverage(command, extra_args=extra_args)
 
         assert result.returncode == 0
-        assert_cloned_repos(STUDENT_TEAMS, MASTER_REPO_NAMES, tmpdir)
+        assert_cloned_repos(STUDENT_TEAMS, assignment_names, tmpdir)
 
 
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
@@ -194,7 +194,7 @@ class TestSetup:
 
         result = run_in_docker_with_coverage(command, extra_args=extra_args)
         assert result.returncode == 0
-        assert_repos_exist(STUDENT_TEAMS, MASTER_REPO_NAMES)
+        assert_repos_exist(STUDENT_TEAMS, assignment_names)
         assert_on_groups(STUDENT_TEAMS)
 
     def test_setup_twice(self, extra_args):
@@ -213,7 +213,7 @@ class TestSetup:
         result = run_in_docker_with_coverage(command, extra_args=extra_args)
         result = run_in_docker_with_coverage(command, extra_args=extra_args)
         assert result.returncode == 0
-        assert_repos_exist(STUDENT_TEAMS, MASTER_REPO_NAMES)
+        assert_repos_exist(STUDENT_TEAMS, assignment_names)
         assert_on_groups(STUDENT_TEAMS)
 
 
@@ -222,7 +222,7 @@ class TestUpdate:
     """Integration tests for the update command."""
 
     def test_happy_path(self, with_student_repos, extra_args):
-        master_repo = MASTER_REPO_NAMES[0]
+        master_repo = assignment_names[0]
         filename = "superfile.super"
         text = "some epic content\nfor this file!"
         update_repo(master_repo, filename, text)
@@ -233,7 +233,7 @@ class TestUpdate:
                 *repobee_plug.cli.CoreCommand.repos.update.as_name_tuple(),
                 *MASTER_ORG_ARG,
                 *BASE_ARGS,
-                "--mn",
+                "-a",
                 master_repo,
                 *STUDENTS_ARG,
             ]
@@ -246,7 +246,7 @@ class TestUpdate:
     def test_opens_issue_if_update_rejected(
         self, tmpdir, with_student_repos, extra_args
     ):
-        master_repo = MASTER_REPO_NAMES[0]
+        master_repo = assignment_names[0]
         conflict_repo = plug.generate_repo_name(STUDENT_TEAMS[0], master_repo)
         filename = "superfile.super"
         text = "some epic content\nfor this file!"
@@ -265,7 +265,7 @@ class TestUpdate:
                 *repobee_plug.cli.CoreCommand.repos.update.as_name_tuple(),
                 *MASTER_ORG_ARG,
                 *BASE_ARGS,
-                "--mn",
+                "-a",
                 master_repo,
                 *STUDENTS_ARG,
                 "--issue",
@@ -292,7 +292,7 @@ class TestMigrate:
         api = api_instance(MASTER_ORG_NAME)
         master_repo_urls = [
             url.replace(LOCAL_DOMAIN, BASE_DOMAIN)
-            for url in api.get_repo_urls(MASTER_REPO_NAMES)
+            for url in api.get_repo_urls(assignment_names)
         ]
         # clone the master repos to disk first first
         git_commands = [
@@ -304,7 +304,7 @@ class TestMigrate:
         )
 
         assert result.returncode == 0
-        return MASTER_REPO_NAMES
+        return assignment_names
 
     def test_happy_path(self, local_master_repos, extra_args):
         """Migrate a few repos from the existing master repo into the target
@@ -352,8 +352,8 @@ class TestOpenIssues:
         result = run_in_docker_with_coverage(command, extra_args=extra_args)
 
         assert result.returncode == 0
-        assert_num_issues(STUDENT_TEAMS, MASTER_REPO_NAMES, 1)
-        assert_issues_exist(STUDENT_TEAMS, MASTER_REPO_NAMES, self._ISSUE)
+        assert_num_issues(STUDENT_TEAMS, assignment_names, 1)
+        assert_issues_exist(STUDENT_TEAMS, assignment_names, self._ISSUE)
 
 
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
@@ -382,13 +382,13 @@ class TestCloseIssues:
         assert result.returncode == 0
         assert_issues_exist(
             STUDENT_TEAM_NAMES,
-            MASTER_REPO_NAMES,
+            assignment_names,
             close_issue,
             expected_state="closed",
         )
         assert_issues_exist(
             STUDENT_TEAM_NAMES,
-            MASTER_REPO_NAMES,
+            assignment_names,
             open_issue,
             expected_state="opened",
         )
@@ -406,7 +406,7 @@ class TestListIssues:
         assert len(open_issues) == 2, "expected there to be only 2 open issues"
         matched = open_issues[0]
         unmatched = open_issues[1]
-        repo_names = plug.generate_repo_names(STUDENT_TEAMS, MASTER_REPO_NAMES)
+        repo_names = plug.generate_repo_names(STUDENT_TEAMS, assignment_names)
 
         issue_pattern_template = r"^.*{}/#\d:\s+{}.*by {}.?$"
         expected_issue_output_patterns = [
@@ -451,12 +451,12 @@ class TestAssignReviews:
     """Tests for the assign-reviews command."""
 
     def test_assign_one_review(self, with_student_repos, extra_args):
-        master_repo_name = MASTER_REPO_NAMES[1]
+        assignment_name = assignment_names[1]
         expected_review_teams = [
             plug.StudentTeam(
                 members=[],
                 name=plug.generate_review_team_name(
-                    student_team_name, master_repo_name
+                    student_team_name, assignment_name
                 ),
             )
             for student_team_name in STUDENT_TEAM_NAMES
@@ -466,8 +466,8 @@ class TestAssignReviews:
                 REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.reviews.assign.as_name_tuple(),
                 *BASE_ARGS,
-                "--mn",
-                master_repo_name,
+                "-a",
+                assignment_name,
                 *STUDENTS_ARG,
                 "-n",
                 "1",
@@ -483,10 +483,10 @@ class TestAssignReviews:
         assert_on_groups(
             expected_review_teams, single_group_assertion=group_assertion
         )
-        assert_num_issues(STUDENT_TEAMS, [master_repo_name], 1)
+        assert_num_issues(STUDENT_TEAMS, [assignment_name], 1)
         assert_issues_exist(
             STUDENT_TEAMS,
-            [master_repo_name],
+            [assignment_name],
             _repobee.command.peer.DEFAULT_REVIEW_ISSUE,
             expected_num_asignees=1,
         )
@@ -497,7 +497,7 @@ class TestAssignReviews:
         """If you try to assign reviews where one or more of the allocated
         student repos don't exist, there should be an error.
         """
-        master_repo_name = MASTER_REPO_NAMES[1]
+        assignment_name = assignment_names[1]
         non_existing_group = "non-existing-group"
         student_team_names = STUDENT_TEAM_NAMES + [non_existing_group]
 
@@ -506,8 +506,8 @@ class TestAssignReviews:
                 REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.reviews.assign.as_name_tuple(),
                 *BASE_ARGS_NO_TB,
-                "--mn",
-                master_repo_name,
+                "-a",
+                assignment_name,
                 "-s",
                 *student_team_names,
                 "-n",
@@ -520,25 +520,25 @@ class TestAssignReviews:
 
         assert (
             "[ERROR] NotFoundError: Can't find repos: {}".format(
-                plug.generate_repo_name(non_existing_group, master_repo_name)
+                plug.generate_repo_name(non_existing_group, assignment_name)
             )
             in output
         )
         assert result.returncode == 1
-        assert_num_issues(STUDENT_TEAMS, [master_repo_name], 0)
+        assert_num_issues(STUDENT_TEAMS, [assignment_name], 0)
 
 
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
 class TestEndReviews:
     def test_end_all_reviews(self, with_reviews, extra_args):
-        master_repo_name, review_teams = with_reviews
+        assignment_name, review_teams = with_reviews
         command = " ".join(
             [
                 REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.reviews.end.as_name_tuple(),
                 *BASE_ARGS,
-                "--mn",
-                master_repo_name,
+                "-a",
+                assignment_name,
                 *STUDENTS_ARG,
             ]
         )
@@ -558,14 +558,14 @@ class TestEndReviews:
 
     def test_end_non_existing_reviews(self, with_reviews, extra_args):
         _, review_teams = with_reviews
-        master_repo_name = MASTER_REPO_NAMES[0]
+        assignment_name = assignment_names[0]
         command = " ".join(
             [
                 REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.reviews.end.as_name_tuple(),
                 *BASE_ARGS,
-                "--mn",
-                master_repo_name,
+                "-a",
+                assignment_name,
                 *STUDENTS_ARG,
             ]
         )
@@ -584,17 +584,17 @@ class TestCheckReviews:
     """Tests for check-reviews command."""
 
     def test_no_reviews_opened(self, with_reviews, extra_args):
-        master_repo_name, _ = with_reviews
+        assignment_name, _ = with_reviews
         num_reviews = 0
         num_expected_reviews = 1
-        master_repo_name = MASTER_REPO_NAMES[1]
+        assignment_name = assignment_names[1]
         pattern_template = r"{}.*{}.*{}.*\w+-{}.*"
         expected_output_patterns = [
             pattern_template.format(
                 team_name,
                 str(num_reviews),
                 str(num_expected_reviews - num_reviews),
-                master_repo_name,
+                assignment_name,
             )
             for team_name in STUDENT_TEAM_NAMES
         ]
@@ -605,8 +605,8 @@ class TestCheckReviews:
                 REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.reviews.check.as_name_tuple(),
                 *BASE_ARGS,
-                "--mn",
-                master_repo_name,
+                "-a",
+                assignment_name,
                 *STUDENTS_ARG,
                 "--num-reviews",
                 str(num_expected_reviews),
@@ -629,11 +629,11 @@ class TestCheckReviews:
         """Test that warnings are printed if a student is assigned to fewer
         review teams than expected.
         """
-        master_repo_name, _ = with_reviews
+        assignment_name, _ = with_reviews
         num_reviews = 0
         actual_assigned_reviews = 1
         num_expected_reviews = 2
-        master_repo_name = MASTER_REPO_NAMES[1]
+        assignment_name = assignment_names[1]
         warning_template = (
             r"\[WARNING\] Expected {} to be assigned to {} review teams, but "
             "found {}. Review teams may have been tampered with."
@@ -644,7 +644,7 @@ class TestCheckReviews:
                 team_name,
                 str(num_reviews),
                 str(actual_assigned_reviews - num_reviews),
-                master_repo_name,
+                assignment_name,
             )
             for team_name in STUDENT_TEAM_NAMES
         ] + [
@@ -662,8 +662,8 @@ class TestCheckReviews:
                 REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.reviews.check.as_name_tuple(),
                 *BASE_ARGS,
-                "--mn",
-                master_repo_name,
+                "-a",
+                assignment_name,
                 *STUDENTS_ARG,
                 "--num-reviews",
                 str(num_expected_reviews),
