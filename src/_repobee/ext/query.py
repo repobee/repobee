@@ -24,7 +24,7 @@ class Query(plug.Plugin, plug.cli.Command):
     __settings__ = plug.cli.command_settings(
         help="Query a hook results JSON file for information.",
         description="Query a hook results JSON file for information.",
-        base_parsers=[plug.BaseParser.STUDENTS, plug.BaseParser.REPO_NAMES],
+        base_parsers=[plug.BaseParser.STUDENTS, plug.BaseParser.ASSIGNMENTS],
     )
 
     hook_results_file = plug.cli.option(
