@@ -92,7 +92,7 @@ class BaseParser(enum.Enum):
             ``--org-name``, ``--base-url`` and ``--token`` arguments.
         STUDENTS: Represents the students parser, which includes the
             ``--students`` and `--students-file`` arguments.
-        REPO_NAMES: Represents the repo names parser, which includes the
+        ASSIGNMENTS: Represents the assignments parser, which includes the
             ``--assignments`` argument.
         REPO_DISCOVERY: Represents the repo discovery parser, which adds
             both the ``--assignments`` and the ``--discover-repos``
@@ -103,9 +103,9 @@ class BaseParser(enum.Enum):
 
     BASE = "base"
     STUDENTS = "students"
-    REPO_NAMES = "repo-names"
+    ASSIGNMENTS = "assignments"
     REPO_DISCOVERY = "repo-discovery"
-    MASTER_ORG = "master-org"
+    TEMPLATE_ORG = "template-org"
 
 
 class ImmutableMixin:
