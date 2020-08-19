@@ -642,7 +642,7 @@ def _add_extension_parsers(
 
         if bp.REPO_DISCOVERY in req_parsers:
             parents.append(_REPO_DISCOVERY_PARSER)
-        elif bp.REPO_NAMES in req_parsers:
+        elif bp.ASSIGNMENTS in req_parsers:
             parents.append(repo_name_parser)
 
         if (
