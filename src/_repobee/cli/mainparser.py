@@ -637,7 +637,7 @@ def _add_extension_parsers(
             parents.append(base_parser)
         if bp.STUDENTS in req_parsers:
             parents.append(base_student_parser)
-        if bp.MASTER_ORG in req_parsers:
+        if bp.TEMPLATE_ORG in req_parsers:
             parents.append(template_org_parser)
 
         if bp.REPO_DISCOVERY in req_parsers:
