@@ -82,82 +82,56 @@ It covers the use of RepoBee's varous commands by way of practical example,
 and should set you on the right path with little effort.
 
 ## Why RepoBee?
-RepoBee was developed at KTH Royal Technical Institute of Technology to help
-teachers and TAs administrate GitHub repositories. It's a tool for teachers, by
-teachers, and we use it in our everyday work. All of the features in RepoBee
-are being actively used by us, and so should also be useful to other teachers.
-For newcomers, RepoBee offers an opinionated workflow that is easy to adopt,
-while the more advanced users can utilize the plugin system to augment their
-experience. We also recognize that lock-in is a problem, and therefore provide
-compatibility with both GitHub and GitLab, with hopes of also expanding support
-to Bitbucket at some point. But what you're really looking for is probably what
-RepoBee can do, so below is a complete list of RepoBee's functionality as
-described by the `--help` option (plugins not included!).
+RepoBee is being developed at KTH Royal Technical Institute of Technology to
+help teachers and TAs administrate student repositories. It's a tool for
+teachers, by teachers, and we use it in our everyday work. All of the features
+in RepoBee are being actively used by us, and so should also be useful to other
+teachers.  For newcomers, RepoBee offers an opinionated workflow that is easy
+to adopt, while the more advanced users can utilize the plugin system to
+augment their experience. We also recognize that lock-in is a problem, and
+therefore provide compatibility with both GitHub and GitLab, with hopes of also
+expanding support to Bitbucket at some point. But what you're really looking
+for is probably what RepoBee can do, so below is a list of RepoBee's command
+categories, which should give you a rough idea of RepoBee's capabilities.
 
 ```
-$ repobee -h
-usage: repobee [-h] [-v]
-                {show-config,setup,update,migrate,clone,open-issues,
-                 close-issues,list-issues,assign-reviews,
-                 end-reviews,check-reviews,verify-settings}
-                ...
+repobee -h
+usage: repobee [-h] [-v] {repos,teams,issues,reviews,config,plugin,manage} ...
 
 A CLI tool for administrating large amounts of git repositories on GitHub and
-GitLab instances. See the full documentation at https://repobee.readthedocs.io
+GitLab instances. Read the docs at: https://repobee.readthedocs.io
+
+CLI options that are set in the config file are suppressed in help sections,
+run with pre-parser option --show-all-opts to unsuppress.
+Example: repobee --show-all-opts setup -h
+
+Loaded plugins: distmanager-3.0.0-alpha.7, pluginmanager-3.0.0-alpha.7
 
 positional arguments:
-  {setup,update,migrate,clone,open-issues,close-issues,list-issues,assign-reviews,end-reviews,check-reviews,show-config,verify-settings,config-wizard}
-    setup               Setup student repos.
-    update              Update existing student repos.
-    migrate             Migrate repositories into the target organization.
-    clone               Clone student repos.
-    open-issues         Open issues in student repos.
-    close-issues        Close issues in student repos.
-    list-issues         List issues in student repos.
-    assign-reviews      Assign students to peer review each others' repos.
-    check-reviews       Check which students have opened peer review issues.
-    end-reviews         Delete review allocations created by `assign-reviews`.
-                        DESTRUCTIVE ACTION: read help section before using.
-    show-config         Show the configuration file
-    verify-settings     Verify core settings.
-    config-wizard       Interactive configuration wizard to set up the config
-                        file.
+  {repos,teams,issues,reviews,config,plugin,manage}
+    repos               manage repositories
+    teams               manage teams
+    issues              manage issues
+    reviews             manage peer reviews
+    config              configure RepoBee
+    plugin              manage plugins
+    manage              manage the RepoBee installation
 
 optional arguments:
   -h, --help            show this help message and exit
-  -v, --version         Display version info
+  -v, --version         display version info
 ```
 
-## Roadmap
+## Versioning
 As of December 17th 2018, RepoBee's CLI is a stable release and adheres to
 [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html). The internals
 of RepoBee _do not_ adhere to this versioning, so using RepoBee as a library
 is not recommended.
 
-The plugin system is considered to be in the alpha phase, as it has seen much
-less live action use than the rest of the CLI. Features are highly unlikely to
-be cut, but hooks may be modified as new use-cases arise as the internals of
-RepoBee need to be altered. **If you develop a plugin, please get in touch so
-that can be taken into consideration if breaking changes are introduced to the
-plugin system**.
-
-The plugin system is planned for stable release along with RepoBee 3.0 in
-summer 2020.
-
-### Upcoming features
-RepoBee 3.0 is slated for release summer 2020, and will be accompanied by major
-features such as on-the-fly preprocessing of master repositories before pushing
-to student repositories, and automatic discovery of both student teams and
-student repositories.
-
-#### Features coming in v3.0
-| Feature                                          | Status                                                               | ETA         |
-| -------                                          | ------                                                               | ---         |
-| Preprocessing of master repos in `setup` command | Planning                                                             | Summer 2020 |
-| Automatic discovery of student teams             | Planning ([see #390](https://github.com/repobee/repobee/issues/390)) | Summer 2020 |
-| Video tutorials                                  | Work in progress                                                     | Summer 2020 |
-| Setup of shared read-only repos                  | WIP ([see #391](https://github.com/repobee/repobee/issues/391))      | Summer 2020 |
-| Parallel execution of tasks                      | Planning ([see #415](https://github.com/repobee/repobee/issues/415)) | Summer 2020 |
+The plugin system will be mostly stable as of RepoBee 3.0, but there is a
+slight risk of breakage due to unforeseen problems. **If you develop a plugin,
+please get in touch so that can be taken into consideration if breaking changes
+are introduced to the plugin system**.
 
 ## License
 This software is licensed under the MIT License. See the [LICENSE](LICENSE)
