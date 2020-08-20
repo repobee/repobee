@@ -295,7 +295,10 @@ def clone_repos(
 
     for p in plug.manager.get_plugins():
         if "post_clone" in dir(p):
-            return plugin.execute_clone_tasks(local_repos, api)
+            local_repos_progress = plug.cli.io.progress_bar(
+                local_repos, desc="Executing post_clone hooks",
+            )
+            return plugin.execute_clone_tasks(local_repos_progress, api)
     return {}
 
 

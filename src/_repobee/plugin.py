@@ -412,21 +412,26 @@ def _execute_tasks(
 
     with tempfile.TemporaryDirectory() as tmpdir:
         copies_root = pathlib.Path(tmpdir)
-        repo_copies = []
-        for repo in repos:
-            copy_path = copies_root / plug.fileutils.hash_path(repo.path)
-            shutil.copytree(repo.path, copy_path)
-            repo_copies.append(repo.with_path(copy_path))
 
         plug.log.info("Executing tasks ...")
         results = collections.defaultdict(list)
-        for repo in repo_copies:
+        for repo in _copy_repos(repos, basedir=copies_root):
             plug.log.info("Processing {}".format(repo.path.name))
 
             for result in hook_function(repo=repo, api=api):
                 if result:
-                    results[repo.path.name].append(result)
+                    results[repo.name].append(result)
     return results
+
+
+def _copy_repos(
+    repos: List[Union[plug.StudentRepo, plug.TemplateRepo]],
+    basedir: pathlib.Path,
+) -> Iterable[Union[plug.StudentRepo, plug.TemplateRepo]]:
+    for repo in repos:
+        copy_path = basedir / plug.fileutils.hash_path(repo.path)
+        shutil.copytree(repo.path, copy_path)
+        yield repo.with_path(copy_path)
 
 
 @contextlib.contextmanager
