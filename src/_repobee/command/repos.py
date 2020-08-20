@@ -265,8 +265,7 @@ def _open_issue_by_urls(
         api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
-    repo_names = [util.repo_name(url) for url in repo_urls]
-    repos = progresswrappers.get_repos(repo_names, api)
+    repos = progresswrappers.get_repos(repo_urls, api)
     for repo in repos:
         issue = api.create_issue(issue.title, issue.body, repo)
         msg = f"Opened issue {repo.name}/#{issue.number}-'{issue.title}'"

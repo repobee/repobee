@@ -8,7 +8,7 @@ __all__ = ["get_repos"]
 
 
 def get_repos(
-    repo_names: Iterable[str],
+    repo_urls: Iterable[str],
     api: plug.PlatformAPI,
     desc: str = "Fetching repos",
     **kwargs: Any,
@@ -17,7 +17,7 @@ def get_repos(
     provides an auto-updating progress bar to the CLI.
 
     Args:
-        repo_names: An iterable of repo names.
+        repo_urls: An iterable of repo URLs.
         api: An instance of the platform API.
         desc: A description of the action.
         kwargs: Keyword arguments to the underlying implementation of the
@@ -25,9 +25,9 @@ def get_repos(
     Returns:
         An iterable of repos with an auto-updating CLI progress bar.
     """
-    repo_names = list(repo_names)
+    repo_urls = list(repo_urls)
     return plug.cli.io.progress_bar(
-        api.get_repos(repo_names), desc=desc, total=len(repo_names), **kwargs
+        api.get_repos(repo_urls), desc=desc, total=len(repo_urls), **kwargs
     )
 
 

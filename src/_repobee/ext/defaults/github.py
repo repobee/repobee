@@ -249,12 +249,13 @@ class GitHubAPI(plug.PlatformAPI):
         return self._wrap_repo(repo)
 
     def get_repos(
-        self, repo_names: Optional[List[str]] = None,
+        self, repo_urls: Optional[List[str]] = None,
     ) -> Iterable[plug.Repo]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repos`."""
+        repo_names = map(self.extract_repo_name, repo_urls or [])
         return (
             self._wrap_repo(repo)
-            for repo in self._get_repos_by_name(repo_names or [])
+            for repo in self._get_repos_by_name(repo_names)
         )
 
     def create_issue(

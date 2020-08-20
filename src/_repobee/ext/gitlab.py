@@ -210,23 +210,24 @@ class GitLabAPI(plug.PlatformAPI):
             return self._wrap_project(project)
 
     def get_repos(
-        self, repo_names: Optional[List[str]] = None,
+        self, repo_urls: Optional[List[str]] = None,
     ) -> Iterable[plug.Repo]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repos`."""
-        projects = []
+        found_urls = []
         with _try_api_request():
-            for name in repo_names:
+            for url in repo_urls:
+                name = self.extract_repo_name(url)
                 candidates = self._group.projects.list(
                     include_subgroups=True, search=name, all=True
                 )
                 for candidate in candidates:
-                    if candidate.name == name:
-                        projects.append(candidate.name)
+                    if candidate.attributes["http_url_to_repo"] == url:
+                        found_urls.append(candidate.url)
                         yield self._wrap_project(
                             self._gitlab.projects.get(candidate.id)
                         )
 
-        missing = set(repo_names) - set(projects)
+        missing = set(repo_urls) - set(found_urls)
         if missing:
             msg = f"Can't find repos: {', '.join(missing)}"
             plug.log.warning(msg)
