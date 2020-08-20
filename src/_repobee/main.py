@@ -14,11 +14,14 @@ import sys
 from typing import List, Optional, Union, Mapping
 from types import ModuleType
 
+import argcomplete
+
 import repobee_plug as plug
 
 import _repobee.cli.dispatch
 import _repobee.cli.parsing
 import _repobee.cli.preparser
+import _repobee.cli.mainparser
 from _repobee import plugin
 from _repobee import exception
 from _repobee import config
@@ -142,6 +145,16 @@ def main(sys_args: List[str], unload_plugins: bool = True):
         )
 
         _initialize_plugins(parsed_preparser_args)
+
+        # create a separate parser for autocompletion with show_all_opts
+        # enabled as not having show_all_opts messes a bit with the
+        # autocompletion
+        argcomplete.autocomplete(
+            _repobee.cli.mainparser.create_parser(
+                show_all_opts=True,
+                config_file=parsed_preparser_args.config_file,
+            )
+        )
 
         parsed_args, api = _parse_args(
             app_args,

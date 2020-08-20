@@ -3,7 +3,7 @@
 REPOBEE_INSTALL_DIR="$HOME/.repobee"
 REPOBEE_BIN_DIR="$REPOBEE_INSTALL_DIR/bin"
 REPOBEE_REPO_DIR="$REPOBEE_INSTALL_DIR/repobee_git"
-REPOBEE_HTTPS_URL="https://github.com/slarse/repobee"
+REPOBEE_HTTPS_URL="https://github.com/repobee/repobee"
 REPOBEE_EXECUTABLE="$REPOBEE_BIN_DIR/repobee"
 REPOBEE_VERSION="v3.0.0-alpha.7"
 REPOBEE_PIP_URL="git+$REPOBEE_HTTPS_URL.git@$REPOBEE_VERSION"
@@ -13,6 +13,13 @@ VENV_DIR="$REPOBEE_INSTALL_DIR/env"
 REPOBEE_PIP="$VENV_DIR/bin/pip"
 REPOBEE_ENV_ACTIVATE="$VENV_DIR/bin/activate"
 REPOBEE_PYTHON="$VENV_DIR/bin/python"
+
+# tab completion stuff
+REPOBEE_COMPLETION="$REPOBEE_INSTALL_DIR/completion"
+REPOBEE_ZSH_COMPLETION="$REPOBEE_COMPLETION/zsh_completion.sh"
+REPOBEE_BASH_COMPLETION="$REPOBEE_COMPLETION/bash_completion.sh"
+REPOBEE_FISH_COMPLETION="$REPOBEE_COMPLETION/fish_completion.sh"
+REGISTER_PYTHON_ARGCOMPLETE="$REPOBEE_INSTALL_DIR/env/bin/register-python-argcomplete"
 
 function install() {
     if [ -d "$REPOBEE_INSTALL_DIR" ]; then
@@ -149,8 +156,52 @@ function add_to_path() {
     esac
 }
 
-install
+function create_autocomplete_scripts() {
+    mkdir -p "$REPOBEE_COMPLETION"
 
-echo ""
-echo "RepoBee was installed successfully. To uninstall, simply remove the directory at $REPOBEE_INSTALL_DIR"
-echo "If you are having trouble, please visit the FAQ at https://repobee.readthedocs.io/troubleshoot.html"
+# zsh
+    echo "
+# Source this file to get tab completion for zsh
+\"$REPOBEE_INSTALL_DIR/env/bin/register-python-argcomplete\"
+autoload -U bashcompinit
+bashcompinit
+eval \"\$($REGISTER_PYTHON_ARGCOMPLETE repobee)\"
+" > "$REPOBEE_ZSH_COMPLETION"
+
+# bash
+echo "
+# Source this file to get tab completion for bash
+eval \"\$($REGISTER_PYTHON_ARGCOMPLETE repobee)\"
+" > "$REPOBEE_BASH_COMPLETION"
+
+}
+
+function auto_complete_msg() {
+    echo "
+### TAB COMPLETION INSTRUCTIONS ###
+RepoBee supports tab completion (aka auto completion, shell completion, etc), but you need to do just a little bit of the legwork yourself. To activate tab completion for RepoBee, do the following (depending on your shell):
+
+### bash ###
+Add the following to your ~/.bashrc:
+
+    source \"$REPOBEE_BASH_COMPLETION\"
+
+### zsh ###
+Add the following to your ~/.zshrc:
+
+    source \"$REPOBEE_ZSH_COMPLETION\"
+
+### other shells ###
+Sorry, we don't support tab completion for any other shells at this time :(
+
+"
+}
+
+install
+create_autocomplete_scripts
+auto_complete_msg
+
+echo "
+RepoBee was installed successfully. To uninstall, simply remove the directory at $REPOBEE_INSTALL_DIR
+If you are having trouble, please visit the FAQ at https://repobee.readthedocs.io/troubleshoot.html
+"

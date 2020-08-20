@@ -89,6 +89,7 @@ def _parse_args(
         not further processing is required.
     """
     parser = cli.mainparser.create_parser(show_all_opts, config_file)
+
     args = parser.parse_args(_handle_deprecation(sys_args))
 
     if "_extension_command" in args:

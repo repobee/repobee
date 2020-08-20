@@ -42,6 +42,7 @@ docs_requirements = [
 ]
 required = [
     "appdirs",
+    "argcomplete>=1.12.0",
     "bullet",
     "colored",
     "daiquiri",
