@@ -202,9 +202,10 @@ class LocalAPI(plug.PlatformAPI):
         raise plug.NotFoundError(f"{team_name} has no repository {repo_name}")
 
     def get_repos(
-        self, repo_names: Optional[List[str]] = None,
+        self, repo_urls: Optional[List[str]] = None,
     ) -> Iterable[plug.Repo]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repos`."""
+        repo_names = map(self.extract_repo_name, repo_urls or [])
         unfiltered_repos = (
             self._repos[self._org_name].get(name) for name in repo_names
         )

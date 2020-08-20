@@ -47,7 +47,7 @@ def list_issues(
     repo_names = [repo.name for repo in repos]
     max_repo_name_length = max(map(len, repo_names))
 
-    repos = api.get_repos(repo_names)
+    repos = api.get_repos([repo.url for repo in repos])
 
     issues_per_repo = _get_issue_generator(
         repos, title_regex=title_regex, author=author, state=state, api=api
@@ -197,8 +197,10 @@ def open_issue(
         api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
-    repo_names = plug.generate_repo_names(teams, assignment_names)
-    repos = progresswrappers.get_repos(repo_names, api)
+    repo_urls = api.get_repo_urls(
+        team_names=[t.name for t in teams], assignment_names=assignment_names
+    )
+    repos = progresswrappers.get_repos(repo_urls, api)
     for repo in repos:
         issue = api.create_issue(issue.title, issue.body, repo)
         msg = f"Opened issue {repo.name}/#{issue.number}-'{issue.title}'"
@@ -218,8 +220,8 @@ def close_issue(
         api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
-    repo_names = (repo.name for repo in repos)
-    repos = progresswrappers.get_repos(repo_names, api)
+    repo_urls = (repo.url for repo in repos)
+    repos = progresswrappers.get_repos(repo_urls, api)
     for repo in repos:
         to_close = [
             issue

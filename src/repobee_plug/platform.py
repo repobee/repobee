@@ -248,14 +248,14 @@ class _APISpec:
         _not_implemented()
 
     def get_repos(
-        self, repo_names: Optional[List[str]] = None,
+        self, repo_urls: Optional[List[str]] = None,
     ) -> Iterable[Repo]:
         """Get repositories from the platform.
 
         Args:
-            repo_names: Repository names to filter the results by. Names that
-                do not exist on the platform are ignored. If
-                ``repo_names=None``, all repos are fetched.
+            repo_urls: Repository URLs to filter the results by. URLs that do
+                not exist on the platform are ignored. If ``repo_urls=None``,
+                all repos are fetched.
         Returns:
             Repositories matching the filters.
         Raises:
