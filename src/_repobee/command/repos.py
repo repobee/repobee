@@ -14,6 +14,7 @@ program.
 """
 import itertools
 import pathlib
+import re
 import os
 import sys
 import tempfile
@@ -248,7 +249,10 @@ def update_student_repos(
 
     if failed_urls and issue:
         plug.echo("Opening issue in repos to which push failed")
-        _open_issue_by_urls(failed_urls, issue, api)
+        urls_without_auth = [
+            re.sub("https://.*?@", "https://", url) for url in failed_urls
+        ]
+        _open_issue_by_urls(urls_without_auth, issue, api)
 
     plug.log.info("Done!")
     return hook_results

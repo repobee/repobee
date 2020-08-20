@@ -221,8 +221,8 @@ class GitLabAPI(plug.PlatformAPI):
                     include_subgroups=True, search=name, all=True
                 )
                 for candidate in candidates:
-                    if candidate.attributes["http_url_to_repo"] == url:
-                        found_urls.append(candidate.url)
+                    if candidate.http_url_to_repo == url:
+                        found_urls.append(candidate.http_url_to_repo)
                         yield self._wrap_project(
                             self._gitlab.projects.get(candidate.id)
                         )
