@@ -45,7 +45,6 @@ class TestGetConfiguredDefaults:
         assert defaults["base_url"] == BASE_URL
         assert defaults["org_name"] == ORG_NAME
         assert defaults["students_file"] == str(students_file)
-        assert defaults["plugins"] == ",".join(PLUGINS)
         assert defaults["template_org_name"] == TEMPLATE_ORG_NAME
         assert defaults["token"] == CONFIG_TOKEN
 
@@ -67,7 +66,6 @@ class TestGetConfiguredDefaults:
                 "org_name = {}".format(ORG_NAME),
                 "template_org_name = {}".format(TEMPLATE_ORG_NAME),
                 "students_file = {!s}".format(students_file),
-                "plugins = {!s}".format(PLUGINS),
                 "{} = whatever".format(invalid_key),
             ]
         )
@@ -101,40 +99,6 @@ class TestGetConfiguredDefaults:
         assert "does not contain the required [repobee] header" in str(
             exc_info.value
         )
-
-
-class TestGetPluginNames:
-    """Tests for get_plugin_names."""
-
-    def test_with_full_config(self, config_mock):
-        """Test that plugins are read correctly from a full config file."""
-        plugin_names = config.get_plugin_names(str(config_mock))
-
-        assert plugin_names == PLUGINS
-
-    @pytest.mark.parametrize(
-        "plugins_string, expected_plugins",
-        [
-            (",".join(PLUGINS), PLUGINS),
-            (", ".join(PLUGINS), PLUGINS),
-            ("javac", ["javac"]),
-            ("", []),
-        ],
-    )
-    def test_with_only_plugins(
-        self, plugins_string, expected_plugins, empty_config_mock
-    ):
-        contents = os.linesep.join(
-            [
-                "[{}]".format(_repobee.constants.CORE_SECTION_HDR),
-                "plugins = " + plugins_string,
-            ]
-        )
-        empty_config_mock.write(contents)
-
-        plugin_names = config.get_plugin_names(str(empty_config_mock))
-
-        assert plugin_names == expected_plugins
 
 
 class TestExecuteConfigHooks:
