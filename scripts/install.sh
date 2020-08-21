@@ -5,8 +5,6 @@ REPOBEE_BIN_DIR="$REPOBEE_INSTALL_DIR/bin"
 REPOBEE_REPO_DIR="$REPOBEE_INSTALL_DIR/repobee_git"
 REPOBEE_HTTPS_URL="https://github.com/repobee/repobee"
 REPOBEE_EXECUTABLE="$REPOBEE_BIN_DIR/repobee"
-REPOBEE_VERSION="v3.0.0-beta.1"
-REPOBEE_PIP_URL="git+$REPOBEE_HTTPS_URL.git@$REPOBEE_VERSION"
 REPOBEE_INSTALLED_PLUGINS="$REPOBEE_INSTALL_DIR/installed_plugins.json"
 
 VENV_DIR="$REPOBEE_INSTALL_DIR/env"
@@ -22,12 +20,14 @@ REPOBEE_FISH_COMPLETION="$REPOBEE_COMPLETION/fish_completion.sh"
 REGISTER_PYTHON_ARGCOMPLETE="$REPOBEE_INSTALL_DIR/env/bin/register-python-argcomplete"
 
 function install() {
+    version=$1
+
     if [ -d "$REPOBEE_INSTALL_DIR" ]; then
         echo "Found RepoBee installation at $REPOBEE_INSTALL_DIR, attempting repair and upgrade ..."
     fi
 
     check_prerequisites
-    install_repobee
+    install_repobee $version
 }
 
 function check_prerequisites() {
@@ -54,6 +54,7 @@ function check_prerequisites() {
 }
 
 function install_repobee() {
+    version=$1
     echo "Installing RepoBee at $REPOBEE_INSTALL_DIR"
 
     $(find_python) -m venv "$VENV_DIR" &> /dev/null || {
@@ -69,8 +70,9 @@ function install_repobee() {
     source "$REPOBEE_ENV_ACTIVATE"
     ensure_pip_installed
 
-    echo "Installing RepoBee $REPOBEE_VERSION"
-    REPOBEE_INSTALL_DIR="$REPOBEE_INSTALL_DIR" pip_install_quiet_failfast "$REPOBEE_PIP_URL"
+    echo "Installing RepoBee $version"
+    repobee_pip_url="git+$REPOBEE_HTTPS_URL.git@$version"
+    REPOBEE_INSTALL_DIR="$REPOBEE_INSTALL_DIR" pip_install_quiet_failfast "$repobee_pip_url"
     create_repobee_executable
 
     if [ ! -f "$REPOBEE_INSTALLED_PLUGINS" ]; then
@@ -156,6 +158,17 @@ function add_to_path() {
     esac
 }
 
+function get_latest_version() {
+    curl --version &> /dev/null || {
+        echo "Running this install script without specifying a version requires curl."
+        echo "Please install curl or manually specify a version to install."
+        echo "You can find the latest version here: https://github.com/repobee/repobee/releases/latest"
+    }
+
+    # find the version number of the latest release of RepoBee
+    echo $(curl -Ls -o /dev/null -w %{url_effective} https://github.com/repobee/repobee/releases/latest | awk -F / '{ print $NF }')
+}
+
 function create_autocomplete_scripts() {
     mkdir -p "$REPOBEE_COMPLETION"
 
@@ -197,7 +210,14 @@ Sorry, we don't support tab completion for any other shells at this time :(
 "
 }
 
-install
+# find the version to install
+if [ $1 ]; then
+    version=$1
+else
+    version=$(get_latest_version)
+fi
+
+install $version
 create_autocomplete_scripts
 auto_complete_msg
 
