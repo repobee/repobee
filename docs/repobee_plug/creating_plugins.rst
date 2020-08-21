@@ -499,6 +499,9 @@ this:
 
 
     class CiCheck(plug.Plugin, plug.cli.CommandExtension):
+        __settings__ = plug.cli.command_extension_settings(
+            actions=[plug.cli.CoreCommand.repos.clone]
+        )
 
         cicheck_reference_yml = plug.cli.option(
             help="path to the refence ci.yml file",
@@ -531,11 +534,18 @@ this:
 
             return plug.Result(name=repo.name, status=status, msg=msg)
 
-There are a few important things to note here. First of all, ``post_clone`` may
-optionally return a :py:class:`repobee_plug.Result`. This data type is used by
-RepoBee to report results to the CLI, and also to the hook results file. The
-``name`` is used as a key to identify what the result belongs to (in this case
-the repo name), and the rest of the arguments should be self-explanatory.
+There are a few important things to note here. First of all, a command
+extension *must* have a ``__settings__`` attribute, which should be
+instantiated with the :py:func:`~repobee_plug.cli.command_extension_settings`
+function. You must also supply this with a list of command line actions to
+attach the extension command to. In this case, we are only interested in the
+``repos clone`` command, so that's the only action we specify.
+
+Also note that ``post_clone`` may optionally return a
+:py:class:`repobee_plug.Result`. This data type is used by RepoBee to report
+results to the CLI, and also to the hook results file. The ``name`` is used as
+a key to identify what the result belongs to (in this case the repo name), and
+the rest of the arguments should be self-explanatory.
 
 Another important aspect is that we add the command line option just like we
 would for the regular plugin commands discussed in :ref:`plugin commands`_,
