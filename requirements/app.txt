@@ -1,4 +1,5 @@
 appdirs
+argcomplete>=1.12.0
 bullet
 colored
 daiquiri
