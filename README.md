@@ -69,9 +69,30 @@ If you want to reference RepoBee in a paper, please cite the following paper:
       is highly recommended
 
 ### Install
-RepoBee is on PyPi, so `python3 -m pip install repobee` should do the trick. See the
-[install instructions](https://repobee.readthedocs.io/en/stable/install.html)
-for more elaborate instructions.
+We provide an install script that sets up an isolated and correctly configured
+environment for RepoBee. It supports macOS, Linux and Windows Subsystem for
+Linux (WSL). You can execute it directly using `curl`, with either `bash` or
+`zsh`.
+
+> **IMPORTANT:** If you use any other shell than bash or zsh, you must still
+> execute the install script with one of them.
+
+```bash
+$ bash <(curl -s https://repobee.org/install.sh)
+```
+
+```bash
+$ zsh <(curl -s https://repobee.org/install.sh)
+```
+
+#### Required software
+RepoBee requires Python 3.6+ and Git to be installed. The install script will
+complain if they are not, and point you to relevant resources. When you have
+installed the requirements, simply try the install script again.
+
+#### Tab completion
+RepoBee supports tab completion for `zsh` and `bash`. Follow the instructions
+from the install script to activate tab completion.
 
 ### Getting started
 The best way to get started with RepoBee is to head over to the
