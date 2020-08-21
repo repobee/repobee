@@ -209,10 +209,7 @@ def _initialize_plugins(parsed_preparser_args: argparse.Namespace) -> None:
             )
 
         plug.log.debug("Initializing user plugins")
-        plugin_names = (
-            parsed_preparser_args.plug
-            or config.get_plugin_names(parsed_preparser_args.config_file)
-        ) or []
+        plugin_names = parsed_preparser_args.plug or []
         plugin.initialize_plugins(plugin_names, allow_filepath=True)
 
 

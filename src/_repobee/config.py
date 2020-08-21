@@ -11,7 +11,7 @@ Contains the code required for pre-configuring user interfaces.
 import os
 import pathlib
 import configparser
-from typing import Union, List, Mapping
+from typing import Union, Mapping
 
 import repobee_plug as plug
 
@@ -55,31 +55,6 @@ def check_defaults(
                 ", ".join(configured - constants.CONFIGURABLE_ARGS),
             )
         )
-
-
-def get_plugin_names(config_file: Union[str, pathlib.Path]) -> List[str]:
-    """Return a list of unqualified names of plugins listed in the config. The
-    order of the plugins is preserved.
-
-    Args:
-        config_file: path to the config file.
-
-    Returns:
-        a list of unqualified names of plugin modules, or an empty list if no
-        plugins are listed.
-    """
-    config_file = (
-        pathlib.Path(config_file)
-        if isinstance(config_file, str)
-        else config_file
-    )
-    if not config_file.is_file():
-        return []
-    config = _read_config(config_file)
-    plugin_string = config.get(
-        constants.CORE_SECTION_HDR, "plugins", fallback=""
-    )
-    return [name.strip() for name in plugin_string.split(",") if name]
 
 
 def execute_config_hooks(config_file: Union[str, pathlib.Path]) -> None:

@@ -209,27 +209,6 @@ def test_no_plugins_with_configured_plugins(
     )
 
 
-def test_configured_plugins_are_loaded(
-    handle_args_mock, dispatch_command_mock, init_plugins_mock, config_mock
-):
-    sys_args = ["repobee", *CLONE_ARGS]
-
-    main.main(sys_args)
-
-    init_plugins_mock.assert_has_calls(
-        [
-            call(["javac", "pylint"], allow_filepath=True),
-            call(DEFAULT_PLUGIN_NAMES, allow_qualified=True),
-        ],
-        any_order=True,
-    )
-    handle_args_mock.assert_called_once_with(
-        CLONE_ARGS,
-        show_all_opts=False,
-        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
-    )
-
-
 def test_dist_plugins_are_loaded_when_dist_install(monkeypatch):
     dist_plugin_qualnames = plugin.get_qualified_module_names(
         _repobee.ext.dist

@@ -275,7 +275,6 @@ def config_mock(empty_config_mock, students_file):
             "org_name = {}".format(constants.ORG_NAME),
             "template_org_name = {}".format(constants.TEMPLATE_ORG_NAME),
             "students_file = {!s}".format(students_file),
-            "plugins = {!s}".format(",".join(constants.PLUGINS)),
             "token = {}".format(constants.CONFIG_TOKEN),
         ]
     )
