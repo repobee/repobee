@@ -8,7 +8,7 @@ RepoBee User Guide
    :caption: Contents:
 
    getting_started
-   update
+   repos
    issues
    clone
    peer
