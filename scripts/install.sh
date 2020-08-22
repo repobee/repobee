@@ -130,10 +130,7 @@ function create_repobee_executable() {
     echo "Creating RepoBee executable"
 
     mkdir -p "$REPOBEE_BIN_DIR"
-    echo "#! /bin/sh
-source \"$REPOBEE_ENV_ACTIVATE\"
-python -m repobee" '$@' > "$REPOBEE_EXECUTABLE"
-    chmod +x "$REPOBEE_EXECUTABLE"
+    ln -sf "$VENV_DIR/bin/repobee" "$REPOBEE_EXECUTABLE"
 
     echo "RepoBee exuctable created at $REPOBEE_EXECUTABLE"
 }
