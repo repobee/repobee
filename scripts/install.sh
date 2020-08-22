@@ -14,9 +14,7 @@ REPOBEE_PYTHON="$VENV_DIR/bin/python"
 
 # tab completion stuff
 REPOBEE_COMPLETION="$REPOBEE_INSTALL_DIR/completion"
-REPOBEE_ZSH_COMPLETION="$REPOBEE_COMPLETION/zsh_completion.sh"
 REPOBEE_BASH_COMPLETION="$REPOBEE_COMPLETION/bash_completion.sh"
-REPOBEE_FISH_COMPLETION="$REPOBEE_COMPLETION/fish_completion.sh"
 REGISTER_PYTHON_ARGCOMPLETE="$REPOBEE_INSTALL_DIR/env/bin/register-python-argcomplete"
 
 function install() {
@@ -172,21 +170,9 @@ function get_latest_version() {
 function create_autocomplete_scripts() {
     mkdir -p "$REPOBEE_COMPLETION"
 
-# zsh
-    echo "
-# Source this file to get tab completion for zsh
-\"$REPOBEE_INSTALL_DIR/env/bin/register-python-argcomplete\"
-autoload -U bashcompinit
-bashcompinit
-eval \"\$($REGISTER_PYTHON_ARGCOMPLETE repobee)\"
-" > "$REPOBEE_ZSH_COMPLETION"
-
-# bash
-echo "
-# Source this file to get tab completion for bash
-eval \"\$($REGISTER_PYTHON_ARGCOMPLETE repobee)\"
+echo "# Tab completion for bash/zsh
+$($REGISTER_PYTHON_ARGCOMPLETE repobee)
 " > "$REPOBEE_BASH_COMPLETION"
-
 }
 
 function auto_complete_msg() {
@@ -202,7 +188,13 @@ Add the following to your ~/.bashrc:
 ### zsh ###
 Add the following to your ~/.zshrc:
 
-    source \"$REPOBEE_ZSH_COMPLETION\"
+    autoload -Uz compinit
+    compinit
+    autoload -Uz bashcompinit
+    bashcompinit
+    source \"$REPOBEE_BASH_COMPLETION\"
+
+IMPORTANT: You should _not_ have multiple occurences of compinit and bashcompinit in your .zshrc, they should be loaded and executed only once. If you already have them in there, just make sure to source the RepoBee bash completion script after compinit and bashcompinit have been called.
 
 ### other shells ###
 Sorry, we don't support tab completion for any other shells at this time :(
