@@ -1,10 +1,11 @@
 .. _getting_started:
 
-Getting started (the ``show-config``, ``verify-settings`` and ``setup`` commands)
-*********************************************************************************
+Getting started
+***************
+
 .. important::
 
-    This guide assumes that the user has access to a ``bash`` shell, or is
+    This guide assumes that the user has access to a ``bash``-like shell, or is
     tech-savvy enough to translate the instructions into some other shell
     environment.
 
@@ -13,25 +14,23 @@ Getting started (the ``show-config``, ``verify-settings`` and ``setup`` commands
    Whenever you see specific mentions of GitHub, refer to the :ref:`gitlab`
    section for how this translates to use with GitLab.
 
-The basic workflow of RepoBee is best described by example. In this section,
-I will walk you through how to set up a target organization with template and
-student repositories by showing every single step I would perform myself. The
-basic workflow can be summarized in the following steps:
+The basic workflow of RepoBee is best described by example. This guide will
+take you through most of RepoBee's core functionality with using less realistic
+examples as the backdrop. In this first section, we will set up everything on
+the hosting platform, and configure RepoBee to interface with the hosting
+platform. The steps are as follows.
 
 1. Create an organization (the target organization).
 2. Configure RepoBee for the target organization.
 3. Verify settings.
 4. Set up the template repos.
-5. Set up the student repos.
 
-This should leave you with enough knowledge to use the rudimentary features of
-RepoBee. There is much more to RepoBee, such as opening/closing issues,
-updating student repos and cloning repos in batches. This is covered in later
-sections, but you don't necessarily need to go through the entire guide in one
-go. Now, let's delve into the above steps in greater detail.
+When this initial setup is over and done with, the following parts of the guide
+will teach you how to use the most fundamental parts of RepoBee.
 
 Create an organization
 ======================
+
 This is an absolutely necessary pre-requisite for using RepoBee.
 Create an organization with an appropriate name on the platform instance you
 intend to use. You can find the ``New organization`` button by going to
@@ -128,13 +127,13 @@ Similarly, to access the help section of a given action, simply type ``repobee
 
 
 Configure RepoBee for the target organization (the ``config`` category)
-=======================================================================================
+=======================================================================
 
 In this section, we'll cover the ``config`` category of commands. These are used
 to configure RepoBee.
 
-Editing the configuration file (``wizard`` and ``show``)
---------------------------------------------------------
+Editing the configuration file (the ``wizard`` and ``show`` actions)
+--------------------------------------------------------------------
 
 For RepoBee to work at all, it needs to be provided with an access token to
 whichever platform instance you intend to use. See the `GitHub access token
@@ -208,8 +207,8 @@ got everything set correctly.
 If you ever want to re-configure some of the options, simply run ``config
 wizard`` again.
 
-Verifying settings settings
----------------------------
+Verifying the configuration (the ``verify`` action)
+---------------------------------------------------
 
 Now that everything is set up, it's time to verify all of the settings. Given
 that you have a configuration file that looks something like the one above,
@@ -217,7 +216,7 @@ you can simply run the ``config verify`` command without any options.
 
 .. code-block:: bash
 
-    $ repobee verify-settings
+    $ repobee config verify
     Verifying settings ...
     Trying to fetch user information ...
     SUCCESS: found user slarse, user exists and base url looks okay
