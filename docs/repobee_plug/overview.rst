@@ -3,10 +3,11 @@ Plugin system overview
 Creating plugins for RepoBee is not difficult, and you do not need to be a
 seasoned Python developer in order to make something that is genuinely useful.
 
-.. _conventions:
+.. _plug_conventions:
 
 Conventions
 ===========
+
 For RepoBee to discover a plugin and its hooks, the following conventions
 need to be adhered to:
 

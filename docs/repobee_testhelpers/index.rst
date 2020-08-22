@@ -24,10 +24,3 @@ Refer to the module reference for details on the contents of the package.
    :caption: Contents:
 
    code
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

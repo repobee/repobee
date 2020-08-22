@@ -26,10 +26,3 @@ web site <https://repobee.org/contact.html>`_.
    overview
    creating_plugins
    code
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

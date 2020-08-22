@@ -548,7 +548,7 @@ a key to identify what the result belongs to (in this case the repo name), and
 the rest of the arguments should be self-explanatory.
 
 Another important aspect is that we add the command line option just like we
-would for the regular plugin commands discussed in :ref:`plugin commands`_,
+would for the regular plugin commands discussed in :ref:`plugin commands`,
 with one exception: **the argument name is prefixed with the name of the
 plugin**. This is to avoid name collisions with RepoBee's core arguments, or
 any other plugins. This is not enforced, but you should always strive to do it.

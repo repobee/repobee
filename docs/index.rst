@@ -42,7 +42,6 @@ rest of the guide assumes a configuration as described there.
    repobee_testhelpers/index
    code
 
-
 Indices and tables
 ==================
 
