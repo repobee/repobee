@@ -12,6 +12,5 @@ RepoBee User Guide
    issues
    peer
    plugins
-   migrate
    group_assignments
    gitlab

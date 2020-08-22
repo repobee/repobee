@@ -223,3 +223,43 @@ about it in the :ref:`plugins` section.
    have to run ``repos clone`` again in a different directory to fetch any
    updates students have made, alternatively simply delete to particular
    repositories you want to clone again and then run ``repos clone``.
+
+.. _migrate:
+
+Migrate repositories into the target (or template) organization (the ``migrate`` action)
+========================================================================================
+
+Migrating repositories into an organization can be useful in a few cases. You
+may have repos that should be accessible to students and need to be moved
+across course rounds, or you might be storing your template repos in the target
+organization and need to migrate them for each new course round. To migrate
+repos into the target organization, they must be local on disc. Assuming we
+have the repos ``task-1`` and ``task-2`` in the current working
+directory (i.e. local repos), all we have to do is this:
+
+.. code-block:: bash
+
+    $ repobee repos migrate --assignments task-1 task-2
+
+.. note::
+
+    It may seem a bit odd that the ``--assignments`` option is used to specify
+    the repos to migrate. This is an implementation detail that makes it easier
+    to handle the command, but may be changed in the future for better
+    usability.
+
+.. important::
+
+    If you want to use this command to migrate repos into a template
+    organization, you must specify it with the ``--org-name`` option here
+    (instead of the ``--template-org-name``).
+
+Only the defualt branch is actually migrated, and is pushed to that same
+default branch in the new repo.  Migrating several branches is something that
+we've never had a need to do, but if you do, please `open an issue on GitHub
+<https://github.com/repobee/repobee/issues/new>`_ with a feature request.
+``migrate`` is perfectly safe to run several times, in case you think you
+missed something, or need to update repos. In fact, all RepoBee commands that
+deal with pushing to or cloning from repos in some way are safe to run over and
+over. This is mostly because of how Git works, and has little to do with
+RepoBee itself.
