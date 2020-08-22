@@ -10,7 +10,6 @@ RepoBee User Guide
    getting_started
    repos
    issues
-   clone
    peer
    plugins
    migrate

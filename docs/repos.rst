@@ -7,6 +7,11 @@ The ``repos`` category of commands allows you to manage student repositories
 with a few simple, high-level operations. Each action in the ``repos`` category
 is more or less independent.
 
+.. hint::
+
+    For an up-to-date listing of all ``repos`` actions, run ``repobee repos
+    -h``.
+
 .. _setup:
 
 Set up student repositories (the ``setup`` action)
@@ -102,7 +107,7 @@ Let's say that we've updated ``task-1``, and that users ``slarse``,
 
 .. code-block:: bash
 
-    $ repobee update --assignments task-1 --students slarse glennol glassey
+    $ repobee repos update --assignments task-1 --students slarse glennol glassey
     # again, there will be progress bars here
 
 That's all there is to it for this super simple case. But what if ``glassey`` had
@@ -128,7 +133,7 @@ solution: open an issue in the student's repo that explains the situation.
 
 .. important::
 
-    If you don't specify an issue to ``repobee update``, rejected pushes will
+    If you don't specify an issue to ``repos update``, rejected pushes will
     simply be ignored.
 
 So, let's first create that issue. It should be a Markdown-formatted file, and
@@ -153,7 +158,7 @@ students, plain text is more helpful. Now it's just a matter of using
 
 .. code-block:: bash
 
-    $ repobee update --assignments task-1 --students slarse glennol glassey -i issue.md
+    $ repobee repos update --assignments task-1 --students slarse glennol glassey -i issue.md
     [ERROR] Failed to push to https://some-enterprise-host/repobee-demo/glassey-task-1
     return code: 128
     fatal: repository 'https://some-enterprise-host/repobee-demo/glassey-task-1/' not found
@@ -178,3 +183,43 @@ connection issues and misaligned planets.
     simply be listed as ``up-to-date`` (which is a successful update!), and the
     rejecting repos will still reject the push. However, be careful not to run
     ``update`` with ``-i`` multiple times, as it will then open multiple issues.
+
+Cloning Repos in Bulk (the ``clone`` action)
+============================================
+
+It can at times be beneficial to be able to clone a bunch of student repos
+at the same time. It could for example be prudent to do this slightly after
+a deadline, as timestamps in a ``git`` commit can easily be altered (and are
+therefore not particularly trustworthy). Whatever your reason may be, it's
+very simple using the ``clone`` command. Again, assume that we have the
+``students.txt`` file from :ref:`setup`, and that we want to clone all student
+repos based on ``task-1`` and ``task-2``.
+
+.. code-block:: bash
+
+    $ repobee repos clone -a task-1 task-2 --sf students.txt
+    [INFO] cloning into student repos ...
+    [INFO] Cloned into https://some-enterprise-host/repobee-demo/slarse-task-1
+    [INFO] Cloned into https://some-enterprise-host/repobee-demo/glassey-task-1
+    [INFO] Cloned into https://some-enterprise-host/repobee-demo/glassey-task-2
+    [INFO] Cloned into https://some-enterprise-host/repobee-demo/glennol-task-1
+    [INFO] Cloned into https://some-enterprise-host/repobee-demo/slarse-task-2
+    [INFO] Cloned into https://some-enterprise-host/repobee-demo/glennol-task-2
+
+Splendid! That's really all there is to the basic functionality, the repos
+should now be in your current working directory. There is also a possibility to
+run automated tasks on cloned repos, such as running test suites or linters. If
+you're not satisfied with the tasks on offer, you can define your own. Read more
+about it in the :ref:`plugins` section.
+
+.. note::
+
+   `For security reasons
+   <https://github.blog/2012-09-21-easier-builds-and-deployments-using-git-over-https-and-oauth/>`_,
+   RepoBee doesn't actually use ``git clone`` to clone repositories. Instead,
+   RepoBee clones by initializing the repository and running ``git pull``. The
+   practical implication is that you can't simply enter a repository that's
+   been cloned with RepoBee and run ``git pull`` to fetch updates. You will
+   have to run ``repos clone`` again in a different directory to fetch any
+   updates students have made, alternatively simply delete to particular
+   repositories you want to clone again and then run ``repos clone``.
