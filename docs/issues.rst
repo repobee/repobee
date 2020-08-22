@@ -1,23 +1,18 @@
-Opening and Closing issues (the ``open-issues`` and ``close-issues`` commands)
-******************************************************************************
-Sometimes, the best way to handle an error in a repo is to simply notify
-affected students about it. This is especially true if the due date for the
-assignment is rapidly approaching, and most students have already started
-modifying their repositories. There can also be cases where you want to make
-general announcements, or communicate some other action item that's best highly
-related to the code that the students are writing. Therefore, RepoBee provides
-the ``open-issues`` command, which can open issues in bulk. When the time is
-right, issues can be closed with the ``close-issues`` command. Finally,
-``list-issues`` provides a way of quickly seeing what issues are open and closed
-in student repositories.
+Managing issues (the ``issues`` category)
+*****************************************
+
+The ``issues`` category of commands allows you to manage the issue trackers of
+the student repositories. The currently available core actions are ``open``,
+``close`` and ``list``, which achieve about what you'd expect.
 
 .. _open:
 
-Opening Issues
---------------
-The ``open-issues`` command is very simple. Before we use it, however, we need
-to write a Markdown-formatted issue. Just like with the ``update`` command, the
-**first line of the file is the title**. Here is ``issue.md``:
+Opening Issues (the ``open`` action)
+====================================
+The ``issues open`` command is very simple. Before we use it, however, we need
+to write a Markdown-formatted issue. Just like with the ``update`` command (see
+:ref:`update`), the **first line of the file is the title**. Here is
+``issue.md``:
 
 .. code-block:: none
    :caption: issue.md
@@ -36,10 +31,10 @@ for our dear students ``slarse``, ``glennol`` and ``glassey``, who are listed in
 
 .. code-block:: bash
 
-    $ repobee open-issues -a task-2 --sf students.txt -i issue.md
-    [INFO] Opened issue slarse-task-2/#1-'An important announcement'
-    [INFO] Opened issue glennol-task-2/#1-'An important announcement'
-    [INFO] Opened issue glassey-task-2/#1-'An important announcement'
+    $ repobee issues open --assignments task-2 --students-file students.txt -i issue.md
+    Opened issue slarse-task-2/#1-'An important announcement'
+    Opened issue glennol-task-2/#1-'An important announcement'
+    Opened issue glassey-task-2/#1-'An important announcement'
 
 From the output, we can read that in each of the repos, an issue with the title
 ``An important announcement`` was opened as issue nr 1 (``#1``). The number
@@ -48,8 +43,8 @@ correctly. And that's it! Neat, right?
 
 .. _close:
 
-Closing Issues
---------------
+Closing Issues (the ``close`` action)
+=====================================
 Now that the deadline has passed for ``task-2``, we want to close the
 issues opened in open_. The ``close-issues`` command takes a *regex* that runs
 against titles. All issues with matching titles are closed. While you *can*
@@ -58,7 +53,7 @@ announcement`` is simple: we provide the regex ``\AAn important announcement\Z``
 
 .. code-block:: bash
 
-    $ repobee close-issues -a task-2 --sf students.txt -r '\AAn important announcement\Z'
+    $ repobee issues close -a task-2 --sf students.txt -r '\AAn important announcement\Z'
     [INFO] Closed issue slarse-task-2/#1-'An important announcement'
     [INFO] Closed issue glennol-task-2/#1-'An important announcement'
     [INFO] Closed issue glassey-task-2/#1-'An important announcement'
@@ -75,8 +70,8 @@ And there we go, easy as pie!
     announcement``, and nothing else. Not even an extra space or linebreak is
     allowed.
 
-Listing Issues
---------------
+Listing Issues (the ``list`` action)
+====================================
 It can often be interesting to check what issues exist in a set of repos,
 especially so if you're a teaching assistant who just doesn't want to leave your
 trusty terminal. This is where the ``list-issues`` command comes into play.
@@ -103,5 +98,5 @@ issues, we must specifically say so with the ``--closed`` argument.
 
 Other interesting arguments include ``--all`` for both open and closed issues,
 ``--show-body`` for showing the body of each issue, and ``--author <username>``
-for filtering by author. There's not much more to it, see ``repobee list-issues
+for filtering by author. There's not much more to it, see ``repobee issues list
 -h`` for complete and up-to-date information on usage!
