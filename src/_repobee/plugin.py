@@ -327,9 +327,14 @@ def initialize_default_plugins() -> None:
     initialize_plugins(default_plugin_qualnames, allow_qualified=True)
 
 
-def initialize_dist_plugins() -> None:
-    """Initialize the distribution plugin modules."""
-    if not _repobee.distinfo.DIST_INSTALL:
+def initialize_dist_plugins(force: bool = False) -> None:
+    """Initialize the distribution plugin modules.
+
+    Args:
+        force: Initialize dist plugins even if RepoBee has not been properly
+            installed.
+    """
+    if not _repobee.distinfo.DIST_INSTALL and not force:
         raise exception.PluginLoadError(
             "Dist plugins can only be loaded with installed RepoBee"
         )

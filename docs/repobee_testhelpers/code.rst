@@ -1,4 +1,4 @@
-.. _modref:
+.. _testhelpers_modref:
 
 ``repobee_testhelpers`` Module Reference
 ****************************************

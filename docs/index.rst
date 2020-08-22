@@ -19,6 +19,10 @@ If you use the :ref:`userguide` in any way and feel like skipping
 :ref:`getting_started`, make sure to read :ref:`configure_repobee` anyway! The
 rest of the guide assumes a configuration as described there.
 
+The entire core CLI (i.e. without plugins) is also documented in the
+:ref:`cli`. This is both handy as reference material for existing users, and
+for prospective users to get a clear understanding of what RepoBee can do.
+
 .. important::
 
    Please open an issue over on the `issue tracker
@@ -41,7 +45,6 @@ rest of the guide assumes a configuration as described there.
    repobee_plug/index
    repobee_testhelpers/index
    code
-
 
 Indices and tables
 ==================

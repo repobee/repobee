@@ -1,4 +1,4 @@
-.. _modref:
+.. _plug_modref:
 
 ``repobee_plug`` Module Reference
 **********************************

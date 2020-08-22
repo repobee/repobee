@@ -70,8 +70,8 @@ def create_parser_for_docs() -> argparse.ArgumentParser:
     Returns:
         The primary parser, specifically for generating documentation.
     """
-    # load default plugins
     plugin.initialize_default_plugins()
+    plugin.initialize_dist_plugins(force=True)
     return create_parser(
         show_all_opts=True, config_file=_repobee.constants.DEFAULT_CONFIG_FILE
     )
@@ -493,7 +493,7 @@ def _add_issue_parsers(base_parsers, add_parser):
         formatter_class=_OrderedFormatter,
     )
     list_parser.add_argument(
-        "-r", "--title-regex", help="regex to filter issues by",
+        "-r", "--title-regex", help="regex to filter issues by"
     )
     list_parser.add_argument(
         "-b",
