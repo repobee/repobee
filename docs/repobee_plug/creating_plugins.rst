@@ -473,6 +473,8 @@ one.
 With the basics if implementing hooks out of the way, let's move into something
 a bit more interesting: command extensions.
 
+.. _command_extensions:
+
 Command extensions
 ------------------
 
