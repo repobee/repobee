@@ -116,7 +116,9 @@ def run(
     with _in_requested_workdir():
         try:
             _repobee.cli.parsing.setup_logging()
-            plugin.initialize_default_plugins()
+            # FIXME calling _initialize_plugins like this is ugly, should be
+            # refactored
+            _initialize_plugins(argparse.Namespace(no_plugins=False, plug=[]))
             plugin.register_plugins(wrapped_plugins)
             parsed_args, api = _parse_args(cmd, config_file, show_all_opts)
             return _repobee.cli.dispatch.dispatch_command(
