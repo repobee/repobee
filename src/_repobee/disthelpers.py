@@ -1,8 +1,10 @@
 """Helper functions for the distribution."""
-import pathlib
-import json
-import types
 import importlib
+import json
+import pathlib
+import subprocess
+import sys
+import types
 
 from typing import Optional, List
 
@@ -120,3 +122,26 @@ def get_builtin_plugins(ext_pkg: types.ModuleType = _repobee.ext) -> dict:
         )
         for name in plugin.get_module_names(ext_pkg)
     }
+
+
+def pip(*args, **kwargs) -> subprocess.CompletedProcess:
+    """Thin wrapper around the ``pip`` executable in the distribution's virtual
+    environment.
+
+    Args:
+        args: Positional arguments to ``pip``, passed in order. Flags should
+            also be passed here (e.g. `--pre`)
+        kwargs: Keyword arguments to ``pip``, passed as ``--key=value`` to the
+            CLI.
+    Returns:
+        True iff the command exited with a zero exit status.
+    """
+    cmd = [
+        str(get_pip_path()),
+        *args,
+        *[f"--{key}={val}" for key, val in kwargs.items()],
+    ]
+    proc = subprocess.run(cmd, capture_output=True)
+    if proc.returncode != 0:
+        plug.log.error(proc.stderr.decode(sys.getdefaultencoding()))
+    return proc

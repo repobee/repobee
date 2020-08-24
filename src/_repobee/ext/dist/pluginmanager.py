@@ -6,8 +6,6 @@ tooling.
     This plugin should only be used when using an installed version of RepoBee.
 """
 import pathlib
-import subprocess
-import sys
 import textwrap
 
 import typing as ty
@@ -118,17 +116,10 @@ def _select_plugin(plugins: dict) -> ty.Tuple[str, str]:
 
 def _install_plugin(name: str, version: str, plugins: dict) -> None:
     install_url = f"git+{plugins[name]['url']}@{version}"
-
-    cmd = [
-        str(disthelpers.get_pip_path()),
-        "install",
-        "--upgrade",
-        install_url,
-    ]
-    proc = subprocess.run(cmd, capture_output=True)
-
-    if proc.returncode != 0:
-        plug.log.error(proc.stderr.decode(sys.getdefaultencoding()))
+    installed = (
+        disthelpers.pip("install", "--upgrade", install_url).returncode == 0
+    )
+    if not installed:
         raise plug.PlugError(f"could not install {name} {version}")
 
 
@@ -182,16 +173,11 @@ def _uninstall_plugin(plugin_name: str, installed_plugins: dict):
 
 
 def _pip_uninstall_plugin(plugin_name: str) -> None:
-    cmd = [
-        str(disthelpers.get_pip_path()),
-        "uninstall",
-        "-y",
-        f"repobee-{plugin_name}",
-    ]
-    proc = subprocess.run(cmd, capture_output=True)
-
-    if proc.returncode != 0:
-        plug.log.error(proc.stderr.decode(sys.getdefaultencoding()))
+    uninstalled = (
+        disthelpers.pip("uninstall", "-y", "repobee-{plugin_name}").returncode
+        == 0
+    )
+    if not uninstalled:
         raise plug.PlugError(f"could not uninstall {plugin_name}")
 
 
