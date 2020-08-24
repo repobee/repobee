@@ -228,7 +228,8 @@ def get_gitlab_status():
     return (
         subprocess.run(
             "docker inspect -f {{.State.Health.Status}} gitlab".split(),
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
         .stdout.decode(sys.getdefaultencoding())
         .strip()

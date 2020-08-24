@@ -141,7 +141,7 @@ def pip(*args, **kwargs) -> subprocess.CompletedProcess:
         *args,
         *[f"--{key}={val}" for key, val in kwargs.items()],
     ]
-    proc = subprocess.run(cmd, capture_output=True)
+    proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if proc.returncode != 0:
         plug.log.error(proc.stderr.decode(sys.getdefaultencoding()))
     return proc
