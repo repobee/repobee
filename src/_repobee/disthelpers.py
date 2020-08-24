@@ -131,15 +131,21 @@ def pip(*args, **kwargs) -> subprocess.CompletedProcess:
     Args:
         args: Positional arguments to ``pip``, passed in order. Flags should
             also be passed here (e.g. `--pre`)
-        kwargs: Keyword arguments to ``pip``, passed as ``--key=value`` to the
-            CLI.
+        kwargs: Keyword arguments to ``pip``, passed as ``--key value`` to the
+            CLI. If the value is ``True``, the argument is passed as a flag,
+            i.e. as ``--key``.
     Returns:
         True iff the command exited with a zero exit status.
     """
     cmd = [
         str(get_pip_path()),
         *args,
-        *[f"--{key}={val}" for key, val in kwargs.items()],
+        *[
+            f"--{key.replace('_', '-')}"
+            # True is interpreted as a flag
+            + (f"={val}" if val is not True else "")
+            for key, val in kwargs.items()
+        ],
     ]
     proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if proc.returncode != 0:
