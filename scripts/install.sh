@@ -1,6 +1,10 @@
 #! /bin/bash
 
-REPOBEE_INSTALL_DIR="$HOME/.repobee"
+if [ -z "$REPOBEE_INSTALL_DIR" ]; then
+    REPOBEE_INSTALL_DIR="$HOME/.repobee"
+fi
+
+echo "Using install dir '$REPOBEE_INSTALL_DIR'"
 REPOBEE_BIN_DIR="$REPOBEE_INSTALL_DIR/bin"
 REPOBEE_REPO_DIR="$REPOBEE_INSTALL_DIR/repobee_git"
 REPOBEE_HTTPS_URL="https://github.com/repobee/repobee"
@@ -55,7 +59,9 @@ function install_repobee() {
     version=$1
     echo "Installing RepoBee at $REPOBEE_INSTALL_DIR"
 
-    $(find_python) -m venv "$VENV_DIR" &> /dev/null || {
+    # virtualenv works better in CI as it properly copies pip from another
+    # virtualenv while venv doesn't appear to do that. So we try both.
+    $(find_python) -m virtualenv "$VENV_DIR" &> /dev/null || $(find_python) -m venv "$VENV_DIR" &> /dev/null || {
         printf "\nFailed to create a virtual environment for RepoBee.\n"
         echo "This is typically caused by the venv package not being installed."
         printf "If you run Ubuntu/Debian, try running the following commands:\n\n"
@@ -65,6 +71,7 @@ function install_repobee() {
         printf "\nThen re-execute this script."
         exit 1
     }
+
     source "$REPOBEE_ENV_ACTIVATE"
     ensure_pip_installed
 

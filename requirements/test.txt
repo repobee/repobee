@@ -7,3 +7,4 @@ pylint
 pytest-cov>=2.6.1
 pytest-mock
 pytest>=5.0.0
+virtualenv
