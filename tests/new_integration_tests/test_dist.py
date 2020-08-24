@@ -25,7 +25,7 @@ def install_dir(monkeypatch):
         env = dict(os.environ)
         env["REPOBEE_INSTALL_DIR"] = str(install_dir)
 
-        if "VIRTUAL_ENV" in env:
+        if "VIRTUAL_ENV" in env and "TRAVIS" not in env:
             # remove any paths that lead to a virtual environment such that the
             # global Python interpreter is used to create the new venv
             virtualenv_dir = env["VIRTUAL_ENV"]
