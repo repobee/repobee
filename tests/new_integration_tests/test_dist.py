@@ -10,9 +10,7 @@ import shlex
 import subprocess
 import sys
 
-import packaging.version
 import repobee
-import _repobee
 
 from _repobee import disthelpers
 
@@ -70,18 +68,17 @@ class TestPluginInstall:
         installed and RepoBee should not be downgraded.
         """
         # this version of sanitizer requires repobee==3.0.0-alpha.5
-        version = "2110de7952a75c03f4d33e8f2ada78e8aca29c57"
+        sanitizer_version = "2110de7952a75c03f4d33e8f2ada78e8aca29c57"
         mocker.patch(
-            "bullet.Bullet.launch", side_effect=["sanitizer", version]
+            "bullet.Bullet.launch",
+            side_effect=["sanitizer", sanitizer_version],
         )
+        repobee_initial_version = get_pkg_version("repobee")
 
         with pytest.raises(disthelpers.DependencyResolutionError):
             repobee.run("plugin install".split())
 
-        normalized_version = str(
-            packaging.version.Version(_repobee.__version__)
-        )
-        assert get_pkg_version("repobee") == normalized_version
+        assert get_pkg_version("repobee") == repobee_initial_version
 
 
 class TestManageUpgrade:
