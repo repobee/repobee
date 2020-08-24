@@ -2,12 +2,13 @@
 
 import pytest
 import tempfile
-import pathlib
-import subprocess
-import os
-import sys
-import json
 
+import json
+import os
+import pathlib
+import shlex
+import subprocess
+import sys
 import repobee
 from _repobee import disthelpers
 
@@ -56,13 +57,31 @@ class TestInstallPlugin:
 
         repobee.run("plugin install".split())
 
-        pip_proc = disthelpers.pip("list", format="json")
-        installed_packages = {
-            pkg_info["name"]: pkg_info
-            for pkg_info in json.loads(
-                pip_proc.stdout.decode(sys.getdefaultencoding())
-            )
-        }
-        assert installed_packages["repobee-junit4"][
-            "version"
-        ] == version.lstrip("v")
+        assert get_pkg_version("repobee-junit4") == version.lstrip("v")
+
+
+class TestManageUpgrade:
+    """Tests for the ``manage upgrade`` command."""
+
+    def test_specific_version(self):
+        """Test "upgrading" to a specific version. In this case, it's really
+        downgrading, but we don't have a separate command for that.
+        """
+        version = "2.4.0"
+        repobee.run(
+            shlex.split(f"manage upgrade --version-spec '=={version}'")
+        )
+
+        assert get_pkg_version("repobee") == version
+
+
+def get_pkg_version(pkg_name: str) -> str:
+    """Get the version of this package from the distribution environment."""
+    pip_proc = disthelpers.pip("list", format="json")
+    installed_packages = {
+        pkg_info["name"]: pkg_info
+        for pkg_info in json.loads(
+            pip_proc.stdout.decode(sys.getdefaultencoding())
+        )
+    }
+    return installed_packages[pkg_name]["version"]
