@@ -32,30 +32,13 @@ def select_repobee_section(mocker):
     )
 
 
-def test_exits_when_config_file_exists_and_user_enters_no(config_mock):
-    """If the config file exists, a prompt should appear, and if the user
-    enters anything but 'yes' the function should exit and the config file
-    should not be altered.
-    """
-    contents_before = config_mock.read()
-
-    with patch("builtins.input", side_effect=["no"]):
-        configwizard.callback(None)
-
-    contents_after = config_mock.read()
-
-    assert contents_before == contents_after
-
-
-def test_enters_values_if_config_file_exists_and_user_enters_yes(
+def test_enters_values_if_config_file_exists(
     config_mock, defaults_options, select_repobee_section
 ):
     """If the config file exists, a prompt should appear, and if the user
     enters yes the wizard should proceed as usuall.
     """
-    with patch(
-        "builtins.input", side_effect=["yes"] + list(defaults_options.values())
-    ):
+    with patch("builtins.input", side_effect=list(defaults_options.values())):
         configwizard.callback(None)
 
     confparser = configparser.ConfigParser()
@@ -65,7 +48,7 @@ def test_enters_values_if_config_file_exists_and_user_enters_yes(
         assert confparser[_repobee.constants.CORE_SECTION_HDR][key] == value
 
 
-def test_enters_values_without_continue_prompt_if_no_config_exists(
+def test_enters_values_if_no_config_exists(
     config_mock, defaults_options, select_repobee_section
 ):
     """If no config mock can be found (ensured by the nothing_exists fixture),
@@ -146,9 +129,7 @@ def test_retains_values_that_are_not_specified(
     ][empty_option]
 
     # act
-    with patch(
-        "builtins.input", side_effect=["yes"] + list(defaults_options.values())
-    ):
+    with patch("builtins.input", side_effect=list(defaults_options.values())):
         configwizard.callback(None)
 
     # assert
@@ -170,7 +151,7 @@ def test_creates_directory(
     config_mock, tmpdir, defaults_options, select_repobee_section
 ):
     with patch(
-        "builtins.input", side_effect=["yes"] + list(defaults_options.values())
+        "builtins.input", side_effect=list(defaults_options.values())
     ), patch("os.makedirs", autospec=True) as makedirs_mock, patch(
         "pathlib.Path.exists", autospec=True, return_value=False
     ):

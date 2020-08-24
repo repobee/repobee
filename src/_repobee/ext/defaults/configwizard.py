@@ -38,18 +38,11 @@ def callback(args: argparse.Namespace) -> None:
     parser = configparser.ConfigParser()
 
     if constants.DEFAULT_CONFIG_FILE.exists():
-        plug.log.warning(
-            "A configuration file was found at {}".format(
+        plug.echo(
+            "Editing config file at {}".format(
                 str(constants.DEFAULT_CONFIG_FILE)
             )
         )
-        plug.log.warning(
-            "Continuing this wizard will OVERWRITE any options you enter "
-            "values for"
-        )
-        if input("Continue anyway? (yes/no): ") != "yes":
-            plug.echo("User-prompted exit")
-            return
         parser.read(str(constants.DEFAULT_CONFIG_FILE))
 
     os.makedirs(
@@ -74,9 +67,9 @@ def callback(args: argparse.Namespace) -> None:
         choices=list(configurable_args_dict.keys()),
     ).launch()
 
-    plug.echo("")
     plug.echo(
-        f"""Configuring section: {section}
+        f"""
+Configuring section: {section}
 Type config values for the options when prompted.
 Press ENTER without inputing a value to pick existing default.
 
