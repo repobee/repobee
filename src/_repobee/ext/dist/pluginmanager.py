@@ -16,7 +16,7 @@ import bullet
 import repobee_plug as plug
 
 from _repobee import disthelpers
-from _repobee import __version
+from _repobee import __version__
 
 PLUGIN = "pluginmanager"
 
@@ -116,10 +116,13 @@ def _select_plugin(plugins: dict) -> ty.Tuple[str, str]:
 
 def _install_plugin(name: str, version: str, plugins: dict) -> None:
     install_url = f"git+{plugins[name]['url']}@{version}"
-    installed = (
-        disthelpers.pip("install", "--upgrade", install_url).returncode == 0
+    install_proc = disthelpers.pip(
+        "install",
+        install_url,
+        f"repobee=={__version__}",  # force RepoBee to stay the same version
+        upgrade=True,
     )
-    if not installed:
+    if install_proc.returncode != 0:
         raise plug.PlugError(f"could not install {name} {version}")
 
 
@@ -228,7 +231,7 @@ def _list_all_plugins(
         latest_version = list(attrs["versions"].keys())[0]
         installed = installed_plugins.get(plugin_name) or {}
         installed_version = (
-            __version.__version__
+            __version__
             if attrs.get("builtin")
             else (installed.get("version") or "-")
         ) + (" √" if plugin_name in active_plugins else "")

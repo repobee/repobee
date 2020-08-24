@@ -16,6 +16,10 @@ from _repobee import distinfo
 from _repobee import plugin
 
 
+class DependencyResolutionError(plug.PlugError):
+    """Raise when dependency resolution fails during an install."""
+
+
 def get_installed_plugins_path() -> pathlib.Path:
     """Return the path to the installed_plugins.json file."""
     return distinfo.INSTALL_DIR / "installed_plugins.json"
@@ -124,11 +128,12 @@ def get_builtin_plugins(ext_pkg: types.ModuleType = _repobee.ext) -> dict:
     }
 
 
-def pip(*args, **kwargs) -> subprocess.CompletedProcess:
+def pip(command: str, *args, **kwargs) -> subprocess.CompletedProcess:
     """Thin wrapper around the ``pip`` executable in the distribution's virtual
     environment.
 
     Args:
+        command: The command to execute (e.g. "install" or "list").
         args: Positional arguments to ``pip``, passed in order. Flags should
             also be passed here (e.g. `--pre`)
         kwargs: Keyword arguments to ``pip``, passed as ``--key value`` to the
@@ -136,18 +141,30 @@ def pip(*args, **kwargs) -> subprocess.CompletedProcess:
             i.e. as ``--key``.
     Returns:
         True iff the command exited with a zero exit status.
+    Raises:
+        DependencyResolutionError: If the 2020-resolver encounters fails to
+            resolve dependencies.
     """
+    cli_kwargs = [
+        f"--{key.replace('_', '-')}"
+        # True is interpreted as a flag
+        + (f"={val}" if val is not True else "")
+        for key, val in kwargs.items()
+    ]
+    if command == "install":
+        cli_kwargs.append("--use-feature=2020-resolver")
+
     cmd = [
         str(get_pip_path()),
+        command,
         *args,
-        *[
-            f"--{key.replace('_', '-')}"
-            # True is interpreted as a flag
-            + (f"={val}" if val is not True else "")
-            for key, val in kwargs.items()
-        ],
+        *cli_kwargs,
     ]
     proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if proc.returncode != 0:
-        plug.log.error(proc.stderr.decode(sys.getdefaultencoding()))
+        stderr = proc.stderr.decode(sys.getdefaultencoding())
+        plug.log.error(stderr)
+
+        if "ResolutionImpossible" in stderr:
+            raise DependencyResolutionError()
     return proc
