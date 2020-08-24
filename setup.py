@@ -33,6 +33,7 @@ test_requirements = [
     "pytest-cov>=2.6.1",
     "pytest-mock",
     "pytest>=4.0.0",
+    "virtualenv",
 ]
 docs_requirements = [
     "sphinx>=1.8.2",

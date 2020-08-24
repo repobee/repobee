@@ -25,18 +25,6 @@ def install_dir(monkeypatch):
         env = dict(os.environ)
         env["REPOBEE_INSTALL_DIR"] = str(install_dir)
 
-        if "VIRTUAL_ENV" in env and "TRAVIS" not in env:
-            # remove any paths that lead to a virtual environment such that the
-            # global Python interpreter is used to create the new venv
-            virtualenv_dir = env["VIRTUAL_ENV"]
-            del env["VIRTUAL_ENV"]
-            paths = [
-                path
-                for path in env["PATH"].split(":")
-                if not path.startswith(virtualenv_dir)
-            ]
-            env["PATH"] = ":".join(paths)
-
         proc = subprocess.Popen(str(INSTALL_SCRIPT), env=env)
         proc.communicate("n")  # 'n' in answering whether or not to add to PATH
         assert proc.returncode == 0
