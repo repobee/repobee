@@ -1,6 +1,10 @@
 #! /bin/bash
 
-REPOBEE_INSTALL_DIR="$HOME/.repobee"
+if [ -z "$REPOBEE_INSTALL_DIR" ]; then
+    REPOBEE_INSTALL_DIR="$HOME/.repobee"
+fi
+
+echo "Using install dir '$REPOBEE_INSTALL_DIR'"
 REPOBEE_BIN_DIR="$REPOBEE_INSTALL_DIR/bin"
 REPOBEE_REPO_DIR="$REPOBEE_INSTALL_DIR/repobee_git"
 REPOBEE_HTTPS_URL="https://github.com/repobee/repobee"
