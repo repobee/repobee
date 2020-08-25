@@ -14,6 +14,7 @@ from unittest import mock
 from typing import Optional
 
 import repobee
+import _repobee
 
 from _repobee import disthelpers
 
@@ -70,6 +71,9 @@ class TestPluginInstall:
         version of RepoBee does fails. In other words, the plugin should not be
         installed and RepoBee should not be downgraded.
         """
+        if get_pkg_version("repobee") != _repobee.__version__:
+            pytest.skip("unreleased version, can't run downgrade test")
+
         # this version of sanitizer requires repobee==3.0.0-alpha.5
         sanitizer_version = "2110de7952a75c03f4d33e8f2ada78e8aca29c57"
         mocker.patch(
