@@ -160,7 +160,7 @@ def get_teams(
         A list of platform teams.
     """
     api = get_api(platform_url, org_name=org_name)
-    return [team.to_plug_team() for team in api._teams[org_name].values()]
+    return list(api._teams[org_name].values())
 
 
 def get_student_teams(
