@@ -10,6 +10,9 @@ import shlex
 import subprocess
 import sys
 
+from unittest import mock
+from typing import Optional
+
 import repobee
 
 from _repobee import disthelpers
@@ -81,6 +84,19 @@ class TestPluginInstall:
         assert get_pkg_version("repobee") == repobee_initial_version
 
 
+class TestPluginUninstall:
+    """Tests for the ``plugin uninstall`` command."""
+
+    def test_uninstall_installed_plugin(self, mocker):
+        plugin_name = "junit4"
+        install_plugin(plugin_name, version="v1.0.0")
+        mocker.patch("bullet.Bullet.launch", side_effect=[plugin_name])
+
+        repobee.run("plugin uninstall".split())
+
+        assert not get_pkg_version(f"repobee-{plugin_name}")
+
+
 class TestManageUpgrade:
     """Tests for the ``manage upgrade`` command."""
 
@@ -96,7 +112,14 @@ class TestManageUpgrade:
         assert get_pkg_version("repobee") == version
 
 
-def get_pkg_version(pkg_name: str) -> str:
+def install_plugin(name: str, version: str) -> None:
+    # arrange
+    with mock.patch("bullet.Bullet.launch", side_effect=[name, version]):
+        repobee.run("plugin install".split())
+    assert get_pkg_version(f"repobee-{name}")
+
+
+def get_pkg_version(pkg_name: str) -> Optional[str]:
     """Get the version of this package from the distribution environment."""
     pip_proc = disthelpers.pip("list", format="json")
     installed_packages = {
@@ -105,4 +128,8 @@ def get_pkg_version(pkg_name: str) -> str:
             pip_proc.stdout.decode(sys.getdefaultencoding())
         )
     }
-    return installed_packages[pkg_name]["version"]
+    return (
+        installed_packages[pkg_name]["version"]
+        if pkg_name in installed_packages
+        else None
+    )

@@ -177,7 +177,7 @@ def _uninstall_plugin(plugin_name: str, installed_plugins: dict):
 
 def _pip_uninstall_plugin(plugin_name: str) -> None:
     uninstalled = (
-        disthelpers.pip("uninstall", "-y", "repobee-{plugin_name}").returncode
+        disthelpers.pip("uninstall", "-y", f"repobee-{plugin_name}").returncode
         == 0
     )
     if not uninstalled:
