@@ -165,7 +165,18 @@ def _dispatch_teams_command(
     teams = plug.cli.CoreCommand.teams
     action = args.action
     if action == teams.create:
-        command.create_teams(args.students, plug.TeamPermission.PUSH, api)
+        # list() is required here as the generator must be exhausted for teams
+        # to be created
+        list(
+            plug.cli.io.progress_bar(
+                command.create_teams(
+                    args.students, plug.TeamPermission.PUSH, api
+                ),
+                desc="Creating teams",
+                unit="teams",
+                total=len(args.students),
+            )
+        )
         return None
     _raise_illegal_action_error(args)
 
