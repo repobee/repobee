@@ -2,6 +2,7 @@
 import tempfile
 import pathlib
 import shutil
+import shlex
 from typing import Mapping, List, Union
 
 import repobee
@@ -62,7 +63,7 @@ def run_repobee(
     Returns:
         The results mapping returned by :py:func:`repobee.run`
     """
-    cmd = cmd.split() if isinstance(cmd, str) else cmd
+    cmd = shlex.split(cmd) if isinstance(cmd, str) else cmd
     kwargs = dict(kwargs)  # copy to not mutate input
     plugins = (kwargs.get("plugins") or []) + [localapi]
     kwargs["plugins"] = plugins
@@ -144,15 +145,39 @@ def get_repos(
     return list(api._repos[org_name].values())
 
 
-def get_teams(platform_url: str, org_name: str) -> List[localapi.Team]:
-    """Get all of the teams form the given platform and organization.
+def get_teams(
+    platform_url: str, org_name: str = const.TARGET_ORG_NAME
+) -> List[localapi.Team]:
+    """Get all of the teams from the given platform and organization.
+    Note that this returns the actual platform implementation of
+    :py:class:`~repobee_plug.Team`.
 
     Args:
         platform_url: URL to the directory used by the
             :py:class:`fakeapi.FakeAPI`.
         org_name: The organization to get repos from.
     Returns:
-        A list of fake teams.
+        A list of platform teams.
     """
     api = get_api(platform_url, org_name=org_name)
     return list(api._teams[org_name].values())
+
+
+def get_student_teams(
+    platform_url: str, org_name: str = const.TARGET_ORG_NAME
+) -> List[plug.StudentTeam]:
+    """Like :py:func:`get_platform_teams`, but converts each team to a
+    :py:class:`~repobee_plug.StudentTeam`. for easier comparison.
+
+    Args:
+        platform_url: URL to the directory used by the
+            :py:class:`fakeapi.FakeAPI`.
+        org_name: The organization to get repos from.
+    Returns:
+        A list of student teams.
+    """
+    api = get_api(platform_url, org_name=org_name)
+    return [
+        plug.StudentTeam(members=[usr.username for usr in team.members])
+        for team in api._teams[org_name].values()
+    ]
