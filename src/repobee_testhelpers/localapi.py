@@ -128,7 +128,7 @@ class LocalAPI(plug.PlatformAPI):
         del self._teams[self._org_name][team.implementation.name]
 
     def get_teams(
-        self, team_names: Optional[List[str]] = None,
+        self, team_names: Optional[List[str]] = None
     ) -> Iterable[plug.Team]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_teams`."""
         team_names = set(team_names or [])
@@ -188,7 +188,7 @@ class LocalAPI(plug.PlatformAPI):
 
         return repo.to_plug_repo()
 
-    def get_repo(self, repo_name: str, team_name: Optional[str],) -> plug.Repo:
+    def get_repo(self, repo_name: str, team_name: Optional[str]) -> plug.Repo:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repo`."""
         repos = (
             self._get_team(team_name).repos
@@ -202,7 +202,7 @@ class LocalAPI(plug.PlatformAPI):
         raise plug.NotFoundError(f"{team_name} has no repository {repo_name}")
 
     def get_repos(
-        self, repo_urls: Optional[List[str]] = None,
+        self, repo_urls: Optional[List[str]] = None
     ) -> Iterable[plug.Repo]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repos`."""
         repo_names = map(self.extract_repo_name, repo_urls or [])

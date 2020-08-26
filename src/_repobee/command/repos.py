@@ -146,7 +146,7 @@ def _create_or_fetch_repo(
 ) -> plug.Repo:
     try:
         return api.create_repo(
-            name, description=description, private=private, team=team,
+            name, description=description, private=private, team=team
         )
     except plug.PlatformError:
         team_name = team.name if team else None
@@ -299,7 +299,7 @@ def clone_repos(
     for p in plug.manager.get_plugins():
         if "post_clone" in dir(p):
             local_repos_progress = plug.cli.io.progress_bar(
-                local_repos, desc="Executing post_clone hooks",
+                local_repos, desc="Executing post_clone hooks"
             )
             return plugin.execute_clone_tasks(local_repos_progress, api)
     return {}

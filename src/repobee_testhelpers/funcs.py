@@ -15,8 +15,7 @@ from repobee_testhelpers import const
 
 
 def initialize_repo(path: pathlib.Path) -> git.Repo:
-    """Initialize the directory to a Git repo and commit all files in it.
-    """
+    """Initialize the directory to a Git repo and commit all files in it."""
     repo = git.Repo.init(path)
     repo.git.config("user.name", const.TEACHER)
     repo.git.config("user.email", f"{const.TEACHER}@repobee.org")
@@ -125,7 +124,7 @@ def get_api(
     configured for the tests.
     """
     return localapi.LocalAPI(
-        base_url=platform_url, user=user, org_name=org_name, token=token,
+        base_url=platform_url, user=user, org_name=org_name, token=token
     )
 
 

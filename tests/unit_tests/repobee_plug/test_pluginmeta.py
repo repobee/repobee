@@ -452,7 +452,7 @@ class TestDeclarativeExtensionCommand:
             name = plug.cli.option()
             age = plug.cli.positional(converter=int)
             tolerance = plug.cli.mutually_exclusive_group(
-                high=plug.cli.flag(), low=plug.cli.flag(), __required__=True,
+                high=plug.cli.flag(), low=plug.cli.flag(), __required__=True
             )
 
             def command(self):

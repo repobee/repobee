@@ -165,7 +165,7 @@ def create_groups_and_projects(
     token: str,
 ) -> None:
     print("Creating groups and projects")
-    gl = gitlab.Gitlab(BASE_URL, private_token=TOKEN, ssl_verify=False,)
+    gl = gitlab.Gitlab(BASE_URL, private_token=TOKEN, ssl_verify=False)
 
     master_group = gl.groups.create(
         dict(name=master_group_name, path=master_group_name)

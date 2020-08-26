@@ -174,7 +174,7 @@ class TestPush:
                 *"git push {} {}".format(url, branch).split(),
                 cwd=os.path.abspath(local_repo),
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
             )
             for local_repo, url, branch in push_tuples
         ]
@@ -248,7 +248,7 @@ class TestPush:
                 pt.branch,
                 cwd=os.path.abspath(pt.local_path),
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
             )
             for pt in push_tuples
         ]
@@ -269,7 +269,7 @@ class TestClone:
                 *"git pull {}".format(url).split(),
                 cwd=str(pathlib.Path(working_dir) / util.repo_name(url)),
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
             )
             for url in urls
         ]
@@ -319,7 +319,7 @@ class TestClone:
                 *"git pull {}".format(url).split(),
                 cwd=str(pathlib.Path(".") / util.repo_name(url)),
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
             )
             for url in urls
         ]

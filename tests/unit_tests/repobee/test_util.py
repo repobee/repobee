@@ -99,13 +99,13 @@ def directory_structure(tmpdir):
     """Create a directory structure like this:
 
 
-                       root
-                    _____|___________________
-                    |    |           |       |
-                  repo Main.java  epic.py  other_repo
-            ________|________          ______|_________
-            |       |       |          |     |        |
-        README.md test.py best.py    Main.java test.py epic.py
+                   root
+                _____|___________________
+                |    |           |       |
+              repo Main.java  epic.py  other_repo
+        ________|________          ______|_________
+        |       |       |          |     |        |
+    README.md test.py best.py    Main.java test.py epic.py
     """
     root_files = ["Main.java", "epic.py"]
     repo_files = ["README.md", "test.py", "best.py"]

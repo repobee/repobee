@@ -141,7 +141,7 @@ def _dispatch_reviews_command(
     action = args.action
     if action == reviews.assign:
         command.assign_peer_reviews(
-            args.assignments, args.students, args.num_reviews, args.issue, api,
+            args.assignments, args.students, args.num_reviews, args.issue, api
         )
         return None
     elif action == reviews.end:
