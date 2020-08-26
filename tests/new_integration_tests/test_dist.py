@@ -10,13 +10,15 @@ import shlex
 import subprocess
 import sys
 
+from packaging import version
+
 from unittest import mock
 from typing import Optional
 
 import repobee
 import _repobee
 
-from _repobee import disthelpers
+from _repobee import disthelpers, distinfo
 
 
 INSTALL_SCRIPT = (
@@ -71,7 +73,8 @@ class TestPluginInstall:
         version of RepoBee does fails. In other words, the plugin should not be
         installed and RepoBee should not be downgraded.
         """
-        if get_pkg_version("repobee") != _repobee.__version__:
+        current_version = str(version.Version(_repobee.__version__))
+        if get_pkg_version("repobee") != current_version:
             pytest.skip("unreleased version, can't run downgrade test")
 
         # this version of sanitizer requires repobee==3.0.0-alpha.5
@@ -115,6 +118,19 @@ class TestManageUpgrade:
 
         assert get_pkg_version("repobee") == version
 
+    def test_activates_dist_plugins(self):
+        """Test that dist plugins (e.g. the ``plugin`` category of commands)
+        are activated properly upon an upgrade.
+        """
+        repobee.run(
+            shlex.split(
+                f"manage upgrade --version-spec '=={_repobee.__version__}'"
+            )
+        )
+        proc = run_dist("plugin list")
+
+        assert proc.returncode == 0
+
 
 def install_plugin(name: str, version: str) -> None:
     # arrange
@@ -137,3 +153,9 @@ def get_pkg_version(pkg_name: str) -> Optional[str]:
         if pkg_name in installed_packages
         else None
     )
+
+
+def run_dist(cmd: str) -> subprocess.CompletedProcess:
+    """Execute a command with the installed RepoBee executable."""
+    repobee_executable = distinfo.INSTALL_DIR / "bin" / "repobee"
+    return subprocess.run(shlex.split(f"{repobee_executable} {cmd}"))

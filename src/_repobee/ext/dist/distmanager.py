@@ -38,12 +38,14 @@ class UpgradeCommand(plug.Plugin, plug.cli.Command):
     def command(self) -> None:
         """Upgrade RepoBee to the latest version."""
         plug.echo("Upgrading RepoBee ...")
-        repobee_requirement = "repobee" + (
-            self.version_spec if self.version_spec else ""
-        )
+        repobee_requirement = f"repobee{self.version_spec or ''}"
 
         upgrade = disthelpers.pip(
-            "install", repobee_requirement, upgrade=True, no_cache=True
+            "install",
+            repobee_requirement,
+            upgrade=True,
+            no_cache=True,
+            force_reinstall=True,
         )
         if upgrade.returncode != 0:
             raise plug.PlugError("failed to upgrade RepoBee")

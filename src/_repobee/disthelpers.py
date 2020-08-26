@@ -5,6 +5,7 @@ import pathlib
 import subprocess
 import sys
 import types
+import os
 
 from typing import Optional, List
 
@@ -151,8 +152,19 @@ def pip(command: str, *args, **kwargs) -> subprocess.CompletedProcess:
         + (f"={val}" if val is not True else "")
         for key, val in kwargs.items()
     ]
+    env = dict(os.environ)
     if command == "install":
+        # the resolver allows us to avoid installing plugins that are
+        # incompatible with the current version of RepoBee
         cli_kwargs.append("--use-feature=2020-resolver")
+
+        # REPOBEE_INSTALL_DIR must be available when upgrading RepoBee,
+        # or the dist plugins aren't activated
+        env["REPOBEE_INSTALL_DIR"] = str(distinfo.INSTALL_DIR)
+
+        # due to the hack in setup.py to edit the distinfo, we must build
+        # RepoBee from source
+        cli_kwargs.append("--no-binary=repobee")
 
     cmd = [
         str(get_pip_path()),
@@ -160,7 +172,9 @@ def pip(command: str, *args, **kwargs) -> subprocess.CompletedProcess:
         *args,
         *cli_kwargs,
     ]
-    proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
+    )
     if proc.returncode != 0:
         stderr = proc.stderr.decode(sys.getdefaultencoding())
         plug.log.error(stderr)
