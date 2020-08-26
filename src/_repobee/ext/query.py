@@ -45,7 +45,7 @@ class Query(plug.Plugin, plug.cli.Command):
         )
         hook_results_mapping = plug.json_to_result_mapping(contents)
         selected_hook_results = _filter_hook_results(
-            hook_results_mapping, self.args.students, self.args.assignments,
+            hook_results_mapping, self.args.students, self.args.assignments
         )
         plug.echo(formatters.format_hook_results_output(selected_hook_results))
 

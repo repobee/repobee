@@ -204,7 +204,7 @@ def check_peer_review_progress(
                 plug.Review(
                     repo=reviewed_repo.name,
                     done=any(
-                        map(review_issue_authors.__contains__, team.members,)
+                        map(review_issue_authors.__contains__, team.members)
                     ),
                 )
             )

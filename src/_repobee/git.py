@@ -65,7 +65,7 @@ async def _pull_clone_async(repo_url: str, branch: str = "", cwd: str = "."):
         *pull_command,
         cwd=str(dirpath),
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+        stderr=subprocess.PIPE,
     )
     _, stderr = await proc.communicate()
     return proc.returncode, stderr
@@ -183,7 +183,7 @@ async def _push_async(pt: Push):
         *command,
         cwd=os.path.abspath(pt.local_path),
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+        stderr=subprocess.PIPE,
     )
     _, stderr = await proc.communicate()
 
@@ -253,7 +253,7 @@ def _batch_execution(
     batch_func: Callable[[Iterable[Any], Any], List[asyncio.Task]],
     arg_list: Iterable[Any],
     *batch_func_args,
-    **batch_func_kwargs
+    **batch_func_kwargs,
 ) -> List[Exception]:
     """Take a batch function (any function whos first argument is an iterable)
     and send in send in CONCURRENT_TASKS amount of arguments from the arg_list
@@ -282,7 +282,7 @@ async def _batch_execution_async(
     batch_func: Callable[[Iterable[Any], Any], List[asyncio.Task]],
     arg_list: Iterable[Any],
     *batch_func_args,
-    **batch_func_kwargs
+    **batch_func_kwargs,
 ) -> List[Exception]:
 
     import tqdm.asyncio

@@ -186,13 +186,13 @@ class GitHubAPI(plug.PlatformAPI):
         team.implementation.delete()
 
     def get_teams(
-        self, team_names: Optional[List[str]] = None,
+        self, team_names: Optional[List[str]] = None
     ) -> Iterable[plug.Team]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_teams`."""
         team_names = set(team_names)
         with _try_api_request():
             return (
-                self._wrap_team(team,)
+                self._wrap_team(team)
                 for team in self._org.get_teams()
                 if not team_names or team.name in team_names
             )
@@ -241,7 +241,7 @@ class GitHubAPI(plug.PlatformAPI):
             repo = self._org.create_repo(name, **kwargs)
             return self._wrap_repo(repo)
 
-    def get_repo(self, repo_name: str, team_name: Optional[str],) -> plug.Repo:
+    def get_repo(self, repo_name: str, team_name: Optional[str]) -> plug.Repo:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repo`."""
         # the GitHub API does not need the team name, as teams do not form
         # namespaces
@@ -249,7 +249,7 @@ class GitHubAPI(plug.PlatformAPI):
         return self._wrap_repo(repo)
 
     def get_repos(
-        self, repo_urls: Optional[List[str]] = None,
+        self, repo_urls: Optional[List[str]] = None
     ) -> Iterable[plug.Repo]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repos`."""
         repo_names = map(self.extract_repo_name, repo_urls or [])
@@ -289,7 +289,7 @@ class GitHubAPI(plug.PlatformAPI):
             impl.get_issues(state=_ISSUE_STATE_MAPPING[plug.IssueState.ALL]),
         )
 
-    def _wrap_team(self, team: _Team,) -> plug.Team:
+    def _wrap_team(self, team: _Team) -> plug.Team:
         return plug.Team(
             name=team.name,
             members=[m.login for m in team.get_members()],
@@ -297,7 +297,7 @@ class GitHubAPI(plug.PlatformAPI):
             implementation=team,
         )
 
-    def _wrap_repo(self, repo: _Repo,) -> plug.Repo:
+    def _wrap_repo(self, repo: _Repo) -> plug.Repo:
         return plug.Repo(
             name=repo.name,
             description=repo.description,

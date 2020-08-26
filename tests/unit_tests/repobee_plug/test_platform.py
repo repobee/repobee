@@ -83,9 +83,7 @@ class TestAPI:
             def __init__(self, base_url, token, org_name, user):
                 pass
 
-            def get_teams(
-                self, team_names: Optional[List[str]] = None,
-            ):
+            def get_teams(self, team_names: Optional[List[str]] = None):
                 return expected
 
         assert API(None, None, None, None).get_teams() == expected

@@ -1,5 +1,5 @@
 bandit>=1.6.2
-black
+black==19.10b0
 codecov
 flake8>=3.8.3
 mypy>=0.770

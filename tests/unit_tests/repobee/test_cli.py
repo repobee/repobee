@@ -271,7 +271,7 @@ class TestDispatchCommand:
     ):
         args = argparse.Namespace(
             **repobee_plug.cli.CoreCommand.repos.setup.asdict(),
-            **VALID_PARSED_ARGS
+            **VALID_PARSED_ARGS,
         )
 
         _repobee.cli.dispatch.dispatch_command(
@@ -287,7 +287,7 @@ class TestDispatchCommand:
     ):
         args = argparse.Namespace(
             **repobee_plug.cli.CoreCommand.repos.update.asdict(),
-            **VALID_PARSED_ARGS
+            **VALID_PARSED_ARGS,
         )
 
         _repobee.cli.dispatch.dispatch_command(
@@ -306,7 +306,7 @@ class TestDispatchCommand:
     ):
         args = argparse.Namespace(
             **repobee_plug.cli.CoreCommand.teams.create.asdict(),
-            **VALID_PARSED_ARGS
+            **VALID_PARSED_ARGS,
         )
 
         _repobee.cli.dispatch.dispatch_command(
@@ -322,7 +322,7 @@ class TestDispatchCommand:
     ):
         args = argparse.Namespace(
             **repobee_plug.cli.CoreCommand.issues.open.asdict(),
-            **VALID_PARSED_ARGS
+            **VALID_PARSED_ARGS,
         )
 
         _repobee.cli.dispatch.dispatch_command(
@@ -330,7 +330,7 @@ class TestDispatchCommand:
         )
 
         command_mock.open_issue.assert_called_once_with(
-            args.issue, args.assignments, args.students, dummyapi_instance,
+            args.issue, args.assignments, args.students, dummyapi_instance
         )
 
     def test_close_issue_called_with_correct_args(
@@ -338,7 +338,7 @@ class TestDispatchCommand:
     ):
         args = argparse.Namespace(
             **repobee_plug.cli.CoreCommand.issues.close.asdict(),
-            **VALID_PARSED_ARGS
+            **VALID_PARSED_ARGS,
         )
 
         _repobee.cli.dispatch.dispatch_command(
@@ -354,7 +354,7 @@ class TestDispatchCommand:
     ):
         args = argparse.Namespace(
             **repobee_plug.cli.CoreCommand.repos.migrate.asdict(),
-            **VALID_PARSED_ARGS
+            **VALID_PARSED_ARGS,
         )
 
         _repobee.cli.dispatch.dispatch_command(
@@ -370,7 +370,7 @@ class TestDispatchCommand:
     ):
         args = argparse.Namespace(
             **repobee_plug.cli.CoreCommand.repos.clone.asdict(),
-            **VALID_PARSED_ARGS
+            **VALID_PARSED_ARGS,
         )
 
         _repobee.cli.dispatch.dispatch_command(
@@ -392,7 +392,7 @@ class TestDispatchCommand:
             base_url=BASE_URL,
             token=TOKEN,
             org_name=ORG_NAME,
-            template_org_name=None
+            template_org_name=None,
         )
         mock_verify_settings = mock.MagicMock(
             spec=dummyapi_class.verify_settings
@@ -416,7 +416,7 @@ class TestDispatchCommand:
             base_url=BASE_URL,
             org_name=ORG_NAME,
             token=TOKEN,
-            template_org_name=TEMPLATE_ORG_NAME
+            template_org_name=TEMPLATE_ORG_NAME,
         )
         mock_verify_settings = mock.MagicMock(
             spec=dummyapi_class.verify_settings

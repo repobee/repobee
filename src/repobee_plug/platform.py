@@ -167,7 +167,7 @@ class _APISpec:
         _not_implemented()
 
     def get_teams(
-        self, team_names: Optional[List[str]] = None,
+        self, team_names: Optional[List[str]] = None
     ) -> Iterable[Team]:
         """Get teams from the platform.
 
@@ -184,7 +184,7 @@ class _APISpec:
         _not_implemented()
 
     def assign_repo(
-        self, team: Team, repo: Repo, permission: TeamPermission,
+        self, team: Team, repo: Repo, permission: TeamPermission
     ) -> None:
         """Assign a repository to a team, granting any members of the team
         permission to access the repository according to the specified
@@ -248,7 +248,7 @@ class _APISpec:
         _not_implemented()
 
     def get_repos(
-        self, repo_urls: Optional[List[str]] = None,
+        self, repo_urls: Optional[List[str]] = None
     ) -> Iterable[Repo]:
         """Get repositories from the platform.
 

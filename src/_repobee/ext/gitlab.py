@@ -135,7 +135,7 @@ class GitLabAPI(plug.PlatformAPI):
         team.implementation.delete()
 
     def get_teams(
-        self, team_names: Optional[List[str]] = None,
+        self, team_names: Optional[List[str]] = None
     ) -> Iterable[plug.Team]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_teams`."""
         team_names = set(team_names or [])
@@ -198,7 +198,7 @@ class GitLabAPI(plug.PlatformAPI):
             )
             return self._wrap_project(project)
 
-    def get_repo(self, repo_name: str, team_name: Optional[str],) -> plug.Repo:
+    def get_repo(self, repo_name: str, team_name: Optional[str]) -> plug.Repo:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repo`."""
         with _try_api_request():
             path = (
@@ -210,7 +210,7 @@ class GitLabAPI(plug.PlatformAPI):
             return self._wrap_project(project)
 
     def get_repos(
-        self, repo_urls: Optional[List[str]] = None,
+        self, repo_urls: Optional[List[str]] = None
     ) -> Iterable[plug.Repo]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repos`."""
         found_urls = []
