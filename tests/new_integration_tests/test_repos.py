@@ -4,6 +4,8 @@ import tempfile
 
 from typing import List, Mapping
 
+import git
+
 import repobee_plug as plug
 from repobee_testhelpers import localapi
 from repobee_testhelpers import funcs
@@ -26,7 +28,10 @@ def assert_student_repos_match_templates(
     """
     repos_dict = {repo.name: repo.path for repo in repos}
     _assert_repos_match_templates(
-        student_teams, template_repo_names, repos_dict
+        student_teams,
+        template_repo_names,
+        funcs.template_repo_hashes(),
+        repos_dict,
     )
 
 
@@ -43,13 +48,17 @@ def assert_cloned_student_repos_match_templates(
         for template_repo_name in template_repo_names
     }
     _assert_repos_match_templates(
-        student_teams, template_repo_names, repos_dict
+        student_teams,
+        template_repo_names,
+        funcs.template_repo_hashes(),
+        repos_dict,
     )
 
 
 def _assert_repos_match_templates(
     student_teams: List[plug.StudentTeam],
     template_repo_names: List[str],
+    template_repo_hashes: Mapping[str, str],
     repos_dict: Mapping[str, pathlib.Path],
 ):
     num_asserts = 0
@@ -62,7 +71,6 @@ def _assert_repos_match_templates(
         ]
         assert len(student_repos) == len(student_teams)
 
-        template_repo_hashes = funcs.template_repo_hashes()
         for repo in student_repos:
             num_asserts += 1
             assert funcs.tree_hash(repo) == template_repo_hashes[template_name]
@@ -83,7 +91,7 @@ class TestSetup:
         )
 
         assert_student_repos_match_templates(
-            STUDENT_TEAMS, [template_repo_name], funcs.get_repos(platform_url),
+            STUDENT_TEAMS, [template_repo_name], funcs.get_repos(platform_url)
         )
 
     def test_setup_multiple_template_repos(self, platform_dir, platform_url):
@@ -111,6 +119,60 @@ class TestSetup:
         assert_student_repos_match_templates(
             STUDENT_TEAMS, TEMPLATE_REPO_NAMES, funcs.get_repos(platform_url)
         )
+
+    def test_setup_with_local_repos(self, platform_url):
+        """Test running the setup command with the names of local
+        repositories. That is to say, repos that are not in the
+        template organization.
+        """
+
+        # arrange
+        def reponize(dirpath: pathlib.Path):
+            repo = git.Repo.init(dirpath)
+            repo.init()
+            repo.git.add(".", "--force")
+            repo.git.commit("-m", "Initial commit")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            template_repo_dir = pathlib.Path(tmpdir)
+            template_repo_hashes = {}
+
+            task_34_repo = template_repo_dir / "task-34"
+            task_34_repo.mkdir()
+            task_34_file = task_34_repo / "somefile.txt"
+            task_34_file.write_text("This is task 34!", encoding="utf8")
+            template_repo_hashes[task_34_repo.name] = funcs.hash_directory(
+                task_34_repo
+            )
+            reponize(task_34_repo)
+
+            task_55_repo = template_repo_dir / "task-55"
+            task_55_repo.mkdir()
+            task_55_file = task_55_repo / "hello.py"
+            task_55_file.write_text("print('hello, world!')", encoding="utf8")
+            template_repo_hashes[task_55_repo.name] = funcs.hash_directory(
+                task_55_repo
+            )
+            reponize(task_55_repo)
+
+            # act
+            funcs.run_repobee(
+                f"repos setup -a {task_55_repo.name} {task_34_repo.name} "
+                f"--base-url {platform_url} ",
+                workdir=template_repo_dir,
+            )
+
+            # assert
+            repo_dict = {
+                repo.name: repo.path for repo in funcs.get_repos(platform_url)
+            }
+
+            _assert_repos_match_templates(
+                STUDENT_TEAMS,
+                [task_34_repo.name, task_55_repo.name],
+                template_repo_hashes,
+                repo_dict,
+            )
 
     def test_pre_setup_hook(self, platform_url):
         """Test that the pre-setup hook is run for each template repo."""
