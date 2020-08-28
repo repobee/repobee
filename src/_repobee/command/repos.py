@@ -159,19 +159,6 @@ def _create_or_fetch_repo(
         return repo
 
 
-def _log_repo_creation(
-    repos: Iterable[plug.Repo], total: int
-) -> Iterable[plug.Repo]:
-    for repo in plug.cli.io.progress_bar(
-        repos,
-        desc="Setting up student repositories",
-        total=total,
-        unit="repos",
-    ):
-        plug.log.info(f"Created repository {repo.name}")
-        yield repo
-
-
 def _clone_all(repo_urls: str, cwd: pathlib.Path):
     """Attempts to clone all repos sequentially.
 
@@ -303,20 +290,6 @@ def clone_repos(
             )
             return plugin.execute_clone_tasks(local_repos_progress, api)
     return {}
-
-
-def _non_local_repos(
-    repos, cwd=pathlib.Path(".")
-) -> Iterable[plug.StudentRepo]:
-    """Yield repos with names that do not clash with any of the files present
-    in cwd.
-    """
-    local_files = set(path.name for path in cwd.glob("*"))
-    for repo in repos:
-        if repo.name not in local_files:
-            yield repo
-        else:
-            plug.log.warning("{} already on disk, skipping".format(repo.name))
 
 
 def _clone_repos_no_check(
