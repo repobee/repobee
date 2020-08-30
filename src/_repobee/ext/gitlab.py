@@ -234,6 +234,8 @@ class GitLabAPI(plug.PlatformAPI):
 
     def insert_auth(self, url: str) -> str:
         """See :py:meth:`repobee_plug.PlatformAPI.insert_auth`."""
+        if self._base_url not in url:
+            raise plug.InvalidURL("url not found on platform: '{url}'")
         return self._insert_auth(url)
 
     def create_issue(

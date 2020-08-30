@@ -391,6 +391,23 @@ class TestGetRepoUrls:
         assert sorted(actual_urls) == sorted(expected_urls)
 
 
+class TestInsertAuth:
+    """Tests for insert_auth."""
+
+    def test_inserts_into_https_url(self, api):
+        url = f"{BASE_URL}/some/repo"
+        authed_url = api.insert_auth(url)
+        assert authed_url.startswith(f"https://oauth2:{TOKEN}")
+
+    def test_raises_on_non_platform_url(self, api):
+        url = "https://somedomain.com"
+
+        with pytest.raises(plug.InvalidURL) as exc_info:
+            api.insert_auth(url)
+
+        assert "url not found on platform" in str(exc_info)
+
+
 class TestVerifySettings:
     def test_raises_if_token_is_empty(self):
         with pytest.raises(plug.BadCredentials):
