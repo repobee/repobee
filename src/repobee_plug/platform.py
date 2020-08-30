@@ -287,6 +287,9 @@ class _APISpec:
             url: A URL to the platform.
         Returns:
             The same url, but with authorization credentials inserted.
+        Raises:
+            :py:class:`exceptions.InvalidURL`: If the provided URL does not
+                point to anything on the platform.
         """
         _not_implemented()
 
