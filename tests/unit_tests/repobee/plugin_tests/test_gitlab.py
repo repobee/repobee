@@ -405,7 +405,7 @@ class TestInsertAuth:
         with pytest.raises(plug.InvalidURL) as exc_info:
             api.insert_auth(url)
 
-        assert "url not found on platform" in str(exc_info)
+        assert "url not found on platform" in str(exc_info.value)
 
 
 class TestVerifySettings:
