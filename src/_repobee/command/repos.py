@@ -18,7 +18,7 @@ import re
 import os
 import sys
 import tempfile
-from typing import Iterable, List, Optional, Mapping
+from typing import Iterable, List, Optional, Mapping, Union
 
 import repobee_plug as plug
 
@@ -75,9 +75,7 @@ def setup_student_repos(
         ]
 
         plug.log.info("Cloning into master repos ...")
-        _clone_all(
-            [api.insert_auth(r.url) for r in template_repos], cwd=tmpdir
-        )
+        _clone_all(template_repos, cwd=tmpdir, api=api)
         hook_results = plugin.execute_setup_tasks(
             template_repos, api, cwd=pathlib.Path(tmpdir)
         )
@@ -159,26 +157,36 @@ def _create_or_fetch_repo(
         return repo
 
 
-def _clone_all(repo_urls: str, cwd: pathlib.Path):
+def _clone_all(
+    repos: plug.TemplateRepo, cwd: pathlib.Path, api: plug.PlatformAPI
+):
     """Attempts to clone all repos sequentially.
 
     Args:
-        repo_urls: URLs to clone.
+        repos: Repos to clone.
         cwd: Working directory. Use temporary directory for automatic cleanup.
-    Returns:
-        The template repos with updated paths.
+        api: An instance of the platform API.
     """
-    if len(set(repo_urls)) != len(repo_urls):
-        raise ValueError("duplicated repo url repo")
     try:
-        for url in plug.cli.io.progress_bar(
-            repo_urls, desc="Cloning template repositories", unit="repos"
+        for repo in plug.cli.io.progress_bar(
+            repos, desc="Cloning template repositories", unit="repos"
         ):
+            url = _try_insert_auth(repo, api)
             plug.log.info(f"Cloning into '{url}'")
             git.clone_single(url, cwd=str(cwd))
     except exception.CloneFailedError:
         plug.log.error(f"Error cloning into {url}, aborting ...")
         raise
+
+
+def _try_insert_auth(
+    repo: Union[plug.TemplateRepo, plug.StudentRepo], api: plug.PlatformAPI
+) -> str:
+    """Try to insert authentication into the URL."""
+    try:
+        return api.insert_auth(repo.url)
+    except plug.InvalidURL:
+        return repo.url
 
 
 def update_student_repos(
@@ -212,9 +220,7 @@ def update_student_repos(
         ]
 
         plug.log.info("Cloning into master repos ...")
-        _clone_all(
-            [api.insert_auth(r.url) for r in template_repos], cwd=tmpdir
-        )
+        _clone_all(template_repos, cwd=tmpdir, api=api)
         hook_results = plugin.execute_setup_tasks(
             template_repos, api, cwd=pathlib.Path(tmpdir)
         )
@@ -319,36 +325,34 @@ def migrate_repos(
     it does not already exist.
 
     Args:
-        template_repo_urls: HTTPS URLs to the master repos to migrate.
-            the username that is used in the push.
+        template_repo_urls: Local urls to repos to migrate.
         api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
-    template_names = [util.repo_name(url) for url in template_repo_urls]
+    local_templates = [
+        plug.TemplateRepo(name=util.repo_name(url), url=url)
+        for url in template_repo_urls
+    ]
     create_repo_it = plug.cli.io.progress_bar(
         (
-            _create_or_fetch_repo(name, description="", private=True, api=api)
-            for name in template_names
+            _create_or_fetch_repo(
+                local.name, description="", private=True, api=api
+            )
+            for local in local_templates
         ),
         desc="Creating remote repos",
         total=len(template_repo_urls),
     )
     with tempfile.TemporaryDirectory() as tmpdir:
         workdir = pathlib.Path(tmpdir)
-        template_repos = [
+        _clone_all(local_templates, cwd=workdir, api=api)
+
+        remote_templates = [
             plug.TemplateRepo(
                 name=repo.name, url=repo.url, _path=workdir / repo.name
             )
             for repo in create_repo_it
         ]
-
-        _clone_all(
-            [
-                api.insert_auth(url) if url.startswith("https") else url
-                for url in template_repo_urls
-            ],
-            cwd=workdir,
-        )
 
         git.push(
             [
@@ -357,7 +361,7 @@ def migrate_repos(
                     repo_url=api.insert_auth(template_repo.url),
                     branch="master",
                 )
-                for template_repo in template_repos
+                for template_repo in remote_templates
             ]
         )
 

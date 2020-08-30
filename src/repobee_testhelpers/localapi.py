@@ -213,6 +213,8 @@ class LocalAPI(plug.PlatformAPI):
 
     def insert_auth(self, url: str) -> str:
         """See :py:meth:`repobee_plug.PlatformAPI.insert_auth`."""
+        if f"file://{self._repodir}" not in url:
+            raise plug.InvalidURL(f"url not found on platform: '{url}'")
         return url
 
     def create_issue(

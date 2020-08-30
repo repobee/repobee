@@ -77,5 +77,11 @@ class UnexpectedException(PlatformError):
     """
 
 
+class InvalidURL(PlatformError):
+    """Error to raise if a URL is provided to the platform API, but it is not a
+    valid URL for the platform.
+    """
+
+
 class FileError(PlugError):
     """Raise if something goes wrong with reading from or writing to a file."""

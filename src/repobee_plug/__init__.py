@@ -59,6 +59,7 @@ from repobee_plug.exceptions import (
     ServiceNotFoundError,
     BadCredentials,
     UnexpectedException,
+    InvalidURL,
 )
 
 # Local representations
@@ -106,6 +107,7 @@ __all__ = [
     "ServiceNotFoundError",
     "BadCredentials",
     "UnexpectedException",
+    "InvalidURL",
     # Helpers
     "json_to_result_mapping",
     "result_mapping_to_json",

@@ -374,10 +374,9 @@ class GitHubAPI(plug.PlatformAPI):
 
     def insert_auth(self, url: str) -> str:
         """See :py:meth:`repobee_plug.PlatformAPI.insert_auth`."""
-        if not url.startswith("https://"):
-            raise ValueError(
-                f"unsupported protocol in '{url}', please use https://"
-            )
+        html_base_url = self._org.html_url[: -len(self._org_name) - 1]
+        if html_base_url not in url:
+            raise plug.InvalidURL(f"url not found on platform: '{url}'")
         auth = "{}:{}".format(self._user, self.token)
         return url.replace("https://", f"https://{auth}@")
 
