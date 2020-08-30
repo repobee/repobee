@@ -291,13 +291,12 @@ class TestMigrate:
         """
         api = api_instance(TEMPLATE_ORG_NAME)
         template_repo_urls = [
-            url.replace(LOCAL_DOMAIN, BASE_DOMAIN)
+            api.insert_auth(url).replace(LOCAL_DOMAIN, BASE_DOMAIN)
             for url in api.get_repo_urls(assignment_names)
         ]
         # clone the master repos to disk first first
         git_commands = [
-            "git clone {}".format(api.insert_auth(url))
-            for url in template_repo_urls
+            "git clone {}".format(url) for url in template_repo_urls
         ]
         result = run_in_docker(
             " && ".join(git_commands), extra_args=extra_args
