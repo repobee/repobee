@@ -230,14 +230,9 @@ def update_student_repos(
             template_repos, api, cwd=pathlib.Path(tmpdir)
         )
 
-        # we want to exhaust this iterator immediately to not have progress
-        # bars overlap
-        fetched_teams = list(progresswrappers.get_teams(teams, api))
-
-        push_tuple_iter = _create_push_tuples(
-            fetched_teams, template_repos, api
+        push_tuple_iter = _create_update_push_tuples(
+            teams, template_repos, api
         )
-
         push_tuple_iter_progress = plug.cli.io.progress_bar(
             push_tuple_iter,
             desc="Setting up student repos",
@@ -254,6 +249,35 @@ def update_student_repos(
 
     plug.log.info("Done!")
     return hook_results
+
+
+def _create_update_push_tuples(
+    teams: Iterable[plug.StudentTeam],
+    template_repos: Iterable[plug.TemplateRepo],
+    api: plug.PlatformAPI,
+) -> Iterable[Push]:
+    """Create push tuples for existing repos. Repos that don't exist are
+    ignored.
+
+    Args:
+        teams: An iterable of teams.
+        template_repos: Template repositories.
+        api: A platform API instance.
+    Returns:
+        A list of Push namedtuples for all student repo urls that relate to
+        any of the master repo urls.
+    """
+    urls_to_templates = {}
+    for team, template_repo in itertools.product(teams, template_repos):
+        repo_url, *_ = api.get_repo_urls(
+            [template_repo.name], team_names=[team.name]
+        )
+        urls_to_templates[repo_url] = template_repo
+
+    for repo in api.get_repos(urls_to_templates.keys()):
+        template = urls_to_templates[repo.url]
+        branch = git.active_branch(template.path)
+        yield git.Push(template.path, repo.url, branch)
 
 
 def _open_issue_by_urls(
