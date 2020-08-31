@@ -1037,6 +1037,7 @@ class TestMigrateParser:
             *BASE_ARGS,
             "-a",
             *self.NAMES,
+            "--allow-local-templates",
         ]
 
         parsed_args, _ = _repobee.cli.parsing.handle_args(sys_args)

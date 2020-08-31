@@ -315,6 +315,7 @@ class TestMigrate:
                 *repobee_plug.cli.CoreCommand.repos.migrate.as_name_tuple(),
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
+                "--allow-local-templates",
             ]
         )
 

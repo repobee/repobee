@@ -317,7 +317,7 @@ def _add_repo_parsers(
             "The repos must be local on disk to be migrated. Note that "
             "migrated repos will be private."
         ),
-        parents=[_REPO_NAME_PARSER, base_parser],
+        parents=[_REPO_NAME_PARSER, base_parser, _LOCAL_TEMPLATES_PARSER],
         formatter_class=_OrderedFormatter,
     )
 
