@@ -178,6 +178,36 @@ class TestSetup:
 
             assert "`--allow-local-templates`" in str(exc_info.value)
 
+    def test_use_local_template_with_strangely_named_default_branch(
+        self, platform_url
+    ):
+        """Test setting up student repos with a template repo that has a
+        non-standard default branch name. The student repos should get
+        the same default branch.
+        """
+        strange_branch_name = "definitelynotmaster"
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            template_repo_dir = pathlib.Path(tmpdir)
+            task_99 = template_repo_dir / "task-99"
+            create_local_repo(
+                task_99,
+                [("README.md", "Read me plz.")],
+                default_branch=strange_branch_name,
+            )
+
+            funcs.run_repobee(
+                f"repos setup -a {task_99.name} "
+                f"--base-url {platform_url} "
+                "--allow-local-templates",
+                workdir=template_repo_dir,
+            )
+
+            repo = git.Repo(funcs.get_repos(platform_url)[0].path)
+
+            assert len(repo.branches) == 1
+            assert repo.branches[0].name == strange_branch_name
+
     def test_pre_setup_hook(self, platform_url):
         """Test that the pre-setup hook is run for each template repo."""
         expected_repo_names = set(TEMPLATE_REPO_NAMES)
@@ -255,16 +285,18 @@ class TestClone:
         assert not expected_repo_names
 
 
-def reponize(dirpath: pathlib.Path):
+def reponize(dirpath: pathlib.Path, default_branch: str):
     """Turn a non-empty directory into a Git repo and commit all content."""
     repo = git.Repo.init(dirpath)
-    repo.init()
+    repo.git.checkout("-b", default_branch)
     repo.git.add(".", "--force")
     repo.git.commit("-m", "Initial commit")
 
 
 def create_local_repo(
-    path: pathlib.Path, files: Iterable[Tuple[str, str]]
+    path: pathlib.Path,
+    files: Iterable[Tuple[str, str]],
+    default_branch: str = "master",
 ) -> str:
     """Create a local repository in the provided basedir and return a
     hash of the contents.
@@ -275,5 +307,5 @@ def create_local_repo(
         file.parent.mkdir(parents=True, exist_ok=True)
         (path / filename).write_text(content, encoding="utf8")
     sha = funcs.hash_directory(path)
-    reponize(path)
+    reponize(path, default_branch)
     return sha
