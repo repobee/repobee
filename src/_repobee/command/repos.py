@@ -277,7 +277,7 @@ def _create_update_push_tuples(
     for repo in api.get_repos(urls_to_templates.keys()):
         template = urls_to_templates[repo.url]
         branch = git.active_branch(template.path)
-        yield git.Push(template.path, repo.url, branch)
+        yield git.Push(template.path, api.insert_auth(repo.url), branch)
 
 
 def _open_issue_by_urls(
