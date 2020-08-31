@@ -285,6 +285,36 @@ class TestClone:
         assert not expected_repo_names
 
 
+class TestMigrate:
+    """Tests for the ``repos migrate`` command."""
+
+    def test_use_strange_default_branch_name(self, platform_url):
+        strange_branch_name = "definitelynotmaster"
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            template_repo_dir = pathlib.Path(tmpdir)
+            task_99 = template_repo_dir / "task-99"
+            create_local_repo(
+                task_99,
+                [("README.md", "Read me plz.")],
+                default_branch=strange_branch_name,
+            )
+
+            funcs.run_repobee(
+                f"repos migrate -a {task_99.name} "
+                f"--base-url {platform_url} "
+                "--allow-local-templates",
+                workdir=template_repo_dir,
+            )
+
+            platform_repos = funcs.get_repos(platform_url)
+            assert len(platform_repos) == 1
+            repo = git.Repo(funcs.get_repos(platform_url)[0].path)
+
+            assert len(repo.branches) == 1
+            assert repo.branches[0].name == strange_branch_name
+
+
 def reponize(dirpath: pathlib.Path, default_branch: str):
     """Turn a non-empty directory into a Git repo and commit all content."""
     repo = git.Repo.init(dirpath)
