@@ -61,6 +61,12 @@ _DISCOVERY_MUTEX_GRP.add_argument(
     "expensive in terms of API calls)",
     action="store_true",
 )
+_LOCAL_TEMPLATES_PARSER = argparse.ArgumentParser(add_help=False)
+_LOCAL_TEMPLATES_PARSER.add_argument(
+    "--allow-local-templates",
+    help="allow the use of template repos in the current working directory",
+    action="store_true",
+)
 
 
 def create_parser_for_docs() -> argparse.ArgumentParser:
@@ -259,6 +265,7 @@ def _add_repo_parsers(
             template_org_parser,
             _REPO_NAME_PARSER,
             _HOOK_RESULTS_PARSER,
+            _LOCAL_TEMPLATES_PARSER,
         ],
         formatter_class=_OrderedFormatter,
     )
@@ -277,6 +284,7 @@ def _add_repo_parsers(
             base_student_parser,
             template_org_parser,
             _REPO_NAME_PARSER,
+            _LOCAL_TEMPLATES_PARSER,
         ],
         formatter_class=_OrderedFormatter,
     )
