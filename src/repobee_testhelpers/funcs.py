@@ -14,11 +14,21 @@ from repobee_testhelpers import localapi
 from repobee_testhelpers import const
 
 
-def initialize_repo(path: pathlib.Path) -> git.Repo:
-    """Initialize the directory to a Git repo and commit all files in it."""
+def initialize_repo(
+    path: pathlib.Path, default_branch: str = "master"
+) -> git.Repo:
+    """Initialize the directory to a Git repo and commit all files in it.
+
+    Args:
+        path: Path to the directory to turn into a Git repository.
+        default_branch: Name of the default branch to use.
+    Returns:
+        A repo.
+    """
     repo = git.Repo.init(path)
     repo.git.config("user.name", const.TEACHER)
     repo.git.config("user.email", f"{const.TEACHER}@repobee.org")
+    repo.git.checkout("-b", default_branch)
     repo.git.add(".", "--force")
     repo.git.commit("-m", "Initial commit")
     return repo
