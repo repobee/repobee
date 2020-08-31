@@ -131,7 +131,7 @@ def _create_push_tuples(
         yield git.Push(
             local_path=template_repo.path,
             repo_url=api.insert_auth(repo.url),
-            branch="master",
+            branch=git.active_branch(template_repo.path),
         )
 
 
@@ -359,7 +359,7 @@ def migrate_repos(
                 git.Push(
                     local_path=template_repo.path,
                     repo_url=api.insert_auth(template_repo.url),
-                    branch="master",
+                    branch=git.active_branch(template_repo.path),
                 )
                 for template_repo in remote_templates
             ]

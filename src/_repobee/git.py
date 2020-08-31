@@ -15,6 +15,7 @@ import shutil
 from typing import Iterable, List, Any, Callable, Tuple
 
 import more_itertools
+import git
 
 import repobee_plug as plug
 
@@ -43,20 +44,10 @@ def _git_init(dirpath):
     captured_run(["git", "init"], cwd=str(dirpath))
 
 
-def _pull_clone(repo_url: str, branch: str = "", cwd: str = "."):
+async def _pull_clone_async(repo_url: str, branch: str = "", cwd: str = "."):
     """Simulate a clone with a pull to avoid writing remotes (that could
     include secure tokens) to disk.
     """
-    dirpath = _ensure_repo_dir_exists(repo_url, cwd)
-
-    pull_command = "git pull {} {}".format(repo_url, branch).strip().split()
-
-    rc, _, stderr = captured_run(pull_command, cwd=str(dirpath))
-    return rc, stderr
-
-
-async def _pull_clone_async(repo_url: str, branch: str = "", cwd: str = "."):
-    """Same as _pull_clone, but asynchronously."""
     dirpath = _ensure_repo_dir_exists(repo_url, cwd)
 
     pull_command = "git pull {} {}".format(repo_url, branch).strip().split()
@@ -80,7 +71,10 @@ def captured_run(*args, **kwargs):
 
 
 def clone_single(repo_url: str, branch: str = "", cwd: str = "."):
-    """Clone a git repository.
+    """Clone a git repository with ``git clone``.
+
+    This should only be used for temporary cloning, as any secure tokens in the
+    repo URL are stored in the repository.
 
     Args:
         repo_url: HTTPS url to repository on the form
@@ -88,10 +82,13 @@ def clone_single(repo_url: str, branch: str = "", cwd: str = "."):
         branch: The branch to clone.
         cwd: Working directory. Defaults to the current directory.
     """
-    rc, stderr = _pull_clone(repo_url, branch, cwd)
+    command = [*"git clone --single-branch".split(), repo_url] + (
+        [branch] if branch else []
+    )
+    rc, _, stderr = captured_run(command, cwd=cwd)
     if rc != 0:
         raise exception.CloneFailedError(
-            "Failed to clone", rc, stderr, repo_url
+            "Failed to clone", rc, stderr, repo_url,
         )
 
 
@@ -310,3 +307,14 @@ async def _batch_execution_async(
         plug.log.error(str(exc))
 
     return exceptions
+
+
+def active_branch(repo_path: pathlib.Path) -> str:
+    """Get the active branch from the given repo.
+
+    Args:
+        repo_path: Path to a repo.
+    Returns:
+        The active branch of the repo.
+    """
+    return git.Repo(repo_path).active_branch.name
