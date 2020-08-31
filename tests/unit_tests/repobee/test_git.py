@@ -110,12 +110,14 @@ def test_clone_single_raises_on_non_zero_exit_from_git_pull(env_setup, mocker):
 
 
 def test_clone_single_issues_correct_command_with_defaults(env_setup):
-    expected_command = "git pull {}".format(env_setup.expected_url).split()
+    expected_command = (
+        f"git clone --single-branch {env_setup.expected_url}".split()
+    )
 
     git.clone_single(URL_TEMPLATE.format(""))
     subprocess.run.assert_any_call(
         expected_command,
-        cwd=str(pathlib.Path(".") / REPO_NAME),
+        cwd=".",
         stderr=subprocess.PIPE,
         stdout=subprocess.PIPE,
     )
@@ -123,15 +125,15 @@ def test_clone_single_issues_correct_command_with_defaults(env_setup):
 
 def test_clone_single_issues_correct_command_non_default_branch(env_setup):
     branch = "other-branch"
-    expected_command = "git pull {} {}".format(
-        env_setup.expected_url, branch
-    ).split()
+    expected_command = (
+        f"git clone --single-branch {env_setup.expected_url} {branch}".split()
+    )
 
     git.clone_single(URL_TEMPLATE.format(""), branch=branch)
 
     subprocess.run.assert_any_call(
         expected_command,
-        cwd=str(pathlib.Path(".") / REPO_NAME),
+        cwd=".",
         stderr=subprocess.PIPE,
         stdout=subprocess.PIPE,
     )
@@ -140,14 +142,14 @@ def test_clone_single_issues_correct_command_non_default_branch(env_setup):
 def test_clone_single_issues_correct_command_with_cwd(env_setup):
     working_dir = "some/working/dir"
     branch = "other-branch"
-    expected_command = "git pull {} {}".format(
-        env_setup.expected_url, branch
-    ).split()
+    expected_command = (
+        f"git clone --single-branch {env_setup.expected_url} {branch}".split()
+    )
 
     git.clone_single(URL_TEMPLATE.format(""), branch=branch, cwd=working_dir)
     subprocess.run.assert_called_once_with(
         expected_command,
-        cwd=str(pathlib.Path(working_dir) / REPO_NAME),
+        cwd=str(working_dir),
         stderr=subprocess.PIPE,
         stdout=subprocess.PIPE,
     )
