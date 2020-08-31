@@ -176,6 +176,9 @@ def main(sys_args: List[str], unload_plugins: bool = True):
             "--no-plugins config-wizard` to remove any offending plugins."
         )
         sys.exit(1)
+    except exception.ParseError as exc:
+        plug.log.error(str(exc))
+        sys.exit(1)
     except Exception as exc:
         # FileErrors can occur during pre-init because of reading the config
         # and we don't want tracebacks for those (afaik at this time)

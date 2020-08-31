@@ -2,13 +2,15 @@
 import pathlib
 import tempfile
 
-from typing import List, Mapping
+from typing import List, Mapping, Tuple, Iterable
 
 import git
+import pytest
 
 import repobee_plug as plug
 from repobee_testhelpers import localapi
 from repobee_testhelpers import funcs
+from _repobee import exception
 
 
 from repobee_testhelpers.const import (
@@ -125,40 +127,25 @@ class TestSetup:
         repositories. That is to say, repos that are not in the
         template organization.
         """
-
-        # arrange
-        def reponize(dirpath: pathlib.Path):
-            repo = git.Repo.init(dirpath)
-            repo.init()
-            repo.git.add(".", "--force")
-            repo.git.commit("-m", "Initial commit")
-
         with tempfile.TemporaryDirectory() as tmpdir:
+            # arrange
             template_repo_dir = pathlib.Path(tmpdir)
             template_repo_hashes = {}
 
-            task_34_repo = template_repo_dir / "task-34"
-            task_34_repo.mkdir()
-            task_34_file = task_34_repo / "somefile.txt"
-            task_34_file.write_text("This is task 34!", encoding="utf8")
-            template_repo_hashes[task_34_repo.name] = funcs.hash_directory(
-                task_34_repo
+            task_34 = template_repo_dir / "task-34"
+            task_55 = template_repo_dir / "task-55"
+            template_repo_hashes[task_34.name] = create_local_repo(
+                task_34, [("somefile.txt", "This is task 34!")]
             )
-            reponize(task_34_repo)
-
-            task_55_repo = template_repo_dir / "task-55"
-            task_55_repo.mkdir()
-            task_55_file = task_55_repo / "hello.py"
-            task_55_file.write_text("print('hello, world!')", encoding="utf8")
-            template_repo_hashes[task_55_repo.name] = funcs.hash_directory(
-                task_55_repo
+            template_repo_hashes[task_55.name] = create_local_repo(
+                task_55, [("hello.py", "print('hello, world!')")]
             )
-            reponize(task_55_repo)
 
             # act
             funcs.run_repobee(
-                f"repos setup -a {task_55_repo.name} {task_34_repo.name} "
-                f"--base-url {platform_url} ",
+                f"repos setup -a {task_55.name} {task_34.name} "
+                f"--base-url {platform_url} "
+                "--allow-local-templates",
                 workdir=template_repo_dir,
             )
 
@@ -169,10 +156,27 @@ class TestSetup:
 
             _assert_repos_match_templates(
                 STUDENT_TEAMS,
-                [task_34_repo.name, task_55_repo.name],
+                [task_34.name, task_55.name],
                 template_repo_hashes,
                 repo_dict,
             )
+
+    def test_setup_with_local_repos_fails_without_local_templates_arg(
+        self, platform_url
+    ):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            template_repo_dir = pathlib.Path(tmpdir)
+            task_34 = template_repo_dir / "task-34"
+            create_local_repo(task_34, [("somefile.txt", "Yay!")])
+
+            with pytest.raises(exception.ParseError) as exc_info:
+                funcs.run_repobee(
+                    f"repos setup -a {task_34.name} "
+                    f"--base-url {platform_url} ",
+                    workdir=template_repo_dir,
+                )
+
+            assert "`--allow-local-templates`" in str(exc_info.value)
 
     def test_pre_setup_hook(self, platform_url):
         """Test that the pre-setup hook is run for each template repo."""
@@ -249,3 +253,27 @@ class TestClone:
         )
 
         assert not expected_repo_names
+
+
+def reponize(dirpath: pathlib.Path):
+    """Turn a non-empty directory into a Git repo and commit all content."""
+    repo = git.Repo.init(dirpath)
+    repo.init()
+    repo.git.add(".", "--force")
+    repo.git.commit("-m", "Initial commit")
+
+
+def create_local_repo(
+    path: pathlib.Path, files: Iterable[Tuple[str, str]]
+) -> str:
+    """Create a local repository in the provided basedir and return a
+    hash of the contents.
+    """
+    path.mkdir()
+    for filename, content in files:
+        file = path / filename
+        file.parent.mkdir(parents=True, exist_ok=True)
+        (path / filename).write_text(content, encoding="utf8")
+    sha = funcs.hash_directory(path)
+    reponize(path)
+    return sha

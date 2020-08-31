@@ -156,7 +156,19 @@ def _process_args(
         repos = _discover_repos(args.students, api)
     elif "assignments" in args:
         master_names = args.assignments
-        master_urls = _repo_names_to_urls(master_names, template_org_name, api)
+        remote_urls, local_uris = _repo_names_to_urls(
+            master_names, template_org_name, api
+        )
+
+        if local_uris and not getattr(args, "allow_local_templates", True):
+            locals_str = " ".join([f"'{uri}'" for uri in local_uris])
+            raise exception.ParseError(
+                f"found local templates in workdir: {locals_str}, "
+                "use `--allow-local-templates` to allow locals or change "
+                "directory to use remotes only"
+            )
+
+        master_urls = remote_urls + local_uris
         repos = _repo_tuple_generator(master_names, args.students, api)
         assert master_urls and master_names
 
@@ -284,7 +296,7 @@ def _connect_to_api(
 
 def _repo_names_to_urls(
     repo_names: Iterable[str], org_name: str, api: plug.PlatformAPI
-) -> List[str]:
+) -> Tuple[List[str], List[str]]:
     """Use the repo_names to extract urls to the repos. Look for git
     repos with the correct names in the local directory and create local uris
     for them.  For the rest, create urls to the repos assuming they are in the
@@ -297,13 +309,15 @@ def _repo_names_to_urls(
         repo_names: names of repositories.
         org_name: Name of the organization these repos are expected in.
         api: An API instance.
-
     Returns:
-        a list of urls corresponding to the repo_names.
+        A tuple of lists with (non_local_urls, local_uris).
+    Raises:
+        ParseError: If local templates are found, but allow_local is False.
     """
     local = [
         name for name in repo_names if util.is_git_repo(os.path.abspath(name))
     ]
+
     non_local = [name for name in repo_names if name not in local]
 
     non_local_urls = api.get_repo_urls(non_local, org_name)
@@ -311,7 +325,7 @@ def _repo_names_to_urls(
         pathlib.Path(os.path.abspath(repo_name)).as_uri()
         for repo_name in local
     ]
-    return non_local_urls + local_uris
+    return non_local_urls, local_uris
 
 
 def _process_ext_args(
