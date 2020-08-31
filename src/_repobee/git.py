@@ -44,20 +44,10 @@ def _git_init(dirpath):
     captured_run(["git", "init"], cwd=str(dirpath))
 
 
-def _pull_clone(repo_url: str, branch: str = "", cwd: str = "."):
+async def _pull_clone_async(repo_url: str, branch: str = "", cwd: str = "."):
     """Simulate a clone with a pull to avoid writing remotes (that could
     include secure tokens) to disk.
     """
-    dirpath = _ensure_repo_dir_exists(repo_url, cwd)
-
-    pull_command = "git pull {} {}".format(repo_url, branch).strip().split()
-
-    rc, _, stderr = captured_run(pull_command, cwd=str(dirpath))
-    return rc, stderr
-
-
-async def _pull_clone_async(repo_url: str, branch: str = "", cwd: str = "."):
-    """Same as _pull_clone, but asynchronously."""
     dirpath = _ensure_repo_dir_exists(repo_url, cwd)
 
     pull_command = "git pull {} {}".format(repo_url, branch).strip().split()
