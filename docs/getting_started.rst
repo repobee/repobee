@@ -73,10 +73,6 @@ You can view all available categories like so.
     A CLI tool for administrating large amounts of git repositories on GitHub and
     GitLab instances. Read the docs at: https://repobee.readthedocs.io
 
-    CLI options that are set in the config file are suppressed in help sections,
-    run with pre-parser option --show-all-opts to unsuppress.
-    Example: repobee --show-all-opts setup -h
-
     Loaded plugins: distmanager-3.0.0-beta.1, pluginmanager-3.0.0-beta.1
 
     positional arguments:

@@ -149,7 +149,7 @@ def _extract_flat_cli_options(
     return itertools.chain.from_iterable(map(_flatten_arg, cli_args))
 
 
-def _attach_options(self, config, show_all_opts, parser):
+def _attach_options(self, config, parser):
     parser = (
         parser
         if not isinstance(self, cli.CommandExtension)
@@ -172,7 +172,7 @@ def _attach_options(self, config, show_all_opts, parser):
                 f"Plugin '{self.plugin_name}' does not allow "
                 f"'{name}' to be configured"
             )
-        _add_option(name, opt, configured_value, show_all_opts, parser)
+        _add_option(name, opt, configured_value, parser)
 
     return parser
 
@@ -209,7 +209,6 @@ def _add_option(
     name: str,
     opt: Union[Option, MutuallyExclusiveGroup],
     configured_value: str,
-    show_all_opts: bool,
     parser: Union[argparse.ArgumentParser, argparse._MutuallyExclusiveGroup],
 ) -> None:
     """Add an option to the parser based on the cli option."""
@@ -219,11 +218,7 @@ def _add_option(
         )
         for (mutex_opt_name, mutex_opt) in opt.options:
             _add_option(
-                mutex_opt_name,
-                mutex_opt,
-                configured_value,
-                show_all_opts,
-                mutex_parser,
+                mutex_opt_name, mutex_opt, configured_value, mutex_parser,
             )
         return
 
@@ -234,11 +229,7 @@ def _add_option(
     if opt.converter:
         kwargs["type"] = opt.converter
 
-    kwargs["help"] = (
-        argparse.SUPPRESS
-        if (configured_value and not show_all_opts)
-        else opt.help or ""
-    )
+    kwargs["help"] = opt.help or ""
 
     if opt.argument_type in [cli.ArgumentType.OPTION, cli.ArgumentType.FLAG]:
         if opt.short_name:

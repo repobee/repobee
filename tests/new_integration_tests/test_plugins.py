@@ -1,5 +1,8 @@
 """Integration tests for plugin functionality."""
+import tempfile
+import pathlib
 
+import _repobee
 import repobee_plug as plug
 
 from repobee_testhelpers import funcs
@@ -43,3 +46,28 @@ def test_create_repo_with_plugin(platform_url):
     assert matching_repo.name == repo_name
     assert matching_repo.description == description
     assert matching_repo.private == private
+
+
+def test_plugin_command_without_category(capsys):
+    """A plugin command without category should be added as a 'category
+    command'.
+
+    Note that this test is run with repobee.main, as it previously broke there
+    but not with repobee.run due to the implementation of tab completion.
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        workdir = pathlib.Path(tmpdir)
+        hello_py = workdir / "hello.py"
+        hello_py.write_text(
+            """
+import repobee_plug as plug
+class HelloWorld(plug.Plugin, plug.cli.Command):
+    def command(self):
+        plug.echo("Hello, world!")
+""",
+            encoding="utf8",
+        )
+
+        _repobee.main.main(["repobee", "-p", str(hello_py), "helloworld"])
+
+    assert "Hello, world!" in capsys.readouterr().out

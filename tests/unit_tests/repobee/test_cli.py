@@ -468,48 +468,6 @@ def test_create_parser_for_docs(no_plugins):
 class TestBaseParsing:
     """Test the basic functionality of parsing."""
 
-    def test_show_all_opts_true_shows_configured_args(
-        self, config_mock, capsys
-    ):
-        """Test that configured args are shown when show_all_opts is True."""
-        with pytest.raises(SystemExit):
-            _repobee.cli.parsing.handle_args(
-                [
-                    *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
-                    "-h",
-                ],
-                show_all_opts=True,
-            )
-
-        captured = capsys.readouterr()
-        assert "--user" in captured.out
-        assert "--base-url" in captured.out
-        assert "--org-name" in captured.out
-        assert "--template-org-name" in captured.out
-        assert "--students-file" in captured.out
-        assert "--token" in captured.out
-
-    def test_show_all_opts_false_hides_configured_args(
-        self, config_mock, capsys
-    ):
-        """Test that configured args are hidden when show_all_opts is False."""
-        with pytest.raises(SystemExit):
-            _repobee.cli.parsing.handle_args(
-                [
-                    *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
-                    "-h",
-                ],
-                show_all_opts=False,
-            )
-
-        captured = capsys.readouterr()
-        assert "--user" not in captured.out
-        assert "--base-url" not in captured.out
-        assert "--org-name" not in captured.out
-        assert "--template-org-name" not in captured.out
-        assert "--students-file" not in captured.out
-        assert "--token" not in captured.out
-
     @pytest.mark.parametrize(
         "action",
         [
