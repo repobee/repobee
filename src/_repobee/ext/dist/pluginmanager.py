@@ -62,8 +62,10 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
         description="Install a plugin.",
     )
 
-    single_file = plug.cli.option(
-        converter=pathlib.Path, help="path to a single-file plugin to activate"
+    local = plug.cli.option(
+        converter=pathlib.Path,
+        help="path to a local plugin to install, either a single file or a "
+        "plugin package",
     )
 
     def command(self) -> None:
@@ -72,13 +74,32 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
         installed_plugins = disthelpers.get_installed_plugins()
         active_plugins = disthelpers.get_active_plugins()
 
-        if self.single_file:
-            abspath = self.single_file.resolve(strict=True)
-            installed_plugins[str(abspath)] = dict(
-                version="local", single_file=True,
-            )
+        if self.local:
+            abspath = self.local.resolve(strict=True)
+            install_info = dict(version="local", path=str(abspath))
+
+            if abspath.is_dir():
+                if not abspath.name.startswith("repobee-"):
+                    raise plug.PlugError(
+                        "RepoBee plugin package names must be prefixed with "
+                        "'repobee-'"
+                    )
+
+                disthelpers.pip(
+                    "install",
+                    "-e",
+                    abspath,
+                    f"repobee=={__version__}",
+                    upgrade=True,
+                )
+                ident = abspath.name[len("repobee-") :]
+            else:
+                ident = str(abspath)
+                install_info["single_file"] = True
+
+            installed_plugins[ident] = install_info
             disthelpers.write_installed_plugins(installed_plugins)
-            plug.echo(f"Installed {abspath}")
+            plug.echo(f"Installed {ident}")
         else:
             plug.echo("Available plugins:")
             _list_all_plugins(plugins, installed_plugins, active_plugins)
