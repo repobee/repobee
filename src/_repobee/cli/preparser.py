@@ -2,11 +2,10 @@
 
 The preparser runs before the primary parser
 (see :py:mod:`_repobee.cli.mainparser`). The reason for this somewhat
-convoluted setup is that:
-
-1. Plugins need to be able to add options to the CLI, which is only
-possible if a separate parser runs before the primary parser.
-2. Certain options affect how the CLI behaves, such as ``--show-all-opts``.
+convoluted setup is that plugins need to be able to add options to the CLI.
+As we want to be able to specify plugins on the command line, which may
+add options to the command line, this becomes a chicken or egg problem.
+The preparser solves this.
 
 .. module:: preparser
     :synopsis: The preparser for RepoBee.
@@ -26,9 +25,8 @@ PRE_PARSER_CONFIG_OPTS = ["-c", "--config-file"]
 PRE_PARSER_OPTS = PRE_PARSER_PLUG_OPTS + PRE_PARSER_CONFIG_OPTS
 
 PRE_PARSER_NO_PLUGS = "--no-plugins"
-PRE_PARSER_SHOW_ALL_OPTS = "--show-all-opts"
 # this list should include all pre-parser flags
-PRE_PARSER_FLAGS = [PRE_PARSER_NO_PLUGS, PRE_PARSER_SHOW_ALL_OPTS]
+PRE_PARSER_FLAGS = [PRE_PARSER_NO_PLUGS]
 
 
 def parse_args(sys_args: List[str]) -> argparse.Namespace:
@@ -49,11 +47,6 @@ def parse_args(sys_args: List[str]) -> argparse.Namespace:
         help="Specify path to the config file to use.",
         type=pathlib.Path,
         default=_repobee.constants.DEFAULT_CONFIG_FILE,
-    )
-    parser.add_argument(
-        PRE_PARSER_SHOW_ALL_OPTS,
-        help="Unsuppress all options in help menus",
-        action="store_true",
     )
 
     mutex_grp = parser.add_mutually_exclusive_group()

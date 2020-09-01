@@ -20,7 +20,6 @@ import _repobee
 from _repobee import plugin
 from _repobee import config
 from _repobee import constants
-from _repobee.cli.preparser import PRE_PARSER_SHOW_ALL_OPTS
 
 
 CATEGORY = "category"
@@ -78,19 +77,13 @@ def create_parser_for_docs() -> argparse.ArgumentParser:
     """
     plugin.initialize_default_plugins()
     plugin.initialize_dist_plugins(force=True)
-    return create_parser(
-        show_all_opts=True, config_file=_repobee.constants.DEFAULT_CONFIG_FILE
-    )
+    return create_parser(config_file=_repobee.constants.DEFAULT_CONFIG_FILE)
 
 
-def create_parser(
-    show_all_opts: bool, config_file: pathlib.Path
-) -> argparse.ArgumentParser:
+def create_parser(config_file: pathlib.Path) -> argparse.ArgumentParser:
     """Create the primary parser.
 
     Args:
-        show_all_opts: If False, help sections for options with configured
-            defaults are suppressed. Otherwise, all options are shown.
         config_file: Path to the config file.
     Returns:
         The primary parser.
@@ -116,15 +109,6 @@ def create_parser(
         "on GitHub and\nGitLab instances. Read the docs at: "
         "https://repobee.readthedocs.io\n\n"
     )
-
-    if not show_all_opts and constants.DEFAULT_CONFIG_FILE.is_file():
-        program_description += (
-            "CLI options that are set in the config file are suppressed in "
-            "help sections,\nrun with pre-parser option {all_opts_arg} to "
-            "unsuppress.\nExample: repobee {all_opts_arg} setup -h\n\n".format(
-                all_opts_arg=PRE_PARSER_SHOW_ALL_OPTS
-            )
-        )
     program_description += "Loaded plugins: " + loaded_plugins
 
     parser = argparse.ArgumentParser(
@@ -139,12 +123,12 @@ def create_parser(
         action="version",
         version="{}".format(_repobee.__version__),
     )
-    _add_subparsers(parser, show_all_opts, config_file)
+    _add_subparsers(parser, config_file)
 
     return parser
 
 
-def _add_subparsers(parser, show_all_opts, config_file):
+def _add_subparsers(parser, config_file):
     """Add all of the subparsers to the parser. Note that the parsers prefixed
     with `base_` do not have any parent parsers, so any parser inheriting from
     them must also inherit from the required `base_parser` (unless it is a
@@ -155,7 +139,7 @@ def _add_subparsers(parser, show_all_opts, config_file):
         base_parser,
         base_student_parser,
         template_org_parser,
-    ) = _create_base_parsers(show_all_opts, config_file)
+    ) = _create_base_parsers(config_file)
 
     subparsers = parser.add_subparsers(dest=CATEGORY)
     subparsers.required = True
@@ -240,7 +224,6 @@ def _add_subparsers(parser, show_all_opts, config_file):
         _REPO_NAME_PARSER,
         parsers,
         config._read_config(config_file) if config_file.is_file() else {},
-        show_all_opts,
     )
 
 
@@ -593,7 +576,6 @@ def _add_extension_parsers(
     repo_name_parser,
     parsers_mapping,
     parsed_config,
-    show_all_opts,
 ):
     """Add extension parsers defined by plugins."""
     command_extension_plugins = [
@@ -605,9 +587,7 @@ def _add_extension_parsers(
         for action in cmd.__settings__.actions:
             parser = parsers_mapping[action]
             cmd.attach_options(
-                config=parsed_config,
-                show_all_opts=show_all_opts,
-                parser=parser,
+                config=parsed_config, parser=parser,
             )
 
     command_plugins = [
@@ -718,9 +698,7 @@ def _add_extension_parsers(
             )
 
         cmd.attach_options(
-            config=parsed_config,
-            show_all_opts=show_all_opts,
-            parser=ext_parser,
+            config=parsed_config, parser=ext_parser,
         )
 
         settings_dict = settings._asdict()
@@ -728,7 +706,7 @@ def _add_extension_parsers(
         cmd.__settings__ = settings.__class__(**settings_dict)
 
 
-def _create_base_parsers(show_all_opts, config_file):
+def _create_base_parsers(config_file):
     """Create the base parsers."""
     configured_defaults = config.get_configured_defaults(config_file)
 
@@ -745,60 +723,24 @@ def _create_base_parsers(show_all_opts, config_file):
     def api_requires(arg_name):
         return arg_name in plug.manager.hook.api_init_requires()
 
-    def hide_api_arg(arg_name):
-        # note that API args that are not required should not be shown even
-        # when show_all_opts is True, as they are not relevant.
-        return not api_requires(arg_name) or (
-            not show_all_opts and configured(arg_name)
-        )
-
-    def hide_configurable_arg(arg_name):
-        return not show_all_opts and configured(arg_name)
-
     # API args help sections
-    user_help = argparse.SUPPRESS if hide_api_arg("user") else "Your username."
-    org_name_help = (
-        argparse.SUPPRESS
-        if hide_api_arg("org_name")
-        else "Name of the target organization"
-    )
+    user_help = "your username"
+    org_name_help = "name of the target organization"
     base_url_help = (
-        argparse.SUPPRESS
-        if hide_api_arg("base_url")
-        else (
-            "Base url to a platform API. Must be HTTPS. For example, with "
-            "github.com, the base url is https://api.github.com, and with "
-            "GitHub enterprise, the url is https://<ENTERPRISE_HOST>/api/v3"
-        )
+        "Base url to a platform API. Must be HTTPS. For example, with "
+        "github.com, the base url is https://api.github.com, and with "
+        "GitHub enterprise, the url is https://<ENTERPRISE_HOST>/api/v3"
     )
-    token_help = (
-        argparse.SUPPRESS
-        if hide_api_arg("token")
-        else (
-            "Access token for the platform instance. Can also be specified in "
-            "the `{}` environment variable.".format(constants.TOKEN_ENV)
-        )
-    )
+    token_help = "access token for the platform instance"
 
     # other configurable args help sections
     # these should not be checked against the api_requires function
     students_file_help = (
-        argparse.SUPPRESS
-        if hide_configurable_arg("students_file")
-        else (
-            "Path to a list of student usernames. Put multiple usernames on "
-            "each line to form groups."
-        )
+        "path to a list of student usernames or groups of students"
     )
     template_org_help = (
-        argparse.SUPPRESS
-        if hide_configurable_arg("template_org_name")
-        else (
-            "Name of the organization containing the template repos. "
-            "Defaults to the same value as `-o|--org-name` if left "
-            "unspecified. Note that config values take precedence "
-            "over this default."
-        )
+        "name of the organization containing the template repos "
+        "(defaults to the same value as `-o|--org-name`)"
     )
 
     base_parser = argparse.ArgumentParser(add_help=False)

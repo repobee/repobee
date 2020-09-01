@@ -18,6 +18,7 @@ import sys
 import enum
 from typing import Iterable, Optional, List, Tuple
 
+import argcomplete
 import daiquiri
 import repobee_plug as plug
 from repobee_plug.cli import categorization
@@ -39,7 +40,6 @@ class _ArgsProcessing(enum.Enum):
 
 def handle_args(
     sys_args: Iterable[str],
-    show_all_opts: bool = False,
     config_file: pathlib.Path = constants.DEFAULT_CONFIG_FILE,
 ) -> Tuple[argparse.Namespace, Optional[plug.PlatformAPI]]:
     """Parse and process command line arguments and instantiate the platform
@@ -49,15 +49,11 @@ def handle_args(
     Args:
         sys_args: Raw command line arguments for the primary parser.
         config_file: Path to the config file.
-        show_all_opts: If False, help sections for options that have
-            configured defaults are suppressed. Otherwise, all options are
-            shown.
-
     Returns:
         A tuple of a namespace with parsed and processed arguments, and an
         instance of the platform API if it is required for the command.
     """
-    args, processing = _parse_args(sys_args, config_file, show_all_opts)
+    args, processing = _parse_args(sys_args, config_file)
     plug.manager.hook.handle_parsed_args(args=args)
 
     if processing == _ArgsProcessing.CORE:
@@ -70,9 +66,7 @@ def handle_args(
 
 
 def _parse_args(
-    sys_args: Iterable[str],
-    config_file: pathlib.Path,
-    show_all_opts: bool = False,
+    sys_args: Iterable[str], config_file: pathlib.Path,
 ) -> Tuple[argparse.Namespace, _ArgsProcessing]:
     """Parse the command line arguments with some light processing. Any
     processing that requires external resources (such as a network connection)
@@ -81,14 +75,12 @@ def _parse_args(
     Args:
         sys_args: A list of command line arguments.
         config_file: Path to the config file.
-        show_all_opts: If False, CLI arguments that are configure in the
-            configuration file are not shown in help menus.
-
     Returns:
         A namespace of parsed arpuments and a boolean that specifies whether or
         not further processing is required.
     """
-    parser = cli.mainparser.create_parser(show_all_opts, config_file)
+    parser = cli.mainparser.create_parser(config_file)
+    argcomplete.autocomplete(parser)
 
     args = parser.parse_args(_handle_deprecation(sys_args))
 

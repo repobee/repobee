@@ -14,8 +14,6 @@ import sys
 from typing import List, Optional, Union, Mapping
 from types import ModuleType
 
-import argcomplete
-
 import repobee_plug as plug
 
 import _repobee.cli.dispatch
@@ -42,7 +40,6 @@ and supply the stack trace below.""".replace(
 
 def run(
     cmd: List[str],
-    show_all_opts: bool = False,
     config_file: Union[str, pathlib.Path] = "",
     plugins: Optional[List[Union[ModuleType, plug.Plugin]]] = None,
     workdir: Union[str, pathlib.Path] = ".",
@@ -81,7 +78,6 @@ def run(
 
     Args:
         cmd: The command to run.
-        show_all_opts: Equivalent to the ``--show-all-opts`` flag.
         config_file: Path to the configuration file.
         plugins: A list of plugin modules and/or plugin classes.
         workdir: The working directory to run RepoBee in.
@@ -120,7 +116,7 @@ def run(
             # refactored
             _initialize_plugins(argparse.Namespace(no_plugins=False, plug=[]))
             plugin.register_plugins(wrapped_plugins)
-            parsed_args, api = _parse_args(cmd, config_file, show_all_opts)
+            parsed_args, api = _parse_args(cmd, config_file)
             return _repobee.cli.dispatch.dispatch_command(
                 parsed_args, api, config_file
             )
@@ -148,20 +144,8 @@ def main(sys_args: List[str], unload_plugins: bool = True):
 
         _initialize_plugins(parsed_preparser_args)
 
-        # create a separate parser for autocompletion with show_all_opts
-        # enabled as not having show_all_opts messes a bit with the
-        # autocompletion
-        argcomplete.autocomplete(
-            _repobee.cli.mainparser.create_parser(
-                show_all_opts=True,
-                config_file=parsed_preparser_args.config_file,
-            )
-        )
-
         parsed_args, api = _parse_args(
-            app_args,
-            parsed_preparser_args.config_file,
-            parsed_preparser_args.show_all_opts,
+            app_args, parsed_preparser_args.config_file,
         )
         traceback = parsed_args.traceback
         pre_init = False
@@ -218,10 +202,10 @@ def _initialize_plugins(parsed_preparser_args: argparse.Namespace) -> None:
         plugin.initialize_plugins(plugin_names, allow_filepath=True)
 
 
-def _parse_args(args, config_file, show_all_opts):
+def _parse_args(args, config_file):
     config.execute_config_hooks(config_file)
     parsed_args, api = _repobee.cli.parsing.handle_args(
-        args, show_all_opts=show_all_opts, config_file=config_file
+        args, config_file=config_file
     )
     plug.manager.hook.handle_processed_args(args=parsed_args)
     return parsed_args, api

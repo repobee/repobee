@@ -100,9 +100,7 @@ def test_happy_path(
     main.main(sys_args)
 
     handle_args_mock.assert_called_once_with(
-        sys_args[1:],
-        show_all_opts=False,
-        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
+        sys_args[1:], config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
     dispatch_command_mock.assert_called_once_with(
         PARSED_ARGS, api_instance_mock, _repobee.constants.DEFAULT_CONFIG_FILE
@@ -121,9 +119,7 @@ def test_exit_status_1_on_exception_in_parsing(
 
     assert exc_info.value.code == 1
     handle_args_mock.assert_called_once_with(
-        sys_args[1:],
-        show_all_opts=False,
-        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
+        sys_args[1:], config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
     assert not dispatch_command_mock.called
 
@@ -141,9 +137,7 @@ def test_exit_status_1_on_exception_in_handling_parsed_args(
 
     assert exc_info.value.code == 1
     handle_args_mock.assert_called_once_with(
-        sys_args[1:],
-        show_all_opts=False,
-        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
+        sys_args[1:], config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
 
 
@@ -163,9 +157,7 @@ def test_plugins_args(
         any_order=True,
     )
     handle_args_mock.assert_called_once_with(
-        CLONE_ARGS,
-        show_all_opts=False,
-        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
+        CLONE_ARGS, config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
 
 
@@ -183,9 +175,7 @@ def test_no_plugins_arg(
         DEFAULT_PLUGIN_NAMES, allow_qualified=True
     )
     handle_args_mock.assert_called_once_with(
-        CLONE_ARGS,
-        show_all_opts=False,
-        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
+        CLONE_ARGS, config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
 
 
@@ -203,9 +193,7 @@ def test_no_plugins_with_configured_plugins(
         DEFAULT_PLUGIN_NAMES, allow_qualified=True
     )
     handle_args_mock.assert_called_once_with(
-        CLONE_ARGS,
-        show_all_opts=False,
-        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
+        CLONE_ARGS, config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
 
 
@@ -244,9 +232,7 @@ def test_plugin_with_subparser_name(
         any_order=True,
     )
     handle_args_mock.assert_called_once_with(
-        CLONE_ARGS,
-        show_all_opts=False,
-        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
+        CLONE_ARGS, config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
     )
 
 
@@ -327,44 +313,7 @@ def test_logs_traceback_on_exception_in_dispatch_if_traceback(
     assert logger_exception_mock.called
     handle_args_mock.assert_called_once_with(
         [*CLONE_ARGS, "--traceback"],
-        show_all_opts=False,
         config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
-    )
-
-
-def test_show_all_opts_correctly_separated(
-    handle_args_mock, parse_preparser_options_mock, no_config_mock
-):
-    msg = "expected exit"
-
-    def _raise_sysexit(*args, **kwargs):
-        raise SystemExit(msg)
-
-    parse_preparser_options_mock.return_value = argparse.Namespace(
-        show_all_opts=True,
-        no_plugins=False,
-        plug=None,
-        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
-    )
-    handle_args_mock.side_effect = _raise_sysexit
-    sys_args = [
-        "repobee",
-        _repobee.cli.preparser.PRE_PARSER_SHOW_ALL_OPTS,
-        *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
-        "-h",
-    ]
-
-    with pytest.raises(SystemExit) as exc_info:
-        main.main(sys_args)
-
-    assert msg in str(exc_info.value)
-    handle_args_mock.assert_called_once_with(
-        [*repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(), "-h"],
-        show_all_opts=True,
-        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
-    )
-    parse_preparser_options_mock.assert_called_once_with(
-        [_repobee.cli.preparser.PRE_PARSER_SHOW_ALL_OPTS]
     )
 
 

@@ -138,9 +138,7 @@ class TestDeclarativeExtensionCommand:
         """Test the parser that's generated automatically."""
         plugin_instance = basic_greeting_command("g")
         parser = argparse.ArgumentParser()
-        plugin_instance.attach_options(
-            config={}, show_all_opts=False, parser=parser
-        )
+        plugin_instance.attach_options(config={}, parser=parser)
         args = parser.parse_args("--name Eve".split())
 
         assert args.name == "Eve"
@@ -162,9 +160,7 @@ class TestDeclarativeExtensionCommand:
         config = {plugin_name: {"name": configured_name}}
         plugin_instance = Greeting("greeting")
         parser = argparse.ArgumentParser()
-        plugin_instance.attach_options(
-            config=config, show_all_opts=False, parser=parser
-        )
+        plugin_instance.attach_options(config=config, parser=parser)
         args = parser.parse_args([])
 
         assert args.name == configured_name
@@ -229,9 +225,7 @@ class TestDeclarativeExtensionCommand:
         parser = argparse.ArgumentParser()
 
         with pytest.raises(plug.PlugError) as exc_info:
-            plugin_instance.attach_options(
-                config=config, show_all_opts=False, parser=parser
-            )
+            plugin_instance.attach_options(config=config, parser=parser)
 
         assert (
             f"Plugin '{plugin_name}' does not allow 'name' to be configured"
@@ -256,9 +250,7 @@ class TestDeclarativeExtensionCommand:
 
         plugin_instance = Greeting("g")
         parser = argparse.ArgumentParser()
-        plugin_instance.attach_options(
-            config={}, show_all_opts=False, parser=parser
-        )
+        plugin_instance.attach_options(config={}, parser=parser)
         name = "Alice"
 
         short_opt_args = parser.parse_args(f"-n {name}".split())
@@ -277,9 +269,7 @@ class TestDeclarativeExtensionCommand:
 
         plugin_instance = Greeting("g")
         parser = argparse.ArgumentParser()
-        plugin_instance.attach_options(
-            config={}, show_all_opts=False, parser=parser
-        )
+        plugin_instance.attach_options(config={}, parser=parser)
 
         name = "Alice"
         age = 33
@@ -305,9 +295,7 @@ class TestDeclarativeExtensionCommand:
 
         plugin_instance = Greeting("g")
         parser = argparse.ArgumentParser()
-        plugin_instance.attach_options(
-            config={}, show_all_opts=False, parser=parser
-        )
+        plugin_instance.attach_options(config={}, parser=parser)
 
         with pytest.raises(SystemExit):
             parser.parse_args("--age 12 --old".split())
@@ -348,9 +336,7 @@ class TestDeclarativeExtensionCommand:
 
         plugin_instance = Greeting("g")
         parser = argparse.ArgumentParser()
-        plugin_instance.attach_options(
-            config={}, show_all_opts=False, parser=parser
-        )
+        plugin_instance.attach_options(config={}, parser=parser)
 
         parsed_args = parser.parse_args(["--old"])
 
