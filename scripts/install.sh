@@ -21,6 +21,8 @@ REPOBEE_COMPLETION="$REPOBEE_INSTALL_DIR/completion"
 REPOBEE_BASH_COMPLETION="$REPOBEE_COMPLETION/bash_completion.sh"
 REGISTER_PYTHON_ARGCOMPLETE="$REPOBEE_INSTALL_DIR/env/bin/register-python-argcomplete"
 
+MIN_PYTHON_VERSION=6
+
 function install() {
     version=$1
 
@@ -41,7 +43,7 @@ function check_prerequisites() {
         echo "See https://www.python.org/downloads/ for a Python installer."
         exit 1
     else
-        echo "Found $installed_python executable"
+        echo "Found appropriate Python executable: $installed_python"
     fi
 
     git --version &> /dev/null
@@ -90,13 +92,24 @@ function install_repobee() {
     && echo "PATH OK" || add_to_path
 }
 
+function get_minor_python_version() {
+    # echo the minor version number from the given Python executable, or -1 if
+    # the executable does not exist
+    python_executable=$1
+    if ! "$python_executable" -V &> /dev/null; then
+        echo -1
+        return
+    fi
+
+    echo $("$python_executable" -V | grep -o '[0-9]\+' | sed -n 2p)
+}
+
 function find_python() {
-    for python_version in "3.6" "3.7" "3.8"; do
-        python_cmd="python$python_version"
-        $python_cmd --version &> /dev/null
-        if [ $? = 0 ]; then
-            echo $python_cmd
-            break
+    for python_exec in "python3.9" "python3.8" "python3.7" "python3.6" "python3" "python"; do
+        minor_version=$(get_minor_python_version "$python_exec")
+        if [ "$minor_version" -ge "$MIN_PYTHON_VERSION" ]; then
+            echo "$python_exec"
+            return
         fi
     done
 }
