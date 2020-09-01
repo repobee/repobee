@@ -76,30 +76,7 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
 
         if self.local:
             abspath = self.local.resolve(strict=True)
-            install_info = dict(version="local", path=str(abspath))
-
-            if abspath.is_dir():
-                if not abspath.name.startswith("repobee-"):
-                    raise plug.PlugError(
-                        "RepoBee plugin package names must be prefixed with "
-                        "'repobee-'"
-                    )
-
-                disthelpers.pip(
-                    "install",
-                    "-e",
-                    abspath,
-                    f"repobee=={__version__}",
-                    upgrade=True,
-                )
-                ident = abspath.name[len("repobee-") :]
-            else:
-                ident = str(abspath)
-                install_info["single_file"] = True
-
-            installed_plugins[ident] = install_info
-            disthelpers.write_installed_plugins(installed_plugins)
-            plug.echo(f"Installed {ident}")
+            _install_local_plugin(abspath, installed_plugins)
         else:
             plug.echo("Available plugins:")
             _list_all_plugins(plugins, installed_plugins, active_plugins)
@@ -115,6 +92,33 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
 
             installed_plugins[name] = dict(version=version)
             disthelpers.write_installed_plugins(installed_plugins)
+
+
+def _install_local_plugin(plugin_path: pathlib.Path, installed_plugins: dict):
+    install_info = dict(version="local", path=str(plugin_path))
+
+    if plugin_path.is_dir():
+        if not plugin_path.name.startswith("repobee-"):
+            raise plug.PlugError(
+                "RepoBee plugin package names must be prefixed with "
+                "'repobee-'"
+            )
+
+        disthelpers.pip(
+            "install",
+            "-e",
+            str(plugin_path),
+            f"repobee=={__version__}",
+            upgrade=True,
+        )
+        ident = plugin_path.name[len("repobee-") :]
+    else:
+        ident = str(plugin_path)
+        install_info["single_file"] = True
+
+    installed_plugins[ident] = install_info
+    disthelpers.write_installed_plugins(installed_plugins)
+    plug.echo(f"Installed {ident}")
 
 
 def _select_plugin(plugins: dict) -> ty.Tuple[str, str]:
