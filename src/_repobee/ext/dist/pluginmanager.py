@@ -75,7 +75,10 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
         active_plugins = disthelpers.get_active_plugins()
 
         if self.local:
-            abspath = self.local.resolve(strict=True)
+            abspath = self.local.absolute()
+            if not abspath.exists():
+                raise plug.PlugError(f"no such file or directory: '{abspath}'")
+
             _install_local_plugin(abspath, installed_plugins)
         else:
             plug.echo("Available plugins:")

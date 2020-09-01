@@ -165,6 +165,15 @@ class Hello(plug.Plugin, plug.cli.Command):
 
             assert "'repobee-'" in str(exc_info.value)
 
+    def test_raises_when_local_points_to_non_existing_path(self):
+        with tempfile.NamedTemporaryFile() as tmpfile:
+            pass
+
+        with pytest.raises(plug.PlugError) as exc_info:
+            repobee.run(shlex.split(f"plugin install --local {tmpfile.name}"))
+
+        assert "no such file or directory" in str(exc_info.value)
+
 
 class TestPluginUninstall:
     """Tests for the ``plugin uninstall`` command."""
