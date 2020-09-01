@@ -108,7 +108,7 @@ class TestPluginInstall:
 
         assert get_pkg_version("repobee") == repobee_initial_version
 
-    def test_install_plugin_file_by_path(self, capsys):
+    def test_install_local_plugin_file(self, capsys):
         plugin_content = """
 import repobee_plug as plug
 class Hello(plug.Plugin, plug.cli.Command):
@@ -130,7 +130,7 @@ class Hello(plug.Plugin, plug.cli.Command):
             assert install_info["version"] == "local"
             assert install_info["path"] == str(hello_py)
 
-    def test_install_plugin_package_by_path(self):
+    def test_install_local_plugin_package(self):
         plugin_version = "1.0.0"
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -149,7 +149,7 @@ class Hello(plug.Plugin, plug.cli.Command):
             assert install_info["path"] == str(junit4_local)
             assert get_pkg_version("repobee-junit4") == plugin_version
 
-    def test_install_plugin_package_by_path_without_repobee_prefix(self):
+    def test_raises_when_local_package_lacks_repobee_prefix(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             workdir = pathlib.Path(tmpdir)
             junit4_local = workdir / "junit4"
