@@ -18,7 +18,7 @@ import re
 import os
 import sys
 import tempfile
-from typing import Iterable, List, Optional, Mapping, Union
+from typing import Iterable, List, Optional, Mapping, Union, Tuple
 
 import repobee_plug as plug
 
@@ -108,11 +108,12 @@ def _create_push_tuples(
     template_repos: Iterable[plug.TemplateRepo],
     api: plug.PlatformAPI,
 ) -> Iterable[Push]:
-    """
+    """Create push tuples for newly created repos. Repos that already exist are
+    ignored.
+
     Args:
         teams: An iterable of teams.
-        authed_master_urls: An iterable of authenticated master repo urls.
-        master_repo_paths: A mapping (master_repo_url -> master_repo_path).
+        template_repos: Template repositories.
         api: A platform API instance.
     Returns:
         A list of Push namedtuples for all student repo urls that relate to
@@ -120,7 +121,7 @@ def _create_push_tuples(
     """
     for team, template_repo in itertools.product(teams, template_repos):
         repo_name = plug.generate_repo_name(team, template_repo.name)
-        repo = _create_or_fetch_repo(
+        created, repo = _create_or_fetch_repo(
             name=repo_name,
             description=f"{repo_name} created for {team.name}",
             private=True,
@@ -128,11 +129,12 @@ def _create_push_tuples(
             api=api,
         )
 
-        yield git.Push(
-            local_path=template_repo.path,
-            repo_url=api.insert_auth(repo.url),
-            branch=git.active_branch(template_repo.path),
-        )
+        if created:
+            yield git.Push(
+                local_path=template_repo.path,
+                repo_url=api.insert_auth(repo.url),
+                branch=git.active_branch(template_repo.path),
+            )
 
 
 def _create_or_fetch_repo(
@@ -141,10 +143,13 @@ def _create_or_fetch_repo(
     private: bool,
     api: plug.PlatformAPI,
     team: Optional[plug.Team] = None,
-) -> plug.Repo:
+) -> Tuple[bool, plug.Repo]:
     try:
-        return api.create_repo(
-            name, description=description, private=private, team=team
+        return (
+            True,
+            api.create_repo(
+                name, description=description, private=private, team=team
+            ),
         )
     except plug.PlatformError:
         team_name = team.name if team else None
@@ -154,7 +159,7 @@ def _create_or_fetch_repo(
             api.assign_repo(
                 team=team, repo=repo, permission=plug.TeamPermission.PUSH
             )
-        return repo
+        return False, repo
 
 
 def _clone_all(
@@ -225,14 +230,9 @@ def update_student_repos(
             template_repos, api, cwd=pathlib.Path(tmpdir)
         )
 
-        # we want to exhaust this iterator immediately to not have progress
-        # bars overlap
-        fetched_teams = list(progresswrappers.get_teams(teams, api))
-
-        push_tuple_iter = _create_push_tuples(
-            fetched_teams, template_repos, api
+        push_tuple_iter = _create_update_push_tuples(
+            teams, template_repos, api
         )
-
         push_tuple_iter_progress = plug.cli.io.progress_bar(
             push_tuple_iter,
             desc="Setting up student repos",
@@ -249,6 +249,35 @@ def update_student_repos(
 
     plug.log.info("Done!")
     return hook_results
+
+
+def _create_update_push_tuples(
+    teams: Iterable[plug.StudentTeam],
+    template_repos: Iterable[plug.TemplateRepo],
+    api: plug.PlatformAPI,
+) -> Iterable[Push]:
+    """Create push tuples for existing repos. Repos that don't exist are
+    ignored.
+
+    Args:
+        teams: An iterable of teams.
+        template_repos: Template repositories.
+        api: A platform API instance.
+    Returns:
+        A list of Push namedtuples for all student repo urls that relate to
+        any of the master repo urls.
+    """
+    urls_to_templates = {}
+    for team, template_repo in itertools.product(teams, template_repos):
+        repo_url, *_ = api.get_repo_urls(
+            [template_repo.name], team_names=[team.name]
+        )
+        urls_to_templates[repo_url] = template_repo
+
+    for repo in api.get_repos(urls_to_templates.keys()):
+        template = urls_to_templates[repo.url]
+        branch = git.active_branch(template.path)
+        yield git.Push(template.path, api.insert_auth(repo.url), branch)
 
 
 def _open_issue_by_urls(
@@ -351,7 +380,7 @@ def migrate_repos(
             plug.TemplateRepo(
                 name=repo.name, url=repo.url, _path=workdir / repo.name
             )
-            for repo in create_repo_it
+            for _, repo in create_repo_it
         ]
 
         git.push(

@@ -161,6 +161,35 @@ class TestSetup:
                 repo_dict,
             )
 
+    def test_does_not_push_to_existing_repos(
+        self, platform_url, with_student_repos, capsys
+    ):
+        """This command should not push to existing repos, that's for the
+        ``update`` command to do.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # arrange
+            template_repo_dir = pathlib.Path(tmpdir)
+            task = template_repo_dir / TEMPLATE_REPO_NAMES[0]
+            create_local_repo(task, [("best/file/ever.txt", "content")])
+
+            # act
+            # this push would fail if it was attempted, as the repo
+            # content of the local template does not match that of
+            # the remote template
+            funcs.run_repobee(
+                f"repos setup -a {TEMPLATE_REPOS_ARG} "
+                f"--base-url {platform_url} "
+                "--allow-local-templates",
+                workdir=template_repo_dir,
+            )
+
+        # nothing should have changed, and there should be no errors
+        assert_student_repos_match_templates(
+            STUDENT_TEAMS, TEMPLATE_REPO_NAMES, funcs.get_repos(platform_url),
+        )
+        assert "[ERROR]" not in capsys.readouterr().out
+
     def test_setup_with_local_repos_fails_without_local_templates_arg(
         self, platform_url
     ):
@@ -285,6 +314,25 @@ class TestClone:
         assert not expected_repo_names
 
 
+class TestUpdate:
+    """Tests for the ``repos update`` command."""
+
+    def test_does_not_create_repos(self, platform_url):
+        """This command should only update existing repos, it's not allowed to
+        create repos.
+        """
+        # arrange, must create the student teams
+        funcs.run_repobee(f"teams create --base-url {platform_url}")
+
+        # act
+        funcs.run_repobee(
+            f"repos update -a {TEMPLATE_REPOS_ARG} --base-url {platform_url}"
+        )
+
+        # assert
+        assert not funcs.get_repos(platform_url)
+
+
 class TestMigrate:
     """Tests for the ``repos migrate`` command."""
 
@@ -315,14 +363,6 @@ class TestMigrate:
             assert repo.branches[0].name == strange_branch_name
 
 
-def reponize(dirpath: pathlib.Path, default_branch: str):
-    """Turn a non-empty directory into a Git repo and commit all content."""
-    repo = git.Repo.init(dirpath)
-    repo.git.checkout("-b", default_branch)
-    repo.git.add(".", "--force")
-    repo.git.commit("-m", "Initial commit")
-
-
 def create_local_repo(
     path: pathlib.Path,
     files: Iterable[Tuple[str, str]],
@@ -330,12 +370,22 @@ def create_local_repo(
 ) -> str:
     """Create a local repository in the provided basedir and return a
     hash of the contents.
+
+    Args:
+        path: Path to put the repository at. Parent directories are created if
+            they don't exist.
+        files: Files to add to the repository. Should be tuples on the form
+            (relpath, content), where relpath is a filepath relative to the
+            root of the repository.
+        default_branch: The default branch to use for the repository.
+    Returns:
+        The sha1 hash of the repository.
     """
-    path.mkdir()
+    path.mkdir(parents=True)
     for filename, content in files:
         file = path / filename
         file.parent.mkdir(parents=True, exist_ok=True)
         (path / filename).write_text(content, encoding="utf8")
     sha = funcs.hash_directory(path)
-    reponize(path, default_branch)
+    funcs.initialize_repo(path, default_branch)
     return sha
