@@ -92,26 +92,35 @@ function install_repobee() {
     && echo "PATH OK" || add_to_path
 }
 
-function get_minor_python_version() {
+function find_python() {
+    # Find an appropriate python executable
+    for python_exec in "python3.9" "python3.8" "python3.7" "python3.6" "python3" "python"; do
+        minor_version=$(get_minor_python3_version "$python_exec")
+        if [ "$minor_version" -ge "$MIN_PYTHON_VERSION" ]; then
+            echo "$python_exec"
+            return
+        fi
+    done
+}
+
+function get_minor_python3_version() {
     # echo the minor version number from the given Python executable, or -1 if
-    # the executable does not exist
+    # the executable does not exist or is not Python 3
     python_executable=$1
     if ! "$python_executable" -V &> /dev/null; then
         echo -1
         return
     fi
 
-    echo $("$python_executable" -V | grep -o '[0-9]\+' | sed -n 2p)
-}
+    # python2 prints the version on stderr, hence the 2>&1 redirect
+    major=$("$python_executable" 2>&1 -V | grep -o '[0-9]\+' | sed -n 1p)
+    minor=$("$python_executable" 2>&1 -V | grep -o '[0-9]\+' | sed -n 2p)
 
-function find_python() {
-    for python_exec in "python3.9" "python3.8" "python3.7" "python3.6" "python3" "python"; do
-        minor_version=$(get_minor_python_version "$python_exec")
-        if [ "$minor_version" -ge "$MIN_PYTHON_VERSION" ]; then
-            echo "$python_exec"
-            return
-        fi
-    done
+    if [ "$major" -ne 3 ]; then
+        echo -1
+        return
+    fi
+    echo "$minor"
 }
 
 function pip_install_quiet_failfast() {
