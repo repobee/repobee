@@ -839,7 +839,6 @@ def _create_base_parsers(config_file):
     _add_traceback_arg(base_parser)
     # base parser for when student lists are involved
     base_student_parser = _RepobeeParser(is_core_command=True, add_help=False)
-    print("students")
     students = base_student_parser.add_argument_group(
         "core"
     ).add_mutually_exclusive_group(required=not configured("students_file"))
