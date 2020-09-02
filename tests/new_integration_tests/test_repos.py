@@ -7,6 +7,8 @@ from typing import List, Mapping, Tuple, Iterable
 import git
 import pytest
 
+import _repobee.ext.javac
+
 import repobee_plug as plug
 from repobee_testhelpers import localapi
 from repobee_testhelpers import funcs
@@ -313,6 +315,36 @@ class TestClone:
 
         assert not expected_repo_names
 
+    def test_javac_plugin_happy_path(self, platform_url, tmp_path_factory):
+        workdir = tmp_path_factory.mktemp("workdir")
+        java_task = self._setup_task_with_java_code(platform_url, workdir)
+        repo_names = plug.generate_repo_names(STUDENT_TEAMS, [java_task.name])
+
+        plug_results = funcs.run_repobee(
+            f"repos clone -a {java_task.name} --base-url {platform_url} ",
+            plugins=[_repobee.ext.javac],
+        )
+
+        assert plug_results
+        assert len(plug_results) == len(repo_names)
+        for repo_name in repo_names:
+            javac_result, *_ = plug_results[repo_name]
+            assert javac_result.name == "javac"
+            assert javac_result.status == plug.Status.SUCCESS
+
+    def _setup_task_with_java_code(
+        self, platform_url, workdir
+    ) -> pathlib.Path:
+        java_task = workdir / "java-task"
+        create_local_repo(java_task, [("src/Main.java", _JAVA_MAIN_CLASS)])
+        funcs.run_repobee(
+            f"repos setup -a {java_task.name} "
+            f"--base-url {platform_url} "
+            "--allow-local-templates",
+            workdir=workdir,
+        )
+        return java_task
+
 
 class TestUpdate:
     """Tests for the ``repos update`` command."""
@@ -389,3 +421,12 @@ def create_local_repo(
     sha = funcs.hash_directory(path)
     funcs.initialize_repo(path, default_branch)
     return sha
+
+
+_JAVA_MAIN_CLASS = """
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello, world!");
+    }
+}
+"""
