@@ -42,6 +42,7 @@ jobs:
         coverage run --branch \
             --source _repobee,repobee_plug,repobee_testhelpers \
             -m pytest tests/unit_tests tests/new_integration_tests
+        coverage xml
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
