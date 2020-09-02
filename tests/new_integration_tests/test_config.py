@@ -13,6 +13,13 @@ class TestConfigShow:
         funcs.run_repobee("config show")
 
         outerr = capsys.readouterr()
-        assert "token = xxxxxxxx" in outerr.out
+        assert "token = xxxxxxxxxx\n" in outerr.out
         assert const.TOKEN not in outerr.out
         assert const.TOKEN not in outerr.err
+
+    def test_prints_token_when_asked(self, capsys):
+        """It should be possible to show the token on deman."""
+        funcs.run_repobee("config show --show-secrets")
+
+        outerr = capsys.readouterr()
+        assert const.TOKEN in outerr.out

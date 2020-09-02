@@ -1,9 +1,7 @@
 import os
 import argparse
-import tempfile
-import pathlib
 import types
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, call
 from collections import namedtuple
 
 import pytest
@@ -331,27 +329,6 @@ def test_non_zero_exit_status_on_exception(
         main.main(sys_args)
 
     assert exc_info.value.code == 1
-
-
-def test_show_config_custom_config():
-    config_text = """
-[repobee]
-user = some-unlikely-user
-""".strip()
-    with tempfile.NamedTemporaryFile() as tmpfile, patch(
-        "_repobee.command.show_config", autospec=True
-    ) as show_config_mock:
-        config_file = pathlib.Path(tmpfile.name)
-        config_file.write_text(config_text)
-        sys_args = [
-            "repobee",
-            "--config-file",
-            tmpfile.name,
-            *repobee_plug.cli.CoreCommand.config.show.as_name_tuple(),
-        ]
-        main.main(sys_args)
-
-    show_config_mock.assert_called_once_with(config_file)
 
 
 workdir_category = plug.cli.category("workdir", ["workdir"])

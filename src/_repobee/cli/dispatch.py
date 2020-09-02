@@ -129,7 +129,7 @@ def _dispatch_config_command(
         )
         return None
     elif action == config.show:
-        command.show_config(config_file)
+        command.show_config(config_file, show_secrets=args.show_secrets)
         return None
     _raise_illegal_action_error(args)
 

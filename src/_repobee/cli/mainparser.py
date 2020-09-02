@@ -337,6 +337,11 @@ def _add_config_parsers(base_parser, template_org_parser, add_parser):
         ),
         formatter_class=OrderedFormatter,
     )
+    show_config.add_argument(
+        "--show-secrets",
+        help="show secrets in the config file",
+        action="store_true",
+    )
     _add_traceback_arg(show_config)
 
     add_parser(
