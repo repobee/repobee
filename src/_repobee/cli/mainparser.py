@@ -10,7 +10,7 @@ import types
 import argparse
 import pathlib
 
-from typing import Union, Mapping, Optional
+from typing import Union, Mapping
 
 
 import repobee_plug as plug
@@ -19,77 +19,22 @@ from repobee_plug.cli import categorization
 import _repobee
 from _repobee import plugin
 from _repobee import config
-from _repobee import constants
 
+from _repobee.cli.argparse_ext import RepobeeParser, OrderedFormatter
 
-class _RepobeeParser(argparse.ArgumentParser):
-    def __init__(self, *args, is_core_command: bool = False, **kwargs):
-        self._is_core_command = is_core_command
-        super().__init__(*args, **kwargs)
-        self._platform_args_grp = self.add_argument_group(
-            title="platform arguments",
-            description="Arguments related to the platform "
-            "(e.g. GitHub or GitLab)",
-        )
-        self._debug_args_grp = self.add_argument_group(title="debug arguments")
-        self._alpha_args_grp = self.add_argument_group(
-            title="alpha arguments",
-            description="Arguments that are currently being trialed in alpha, "
-            "and may change without further notice",
-        )
-
-    def add_argument(self, *args, **kwargs):
-        """Add an argument to this parser, placing it in an appropriate
-        argument group.
-        """
-        if not self._is_core_command:
-            return super().add_argument(*args, **kwargs)
-
-        platform_args = {
-            "--token",
-            "--org-name",
-            "--template-org-name",
-            "--user",
-            "--base-url",
-        }
-        debug_args = {"--traceback"}
-        alpha_args = {"--hook-results-file"}
-
-        for arg in args:
-            if arg in platform_args:
-                return self._platform_args_grp.add_argument(*args, **kwargs)
-            elif arg in debug_args:
-                return self._debug_args_grp.add_argument(*args, **kwargs)
-            elif arg in alpha_args:
-                return self._alpha_args_grp.add_argument(*args, **kwargs)
-
-        return super().add_argument(*args, **kwargs)
-
-    def add_argument_group(
-        self, title: Optional[str] = None, description: Optional[str] = None
-    ) -> argparse._ArgumentGroup:
-        """Create a new argument group if the title does not exist, or return
-        an existing one if it does.
-        """
-        for grp in self._action_groups:
-            if grp.title == title:
-                if description is not None:
-                    grp.descripion = description
-                return grp
-        return super().add_argument_group(title, description)
-
+__all__ = ["create_parser", "create_parser_for_docs"]
 
 CATEGORY = "category"
 ACTION = "action"
 
-_HOOK_RESULTS_PARSER = _RepobeeParser(is_core_command=True, add_help=False)
+_HOOK_RESULTS_PARSER = RepobeeParser(is_core_command=True, add_help=False)
 _HOOK_RESULTS_PARSER.add_argument(
     "--hook-results-file",
     help="path to a .json file to store results from plugin hooks in",
     type=str,
     default=None,
 )
-_REPO_NAME_PARSER = _RepobeeParser(is_core_command=True, add_help=False)
+_REPO_NAME_PARSER = RepobeeParser(is_core_command=True, add_help=False)
 _REPO_NAME_PARSER.add_argument(
     "-a",
     "--assignments",
@@ -99,7 +44,7 @@ _REPO_NAME_PARSER.add_argument(
     nargs="+",
     dest="assignments",
 )
-_REPO_DISCOVERY_PARSER = _RepobeeParser(is_core_command=True, add_help=False)
+_REPO_DISCOVERY_PARSER = RepobeeParser(is_core_command=True, add_help=False)
 _DISCOVERY_MUTEX_GRP = _REPO_DISCOVERY_PARSER.add_mutually_exclusive_group(
     required=True
 )
@@ -117,7 +62,7 @@ _DISCOVERY_MUTEX_GRP.add_argument(
     "expensive in terms of API calls)",
     action="store_true",
 )
-_LOCAL_TEMPLATES_PARSER = _RepobeeParser(is_core_command=True, add_help=False)
+_LOCAL_TEMPLATES_PARSER = RepobeeParser(is_core_command=True, add_help=False)
 _LOCAL_TEMPLATES_PARSER.add_argument(
     "--allow-local-templates",
     help="allow the use of template repos in the current working directory",
@@ -307,7 +252,7 @@ def _add_repo_parsers(
             _HOOK_RESULTS_PARSER,
             _LOCAL_TEMPLATES_PARSER,
         ],
-        formatter_class=_OrderedFormatter,
+        formatter_class=OrderedFormatter,
     )
 
     update = add_parser(
@@ -326,7 +271,7 @@ def _add_repo_parsers(
             _REPO_NAME_PARSER,
             _LOCAL_TEMPLATES_PARSER,
         ],
-        formatter_class=_OrderedFormatter,
+        formatter_class=OrderedFormatter,
     )
     update.add_argument(
         "-i",
@@ -346,7 +291,7 @@ def _add_repo_parsers(
             _REPO_DISCOVERY_PARSER,
             _HOOK_RESULTS_PARSER,
         ],
-        formatter_class=_OrderedFormatter,
+        formatter_class=OrderedFormatter,
     )
 
     add_parser(
@@ -358,7 +303,7 @@ def _add_repo_parsers(
             "migrated repos will be private."
         ),
         parents=[_REPO_NAME_PARSER, base_parser, _LOCAL_TEMPLATES_PARSER],
-        formatter_class=_OrderedFormatter,
+        formatter_class=OrderedFormatter,
     )
 
 
@@ -377,7 +322,7 @@ def _add_teams_parsers(
             "this command AND `setup`."
         ),
         parents=[base_parser, base_student_parser],
-        formatter_class=_OrderedFormatter,
+        formatter_class=OrderedFormatter,
     )
 
 
@@ -390,7 +335,7 @@ def _add_config_parsers(base_parser, template_org_parser, add_parser):
             "file can be found, show the path where repobee expectes to find "
             "it."
         ),
-        formatter_class=_OrderedFormatter,
+        formatter_class=OrderedFormatter,
     )
     _add_traceback_arg(show_config)
 
@@ -399,7 +344,7 @@ def _add_config_parsers(base_parser, template_org_parser, add_parser):
         help="verify core settings",
         description="Verify core settings by trying various API requests.",
         parents=[base_parser, template_org_parser],
-        formatter_class=_OrderedFormatter,
+        formatter_class=OrderedFormatter,
     )
 
 
@@ -417,7 +362,7 @@ def _add_peer_review_parsers(base_parsers, add_parser):
         ),
         help="assign students to peer review each others' repos",
         parents=base_parsers,
-        formatter_class=_OrderedFormatter,
+        formatter_class=OrderedFormatter,
     )
     assign_parser.add_argument(
         "-n",
@@ -446,7 +391,7 @@ def _add_peer_review_parsers(base_parsers, add_parser):
         ),
         help="check which students have opened peer review issues",
         parents=base_parsers,
-        formatter_class=_OrderedFormatter,
+        formatter_class=OrderedFormatter,
     )
     check_review_progress.add_argument(
         "-r",
@@ -480,7 +425,7 @@ def _add_peer_review_parsers(base_parsers, add_parser):
         help="delete review allocations created by `assign-reviews` "
         "(DESTRUCTIVE ACTION: read help section before using)",
         parents=base_parsers,
-        formatter_class=_OrderedFormatter,
+        formatter_class=OrderedFormatter,
     )
 
 
@@ -497,7 +442,7 @@ def _add_issue_parsers(base_parsers, add_parser):
         ),
         help="open issues in student repos",
         parents=base_parsers,
-        formatter_class=_OrderedFormatter,
+        formatter_class=OrderedFormatter,
     )
     open_parser.add_argument(
         "-i",
@@ -518,7 +463,7 @@ def _add_issue_parsers(base_parsers, add_parser):
         ),
         help="close issues in student repos",
         parents=[base_parser, base_student_parser, _REPO_DISCOVERY_PARSER],
-        formatter_class=_OrderedFormatter,
+        formatter_class=OrderedFormatter,
     )
     close_parser.add_argument(
         "-r",
@@ -538,7 +483,7 @@ def _add_issue_parsers(base_parsers, add_parser):
             _REPO_DISCOVERY_PARSER,
             _HOOK_RESULTS_PARSER,
         ],
-        formatter_class=_OrderedFormatter,
+        formatter_class=OrderedFormatter,
     )
     list_parser.add_argument(
         "-r", "--title-regex", help="regex to filter issues by"
@@ -578,51 +523,6 @@ def _add_issue_parsers(base_parsers, add_parser):
         const=plug.IssueState.ALL,
     )
     list_parser.set_defaults(state=plug.IssueState.OPEN)
-
-
-class _OrderedFormatter(argparse.HelpFormatter):
-    """A formatter class for putting out the help section in a proper order.
-    All of the arguments that are configurable in the configuration file
-    should appear at the bottom (in arbitrary, but always the same, order).
-    Any other arguments should appear in the order they are added.
-
-    The internals of the formatter classes are technically not public,
-    so this class is "unsafe" when it comes to new versions of Python. It may
-    have to be disabled for future versions, but it works for 3.6, 3.7 and 3.8
-    at the time of writing. If this turns troublesome, it may be time to
-    switch to some other CLI library.
-    """
-
-    def add_arguments(self, actions):
-        """Order actions by the name  of the long argument, and then add them
-        as arguments.
-
-        The order is the following:
-
-        [ NON-CONFIGURABLE | CONFIGURABLE | DEBUG ]
-
-        Non-configurable arguments added without modification, which by
-        default is the order they are added to the parser. Configurable
-        arguments are added in the order defined by
-        :py:const:`constants.ORDERED_CONFIGURABLE_ARGS`. Finally, debug
-        commands (such as ``--traceback``) are added in arbitrary (but
-        consistent) order.
-        """
-        args_order = tuple(
-            "--" + name.replace("_", "-")
-            for name in constants.ORDERED_CONFIGURABLE_ARGS
-        ) + ("--traceback",)
-
-        def key(action):
-            if len(action.option_strings) < 2:
-                return -1
-            long_arg = action.option_strings[1]
-            if long_arg in args_order:
-                return args_order.index(long_arg)
-            return -1
-
-        actions = sorted(actions, key=key)
-        super().add_arguments(actions)
 
 
 def _add_extension_parsers(
@@ -712,7 +612,7 @@ def _add_extension_parsers(
             help=settings.help,
             description=settings.description,
             parents=parents,
-            formatter_class=_OrderedFormatter,
+            formatter_class=OrderedFormatter,
         )
 
         try:
@@ -800,7 +700,7 @@ def _create_base_parsers(config_file):
         "(defaults to the same value as `-o|--org-name`)"
     )
 
-    base_parser = _RepobeeParser(is_core_command=True, add_help=False)
+    base_parser = RepobeeParser(is_core_command=True, add_help=False)
     base_parser.add_argument(
         "-u",
         "--user",
@@ -838,7 +738,7 @@ def _create_base_parsers(config_file):
 
     _add_traceback_arg(base_parser)
     # base parser for when student lists are involved
-    base_student_parser = _RepobeeParser(is_core_command=True, add_help=False)
+    base_student_parser = RepobeeParser(is_core_command=True, add_help=False)
     students = base_student_parser.add_argument_group(
         "core"
     ).add_mutually_exclusive_group(required=not configured("students_file"))
@@ -858,7 +758,7 @@ def _create_base_parsers(config_file):
         nargs="+",
     )
 
-    template_org_parser = _RepobeeParser(is_core_command=True, add_help=False)
+    template_org_parser = RepobeeParser(is_core_command=True, add_help=False)
     template_org_parser.add_argument(
         "--to",
         "--template-org-name",

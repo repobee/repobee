@@ -34,6 +34,12 @@ preparser
 .. automodule:: _repobee.cli.preparser
     :members:
 
+argparse_ext
+------------
+
+.. automodule:: _repobee.cli.argparse_ext
+    :members:
+
 config
 ====================
 
