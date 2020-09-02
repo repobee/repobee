@@ -19,7 +19,7 @@ class TestConfigShow:
 
     def test_prints_token_when_asked(self, capsys):
         """It should be possible to show the token on deman."""
-        funcs.run_repobee("config show --show-secrets")
+        funcs.run_repobee("config show --secrets")
 
         outerr = capsys.readouterr()
         assert const.TOKEN in outerr.out
