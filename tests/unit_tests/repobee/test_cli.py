@@ -19,6 +19,7 @@ import _repobee.plugin
 import _repobee.ext.defaults.configwizard
 import repobee_plug.cli
 from _repobee.cli import mainparser
+from _repobee.cli import argparse_ext
 from _repobee import exception
 
 import constants
@@ -440,7 +441,7 @@ def test_help_calls_add_arguments(monkeypatch, action):
     removed or changed in future versions of Python.
     """
     called = False
-    add_arguments = mainparser._OrderedFormatter.add_arguments
+    add_arguments = argparse_ext.OrderedFormatter.add_arguments
 
     def wrapper(self, *args, **kwargs):
         nonlocal called
@@ -448,7 +449,7 @@ def test_help_calls_add_arguments(monkeypatch, action):
         add_arguments(self, *args, **kwargs)
 
     monkeypatch.setattr(
-        "_repobee.cli.mainparser._OrderedFormatter.add_arguments", wrapper
+        "_repobee.cli.argparse_ext.OrderedFormatter.add_arguments", wrapper
     )
 
     with pytest.raises(SystemExit) as exc_info:
