@@ -94,7 +94,8 @@ function install_repobee() {
 
 function find_python() {
     # Find an appropriate python executable
-    for python_exec in "python3.9" "python3.8" "python3.7" "python3.6" "python3" "python"; do
+    for exec_suffix in "3.9" "3.8" "3.7" "3.6" "3" ""; do
+        python_exec="python$exec_suffix"
         minor_version=$(get_minor_python3_version "$python_exec")
         if [ "$minor_version" -ge "$MIN_PYTHON_VERSION" ]; then
             echo "$python_exec"
