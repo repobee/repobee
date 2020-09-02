@@ -75,6 +75,7 @@ VALID_PARSED_ARGS = dict(
         )
         for team, master_name in itertools.product(STUDENTS, ASSIGNMENT_NAMES)
     ],
+    secrets=False,
 )
 
 

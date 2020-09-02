@@ -397,8 +397,13 @@ def migrate_repos(
     plug.echo("Done!")
 
 
-def show_config(config_file: pathlib.Path) -> None:
-    """Print the configuration file to the log."""
+def show_config(config_file: pathlib.Path, show_secrets: bool) -> None:
+    """Echo the config file.
+
+    Args:
+        config_file: The config file to echo.
+        show_secrets: Whether or not to show configured secrets.
+    """
     config.check_config_integrity(config_file)
 
     plug.echo(f"Found valid config file at {config_file}")
@@ -412,5 +417,8 @@ def show_config(config_file: pathlib.Path) -> None:
         + config_contents
         + "END CONFIG FILE".center(50, "-")
     )
+    sanitized_output = re.sub(
+        r"\s*token\s*=\s*.*", "token = xxxxxxxxxx", output
+    )
 
-    plug.echo(output)
+    plug.echo(output if show_secrets else sanitized_output)

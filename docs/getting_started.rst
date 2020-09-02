@@ -197,11 +197,12 @@ got everything set correctly.
     user = slarse
     org_name = repobee-demo
     template_org_name = template-repos
-    token = xxxxxxx
+    token = xxxxxxxxxx
     -----------------END CONFIG FILE------------------
 
-If you ever want to re-configure some of the options, simply run ``config
-wizard`` again.
+Note that the token is not shown. To show secrets in the configuration file,
+provide the ``--secrets`` option to ``config show``. If you ever want to
+re-configure some of the options, simply run ``config wizard`` again.
 
 Verifying the configuration (the ``verify`` action)
 ---------------------------------------------------
