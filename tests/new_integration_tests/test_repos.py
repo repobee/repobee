@@ -353,7 +353,7 @@ class TestClone:
             pylint_result, *_ = plug_results[repo_name]
             assert pylint_result.name == "pylint"
             assert pylint_result.status == plug.Status.SUCCESS
-            assert "src/main.py: OK" in pylint_result.msg
+            assert "src/main.py -- OK" in pylint_result.msg
 
     def test_pylint_plugin_with_python_syntax_error(
         self, platform_url, tmp_path_factory
@@ -379,7 +379,7 @@ class TestClone:
             pylint_result, *_ = plug_results[repo_name]
             assert pylint_result.name == "pylint"
             assert pylint_result.status == plug.Status.ERROR
-            assert "src/main.py: ERROR" in pylint_result.msg
+            assert "src/main.py -- ERROR" in pylint_result.msg
 
     def _setup_task_with_faulty_python_code(self, platform_url, workdir):
         python_task = workdir / "python-task"

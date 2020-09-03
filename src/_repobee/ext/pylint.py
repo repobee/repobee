@@ -17,7 +17,10 @@ files in a repo, and runs pylint on them, storing the results in files named
 
 import subprocess
 import pathlib
-from typing import Tuple, Union, Iterable
+import shlex
+import sys
+import dataclasses
+from typing import List
 
 
 import repobee_plug as plug
@@ -27,8 +30,15 @@ PLUGIN_DESCRIPTION = "Runs pylint on student repos after cloning"
 SECTION = "pylint"
 
 
+@dataclasses.dataclass(frozen=True)
+class _PylintResult:
+    path: pathlib.Path
+    output: str
+    errored: bool
+
+
 @plug.repobee_hook
-def post_clone(repo: plug.StudentRepo, api: plug.PlatformAPI):
+def post_clone(repo: plug.StudentRepo, api: plug.PlatformAPI) -> plug.Result:
     """Run pylint on all Python files in a repo.
 
     Args:
@@ -37,40 +47,62 @@ def post_clone(repo: plug.StudentRepo, api: plug.PlatformAPI):
     Returns:
         a plug.Result specifying the outcome.
     """
-    path = repo.path
-    python_files = list(path.rglob("*.py"))
-
-    if not python_files:
+    lint_results = _pylint(repo.path)
+    if not lint_results:
         msg = "no .py files found"
         return plug.Result(SECTION, plug.Status.WARNING, msg)
 
-    status, msg = _pylint(python_files)
-    return plug.Result(name=SECTION, status=status, msg=msg)
+    msg = "\n".join(
+        [
+            f"{res.path} -- {'ERROR' if res.errored else 'OK'}"
+            for res in lint_results
+        ],
+    )
+    has_errors = any(map(lambda res: res.errored != 0, lint_results))
+
+    return plug.Result(
+        name=SECTION,
+        msg=msg,
+        status=plug.Status.SUCCESS if not has_errors else plug.Status.ERROR,
+        data={
+            str(pylint_res.path): pylint_res.output
+            for pylint_res in lint_results
+        },
+    )
 
 
-def _pylint(python_files: Iterable[Union[pathlib.Path]]) -> Tuple[str, str]:
-    """Run ``pylint`` on all of the specified files.
+def _pylint(basedir: pathlib.Path) -> List[_PylintResult]:
+    """Run ``pylint`` on all python files in the specified directory.
 
     Args:
-        python_files: paths to ``.py`` files.
+        basedir: The base directory to search for files in.
     Returns:
-        (status, msg), where status is e.g. :py:const:`plugin.ERROR` and
-        the message describes the outcome in plain text.
+        A list of results from running pylint.
     """
+    python_files = list(basedir.rglob("*.py"))
+
     linted_files = []
     for py_file in python_files:
-        plug.echo("Running pylint on {!s}".format(py_file))
-        command = "pylint {!s}".format(py_file).split()
-        proc = subprocess.run(
+        command = shlex.split(f"pylint {py_file}")
+
+        full_lint = subprocess.run(
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
-
-        outfile = pathlib.Path(
-            "{}/{}.lint".format(py_file.parent, py_file.name)
+        error_lint = subprocess.run(
+            command + ["--errors-only"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
-        outfile.touch()
-        outfile.write_bytes(proc.stdout)
-        linted_files.append(str(py_file))
 
-    msg = "linted files: {}".format(", ".join(linted_files))
-    return plug.Result(name=SECTION, status=plug.Status.SUCCESS, msg=msg)
+        output = full_lint.stdout.decode(sys.getdefaultencoding())
+        errored = error_lint.returncode != 0
+
+        linted_files.append(
+            _PylintResult(
+                path=py_file.relative_to(basedir),
+                output=output,
+                errored=errored,
+            )
+        )
+
+    return linted_files
