@@ -108,6 +108,23 @@ class TestSetup:
             STUDENT_TEAMS, TEMPLATE_REPO_NAMES, funcs.get_repos(platform_url)
         )
 
+    def test_setup_multiple_template_repos_quietly(
+        self, platform_dir, platform_url, capsys
+    ):
+        """Run with `-q` and there should be no output."""
+        funcs.run_repobee(
+            f"repos setup -a {TEMPLATE_REPOS_ARG} "
+            f"--base-url {platform_url} "
+            "-q"
+        )
+
+        assert_student_repos_match_templates(
+            STUDENT_TEAMS, TEMPLATE_REPO_NAMES, funcs.get_repos(platform_url)
+        )
+        out_err = capsys.readouterr()
+        assert not out_err.out.strip()
+        assert not out_err.err.strip()
+
     def test_setup_multiple_template_repos_twice(
         self, platform_dir, platform_url
     ):
@@ -344,6 +361,77 @@ class TestClone:
             workdir=workdir,
         )
         return java_task
+
+    def test_clone_all_repos_quietly(
+        self, platform_url, with_student_repos, capsys
+    ):
+        """Try cloning repos with `-q` for the most quiet of experiences."""
+        with tempfile.TemporaryDirectory() as tmp:
+            workdir = pathlib.Path(tmp)
+            funcs.run_repobee(
+                f"repos clone -a {TEMPLATE_REPOS_ARG} "
+                f"--base-url {platform_url} "
+                "-q",
+                workdir=workdir,
+            )
+            assert_cloned_student_repos_match_templates(
+                STUDENT_TEAMS, TEMPLATE_REPO_NAMES, workdir
+            )
+
+        out_err = capsys.readouterr()
+        assert not out_err.out.strip()
+        assert not out_err.err.strip()
+
+    def test_clone_non_existing_repos_with_errors_silenced_is_quiet(
+        self, platform_url, capsys
+    ):
+        """Cloning repos that don't exist with `-qqq` should silence all
+        errors.
+        """
+        funcs.run_repobee(
+            f"repos clone -a {TEMPLATE_REPOS_ARG} --base-url {platform_url} "
+            "-qqq"
+        )
+
+        out_err = capsys.readouterr()
+        assert not out_err.out.strip()
+        assert not out_err.err.strip()
+
+    def test_clone_non_existing_repos_repos_with_warnings_silenced(
+        self, platform_url, capsys
+    ):
+        """Cloning repos that don't exist with `-qq` should still yield
+        errors.
+        """
+        funcs.run_repobee(
+            f"repos clone -a task-999 task-task --base-url {platform_url} -qq"
+        )
+
+        out_err = capsys.readouterr()
+        assert not out_err.out.strip()
+        assert "[ERROR]" in out_err.err.strip()
+
+    def test_clone_twice_with_warnings_silenced(
+        self, with_student_repos, platform_url, capsys, tmp_path_factory
+    ):
+        """Cloning the same repos twice with `-qq` should prevent warnings
+        about repos already existing from showing up.
+        """
+        workdir = tmp_path_factory.mktemp("workdir")
+        for _ in range(2):
+            funcs.run_repobee(
+                f"repos clone -a {TEMPLATE_REPOS_ARG} "
+                f"--base-url {platform_url} "
+                "-qq",
+                workdir=workdir,
+            )
+
+        assert_cloned_student_repos_match_templates(
+            STUDENT_TEAMS, TEMPLATE_REPO_NAMES, workdir
+        )
+        out_err = capsys.readouterr()
+        assert not out_err.out.strip()
+        assert not out_err.err.strip()
 
 
 class TestUpdate:
