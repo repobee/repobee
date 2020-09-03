@@ -8,6 +8,7 @@ import git
 import pytest
 
 import _repobee.ext.javac
+import _repobee.ext.pylint
 
 import repobee_plug as plug
 from repobee_testhelpers import localapi
@@ -340,6 +341,7 @@ class TestClone:
         plug_results = funcs.run_repobee(
             f"repos clone -a {java_task.name} --base-url {platform_url} ",
             plugins=[_repobee.ext.javac],
+            workdir=workdir,
         )
 
         assert plug_results
@@ -348,6 +350,79 @@ class TestClone:
             javac_result, *_ = plug_results[repo_name]
             assert javac_result.name == "javac"
             assert javac_result.status == plug.Status.SUCCESS
+
+    def test_pylint_plugin_happy_path(self, platform_url, tmp_path_factory):
+        workdir = tmp_path_factory.mktemp("workdir")
+        python_task = self._setup_task_with_python_code(platform_url, workdir)
+        repo_names = plug.generate_repo_names(
+            STUDENT_TEAMS, [python_task.name]
+        )
+
+        plug_results = funcs.run_repobee(
+            f"repos clone -a {python_task.name} --base-url {platform_url}",
+            plugins=[_repobee.ext.pylint],
+            workdir=workdir,
+        )
+
+        assert plug_results
+        assert len(plug_results) == len(repo_names)
+        for repo_name in repo_names:
+            pylint_result, *_ = plug_results[repo_name]
+            assert pylint_result.name == "pylint"
+            assert pylint_result.status == plug.Status.SUCCESS
+            assert "src/main.py -- OK" in pylint_result.msg
+
+    def test_pylint_plugin_with_python_syntax_error(
+        self, platform_url, tmp_path_factory
+    ):
+        """Test that the pylint plugin correctly reports errors."""
+        workdir = tmp_path_factory.mktemp("workdir")
+        python_task = self._setup_task_with_faulty_python_code(
+            platform_url, workdir
+        )
+        repo_names = plug.generate_repo_names(
+            STUDENT_TEAMS, [python_task.name]
+        )
+
+        plug_results = funcs.run_repobee(
+            f"repos clone -a {python_task.name} --base-url {platform_url}",
+            plugins=[_repobee.ext.pylint],
+            workdir=workdir,
+        )
+
+        assert plug_results
+        assert len(plug_results) == len(repo_names)
+        for repo_name in repo_names:
+            pylint_result, *_ = plug_results[repo_name]
+            assert pylint_result.name == "pylint"
+            assert pylint_result.status == plug.Status.ERROR
+            assert "src/main.py -- ERROR" in pylint_result.msg
+
+    def _setup_task_with_faulty_python_code(self, platform_url, workdir):
+        python_task = workdir / "python-task"
+        python_code = (
+            "print('Hello, world!'"  # note missing closing parenthesis
+        )
+        create_local_repo(python_task, [("src/main.py", python_code)])
+        funcs.run_repobee(
+            f"repos setup -a {python_task.name} "
+            f"--base-url {platform_url} "
+            "--allow-local-templates",
+            workdir=workdir,
+        )
+        return python_task
+
+    def _setup_task_with_python_code(self, platform_url, workdir):
+        python_task = workdir / "python-task"
+        python_code = "print('Hello, world!')"
+        create_local_repo(python_task, [("src/main.py", python_code)])
+        funcs.run_repobee(
+            f"repos setup -a {python_task.name} "
+            f"--base-url {platform_url} "
+            "--allow-local-templates",
+            workdir=workdir,
+        )
+        return python_task
 
     def _setup_task_with_java_code(
         self, platform_url, workdir
