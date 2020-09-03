@@ -1,4 +1,5 @@
 """IO functionality for plugins."""
+import sys
 
 from typing import Iterable
 from typing import TypeVar
@@ -42,4 +43,4 @@ def progress_bar(it: Iterable[T], *args, **kwargs) -> Iterable[T]:
         An iterable object that returns elements from ``it``, and also updates
         a progress bar in the terminal.
     """
-    return tqdm.tqdm(it, *args, **kwargs)
+    return tqdm.tqdm(it, *args, file=sys.stdout, **kwargs)

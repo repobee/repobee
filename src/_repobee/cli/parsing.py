@@ -362,9 +362,12 @@ def _filter_tokens():
     logging.setLogRecordFactory(record_factory)
 
 
-def setup_logging() -> None:
+def setup_logging(terminal_level: int = logging.WARNING) -> None:
     """Setup logging by creating the required log directory and setting up
     the logger.
+
+    Args:
+        terminal_level: The logging level to use for printing to stderr.
     """
     try:
         os.makedirs(str(constants.LOG_DIR), exist_ok=True)
@@ -377,11 +380,11 @@ def setup_logging() -> None:
         level=logging.DEBUG,
         outputs=(
             daiquiri.output.Stream(
-                sys.stdout,
+                sys.stderr,
                 formatter=daiquiri.formatter.ColorFormatter(
                     fmt="%(color)s[%(levelname)s] %(message)s%(color_stop)s"
                 ),
-                level=logging.WARNING,
+                level=terminal_level,
             ),
             daiquiri.output.File(
                 filename=str(

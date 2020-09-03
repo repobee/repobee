@@ -8,6 +8,8 @@
 
 import argparse
 import contextlib
+import io
+import logging
 import os
 import pathlib
 import sys
@@ -117,9 +119,11 @@ def run(
             _initialize_plugins(argparse.Namespace(no_plugins=False, plug=[]))
             plugin.register_plugins(wrapped_plugins)
             parsed_args, api = _parse_args(cmd, config_file)
-            return _repobee.cli.dispatch.dispatch_command(
-                parsed_args, api, config_file
-            )
+
+            with _set_output_verbosity(getattr(parsed_args, "quiet", 0)):
+                return _repobee.cli.dispatch.dispatch_command(
+                    parsed_args, api, config_file
+                )
         finally:
             plugin.unregister_all_plugins()
 
@@ -149,9 +153,11 @@ def main(sys_args: List[str], unload_plugins: bool = True):
         )
         traceback = parsed_args.traceback
         pre_init = False
-        _repobee.cli.dispatch.dispatch_command(
-            parsed_args, api, parsed_preparser_args.config_file
-        )
+
+        with _set_output_verbosity(getattr(parsed_args, "quiet", 0)):
+            _repobee.cli.dispatch.dispatch_command(
+                parsed_args, api, parsed_preparser_args.config_file
+            )
     except exception.PluginLoadError as exc:
         plug.log.error("{.__class__.__name__}: {}".format(exc, str(exc)))
         plug.log.error(
@@ -209,6 +215,41 @@ def _parse_args(args, config_file):
     )
     plug.manager.hook.handle_processed_args(args=parsed_args)
     return parsed_args, api
+
+
+@contextlib.contextmanager
+def _set_output_verbosity(quietness: int):
+    """Set the output verbosity, expecting `quietness` to be a non-negative
+    integer.
+
+    0 = do nothing, all output goes
+    1 = silence "regular" user feedback
+    2 = silence warnings
+    >=3 = silence everything
+    """
+    assert quietness >= 0
+    if quietness >= 1:
+        # silence "regular" user feedback by redirecting stdout
+        with contextlib.redirect_stdout(io.StringIO()):
+            if quietness == 2:
+                # additionally silence warnings
+                _repobee.cli.parsing.setup_logging(
+                    terminal_level=logging.ERROR
+                )
+                pass
+            elif quietness >= 3:
+                # additionally silence errors and warnings
+                _repobee.cli.parsing.setup_logging(
+                    terminal_level=logging.CRITICAL
+                )
+                pass
+
+            yield
+    else:
+        # this must be in an else, because
+        # 1) the generator must yeld
+        # 2) it must yield precisely once
+        yield
 
 
 if __name__ == "__main__":

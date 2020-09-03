@@ -342,7 +342,7 @@ def _add_config_parsers(base_parser, template_org_parser, add_parser):
         help="show secrets in the config file that are otherwise sanitized",
         action="store_true",
     )
-    _add_traceback_arg(show_config)
+    _add_debug_args(show_config)
 
     add_parser(
         plug.cli.CoreCommand.config.verify,
@@ -621,7 +621,7 @@ def _add_extension_parsers(
         )
 
         try:
-            _add_traceback_arg(ext_parser)
+            _add_debug_args(ext_parser)
         except argparse.ArgumentError:
             pass
 
@@ -741,7 +741,7 @@ def _create_base_parsers(config_file):
         default=default("token"),
     )
 
-    _add_traceback_arg(base_parser)
+    _add_debug_args(base_parser)
     # base parser for when student lists are involved
     base_student_parser = RepobeeParser(is_core_command=True, add_help=False)
     students = base_student_parser.add_argument_group(
@@ -775,11 +775,19 @@ def _create_base_parsers(config_file):
     return (base_parser, base_student_parser, template_org_parser)
 
 
-def _add_traceback_arg(parser):
+def _add_debug_args(parser):
     parser.add_argument(
         "--tb",
         "--traceback",
-        help="Show the full traceback of critical exceptions.",
+        help="show the full traceback of critical exceptions",
         action="store_true",
         dest="traceback",
+    )
+    parser.add_argument(
+        "-q",
+        "--quiet",
+        help="silence output (stacks up to 3 times: x1=only warnings "
+        "and errors, x2=only errors, x3=complete and utter silence)",
+        action="count",
+        default=0,
     )
