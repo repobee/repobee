@@ -6,12 +6,13 @@
 .. moduleauthor:: Simon Larsén
 """
 import asyncio
-import os
-import subprocess
 import collections
-import pathlib
 import enum
+import os
+import pathlib
 import shutil
+import subprocess
+import sys
 from typing import Iterable, List, Any, Callable, Tuple
 
 import more_itertools
@@ -296,7 +297,7 @@ async def _batch_execution_async(
             for arg in args_chunk
         ]
         for coro in tqdm.asyncio.tqdm_asyncio.as_completed(
-            tasks, desc=f"Progress batch {batch}"
+            tasks, desc=f"Progress batch {batch}", file=sys.stdout,
         ):
             try:
                 await coro
