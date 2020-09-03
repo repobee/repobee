@@ -9,26 +9,8 @@ matrix:
     python: 3.7
     dist: xenial
     sudo: true
-    env:
-      - SYSTEM_TEST=true
-  - os: linux
-    python: 3.6
-  - os: linux
-    python: 3.7
-    dist: xenial
-    sudo: true
-  - os: linux
-    python: 3.8
-  - os: osx
-    language: generic
-    sudo: true
-    before_cache:
-    - brew cleanup
-    cache:
-      directories:
-      - "$HOME/Library/Caches/Homebrew"
-install: ".travis/install.sh"
-script: ".travis/run.sh"
+install: pip install -e ".[TEST]"
+script: ".travis/system_test.sh"
 after_success:
 - ".travis/upload_coverage.sh"
 notifications:
