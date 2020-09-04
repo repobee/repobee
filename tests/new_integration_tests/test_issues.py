@@ -15,16 +15,6 @@ from repobee_testhelpers import const
 _TestIssue = collections.namedtuple("_TestIssue", "title body path")
 
 
-@pytest.fixture
-def issue():
-    title = "This is the title"
-    body = "And this\nis the body."
-    with tempfile.TemporaryDirectory() as tmpdir:
-        path = pathlib.Path(tmpdir) / "issue.md"
-        path.write_text(f"{title}\n{body}")
-        yield _TestIssue(title, body, path)
-
-
 class TestOpen:
     """Tests for the ``issues open`` command."""
 
@@ -61,49 +51,30 @@ class TestOpen:
 class TestClose:
     """Tests for the ``issues close`` command."""
 
-    def test_closes_correct_issues(
-        self, with_student_repos, platform_url, issue
-    ):
-        # arrange
-        open_issue = issue
+    def test_closes_correct_issues(self, with_student_repos, platform_url):
+        issue_to_close, open_issue = _open_predefined_issues(platform_url)
 
-        issue_to_close_title = "The title of an issue to close"
-        issue_to_close_body = "The body of an issue to close"
-        with tempfile.NamedTemporaryFile() as tmpfile:
-            path = pathlib.Path(tmpfile.name)
-            path.write_text(f"{issue_to_close_title}\n{issue_to_close_body}")
-            issue_to_close = _TestIssue(
-                issue_to_close_title, issue_to_close_body, path
-            )
+        funcs.run_repobee(
+            [
+                *f"issues close --base-url {platform_url} "
+                f"--assignments {const.TEMPLATE_REPOS_ARG} ".split(),
+                "--title-regex",
+                issue_to_close.title,
+            ]
+        )
 
-            for issue in [open_issue, issue_to_close]:
-                funcs.run_repobee(
-                    f"issues open "
-                    f"--assignments {const.TEMPLATE_REPOS_ARG} "
-                    f"--base-url {platform_url} "
-                    f"--issue {issue.path}"
-                )
-
-            # act
-            funcs.run_repobee(
-                [
-                    *f"issues close --base-url {platform_url} "
-                    f"--assignments {const.TEMPLATE_REPOS_ARG} ".split(),
-                    "--title-regex",
-                    issue_to_close_title,
-                ]
-            )
-
-        # assert
         iterations = 0
         for repo in funcs.get_repos(platform_url, const.TARGET_ORG_NAME):
             iterations += 1
             assert len(repo.issues) == 2
-            first, second = repo.issues
-            assert first.title == open_issue.title
-            assert first.state == plug.IssueState.OPEN
-            assert second.title == issue_to_close.title
-            assert second.state == plug.IssueState.CLOSED
+            actual_open_issue, *_ = [
+                i for i in repo.issues if i.state == plug.IssueState.OPEN
+            ]
+            actual_closed_issue, *_ = [
+                i for i in repo.issues if i.state == plug.IssueState.CLOSED
+            ]
+            assert actual_open_issue.title == open_issue.title
+            assert actual_closed_issue.title == issue_to_close.title
 
         assert iterations == len(const.STUDENT_TEAMS) * len(
             const.TEMPLATE_REPO_NAMES
@@ -146,6 +117,16 @@ class TestList:
         )
         for issue in issues:
             assert len(re.findall(issue.body, stdout)) == expected_num_bodies
+
+
+@pytest.fixture
+def issue():
+    title = "This is the title"
+    body = "And this\nis the body."
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = pathlib.Path(tmpdir) / "issue.md"
+        path.write_text(f"{title}\n{body}")
+        yield _TestIssue(title, body, path)
 
 
 def _open_predefined_issues(
