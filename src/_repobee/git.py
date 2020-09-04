@@ -28,6 +28,9 @@ CONCURRENT_TASKS = 20
 
 Push = collections.namedtuple("Push", ("local_path", "repo_url", "branch"))
 
+_EMPTY_REPO_ERROR = b"""fatal: Couldn't find remote ref HEAD
+fatal: the remote end hung up unexpectedly"""
+
 
 def _ensure_repo_dir_exists(repo_url: str, cwd: str) -> pathlib.Path:
     """Checks if a dir for the repo url exists, and if it does not, creates it.
@@ -103,7 +106,7 @@ async def _clone_async(repo_url: str, branch: str = "", cwd="."):
     """
     rc, stderr = await _pull_clone_async(repo_url, branch, cwd)
 
-    if rc != 0:
+    if rc != 0 and _EMPTY_REPO_ERROR not in stderr:
         raise exception.CloneFailedError(
             "Failed to clone {}".format(repo_url),
             returncode=rc,
