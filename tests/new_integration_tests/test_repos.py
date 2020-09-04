@@ -525,6 +525,7 @@ class TestClone:
         )
 
         # assert
+        assert not capsys.readouterr().err
         for student_team in STUDENT_TEAMS:
             repo = (
                 workdir
