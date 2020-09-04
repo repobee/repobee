@@ -417,8 +417,6 @@ def show_config(config_file: pathlib.Path, show_secrets: bool) -> None:
         + config_contents
         + "END CONFIG FILE".center(50, "-")
     )
-    sanitized_output = re.sub(
-        r"\s*token\s*=\s*.*", "token = xxxxxxxxxx", output
-    )
+    sanitized_output = re.sub(r"token\s*=\s*.*", "token = xxxxxxxxxx", output)
 
     plug.echo(output if show_secrets else sanitized_output)
