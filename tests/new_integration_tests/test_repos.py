@@ -16,6 +16,7 @@ from repobee_testhelpers import funcs
 from _repobee import exception
 
 
+from repobee_testhelpers import const
 from repobee_testhelpers.const import (
     STUDENT_TEAMS,
     TEMPLATE_REPO_NAMES,
@@ -567,6 +568,43 @@ class TestUpdate:
 
         # assert
         assert not funcs.get_repos(platform_url)
+
+    def test_opens_issue_when_push_fails(
+        self, platform_url, tmp_path, with_student_repos
+    ):
+        """Test running update when a student repo has been modified such that
+        the push is rejected. The specified issues should then be opened in
+        that student's repo, but not in any of the others.
+        """
+        # arrange
+        title = "You done goofed"
+        body = "You need to fix these things manually."
+        issue_path = tmp_path / "issue.md"
+        issue_path.write_text(f"{title}\n{body}", encoding="utf8")
+
+        # modify a student repo
+        repo_path = tmp_path / "repo"
+        selected_repo = funcs.get_repos(platform_url)[0]
+        repo = git.Repo.clone_from(selected_repo.path, to_path=repo_path)
+        repo.git.commit("--amend", "-m", "Best commit")
+        repo.git.push("--force")
+
+        # act
+        funcs.run_repobee(
+            f"repos update -a {const.TEMPLATE_REPOS_ARG} "
+            f"--base-url {platform_url} "
+            f"--issue {issue_path}"
+        )
+
+        # assert
+        for platform_repo in funcs.get_repos(platform_url):
+            if platform_repo.name == selected_repo.name:
+                assert len(platform_repo.issues) == 1
+                issue = platform_repo.issues[0]
+                assert issue.title == title
+                assert issue.body == body
+            else:
+                assert not platform_repo.issues
 
 
 class TestMigrate:
