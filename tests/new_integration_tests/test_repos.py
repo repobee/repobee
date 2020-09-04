@@ -508,6 +508,46 @@ class TestClone:
         assert not out_err.out.strip()
         assert not out_err.err.strip()
 
+    def test_empty_student_repos_dont_cause_errors(
+        self, with_student_repos, platform_url, capsys, tmp_path_factory
+    ):
+        """No error messages should be displayed when empty repos are
+        cloned, and the empty repos should be on disk.
+        """
+        # arrange
+        workdir = tmp_path_factory.mktemp("workdir")
+        task_name = self._setup_empty_task(platform_url)
+
+        # act
+        funcs.run_repobee(
+            f"repos clone -a {task_name} --base-url {platform_url} ",
+            workdir=workdir,
+        )
+
+        # assert
+        for student_team in STUDENT_TEAMS:
+            repo = (
+                workdir
+                / student_team.name
+                / plug.generate_repo_name(student_team.name, task_name)
+            )
+            assert repo.is_dir()
+            assert [f.name for f in repo.iterdir()] == [".git"]
+
+    def _setup_empty_task(self, platform_url: str) -> str:
+        task_name = "empty-task"
+        api = funcs.get_api(platform_url)
+        for team in api.get_teams([t.name for t in STUDENT_TEAMS]):
+            repo_name = plug.generate_repo_name(team.name, task_name)
+            api.create_repo(
+                name=repo_name,
+                description="An empty task",
+                private=True,
+                team=team,
+            )
+
+        return task_name
+
 
 class TestUpdate:
     """Tests for the ``repos update`` command."""
