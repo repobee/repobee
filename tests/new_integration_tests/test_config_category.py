@@ -13,7 +13,7 @@ class TestConfigShow:
         funcs.run_repobee("config show")
 
         outerr = capsys.readouterr()
-        assert "token = xxxxxxxxxx\n" in outerr.out
+        assert "\ntoken = xxxxxxxxxx\n" in outerr.out
         assert const.TOKEN not in outerr.out
         assert const.TOKEN not in outerr.err
 
