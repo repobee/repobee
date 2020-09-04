@@ -3,6 +3,10 @@ import pathlib
 import pytest
 import tempfile
 import collections
+import itertools
+import re
+
+from typing import List, Tuple
 
 import repobee_plug as plug
 from repobee_testhelpers import funcs
@@ -103,4 +107,86 @@ class TestClose:
 
         assert iterations == len(const.STUDENT_TEAMS) * len(
             const.TEMPLATE_REPO_NAMES
+        )
+
+
+class TestList:
+    """Tests for the ``issues list`` command."""
+
+    def test_lists_open_issues_by_default(
+        self, platform_url, with_student_repos, capsys
+    ):
+        criteria_issue, notice_issue = _open_predefined_issues(platform_url)
+
+        funcs.run_repobee(
+            f"issues list -a {const.TEMPLATE_REPOS_ARG} "
+            f"--base-url {platform_url}"
+        )
+
+        stdout = capsys.readouterr().out
+        for student_team, test_issue in itertools.product(
+            const.STUDENT_TEAMS, [criteria_issue, notice_issue]
+        ):
+            assert re.search(
+                fr"{student_team.name}.*{test_issue.title}", stdout
+            )
+
+    def test_show_body(self, platform_url, with_student_repos, capsys):
+        issues = _open_predefined_issues(platform_url)
+
+        funcs.run_repobee(
+            f"issues list -a {const.TEMPLATE_REPOS_ARG} "
+            f"--base-url {platform_url} "
+            "--show-body",
+        )
+
+        stdout = capsys.readouterr().out
+        expected_num_bodies = len(const.STUDENT_TEAMS) * len(
+            const.TEMPLATE_REPO_NAMES
+        )
+        for issue in issues:
+            assert len(re.findall(issue.body, stdout)) == expected_num_bodies
+
+
+def _open_predefined_issues(
+    platform_url: str,
+) -> Tuple[_TestIssue, _TestIssue]:
+    """Open two pre-defined issues in all student repos. Note that this only
+    works if the student repos actually exist before invoking this funciton.
+
+    IMPORTANT: The paths are actually invalid, the directory is deleted before
+    the function returns.
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        issues_dir = pathlib.Path(tmpdir)
+        criteria_issue = _TestIssue(
+            title="Grading criteria",
+            body="You must do very well!",
+            path=issues_dir / "grading.md",
+        )
+        notice_issue = _TestIssue(
+            title="Important notice",
+            body="The grading criteria is fake!",
+            path=issues_dir / "notice.md",
+        )
+        _open_issues_in_student_repos(
+            [criteria_issue, notice_issue], platform_url
+        )
+
+    return criteria_issue, notice_issue
+
+
+def _open_issues_in_student_repos(
+    test_issues: List[_TestIssue], platform_url: str
+):
+    """Open issues on the platform in all student repos."""
+    for issue in test_issues:
+        issue.path.parent.mkdir(parents=True, exist_ok=True)
+        issue.path.write_text(f"{issue.title}\n{issue.body}", encoding="utf8")
+        funcs.run_repobee(
+            f"issues open "
+            f"--assignments {const.TEMPLATE_REPOS_ARG} "
+            f"--base-url {platform_url} "
+            f"--issue {issue.path}",
+            workdir=issue.path.parent,
         )
