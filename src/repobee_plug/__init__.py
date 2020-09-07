@@ -2,6 +2,8 @@ import pluggy  # type: ignore
 
 from repobee_plug.__version import __version__  # noqa: F401
 
+from repobee_plug import types
+
 # Plugin stuff
 from repobee_plug._pluginmeta import Plugin
 from repobee_plug.hook import hookimpl as repobee_hook
@@ -118,4 +120,5 @@ __all__ = [
     "cli",
     "fileutils",
     "log",
+    "types",
 ]

@@ -75,7 +75,7 @@ def setup_student_repos(
         ]
 
         plug.log.info("Cloning into master repos ...")
-        _clone_all(template_repos, cwd=tmpdir, api=api)
+        _clone_all(template_repos, cwd=workdir, api=api)
         hook_results = plugin.execute_setup_tasks(
             template_repos, api, cwd=pathlib.Path(tmpdir)
         )
@@ -163,7 +163,9 @@ def _create_or_fetch_repo(
 
 
 def _clone_all(
-    repos: plug.TemplateRepo, cwd: pathlib.Path, api: plug.PlatformAPI
+    repos: Iterable[plug.TemplateRepo],
+    cwd: pathlib.Path,
+    api: plug.PlatformAPI,
 ):
     """Attempts to clone all repos sequentially.
 
@@ -195,8 +197,8 @@ def _try_insert_auth(
 
 
 def update_student_repos(
-    template_repo_urls: Iterable[str],
-    teams: Iterable[plug.StudentTeam],
+    template_repo_urls: plug.types.SizedIterable[str],
+    teams: plug.types.SizedIterable[plug.StudentTeam],
     api: plug.PlatformAPI,
     issue: Optional[plug.Issue] = None,
 ) -> Mapping[str, List[plug.Result]]:
@@ -225,7 +227,7 @@ def update_student_repos(
         ]
 
         plug.log.info("Cloning into master repos ...")
-        _clone_all(template_repos, cwd=tmpdir, api=api)
+        _clone_all(template_repos, cwd=workdir, api=api)
         hook_results = plugin.execute_setup_tasks(
             template_repos, api, cwd=pathlib.Path(tmpdir)
         )
@@ -274,7 +276,7 @@ def _create_update_push_tuples(
         )
         urls_to_templates[repo_url] = template_repo
 
-    for repo in api.get_repos(urls_to_templates.keys()):
+    for repo in api.get_repos(list(urls_to_templates.keys())):
         template = urls_to_templates[repo.url]
         branch = git.active_branch(template.path)
         yield git.Push(template.path, api.insert_auth(repo.url), branch)
@@ -295,7 +297,7 @@ def _open_issue_by_urls(
     for repo in repos:
         issue = api.create_issue(issue.title, issue.body, repo)
         msg = f"Opened issue {repo.name}/#{issue.number}-'{issue.title}'"
-        repos.write(msg)
+        repos.write(msg)  # type: ignore
         plug.log.info(msg)
 
 
@@ -338,7 +340,7 @@ def _clone_repos_no_check(
     Return a list of cloned and previously existing repos.
     """
     cur_dir = pathlib.Path(".").resolve()
-    pathed_repos = [
+    pathed_repos: List[plug.StudentRepo] = [
         repo.with_path(cur_dir / repo.team.name / repo.name) for repo in repos
     ]
 
@@ -347,7 +349,7 @@ def _clone_repos_no_check(
 
 
 def migrate_repos(
-    template_repo_urls: Iterable[str], api: plug.PlatformAPI
+    template_repo_urls: plug.types.SizedIterable[str], api: plug.PlatformAPI
 ) -> None:
     """Migrate a repository from an arbitrary URL to the target organization.
     The new repository is added to the master_repos team, which is created if
