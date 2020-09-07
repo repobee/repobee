@@ -151,7 +151,7 @@ class GitLabAPI(plug.PlatformAPI):
     def assign_members(
         self,
         team: plug.Team,
-        members: List[str],
+        members: Iterable[str],
         permission: plug.TeamPermission = plug.TeamPermission.PUSH,
     ) -> None:
         """See :py:meth:`repobee_plug.PlatformAPI.assign_members`."""

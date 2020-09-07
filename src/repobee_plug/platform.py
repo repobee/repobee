@@ -204,7 +204,7 @@ class _APISpec:
     def assign_members(
         self,
         team: Team,
-        members: List[str],
+        members: Iterable[str],
         permission: TeamPermission = TeamPermission.PUSH,
     ) -> None:
         """Assign members to a team.
