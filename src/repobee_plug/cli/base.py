@@ -4,7 +4,7 @@ import itertools
 
 from typing import Iterator
 
-from .categorization import Category, Action
+from repobee_plug.cli.categorization import Category, Action
 from repobee_plug._immutable import ImmutableMixin
 
 
