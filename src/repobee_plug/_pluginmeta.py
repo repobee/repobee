@@ -105,7 +105,7 @@ def _process_cli_plugin(bases, attrdict) -> dict:
         def get_configurable_args(self) -> ConfigurableArguments:
             return ConfigurableArguments(
                 config_section_name=self.__settings__.config_section_name
-                or self.plugin_name,
+                or self.__plugin_name__,
                 argnames=list(
                     _get_configurable_arguments(self.__class__.__dict__)
                 ),
@@ -154,11 +154,11 @@ def _attach_options(self, config, parser):
         parser
         if not isinstance(self, cli.CommandExtension)
         else parser.add_argument_group(
-            title=self.plugin_name,
-            description=f"Arguments for the {self.plugin_name} plugin",
+            title=self.__plugin_name__,
+            description=f"Arguments for the {self.__plugin_name__} plugin",
         )
     )
-    config_name = self.__settings__.config_section_name or self.plugin_name
+    config_name = self.__settings__.config_section_name or self.__plugin_name__
     config_section = dict(config[config_name]) if config_name in config else {}
 
     opts = _extract_cli_options(self.__class__.__dict__)
@@ -169,7 +169,7 @@ def _attach_options(self, config, parser):
             hasattr(opt, "configurable") and opt.configurable
         ):
             raise exceptions.PlugError(
-                f"Plugin '{self.plugin_name}' does not allow "
+                f"Plugin '{self.__plugin_name__}' does not allow "
                 f"'{name}' to be configured"
             )
         _add_option(name, opt, configured_value, parser)
@@ -284,4 +284,4 @@ class Plugin(metaclass=_PluginMeta):
         Args:
             plugin_name: Name of the plugin that this instance belongs to.
         """
-        self.plugin_name = plugin_name
+        self.__plugin_name__ = plugin_name

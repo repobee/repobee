@@ -352,7 +352,7 @@ class TestDeclarativeExtensionCommand:
 
             def command(self):
                 return plug.Result(
-                    name=self.plugin_name,
+                    name=self.__plugin_name__,
                     msg="Nice!",
                     status=plug.Status.SUCCESS,
                     data={"name": self.name, "age": self.age},

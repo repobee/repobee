@@ -8,10 +8,10 @@ tooling.
 import pathlib
 import textwrap
 
-import typing as ty
+from typing import Tuple, List, Any, Dict
 
 import tabulate
-import bullet
+import bullet  # type: ignore
 
 import repobee_plug as plug
 
@@ -98,7 +98,7 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
 
 
 def _install_local_plugin(plugin_path: pathlib.Path, installed_plugins: dict):
-    install_info = dict(version="local", path=str(plugin_path))
+    install_info: Dict[str, Any] = dict(version="local", path=str(plugin_path))
 
     if plugin_path.is_dir():
         if not plugin_path.name.startswith("repobee-"):
@@ -124,7 +124,7 @@ def _install_local_plugin(plugin_path: pathlib.Path, installed_plugins: dict):
     plug.echo(f"Installed {ident}")
 
 
-def _select_plugin(plugins: dict) -> ty.Tuple[str, str]:
+def _select_plugin(plugins: dict) -> Tuple[str, str]:
     """Interactively select a plugin."""
     selected_plugin_name = bullet.Bullet(
         prompt="Select a plugin to install:", choices=list(plugins.keys())
@@ -245,7 +245,7 @@ def _wrap_cell(text: str, width: int = 40) -> str:
 
 
 def _list_all_plugins(
-    plugins: dict, installed_plugins: dict, active_plugins: ty.List[str]
+    plugins: dict, installed_plugins: dict, active_plugins: List[str]
 ) -> None:
     headers = [
         "Name",
