@@ -59,6 +59,12 @@ serialize
 .. automodule:: repobee_plug.serialize
     :members:
 
+base
+====
+
+.. automodule:: repobee_plug.cli.base
+    :members:
+
 cli
 ===
 

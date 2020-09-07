@@ -4,7 +4,7 @@ import collections
 from typing import Optional, Union, List
 
 from repobee_plug.cli.categorization import Category, Action
-from repobee_plug.cli._corecommand import BaseParser
+from repobee_plug.cli.base import BaseParser
 
 
 CommandSettings = collections.namedtuple(
