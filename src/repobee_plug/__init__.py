@@ -26,7 +26,7 @@ from repobee_plug._exthooks import ConfigHook as _config_hook
 
 # Helpers
 from repobee_plug.deprecation import deprecate, deprecated_hooks, Deprecation
-from repobee_plug._serialize import (
+from repobee_plug.serialize import (
     json_to_result_mapping,
     result_mapping_to_json,
 )

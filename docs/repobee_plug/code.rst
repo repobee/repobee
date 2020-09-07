@@ -53,6 +53,12 @@ deprecation
 .. automodule:: repobee_plug.deprecation
     :members:
 
+serialize
+=========
+
+.. automodule:: repobee_plug.serialize
+    :members:
+
 cli
 ===
 
