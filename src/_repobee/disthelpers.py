@@ -23,6 +23,7 @@ class DependencyResolutionError(plug.PlugError):
 
 def get_installed_plugins_path() -> pathlib.Path:
     """Return the path to the installed_plugins.json file."""
+    assert distinfo.INSTALL_DIR
     return distinfo.INSTALL_DIR / "installed_plugins.json"
 
 
@@ -87,6 +88,7 @@ def write_active_plugins(
 
 def get_pip_path() -> pathlib.Path:
     """Return the path to the installed pip binary."""
+    assert distinfo.INSTALL_DIR
     return distinfo.INSTALL_DIR / "env" / "bin" / "pip"
 
 
