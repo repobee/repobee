@@ -316,7 +316,7 @@ class TestDeclarativeExtensionCommand:
             )
 
         assert (
-            f"{plug.cli.ArgumentType.POSITIONAL.value} not allowed in mutex"
+            f"{plug.cli._ArgumentType.POSITIONAL.value} not allowed in mutex"
             in str(exc_info.value)
         )
 

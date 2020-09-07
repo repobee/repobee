@@ -8,7 +8,7 @@ from repobee_plug.cli.args import (
     positional,
     flag,
     mutually_exclusive_group,
-    ArgumentType,
+    _ArgumentType,
     is_cli_arg,
 )
 from repobee_plug.cli.commandmarkers import Command, CommandExtension
@@ -18,7 +18,7 @@ from repobee_plug.cli._corecommand import _CoreCommand
 CoreCommand = _CoreCommand()
 
 __all__ = [
-    "ArgumentType",
+    "_ArgumentType",
     "option",
     "positional",
     "flag",

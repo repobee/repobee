@@ -9,7 +9,7 @@ from repobee_plug import _exthooks
 from repobee_plug import _containers
 from repobee_plug import cli
 
-from repobee_plug.cli.args import Option, MutuallyExclusiveGroup
+from repobee_plug.cli.args import _Option, _MutuallyExclusiveGroup
 
 _HOOK_METHODS = {
     key: value
@@ -128,7 +128,7 @@ def _get_configurable_arguments(attrdict: dict) -> List[str]:
 
 def _extract_cli_options(
     attrdict,
-) -> List[Tuple[str, Union[Option, MutuallyExclusiveGroup]]]:
+) -> List[Tuple[str, Union[_Option, _MutuallyExclusiveGroup]]]:
     """Returns any members that are CLI options as a list of tuples on the form
     (member_name, option).
     """
@@ -141,7 +141,7 @@ def _extract_cli_options(
 
 def _extract_flat_cli_options(
     attrdict,
-) -> Iterator[Tuple[str, Union[Option, MutuallyExclusiveGroup]]]:
+) -> Iterator[Tuple[str, Union[_Option, _MutuallyExclusiveGroup]]]:
     """Like _extract_cli_options, but flattens nested options such as mutex
     groups.
     """
@@ -199,7 +199,7 @@ def _flatten_arg(arg_tup):
     name, arg = arg_tup
     assert cli.is_cli_arg(arg)
 
-    if isinstance(arg, MutuallyExclusiveGroup):
+    if isinstance(arg, _MutuallyExclusiveGroup):
         return itertools.chain.from_iterable(map(_flatten_arg, arg.options))
     else:
         return [arg_tup]
@@ -207,12 +207,12 @@ def _flatten_arg(arg_tup):
 
 def _add_option(
     name: str,
-    opt: Union[Option, MutuallyExclusiveGroup],
+    opt: Union[_Option, _MutuallyExclusiveGroup],
     configured_value: str,
     parser: Union[argparse.ArgumentParser, argparse._MutuallyExclusiveGroup],
 ) -> None:
     """Add an option to the parser based on the cli option."""
-    if isinstance(opt, MutuallyExclusiveGroup):
+    if isinstance(opt, _MutuallyExclusiveGroup):
         mutex_parser = parser.add_mutually_exclusive_group(
             required=opt.required
         )
@@ -222,7 +222,7 @@ def _add_option(
             )
         return
 
-    assert isinstance(opt, Option)
+    assert isinstance(opt, _Option)
     args = []
     kwargs = dict(opt.argparse_kwargs or {})
 
@@ -231,7 +231,7 @@ def _add_option(
 
     kwargs["help"] = opt.help or ""
 
-    if opt.argument_type in [cli.ArgumentType.OPTION, cli.ArgumentType.FLAG]:
+    if opt.argument_type in [cli._ArgumentType.OPTION, cli._ArgumentType.FLAG]:
         if opt.short_name:
             args.append(opt.short_name)
 
@@ -241,12 +241,12 @@ def _add_option(
             args.append(f"--{name.replace('_', '-')}")
 
         kwargs["dest"] = name
-        if not opt.argument_type == cli.ArgumentType.FLAG:
+        if not opt.argument_type == cli._ArgumentType.FLAG:
             # configured value takes precedence over default
             kwargs["default"] = configured_value or opt.default
         # required opts become not required if configured
         kwargs["required"] = not configured_value and opt.required
-    elif opt.argument_type == cli.ArgumentType.POSITIONAL:
+    elif opt.argument_type == cli._ArgumentType.POSITIONAL:
         args.append(name)
 
     parser.add_argument(*args, **kwargs)

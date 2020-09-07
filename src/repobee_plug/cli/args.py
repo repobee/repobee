@@ -4,7 +4,7 @@ import enum
 from typing import Optional, Any, Callable, Mapping, List, Tuple
 
 
-class ArgumentType(enum.Enum):
+class _ArgumentType(enum.Enum):
     OPTION = "option"
     POSITIONAL = "positional"
     MUTEX_GROUP = "mutually_exclusive_group"
@@ -12,7 +12,7 @@ class ArgumentType(enum.Enum):
 
 
 @dataclasses.dataclass(frozen=True)
-class Option:
+class _Option:
     short_name: Optional[str] = None
     long_name: Optional[str] = None
     configurable: Optional[bool] = None
@@ -20,21 +20,21 @@ class Option:
     converter: Optional[Callable[[str], Any]] = None
     required: Optional[bool] = None
     default: Optional[Any] = None
-    argument_type: ArgumentType = ArgumentType.OPTION
+    argument_type: _ArgumentType = _ArgumentType.OPTION
     argparse_kwargs: Optional[Mapping[str, Any]] = None
 
 
 @dataclasses.dataclass(frozen=True)
-class MutuallyExclusiveGroup:
-    options: List[Tuple[str, Option]]
+class _MutuallyExclusiveGroup:
+    options: List[Tuple[str, _Option]]
     required: bool = False
 
     def __post_init__(self):
         for name, opt in self.options:
             self._check_arg_type(name, opt)
 
-    def _check_arg_type(self, name: str, opt: Option):
-        allowed_types = (ArgumentType.OPTION, ArgumentType.FLAG)
+    def _check_arg_type(self, name: str, opt: _Option):
+        allowed_types = (_ArgumentType.OPTION, _ArgumentType.FLAG)
 
         if opt.argument_type not in allowed_types:
             raise ValueError(
@@ -50,7 +50,7 @@ def is_cli_arg(obj: Any) -> bool:
     Returns:
         True if the object is an instance of a CLI argument class.
     """
-    return isinstance(obj, (Option, MutuallyExclusiveGroup))
+    return isinstance(obj, (_Option, _MutuallyExclusiveGroup))
 
 
 def option(
@@ -62,7 +62,7 @@ def option(
     configurable: bool = False,
     converter: Optional[Callable[[str], Any]] = None,
     argparse_kwargs: Optional[Mapping[str, Any]] = None,
-) -> Option:
+) -> _Option:
     """Create an option for a :py:class:`Command` or a
     :py:class:`CommandExtension`.
 
@@ -111,7 +111,7 @@ def option(
         line arguments.
     """
 
-    return Option(
+    return _Option(
         short_name=short_name,
         long_name=long_name,
         configurable=configurable,
@@ -119,7 +119,7 @@ def option(
         converter=converter,
         required=required,
         default=default,
-        argument_type=ArgumentType.OPTION,
+        argument_type=_ArgumentType.OPTION,
         argparse_kwargs=argparse_kwargs or {},
     )
 
@@ -128,7 +128,7 @@ def positional(
     help: str = "",
     converter: Optional[Callable[[str], Any]] = None,
     argparse_kwargs: Optional[Mapping[str, Any]] = None,
-) -> Option:
+) -> _Option:
     """Create a positional argument for a :py:class:`Command` or a
     :py:class:`CommandExtension`.
 
@@ -168,11 +168,11 @@ def positional(
         A CLI argument wrapper used internally by RepoBee to create command
         line argument.
     """
-    return Option(
+    return _Option(
         help=help,
         converter=converter,
         argparse_kwargs=argparse_kwargs or {},
-        argument_type=ArgumentType.POSITIONAL,
+        argument_type=_ArgumentType.POSITIONAL,
     )
 
 
@@ -182,7 +182,7 @@ def flag(
     help: str = "",
     const: Any = True,
     default: Optional[Any] = None,
-) -> Option:
+) -> _Option:
     """Create a command line flag for a :py:class:`Command` or a
     :py:class`CommandExtension`. This is simply a convenience wrapper around
     :py:func:`option`.
@@ -244,14 +244,14 @@ def flag(
     resolved_default = (
         not const if default is None and isinstance(const, bool) else default
     )
-    return Option(
+    return _Option(
         short_name=short_name,
         long_name=long_name,
         help=help,
         argparse_kwargs=dict(
             action="store_const", const=const, default=resolved_default
         ),
-        argument_type=ArgumentType.FLAG,
+        argument_type=_ArgumentType.FLAG,
     )
 
 
@@ -262,4 +262,4 @@ def mutually_exclusive_group(*, __required__: bool = False, **kwargs):
         kwargs: Keyword arguments on the form ``name=plug.cli.option()``.
     """
     options = [(key, value) for key, value in kwargs.items()]
-    return MutuallyExclusiveGroup(required=__required__, options=options)
+    return _MutuallyExclusiveGroup(required=__required__, options=options)
