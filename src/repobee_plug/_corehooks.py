@@ -11,19 +11,17 @@ to allow for this dynamic override.
 
 from typing import List, Tuple
 
-from repobee_plug import localreps
-from repobee_plug import _containers
-from repobee_plug._containers import hookspec
+from repobee_plug import localreps, hook, reviews
 
 
 class PeerReviewHook:
     """Hook functions related to allocating peer reviews."""
 
-    @hookspec(firstresult=True)
+    @hook.hookspec(firstresult=True)
     def generate_review_allocations(
         self, teams: List[localreps.StudentTeam], num_reviews: int
-    ) -> List[_containers.ReviewAllocation]:
-        """Generate :py:class:`~repobee_plug.containers.ReviewAllocation`
+    ) -> List[reviews.ReviewAllocation]:
+        """Generate :py:class:`~repobee_plug.ReviewAllocation`
         tuples from the provided teams, given that this concerns reviews for a
         single master repo.
 
@@ -39,7 +37,7 @@ class PeerReviewHook:
         This can be scaled to however many teams you would like to merge. As a
         practical example, if teams ``team_a`` and ``team_b`` are to review
         ``team_c``, then the following
-        :py:class:`~repobee_plug.containers.ReviewAllocation` tuple, here
+        :py:class:`~repobee_plug.ReviewAllocation` tuple, here
         called ``allocation``, should be contained in the returned list.
 
         .. code-block:: python
@@ -47,7 +45,7 @@ class PeerReviewHook:
             review_team = plug.StudentTeam(
                 members=team_a.members + team_b.members
             )
-            allocation = containers.ReviewAllocation(
+            allocation = plug.ReviewAllocation(
                 review_team=review_team,
                 reviewed_team=team_c,
             )
@@ -70,7 +68,7 @@ class PeerReviewHook:
 class APIHook:
     """Hooks related to platform APIs."""
 
-    @hookspec(firstresult=True)
+    @hook.hookspec(firstresult=True)
     def get_api_class(self):
         """Return an API platform class. Must be a subclass of apimeta.API.
 
@@ -78,7 +76,7 @@ class APIHook:
             An apimeta.API subclass.
         """
 
-    @hookspec(firstresult=True)
+    @hook.hookspec(firstresult=True)
     def api_init_requires(self) -> Tuple[str]:
         """Return which of the arguments to apimeta._APISpec.__init__ that the
         given API requires. For example, the GitHubAPI requires all, but the

@@ -41,6 +41,12 @@ name
 .. automodule:: repobee_plug.name
     :members:
 
+reviews
+=======
+
+.. automodule:: repobee_plug.reviews
+    :members:
+
 cli
 ===
 

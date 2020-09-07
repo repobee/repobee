@@ -4,20 +4,18 @@ from repobee_plug.__version import __version__  # noqa: F401
 
 # Plugin stuff
 from repobee_plug._pluginmeta import Plugin
-from repobee_plug._containers import hookimpl as repobee_hook
+from repobee_plug.hook import hookimpl as repobee_hook
 from repobee_plug import cli
 from repobee_plug.cli.io import echo
+from repobee_plug.cli import BaseParser
 from repobee_plug import log
+from repobee_plug.cli.args import ConfigurableArguments
 
-# Containers
-from repobee_plug._containers import Review
-from repobee_plug._containers import Result
-from repobee_plug._containers import Status
-from repobee_plug._containers import ReviewAllocation
-from repobee_plug._containers import BaseParser
-from repobee_plug._containers import Deprecation
-from repobee_plug._containers import HookResult
-from repobee_plug._containers import ConfigurableArguments
+# Hook stuff
+from repobee_plug.hook import Status, Result
+
+# Review stuff
+from repobee_plug.reviews import Review, ReviewAllocation
 
 # Hook functions
 from repobee_plug._corehooks import PeerReviewHook as _peer_hook
@@ -27,7 +25,7 @@ from repobee_plug._exthooks import SetupHook as _setup_hook
 from repobee_plug._exthooks import ConfigHook as _config_hook
 
 # Helpers
-from repobee_plug._deprecation import deprecate, deprecated_hooks
+from repobee_plug._deprecation import deprecate, deprecated_hooks, Deprecation
 from repobee_plug._serialize import (
     json_to_result_mapping,
     result_mapping_to_json,
@@ -80,7 +78,6 @@ __all__ = [
     "echo",
     # Containers
     "Result",
-    "HookResult",
     "Status",
     "ReviewAllocation",
     "Review",

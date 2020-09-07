@@ -6,8 +6,9 @@ from typing import List, Tuple, Union, Iterator
 from repobee_plug import exceptions
 from repobee_plug import _corehooks
 from repobee_plug import _exthooks
-from repobee_plug import _containers
 from repobee_plug import cli
+from repobee_plug.cli.args import ConfigurableArguments
+from repobee_plug.hook import hookimpl
 
 from repobee_plug.cli.args import Option, MutuallyExclusiveGroup
 
@@ -47,8 +48,7 @@ class _PluginMeta(type):
         methods = cls._extract_public_methods(attrdict)
         cls._check_names(methods)
         hooked_methods = {
-            name: _containers.hookimpl(method)
-            for name, method in methods.items()
+            name: hookimpl(method) for name, method in methods.items()
         }
         attrdict.update(hooked_methods)
 
@@ -102,8 +102,8 @@ def _process_cli_plugin(bases, attrdict) -> dict:
     configurable_argnames = list(_get_configurable_arguments(attrdict))
     if configurable_argnames:
 
-        def get_configurable_args(self) -> _containers.ConfigurableArguments:
-            return _containers.ConfigurableArguments(
+        def get_configurable_args(self) -> ConfigurableArguments:
+            return ConfigurableArguments(
                 config_section_name=self.__settings__.config_section_name
                 or self.plugin_name,
                 argnames=list(
