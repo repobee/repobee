@@ -139,6 +139,12 @@ def option(
         $ repobee -p ext.py hello --name Alice --age 22
         Hello, my name is Alice and I am 22 years old
 
+    .. danger::
+
+        This function returns an `_Option`, which is an internal structure. You
+        should not handle this value directly, it should only ever be assigned
+        as an attribute to a command class.
+
     Args:
         short_name: The short name of this option. Must start with ``-``.
         long_name: The long name of this option. Must start with `--`.
@@ -204,6 +210,12 @@ def positional(
 
         $ repobee -p ext.py hello Alice 22
         Hello, my name is Alice and I am 22 years old
+
+    .. danger::
+
+        This function returns an `_Option`, which is an internal structure. You
+        should not handle this value directly, it should only ever be assigned
+        as an attribute to a command class.
 
     Args:
         help: The help section for the positional argument.
@@ -278,6 +290,12 @@ def flag(
             meaning 42
             approve no
 
+    .. danger::
+
+        This function returns an `_Option`, which is an internal structure. You
+        should not handle this value directly, it should only ever be assigned
+        as an attribute to a command class.
+
     Args:
         short_name: The short name of this option. Must start with ``-``.
         long_name: The long name of this option. Must start with `--`.
@@ -304,7 +322,14 @@ def flag(
 
 
 def mutually_exclusive_group(*, __required__: bool = False, **kwargs):
-    """
+    """Create a mutually exclusive group of arguments in a command.
+
+    .. danger::
+
+        This function returns a `_MutuallyExclusiveGroup`, which is an internal
+        structure. You should not handle this value directly, it should only
+        ever be assigned as an attribute to a command class.
+
     Args:
         __required__: Whether or not this mutex group is required.
         kwargs: Keyword arguments on the form ``name=plug.cli.option()``.
