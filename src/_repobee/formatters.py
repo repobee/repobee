@@ -8,9 +8,9 @@ This module contains functions for pretty formatting of command line output.
 .. moduleauthor:: Simon Larsén
 """
 import os
-from typing import Mapping, List
+from typing import Mapping, List, Any
 
-from colored import fg, bg, style
+from colored import fg, bg, style  # type: ignore
 
 import repobee_plug as plug
 
@@ -39,7 +39,7 @@ def format_peer_review_progress_output(
     return os.linesep.join(output)
 
 
-def _format_row(items: List[str]) -> str:
+def _format_row(items: List[Any]) -> str:
     column_width = 16
     return "".join([str(item).ljust(column_width) for item in items])
 
@@ -47,7 +47,7 @@ def _format_row(items: List[str]) -> str:
 def _format_reviewer(
     reviewer: str,
     review_list: List[plug.Review],
-    num_reviews: bool,
+    num_reviews: int,
     even: bool,
 ):
     performed_reviews = [rev.repo for rev in review_list if rev.done]
