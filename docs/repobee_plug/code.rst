@@ -61,6 +61,24 @@ serialize
 
 cli
 ===
+The ``cli`` subpackage contains the specific parts to extend RepoBee's command
+line interface.
+
+.. important::
+
+    The vast majority of the classes and functions of this package can be
+    accessed from the ``cli`` package. Canonical usage of most functionality is
+    like this:
+
+    .. code-block:: python
+
+        import repobee_plug as plug
+
+        class ExtCommand(plug.Plugin, plug.cli.Command):
+            is_awesome = plug.cli.flag(help="whether or not everything is awesome")
+
+            def command(self):
+                print(f"Everything is awesome = {self.is_awesome}")
 
 args
 ----
