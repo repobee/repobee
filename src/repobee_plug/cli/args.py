@@ -4,15 +4,32 @@ import enum
 from typing import Optional, Any, Callable, Mapping, List, Tuple
 
 
-class ArgumentType(enum.Enum):
+class _ArgumentType(enum.Enum):
     OPTION = "option"
     POSITIONAL = "positional"
     MUTEX_GROUP = "mutually_exclusive_group"
     FLAG = "flag"
+    # for one reason or another, this argument should be ignored when adding
+    # arguments to the parser. This is typically used by mutex groups to add
+    # their arguments to the top level of the class
+    IGNORE = "ignore"
 
 
-@dataclasses.dataclass(frozen=True)
-class Option:
+class _NotSet:
+    """A marker to indicate that a value is not set."""
+
+    def __repr__(self):
+        return "_NotSet()"
+
+    def __str__(self):
+        return "The value related to this argument has not yet been set"
+
+
+NOTSET = _NotSet()
+
+
+@dataclasses.dataclass
+class _Option:
     short_name: Optional[str] = None
     long_name: Optional[str] = None
     configurable: Optional[bool] = None
@@ -20,25 +37,56 @@ class Option:
     converter: Optional[Callable[[str], Any]] = None
     required: Optional[bool] = None
     default: Optional[Any] = None
-    argument_type: ArgumentType = ArgumentType.OPTION
+    argument_type: _ArgumentType = _ArgumentType.OPTION
     argparse_kwargs: Optional[Mapping[str, Any]] = None
+    # Value_attr_name should be set by the __set_name__ function. Attempting to
+    # use this default will cause a crash as it isn't a valid Python identifier
+    value_attr_name: str = "invalid attribute name"
+
+    def __set_name__(self, owner, name) -> None:
+        if self.long_name is None:
+            self.long_name = f"--{name.replace('_', '-')}"
+        self.value_attr_name = f"_parsed_value_{name}"
+
+    def __set__(self, obj, value) -> None:
+        setattr(obj, self.value_attr_name, value)
+
+    def __get__(self, obj, type=None) -> Any:
+        return getattr(obj, self.value_attr_name, NOTSET)
 
 
 @dataclasses.dataclass(frozen=True)
-class MutuallyExclusiveGroup:
-    options: List[Tuple[str, Option]]
+class _MutuallyExclusiveGroup:
+    options: List[Tuple[str, _Option]]
     required: bool = False
 
     def __post_init__(self):
         for name, opt in self.options:
             self._check_arg_type(name, opt)
+            # __set_name__ must be called explicitly as it is not called when
+            # assigning values to keyword arguments, as is done in mutex groups
+            opt.__set_name__(self, name)
 
-    def _check_arg_type(self, name: str, opt: Option):
-        allowed_types = (ArgumentType.OPTION, ArgumentType.FLAG)
+    def _check_arg_type(self, name: str, opt: _Option):
+        allowed_types = (_ArgumentType.OPTION, _ArgumentType.FLAG)
 
         if opt.argument_type not in allowed_types:
             raise ValueError(
                 f"{opt.argument_type.value} not allowed in mutex group"
+            )
+
+    def __set__(self, obj, value) -> None:
+        self._add_options_to_obj(obj, self.options)
+
+    @staticmethod
+    def _add_options_to_obj(
+        obj: object, options: List[Tuple[str, _Option]]
+    ) -> None:
+        for name, opt in options:
+            setattr(
+                obj,
+                name,
+                dataclasses.replace(opt, argument_type=_ArgumentType.IGNORE),
             )
 
 
@@ -50,7 +98,7 @@ def is_cli_arg(obj: Any) -> bool:
     Returns:
         True if the object is an instance of a CLI argument class.
     """
-    return isinstance(obj, (Option, MutuallyExclusiveGroup))
+    return isinstance(obj, (_Option, _MutuallyExclusiveGroup))
 
 
 def option(
@@ -62,7 +110,7 @@ def option(
     configurable: bool = False,
     converter: Optional[Callable[[str], Any]] = None,
     argparse_kwargs: Optional[Mapping[str, Any]] = None,
-) -> Option:
+) -> _Option:
     """Create an option for a :py:class:`Command` or a
     :py:class:`CommandExtension`.
 
@@ -91,6 +139,12 @@ def option(
         $ repobee -p ext.py hello --name Alice --age 22
         Hello, my name is Alice and I am 22 years old
 
+    .. danger::
+
+        This function returns an `_Option`, which is an internal structure. You
+        should not handle this value directly, it should only ever be assigned
+        as an attribute to a command class.
+
     Args:
         short_name: The short name of this option. Must start with ``-``.
         long_name: The long name of this option. Must start with `--`.
@@ -111,7 +165,7 @@ def option(
         line arguments.
     """
 
-    return Option(
+    return _Option(
         short_name=short_name,
         long_name=long_name,
         configurable=configurable,
@@ -119,7 +173,7 @@ def option(
         converter=converter,
         required=required,
         default=default,
-        argument_type=ArgumentType.OPTION,
+        argument_type=_ArgumentType.OPTION,
         argparse_kwargs=argparse_kwargs or {},
     )
 
@@ -128,7 +182,7 @@ def positional(
     help: str = "",
     converter: Optional[Callable[[str], Any]] = None,
     argparse_kwargs: Optional[Mapping[str, Any]] = None,
-) -> Option:
+) -> _Option:
     """Create a positional argument for a :py:class:`Command` or a
     :py:class:`CommandExtension`.
 
@@ -157,6 +211,12 @@ def positional(
         $ repobee -p ext.py hello Alice 22
         Hello, my name is Alice and I am 22 years old
 
+    .. danger::
+
+        This function returns an `_Option`, which is an internal structure. You
+        should not handle this value directly, it should only ever be assigned
+        as an attribute to a command class.
+
     Args:
         help: The help section for the positional argument.
         converter: A converter function that takes a string and returns
@@ -168,11 +228,11 @@ def positional(
         A CLI argument wrapper used internally by RepoBee to create command
         line argument.
     """
-    return Option(
+    return _Option(
         help=help,
         converter=converter,
         argparse_kwargs=argparse_kwargs or {},
-        argument_type=ArgumentType.POSITIONAL,
+        argument_type=_ArgumentType.POSITIONAL,
     )
 
 
@@ -182,7 +242,7 @@ def flag(
     help: str = "",
     const: Any = True,
     default: Optional[Any] = None,
-) -> Option:
+) -> _Option:
     """Create a command line flag for a :py:class:`Command` or a
     :py:class`CommandExtension`. This is simply a convenience wrapper around
     :py:func:`option`.
@@ -230,6 +290,12 @@ def flag(
             meaning 42
             approve no
 
+    .. danger::
+
+        This function returns an `_Option`, which is an internal structure. You
+        should not handle this value directly, it should only ever be assigned
+        as an attribute to a command class.
+
     Args:
         short_name: The short name of this option. Must start with ``-``.
         long_name: The long name of this option. Must start with `--`.
@@ -244,25 +310,32 @@ def flag(
     resolved_default = (
         not const if default is None and isinstance(const, bool) else default
     )
-    return Option(
+    return _Option(
         short_name=short_name,
         long_name=long_name,
         help=help,
         argparse_kwargs=dict(
             action="store_const", const=const, default=resolved_default
         ),
-        argument_type=ArgumentType.FLAG,
+        argument_type=_ArgumentType.FLAG,
     )
 
 
 def mutually_exclusive_group(*, __required__: bool = False, **kwargs):
-    """
+    """Create a mutually exclusive group of arguments in a command.
+
+    .. danger::
+
+        This function returns a `_MutuallyExclusiveGroup`, which is an internal
+        structure. You should not handle this value directly, it should only
+        ever be assigned as an attribute to a command class.
+
     Args:
         __required__: Whether or not this mutex group is required.
         kwargs: Keyword arguments on the form ``name=plug.cli.option()``.
     """
     options = [(key, value) for key, value in kwargs.items()]
-    return MutuallyExclusiveGroup(required=__required__, options=options)
+    return _MutuallyExclusiveGroup(required=__required__, options=options)
 
 
 @dataclasses.dataclass(frozen=True)
