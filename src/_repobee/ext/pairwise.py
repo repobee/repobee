@@ -54,11 +54,14 @@ def generate_review_allocations(
     random.shuffle(teams)
 
     groups = [(teams[i - 1], teams[i]) for i in range(1, len(teams), 2)]
-    if len(teams) % 2:
-        groups[-1] = (*groups[-1], teams[-1])
+    # odd number of teams necessitates 3 teams in last group
+    last_review_group = (
+        (*groups[-1], teams[-1]) if len(teams) % 2 else groups[-1]
+    )
+    finalized_groups = [*groups[:-1], last_review_group]
 
     allocations = []
-    for group in groups:
+    for group in finalized_groups:
         for i, review_team in enumerate(group):
             reviewed_team = group[(i + 1) % len(group)]
             allocations.append(
