@@ -59,16 +59,43 @@ serialize
 .. automodule:: repobee_plug.serialize
     :members:
 
+cli
+===
+
+args
+----
+
+.. automodule:: repobee_plug.cli.args
+    :members:
+
 base
-====
+----
 
 .. automodule:: repobee_plug.cli.base
     :members:
 
-cli
-===
+categorization
+--------------
 
-.. automodule:: repobee_plug.cli
+.. automodule:: repobee_plug.cli.categorization
+    :members:
+
+commandmarkers
+--------------
+
+.. automodule:: repobee_plug.cli.commandmarkers
+    :members:
+
+io
+----
+
+.. automodule:: repobee_plug.cli.io
+    :members:
+
+settings
+--------
+
+.. automodule:: repobee_plug.cli.settings
     :members:
 
 _corehooks
