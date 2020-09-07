@@ -315,10 +315,8 @@ class TestDeclarativeExtensionCommand:
                 __required__=True,
             )
 
-        assert (
-            f"{plug.cli._ArgumentType.POSITIONAL.value} not allowed in mutex"
-            in str(exc_info.value)
-        )
+        arg_type_str = plug.cli.args._ArgumentType.POSITIONAL.value
+        assert f"{arg_type_str} not allowed in mutex" in str(exc_info.value)
 
     def test_mutex_group_allows_one_argument(self):
         """Test that a mutex group allows one argument to be specified."""

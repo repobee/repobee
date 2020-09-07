@@ -221,7 +221,7 @@ def _add_option(
                 mutex_opt_name, mutex_opt, configured_value, mutex_parser,
             )
         return
-    elif opt.argument_type == cli._ArgumentType.IGNORE:
+    elif opt.argument_type == cli.args._ArgumentType.IGNORE:
         return
 
     assert isinstance(opt, _Option)
@@ -233,7 +233,10 @@ def _add_option(
 
     kwargs["help"] = opt.help or ""
 
-    if opt.argument_type in [cli._ArgumentType.OPTION, cli._ArgumentType.FLAG]:
+    if opt.argument_type in [
+        cli.args._ArgumentType.OPTION,
+        cli.args._ArgumentType.FLAG,
+    ]:
         if opt.short_name:
             args.append(opt.short_name)
 
@@ -241,12 +244,12 @@ def _add_option(
         args.append(opt.long_name)
 
         kwargs["dest"] = name
-        if not opt.argument_type == cli._ArgumentType.FLAG:
+        if not opt.argument_type == cli.args._ArgumentType.FLAG:
             # configured value takes precedence over default
             kwargs["default"] = configured_value or opt.default
         # required opts become not required if configured
         kwargs["required"] = not configured_value and opt.required
-    elif opt.argument_type == cli._ArgumentType.POSITIONAL:
+    elif opt.argument_type == cli.args._ArgumentType.POSITIONAL:
         args.append(name)
 
     parser.add_argument(*args, **kwargs)
