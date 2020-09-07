@@ -31,7 +31,7 @@ Please commit any written answers to the [`docs`](docs) folder, and commit any J
 developed to the [`src`](src) folder of your KTH Github repo. Remember to push to KTH
 Github.
 
-### _Option 1: Book
+### Option 1: Book
 
 #### Exercise 2.83
 Below is the outline for a Book class, which can be found in the book-exercise
@@ -126,7 +126,7 @@ accessor, `getBorrowed`, that returns the value of this new field as its result.
 Modify `printDetails` so that it includes the value of this field with an
 explanatory piece of text.
 
-### _Option 2: Heater
+### Option 2: Heater
 
 #### Exercise 2.92
 Create a new project, heater-exercise, within BlueJ. Edit the details in the
