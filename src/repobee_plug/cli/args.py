@@ -9,9 +9,26 @@ class _ArgumentType(enum.Enum):
     POSITIONAL = "positional"
     MUTEX_GROUP = "mutually_exclusive_group"
     FLAG = "flag"
+    # for one reason or another, this argument should be ignored when adding
+    # arguments to the parser. This is typically used by mutex groups to add
+    # their arguments to the top level of the class
+    IGNORE = "ignore"
 
 
-@dataclasses.dataclass(frozen=True)
+class _NotSet:
+    """A marker to indicate that a value is not set."""
+
+    def __repr__(self):
+        return "_NotSet()"
+
+    def __str__(self):
+        return "The value related to this argument has not yet been set"
+
+
+NOTSET = _NotSet()
+
+
+@dataclasses.dataclass
 class _Option:
     short_name: Optional[str] = None
     long_name: Optional[str] = None
@@ -22,6 +39,20 @@ class _Option:
     default: Optional[Any] = None
     argument_type: _ArgumentType = _ArgumentType.OPTION
     argparse_kwargs: Optional[Mapping[str, Any]] = None
+    # Value_attr_name should be set by the __set_name__ function. Attempting to
+    # use this default will cause a crash as it isn't a valid Python identifier
+    value_attr_name: str = "invalid attribute name"
+
+    def __set_name__(self, owner, name) -> None:
+        if self.long_name is None:
+            self.long_name = f"--{name.replace('_', '-')}"
+        self.value_attr_name = f"_parsed_value_{name}"
+
+    def __set__(self, obj, value) -> None:
+        setattr(obj, self.value_attr_name, value)
+
+    def __get__(self, obj, type=None) -> Any:
+        return getattr(obj, self.value_attr_name, NOTSET)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -32,6 +63,9 @@ class _MutuallyExclusiveGroup:
     def __post_init__(self):
         for name, opt in self.options:
             self._check_arg_type(name, opt)
+            # __set_name__ must be called explicitly as it is not called when
+            # assigning values to keyword arguments, as is done in mutex groups
+            opt.__set_name__(self, name)
 
     def _check_arg_type(self, name: str, opt: _Option):
         allowed_types = (_ArgumentType.OPTION, _ArgumentType.FLAG)
@@ -39,6 +73,20 @@ class _MutuallyExclusiveGroup:
         if opt.argument_type not in allowed_types:
             raise ValueError(
                 f"{opt.argument_type.value} not allowed in mutex group"
+            )
+
+    def __set__(self, obj, value) -> None:
+        self._add_options_to_obj(obj, self.options)
+
+    @staticmethod
+    def _add_options_to_obj(
+        obj: object, options: List[Tuple[str, _Option]]
+    ) -> None:
+        for name, opt in options:
+            setattr(
+                obj,
+                name,
+                dataclasses.replace(opt, argument_type=_ArgumentType.IGNORE),
             )
 
 

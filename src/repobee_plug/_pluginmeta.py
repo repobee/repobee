@@ -221,6 +221,8 @@ def _add_option(
                 mutex_opt_name, mutex_opt, configured_value, mutex_parser,
             )
         return
+    elif opt.argument_type == cli._ArgumentType.IGNORE:
+        return
 
     assert isinstance(opt, _Option)
     args = []
@@ -235,10 +237,8 @@ def _add_option(
         if opt.short_name:
             args.append(opt.short_name)
 
-        if opt.long_name:
-            args.append(opt.long_name)
-        else:
-            args.append(f"--{name.replace('_', '-')}")
+        assert isinstance(opt.long_name, str)
+        args.append(opt.long_name)
 
         kwargs["dest"] = name
         if not opt.argument_type == cli._ArgumentType.FLAG:
