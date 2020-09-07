@@ -3,13 +3,27 @@
 .. module:: _deprecation
     :synopsis: Module with functions for dealing with deprecation.
 """
+import collections
+
 from typing import Optional, Mapping, Callable, Any, TypeVar
-from repobee_plug import _containers
 from repobee_plug import exceptions
 
 AnyFunction = Callable[..., Any]
 
 T = TypeVar("T")
+
+
+Deprecation = collections.namedtuple(
+    "Deprecation", ["replacement", "remove_by_version"]
+)
+Deprecation.__doc__ = """
+Args:
+    replacement (str): The functionality that replaces the deprecated
+        functionality.
+    remove_by_version (str): A version number on the form
+        ``MAJOR.MINOR.PATCH`` by which the deprecated functionality will be
+        removed.
+"""
 
 
 def deprecate(
@@ -27,7 +41,7 @@ def deprecate(
         A function
 
     """
-    dep = _containers.Deprecation(
+    dep = Deprecation(
         replacement=replacement, remove_by_version=remove_by_version
     )
 
@@ -43,7 +57,7 @@ def deprecate(
     return _inner
 
 
-def deprecated_hooks() -> Mapping[str, _containers.Deprecation]:
+def deprecated_hooks() -> Mapping[str, Deprecation]:
     """
     Returns:
         A mapping of hook names to :py:class:`~containers.Deprecation` tuples.
@@ -68,9 +82,7 @@ class _Deprecations:
             cls._instance = inst
         return cls._instance
 
-    def deprecate_hook(
-        self, hook_name: str, deprecation: _containers.Deprecation
-    ) -> None:
+    def deprecate_hook(self, hook_name: str, deprecation: Deprecation) -> None:
         """Deprecate a hook function with the given name.
 
         Args:

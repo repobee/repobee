@@ -6,12 +6,10 @@
 import json
 from typing import Mapping, List
 
-from repobee_plug import _containers
+from repobee_plug.hook import Result, Status
 
 
-def result_mapping_to_json(
-    result_mapping: Mapping[str, List[_containers.Result]]
-) -> str:
+def result_mapping_to_json(result_mapping: Mapping[str, List[Result]]) -> str:
     """Serialize a result mapping ``repo_name: str -> hook_results:
     List[Result]`` to JSON.
     """
@@ -25,18 +23,16 @@ def result_mapping_to_json(
     return json.dumps(hook_results_as_dicts, indent=4, ensure_ascii=False)
 
 
-def json_to_result_mapping(
-    json_string: str,
-) -> Mapping[str, List[_containers.Result]]:
+def json_to_result_mapping(json_string: str,) -> Mapping[str, List[Result]]:
     """Deserialize a JSON string to a mapping ``repo_name: str -> hook_results:
     List[Result]``
     """
     json_dict = json.loads(json_string)
     return {
         repo_name: [
-            _containers.Result(
+            Result(
                 name=hook,
-                status=_containers.Status(val["status"]),
+                status=Status(val["status"]),
                 msg=val["msg"],
                 data=val["data"],
             )

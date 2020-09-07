@@ -336,3 +336,11 @@ def mutually_exclusive_group(*, __required__: bool = False, **kwargs):
     """
     options = [(key, value) for key, value in kwargs.items()]
     return _MutuallyExclusiveGroup(required=__required__, options=options)
+
+
+@dataclasses.dataclass(frozen=True)
+class ConfigurableArguments:
+    """A container for holding a plugin's configurable arguments."""
+
+    config_section_name: str
+    argnames: List[str]

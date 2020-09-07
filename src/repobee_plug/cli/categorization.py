@@ -2,7 +2,7 @@
 import abc
 from typing import Tuple, Set, List, Mapping, Optional, Iterable, Union
 
-from repobee_plug._containers import ImmutableMixin
+from repobee_plug._immutable import ImmutableMixin
 
 
 class Category(ImmutableMixin, abc.ABC):
