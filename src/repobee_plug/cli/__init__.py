@@ -13,7 +13,8 @@ from repobee_plug.cli.args import (
 )
 from repobee_plug.cli.commandmarkers import Command, CommandExtension
 
-from repobee_plug.cli._corecommand import _CoreCommand
+from repobee_plug.cli.base import _CoreCommand
+from repobee_plug.cli.base import BaseParser
 
 CoreCommand = _CoreCommand()
 
@@ -29,5 +30,6 @@ __all__ = [
     "Command",
     "CommandExtension",
     "CoreCommand",
+    "BaseParser",
     "is_cli_arg",
 ]

@@ -3,8 +3,8 @@ import collections
 
 from typing import Optional, Union, List
 
-from repobee_plug import _containers
 from repobee_plug.cli.categorization import Category, Action
+from repobee_plug.cli.base import BaseParser
 
 
 CommandSettings = collections.namedtuple(
@@ -30,7 +30,7 @@ def command_settings(
     category: Optional[Category] = None,
     help: str = "",
     description: str = "",
-    base_parsers: Optional[List[_containers.BaseParser]] = None,
+    base_parsers: Optional[List[BaseParser]] = None,
     config_section_name: Optional[str] = None,
 ) -> CommandSettings:
     """Create a settings object for a :py:class:`Command`.

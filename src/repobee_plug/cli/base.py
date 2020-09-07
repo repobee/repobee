@@ -1,10 +1,11 @@
 """Specification for RepoBee's core CLI categories and actions."""
+import enum
 import itertools
 
 from typing import Iterator
 
-from .categorization import Category, Action
-from repobee_plug._containers import ImmutableMixin
+from repobee_plug.cli.categorization import Category, Action
+from repobee_plug._immutable import ImmutableMixin
 
 
 class _CoreCommand(ImmutableMixin):
@@ -64,3 +65,28 @@ class _CoreCommand(ImmutableMixin):
     config = _Config()
     reviews = _Reviews()
     teams = _Teams()
+
+
+class BaseParser(enum.Enum):
+    """Enumeration of base parsers that an extension command can request to
+    have added to it.
+
+    Attributes:
+        BASE: Represents the base parser, which includes the ``--user``,
+            ``--org-name``, ``--base-url`` and ``--token`` arguments.
+        STUDENTS: Represents the students parser, which includes the
+            ``--students`` and `--students-file`` arguments.
+        ASSIGNMENTS: Represents the assignments parser, which includes the
+            ``--assignments`` argument.
+        REPO_DISCOVERY: Represents the repo discovery parser, which adds
+            both the ``--assignments`` and the ``--discover-repos``
+            arguments.
+        TEMPLATE_ORG: Represents the master organization parser, which includes
+            the ``--master-org`` argument.
+    """
+
+    BASE = "base"
+    STUDENTS = "students"
+    ASSIGNMENTS = "assignments"
+    REPO_DISCOVERY = "repo-discovery"
+    TEMPLATE_ORG = "template-org"
