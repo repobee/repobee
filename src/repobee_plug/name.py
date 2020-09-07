@@ -6,10 +6,11 @@
 from typing import Iterable, Union
 
 from repobee_plug import localreps
+from repobee_plug import platform
 
 
 def generate_repo_names(
-    team_names: Iterable[Union[str, localreps.StudentTeam]],
+    team_names: Iterable[Union[str, localreps.StudentTeam, platform.Team]],
     assignment_names: Iterable[str],
 ) -> Iterable[str]:
     """Construct all combinations of generate_repo_name(team_name,
@@ -33,7 +34,8 @@ def generate_repo_names(
 
 
 def generate_repo_name(
-    team_name: Union[str, localreps.StudentTeam], assignment_name: str
+    team_name: Union[str, localreps.StudentTeam, platform.Team],
+    assignment_name: str,
 ) -> str:
     """Construct a repo name for a team.
 
@@ -45,7 +47,8 @@ def generate_repo_name(
 
 
 def generate_review_team_name(
-    student: Union[str, localreps.StudentTeam], assignment_name: str
+    student: Union[str, localreps.StudentTeam, platform.Team],
+    assignment_name: str,
 ) -> str:
     """Generate a review team name.
 
