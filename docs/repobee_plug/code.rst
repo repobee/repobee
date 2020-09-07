@@ -47,6 +47,12 @@ reviews
 .. automodule:: repobee_plug.reviews
     :members:
 
+deprecation
+===========
+
+.. automodule:: repobee_plug.deprecation
+    :members:
+
 cli
 ===
 
