@@ -167,7 +167,7 @@ class _APISpec:
         _not_implemented()
 
     def get_teams(
-        self, team_names: Optional[List[str]] = None
+        self, team_names: Optional[Iterable[str]] = None
     ) -> Iterable[Team]:
         """Get teams from the platform.
 

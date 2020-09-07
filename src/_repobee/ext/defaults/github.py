@@ -186,7 +186,7 @@ class GitHubAPI(plug.PlatformAPI):
         team.implementation.delete()
 
     def get_teams(
-        self, team_names: Optional[List[str]] = None
+        self, team_names: Optional[Iterable[str]] = None
     ) -> Iterable[plug.Team]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_teams`."""
         unique_team_names = set(team_names or {})
