@@ -107,7 +107,7 @@ def _try_load_module_from_filepath(path: str) -> Optional[ModuleType]:
         return None
 
     mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
+    spec.loader.exec_module(mod)  # type: ignore
 
     return mod
 
@@ -127,7 +127,9 @@ def _try_load_module(qualname: str) -> Optional[ModuleType]:
         return None
 
 
-def register_plugins(modules: List[ModuleType]) -> List[object]:
+def register_plugins(
+    modules: List[ModuleType],
+) -> List[Union[plug.Plugin, ModuleType]]:
     """Register the namespaces of the provided modules, and any plug.Plugin
     instances in them. Registers modules in reverse order as they are
     run in LIFO order.
@@ -139,7 +141,7 @@ def register_plugins(modules: List[ModuleType]) -> List[object]:
     """
     assert all([isinstance(mod, ModuleType) for mod in modules])
 
-    registered = []
+    registered: List[Union[plug.Plugin, ModuleType]] = []
     for module in reversed(modules):  # reverse because plugins are run LIFO
         plugin_name = module.__name__.split(".")[-1]
         plug.manager.register(module)
@@ -235,10 +237,10 @@ def try_register_plugin(
 
 
 def initialize_plugins(
-    plugin_names: List[str] = None,
+    plugin_names: List[str],
     allow_qualified: bool = False,
     allow_filepath: bool = False,
-) -> List[Union[ModuleType, type]]:
+) -> List[Union[plug.Plugin, ModuleType]]:
     """Load and register plugins.
 
     Args:
@@ -299,16 +301,15 @@ def resolve_plugin_version(plugin_module: ModuleType) -> Optional[str]:
         The version if found, otherwise None.
     """
     if hasattr(plugin_module, "__version__"):
-        return plugin_module.__version__
+        return getattr(plugin_module, "__version__")
 
+    assert plugin_module.__package__ is not None
     pkg_name = plugin_module.__package__.split(".")[0]
     pkg_module = _try_load_module(pkg_name)
-    return (
-        pkg_module.__version__ if hasattr(pkg_module, "__version__") else None
-    )
+    return getattr(pkg_module, "__version__", None)
 
 
-def is_default_plugin(module: ModuleType) -> Optional[str]:
+def is_default_plugin(module: ModuleType) -> bool:
     """Check if the provided module is a default module.
 
     Args:
@@ -362,9 +363,10 @@ def get_module_names(pkg: ModuleType) -> List[str]:
     Returns:
         All modules in the given package.
     """
+    pkg_path = pkg.__path__  # type: ignore
     return [
         name
-        for file_finder, name, _ in pkgutil.iter_modules(pkg.__path__)
+        for file_finder, name, _ in pkgutil.iter_modules(pkg_path)
         # only include modules (i.e. files), not subpackages
         if (pathlib.Path(file_finder.path) / (name + ".py")).is_file()
     ]
@@ -405,7 +407,7 @@ def execute_setup_tasks(
 
 
 def _execute_tasks(
-    repos: List[Union[plug.StudentRepo, plug.TemplateRepo]],
+    repos: Iterable[Union[plug.StudentRepo, plug.TemplateRepo]],
     hook_function: Callable[
         [pathlib.Path, plug.PlatformAPI], Optional[plug.Result]
     ],
@@ -423,14 +425,14 @@ def _execute_tasks(
         for repo in _copy_repos(repos, basedir=copies_root):
             plug.log.info("Processing {}".format(repo.path.name))
 
-            for result in hook_function(repo=repo, api=api):
+            for result in hook_function(repo=repo, api=api):  # type: ignore
                 if result:
                     results[repo.name].append(result)
     return results
 
 
 def _copy_repos(
-    repos: List[Union[plug.StudentRepo, plug.TemplateRepo]],
+    repos: Iterable[Union[plug.StudentRepo, plug.TemplateRepo]],
     basedir: pathlib.Path,
 ) -> Iterable[Union[plug.StudentRepo, plug.TemplateRepo]]:
     for repo in repos:

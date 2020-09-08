@@ -3,11 +3,15 @@
 .. module:: name
     :synopsis: Utility functions relating to RepoBee's naming conventions.
 """
-from typing import Iterable
+from typing import Iterable, Union
+
+from repobee_plug import localreps
+from repobee_plug import platform
 
 
 def generate_repo_names(
-    team_names: Iterable[str], assignment_names: Iterable[str]
+    team_names: Iterable[Union[str, localreps.StudentTeam, platform.Team]],
+    assignment_names: Iterable[str],
 ) -> Iterable[str]:
     """Construct all combinations of generate_repo_name(team_name,
     assignment_name) for the provided team names and master repo names.
@@ -29,7 +33,10 @@ def generate_repo_names(
     ]
 
 
-def generate_repo_name(team_name: str, assignment_name: str) -> str:
+def generate_repo_name(
+    team_name: Union[str, localreps.StudentTeam, platform.Team],
+    assignment_name: str,
+) -> str:
     """Construct a repo name for a team.
 
     Args:
@@ -39,7 +46,10 @@ def generate_repo_name(team_name: str, assignment_name: str) -> str:
     return "{}-{}".format(team_name, assignment_name)
 
 
-def generate_review_team_name(student: str, assignment_name: str) -> str:
+def generate_review_team_name(
+    student: Union[str, localreps.StudentTeam, platform.Team],
+    assignment_name: str,
+) -> str:
     """Generate a review team name.
 
     Args:

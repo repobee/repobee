@@ -74,7 +74,7 @@ class JavacCloneHook(plug.Plugin, plug.cli.CommandExtension):
 
     def _javac(
         self, java_files: Iterable[Union[str, pathlib.Path]]
-    ) -> Tuple[str, str]:
+    ) -> Tuple[plug.Status, str]:
         """Run ``javac`` on all of the specified files, assuming that they are
         all ``.java`` files.
 

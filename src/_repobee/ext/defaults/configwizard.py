@@ -11,7 +11,9 @@ import configparser
 import collections
 import os
 
-import bullet
+from typing import Mapping, List
+
+import bullet  # type: ignore
 
 import repobee_plug as plug
 
@@ -58,7 +60,9 @@ def callback(args: argparse.Namespace) -> None:
         )
     ] + plug.manager.hook.get_configurable_args()
 
-    configurable_args_dict = collections.defaultdict(list)
+    configurable_args_dict: Mapping[str, List[str]] = collections.defaultdict(
+        list
+    )
     for ca in configurable_args:
         configurable_args_dict[ca.config_section_name] += ca.argnames
 

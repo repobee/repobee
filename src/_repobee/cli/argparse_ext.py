@@ -56,7 +56,7 @@ class RepobeeParser(argparse.ArgumentParser):
 
         return super().add_argument(*args, **kwargs)
 
-    def add_argument_group(
+    def add_argument_group(  # type: ignore
         self, title: Optional[str] = None, description: Optional[str] = None
     ) -> argparse._ArgumentGroup:
         """Create a new argument group if the title does not exist, or return
@@ -65,7 +65,7 @@ class RepobeeParser(argparse.ArgumentParser):
         for grp in self._action_groups:
             if grp.title == title:
                 if description is not None:
-                    grp.descripion = description
+                    grp.description = description
                 return grp
         return super().add_argument_group(title, description)
 

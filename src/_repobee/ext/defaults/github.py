@@ -177,7 +177,7 @@ class GitHubAPI(plug.PlatformAPI):
                 team.remove_membership(member)
 
         # TODO optimize, redundant API call when wrapping the team
-        self.assign_members(self._wrap_team(team), members, permission)
+        self.assign_members(self._wrap_team(team), members or [], permission)
 
         return self._wrap_team(team)
 
@@ -186,21 +186,21 @@ class GitHubAPI(plug.PlatformAPI):
         team.implementation.delete()
 
     def get_teams(
-        self, team_names: Optional[List[str]] = None
+        self, team_names: Optional[Iterable[str]] = None
     ) -> Iterable[plug.Team]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_teams`."""
-        team_names = set(team_names)
+        unique_team_names = set(team_names or {})
         with _try_api_request():
             return (
                 self._wrap_team(team)
                 for team in self._org.get_teams()
-                if not team_names or team.name in team_names
+                if not team_names or team.name in unique_team_names
             )
 
     def assign_members(
         self,
         team: plug.Team,
-        members: List[str],
+        members: Iterable[str],
         permission: plug.TeamPermission = plug.TeamPermission.PUSH,
     ) -> None:
         """See :py:meth:`repobee_plug.PlatformAPI.assign_members`."""
@@ -238,7 +238,7 @@ class GitHubAPI(plug.PlatformAPI):
             kwargs["team_id"] = team.id
 
         with _try_api_request():
-            repo = self._org.create_repo(name, **kwargs)
+            repo = self._org.create_repo(name, **kwargs)  # type: ignore
             return self._wrap_repo(repo)
 
     def get_repo(self, repo_name: str, team_name: Optional[str]) -> plug.Repo:
@@ -263,17 +263,20 @@ class GitHubAPI(plug.PlatformAPI):
         title: str,
         body: str,
         repo: plug.Repo,
-        assignees: Optional[str] = None,
+        assignees: Optional[Iterable[str]] = None,
     ) -> plug.Issue:
         """See :py:meth:`repobee_plug.PlatformAPI.create_issue`."""
         repo_impl: github.Repository.Repository = repo.implementation
         issue = repo_impl.create_issue(
-            title, body=body, assignees=assignees or github.GithubObject.NotSet
+            title,
+            body=body,
+            assignees=assignees or github.GithubObject.NotSet,  # type: ignore
         )
         return self._wrap_issue(issue)
 
     def close_issue(self, issue: plug.Issue) -> None:
         """See :py:meth:`repobee_plug.PlatformAPI.close_issue`."""
+        assert issue.implementation is not None
         issue.implementation.edit(state="closed")
 
     def get_team_repos(self, team: plug.Team) -> Iterable[plug.Repo]:
@@ -454,6 +457,7 @@ class GitHubAPI(plug.PlatformAPI):
 
         plug.echo("Verifying access token scopes ...")
         scopes = g.oauth_scopes
+        assert scopes is not None
         if not REQUIRED_TOKEN_SCOPES.issubset(scopes):
             raise plug.BadCredentials(
                 "missing one or more access token scopes. "

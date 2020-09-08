@@ -2,7 +2,7 @@
 import dataclasses
 import pathlib
 
-from typing import Optional, List
+from typing import Optional, List, TypeVar
 
 from repobee_plug import exceptions
 
@@ -45,6 +45,9 @@ class StudentTeam:
         _check_name_length(self.name)
 
 
+Pathed = TypeVar("Pathed", covariant=True, bound="_RepoPathMixin")
+
+
 class _RepoPathMixin:
     """Mixin class for local repo representations that provides a path
     attribute, which may not be set.
@@ -55,7 +58,7 @@ class _RepoPathMixin:
     def __init__(self, *ars, **kwargs):
         pass
 
-    def with_path(self, path: pathlib.Path) -> "_RepoPathMixin":
+    def with_path(self: Pathed, path: pathlib.Path) -> Pathed:
         """Return a copy of this repo, with a different path.
 
         Args:
@@ -63,14 +66,7 @@ class _RepoPathMixin:
         Returns:
             A copy of this repo representation, with the specified path.
         """
-        # must not use dataclasses.asdict, as it recursively operates on
-        # dataclass members
-        data_dict = {
-            field.name: getattr(self, field.name)
-            for field in dataclasses.fields(self)
-        }
-        data_dict["_path"] = path
-        return self.__class__(**data_dict)
+        return dataclasses.replace(self, _path=path)
 
     @property
     def path(self) -> pathlib.Path:

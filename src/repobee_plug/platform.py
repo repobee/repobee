@@ -167,7 +167,7 @@ class _APISpec:
         _not_implemented()
 
     def get_teams(
-        self, team_names: Optional[List[str]] = None
+        self, team_names: Optional[Iterable[str]] = None
     ) -> Iterable[Team]:
         """Get teams from the platform.
 
@@ -204,7 +204,7 @@ class _APISpec:
     def assign_members(
         self,
         team: Team,
-        members: List[str],
+        members: Iterable[str],
         permission: TeamPermission = TeamPermission.PUSH,
     ) -> None:
         """Assign members to a team.

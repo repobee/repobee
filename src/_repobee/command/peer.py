@@ -106,7 +106,7 @@ def assign_peer_reviews(
             reviewed_repo = fetched_repo_dict[
                 plug.generate_repo_name(reviewed_team_name, assignment_name)
             ]
-            review_teams_progress.write(
+            review_teams_progress.write(  # type: ignore
                 f"Assigning {' and '.join(review_team.members)} "
                 f"to review {reviewed_repo.name}"
             )
@@ -123,7 +123,7 @@ def assign_peer_reviews(
 
 def purge_review_teams(
     assignment_names: Iterable[str],
-    students: Iterable[plug.Team],
+    students: Iterable[plug.StudentTeam],
     api: plug.PlatformAPI,
 ) -> None:
     """Delete all review teams associated with the given assignment names and
@@ -211,7 +211,7 @@ def check_peer_review_progress(
 
     plug.echo(
         formatters.format_peer_review_progress_output(
-            reviews, teams, num_reviews
+            reviews, [team.name for team in teams], num_reviews
         )
     )
 

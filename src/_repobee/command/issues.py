@@ -13,7 +13,7 @@ import os
 import re
 from typing import Iterable, Optional, List, Tuple, Any, Mapping
 
-from colored import bg, fg, style
+from colored import bg, fg, style  # type: ignore
 
 import repobee_plug as plug
 
@@ -47,10 +47,13 @@ def list_issues(
     repo_names = [repo.name for repo in repos]
     max_repo_name_length = max(map(len, repo_names))
 
-    repos = api.get_repos([repo.url for repo in repos])
-
+    platform_repos = api.get_repos([repo.url for repo in repos])
     issues_per_repo = _get_issue_generator(
-        repos, title_regex=title_regex, author=author, state=state, api=api
+        platform_repos,
+        title_regex=title_regex,
+        author=author,
+        state=state,
+        api=api,
     )
 
     # _log_repo_issues exhausts the issues_per_repo iterator and
@@ -88,7 +91,7 @@ def list_issues(
 def _get_issue_generator(
     repos: Iterable[plug.Repo],
     title_regex: str,
-    author: str,
+    author: Optional[str],
     state: plug.IssueState,
     api: plug.PlatformAPI,
 ) -> Iterable[Tuple[str, Iterable[plug.Issue]]]:
@@ -109,7 +112,7 @@ def _get_issue_generator(
 
 
 def _log_repo_issues(
-    issues_per_repo: Tuple[str, Iterable[plug.Issue]],
+    issues_per_repo: Iterable[Tuple[str, Iterable[plug.Issue]]],
     show_body: bool,
     title_alignment: int,
 ) -> List[Tuple[Any, list]]:
@@ -204,7 +207,7 @@ def open_issue(
     for repo in repos:
         issue = api.create_issue(issue.title, issue.body, repo)
         msg = f"Opened issue {repo.name}/#{issue.number}-'{issue.title}'"
-        repos.write(msg)
+        repos.write(msg)  # type: ignore
         plug.log.info(msg)
 
 
@@ -221,8 +224,8 @@ def close_issue(
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     repo_urls = (repo.url for repo in repos)
-    repos = progresswrappers.get_repos(repo_urls, api)
-    for repo in repos:
+    platform_repos = progresswrappers.get_repos(repo_urls, api)
+    for repo in platform_repos:
         to_close = [
             issue
             for issue in api.get_repo_issues(repo)
@@ -232,5 +235,5 @@ def close_issue(
         for issue in to_close:
             api.close_issue(issue)
             msg = f"Closed {repo.name}/#{issue.number}='{issue.title}'"
-            repos.write(msg)
+            platform_repos.write(msg)  # type: ignore
             plug.log.info(msg)

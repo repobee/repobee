@@ -6,7 +6,7 @@ import shlex
 from typing import Mapping, List, Union
 
 import repobee
-import git
+import git  # type: ignore
 
 import repobee_plug as plug
 

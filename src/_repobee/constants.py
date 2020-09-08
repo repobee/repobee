@@ -8,7 +8,7 @@
 """
 import pathlib
 
-import appdirs
+import appdirs  # type: ignore
 
 import _repobee
 

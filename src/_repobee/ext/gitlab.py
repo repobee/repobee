@@ -16,7 +16,7 @@ import contextlib
 import pathlib
 from typing import List, Iterable, Optional, Generator
 
-import gitlab
+import gitlab  # type: ignore
 import requests.exceptions
 
 import repobee_plug as plug
@@ -135,23 +135,23 @@ class GitLabAPI(plug.PlatformAPI):
         team.implementation.delete()
 
     def get_teams(
-        self, team_names: Optional[List[str]] = None
+        self, team_names: Optional[Iterable[str]] = None
     ) -> Iterable[plug.Team]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_teams`."""
-        team_names = set(team_names or [])
+        unique_team_names = set(team_names or [])
         with _try_api_request():
             return (
                 self._wrap_group(group)
                 for group in self._gitlab.groups.list(
                     id=self._group.id, all=True
                 )
-                if not team_names or group.path in team_names
+                if not team_names or group.path in unique_team_names
             )
 
     def assign_members(
         self,
         team: plug.Team,
-        members: List[str],
+        members: Iterable[str],
         permission: plug.TeamPermission = plug.TeamPermission.PUSH,
     ) -> None:
         """See :py:meth:`repobee_plug.PlatformAPI.assign_members`."""
@@ -213,6 +213,14 @@ class GitLabAPI(plug.PlatformAPI):
         self, repo_urls: Optional[List[str]] = None
     ) -> Iterable[plug.Repo]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repos`."""
+        if not repo_urls:
+            return (
+                self._wrap_project(self._gitlab.projects.get(proj.id))
+                for proj in self._group.projects.list(
+                    include_subgroups=True, all=True
+                )
+            )
+
         found_urls = []
         with _try_api_request():
             for url in repo_urls:
@@ -243,7 +251,7 @@ class GitLabAPI(plug.PlatformAPI):
         title: str,
         body: str,
         repo: plug.Repo,
-        assignees: Optional[str] = None,
+        assignees: Optional[Iterable[str]] = None,
     ) -> plug.Issue:
         """See :py:meth:`repobee_plug.PlatformAPI.create_issue`."""
         project = repo.implementation

@@ -10,7 +10,7 @@ CLI into commands for RepoBee's core.
 """
 import argparse
 import pathlib
-from typing import Optional, List, Mapping
+from typing import Optional, List, Mapping, NoReturn
 
 import repobee_plug as plug
 
@@ -29,7 +29,7 @@ def dispatch_command(
         api: An initialized plug.API instance.
         config_file: Path to the config file.
     """
-    hook_results = {}
+    hook_results: Mapping[str, List[plug.Result]] = {}
     dispatch_table = {
         plug.cli.CoreCommand.repos: _dispatch_repos_command,
         plug.cli.CoreCommand.issues: _dispatch_issues_command,
@@ -181,7 +181,7 @@ def _dispatch_teams_command(
     _raise_illegal_action_error(args)
 
 
-def _raise_illegal_action_error(args: argparse.Namespace) -> None:
+def _raise_illegal_action_error(args: argparse.Namespace) -> NoReturn:
     raise exception.ParseError(
         f"Unknown action {args.action} for category {args.category}"
     )

@@ -18,8 +18,8 @@ import sys
 import enum
 from typing import Iterable, Optional, List, Tuple
 
-import argcomplete
-import daiquiri
+import argcomplete  # type: ignore
+import daiquiri  # type: ignore
 import repobee_plug as plug
 from repobee_plug.cli import categorization
 
@@ -57,11 +57,9 @@ def handle_args(
     plug.manager.hook.handle_parsed_args(args=args)
 
     if processing == _ArgsProcessing.CORE:
-        processed_args, api = _process_args(args)
-        return processed_args, api
+        return _process_args(args)
     elif processing == _ArgsProcessing.EXT:
-        processed_args, api = _process_ext_args(args)
-        return processed_args, api
+        return _process_ext_args(args)
     return args, None
 
 
@@ -175,7 +173,7 @@ def _process_args(
 
 
 def _discover_repos(
-    student_teams: plug.StudentTeam, api: plug.PlatformAPI
+    student_teams: List[plug.StudentTeam], api: plug.PlatformAPI
 ) -> Iterable[plug.StudentRepo]:
     student_teams_dict = {t.name: t for t in student_teams}
     fetched_teams = progresswrappers.get_teams(
@@ -216,7 +214,7 @@ def _validate_tls_url(url):
         )
 
 
-def _handle_deprecation(sys_args: List[str]) -> List[str]:
+def _handle_deprecation(sys_args: Iterable[str]) -> List[str]:
     """If the first argument on the arglist is a deprecated command, replace it
     with the corresponding current command and issue a warning.
 
@@ -225,7 +223,7 @@ def _handle_deprecation(sys_args: List[str]) -> List[str]:
         one.
     """
     # FIXME Deprecation needs to be re-implemented
-    return sys_args
+    return list(sys_args)
 
 
 def _extract_groups(args: argparse.Namespace) -> List[plug.StudentTeam]:
@@ -256,7 +254,7 @@ def _extract_groups(args: argparse.Namespace) -> List[plug.StudentTeam]:
             if group  # skip blank lines
         ]
     else:
-        students = None
+        students = []
 
     return students
 
@@ -342,6 +340,7 @@ def _process_ext_args(
     if bp.STUDENTS in req_parsers:
         args_dict["students"] = _extract_groups(args)
     if bp.REPO_DISCOVERY in req_parsers:
+        assert api is not None
         args_dict["repos"] = _discover_repos(args_dict["students"], api)
 
     return argparse.Namespace(**args_dict), api

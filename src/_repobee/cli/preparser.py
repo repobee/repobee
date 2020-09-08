@@ -15,7 +15,7 @@ The preparser solves this.
 
 import argparse
 import pathlib
-from typing import List
+from typing import List, Tuple
 
 import _repobee.cli
 import _repobee.constants
@@ -66,7 +66,7 @@ def parse_args(sys_args: List[str]) -> argparse.Namespace:
     return args
 
 
-def separate_args(args: List[str]) -> (List[str], List[str]):
+def separate_args(args: List[str]) -> Tuple[List[str], List[str]]:
     """Separate args into preparser args and primary parser args.
 
     Args:

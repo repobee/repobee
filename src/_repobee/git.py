@@ -13,10 +13,10 @@ import pathlib
 import shutil
 import subprocess
 import sys
-from typing import Iterable, List, Any, Callable, Tuple
+from typing import Iterable, List, Any, Callable, Tuple, Awaitable, Sequence
 
 import more_itertools
-import git
+import git  # type: ignore
 
 import repobee_plug as plug
 
@@ -191,7 +191,7 @@ async def _push_async(pt: Push):
     if proc.returncode != 0:
         raise exception.PushFailedError(
             "Failed to push to {}".format(pt.repo_url),
-            proc.returncode,
+            proc.returncode or -sys.maxsize,
             stderr,
             pt.repo_url,
         )
@@ -251,11 +251,11 @@ def push(push_tuples: Iterable[Push], tries: int = 3) -> List[str]:
 
 
 def _batch_execution(
-    batch_func: Callable[[Iterable[Any], Any], List[asyncio.Task]],
+    batch_func: Callable[..., Awaitable],
     arg_list: Iterable[Any],
     *batch_func_args,
     **batch_func_kwargs,
-) -> List[Exception]:
+) -> Sequence[Exception]:
     """Take a batch function (any function whos first argument is an iterable)
     and send in send in CONCURRENT_TASKS amount of arguments from the arg_list
     until it is exhausted. The batch_func_kwargs are provided on each call.
@@ -280,13 +280,13 @@ def _batch_execution(
 
 
 async def _batch_execution_async(
-    batch_func: Callable[[Iterable[Any], Any], List[asyncio.Task]],
+    batch_func: Callable[..., Awaitable],
     arg_list: Iterable[Any],
     *batch_func_args,
     **batch_func_kwargs,
-) -> List[Exception]:
+) -> Sequence[Exception]:
 
-    import tqdm.asyncio
+    import tqdm.asyncio  # type: ignore
 
     exceptions = []
     loop = asyncio.get_event_loop()
@@ -307,8 +307,8 @@ async def _batch_execution_async(
             except exception.GitError as exc:
                 exceptions.append(exc)
 
-    for exc in exceptions:
-        plug.log.error(str(exc))
+    for e in exceptions:
+        plug.log.error(str(e))
 
     return exceptions
 

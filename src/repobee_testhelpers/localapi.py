@@ -8,12 +8,13 @@ specification that can be used to test RepoBee and plugins.
 """
 
 import pathlib
-import git
 import pickle
 import datetime
 import dataclasses
 
 from typing import List, Iterable, Optional, Set
+
+import git  # type: ignore
 
 import repobee_plug as plug
 
@@ -102,9 +103,9 @@ class LocalAPI(plug.PlatformAPI):
         self._user = user
         self._token = token
 
-        self._teams = {self._org_name: {}}
-        self._repos = {self._org_name: {}}
-        self._users = {}
+        self._teams: dict = {self._org_name: {}}
+        self._repos: dict = {self._org_name: {}}
+        self._users: dict = {}
         self._restore_state()
 
     def create_team(
@@ -128,7 +129,7 @@ class LocalAPI(plug.PlatformAPI):
         del self._teams[self._org_name][team.implementation.name]
 
     def get_teams(
-        self, team_names: Optional[List[str]] = None
+        self, team_names: Optional[Iterable[str]] = None
     ) -> Iterable[plug.Team]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_teams`."""
         team_names = set(team_names or [])
@@ -141,7 +142,7 @@ class LocalAPI(plug.PlatformAPI):
     def assign_members(
         self,
         team: plug.Team,
-        members: List[str],
+        members: Iterable[str],
         permission: plug.TeamPermission = plug.TeamPermission.PUSH,
     ) -> None:
         """See :py:meth:`repobee_plug.PlatformAPI.assign_members`."""
@@ -222,10 +223,10 @@ class LocalAPI(plug.PlatformAPI):
         title: str,
         body: str,
         repo: plug.Repo,
-        assignees: Optional[str] = None,
+        assignees: Optional[Iterable[str]] = None,
     ) -> plug.Issue:
         """See :py:meth:`repobee_plug.PlatformAPI.create_issue`."""
-        assignees = {
+        unique_assignees = {
             self._get_user(assignee) for assignee in (assignees or [])
         }
 
@@ -236,13 +237,14 @@ class LocalAPI(plug.PlatformAPI):
             created_at=TIME,
             author=self._user,
             state=plug.IssueState.OPEN,
-            assignees=assignees,
+            assignees=unique_assignees,
         )
         repo.implementation.issues.append(issue)
         return issue.to_plug_issue()
 
-    def close_issue(self, issue: Issue) -> None:
+    def close_issue(self, issue: plug.Issue) -> None:
         """See :py:meth:`repobee_plug.PlatformAPI.close_issue`."""
+        assert issue.implementation
         issue.implementation.state = plug.IssueState.CLOSED
 
     def get_team_repos(self, team: plug.Team) -> Iterable[plug.Repo]:
