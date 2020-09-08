@@ -3,7 +3,7 @@ from typing import TypeVar, Iterator
 
 from typing_extensions import Protocol
 
-T = TypeVar("T")
+T = TypeVar("T", covariant=True)
 
 
 class SizedIterable(Protocol[T]):
