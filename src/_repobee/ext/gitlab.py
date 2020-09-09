@@ -214,31 +214,31 @@ class GitLabAPI(plug.PlatformAPI):
     ) -> Iterable[plug.Repo]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repos`."""
         if not repo_urls:
-            return (
+            yield from (
                 self._wrap_project(self._gitlab.projects.get(proj.id))
                 for proj in self._group.projects.list(
                     include_subgroups=True, all=True
                 )
             )
+        else:
+            found_urls = []
+            with _try_api_request():
+                for url in repo_urls:
+                    name = self.extract_repo_name(url)
+                    candidates = self._group.projects.list(
+                        include_subgroups=True, search=name, all=True
+                    )
+                    for candidate in candidates:
+                        if candidate.http_url_to_repo == url:
+                            found_urls.append(candidate.http_url_to_repo)
+                            yield self._wrap_project(
+                                self._gitlab.projects.get(candidate.id)
+                            )
 
-        found_urls = []
-        with _try_api_request():
-            for url in repo_urls:
-                name = self.extract_repo_name(url)
-                candidates = self._group.projects.list(
-                    include_subgroups=True, search=name, all=True
-                )
-                for candidate in candidates:
-                    if candidate.http_url_to_repo == url:
-                        found_urls.append(candidate.http_url_to_repo)
-                        yield self._wrap_project(
-                            self._gitlab.projects.get(candidate.id)
-                        )
-
-        missing = set(repo_urls) - set(found_urls)
-        if missing:
-            msg = f"Can't find repos: {', '.join(missing)}"
-            plug.log.warning(msg)
+            missing = set(repo_urls) - set(found_urls)
+            if missing:
+                msg = f"Can't find repos: {', '.join(missing)}"
+                plug.log.warning(msg)
 
     def insert_auth(self, url: str) -> str:
         """See :py:meth:`repobee_plug.PlatformAPI.insert_auth`."""

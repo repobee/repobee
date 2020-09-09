@@ -252,6 +252,9 @@ class GitHubAPI(plug.PlatformAPI):
         self, repo_urls: Optional[List[str]] = None
     ) -> Iterable[plug.Repo]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repos`."""
+        if not repo_urls:
+            return (self._wrap_repo(repo) for repo in self._org.get_repos())
+
         repo_names = map(self.extract_repo_name, repo_urls or [])
         return (
             self._wrap_repo(repo)

@@ -335,6 +335,14 @@ class TestInit:
         assert isinstance(api, plug.PlatformAPI)
 
 
+class TestGetRepos:
+    """Tests for get_repos."""
+
+    def test_get_all_repos(self, api, repos):
+        """Calling get_repos without an argument should return all repos."""
+        assert len(list(api.get_repos())) == len(repos)
+
+
 class TestInsertAuth:
     """Tests for insert_auth."""
 

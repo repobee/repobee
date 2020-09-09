@@ -55,6 +55,7 @@ required = [
     "python-gitlab==2.4.0",
     "tabulate",
     "tqdm>=4.48.2",
+    "typing-extensions",
 ]
 
 testhelper_resources_dir = pathlib.Path("src/repobee_testhelpers/resources")
