@@ -1,4 +1,5 @@
 from collections import namedtuple
+import itertools
 
 import requests.exceptions
 import pytest
@@ -17,6 +18,7 @@ class Group:
 
     _Members = namedtuple("_Members", ("create", "list"))
     _Member = namedtuple("_Member", ("id", "access_level", "username"))
+    _Projects = namedtuple("_Projects", "list")
 
     def __init__(self, id, name, path, parent_id, users_read_only):
         self.id = id
@@ -27,6 +29,8 @@ class Group:
             create=self._create_member, list=self._list_members
         )
         self._member_list = []
+        self._project_list = []
+        self._group_list = []
         self._users_read_only = users_read_only or {}
         # the group owner is always added to the group with max access level
         owner_id = [
@@ -56,12 +60,27 @@ class Group:
     def _list_members(self, all=False):
         return list(self._member_list)[: (PAGE_SIZE if not all else None)]
 
+    def _list_projects(self, all=False, include_subgroups=False):
+        projects = list(self._project_list)
+
+        if include_subgroups:
+            projects += list(
+                itertools.chain.from_iterable(
+                    [list(g._project_list) for g in self._group_list]
+                )
+            )
+        return projects[: (PAGE_SIZE if not all else None)]
+
     def delete(self):
         self._deleted = True
 
     @property
     def tests_only_deleted(self):
         return self._deleted
+
+    @property
+    def projects(self):
+        return self._Projects(list=self._list_projects)
 
 
 class Project:
@@ -154,12 +173,17 @@ class GitLabMock:
             get=self._get_project, create=self._create_project
         )
 
-    def _get_project(self, full_path):
-        if full_path not in self._projects:
-            raise gitlab.exceptions.GitlabGetError(
-                response_code=404, error_message="Project Not Found"
-            )
-        return self._projects[full_path]
+    def _get_project(self, full_path_or_id):
+        if full_path_or_id in self._projects:
+            return self._projects[full_path_or_id]
+
+        for project in self._projects.values():
+            if project.id == full_path_or_id:
+                return project
+
+        raise gitlab.exceptions.GitlabGetError(
+            response_code=404, error_message="Project Not Found"
+        )
 
     def _create_project(self, data):
         """Note thate the self._projects dict is indexed by full path, as
@@ -173,7 +197,7 @@ class GitLabMock:
 
         # ensure namespace exists
         try:
-            self._get_group(namespace_id)
+            group = self._get_group(namespace_id)
         except gitlab.exceptions.GitlabGetError:
             raise gitlab.exceptions.GitlabCreateError(
                 response_code=400,
@@ -182,11 +206,7 @@ class GitLabMock:
             )
 
         # ensure no other project in the namespace has the same path
-        if path in [
-            p.path
-            for p in self._projects.values()
-            if p.namespace_id == namespace_id
-        ]:
+        if path in [p.path for p in group.projects.list(all=True)]:
             raise gitlab.exceptions.GitlabCreateError(
                 response_code=400,
                 error_message="Failed to save project "
@@ -206,6 +226,7 @@ class GitLabMock:
             namespace_id=namespace_id,
             http_url=http_url,
         )
+        group._project_list.append(self._projects[full_path])
         return self._projects[full_path]
 
     def _group_endpoint(self, group_id):
@@ -244,6 +265,10 @@ class GitLabMock:
             parent_id=parent_id,
             users_read_only=self._users,
         )
+
+        if parent_id:
+            self._groups[parent_id]._group_list.append(self._groups[group_id])
+
         return self._groups[group_id]
 
     def _list_groups(self, *, id=None, search=None, all=False):
@@ -297,6 +322,33 @@ def raise_(error):
         raise error
 
     return inner
+
+
+@pytest.fixture
+def repo_names(api, assignment_names):
+    """Setup repo tuples along with groups for the repos to be created in."""
+    target_group_id = api._gitlab.tests_only_target_group_id
+    groups = [
+        api._gitlab.groups.create(
+            dict(name=str(team), path=str(team), parent_id=target_group_id)
+        )
+        for team in constants.STUDENTS
+    ]
+
+    repo_names = []
+    for group, assignment in itertools.product(groups, assignment_names):
+        repo_name = plug.generate_repo_name(group.name, assignment)
+        api._gitlab.projects.create(
+            dict(
+                name=repo_name,
+                path=repo_name,
+                description="Some description",
+                visibility="private",
+                namespace_id=group.id,
+            )
+        )
+        repo_names.append(repo_name)
+    return repo_names
 
 
 class TestInit:
@@ -389,6 +441,16 @@ class TestGetRepoUrls:
 
         # assert
         assert sorted(actual_urls) == sorted(expected_urls)
+
+
+class TestGetRepos:
+    """Tests for get_repos."""
+
+    def test_get_all_repos(self, api, repo_names):
+        """get_repos should return all repos when called without an
+        argument.
+        """
+        assert len(list(api.get_repos())) == len(repo_names)
 
 
 class TestInsertAuth:
