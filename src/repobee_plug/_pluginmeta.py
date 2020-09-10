@@ -15,11 +15,7 @@ from repobee_plug.cli.args import _Option, _MutuallyExclusiveGroup
 _HOOK_METHODS = {
     key: value
     for key, value in itertools.chain(
-        _exthooks.CloneHook.__dict__.items(),
-        _exthooks.SetupHook.__dict__.items(),
-        _exthooks.ConfigHook.__dict__.items(),
-        _corehooks.PeerReviewHook.__dict__.items(),
-        _corehooks.APIHook.__dict__.items(),
+        _corehooks.__dict__.items(), _exthooks.__dict__.items(),
     )
     if callable(value) and not key.startswith("_")
 }
