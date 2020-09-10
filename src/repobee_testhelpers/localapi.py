@@ -208,7 +208,9 @@ class LocalAPI(plug.PlatformAPI):
         """See :py:meth:`repobee_plug.PlatformAPI.get_repos`."""
         repo_names = map(self.extract_repo_name, repo_urls or [])
         unfiltered_repos = (
-            self._repos[self._org_name].get(name) for name in repo_names
+            (self._repos[self._org_name].get(name) for name in repo_names)
+            if repo_urls
+            else self._repos[self._org_name].values()
         )
         return [repo.to_plug_repo() for repo in unfiltered_repos if repo]
 
