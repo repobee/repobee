@@ -14,6 +14,16 @@ yet and may change without notice)""".replace(
     "\n", " "
 )
 
+_ADD_TEACHERS_DESCRIPTION = f"""
+Add teachers/teaching assistants to the `{TEACHERS_TEAM_NAME}` team. This team
+is in turn granted read access to all repositories in the organization. The
+point of this is to allow a course responsible to allow teaching assistants to
+access student repositories without being able to manipulate them. To revoke
+read access, simply manually remove users from `{TEACHERS_TEAM_NAME}`.
+""".replace(
+    "\n", " "
+)
+
 
 class AddTeachers(plug.Plugin, plug.cli.Command):
     __settings__ = plug.cli.command_settings(
@@ -21,9 +31,7 @@ class AddTeachers(plug.Plugin, plug.cli.Command):
         action="add-teachers",
         help="add teachers/teaching assistants to the organization, with read "
         "access to all repositories",
-        description="Add teachers/teaching assistants to the "
-        "`repobee-teachers` team, which in turn is granted read access to "
-        "all repositories in the target organization.",
+        description=_ADD_TEACHERS_DESCRIPTION,
     )
 
     teachers = plug.cli.option(
