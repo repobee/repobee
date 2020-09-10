@@ -181,9 +181,10 @@ class TestPush:
             for local_repo, url, branch in push_tuples
         ]
 
-        failed_urls = git.push(push_tuples)
+        successful_pts, failed_pts = git.push(push_tuples)
 
-        assert not failed_urls
+        assert not failed_pts
+        assert successful_pts == push_tuples
         aio_subproc.create_subprocess.assert_has_calls(expected_calls)
 
     def test_tries_all_calls_despite_exceptions(
@@ -203,11 +204,11 @@ class TestPush:
             )
 
         mocker.patch("_repobee.git._push_async", side_effect=raise_)
-        expected_failed_urls = [pt.repo_url for pt in push_tuples]
 
-        failed_urls = git.push(push_tuples, tries=tries)
+        successful_pts, failed_pts = git.push(push_tuples, tries=tries)
 
-        assert sorted(failed_urls) == sorted(expected_failed_urls)
+        assert not successful_pts
+        assert failed_pts == push_tuples
         git._push_async.assert_has_calls(expected_calls, any_order=True)
 
     def test_stops_retrying_when_failed_pushes_succeed(

@@ -386,7 +386,7 @@ def execute_clone_tasks(
     Returns:
         A mapping from repo name to hook result.
     """
-    return _execute_tasks(repos, plug.manager.hook.post_clone, api, cwd)
+    return execute_tasks(repos, plug.manager.hook.post_clone, api, cwd)
 
 
 def execute_setup_tasks(
@@ -403,16 +403,17 @@ def execute_setup_tasks(
     Returns:
         A mapping from repo name to hook result.
     """
-    return _execute_tasks(repos, plug.manager.hook.pre_setup, api, cwd)
+    return execute_tasks(repos, plug.manager.hook.pre_setup, api, cwd)
 
 
-def _execute_tasks(
+def execute_tasks(
     repos: Iterable[Union[plug.StudentRepo, plug.TemplateRepo]],
     hook_function: Callable[
         [pathlib.Path, plug.PlatformAPI], Optional[plug.Result]
     ],
     api: plug.PlatformAPI,
     cwd: Optional[pathlib.Path],
+    copy_repos: bool = True,
 ) -> Mapping[str, List[plug.Result]]:
     """Execute plugin tasks on the provided repos."""
     cwd = cwd or pathlib.Path(".")
@@ -422,8 +423,10 @@ def _execute_tasks(
 
         plug.log.info("Executing tasks ...")
         results = collections.defaultdict(list)
-        for repo in _copy_repos(repos, basedir=copies_root):
-            plug.log.info("Processing {}".format(repo.path.name))
+        for repo in (
+            _copy_repos(repos, basedir=copies_root) if copy_repos else repos
+        ):
+            plug.log.info("Processing {}".format(repo.name))
 
             for result in hook_function(repo=repo, api=api):  # type: ignore
                 if result:

@@ -6,13 +6,13 @@
 .. moduleauthor:: Simon Larsén
 """
 import asyncio
-import collections
 import enum
 import os
 import pathlib
 import shutil
 import subprocess
 import sys
+import dataclasses
 from typing import Iterable, List, Any, Callable, Tuple, Awaitable, Sequence
 
 import more_itertools
@@ -26,7 +26,17 @@ from _repobee import util
 CONCURRENT_TASKS = 20
 
 
-Push = collections.namedtuple("Push", ("local_path", "repo_url", "branch"))
+@dataclasses.dataclass(frozen=True)
+class Push:
+    local_path: pathlib.Path
+    repo_url: str
+    branch: str
+    metadata: dict = dataclasses.field(default_factory=dict)
+
+    def __iter__(self):
+        """Iter implementation just to make this dataclass unpackable."""
+        return iter((self.local_path, self.repo_url, self.branch))
+
 
 _EMPTY_REPO_ERROR = b"""fatal: Couldn't find remote ref HEAD
 fatal: the remote end hung up unexpectedly"""
@@ -221,7 +231,9 @@ def _push_no_retry(push_tuples: Iterable[Push]) -> List[str]:
     ]
 
 
-def push(push_tuples: Iterable[Push], tries: int = 3) -> List[str]:
+def push(
+    push_tuples: Iterable[Push], tries: int = 3
+) -> Tuple[List[Push], List[Push]]:
     """Push to all repos defined in push_tuples asynchronously. Amount of
     concurrent tasks is limited by CONCURRENT_TASKS. Pushing to repos is tried
     a maximum of ``tries`` times (i.e. pushing is _retried_ ``tries - 1``
@@ -232,11 +244,12 @@ def push(push_tuples: Iterable[Push], tries: int = 3) -> List[str]:
         tries: Amount of times to try to push (including initial push).
 
     Returns:
-        urls to which pushes failed with exception.PushFailedError. Other
-        errors are only logged.
+        A tuple of lists of push tuples on the form (successful, failures).
     """
     if tries < 1:
         raise ValueError("tries must be larger than 0")
+
+    push_tuples = list(push_tuples)
     # confusing, but failed_pts needs an initial value
     failed_pts = list(push_tuples)
     for i in range(tries):
@@ -247,7 +260,8 @@ def push(push_tuples: Iterable[Push], tries: int = 3) -> List[str]:
             break
         plug.log.warning("{} pushes failed ...".format(len(failed_pts)))
 
-    return [pt.repo_url for pt in failed_pts]
+    successful_pts = [pt for pt in push_tuples if pt not in failed_pts]
+    return successful_pts, failed_pts
 
 
 def _batch_execution(
