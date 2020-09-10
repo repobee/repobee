@@ -8,9 +8,9 @@ TEACHERS_TEAM_NAME = "repobee-teachers"
 
 PLUGIN_DESCRIPTION = """Manager plugin for adding and removing
 teachers/teaching assistants from the taget organization. Teachers are granted
-read access to all repositories in the organization. This plugin only supports
-GitHub. (NOTE: This plugin is not stable yet and may
-change without notice)""".replace(
+read access to all repositories in the organization. This plugin should not be
+used with GitLab due to performance issues. (NOTE: This plugin is not stable
+yet and may change without notice)""".replace(
     "\n", " "
 )
 
