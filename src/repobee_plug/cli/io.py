@@ -1,8 +1,7 @@
 """IO functionality for plugins."""
 import sys
 
-from typing import Iterable
-from typing import TypeVar
+from typing import Iterable, TypeVar, Any
 
 import tqdm  # type: ignore
 
@@ -16,12 +15,14 @@ __all__ = [
 T = TypeVar("T")
 
 
-def echo(msg: str) -> None:
+def echo(msg: Any) -> None:
     """Echo a message to the command line.
 
     Args:
-        msg: The message to echo.
+        msg: Any kind of object that can be converted into a human-readable
+            string with the ``str`` function.
     """
+    msg = str(msg)
     log.info(msg)
     print(msg)
 
