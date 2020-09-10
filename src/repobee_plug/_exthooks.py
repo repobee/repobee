@@ -117,6 +117,26 @@ class SetupHook:
             for the hook.
         """
 
+    @hookspec
+    def post_setup(
+        self, repo: StudentRepo, api: PlatformAPI
+    ) -> Optional[Result]:
+        """Operate on a student repo after the setup command has executed.
+
+        .. important::
+
+            This hook is only called on freshly created student repos that did
+            not already exist when the setup command was invoked.
+
+        Args:
+            repo: A student repository.
+            api: An instance of the platform API.
+        Returns:
+            Optionally returns a Result for reporting the outcome of the hook.
+            May also return None, in which case no reporting will be performed
+            for the hook.
+        """
+
 
 class ConfigHook:
     """Hook functions related to configuration."""

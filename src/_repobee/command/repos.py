@@ -18,7 +18,7 @@ import re
 import os
 import sys
 import tempfile
-from typing import Iterable, List, Optional, Mapping, Union, Tuple
+from typing import Iterable, List, Optional, Mapping, Union, Tuple, Any
 
 import repobee_plug as plug
 
@@ -76,11 +76,11 @@ def setup_student_repos(
 
         plug.log.info("Cloning into master repos ...")
         _clone_all(template_repos, cwd=workdir, api=api)
-        hook_results = plugin.execute_setup_tasks(
+        pre_setup_results = plugin.execute_setup_tasks(
             template_repos, api, cwd=pathlib.Path(tmpdir)
         )
 
-        created_teams = list(
+        platform_teams = list(
             plug.cli.io.progress_bar(
                 _repobee.command.teams.create_teams(
                     teams, plug.TeamPermission.PUSH, api
@@ -91,16 +91,69 @@ def setup_student_repos(
         )
 
         push_tuple_iter = _create_push_tuples(
-            created_teams, template_repos, api
+            platform_teams, template_repos, api
         )
         push_tuple_iter_progress = plug.cli.io.progress_bar(
             push_tuple_iter,
             desc="Setting up student repos",
             total=len(teams) * len(template_repos),
         )
-        git.push(push_tuples=push_tuple_iter_progress)
+        successful_pts, _ = git.push(push_tuples=push_tuple_iter_progress)
 
-    return hook_results
+        post_setup_results = _execute_post_setup_hook(successful_pts, api)
+
+    return _combine_dicts(pre_setup_results, post_setup_results)
+
+
+def _combine_dicts(*dicts):
+    base = dict(dicts[0])
+    others = dicts[1:]
+
+    for key, value in itertools.chain.from_iterable(
+        [d.items() for d in others]
+    ):
+        if key in base:
+            base[key].extend(value)
+        else:
+            base[key] = value
+
+    return base
+
+
+def _execute_post_setup_hook(
+    push_tuples: List[git.Push], api: plug.PlatformAPI
+) -> Mapping[Any, Any]:
+    """Execute the post_setup hook on the given push tuples. Note that the push
+    tuples are expected to have the "team" and "repo" keys set in the metadata.
+    """
+    post_setup_exists = any(
+        ["post_setup" in dir(p) for p in plug.manager.get_plugins()]
+    )
+    if not post_setup_exists or not push_tuples:
+        return {}
+
+    teams_and_repos = [
+        (pt.metadata["team"], pt.metadata["repo"]) for pt in push_tuples
+    ]
+    student_repos = [
+        plug.StudentRepo(
+            name=repo.name,
+            url=repo.url,
+            team=plug.StudentTeam(members=team.members),
+        )
+        for team, repo in teams_and_repos
+    ]
+    student_repos_iter = plug.cli.io.progress_bar(
+        student_repos, desc="Executing post_setup hooks"
+    )
+
+    return plugin.execute_tasks(
+        student_repos_iter,
+        plug.manager.hook.post_setup,
+        api,
+        cwd=None,
+        copy_repos=False,
+    )
 
 
 def _create_push_tuples(
@@ -134,6 +187,7 @@ def _create_push_tuples(
                 local_path=template_repo.path,
                 repo_url=api.insert_auth(repo.url),
                 branch=git.active_branch(template_repo.path),
+                metadata=dict(repo=repo, team=team),
             )
 
 
@@ -240,12 +294,15 @@ def update_student_repos(
             desc="Setting up student repos",
             total=len(teams) * len(template_repos),
         )
-        failed_urls = git.push(push_tuples=push_tuple_iter_progress)
+        successful_pts, failed_pts = git.push(
+            push_tuples=push_tuple_iter_progress
+        )
 
-    if failed_urls and issue:
+    if failed_pts and issue:
         plug.echo("Opening issue in repos to which push failed")
         urls_without_auth = [
-            re.sub("https://.*?@", "https://", url) for url in failed_urls
+            re.sub("https://.*?@", "https://", pt.repo_url)
+            for pt in failed_pts
         ]
         _open_issue_by_urls(urls_without_auth, issue, api)
 
