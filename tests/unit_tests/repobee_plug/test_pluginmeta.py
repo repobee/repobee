@@ -202,8 +202,7 @@ class TestDeclarativeExtensionCommand:
         plugin_instance = Greeting("greeting")
 
         assert not hasattr(
-            plugin_instance,
-            plug._exthooks.ConfigHook.get_configurable_args.__name__,
+            plugin_instance, plug._exthooks.get_configurable_args.__name__,
         )
 
     def test_raises_when_non_configurable_value_is_configured(self):

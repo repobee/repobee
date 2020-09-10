@@ -19,13 +19,6 @@ from repobee_plug.hook import Status, Result
 # Review stuff
 from repobee_plug.reviews import Review, ReviewAllocation
 
-# Hook functions
-from repobee_plug._corehooks import PeerReviewHook as _peer_hook
-from repobee_plug._corehooks import APIHook as _api_hook
-from repobee_plug._exthooks import CloneHook as _clone_hook
-from repobee_plug._exthooks import SetupHook as _setup_hook
-from repobee_plug._exthooks import ConfigHook as _config_hook
-
 # Helpers
 from repobee_plug.deprecation import deprecate, deprecated_hooks, Deprecation
 from repobee_plug.serialize import (
@@ -65,12 +58,13 @@ from repobee_plug.exceptions import (
 # Local representations
 from repobee_plug.localreps import StudentTeam, StudentRepo, TemplateRepo
 
+# Hook functions
+import repobee_plug._corehooks
+import repobee_plug._exthooks
+
 manager = pluggy.PluginManager(__package__)
-manager.add_hookspecs(_clone_hook)
-manager.add_hookspecs(_setup_hook)
-manager.add_hookspecs(_peer_hook)
-manager.add_hookspecs(_api_hook)
-manager.add_hookspecs(_config_hook)
+manager.add_hookspecs(repobee_plug._corehooks)
+manager.add_hookspecs(repobee_plug._exthooks)
 
 __all__ = [
     # Plugin stuff
