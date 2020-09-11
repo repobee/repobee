@@ -7,6 +7,8 @@ tooling.
 """
 import pathlib
 import textwrap
+import os
+import sys
 
 from typing import Tuple, List, Any, Dict
 
@@ -252,7 +254,7 @@ def _list_all_plugins(
         "Description",
         "URL",
         "Latest",
-        "Installed (√ = active)",
+        "Installed\n(√ = active)",
     ]
     plugins_table = []
     for plugin_name, attrs in plugins.items():
@@ -273,7 +275,14 @@ def _list_all_plugins(
             ]
         )
 
-    plug.echo(tabulate.tabulate(plugins_table, headers, tablefmt="fancy_grid"))
+    pretty_table = _format_table(
+        plugins_table,
+        headers,
+        max_width=_get_terminal_width(),
+        column_elim_order=[2, 3, 4, 1, 0],
+    )
+
+    plug.echo(pretty_table)
 
 
 def _list_installed_plugins(installed_plugins: dict) -> None:
@@ -300,3 +309,50 @@ def _list_plugin(plugin_name: str, plugins: dict) -> None:
         ["URL", attrs["url"]],
     ]
     plug.echo(tabulate.tabulate(table, tablefmt="fancy_grid"))
+
+
+def _format_table(
+    table: List[List[str]],
+    headers: List[str],
+    max_width: int,
+    column_elim_order: List[int],
+) -> str:
+    """Format a table to fit the max width."""
+    assert table
+    assert headers
+    assert max_width > 0
+    assert column_elim_order
+
+    header_elimination_order = [headers[i] for i in column_elim_order]
+
+    # this is extremely inefficient, but as the table is so small it doesn't
+    # matter
+    mutable_table = list(table)
+    mutable_hdrs = list(headers)
+    for hdr in header_elimination_order:
+        pretty_table = tabulate.tabulate(
+            mutable_table, mutable_hdrs, tablefmt="fancy_grid"
+        )
+        table_width = len(pretty_table.split("\n")[0])
+        if table_width <= max_width:
+            return pretty_table
+
+        plug.log.warning(
+            f"Terminal < {table_width} cols wide, truncating: '{hdr}'"
+        )
+        elim_idx = mutable_hdrs.index(hdr)
+        mutable_hdrs.pop(elim_idx)
+        mutable_table = [
+            row[:elim_idx] + row[elim_idx + 1 :] for row in mutable_table
+        ]
+
+    return pretty_table
+
+
+def _get_terminal_width() -> int:
+    try:
+        return os.get_terminal_size().columns
+    except OSError:
+        # if there is no tty, there will be no terminal size
+        # so we simply set it to max
+        return sys.maxsize
