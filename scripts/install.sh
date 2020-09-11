@@ -167,16 +167,16 @@ function create_repobee_executable() {
 
 function add_to_path() {
     printf "\n$REPOBEE_BIN_DIR is not on the PATH, so to run RepoBee you must type the full path to $REPOBEE_EXECUTABLE.\n"
-    echo "We can add $REPOBEE_BIN_DIR to your PATH by adding it to your profile file (e.g. .bashrc, .zshrc, config.fish, etc), and then you just need to type 'repobee' to run it."
-    echo "If you prefer to do this manually, and know how to do it, then that's absolutely fine, and you can always run RepoBee with the full path to $REPOBEE_EXECUTABLE"
-    echo "Do you want us to add $REPOBEE_BIN_DIR to your PATH? (y/n): "
+    echo "We can add try to add $REPOBEE_BIN_DIR to your PATH by adding it to your profile files (e.g. .bashrc, .zshrc, config.fish, etc), and then you just need to type 'repobee' to run it."
+    echo "If you know how to do this manually, then we recommend that you do so such that you get it the way you like it."
+    echo "Do you want us to add try to $REPOBEE_BIN_DIR to your PATH? [y/N]: "
 
     # careful with read, its options work differently in zsh and bash
     read confirm
 
     case "$confirm" in y|Y|yes|YES|yes)
             echo "Adding $REPOBEE_BIN_DIR to PATH"
-            "$REPOBEE_PYTHON" -m userpath prepend "$REPOBEE_BIN_DIR" || exit 1
+            "$REPOBEE_PYTHON" -m userpath append "$REPOBEE_BIN_DIR" || exit 1
             echo "$REPOBEE_BIN_DIR added to PATH, please start a new shell for the changes to take effect."
             ;;
         *) echo "Not adding $REPOBEE_BIN_DIR to PATH. Please do this manually."
