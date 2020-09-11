@@ -1,7 +1,6 @@
 language: python
 branches:
   only:
-  - master
   - "/^v\\d+\\.\\d+\\.\\d+(-(alpha|beta|rc)(\\.\\d+)?)?$/"
 matrix:
   include:
@@ -14,7 +13,7 @@ script: ".travis/system_test.sh"
 after_success:
 - ".travis/upload_coverage.sh"
 notifications:
-  email: false
+  email: true
   slack:
     secure: dIcoapJPmlFSN/eHmGxklWy3TDvfACO0Ed5JhKbApYzbztvl9JB6ggmtpmq4NFWVkkJKnz7SaDTKdD7Qis7O+fOQ8hc2HMQ9BKC0dYiaBfJlxT68UsBbhhiUYARNNCXLAUSY81V/ea233EK4YyukYj/wKxi7W8uqfPh0/ZSQoCfNE9CW0IJdxIk73NDFshzxHJhPuIqnSvJuDbh9dfxIWUrezH0efe8CBROVHPxBehjCfLBrL/hNPZ6ryzZzqISYmStmQ31H/xmebdizqKEbtFb9AlYHh0yN+Lt2UFcXMI30e5AbDDkb+/gA1hN1hlQOvjpXl2ZiRrC+bwoeBX2dB0RqBz0UyNz6WWoD3w6ebebkVrZEgL6S9G+WdffOqvvElTE0nbR7HAQuzL+E1joqAR63XOhDQO5uT2BdGbJkpWqQQDkZJNBQAoBPLNsZ7oPr9WKvrfzJmkDOZRHEVzY/1FtubRjZAIrmY8xDACziI/XUVMNz2RtmfO9b4RQdP1u1KdFDRq5WbGLBi9B7vMUUVoVQVG6xrLDVG0Thi8DGF+cw/3VomqhERoIMb4WQf2zCVXKUfm5AFJ3VgikvOAV21/ACdDq/gw3RUVKLd3jUdvM2am3kGIxmTB7nq2wIkyLMoshOBcZlLyvRwkIvi+riVHN/XVArOc7wq6EwRS1Jkq0=
     on_success: change
