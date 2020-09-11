@@ -2,6 +2,7 @@
 
 import tempfile
 import collections
+import shutil
 import json
 import os
 import pathlib
@@ -29,39 +30,6 @@ INSTALL_SCRIPT = (
     pathlib.Path(__file__).parent.parent.parent / "scripts" / "install.sh"
 )
 assert INSTALL_SCRIPT.is_file(), "unable to find install script"
-
-
-@pytest.fixture(autouse=True)
-def install_dir(monkeypatch):
-    """Install the RepoBee distribution into a temporary directory."""
-    with tempfile.TemporaryDirectory() as install_dirname:
-        install_dir = pathlib.Path(install_dirname)
-        env = dict(os.environ)
-        env["REPOBEE_INSTALL_DIR"] = str(install_dir)
-
-        proc = subprocess.Popen(str(INSTALL_SCRIPT), env=env)
-        proc.communicate("n")  # 'n' in answering whether or not to add to PATH
-        assert proc.returncode == 0
-
-        # moneypatch the distinfo module to make RepoBee think it's installed
-        monkeypatch.setattr("_repobee.distinfo.DIST_INSTALL", True)
-        monkeypatch.setattr("_repobee.distinfo.INSTALL_DIR", install_dir)
-
-        yield install_dir
-
-
-@pytest.fixture(autouse=True)
-def set_version_in_pluginmanager(monkeypatch):
-    """Set the version attribute of the pluginmanager to the same version as
-    the installed RepoBee.
-
-    This only matters when there is a mismatch between the latest released
-    version, and the version of the current repository.
-    """
-    monkeypatch.setattr(
-        "_repobee.ext.dist.pluginmanager.__version__",
-        f"v{get_pkg_version('repobee')}",
-    )
 
 
 def test_install_dist(install_dir):
@@ -280,3 +248,53 @@ def run_dist(cmd: str) -> subprocess.CompletedProcess:
     """Execute a command with the installed RepoBee executable."""
     repobee_executable = distinfo.INSTALL_DIR / "bin" / "repobee"
     return subprocess.run(shlex.split(f"{repobee_executable} {cmd}"))
+
+
+@pytest.fixture(scope="session")
+def install_dir():
+    """Install the RepoBee distribution into a temporary directory."""
+    with tempfile.TemporaryDirectory() as install_dirname:
+        install_dir = pathlib.Path(install_dirname)
+        env = dict(os.environ)
+        env["REPOBEE_INSTALL_DIR"] = str(install_dir)
+
+        proc = subprocess.Popen(str(INSTALL_SCRIPT), env=env)
+        proc.communicate("n")  # 'n' in answering whether or not to add to PATH
+        assert proc.returncode == 0
+
+        yield install_dir
+
+
+@pytest.fixture(scope="session")
+def backup_install_dir(install_dir, tmp_path_factory):
+    """Backup the install dir such that it can be restored for each test
+    function without having to reinstall from scratch.
+    """
+    backup_root = tmp_path_factory.mktemp("repobee_test_backups")
+    repobee_install_backup = backup_root / "repobee_install_backup"
+    shutil.copytree(install_dir, repobee_install_backup)
+    return repobee_install_backup
+
+
+@pytest.fixture(autouse=True)
+def restore_install_dir(install_dir, backup_install_dir, monkeypatch):
+    """Restore the install dir for each test."""
+    # moneypatch the distinfo module to make RepoBee think it's installed
+    monkeypatch.setattr("_repobee.distinfo.DIST_INSTALL", True)
+    monkeypatch.setattr("_repobee.distinfo.INSTALL_DIR", install_dir)
+    shutil.rmtree(install_dir)
+    shutil.copytree(backup_install_dir, install_dir)
+
+
+@pytest.fixture(autouse=True)
+def set_version_in_pluginmanager(monkeypatch):
+    """Set the version attribute of the pluginmanager to the same version as
+    the installed RepoBee.
+
+    This only matters when there is a mismatch between the latest released
+    version, and the version of the current repository.
+    """
+    monkeypatch.setattr(
+        "_repobee.ext.dist.pluginmanager.__version__",
+        f"v{get_pkg_version('repobee')}",
+    )
