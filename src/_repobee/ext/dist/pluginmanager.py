@@ -341,8 +341,9 @@ def _format_table(
             mutable_table, mutable_hdrs, tablefmt="fancy_grid"
         )
         table_width = len(pretty_table.split("\n")[0])
+
         if table_width <= max_width:
-            return pretty_table
+            break
 
         plug.log.warning(
             f"Terminal < {table_width} cols wide, truncating: '{hdr}'"

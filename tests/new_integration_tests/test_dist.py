@@ -1,8 +1,7 @@
 """Tests for the RepoBee installable distribution."""
 
-import pytest
 import tempfile
-
+import collections
 import json
 import os
 import pathlib
@@ -10,6 +9,7 @@ import shlex
 import subprocess
 import sys
 
+import pytest
 from packaging import version
 
 from unittest import mock
@@ -186,6 +186,45 @@ class TestPluginUninstall:
         repobee.run("plugin uninstall".split())
 
         assert not get_pkg_version(f"repobee-{plugin_name}")
+
+
+class TestPluginList:
+    """Tests for the ``plugin list`` command."""
+
+    def test_truncates_urls_to_fit_terminal_width(self, capsys, mocker):
+        """When the terminal is too narrow, the URLs in the plugins table are
+        the first to be truncated.
+        """
+        cols = 120  # URLs need ~140 cols to fit
+        mocker.patch(
+            "os.get_terminal_size",
+            autospec=True,
+            return_value=collections.namedtuple("TermSize", "columns lines")(
+                columns=cols, lines=100
+            ),
+        )
+
+        repobee.run("plugin list".split())
+
+        out_err = capsys.readouterr()
+        assert "truncating: 'URL'" in out_err.err
+        assert "https://github.com" not in out_err.out
+
+    def test_shows_urls_when_terminal_width_is_large(self, capsys, mocker):
+        cols = sys.maxsize  # URLs need ~140 cols to fit
+        mocker.patch(
+            "os.get_terminal_size",
+            autospec=True,
+            return_value=collections.namedtuple("TermSize", "columns lines")(
+                columns=cols, lines=100
+            ),
+        )
+
+        repobee.run("plugin list".split())
+
+        out_err = capsys.readouterr()
+        assert "truncating: 'URL'" not in out_err.err
+        assert "https://github.com" in out_err.out
 
 
 class TestManageUpgrade:
