@@ -194,16 +194,18 @@ def _initialize_plugins(parsed_preparser_args: argparse.Namespace) -> None:
     plug.log.debug("Initializing default plugins")
     plugin.initialize_default_plugins()
 
-    if not parsed_preparser_args.no_plugins:
+    if distinfo.DIST_INSTALL:
+        plug.log.debug("Initializing dist plugins")
+        plugin.initialize_dist_plugins()
 
+    if not parsed_preparser_args.no_plugins:
         if distinfo.DIST_INSTALL:
-            plug.log.debug("Initializing dist plugins")
-            plugin.initialize_dist_plugins()
+            plug.log.debug("Initializing active plugins")
             plugin.initialize_plugins(
                 disthelpers.get_active_plugins(), allow_filepath=True
             )
 
-        plug.log.debug("Initializing user plugins")
+        plug.log.debug("Initializing preparser-specified plugins")
         plugin_names = parsed_preparser_args.plug or []
         plugin.initialize_plugins(plugin_names, allow_filepath=True)
 

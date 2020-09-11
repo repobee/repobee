@@ -215,6 +215,29 @@ def test_dist_plugins_are_loaded_when_dist_install(monkeypatch):
     assert qualnames.issuperset(dist_plugin_qualnames)
 
 
+def test_dist_plugins_are_loaded_when_dist_install_and_no_plugins(monkeypatch):
+    """Even with --no-plugins specified, the default dist plugins should be
+    loaded.
+    """
+    dist_plugin_qualnames = plugin.get_qualified_module_names(
+        _repobee.ext.dist
+    )
+    sys_args = "repobee --no-plugins -h".split()
+    monkeypatch.setattr("_repobee.distinfo.DIST_INSTALL", True)
+
+    with pytest.raises(SystemExit):
+        # calling -h always causes a SystemExit
+        main.main(sys_args, unload_plugins=False)
+
+    qualnames = {
+        p.__name__
+        for p in plug.manager.get_plugins()
+        if isinstance(p, types.ModuleType)
+    }
+
+    assert qualnames.issuperset(dist_plugin_qualnames)
+
+
 def test_plugin_with_subparser_name(
     handle_args_mock, dispatch_command_mock, init_plugins_mock
 ):
