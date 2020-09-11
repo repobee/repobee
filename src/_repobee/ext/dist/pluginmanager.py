@@ -263,7 +263,7 @@ def _list_all_plugins(
         latest_version = list(attrs["versions"].keys())[0]
         installed = installed_plugins.get(plugin_name) or {}
         installed_version = (
-            __version__
+            "built-in"
             if attrs.get("builtin")
             else (installed.get("version") or "-")
         ) + (" √" if plugin_name in active_plugins else "")
