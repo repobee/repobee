@@ -242,5 +242,5 @@ auto_complete_msg
 
 echo "
 RepoBee was installed successfully. To uninstall, simply remove the directory at $REPOBEE_INSTALL_DIR
-If you are having trouble, please visit the FAQ at https://repobee.readthedocs.io/troubleshoot.html
+If you are having trouble, please visit the FAQ at https://repobee.readthedocs.io/en/stable/faq.html
 "

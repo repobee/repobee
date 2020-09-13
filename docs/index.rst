@@ -23,6 +23,11 @@ The entire core CLI (i.e. without plugins) is also documented in the
 :ref:`cli`. This is both handy as reference material for existing users, and
 for prospective users to get a clear understanding of what RepoBee can do.
 
+.. hint::
+
+    Having issues? Check the :ref:`faq` to see if you can find a solution for
+    your problem.
+
 .. important::
 
    Please open an issue over on the `issue tracker
@@ -39,6 +44,7 @@ for prospective users to get a clear understanding of what RepoBee can do.
    fundamentals
    install
    userguide
+   faq
    configuration
    cli
    contributing
