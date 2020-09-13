@@ -84,6 +84,6 @@ RepoBee crashes
 
 First try to upgrade RepoBee to the latest version with ``repobee manage
 upgrade``. If that does not resolve the issue, try uninstalling plugins
-one-by-one with ``repobee plugin uninstall`` until RepoBee works again.
-If that has no effect either, then you should remove the ``~/.repobee``
+one-by-one with ``repobee --no-plugins plugin uninstall`` until RepoBee works
+again. If that has no effect either, then you should remove the ``~/.repobee``
 directory and execute the installer again (see :ref:`install`).
