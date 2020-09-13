@@ -145,7 +145,7 @@ def main(sys_args: List[str], unload_plugins: bool = True):
                 "Please visit the FAQ to try to resolve the problem: "
                 "https://repobee.readthedocs.io/en/stable/faq.html"
             )
-            raise
+        raise
 
 
 def _main(sys_args: List[str], unload_plugins: bool = True):
