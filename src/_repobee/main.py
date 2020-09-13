@@ -138,13 +138,14 @@ def main(sys_args: List[str], unload_plugins: bool = True):
     """
     try:
         _main(sys_args, unload_plugins)
-    except SystemExit:
-        plug.log.error(
-            "RepoBee exited unexpectedly. "
-            "Please visit the FAQ to try to resolve the problem: "
-            "https://repobee.readthedocs.io/en/stable/faq.html"
-        )
-        raise
+    except SystemExit as exc:
+        if exc.code != 0:
+            plug.log.error(
+                "RepoBee exited unexpectedly. "
+                "Please visit the FAQ to try to resolve the problem: "
+                "https://repobee.readthedocs.io/en/stable/faq.html"
+            )
+            raise
 
 
 def _main(sys_args: List[str], unload_plugins: bool = True):
@@ -161,7 +162,7 @@ def _main(sys_args: List[str], unload_plugins: bool = True):
         _initialize_plugins(parsed_preparser_args)
 
         parsed_args, api = _parse_args(
-            app_args, parsed_preparser_args.config_file,
+            app_args, parsed_preparser_args.config_file
         )
         traceback = parsed_args.traceback
         pre_init = False
