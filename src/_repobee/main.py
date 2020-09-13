@@ -136,6 +136,18 @@ def main(sys_args: List[str], unload_plugins: bool = True):
         unload_plugins: If True, plugins are automatically unloaded just before
             the function returns.
     """
+    try:
+        _main(sys_args, unload_plugins)
+    except SystemExit:
+        plug.log.error(
+            "RepoBee exited unexpectedly. "
+            "Please visit the FAQ to try to resolve the problem: "
+            "https://repobee.readthedocs.io/en/stable/faq.html"
+        )
+        raise
+
+
+def _main(sys_args: List[str], unload_plugins: bool = True):
     _repobee.cli.parsing.setup_logging()
     args = sys_args[1:]  # drop the name of the program
     traceback = False
@@ -160,11 +172,6 @@ def main(sys_args: List[str], unload_plugins: bool = True):
             )
     except exception.PluginLoadError as exc:
         plug.log.error("{.__class__.__name__}: {}".format(exc, str(exc)))
-        plug.log.error(
-            "The plugin may not be installed, or it may not exist. If the "
-            "plugin is defined in the config file, try running `repobee "
-            "--no-plugins config-wizard` to remove any offending plugins."
-        )
         sys.exit(1)
     except exception.ParseError as exc:
         plug.log.error(str(exc))

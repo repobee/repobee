@@ -354,6 +354,23 @@ def test_non_zero_exit_status_on_exception(
     assert exc_info.value.code == 1
 
 
+def test_prints_url_to_faq_on_error(
+    capsys, parse_preparser_options_mock, handle_args_mock, no_config_mock
+):
+    def raise_():
+        raise ValueError()
+
+    parse_preparser_options_mock.side_effect = raise_
+
+    with pytest.raises(SystemExit):
+        main.main("repobee -h".split())
+
+    assert (
+        "https://repobee.readthedocs.io/en/stable/faq.html"
+        in capsys.readouterr().err
+    )
+
+
 workdir_category = plug.cli.category("workdir", ["workdir"])
 
 
