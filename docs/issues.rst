@@ -74,13 +74,13 @@ Listing Issues (the ``list`` action)
 ====================================
 It can often be interesting to check what issues exist in a set of repos,
 especially so if you're a teaching assistant who just doesn't want to leave your
-trusty terminal. This is where the ``list-issues`` command comes into play.
+trusty terminal. This is where the ``issues list`` command comes into play.
 Typically, we are only interested in open issues, and can then use list
 issues like so:
 
 .. code-block:: bash
 
-    $ repobee list-issues -a task-2 --sf students.txt
+    $ repobee issues list -a task-2 --sf students.txt
     [INFO] slarse-task-2/#1:  Grading Criteria created 2018-09-12 18:20:56 by glassey
     [INFO] glennol-task-2/#1:  Grading Criteria created 2018-09-12 18:20:56 by glassey
     [INFO] glassey-task-2/#1:   Grading Criteria created 2018-09-12 18:20:56 by glassey
@@ -91,7 +91,7 @@ issues, we must specifically say so with the ``--closed`` argument.
 
 .. code-block:: bash
 
-    $ repobee list-issues -a task-2 --sf students.txt --closed
+    $ repobee issues list -a task-2 --sf students.txt --closed
     [INFO] slarse-task-2/#2:  An important announcement created 2018-09-17 17:46:43 by slarse
     [INFO] glennol-task-2/#2:  An important announcement created 2018-09-17 17:46:43 by slarse
     [INFO] glassey-task-2/#2:   An important announcement created 2018-09-17 17:46:43 by slarse
