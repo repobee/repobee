@@ -98,7 +98,7 @@ def test_happy_path(
     main.main(sys_args)
 
     handle_args_mock.assert_called_once_with(
-        sys_args[1:], config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
+        sys_args[1:], config_file=_repobee.constants.DEFAULT_CONFIG_FILE
     )
     dispatch_command_mock.assert_called_once_with(
         PARSED_ARGS, api_instance_mock, _repobee.constants.DEFAULT_CONFIG_FILE
@@ -117,7 +117,7 @@ def test_exit_status_1_on_exception_in_parsing(
 
     assert exc_info.value.code == 1
     handle_args_mock.assert_called_once_with(
-        sys_args[1:], config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
+        sys_args[1:], config_file=_repobee.constants.DEFAULT_CONFIG_FILE
     )
     assert not dispatch_command_mock.called
 
@@ -135,7 +135,7 @@ def test_exit_status_1_on_exception_in_handling_parsed_args(
 
     assert exc_info.value.code == 1
     handle_args_mock.assert_called_once_with(
-        sys_args[1:], config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
+        sys_args[1:], config_file=_repobee.constants.DEFAULT_CONFIG_FILE
     )
 
 
@@ -155,7 +155,7 @@ def test_plugins_args(
         any_order=True,
     )
     handle_args_mock.assert_called_once_with(
-        CLONE_ARGS, config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
+        CLONE_ARGS, config_file=_repobee.constants.DEFAULT_CONFIG_FILE
     )
 
 
@@ -173,7 +173,7 @@ def test_no_plugins_arg(
         DEFAULT_PLUGIN_NAMES, allow_qualified=True
     )
     handle_args_mock.assert_called_once_with(
-        CLONE_ARGS, config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
+        CLONE_ARGS, config_file=_repobee.constants.DEFAULT_CONFIG_FILE
     )
 
 
@@ -191,7 +191,7 @@ def test_no_plugins_with_configured_plugins(
         DEFAULT_PLUGIN_NAMES, allow_qualified=True
     )
     handle_args_mock.assert_called_once_with(
-        CLONE_ARGS, config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
+        CLONE_ARGS, config_file=_repobee.constants.DEFAULT_CONFIG_FILE
     )
 
 
@@ -253,7 +253,7 @@ def test_plugin_with_subparser_name(
         any_order=True,
     )
     handle_args_mock.assert_called_once_with(
-        CLONE_ARGS, config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
+        CLONE_ARGS, config_file=_repobee.constants.DEFAULT_CONFIG_FILE
     )
 
 
@@ -369,6 +369,19 @@ def test_prints_url_to_faq_on_error(
         "https://repobee.readthedocs.io/en/stable/faq.html"
         in capsys.readouterr().err
     )
+
+
+def test_does_not_log_error_when_command_is_used_incorrectly(mocker):
+    """There should be no error log when a command is invoked incorrectly (e.g.
+    misspelling the category).
+    """
+    errlog_mock = mocker.patch("repobee_plug.log.error")
+
+    with pytest.raises(SystemExit):
+        # note that the category is misspelled
+        main.main("repbee isues -h".split())
+
+    assert not errlog_mock.called
 
 
 workdir_category = plug.cli.category("workdir", ["workdir"])

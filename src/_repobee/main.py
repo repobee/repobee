@@ -138,14 +138,13 @@ def main(sys_args: List[str], unload_plugins: bool = True):
     """
     try:
         _main(sys_args, unload_plugins)
-    except SystemExit as exc:
-        if exc.code != 0:
-            plug.log.error(
-                "RepoBee exited unexpectedly. "
-                "Please visit the FAQ to try to resolve the problem: "
-                "https://repobee.readthedocs.io/en/stable/faq.html"
-            )
-        raise
+    except Exception:
+        plug.log.error(
+            "RepoBee exited unexpectedly. "
+            "Please visit the FAQ to try to resolve the problem: "
+            "https://repobee.readthedocs.io/en/stable/faq.html"
+        )
+        sys.exit(1)
 
 
 def _main(sys_args: List[str], unload_plugins: bool = True):
@@ -172,11 +171,11 @@ def _main(sys_args: List[str], unload_plugins: bool = True):
                 parsed_args, api, parsed_preparser_args.config_file
             )
     except exception.PluginLoadError as exc:
-        plug.log.error("{.__class__.__name__}: {}".format(exc, str(exc)))
-        sys.exit(1)
+        plug.log.error(f"{exc.__class__.__name__}: {exc}")
+        raise
     except exception.ParseError as exc:
         plug.log.error(str(exc))
-        sys.exit(1)
+        raise
     except Exception as exc:
         # FileErrors can occur during pre-init because of reading the config
         # and we don't want tracebacks for those (afaik at this time)
@@ -189,7 +188,7 @@ def _main(sys_args: List[str], unload_plugins: bool = True):
             plug.log.exception("Critical exception")
         else:
             plug.log.error("{.__class__.__name__}: {}".format(exc, str(exc)))
-        sys.exit(1)
+        raise
     finally:
         if unload_plugins:
             plugin.unregister_all_plugins()
