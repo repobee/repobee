@@ -33,7 +33,7 @@ then inspect the log output to figure out what happened. Recall that
 
 .. code-block:: bash
 
-    $ repobee assign-reviews -a task-1 --sf students.txt --num-reviews 2
+    $ repobee reviews assign -a task-1 --sf students.txt --num-reviews 2
 
 
     # Output nabbed from the log file, this will not appear on stdout
@@ -224,7 +224,7 @@ the student ``cabbage`` in the reviews for ``task-2`` back at
     allocations (repo access has been revoked anyway).
 
 5. Assign peer reviews again, with the new issue, with ``repobee
-   assign-reviews -a task-2 --sf students.txt --num-reviews 2
+   reviews assign -a task-2 --sf students.txt --num-reviews 2
    --issue issue.md``
 
 And that's it! Disaster averted.
