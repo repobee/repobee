@@ -116,7 +116,7 @@ you through the process of uninstalling any installed plugin.
 
     Sometimes, plugins break, and may cause RepoBee to fail to load. If you
     experience this, try running ``uninstall`` with the ``--no-plugins``
-    pre-parser option.
+    preparser option.
 
     .. code-block:: bash
 
