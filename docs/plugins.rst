@@ -15,48 +15,63 @@ Listing available plugins (the ``list`` action)
 ===============================================
 
 The ``plugin list`` command allows you to list available plugins for RepoBee.
-At the time of writing, the list is as follows:
+It should look something like this:
 
 
 .. code-block:: bash
+	:caption: Sample output from the ``plugin list`` command
 
 	$ repobee plugin list
-	╒═══════════╤════════════════════════════════════════╤═══════════════════════════════════════════════════════╤════════════════╤══════════════════════════╕
-	│ Name      │ Description                            │ URL                                                   │ Latest         │ Installed (√ = active)   │
-	╞═══════════╪════════════════════════════════════════╪═══════════════════════════════════════════════════════╪════════════════╪══════════════════════════╡
-	│ junit4    │ Plugin for RepoBee that runs JUnit4 on │ https://github.com/repobee/repobee-junit4             │ v1.0.0-alpha.1 │ -                        │
-	│           │ cloned repos                           │                                                       │                │                          │
-	├───────────┼────────────────────────────────────────┼───────────────────────────────────────────────────────┼────────────────┼──────────────────────────┤
-	│ feedback  │ A RepoBee plugin for opening feedback  │ https://github.com/repobee/repobee-feedback           │ v0.5.0         │ -                        │
-	│           │ issues in on student issue trackers    │                                                       │                │                          │
-	├───────────┼────────────────────────────────────────┼───────────────────────────────────────────────────────┼────────────────┼──────────────────────────┤
-	│ csvgrades │ A plugin for RepoBee that parses the   │ https://github.com/repobee/repobee-csvgrades          │ v0.1.0         │ -                        │
-	│           │ JSON file produced by list-issues to   │                                                       │                │                          │
-	│           │ report grades into a CSV file          │                                                       │                │                          │
-	├───────────┼────────────────────────────────────────┼───────────────────────────────────────────────────────┼────────────────┼──────────────────────────┤
-	│ sanitizer │ A plugin for sanitizing master         │ https://github.com/repobee/repobee-sanitizer          │ bcab711        │ -                        │
-	│           │ repositories before distribution to    │                                                       │                │                          │
-	│           │ students                               │                                                       │                │                          │
-	├───────────┼────────────────────────────────────────┼───────────────────────────────────────────────────────┼────────────────┼──────────────────────────┤
-	│ gitlab    │ Makes RepoBee compatible with GitLab   │ https://repobee.readthedocs.io/en/stable/plugins.html │ N/A            │ 3.0.0-beta.1             │
-	├───────────┼────────────────────────────────────────┼───────────────────────────────────────────────────────┼────────────────┼──────────────────────────┤
-	│ javac     │ Runs javac on student repos after      │ https://repobee.readthedocs.io/en/stable/plugins.html │ N/A            │ 3.0.0-beta.1             │
-	│           │ cloning                                │                                                       │                │                          │
-	├───────────┼────────────────────────────────────────┼───────────────────────────────────────────────────────┼────────────────┼──────────────────────────┤
-	│ pairwise  │ Makes peer review allocation pairwise  │ https://repobee.readthedocs.io/en/stable/plugins.html │ N/A            │ 3.0.0-beta.1             │
-	│           │ (if student A reviews student B, then  │                                                       │                │                          │
-	│           │ student B reviews student A)           │                                                       │                │                          │
-	├───────────┼────────────────────────────────────────┼───────────────────────────────────────────────────────┼────────────────┼──────────────────────────┤
-	│ pylint    │ Runs pylint on student repos after     │ https://repobee.readthedocs.io/en/stable/plugins.html │ N/A            │ 3.0.0-beta.1             │
-	│           │ cloning                                │                                                       │                │                          │
-	├───────────┼────────────────────────────────────────┼───────────────────────────────────────────────────────┼────────────────┼──────────────────────────┤
-	│ query     │ An experimental query command for      │ https://repobee.readthedocs.io/en/stable/plugins.html │ N/A            │ 3.0.0-beta.1             │
-	│           │ querying the hooks results file (NOTE: │                                                       │                │                          │
-	│           │ This plugin is not stable)             │                                                       │                │                          │
-	╘═══════════╧════════════════════════════════════════╧═══════════════════════════════════════════════════════╧════════════════╧══════════════════════════╛
+	╒═══════════╤══════════════════════════════════════════╤═══════════════════════════════════════════════════════╤══════════╤════════════════╕
+	│ Name      │ Description                              │ URL                                                   │ Latest   │ Installed      │
+	│           │                                          │                                                       │          │ (√ = active)   │
+	╞═══════════╪══════════════════════════════════════════╪═══════════════════════════════════════════════════════╪══════════╪════════════════╡
+	│ junit4    │ Plugin for RepoBee that runs JUnit4 on   │ https://github.com/repobee/repobee-junit4             │ v1.0.0   │ v1.0.0         │
+	│           │ cloned repos                             │                                                       │          │                │
+	├───────────┼──────────────────────────────────────────┼───────────────────────────────────────────────────────┼──────────┼────────────────┤
+	│ feedback  │ A RepoBee plugin for opening feedback    │ https://github.com/repobee/repobee-feedback           │ v0.6.2   │ v0.6.2 √       │
+	│           │ issues in on student issue trackers      │                                                       │          │                │
+	├───────────┼──────────────────────────────────────────┼───────────────────────────────────────────────────────┼──────────┼────────────────┤
+	│ sanitizer │ A plugin for sanitizing master           │ https://github.com/repobee/repobee-sanitizer          │ v0.1.0   │ -              │
+	│           │ repositories before distribution to      │                                                       │          │                │
+	│           │ students                                 │                                                       │          │                │
+	├───────────┼──────────────────────────────────────────┼───────────────────────────────────────────────────────┼──────────┼────────────────┤
+	│ csvgrades │ A plugin for RepoBee that parses the     │ https://github.com/repobee/repobee-csvgrades          │ v0.2.0   │ -              │
+	│           │ JSON file produced by list-issues to     │                                                       │          │                │
+	│           │ report grades into a CSV file            │                                                       │          │                │
+	├───────────┼──────────────────────────────────────────┼───────────────────────────────────────────────────────┼──────────┼────────────────┤
+	│ gitlab    │ Makes RepoBee compatible with GitLab     │ https://repobee.readthedocs.io/en/stable/plugins.html │ N/A      │ built-in       │
+	├───────────┼──────────────────────────────────────────┼───────────────────────────────────────────────────────┼──────────┼────────────────┤
+	│ javac     │ Runs javac on student repos after        │ https://repobee.readthedocs.io/en/stable/plugins.html │ N/A      │ built-in       │
+	│           │ cloning                                  │                                                       │          │                │
+	├───────────┼──────────────────────────────────────────┼───────────────────────────────────────────────────────┼──────────┼────────────────┤
+	│ pairwise  │ Makes peer review allocation pairwise    │ https://repobee.readthedocs.io/en/stable/plugins.html │ N/A      │ built-in       │
+	│           │ (if student A reviews student B, then    │                                                       │          │                │
+	│           │ student B reviews student A)             │                                                       │          │                │
+	├───────────┼──────────────────────────────────────────┼───────────────────────────────────────────────────────┼──────────┼────────────────┤
+	│ pylint    │ Runs pylint on student repos after       │ https://repobee.readthedocs.io/en/stable/plugins.html │ N/A      │ built-in       │
+	│           │ cloning                                  │                                                       │          │                │
+	├───────────┼──────────────────────────────────────────┼───────────────────────────────────────────────────────┼──────────┼────────────────┤
+	│ query     │ An experimental query command for        │ https://repobee.readthedocs.io/en/stable/plugins.html │ N/A      │ built-in       │
+	│           │ querying the hooks results file (NOTE:   │                                                       │          │                │
+	│           │ This plugin is not stable)               │                                                       │          │                │
+	├───────────┼──────────────────────────────────────────┼───────────────────────────────────────────────────────┼──────────┼────────────────┤
+	│ tamanager │ Manager plugin for adding and removing   │ https://repobee.readthedocs.io/en/stable/plugins.html │ N/A      │ built-in √     │
+	│           │ teachers/teaching assistants from the    │                                                       │          │                │
+	│           │ taget organization. Teachers are granted │                                                       │          │                │
+	│           │ read access to all repositories in the   │                                                       │          │                │
+	│           │ organization. This plugin should not be  │                                                       │          │                │
+	│           │ used with GitLab due to performance      │                                                       │          │                │
+	│           │ issues. (NOTE: This plugin is not stable │                                                       │          │                │
+	│           │ yet and may change without notice)       │                                                       │          │                │
+	╘═══════════╧══════════════════════════════════════════╧═══════════════════════════════════════════════════════╧══════════╧════════════════╛
 
-Note that the ``list`` action also shows you what version is installed, and if
-it's *active*. More on that later.
+There are a few things to note from the output. First of all, several plugins
+are listed as *built-in* in the column labeled ``Installed``. This means that
+they ship with RepoBee, and there is no need to install them. Any plugin not
+listed as built-in is external, and must be installed as described in the next
+section. You may also note a ``√`` next to certain version numbers. This means
+that the plugin is *active*, which is discussed in :req:`activate_plugins`.
 
 .. _configure_plugs:
 
@@ -72,6 +87,8 @@ action again and select a newer version.
 To uninstall a plugin, simply run ``repobee plugin uninstall``. This will guide
 you through the process of installing any installed plugin that you do not wish
 to have anymore.
+
+.. _activate_plugins:
 
 Managing installed plugins (the ``activate`` action)
 ====================================================
