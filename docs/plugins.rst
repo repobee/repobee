@@ -92,8 +92,7 @@ through the install process. To upgrade a plugin, simply run the ``install``
 action again and select a newer version.
 
 To uninstall a plugin, simply run ``repobee plugin uninstall``. This will guide
-you through the process of installing any installed plugin that you do not wish
-to have anymore.
+you through the process of uninstalling any installed plugin.
 
 .. _activate_plugins:
 
