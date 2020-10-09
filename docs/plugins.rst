@@ -91,6 +91,21 @@ install``, and a menu system much like the ``config wizard`` will guide you
 through the install process. To upgrade a plugin, simply run the ``install``
 action again and select a newer version.
 
+The ``install`` action also allows for a *local* install. This is useful if you
+want to install an unofficial plugin, or perhaps something that you wrote
+yourself. To perform a local install, simply provide the path to the file (if
+single-file plugin) or directory (if a packaged plugin) containing the plugin
+to the ``--local`` option.
+
+.. code-block:: bash
+    :caption: Example of a local plugin install
+
+    $ repobee plugin install --local path/to/plugin
+
+Note that a local install may sometimes be dependent on its location in the
+local file system. If you move or delete the local plugin, it may break
+RepoBee's installation of it.
+
 To uninstall a plugin, simply run ``repobee plugin uninstall``. This will guide
 you through the process of uninstalling any installed plugin.
 
