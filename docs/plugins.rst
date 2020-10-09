@@ -71,7 +71,7 @@ are listed as *built-in* in the column labeled ``Installed``. This means that
 they ship with RepoBee, and there is no need to install them. Any plugin not
 listed as built-in is external, and must be installed as described in the next
 section. You may also note a ``√`` next to certain version numbers. This means
-that the plugin is *active*, which is discussed in :req:`activate_plugins`.
+that the plugin is *active*, which is discussed in :ref:`activate_plugins`.
 
 .. note::
 
