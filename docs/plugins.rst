@@ -82,8 +82,8 @@ that the plugin is *active*, which is discussed in :req:`activate_plugins`.
 
 .. _configure_plugs:
 
-Installing and uninstalling plugins (the ``install`` and ``uninstall`` actions)
-===============================================================================
+Installing plugins (the ``install`` action)
+===========================================
 
 The ``install`` action allows a user to install one of our curated plugins, or
 user-made plugins. To install a curated plugin, simply run ``repobee plugin
@@ -105,6 +105,9 @@ to the ``--local`` option.
 Note that a local install may sometimes be dependent on its location in the
 local file system. If you move or delete the local plugin, it may break
 RepoBee's installation of it.
+
+Uninstalling plugins (the ``uninstall`` action)
+===============================================
 
 To uninstall a plugin, simply run ``repobee plugin uninstall``. This will guide
 you through the process of uninstalling any installed plugin.
