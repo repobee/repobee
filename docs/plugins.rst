@@ -73,6 +73,13 @@ listed as built-in is external, and must be installed as described in the next
 section. You may also note a ``√`` next to certain version numbers. This means
 that the plugin is *active*, which is discussed in :req:`activate_plugins`.
 
+.. note::
+
+    **External plugins have separate documentation:** An important thing to
+    note about external plugins is that they typically have separate
+    documentation on usage. You may find this by visiting the URL listed by the
+    ``list`` action.
+
 .. _configure_plugs:
 
 Installing and uninstalling plugins (the ``install`` and ``uninstall`` actions)
