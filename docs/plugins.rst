@@ -112,6 +112,16 @@ Uninstalling plugins (the ``uninstall`` action)
 To uninstall a plugin, simply run ``repobee plugin uninstall``. This will guide
 you through the process of uninstalling any installed plugin.
 
+.. hint::
+
+    Sometimes, plugins break, and may cause RepoBee to fail to load. If you
+    experience this, try running ``uninstall`` with the ``--no-plugins``
+    pre-parser option.
+
+    .. code-block:: bash
+
+        $ repobee --no-plugins plugin uninstall
+
 .. _activate_plugins:
 
 Managing installed plugins (the ``activate`` action)
