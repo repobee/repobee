@@ -2,6 +2,10 @@ language: python
 branches:
   only:
   - "/^v\\d+\\.\\d+\\.\\d+(-(alpha|beta|rc)(\\.\\d+)?)?$/"
+  - master
+jobs:
+  exclude:
+    - if: branch = master AND env(TRAVIS_EVENT_TYPE) != cron
 matrix:
   include:
   - os: linux
