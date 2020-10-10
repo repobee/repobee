@@ -2,12 +2,14 @@ language: python
 branches:
   only:
   - "/^v\\d+\\.\\d+\\.\\d+(-(alpha|beta|rc)(\\.\\d+)?)?$/"
+  - master
 matrix:
   include:
   - os: linux
     python: 3.7
     dist: xenial
-    sudo: true
+  exclude:
+  - if: branch = master AND env(TRAVIS_EVENT_TYPE) != cron
 install: pip install -e ".[TEST]"
 script: ".travis/system_test.sh"
 after_success:
