@@ -4,8 +4,10 @@ Plugins for RepoBee (the ``plugin`` category)
 *********************************************
 
 RepoBee defines a fairly simple but powerful plugin system that allows
-programmers to hook into certain execution points. To read more about the
-details of these hooks (and how to write your own plugins), see the
+programmers to create plugins that hook into certain execution points of
+specific commands, or define new commands altogether. This chapter details
+general usage of existing plugins, such as installing, uninstalling and
+activating them. To read more about how to create plugins of your own, see
 :ref:`repobee-plug`.
 
 .. _list of plugins:
