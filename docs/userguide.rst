@@ -12,5 +12,6 @@ RepoBee User Guide
    issues
    peer
    plugins
+   builtins
    group_assignments
    gitlab
