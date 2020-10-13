@@ -123,7 +123,8 @@ def get_builtin_plugins(ext_pkg: types.ModuleType = _repobee.ext) -> dict:
     return {
         name: dict(
             description=_get_plugin_description(name),
-            url="https://repobee.readthedocs.io/en/stable/plugins.html",
+            url=f"https://repobee.readthedocs.io/"
+            f"en/stable/builtins.html#{name}",
             versions={"N/A": {}},
             builtin=True,
         )
@@ -168,12 +169,7 @@ def pip(command: str, *args, **kwargs) -> subprocess.CompletedProcess:
         # RepoBee from source
         cli_kwargs.append("--no-binary=repobee")
 
-    cmd = [
-        str(get_pip_path()),
-        command,
-        *args,
-        *cli_kwargs,
-    ]
+    cmd = [str(get_pip_path()), command, *args, *cli_kwargs]
     proc = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
     )
