@@ -1,3 +1,20 @@
+"""This Sphinx extension preprocesses any doc source file that starts with a
+line on the following form.
+
+GENERATE-PACKAGE-DOCS:<package_name>
+
+The line is removed from the file, and the docstrings of the modules in package
+<package_name> are appended to the file like so (without the backticks).
+
+```
+<module_name>
+-------------
+<docstring>
+```
+
+This applies recursively to modules in subpackages of <package_name>.
+"""
+
 import importlib
 import itertools
 import pathlib
@@ -9,7 +26,7 @@ import pkgutil
 
 import sphinx.application
 
-import _repobee.ext
+GENERATE_TAG = "GENERATE-PACKAGE-DOCS"
 
 
 def setup(app: sphinx.application.Sphinx):
@@ -25,13 +42,16 @@ def setup(app: sphinx.application.Sphinx):
 def source_read(
     app: sphinx.application.Sphinx, docname: str, source: List[str]
 ):
-    if docname == "builtins":
-        header = "Built-in plugins"
-        content = [header, "*" * len(header), *process_package(_repobee.ext)]
+    if source[0].strip().startswith(GENERATE_TAG):
+        first_line, *rest = source[0].strip().split("\n")
+        _, package_name = first_line.split(":")
+        content = [*rest, "\n", *process_package(package_name)]
+        print(content)
         source[0] = "\n".join(content)
 
 
-def process_package(pkg: types.ModuleType) -> List[str]:
+def process_package(pkg_qualname: types.ModuleType) -> List[str]:
+    pkg = importlib.import_module(pkg_qualname)
     pkg_init_path = pathlib.Path(pkg.__file__)
     if pkg_init_path.name != "__init__.py":
         raise ValueError(f"'{pkg.__name__}' is not a package")
@@ -42,10 +62,8 @@ def process_package(pkg: types.ModuleType) -> List[str]:
         (mod, ispkg)
         for _, mod, ispkg in pkgutil.iter_modules([str(pkg_dir_path)])
     ]
-    subpackages = [
-        importlib.import_module(f"{pkg.__name__}.{subpkg}")
-        for subpkg, ispkg in mods_and_pkgs
-        if ispkg
+    subpackage_names = [
+        f"{pkg_qualname}.{subpkg}" for subpkg, ispkg in mods_and_pkgs if ispkg
     ]
 
     mods = [
@@ -58,7 +76,7 @@ def process_package(pkg: types.ModuleType) -> List[str]:
         [process_module(mod) for mod in mods]
     )
     subpkg_mod_sections = itertools.chain.from_iterable(
-        map(process_package, subpackages)
+        map(process_package, subpackage_names)
     )
     return itertools.chain(mod_sections, subpkg_mod_sections)
 

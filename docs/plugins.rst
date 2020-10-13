@@ -75,11 +75,12 @@ listed as built-in is external, and must be installed as described in the next
 section. You may also note a ``√`` next to certain version numbers. This means
 that the plugin is *active*, which is discussed in :ref:`activate_plugins`.
 
-.. note::
+.. important::
 
-    **External plugins have separate documentation:** An important thing to
-    note about external plugins is that they typically have separate
-    documentation on usage. You may find this by visiting the URL listed by the
+    **Documentation for plugins:** It's important to know where to find
+    documentation for any given plugin. For built-in plugins, you can find the
+    documentation in :ref:`builtins`. External plugins have separate
+    documentation, which can be found by going to the URL listed by the
     ``list`` action.
 
 .. _configure_plugs:
