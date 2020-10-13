@@ -47,7 +47,7 @@ extensions = [
     "sphinx_autodoc_typehints",
     "sphinx_rtd_theme",
     "sphinxarg.ext",
-    "autodoc_builtins",
+    "generate_package_docs",  # defined in ./_ext
 ]
 
 # Add any paths that contain templates here, relative to this directory.
