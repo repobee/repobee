@@ -1,4 +1,52 @@
-"""Plugin for managing teaching assistants' access to student repos."""
+"""Plugin for managing teaching assistants' access to student repos.
+
+.. note::
+
+    We recommend to activate this plugin persistently. See
+    :ref:`activate_plugins` for how to do that.
+
+.. warning::
+
+    This plugin is currently experimental, and may change in coming releases.
+    We encourage you to use it, but be prepared that even a minor version
+    update of RepoBee may come with breaking changes to the interface of this
+    plugin.
+
+Originally, RepoBee was designed such that all teachers and teaching assistants
+using it were supposed to be owners of the target organization. This has proven
+inconvenient at times, as the course responsible may not be comfortable giving
+admin powers to each and every teacher/TA. The purpose of this plugin is to
+allow teaching assistants and teachers (we will say just *teachers* from this
+point on) to be given read-access to the student repositories of a target
+organization, without any further privileges.
+
+There are two primary pieces of functionality. First, the ``add-teachers``
+action is added to the ``teams`` category (i.e. the command ``teams
+add-teachers`` now exists). This command must be executed at least once,
+and provides read-access for the specified teachers. It does so by adding
+specified TAs to a team called *repobee-teachers*, and then adding **all**
+repositories in the target organization to said team. See ``repobee teams
+add-teachers --help`` for specifics on usage.
+
+The second piece of functionality is a hook that runs each time the ``repos
+setup`` command is executed. It adds any newly created student repos to the
+*repobee-teachers* team. For this to work, the plugin *must be activated
+persistently*. See :ref:`activate_plugins` for details on activating plugins.
+
+To summarize usage, you should use this plugin like so.
+
+1. Activate the plugin persistently.
+2. Run the ``teams add-teachers`` command to set everything up.
+
+.. important::
+
+    If you use RepoBee in discovery mode, i.e. students create their own repos
+    and add them to their teams, then you must re-execute ``teams
+    add-teachers`` periodically to give teachers access to the newly created
+    repos. It's only when dictate mode is used, i.e. you setup repos with
+    ``repos setup``, that the new repos are automatically added to the
+    *repobee-teachers* team.
+"""
 from typing import Optional
 
 import repobee_plug as plug
