@@ -46,7 +46,6 @@ def source_read(
         first_line, *rest = source[0].strip().split("\n")
         _, package_name = first_line.split(":")
         content = [*rest, "\n", *process_package(package_name)]
-        print(content)
         source[0] = "\n".join(content)
 
 
