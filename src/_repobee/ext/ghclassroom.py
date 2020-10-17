@@ -12,10 +12,11 @@ RepoBee to be used with repositories created by GitHub Classroom.
 
 .. important::
 
-    The first time you use RepoBee with GitHub Classroom-created repositories,
-    you should run the ``repos setup`` command. This creates the teams that
-    RepoBee needs to find repositories, and allocates the GitHub
-    Classroom-created repositories to them.
+    Some of RepoBee's commands (e.g. the peer review commands) depend on the
+    student repositories being added to the corresponding student team. This is
+    not something that GitHub Classroom typically does. In order for all of
+    RepoBee's commands to work as expected, you must execute the ``repos
+    setup`` command for all assignments that you want to work with.
 
 .. important::
 
@@ -31,9 +32,10 @@ import repobee_plug as plug
 
 PLUGIN_DESCRIPTION = """Allows interoperability with repositories created
 by GitHub Classroom by changing RepoBee's naming scheme to conform to that
-of Classroom. On first time use, you should run `repos setup` to allocate
-the teams that RepoBee needs to find repositories. (NOTE: This plugin is in
-alpha state and may change without notice)""".replace(
+of Classroom. For each assignment you want to work with, you should run `repos
+setup` to add the student repositories to the corresponding student teams, as
+GitHub Classroom does not do this. (NOTE: This plugin is in alpha state and may
+change without notice)""".replace(
     "\n", " "
 )
 
