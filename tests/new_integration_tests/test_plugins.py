@@ -90,7 +90,7 @@ def test_ghclassroom_plugin_changes_repo_name_generation():
             )
 
     funcs.run_repobee(
-        f"recordname", plugins=[RecordName, _repobee.ext.ghclassroom]
+        "recordname", plugins=[RecordName, _repobee.ext.ghclassroom]
     )
 
     assert actual_repo_name == expected_repo_name
