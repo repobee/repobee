@@ -1,5 +1,3 @@
-import pluggy  # type: ignore
-
 from repobee_plug.__version import __version__  # noqa: F401
 
 from repobee_plug import types
@@ -59,10 +57,10 @@ from repobee_plug.exceptions import (
 from repobee_plug.localreps import StudentTeam, StudentRepo, TemplateRepo
 
 # Hook functions
+from repobee_plug.hookmanager import manager
 import repobee_plug._corehooks
 import repobee_plug._exthooks
 
-manager = pluggy.PluginManager(__package__)
 manager.add_hookspecs(repobee_plug._corehooks)
 manager.add_hookspecs(repobee_plug._exthooks)
 

@@ -9,9 +9,9 @@ to allow for this dynamic override.
     :synopsis: Hookspecs for repobee core hooks.
 """
 
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
-from repobee_plug import localreps, hook, reviews
+from repobee_plug import localreps, hook, reviews, platform
 
 
 #####################
@@ -89,4 +89,28 @@ def api_init_requires() -> Tuple[str]:
 
     Returns:
         Names of the required arguments.
+    """
+
+
+############################
+# Hooks for naming schemes #
+############################
+
+
+@hook.hookspec(firstresult=True)
+def generate_repo_name(
+    team_name: Union[str, localreps.StudentTeam, platform.Team],
+    assignment_name: str,
+) -> str:
+    """This hook allows for overriding the behavior of
+    :py:func:`repobee_plug.name.generate_repo_name`.
+
+    .. danger::
+
+        The implementations of this hook should never be invoked other than in
+        :py:func:`repobee_plug.name.generate_repo_name`.
+
+    Args:
+        team_name: Name of the associated team.
+        assignment_name: Name of an assignment.
     """
