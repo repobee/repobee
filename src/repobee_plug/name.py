@@ -7,6 +7,7 @@ from typing import Iterable, Union
 
 from repobee_plug import localreps
 from repobee_plug import platform
+from repobee_plug.hookmanager import manager
 
 
 def generate_repo_names(
@@ -39,11 +40,16 @@ def generate_repo_name(
 ) -> str:
     """Construct a repo name for a team.
 
+    The behavior of this function can be overridden by implementing the
+    :py:func:`repobee_plug._corehooks.generate_repo_name` hook.
+
     Args:
         team_name: Name of the associated team.
         assignment_name: Name of an assignment.
     """
-    return "{}-{}".format(team_name, assignment_name)
+    return manager.hook.generate_repo_name(
+        team_name=team_name, assignment_name=assignment_name
+    ) or "{}-{}".format(team_name, assignment_name)
 
 
 def generate_review_team_name(
