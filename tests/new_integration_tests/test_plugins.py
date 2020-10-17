@@ -3,6 +3,7 @@ import tempfile
 import pathlib
 
 import _repobee
+import _repobee.ext.ghclassroom
 import repobee_plug as plug
 
 from repobee_testhelpers import funcs
@@ -71,3 +72,25 @@ class HelloWorld(plug.Plugin, plug.cli.Command):
         _repobee.main.main(["repobee", "-p", str(hello_py), "helloworld"])
 
     assert "Hello, world!" in capsys.readouterr().out
+
+
+def test_ghclassroom_plugin_changes_repo_name_generation():
+    """Test that the ghclassroom plugin correctly changes the repo name
+    generation even for other plugins."""
+    assignment = "task"
+    student = "eve"
+    expected_repo_name = f"{assignment}-{student}"
+    actual_repo_name = None
+
+    class RecordName(plug.Plugin, plug.cli.Command):
+        def command(self):
+            nonlocal actual_repo_name
+            actual_repo_name = plug.generate_repo_name(
+                team_name=student, assignment_name=assignment
+            )
+
+    funcs.run_repobee(
+        f"recordname", plugins=[RecordName, _repobee.ext.ghclassroom]
+    )
+
+    assert actual_repo_name == expected_repo_name
