@@ -1,6 +1,7 @@
 """Tests for the repos category of commands."""
 import pathlib
 import tempfile
+import itertools
 
 from typing import List, Mapping, Tuple, Iterable
 
@@ -207,7 +208,7 @@ class TestSetup:
 
         # nothing should have changed, and there should be no errors
         assert_student_repos_match_templates(
-            STUDENT_TEAMS, TEMPLATE_REPO_NAMES, funcs.get_repos(platform_url),
+            STUDENT_TEAMS, TEMPLATE_REPO_NAMES, funcs.get_repos(platform_url)
         )
         assert "[ERROR]" not in capsys.readouterr().out
 
@@ -279,6 +280,36 @@ class TestSetup:
 
         assert not expected_repo_names
 
+    def test_use_non_standard_repo_names(self, platform_url):
+        """Test setting up repos with non-standard repo names using an
+        implementation of the ``generate_repo_name`` hook.
+        """
+
+        def generate_repo_name(team_name, assignment_name):
+            return f"{assignment_name}-BONKERS-{team_name}"
+
+        expected_repo_names = [
+            generate_repo_name(team, assignment_name)
+            for team, assignment_name in itertools.product(
+                const.STUDENT_TEAMS, const.TEMPLATE_REPO_NAMES
+            )
+        ]
+
+        class StrangeNamingConvention(plug.Plugin):
+            def generate_repo_name(self, team_name, assignment_name):
+                return generate_repo_name(team_name, assignment_name)
+
+        funcs.run_repobee(
+            f"repos setup -a {const.TEMPLATE_REPOS_ARG} "
+            f"--base-url {platform_url}",
+            plugins=[StrangeNamingConvention],
+        )
+
+        actual_repo_names = [
+            repo.name for repo in funcs.get_repos(platform_url)
+        ]
+        assert sorted(actual_repo_names) == sorted(expected_repo_names)
+
 
 class TestClone:
     """Tests for the ``repos clone`` command."""
@@ -294,6 +325,48 @@ class TestClone:
             assert_cloned_student_repos_match_templates(
                 STUDENT_TEAMS, TEMPLATE_REPO_NAMES, workdir
             )
+
+    def test_use_non_standard_repo_names(self, platform_url, tmp_path_factory):
+        """Test cloning repos with non-standard repo names using an
+        implementation of the ``generate_repo_name`` hook.
+        """
+        # arrange
+        def generate_repo_name(team_name, assignment_name):
+            return f"{assignment_name}-BONKERS-{team_name}"
+
+        class StrangeNamingConvention(plug.Plugin):
+            def generate_repo_name(self, team_name, assignment_name):
+                return generate_repo_name(team_name, assignment_name)
+
+        workdir = tmp_path_factory.mktemp("workdir")
+        expected_repo_names = [
+            generate_repo_name(team, assignment_name)
+            for team, assignment_name in itertools.product(
+                const.STUDENT_TEAMS, const.TEMPLATE_REPO_NAMES
+            )
+        ]
+        funcs.run_repobee(
+            f"repos setup -a {const.TEMPLATE_REPOS_ARG} "
+            f"--base-url {platform_url}",
+            plugins=[StrangeNamingConvention],
+        )
+
+        # act
+        funcs.run_repobee(
+            f"repos clone -a {const.TEMPLATE_REPOS_ARG} "
+            f"--base-url {platform_url}",
+            workdir=workdir,
+            plugins=[StrangeNamingConvention],
+        )
+
+        # assert
+        local_repos = itertools.chain.from_iterable(
+            student_dir.iterdir() for student_dir in workdir.iterdir()
+        )
+        actual_repo_names = [
+            repo_path.name for repo_path in local_repos if repo_path.is_dir()
+        ]
+        assert sorted(actual_repo_names) == sorted(expected_repo_names)
 
     def test_clone_discover_repos(self, platform_url, with_student_repos):
         with tempfile.TemporaryDirectory() as tmp:
