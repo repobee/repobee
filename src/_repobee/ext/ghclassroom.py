@@ -1,10 +1,6 @@
 """Interoperability plugin for using RepoBee with repositories created with
 GitHub Classroom.
 
-.. warning::
-
-    This plugin is in alpha and may change without notice.
-
 RepoBee's default naming scheme is ``<team_name>-<assignment_name>``, whereas
 GitHub Classroom's naming scheme is ``<assignment_name>-<team_name>``. This
 plugin changes RepoBee's naming scheme to conform to the latter, which allows
@@ -34,8 +30,7 @@ PLUGIN_DESCRIPTION = """Allows interoperability with repositories created
 by GitHub Classroom by changing RepoBee's naming scheme to conform to that
 of Classroom. For each assignment you want to work with, you should run `repos
 setup` to add the student repositories to the corresponding student teams, as
-GitHub Classroom does not do this. (NOTE: This plugin is in alpha state and may
-change without notice)""".replace(
+GitHub Classroom does not do this.""".replace(
     "\n", " "
 )
 
