@@ -5,7 +5,6 @@
 
 .. moduleauthor:: Simon Larsén
 """
-import functools
 import asyncio
 import enum
 import os
@@ -200,9 +199,8 @@ def _update_local_repos(
     local: List[plug.StudentRepo], api: plug.PlatformAPI
 ) -> None:
     expected_basedir = local[0].path.parent.parent
-    assert functools.reduce(
-        lambda lhs, rhs: lhs.path.parent.parent == expected_basedir and rhs,
-        local,
+    assert all(
+        map(lambda repo: repo.path.parent.parent == expected_basedir, local)
     )
     specs = [
         CloneSpec(repo_url=api.insert_auth(repo.url), dest=repo.path)

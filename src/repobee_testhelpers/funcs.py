@@ -4,7 +4,7 @@ import pathlib
 import shutil
 import shlex
 import contextlib
-from typing import Mapping, List, Union, ContextManager
+from typing import Mapping, List, Union, Iterator
 
 import repobee
 import git  # type: ignore
@@ -194,7 +194,7 @@ def get_student_teams(
 
 
 @contextlib.contextmanager
-def update_repository(repo_url: str) -> ContextManager[pathlib.Path]:
+def update_repository(repo_url: str) -> Iterator[pathlib.Path]:
     """Context manager for updating a Git repository. Clones the repository
     from the given url, yields the path to the cloned directory, and then
     commits and pushes any changes after the context has been exited.
