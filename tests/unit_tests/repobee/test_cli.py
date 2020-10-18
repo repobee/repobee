@@ -76,6 +76,7 @@ VALID_PARSED_ARGS = dict(
         for team, master_name in itertools.product(STUDENTS, ASSIGNMENT_NAMES)
     ],
     secrets=False,
+    update_local=False,
 )
 
 
@@ -380,7 +381,7 @@ class TestDispatchCommand:
         )
 
         command_mock.clone_repos.assert_called_once_with(
-            args.repos, dummyapi_instance
+            args.repos, False, dummyapi_instance
         )
 
     def test_verify_settings_called_with_correct_args(
