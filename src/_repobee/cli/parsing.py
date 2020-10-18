@@ -412,7 +412,7 @@ def _ensure_size_less(path: pathlib.Path, max_size: int) -> None:
         with open(path, mode="rb") as f:
             cur = target
             f.seek(cur)
-            while f.read(1) != "\n" and cur < file_size:
+            while f.read(1) != b"\n" and cur < file_size:
                 cur += 1
                 f.seek(cur)
 
