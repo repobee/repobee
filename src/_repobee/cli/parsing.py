@@ -64,7 +64,7 @@ def handle_args(
 
 
 def _parse_args(
-    sys_args: Iterable[str], config_file: pathlib.Path,
+    sys_args: Iterable[str], config_file: pathlib.Path
 ) -> Tuple[argparse.Namespace, _ArgsProcessing]:
     """Parse the command line arguments with some light processing. Any
     processing that requires external resources (such as a network connection)
@@ -339,7 +339,7 @@ def _process_ext_args(
     bp = plug.BaseParser
     if bp.STUDENTS in req_parsers:
         args_dict["students"] = _extract_groups(args)
-    if bp.REPO_DISCOVERY in req_parsers:
+    if bp.REPO_DISCOVERY in req_parsers and args.discover_repos:
         assert api is not None
         args_dict["repos"] = _discover_repos(args_dict["students"], api)
 
