@@ -1,6 +1,5 @@
 import os
 import subprocess
-from subprocess import run
 from unittest.mock import call
 from collections import namedtuple
 import pathlib
@@ -264,106 +263,77 @@ class TestPush:
 class TestClone:
     """Tests for clone."""
 
-    def test_happy_path(self, env_setup, push_tuples, aio_subproc):
-        urls = [pt.repo_url for pt in push_tuples]
-        working_dir = "some/working/dir"
+    _WORKING_DIR = pathlib.Path("some/working/dir")
+
+    @pytest.fixture
+    def specs(self, push_tuples):
+        return [
+            git.CloneSpec(
+                repo_url=pt.repo_url,
+                dest=self._WORKING_DIR / util.repo_name(pt.repo_url),
+            )
+            for pt in push_tuples
+        ]
+
+    def test_happy_path(self, env_setup, push_tuples, specs, aio_subproc):
         expected_subproc_calls = [
             call(
-                *"git pull {}".format(url).split(),
-                cwd=str(pathlib.Path(working_dir) / util.repo_name(url)),
+                *"git pull {}".format(spec.repo_url).split(),
+                cwd=str(spec.dest),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
-            for url in urls
+            for spec in specs
         ]
 
-        failed_urls = git.clone(urls, cwd=working_dir)
+        failed_specs = git.clone(specs)
 
-        assert not failed_urls
+        assert not failed_specs
         aio_subproc.create_subprocess.assert_has_calls(expected_subproc_calls)
 
     def test_tries_all_calls_despite_exceptions(
-        self, env_setup, push_tuples, mocker
+        self, env_setup, push_tuples, specs, mocker
     ):
-        urls = [pt.repo_url for pt in push_tuples]
-        fail_urls = [urls[0], urls[-1]]
+        fail_specs = [specs[0], specs[-1]]
 
-        expected_calls = [call(url, cwd=".") for url in urls]
+        expected_calls = [call(spec) for spec in specs]
 
-        async def raise_(repo_url, *args, **kwargs):
-            if repo_url in fail_urls:
+        async def raise_(spec, *args, **kwargs):
+            if spec in fail_specs:
                 raise exception.CloneFailedError(
                     "Some error",
                     returncode=128,
                     stderr=b"Something",
-                    url=repo_url,
+                    clone_spec=spec,
                 )
 
         clone_mock = mocker.patch(
             "_repobee.git._clone_async", autospec=True, side_effect=raise_
         )
 
-        failed_urls = git.clone(urls)
+        failed_specs = git.clone(specs)
 
-        assert failed_urls == fail_urls
+        assert failed_specs == fail_specs
         clone_mock.assert_has_calls(expected_calls)
 
     def test_tries_all_calls_despite_exceptions_lower_level(
-        self, env_setup, push_tuples, mocker, non_zero_aio_subproc
+        self, env_setup, push_tuples, mocker, non_zero_aio_subproc, specs
     ):
         """Same test as test_tries_all_calls_desipite_exception, but
         asyncio.create_subprocess_exec is mocked out instead of
         git._clone_async
         """
-        urls = [pt.repo_url for pt in push_tuples]
-
         expected_calls = [
             call(
-                *"git pull {}".format(url).split(),
-                cwd=str(pathlib.Path(".") / util.repo_name(url)),
+                *"git pull {}".format(spec.repo_url).split(),
+                cwd=str(spec.dest),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
-            for url in urls
+            for spec in specs
         ]
 
-        failed_urls = git.clone(urls)
+        failed_specs = git.clone(specs)
         non_zero_aio_subproc.create_subprocess.assert_has_calls(expected_calls)
 
-        assert failed_urls == urls
-
-
-class TestEnsureRepoDirExists:
-    @pytest.mark.no_ensure_repo_dir_mock
-    def test_functions_when_dir_does_not_exist(self, tmpdir):
-        expected_git_repo = tmpdir.join(REPO_NAME)
-        assert (
-            not expected_git_repo.check()
-        ), "directory should not exist before test"
-
-        git._ensure_repo_dir_exists(URL_TEMPLATE.format(""), cwd=str(tmpdir))
-
-        assert util.is_git_repo(str(expected_git_repo))
-
-    @pytest.mark.no_ensure_repo_dir_mock
-    def test_functions_when_dir_exists(self, tmpdir):
-        expected_git_repo = tmpdir.join(REPO_NAME).mkdir()
-        assert expected_git_repo.check(
-            dir=1
-        ), "directory should exist before test"
-
-        git._ensure_repo_dir_exists(URL_TEMPLATE.format(""), cwd=str(tmpdir))
-
-        assert util.is_git_repo(str(expected_git_repo))
-
-    @pytest.mark.no_ensure_repo_dir_mock
-    def test_functions_when_git_repo_exists(self, tmpdir):
-        expected_git_repo = tmpdir.join(REPO_NAME).mkdir()
-        run(["git", "init"], cwd=str(expected_git_repo))
-        assert util.is_git_repo(
-            str(expected_git_repo)
-        ), "directory should be a git repo before test"
-
-        git._ensure_repo_dir_exists(URL_TEMPLATE.format(""), cwd=str(tmpdir))
-
-        assert util.is_git_repo(str(expected_git_repo))
+        assert failed_specs == specs

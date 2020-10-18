@@ -38,37 +38,45 @@ class Push:
         return iter((self.local_path, self.repo_url, self.branch))
 
 
+@dataclasses.dataclass(frozen=True)
+class CloneSpec:
+    dest: pathlib.Path
+    repo_url: str
+    branch: str = ""
+    metadata: dict = dataclasses.field(default_factory=dict)
+
+
 _EMPTY_REPO_ERROR = b"""fatal: Couldn't find remote ref HEAD
 fatal: the remote end hung up unexpectedly"""
 
 
-def _ensure_repo_dir_exists(repo_url: str, cwd: str) -> pathlib.Path:
+def _ensure_repo_dir_exists(clone_spec: CloneSpec) -> None:
     """Checks if a dir for the repo url exists, and if it does not, creates it.
     Also initializez (or reinitializes, if it alrady exists) as a git repo.
     """
-    repo_name = util.repo_name(repo_url)
-    dirpath = pathlib.Path(cwd) / repo_name
-    if not dirpath.exists():
-        dirpath.mkdir()
-    _git_init(dirpath)
-    return dirpath
+    if not clone_spec.dest.exists():
+        clone_spec.dest.mkdir(parents=True)
+    _git_init(clone_spec.dest)
 
 
 def _git_init(dirpath):
     captured_run(["git", "init"], cwd=str(dirpath))
 
 
-async def _pull_clone_async(repo_url: str, branch: str = "", cwd: str = "."):
+async def _pull_clone_async(clone_spec: CloneSpec):
     """Simulate a clone with a pull to avoid writing remotes (that could
     include secure tokens) to disk.
     """
-    dirpath = _ensure_repo_dir_exists(repo_url, cwd)
+    _ensure_repo_dir_exists(clone_spec)
 
-    pull_command = "git pull {} {}".format(repo_url, branch).strip().split()
+    pull_command = (
+        f"git pull {clone_spec.repo_url} "
+        f"{clone_spec.branch or ''}".strip().split()
+    )
 
     proc = await asyncio.create_subprocess_exec(
         *pull_command,
-        cwd=str(dirpath),
+        cwd=str(clone_spec.dest),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
@@ -102,29 +110,34 @@ def clone_single(repo_url: str, branch: str = "", cwd: str = "."):
     rc, _, stderr = captured_run(command, cwd=cwd)
     if rc != 0:
         raise exception.CloneFailedError(
-            "Failed to clone", rc, stderr, repo_url,
+            "Failed to clone",
+            rc,
+            stderr,
+            CloneSpec(
+                repo_url=repo_url,
+                dest=pathlib.Path(cwd) / util.repo_name(repo_url),
+                branch=branch,
+            ),
         )
 
 
-async def _clone_async(repo_url: str, branch: str = "", cwd="."):
+async def _clone_async(clone_spec: CloneSpec):
     """Clone git repositories asynchronously.
 
     Args:
-        repo_url: A url to clone.
-        branch: Which branch to clone.
-        cwd: Working directory.
+        clone_spec: A clone specification.
     """
-    rc, stderr = await _pull_clone_async(repo_url, branch, cwd)
+    rc, stderr = await _pull_clone_async(clone_spec)
 
     if rc != 0 and _EMPTY_REPO_ERROR not in stderr:
         raise exception.CloneFailedError(
-            "Failed to clone {}".format(repo_url),
+            "Failed to clone {}".format(clone_spec.repo_url),
             returncode=rc,
             stderr=stderr,
-            url=repo_url,
+            clone_spec=clone_spec,
         )
     else:
-        plug.log.info("Cloned into {}".format(repo_url))
+        plug.log.info("Cloned into {}".format(clone_spec.repo_url))
 
 
 class CloneStatus(enum.Enum):
@@ -139,7 +152,6 @@ def clone_student_repos(
     api: plug.PlatformAPI,
 ) -> Iterable[Tuple[CloneStatus, plug.StudentRepo]]:
     assert all(map(lambda r: r.path is not None, repos))
-
     local = [repo for repo in repos if repo.path.exists()]
     if local:
         local_repo_ids = [f"{repo.team.name}/{repo.name}" for repo in local]
@@ -149,15 +161,24 @@ def clone_student_repos(
 
     non_local = [repo for repo in repos if not repo.path.exists()]
     plug.log.info(f"Cloning into {non_local}")
+    non_local_specs = [
+        CloneSpec(
+            dest=clone_dir / plug.fileutils.hash_path(repo.path),
+            repo_url=api.insert_auth(repo.url),
+            metadata=dict(repo=repo),
+        )
+        for repo in non_local
+    ]
 
-    url_to_non_local = {api.insert_auth(repo.url): repo for repo in non_local}
-    failed_urls = clone(url_to_non_local.keys(), cwd=str(clone_dir))
+    failed_specs = clone(non_local_specs)
 
-    failed_repos = {url_to_non_local[url] for url in failed_urls}
+    failed_repos = {spec.metadata["repo"] for spec in failed_specs}
     success_repos = {repo for repo in non_local if repo not in failed_repos}
 
     for repo in success_repos:
-        shutil.copytree(src=clone_dir / repo.name, dst=repo.path)
+        shutil.copytree(
+            src=clone_dir / plug.fileutils.hash_path(repo.path), dst=repo.path
+        )
 
     return (
         [(CloneStatus.EXISTED, repo) for repo in local]
@@ -166,19 +187,19 @@ def clone_student_repos(
     )
 
 
-def clone(repo_urls: Iterable[str], cwd: str = ".") -> List[str]:
+def clone(clone_specs: Iterable[CloneSpec]) -> List[CloneSpec]:
     """Clone all repos asynchronously.
 
     Args:
-        repo_urls: URLs to repos to clone.
+        clone_specs: Clone specifications for repos to clone.
         cwd: Working directory. Defaults to the current directory.
 
     Returns:
-        URLs from which cloning failed.
+        Specs for which the cloning failed.
     """
     return [
-        exc.url
-        for exc in _batch_execution(_clone_async, repo_urls, cwd=cwd)
+        exc.clone_spec
+        for exc in _batch_execution(_clone_async, clone_specs)
         if isinstance(exc, exception.CloneFailedError)
     ]
 
@@ -314,7 +335,7 @@ async def _batch_execution_async(
             for arg in args_chunk
         ]
         for coro in tqdm.asyncio.tqdm_asyncio.as_completed(
-            tasks, desc=f"Progress batch {batch}", file=sys.stdout,
+            tasks, desc=f"Progress batch {batch}", file=sys.stdout
         ):
             try:
                 await coro
