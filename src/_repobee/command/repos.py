@@ -359,7 +359,9 @@ def _open_issue_by_urls(
 
 
 def clone_repos(
-    repos: Iterable[plug.StudentRepo], api: plug.PlatformAPI
+    repos: Iterable[plug.StudentRepo],
+    update_local: bool,
+    api: plug.PlatformAPI,
 ) -> Mapping[str, List[plug.Result]]:
     """Clone all student repos related to the provided master repos and student
     teams.
@@ -367,6 +369,8 @@ def clone_repos(
     Args:
         repos: The repos to be cloned. This function does not use the
             ``implementation`` attribute, so it does not need to be set.
+        update_local: Whether or nut to attempt to update student repos
+            that already exist locally.
         api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     Returns:
@@ -375,7 +379,9 @@ def clone_repos(
 
     plug.echo("Cloning into student repos ...")
     with tempfile.TemporaryDirectory() as tmpdir:
-        local_repos = _clone_repos_no_check(repos, pathlib.Path(tmpdir), api)
+        local_repos = _clone_repos_no_check(
+            repos, pathlib.Path(tmpdir), update_local, api
+        )
 
     for p in plug.manager.get_plugins():
         if "post_clone" in dir(p):
@@ -389,6 +395,7 @@ def clone_repos(
 def _clone_repos_no_check(
     repos: Iterable[plug.StudentRepo],
     dst_dirpath: pathlib.Path,
+    update_local: bool,
     api: plug.PlatformAPI,
 ) -> Iterable[plug.StudentRepo]:
     """Clone the specified repo urls into the destination directory without
@@ -401,7 +408,9 @@ def _clone_repos_no_check(
         repo.with_path(cur_dir / repo.team.name / repo.name) for repo in repos
     ]
 
-    cloned_repos = git.clone_student_repos(pathed_repos, dst_dirpath, api)
+    cloned_repos = git.clone_student_repos(
+        pathed_repos, dst_dirpath, update_local, api
+    )
     return [repo for _, repo in cloned_repos]
 
 

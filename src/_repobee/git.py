@@ -5,6 +5,7 @@
 
 .. moduleauthor:: Simon Larsén
 """
+import functools
 import asyncio
 import enum
 import os
@@ -50,7 +51,8 @@ def _ensure_repo_dir_exists(repo_url: str, cwd: str) -> pathlib.Path:
     dirpath = pathlib.Path(cwd) / repo_name
     if not dirpath.exists():
         dirpath.mkdir()
-    _git_init(dirpath)
+    if not util.is_git_repo(str(dirpath)):
+        _git_init(dirpath)
     return dirpath
 
 
@@ -102,7 +104,7 @@ def clone_single(repo_url: str, branch: str = "", cwd: str = "."):
     rc, _, stderr = captured_run(command, cwd=cwd)
     if rc != 0:
         raise exception.CloneFailedError(
-            "Failed to clone", rc, stderr, repo_url,
+            "Failed to clone", rc, stderr, repo_url
         )
 
 
@@ -136,16 +138,16 @@ class CloneStatus(enum.Enum):
 def clone_student_repos(
     repos: List[plug.StudentRepo],
     clone_dir: pathlib.Path,
+    update_local: bool,
     api: plug.PlatformAPI,
 ) -> Iterable[Tuple[CloneStatus, plug.StudentRepo]]:
     assert all(map(lambda r: r.path is not None, repos))
 
     local = [repo for repo in repos if repo.path.exists()]
-    if local:
-        local_repo_ids = [f"{repo.team.name}/{repo.name}" for repo in local]
-        plug.log.warning(
-            f"Found local repos, skipping: {', '.join(local_repo_ids)}"
-        )
+    if local and update_local:
+        _update_local_repos(local, api)
+    elif local and not update_local:
+        _warn_local_repos(local)
 
     non_local = [repo for repo in repos if not repo.path.exists()]
     plug.log.info(f"Cloning into {non_local}")
@@ -163,6 +165,26 @@ def clone_student_repos(
         [(CloneStatus.EXISTED, repo) for repo in local]
         + [(CloneStatus.CLONED, repo) for repo in success_repos]
         + [(CloneStatus.FAILED, repo) for repo in failed_repos]
+    )
+
+
+def _warn_local_repos(local: List[plug.StudentRepo],):
+    local_repo_ids = [f"{repo.team.name}/{repo.name}" for repo in local]
+    plug.log.warning(
+        f"Found local repos, skipping: {', '.join(local_repo_ids)}"
+    )
+
+
+def _update_local_repos(local: List[plug.StudentRepo], api: plug.PlatformAPI):
+    expected_basedir = local[0].path.parent.parent
+    assert functools.reduce(
+        lambda lhs, rhs: lhs.path.parent.parent == expected_basedir and rhs,
+        local,
+    )
+    # TODO figure out what to do when a local update fails
+    clone(
+        (api.insert_auth(repo.url) for repo in local),
+        cwd=str(expected_basedir),
     )
 
 
@@ -314,7 +336,7 @@ async def _batch_execution_async(
             for arg in args_chunk
         ]
         for coro in tqdm.asyncio.tqdm_asyncio.as_completed(
-            tasks, desc=f"Progress batch {batch}", file=sys.stdout,
+            tasks, desc=f"Progress batch {batch}", file=sys.stdout
         ):
             try:
                 await coro
