@@ -56,7 +56,8 @@ def _ensure_repo_dir_exists(clone_spec: CloneSpec) -> None:
     """
     if not clone_spec.dest.exists():
         clone_spec.dest.mkdir(parents=True)
-    _git_init(clone_spec.dest)
+    if not util.is_git_repo(str(clone_spec.dest)):
+        _git_init(clone_spec.dest)
 
 
 def _git_init(dirpath):
@@ -149,15 +150,15 @@ class CloneStatus(enum.Enum):
 def clone_student_repos(
     repos: List[plug.StudentRepo],
     clone_dir: pathlib.Path,
+    update_local: bool,
     api: plug.PlatformAPI,
 ) -> Iterable[Tuple[CloneStatus, plug.StudentRepo]]:
     assert all(map(lambda r: r.path is not None, repos))
     local = [repo for repo in repos if repo.path.exists()]
-    if local:
-        local_repo_ids = [f"{repo.team.name}/{repo.name}" for repo in local]
-        plug.log.warning(
-            f"Found local repos, skipping: {', '.join(local_repo_ids)}"
-        )
+    if local and update_local:
+        _update_local_repos(local, api)
+    elif local and not update_local:
+        _warn_local_repos(local)
 
     non_local = [repo for repo in repos if not repo.path.exists()]
     plug.log.info(f"Cloning into {non_local}")
@@ -185,6 +186,28 @@ def clone_student_repos(
         + [(CloneStatus.CLONED, repo) for repo in success_repos]
         + [(CloneStatus.FAILED, repo) for repo in failed_repos]
     )
+
+
+def _warn_local_repos(local: List[plug.StudentRepo],):
+    local_repo_ids = [f"{repo.team.name}/{repo.name}" for repo in local]
+    plug.log.warning(
+        f"Found local repos, skipping: {', '.join(local_repo_ids)}"
+    )
+
+
+def _update_local_repos(
+    local: List[plug.StudentRepo], api: plug.PlatformAPI
+) -> None:
+    expected_basedir = local[0].path.parent.parent
+    assert all(
+        map(lambda repo: repo.path.parent.parent == expected_basedir, local)
+    )
+    specs = [
+        CloneSpec(repo_url=api.insert_auth(repo.url), dest=repo.path)
+        for repo in local
+    ]
+    # TODO figure out what to do when a local update fails
+    clone(specs)
 
 
 def clone(clone_specs: Iterable[CloneSpec]) -> List[CloneSpec]:

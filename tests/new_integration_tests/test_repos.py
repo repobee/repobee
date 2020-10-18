@@ -623,6 +623,76 @@ class TestClone:
 
         return task_name
 
+    def test_update_local(
+        self, platform_url, with_student_repos, tmp_path_factory
+    ):
+        """Test cloning an updated repository that already exists locally, when
+        there are no incompatible changes between the remote copy and the local
+        copy and --update-local is specified.
+        """
+        # arrange
+        new_file_name = "suspicious_file.txt"
+        workdir = tmp_path_factory.mktemp("workdir")
+        target_repo = funcs.get_repos(platform_url)[-1]
+        self._clone_all_student_repos(platform_url, workdir)
+
+        with funcs.update_repository(target_repo.url) as repo_path:
+            (repo_path / new_file_name).write_text(new_file_name)
+
+        # act
+        funcs.run_repobee(
+            f"repos clone -a {const.TEMPLATE_REPOS_ARG} "
+            f"--update-local "
+            f"--base-url {platform_url}",
+            workdir=workdir,
+        )
+
+        # assert
+        local_repo_path = list(workdir.rglob(target_repo.name))[0]
+        assert local_repo_path.parent.parent == workdir
+        local_new_file = local_repo_path / new_file_name
+        assert local_new_file.is_file()
+        assert local_new_file.read_text() == new_file_name
+
+    def test_does_not_update_local_by_default(
+        self, platform_url, with_student_repos, tmp_path_factory, capsys
+    ):
+        """Test that cloning an update repository that exists locally does not
+        cause it to be updated by default.
+        """
+        # arrange
+        new_file_name = "suspicious_file.txt"
+        workdir = tmp_path_factory.mktemp("workdir")
+        target_repo = funcs.get_repos(platform_url)[-1]
+        self._clone_all_student_repos(platform_url, workdir)
+
+        with funcs.update_repository(target_repo.url) as repo_path:
+            (repo_path / new_file_name).write_text(new_file_name)
+
+        # act
+        funcs.run_repobee(
+            f"repos clone -a {const.TEMPLATE_REPOS_ARG} "
+            f"--base-url {platform_url}",
+            workdir=workdir,
+        )
+
+        # assert
+        local_repo_path = list(workdir.rglob(target_repo.name))[0]
+        local_new_file = local_repo_path / new_file_name
+        assert not local_new_file.is_file()
+        assert "--update-local" in capsys.readouterr().err
+
+    @staticmethod
+    def _clone_all_student_repos(
+        platform_url: str, workdir: pathlib.Path
+    ) -> None:
+        funcs.run_repobee(
+            f"repos clone -a {const.TEMPLATE_REPOS_ARG} "
+            f"--base-url {platform_url} ",
+            workdir=workdir,
+        )
+        assert list(workdir.iterdir())
+
 
 class TestUpdate:
     """Tests for the ``repos update`` command."""

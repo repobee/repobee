@@ -152,7 +152,7 @@ def _add_subparsers(parser, config_file):
 
     def _create_category_parsers(category, help, description):
         category_command = subparsers.add_parser(
-            name=category.name, help=help, description=description,
+            name=category.name, help=help, description=description
         )
         category_parsers = category_command.add_subparsers(dest=ACTION)
         category_parsers.required = True
@@ -281,7 +281,7 @@ def _add_repo_parsers(
         type=str,
     )
 
-    add_parser(
+    clone = add_parser(
         plug.cli.CoreCommand.repos.clone,
         help="clone student repos",
         description="Clone student repos asynchronously in bulk.",
@@ -292,6 +292,11 @@ def _add_repo_parsers(
             _HOOK_RESULTS_PARSER,
         ],
         formatter_class=OrderedFormatter,
+    )
+    clone.add_argument(
+        "--update-local",
+        help="attempt to update local student repositories (beta feature)",
+        action="store_true",
     )
 
     add_parser(
@@ -548,9 +553,7 @@ def _add_extension_parsers(
     for cmd in command_extension_plugins:
         for action in cmd.__settings__.actions:
             parser = parsers_mapping[action]
-            cmd.attach_options(
-                config=parsed_config, parser=parser,
-            )
+            cmd.attach_options(config=parsed_config, parser=parser)
 
     command_plugins = [
         p
@@ -659,9 +662,7 @@ def _add_extension_parsers(
                 dest="category",
             )
 
-        cmd.attach_options(
-            config=parsed_config, parser=ext_parser,
-        )
+        cmd.attach_options(config=parsed_config, parser=ext_parser)
 
         settings_dict = settings._asdict()
         settings_dict.update(dict(action=action, category=category))
