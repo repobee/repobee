@@ -61,8 +61,8 @@ class GitError(RepoBeeException):
 class CloneFailedError(GitError):
     """An error to raise when cloning a repository fails."""
 
-    def __init__(self, msg: str, returncode: int, stderr: bytes, url: str):
-        self.url = url
+    def __init__(self, msg: str, returncode: int, stderr: bytes, clone_spec):
+        self.clone_spec = clone_spec
         super().__init__(msg, returncode, stderr)
 
 
