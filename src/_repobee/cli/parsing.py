@@ -368,6 +368,10 @@ def setup_logging(terminal_level: int = logging.WARNING) -> None:
     Args:
         terminal_level: The logging level to use for printing to stderr.
     """
+    logfile = constants.LOG_DIR / "{}.log".format(
+        _repobee._external_package_name
+    )
+    _ensure_size_less(logfile, max_size=constants.MAX_LOGFILE_SIZE)
     try:
         os.makedirs(str(constants.LOG_DIR), exist_ok=True)
     except Exception as exc:
@@ -386,10 +390,7 @@ def setup_logging(terminal_level: int = logging.WARNING) -> None:
                 level=terminal_level,
             ),
             daiquiri.output.File(
-                filename=str(
-                    constants.LOG_DIR
-                    / "{}.log".format(_repobee._external_package_name)
-                ),
+                filename=str(logfile),
                 formatter=daiquiri.formatter.ColorFormatter(
                     fmt="%(asctime)s [PID %(process)d] [%(levelname)s] "
                     "%(name)s -> %(message)s"
@@ -400,3 +401,26 @@ def setup_logging(terminal_level: int = logging.WARNING) -> None:
     )
 
     _filter_tokens()
+
+
+def _ensure_size_less(path: pathlib.Path, max_size: int) -> None:
+    if not path.exists():
+        return
+    file_size = path.stat().st_size
+    if file_size >= max_size:
+        target = file_size - max_size // 2
+        with open(path, mode="rb") as f:
+            cur = target
+            f.seek(cur)
+            while f.read(1) != "\n" and cur < file_size:
+                cur += 1
+                f.seek(cur)
+
+            with open(
+                path.parent / (path.name + ".tmp"), mode="wb"
+            ) as tmp_file:
+                for line in f.readlines():
+                    tmp_file.write(line)
+
+        path.unlink()
+        pathlib.Path(tmp_file.name).rename(path)
