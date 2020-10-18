@@ -649,6 +649,7 @@ class TestClone:
 
         # assert
         local_repo_path = list(workdir.rglob(target_repo.name))[0]
+        assert local_repo_path.parent.parent == workdir
         local_new_file = local_repo_path / new_file_name
         assert local_new_file.is_file()
         assert local_new_file.read_text() == new_file_name
