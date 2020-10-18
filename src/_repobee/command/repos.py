@@ -411,6 +411,16 @@ def _clone_repos_no_check(
     cloned_repos = git.clone_student_repos(
         pathed_repos, dst_dirpath, update_local, api
     )
+
+    non_updated_local = (
+        git.CloneStatus.EXISTED in [stat for stat, _ in cloned_repos]
+        and not update_local
+    )
+    if non_updated_local:
+        plug.log.warning(
+            "Local repos were not updated, use `--update-local` to update"
+        )
+
     return [repo for _, repo in cloned_repos]
 
 
