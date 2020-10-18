@@ -5,6 +5,9 @@ tooling.
 
     This plugin should only be used when using an installed version of RepoBee.
 """
+import json
+import sys
+
 import repobee_plug as plug
 
 from _repobee import disthelpers
@@ -37,7 +40,7 @@ class UpgradeCommand(plug.Plugin, plug.cli.Command):
 
     def command(self) -> None:
         """Upgrade RepoBee to the latest version."""
-        plug.echo("Upgrading RepoBee ...")
+        plug.echo(f"Upgrading RepoBee from v{_installed_version()}...")
         repobee_requirement = f"repobee{self.version_spec or ''}"
 
         upgrade = disthelpers.pip(
@@ -50,4 +53,16 @@ class UpgradeCommand(plug.Plugin, plug.cli.Command):
         if upgrade.returncode != 0:
             raise plug.PlugError("failed to upgrade RepoBee")
 
-        plug.echo("RepoBee succesfully upgraded!")
+        plug.echo(f"RepoBee succesfully upgraded to v{_installed_version()}!")
+
+
+def _installed_version(package: str = "repobee") -> str:
+    return next(
+        entry
+        for entry in json.loads(
+            disthelpers.pip("list", format="json").stdout.decode(
+                sys.getdefaultencoding()
+            )
+        )
+        if entry["name"] == package
+    )["version"]
