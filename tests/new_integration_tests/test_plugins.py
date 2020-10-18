@@ -94,3 +94,68 @@ def test_ghclassroom_plugin_changes_repo_name_generation():
     )
 
     assert actual_repo_name == expected_repo_name
+
+
+def test_discover_repos_parser_does_not_discover_repos_if_flag_not_specified(
+    platform_url, with_student_repos
+):
+    """Test that the discovery mechanism is inactive if --discover-repos flag
+    is not specified.
+    """
+    args = []
+    student = "slarse"
+    assignment = "epic-task"
+
+    class Check(plug.Plugin, plug.cli.Command):
+        __settings__ = plug.cli.command_settings(
+            base_parsers=[
+                plug.cli.BaseParser.STUDENTS,
+                plug.cli.BaseParser.REPO_DISCOVERY,
+            ]
+        )
+
+        def command(self, api):
+            nonlocal args
+            args = self.args
+
+    funcs.run_repobee(
+        f"check --base-url {platform_url} "
+        f"-s {student} "
+        f"-a {assignment}",
+        plugins=[Check],
+    )
+
+    assert "repos" not in args
+
+
+def test_discover_repos_parser_discovers_repos_if_flag_is_specified(
+    platform_url, with_student_repos
+):
+    """Test that the discovery mechanism kicks in if --discover-repos is
+    specified.
+    """
+    discovered_repos = []
+
+    class Check(plug.Plugin, plug.cli.Command):
+        __settings__ = plug.cli.command_settings(
+            base_parsers=[
+                plug.cli.BaseParser.STUDENTS,
+                plug.cli.BaseParser.REPO_DISCOVERY,
+            ]
+        )
+
+        def command(self, api):
+            nonlocal discovered_repos
+            discovered_repos = list(self.args.repos)
+
+    funcs.run_repobee(
+        f"check --base-url {platform_url} "
+        f"--sf {const.STUDENTS_FILE} "
+        f"--discover-repos",
+        plugins=[Check],
+    )
+
+    expected_num_repos = len(const.TEMPLATE_REPO_NAMES) * len(
+        const.STUDENT_TEAMS
+    )
+    assert len(discovered_repos) == expected_num_repos
