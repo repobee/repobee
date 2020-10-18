@@ -2,6 +2,8 @@
 import tempfile
 import pathlib
 
+import pytest
+
 import _repobee
 import _repobee.ext.ghclassroom
 import repobee_plug as plug
@@ -159,3 +161,47 @@ def test_discover_repos_parser_discovers_repos_if_flag_is_specified(
         const.STUDENT_TEAMS
     )
     assert len(discovered_repos) == expected_num_repos
+
+
+def test_repo_discovery_parser_requires_api():
+    """It should not be possible to have a plugin command that requires the
+    repo discovery parser, but not the platform API, as the former needs the
+    latter to search for repos."""
+
+    with pytest.raises(plug.PlugError) as exc_info:
+
+        class InvalidCommand(plug.Plugin, plug.cli.Command):
+            __settings__ = plug.cli.command_settings(
+                base_parsers=[
+                    plug.cli.BaseParser.STUDENTS,
+                    plug.cli.BaseParser.REPO_DISCOVERY,
+                ]
+            )
+
+            def command(self):
+                pass
+
+    assert (
+        "REPO_DISCOVERY parser requires command function to use api argument"
+        in str(exc_info.value)
+    )
+
+
+def test_repo_discovery_parser_requires_student_parser():
+    """The repo discovery parser does not make any sense without the student
+    parser, as the whole idea is to search student teams for repositories.
+    """
+
+    with pytest.raises(plug.PlugError) as exc_info:
+
+        class InvalidCommand(plug.Plugin, plug.cli.Command):
+            __settings__ = plug.cli.command_settings(
+                base_parsers=[plug.cli.BaseParser.REPO_DISCOVERY]
+            )
+
+            def command(self, api):
+                pass
+
+    assert "REPO_DISCOVERY parser requires STUDENT parser" in str(
+        exc_info.value
+    )
