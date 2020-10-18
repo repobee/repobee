@@ -3,7 +3,8 @@ import tempfile
 import pathlib
 import shutil
 import shlex
-from typing import Mapping, List, Union
+import contextlib
+from typing import Mapping, List, Union, ContextManager
 
 import repobee
 import git  # type: ignore
@@ -190,3 +191,23 @@ def get_student_teams(
         plug.StudentTeam(members=[usr.username for usr in team.members])
         for team in api._teams[org_name].values()
     ]
+
+
+@contextlib.contextmanager
+def update_repository(repo_url: str) -> ContextManager[pathlib.Path]:
+    """Context manager for updating a Git repository. Clones the repository
+    from the given url, yields the path to the cloned directory, and then
+    commits and pushes any changes after the context has been exited.
+
+    Args:
+        repo_url: URL to a Git repository.
+    Returns:
+        A context manager that yields a path to the local repository.
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        repo_path = pathlib.Path(tmpdir) / "repo"
+        repo = git.Repo.clone_from(repo_url, to_path=repo_path)
+        yield repo_path
+        repo.git.add(".")
+        repo.git.commit("-m", "Update repo")
+        repo.git.push()
