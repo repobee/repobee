@@ -1,5 +1,6 @@
 import argparse
 import itertools
+import inspect
 
 from typing import List, Tuple, Union, Iterator
 
@@ -7,6 +8,7 @@ from repobee_plug import exceptions
 from repobee_plug import _corehooks
 from repobee_plug import _exthooks
 from repobee_plug import cli
+from repobee_plug.cli import base
 from repobee_plug.cli.args import ConfigurableArguments
 from repobee_plug.hook import hookimpl
 
@@ -15,7 +17,7 @@ from repobee_plug.cli.args import _Option, _MutuallyExclusiveGroup
 _HOOK_METHODS = {
     key: value
     for key, value in itertools.chain(
-        _corehooks.__dict__.items(), _exthooks.__dict__.items(),
+        _corehooks.__dict__.items(), _exthooks.__dict__.items()
     )
     if callable(value) and not key.startswith("_")
 }
@@ -83,8 +85,9 @@ def _process_cli_plugin(bases, attrdict) -> dict:
         )
 
     if cli.Command in bases:
-        if "__settings__" not in attrdict_copy:
-            attrdict_copy["__settings__"] = cli.command_settings()
+        settings = attrdict_copy.get("__settings__", cli.command_settings())
+        attrdict_copy["__settings__"] = settings
+        _check_base_parsers(settings.base_parsers or [], attrdict_copy)
     elif cli.CommandExtension in bases:
         if "__settings__" not in attrdict_copy:
             raise exceptions.PlugError(
@@ -110,6 +113,25 @@ def _process_cli_plugin(bases, attrdict) -> dict:
         attrdict_copy[get_configurable_args.__name__] = get_configurable_args
 
     return attrdict_copy
+
+
+def _check_base_parsers(
+    base_parsers: List[base.BaseParser], attrdict: dict
+) -> None:
+    """Check that the base parser list fulfills all requirements."""
+    if base.BaseParser.REPO_DISCOVERY in base_parsers:
+        # the REPO_DISCOVERY parser requires both the STUDENTS parser and
+        # the api argument to the command function, see
+        # https://github.com/repobee/repobee/issues/716 for details
+        if base.BaseParser.STUDENTS not in base_parsers:
+            raise exceptions.PlugError(
+                "REPO_DISCOVERY parser requires STUDENT parser"
+            )
+        elif "api" not in inspect.signature(attrdict["command"]).parameters:
+            raise exceptions.PlugError(
+                "REPO_DISCOVERY parser requires command function to use api "
+                "argument"
+            )
 
 
 def _get_configurable_arguments(attrdict: dict) -> List[str]:
@@ -214,7 +236,7 @@ def _add_option(
         )
         for (mutex_opt_name, mutex_opt) in opt.options:
             _add_option(
-                mutex_opt_name, mutex_opt, configured_value, mutex_parser,
+                mutex_opt_name, mutex_opt, configured_value, mutex_parser
             )
         return
     elif opt.argument_type == cli.args._ArgumentType.IGNORE:
