@@ -84,6 +84,8 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
     """
     try:
         yield
+    except plug.PlugError:
+        raise
     except github.GithubException as e:
         if ignore_statuses and e.status in ignore_statuses:
             return
@@ -159,8 +161,6 @@ class GitHubAPI(plug.PlatformAPI):
     def token(self):
         return self._token
 
-    # START EXPERIMENTAL API
-
     def create_team(
         self,
         name: str,
@@ -183,7 +183,8 @@ class GitHubAPI(plug.PlatformAPI):
 
     def delete_team(self, team: plug.Team) -> None:
         """See :py:meth:`repobee_plug.PlatformAPI.delete_team`."""
-        team.implementation.delete()
+        with _try_api_request():
+            team.implementation.delete()
 
     def get_teams(
         self, team_names: Optional[Iterable[str]] = None
@@ -220,10 +221,11 @@ class GitHubAPI(plug.PlatformAPI):
         self, team: plug.Team, repo: plug.Repo, permission: plug.TeamPermission
     ) -> None:
         """See :py:meth:`repobee_plug.PlatformAPI.assign_repo`."""
-        team.implementation.add_to_repos(repo.implementation)
-        team.implementation.set_repo_permission(
-            repo.implementation, _TEAM_PERMISSION_MAPPING[permission]
-        )
+        with _try_api_request():
+            team.implementation.add_to_repos(repo.implementation)
+            team.implementation.set_repo_permission(
+                repo.implementation, _TEAM_PERMISSION_MAPPING[permission]
+            )
 
     def create_repo(
         self,
@@ -245,7 +247,8 @@ class GitHubAPI(plug.PlatformAPI):
         """See :py:meth:`repobee_plug.PlatformAPI.get_repo`."""
         # the GitHub API does not need the team name, as teams do not form
         # namespaces
-        repo = self._org.get_repo(repo_name)
+        with _try_api_request():
+            repo = self._org.get_repo(repo_name)
         return self._wrap_repo(repo)
 
     def get_repos(
@@ -270,11 +273,13 @@ class GitHubAPI(plug.PlatformAPI):
     ) -> plug.Issue:
         """See :py:meth:`repobee_plug.PlatformAPI.create_issue`."""
         repo_impl: github.Repository.Repository = repo.implementation
-        issue = repo_impl.create_issue(
-            title,
-            body=body,
-            assignees=assignees or github.GithubObject.NotSet,  # type: ignore
-        )
+        with _try_api_request():
+            issue = repo_impl.create_issue(
+                title,
+                body=body,
+                assignees=assignees
+                or github.GithubObject.NotSet,  # type: ignore
+            )
         return self._wrap_issue(issue)
 
     def close_issue(self, issue: plug.Issue) -> None:
@@ -296,34 +301,35 @@ class GitHubAPI(plug.PlatformAPI):
         )
 
     def _wrap_team(self, team: _Team) -> plug.Team:
-        return plug.Team(
-            name=team.name,
-            members=[m.login for m in team.get_members()],
-            id=team.id,
-            implementation=team,
-        )
+        with _try_api_request():
+            return plug.Team(
+                name=team.name,
+                members=[m.login for m in team.get_members()],
+                id=team.id,
+                implementation=team,
+            )
 
     def _wrap_repo(self, repo: _Repo) -> plug.Repo:
-        return plug.Repo(
-            name=repo.name,
-            description=repo.description,
-            private=repo.private,
-            url=repo.html_url,
-            implementation=repo,
-        )
+        with _try_api_request():
+            return plug.Repo(
+                name=repo.name,
+                description=repo.description,
+                private=repo.private,
+                url=repo.html_url,
+                implementation=repo,
+            )
 
     def _wrap_issue(self, issue: github.Issue.Issue) -> plug.Issue:
-        return plug.Issue(
-            title=issue.title,
-            body=issue.body,
-            number=issue.number,
-            created_at=issue.created_at.isoformat(),
-            author=issue.user.login,
-            state=_REVERSE_ISSUE_STATE_MAPPING[issue.state],
-            implementation=issue,
-        )
-
-    # END EXPERIMENTAL API
+        with _try_api_request():
+            return plug.Issue(
+                title=issue.title,
+                body=issue.body,
+                number=issue.number,
+                created_at=issue.created_at.isoformat(),
+                author=issue.user.login,
+                state=_REVERSE_ISSUE_STATE_MAPPING[issue.state],
+                implementation=issue,
+            )
 
     def _get_users(self, usernames: Iterable[str]) -> List[_User]:
         """Get all existing users corresponding to the usernames.
