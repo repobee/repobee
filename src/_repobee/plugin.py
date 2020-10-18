@@ -123,7 +123,8 @@ def _try_load_module(qualname: str) -> Optional[ModuleType]:
     """
     try:
         return importlib.import_module(qualname)
-    except ModuleNotFoundError:
+    except ModuleNotFoundError as exc:
+        plug.log.debug(str(exc))
         return None
 
 
