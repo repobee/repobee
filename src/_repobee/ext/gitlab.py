@@ -257,7 +257,7 @@ class GitLabAPI(plug.PlatformAPI):
         project = repo.implementation
         member_ids = [user.id for user in self._get_users(assignees or [])]
         issue = project.issues.create(
-            dict(title=title, description=body, assignee_ids=member_ids),
+            dict(title=title, description=body, assignee_ids=member_ids)
         )
         return self._wrap_issue(issue)
 
@@ -456,17 +456,34 @@ class GitLabAPI(plug.PlatformAPI):
         plug.echo(
             f"Verifying that user {user} is an owner of group {group_name}"
         )
-        matching_members = [
-            member
-            for member in group.members.list(all=True)
-            if member.username == user
-            and member.access_level == gitlab.OWNER_ACCESS
-        ]
-        if not matching_members:
-            raise plug.BadCredentials(
-                f"User {user} is not an owner of {group_name}"
+        GitLabAPI._verify_membership(user, group)
+
+    @staticmethod
+    def _verify_membership(user: str, group):
+        members = group.members.list(all=True)
+        owners = {
+            m.username
+            for m in members
+            if m.access_level == gitlab.OWNER_ACCESS
+        }
+        if user not in owners:
+            plug.log.warning(
+                f"{user} is not an owner of {group.name}. "
+                "Some features may not be available."
             )
-        plug.echo(f"SUCCESS: User {user} is an owner of group {group_name}")
+            non_owners = {
+                m.username
+                for m in members
+                if m.access_level != gitlab.OWNER_ACCESS
+            }
+            if user not in non_owners:
+                raise plug.BadCredentials(
+                    f"user {user} is not a member of {group.name}"
+                )
+        else:
+            plug.echo(
+                f"SUCCESS: User {user} is an owner of group {group.name}"
+            )
 
 
 class GitLabAPIHook(plug.Plugin):

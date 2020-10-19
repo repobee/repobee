@@ -129,6 +129,7 @@ class GitLabMock:
             for usr in self._users.values()
             if usr.username == constants.USER
         ]
+        self._user = self._owner
         self._base_url = url
         self._private_token = private_token
         self._groups = {}
@@ -149,7 +150,7 @@ class GitLabMock:
 
     @property
     def user(self):
-        return self._owner
+        return self._user
 
     @property
     def tests_only_target_group_id(self):
@@ -527,6 +528,29 @@ class TestVerifySettings:
         assert "Could not find group with slug {}".format(
             non_existing_group
         ) in str(exc_info.value)
+
+    def test_raises_when_user_is_not_member(self, mocker):
+        gl = GitLabMock(BASE_URL, TOKEN, False)
+        gl.groups.create(dict(name=MASTER_GROUP, path=MASTER_GROUP))
+        user = User(id=9999, username="some-random-user")
+        gl._user = user
+        mocker.patch(
+            "_repobee.ext.gitlab.gitlab.Gitlab",
+            side_effect=lambda base_url, private_token, ssl_verify: gl,
+        )
+
+        with pytest.raises(plug.BadCredentials) as exc_info:
+            _repobee.ext.gitlab.GitLabAPI.verify_settings(
+                user=None,
+                org_name=TARGET_GROUP,
+                base_url=BASE_URL,
+                token=TOKEN,
+                template_org_name=MASTER_GROUP,
+            )
+
+        assert f"{user.username} is not a member of {TARGET_GROUP}" in str(
+            exc_info.value
+        )
 
     def test_happy_path(self, mocker):
         """Test that the great success message is printed if all is as it

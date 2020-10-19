@@ -29,7 +29,7 @@ VALIDATION_ERROR = GithubException(msg=None, status=422)
 SERVER_ERROR = GithubException(msg=None, status=500)
 
 USER = constants.USER
-NOT_OWNER = "notanowner"
+NOT_MEMBER = "notanowner"
 ORG_NAME = constants.ORG_NAME
 BASE_URL = constants.BASE_URL
 ISSUE = constants.ISSUE
@@ -127,7 +127,7 @@ def happy_github(mocker, monkeypatch, teams_and_members):
     github_instance = MagicMock()
     github_instance.get_user.side_effect = (
         lambda user: User(login=user)
-        if user in [USER, NOT_OWNER]
+        if user in [USER, NOT_MEMBER]
         else raise_404()
     )
     type(github_instance).oauth_scopes = PropertyMock(
@@ -139,7 +139,7 @@ def happy_github(mocker, monkeypatch, teams_and_members):
     )
 
     def get_user(username):
-        if username in [*usernames, USER, NOT_OWNER]:
+        if username in [*usernames, USER, NOT_MEMBER]:
             user = MagicMock(spec=github.NamedUser.NamedUser)
             type(user).login = PropertyMock(return_value=username)
             return user
@@ -162,11 +162,11 @@ def organization(happy_github):
     returns the mock.
     """
     organization = MagicMock()
-    organization.get_members = lambda role: [
-        User(login="blablabla"),
-        User(login="hello"),
-        User(login=USER),
-    ]
+
+    def get_members(role=""):
+        return [User(login="blablabla"), User(login="hello"), User(login=USER)]
+
+    organization.get_members = get_members
     type(organization).html_url = PropertyMock(
         return_value=generate_repo_url("", ORG_NAME).rstrip("/")
     )
@@ -438,14 +438,33 @@ class TestVerifySettings:
             )
         assert "missing one or more access token scopes" in str(exc_info.value)
 
-    def test_not_owner_raises(self, happy_github, organization, api):
+    def test_not_member_raises(self, happy_github, organization, api):
         with pytest.raises(plug.BadCredentials) as exc_info:
             github_plugin.GitHubAPI.verify_settings(
-                NOT_OWNER, ORG_NAME, BASE_URL, TOKEN
+                NOT_MEMBER, ORG_NAME, BASE_URL, TOKEN
             )
 
-        assert "user {} is not an owner".format(NOT_OWNER) in str(
-            exc_info.value
+        assert f"user {NOT_MEMBER} is not a member" in str(exc_info.value)
+
+    def test_not_owner_warning(self, happy_github, organization, mocker, api):
+        warn_mock = mocker.patch("repobee_plug.log.warning")
+        orig_get_members = organization.get_members
+
+        def get_members(role=""):
+            if role == "admin":
+                return []
+            else:
+                return orig_get_members(role)
+
+        organization.get_members = get_members
+
+        github_plugin.GitHubAPI.verify_settings(
+            USER, ORG_NAME, BASE_URL, TOKEN
+        )
+
+        warn_mock.assert_any_call(
+            f"{USER} is not an owner of {ORG_NAME}. "
+            "Some features may not be available."
         )
 
     def test_raises_unexpected_exception_on_unexpected_status(
