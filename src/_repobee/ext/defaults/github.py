@@ -498,20 +498,21 @@ class GitHubAPI(plug.PlatformAPI):
                 user, org_name
             )
         )
-        owner_usernames = (
-            owner.login for owner in org.get_members(role="admin")
-        )
-        if user not in owner_usernames:
-            raise plug.BadCredentials(
-                "user {} is not an owner of organization {}".format(
+        if user not in (m.login for m in org.get_members(role="admin")):
+            plug.log.warning(
+                f"{user} is not an owner of {org_name}. "
+                "Some features may not be available."
+            )
+            if user not in (m.login for m in org.get_members()):
+                raise plug.BadCredentials(
+                    f"user {user} is not a member of {org_name}"
+                )
+        else:
+            plug.echo(
+                "SUCCESS: user {} is an owner of organization {}".format(
                     user, org_name
                 )
             )
-        plug.echo(
-            "SUCCESS: user {} is an owner of organization {}".format(
-                user, org_name
-            )
-        )
 
 
 class DefaultAPIHooks(plug.Plugin):
