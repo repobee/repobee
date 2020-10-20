@@ -83,5 +83,6 @@ def process_package(pkg_qualname: types.ModuleType) -> List[str]:
 def process_module(mod: types.ModuleType) -> List[str]:
     modname = mod.__name__.split(".")[-1]
     docstring_lines = mod.__doc__.split("\n")
-    content = [modname, "-" * len(modname), *docstring_lines, "\n"]
+    label = f".. _builtin_plugin_{modname}:\n\n"
+    content = [label, modname, "-" * len(modname), *docstring_lines, "\n"]
     return content
