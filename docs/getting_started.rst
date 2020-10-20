@@ -272,6 +272,14 @@ If any of the checks fail, you should be provided with a semi-helpful error
 message. When all checks pass and you get ``GREAT SUCCESS``, move on to the next
 section!
 
+.. note::
+
+    Less privileged users, such as teaching assistants that have been assigned
+    with the :ref:`auto_tamanager` plugin, may see a warning about not being an
+    owner of the organization. That's fine and expected, but note that this may
+    make them unable to execute certain commands, such as those creating teams
+    and repositories.
+
 Set up template repos
 =======================
 
