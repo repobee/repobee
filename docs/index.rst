@@ -45,7 +45,6 @@ for prospective users to get a clear understanding of what RepoBee can do.
    install
    userguide
    faq
-   configuration
    cli
    contributing
    repobee_plug/index

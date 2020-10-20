@@ -23,8 +23,8 @@ arguments it has in common with the other commands of RepoBee. The only
 non-standard arguments are ``--issue`` and ``--num-reviews``, the former of
 which we've actually already seen in the ``issues open`` command (see
 :ref:`open`). We will assume that both ``--base-url`` and ``--org-name`` are
-already configured in the configuration file (if you don't know what this
-means, have a look at :ref:`config`). Thus, the only things we must specify are
+already configured (if you don't know what this means, have a look at
+:ref:`config`). Thus, the only things we must specify are
 ``--students/--students-file`` and ``--num-reviews`` (``--issue`` is optional,
 more on that later). Let's make a minimal call with the ``assign`` action, and
 then inspect the log output to figure out what happened. Recall that
