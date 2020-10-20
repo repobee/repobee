@@ -89,6 +89,13 @@ The following conventions are fundamental to working with RepoBee.
 * Any user of RepoBee has unrestricted access to the target organization
   (i.e. is an owner). If the user has limited access, some features may work,
   while others may not.
+
+  - The :ref:`auto_tamanager` plugin provides functionality for assigning
+    teaching assistants to the organization with significantly fewer
+    privileges than an owner. These users cannot use the full power of RepoBee,
+    but it is sufficient for e.g. cloning repositories and opening issues on
+    the issue trackers.
+
 * Template repos should be available as private repos in one of three places:
 
   - The template organization (recommended if the template repos are being
