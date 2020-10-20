@@ -204,6 +204,45 @@ Note that the token is not shown. To show secrets in the configuration file,
 provide the ``--secrets`` option to ``config show``. If you ever want to
 re-configure some of the options, simply run ``config wizard`` again.
 
+The students file
+-----------------
+
+Most RepoBee commands allow you to specify the students for whose repos you
+want to do something either directly on the command line with the
+``--students`` option, or via a file that we refer to as a *students file*.
+A default for this file can be set in the config file as the ``students_file``
+option, but it can also be provided on the command line with the
+``--students-file`` option.
+
+The format of the students file is simple: each line contains a whitespace
+separated list of student usernames, and represents a team of students. For
+example, the following students file represents single-student teams and would
+make for individual tasks.
+
+.. code-block:: bash
+   :caption: students.txt
+
+    slarse
+    glassey
+    glennol
+
+The above file will be assumed to be available as ``students.txt`` throughout
+the rest of the user guide.
+
+For group assignments, simply place multiple student usernames on a line to
+form a multi-student teams. The following example places ``slarse`` and
+``glassey`` in the same team, and ``glennol`` in a separate one.
+
+.. code-block:: bash
+    :caption: students.txt
+
+    slarse glassey
+    glennol
+
+The order of usernames on a line does not matter; they are always sorted
+lexicographically after parsing. See :ref:`groups` for more information on
+group assignments.
+
 Verifying the configuration (the ``verify`` action)
 ---------------------------------------------------
 
