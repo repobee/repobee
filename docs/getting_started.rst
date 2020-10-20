@@ -121,6 +121,7 @@ Similarly, to access the help section of a given action, simply type ``repobee
     ``bash`` or ``zsh``, RepoBee's tab completion should help you significantly
     in navigating the different categories!
 
+.. _config:
 
 Configure RepoBee for the target organization (the ``config`` category)
 =======================================================================
@@ -134,20 +135,19 @@ Editing the configuration file (the ``wizard`` and ``show`` actions)
 For RepoBee to work at all, it needs to be provided with an access token to
 whichever platform instance you intend to use. See the `GitHub access token
 docs`_ for how to create a token. The token should have the ``repo`` and
-``admin:org`` scopes.
+``admin:org`` scopes. You can either set this token in the ``REPOBEE_TOKEN``
+environment variable with whatever method you deem appropriate, or you can put
+it in the configuration file as described next.
 
 .. note::
 
    See :ref:`gitlab access token` if you use GitLab!
 
-While you can set this token in an environment variable (see
-:ref:`configuration`), it's more convenient to just put it in the configuration
-file, as you will put other default values in there. The ``config wizard``
-command starts a configuration wizard that prompts you for default values for
-the available settings. The defaults that are set in the configuration file are
-*just defaults*, and can always be overridden on the command line. For the rest
-of this guide, I will assume that the config file has defaults for at least the
-following:
+The ``config wizard`` command starts a configuration wizard that prompts you
+for default values for the available settings. The defaults that are set in the
+configuration file are *just defaults*, and can always be overridden on the
+command line. For the rest of this guide, I will assume that the config file
+has defaults for at least the following:
 
 .. code-block:: bash
    :caption: config.ini
