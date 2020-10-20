@@ -157,6 +157,8 @@ connection issues and misaligned planets.
     rejecting repos will still reject the push. However, be careful not to run
     ``update`` with ``-i`` multiple times, as it will then open multiple issues.
 
+.. _clone_action:
+
 Cloning Repos in Bulk (the ``clone`` action)
 ============================================
 
