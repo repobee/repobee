@@ -7,12 +7,16 @@ The line is removed from the file, and the docstrings of the modules in package
 <package_name> are appended to the file like so (without the backticks).
 
 ```
+.. _auto_<module_name>:
+
 <module_name>
 -------------
 <docstring>
 ```
 
-This applies recursively to modules in subpackages of <package_name>.
+This applies recursively to modules in subpackages of <package_name>. Note that
+both labels and headings will clash if there is a duplicate module name in any
+subpackage.
 """
 
 import importlib
@@ -83,6 +87,13 @@ def process_package(pkg_qualname: types.ModuleType) -> List[str]:
 def process_module(mod: types.ModuleType) -> List[str]:
     modname = mod.__name__.split(".")[-1]
     docstring_lines = mod.__doc__.split("\n")
-    label = f".. _builtin_plugin_{modname}:\n\n"
-    content = [label, modname, "-" * len(modname), *docstring_lines, "\n"]
+    label = f".. _auto_{modname}:"
+    content = [
+        label,
+        "\n\n",
+        modname,
+        "-" * len(modname),
+        *docstring_lines,
+        "\n",
+    ]
     return content
