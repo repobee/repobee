@@ -24,7 +24,7 @@ import itertools
 import pathlib
 import types
 
-from typing import List
+from typing import List, Iterable
 
 import pkgutil
 
@@ -53,7 +53,7 @@ def source_read(
         source[0] = "\n".join(content)
 
 
-def process_package(pkg_qualname: types.ModuleType) -> List[str]:
+def process_package(pkg_qualname: str) -> Iterable[str]:
     pkg = importlib.import_module(pkg_qualname)
     pkg_init_path = pathlib.Path(pkg.__file__)
     if pkg_init_path.name != "__init__.py":
