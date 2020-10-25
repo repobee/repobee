@@ -1,14 +1,8 @@
-"""GitLab API module.
+"""GitLab compatibility plugin.
 
-This module contains the :py:class:`GitLabAPI` class, which is meant to be the
-prime means of interacting with the GitLab API in RepoBee. The methods of
-GitLabAPI are mostly high-level bulk operations.
-
-.. module:: gitlab
-    :synopsis: Top level interface for interacting with a GitLab instance
-        within _repobee.
-
-.. moduleauthor:: Simon Larsén
+This plugin allows RepoBee to be used with GitLab. If you want to use RepoBee
+with GitLab, then you should first activate this plugin persistently. See
+:ref:`activate_plugins` for details on how to do that.
 """
 import os
 import collections
