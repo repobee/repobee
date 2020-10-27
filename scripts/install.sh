@@ -24,14 +24,14 @@ REGISTER_PYTHON_ARGCOMPLETE="$REPOBEE_INSTALL_DIR/env/bin/register-python-argcom
 MIN_PYTHON_VERSION=6
 
 function install() {
-    version=$1
+    repobee_pip_uri=$1
 
     if [ -d "$REPOBEE_INSTALL_DIR" ]; then
         echo "Found RepoBee installation at $REPOBEE_INSTALL_DIR, attempting repair and upgrade ..."
     fi
 
     check_prerequisites
-    install_repobee $version
+    install_repobee "$repobee_pip_uri"
 }
 
 function check_prerequisites() {
@@ -58,7 +58,7 @@ function check_prerequisites() {
 }
 
 function install_repobee() {
-    version=$1
+    repobee_pip_uri="$1"
     echo "Installing RepoBee at $REPOBEE_INSTALL_DIR"
 
     # virtualenv works better in CI as it properly copies pip from another
@@ -78,8 +78,7 @@ function install_repobee() {
     ensure_pip_installed
 
     echo "Installing RepoBee $version"
-    repobee_pip_url="git+$REPOBEE_HTTPS_URL.git@$version"
-    REPOBEE_INSTALL_DIR="$REPOBEE_INSTALL_DIR" pip_install_quiet_failfast "$repobee_pip_url"
+    REPOBEE_INSTALL_DIR="$REPOBEE_INSTALL_DIR" pip_install_quiet_failfast "$repobee_pip_uri"
     create_repobee_executable
 
     if [ ! -f "$REPOBEE_INSTALLED_PLUGINS" ]; then
@@ -229,14 +228,21 @@ Sorry, we don't support tab completion for any other shells at this time :(
 "
 }
 
-# find the version to install
-if [ $1 ]; then
-    version=$1
-else
-    version=$(get_latest_version)
-fi
+function resolve_repobee_pip_uri() {
+    # the optional argument can be either a version tag, or a local filepath
+    if [ $1 ]; then
+        if [ -d "$1" ]; then
+            repobee_pip_uri="$1"
+        else
+            repobee_pip_uri="git+$REPOBEE_HTTPS_URL.git@$version"
+        fi
+    else
+        repobee_pip_uri="git+$REPOBEE_HTTPS_URL.git@$(get_latest_version)"
+    fi
+    echo "$repobee_pip_uri"
+}
 
-install $version
+install "$(resolve_repobee_pip_uri $1)"
 create_autocomplete_scripts
 auto_complete_msg
 
