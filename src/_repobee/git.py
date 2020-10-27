@@ -46,8 +46,7 @@ class CloneSpec:
     metadata: dict = dataclasses.field(default_factory=dict)
 
 
-_EMPTY_REPO_ERROR = b"""fatal: Couldn't find remote ref HEAD
-fatal: the remote end hung up unexpectedly"""
+_EMPTY_REPO_ERROR = b"""fatal: Couldn't find remote ref HEAD"""
 
 
 def _ensure_repo_dir_exists(clone_spec: CloneSpec) -> None:
