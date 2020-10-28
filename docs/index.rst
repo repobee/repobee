@@ -50,6 +50,7 @@ for prospective users to get a clear understanding of what RepoBee can do.
    contributing
    repobee_plug/index
    repobee_testhelpers/index
+   code
 
 Indices and tables
 ==================
