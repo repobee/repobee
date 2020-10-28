@@ -5,11 +5,11 @@ Creating plugins
 
 We've put a lot of effort into making the creation of plugins as easy as
 possible, and you do not need to be a seasoned Python developer in order to
-make something that is genuinely useful.  While it is possible to develop
+make something that is genuinely useful. While it is possible to develop
 plugins according to all of the best practices of Python development, you don't
 need to. In fact, all you need to create your first plugin is to write a little
 bit of code in a Python source file. Let's have a go at extending the RepoBee
-CLI with the mandatory Hello World example.  Copy the following lines of code
+CLI with the mandatory Hello World example. Copy the following lines of code
 into a file called ``hello.py``.
 
 .. code-block:: python
@@ -24,11 +24,13 @@ into a file called ``hello.py``.
 
 This plugin will add a command called ``helloworld`` to the command line. As we
 haven't specified a category nor action, it will simply be a top-level command.
-You can call it like this:
+As the plugin is contained in a single file, we call it a *single-file plugin*.
+You can activate the plugin temporarily with ``-p /path/to/hello.py`` in order
+to call the command defined in it.
 
 .. code-block:: bash
 
-    $ repobee --plug hello.py helloworld
+    $ repobee -p hello.py helloworld
     Hello, world!
 
 Of course, this plugin is useless. We will elaborate upon this useless plugin
@@ -673,7 +675,9 @@ plugin module; it's sufficient that they are imported into it.
 The primary plugin module is essentially the same as a single-file plugin,
 except that it's packaged such that it can import other modules in the same
 package. It can also take advantage of additional dependencies defined in
-``setup.py``.
+``setup.py``. Of course, all of the concepts discussed in relation to
+single-file plugins apply to packaged plugins, with one important exception: a
+packaged plugin must be installed.
 
 Installing a plugin package
 ---------------------------
