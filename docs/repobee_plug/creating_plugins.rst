@@ -717,7 +717,7 @@ a module for doing so that ships with Python, called ``venv``. In the root
 directory of your project (so in this case, in ``repobee-example``), execute the
 following.
 
-.. code-block::
+.. code-block:: bash
 
     $ python3 -m venv env
 
