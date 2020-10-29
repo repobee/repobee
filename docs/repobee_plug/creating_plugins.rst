@@ -703,3 +703,67 @@ command.
     $ repobee -p example helloworld
 
 And those are all of the basics of packaging plugins!
+
+Optional: Developing in a virtual environment
+---------------------------------------------
+
+Now that you've got everything setup, it's time for one last thing if you want
+to do get serious with developing and maintaining your plugin. That thing is a
+*virtual environment*, which allows you to install Python dependencies for your
+project in an isolated environment. Installing Python packages with a system or
+user install should be avoided if at all possible, as you quickly end up in the
+dreaded *package hell*. Creating a virtual environment is very easy, as there is
+a module for doing so that ships with Python, called ``venv``. In the root
+directory of your project (so in this case, in ``repobee-example``), execute the
+following.
+
+.. code-block:: bash
+
+    $ python3 -m venv env
+
+
+.. note::
+
+    On some Linux distributions, ``venv`` is separate from ``python``. For
+    example, on Debian you must install it with ``apt install python3-venv``.
+
+This creates a directory called ``env`` in your current working directory,
+containing the virtual environment. You can then enter and exit the virtual
+environment like so.
+
+.. code-block:: bash
+
+    # activate the virtual environment
+    $ source env/bin/activate
+    # install the project with an editable install and test requirements
+    (env) $ pip install -e .[TEST]
+    # run the tests
+    (env) $ pytest tests/
+    ========================= test session starts =========================
+    platform linux -- Python 3.8.6, pytest-6.1.2, py-1.9.0, pluggy-0.13.1
+    rootdir: /home/slarse/Documents/github/repobee/repobee-example
+    plugins: repobee-3.3.0
+    collected 1 item
+
+    tests/test_example.py .                                         [100%]
+
+    ========================== 1 passed in 0.01s ==========================
+    # exit the virtual environment
+    $ deactivate
+
+When you do development on the project, make sure to enter the virtual
+environment first. You don't need to install the local project each time you
+enter, but make sure to do so if you 1) add new dependencies in ``setup.py``, or
+2) change the version number in ``__version.py``.
+
+.. hint::
+
+    Installing the local directory with ``.[TEST]`` may seem cryptic, but it's
+    quite simple. The ``.`` simply means "this directory", and the ``[TEST]``
+    means "also install the requirements listed in ``extras_require`` with key
+    ``TEST`` in the ``setup.py`` file.
+
+And that's just about what you need to know to do some rudimentary Python
+development. For a more in-depth tutorial on using virtual environments,
+`see this great article on RealPython
+<https://realpython.com/python-virtual-environments-a-primer/>`_.
