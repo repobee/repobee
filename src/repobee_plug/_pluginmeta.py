@@ -1,6 +1,8 @@
 import argparse
+import shlex
 import itertools
 import inspect
+import configparser
 
 from typing import List, Tuple, Union, Iterator
 
@@ -182,7 +184,7 @@ def _attach_options(self, config, parser):
     opts = _extract_cli_options(self.__class__.__dict__)
 
     for (name, opt) in opts:
-        configured_value = config_section.get(name)
+        configured_value = _get_configured_value(name, opt, config_section)
         if configured_value and not (
             hasattr(opt, "configurable") and opt.configurable
         ):
@@ -193,6 +195,22 @@ def _attach_options(self, config, parser):
         _add_option(name, opt, configured_value, parser)
 
     return parser
+
+
+def _get_configured_value(
+    arg_name: str, opt: _Option, config_section: configparser.SectionProxy
+):
+    configured_value = config_section.get(arg_name)
+    if (
+        configured_value
+        and opt.argparse_kwargs
+        and opt.argparse_kwargs.get("nargs") in ["+", "*"]
+    ):
+        individual_args = shlex.split(configured_value)
+        converter = opt.converter if opt.converter else lambda x: x
+        return tuple(map(converter, individual_args))
+    else:
+        return configured_value
 
 
 def _generate_handle_processed_args_func():
