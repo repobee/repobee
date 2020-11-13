@@ -165,9 +165,9 @@ class TestDeclarativeExtensionCommand:
 
         assert args.name == configured_name
 
-    def test_configure_list_like_arg(self):
-        """Test setting a configured value for a list-like argument (i.e. with
-        `nargs` in argparse), where each individual value is space-separated.
+    def test_configure_list_like_args(self):
+        """Test setting configured values for list-like arguments (i.e. with
+        `nargs` in argparse).
         """
 
         class Greeting(plug.Plugin, plug.cli.Command):
@@ -177,35 +177,24 @@ class TestDeclarativeExtensionCommand:
                 configurable=True,
                 argparse_kwargs=dict(nargs="+"),
             )
-
-            def command(self):
-                pass
-
-        plugin_name = "greeting"
-        configured_names = "Alice Bob Eve"
-        expected_configured_names = tuple(configured_names.split())
-        config = {plugin_name: {"names": configured_names}}
-
-        plugin_instance = Greeting(plugin_name)
-        parser = argparse.ArgumentParser()
-        plugin_instance.attach_options(config=config, parser=parser)
-
-        args = parser.parse_args([])
-
-        assert args.names == expected_configured_names
-
-    def test_configure_list_like_arg_with_converter(self):
-        """Test that a configured list-like arg with a converter gets the
-        converter correctly applied to each argument in the list.
-        """
-
-        class Greeting(plug.Plugin, plug.cli.Command):
             numbers = plug.cli.option(
                 help="one or more numbers",
                 required=True,
                 configurable=True,
                 converter=int,
+                argparse_kwargs=dict(nargs="*"),
+            )
+            fullnames = plug.cli.option(
+                help="one or more full names",
+                configurable=True,
+                required=True,
                 argparse_kwargs=dict(nargs="+"),
+            )
+            location = plug.cli.option(
+                help="your city and country",
+                configurable=True,
+                required=True,
+                argparse_kwargs=dict(nargs=2),
             )
 
             def command(self):
@@ -213,10 +202,24 @@ class TestDeclarativeExtensionCommand:
 
         plugin_name = "greeting"
         expected_configured_numbers = (1, 1337, 42, 99)
+        expected_configured_names = ("Alice", "Bob", "Eve")
+        expected_configured_fullnames = (
+            "Alice Alisson",
+            "Bob Bobsson",
+            "Eve Evesson",
+        )
+        expected_location = ("Stockholm", "Sweden")
         config = {
             plugin_name: {
-                "numbers": " ".join(map(str, expected_configured_numbers))
-            }
+                "names": " ".join(expected_configured_names),
+                "fullnames": " ".join(
+                    # the full names must be quoted as they contain a space
+                    f"'{fn}'"
+                    for fn in expected_configured_fullnames
+                ),
+                "numbers": " ".join(map(str, expected_configured_numbers)),
+                "location": " ".join(expected_location),
+            },
         }
 
         plugin_instance = Greeting(plugin_name)
@@ -225,7 +228,10 @@ class TestDeclarativeExtensionCommand:
 
         args = parser.parse_args([])
 
+        assert args.names == expected_configured_names
         assert args.numbers == expected_configured_numbers
+        assert args.fullnames == expected_configured_fullnames
+        assert args.location == expected_location
 
     def test_get_configurable_args_hook_correctly_implemented(self):
         """Only configurable arguments should be returned by the
