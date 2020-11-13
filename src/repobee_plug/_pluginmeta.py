@@ -1,8 +1,11 @@
 import argparse
+import shlex
 import itertools
 import inspect
+import configparser
+import re
 
-from typing import List, Tuple, Union, Iterator
+from typing import List, Tuple, Union, Iterator, Any, Optional
 
 from repobee_plug import exceptions
 from repobee_plug import _corehooks
@@ -182,7 +185,7 @@ def _attach_options(self, config, parser):
     opts = _extract_cli_options(self.__class__.__dict__)
 
     for (name, opt) in opts:
-        configured_value = config_section.get(name)
+        configured_value = _get_configured_value(name, opt, config_section)
         if configured_value and not (
             hasattr(opt, "configurable") and opt.configurable
         ):
@@ -193,6 +196,28 @@ def _attach_options(self, config, parser):
         _add_option(name, opt, configured_value, parser)
 
     return parser
+
+
+def _get_configured_value(
+    arg_name: str, opt: _Option, config_section: configparser.SectionProxy
+) -> Optional[Any]:
+    """Try to fetch a configured value from the config, respecting the
+    converter of the option and also handling list-like arguments.
+
+    Returns:
+        The configured value, or none if there was no configured value.
+    """
+    configured_value = config_section.get(arg_name)
+    if (
+        configured_value
+        and opt.argparse_kwargs
+        and re.match(r"\+|\*|\d+", str(opt.argparse_kwargs.get("nargs")))
+    ):
+        individual_args = shlex.split(configured_value)
+        converter = opt.converter if opt.converter else lambda x: x
+        return tuple(map(converter, individual_args))
+    else:
+        return configured_value
 
 
 def _generate_handle_processed_args_func():
