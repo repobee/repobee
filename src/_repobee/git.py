@@ -201,12 +201,18 @@ def _update_local_repos(
     assert all(
         map(lambda repo: repo.path.parent.parent == expected_basedir, local)
     )
+    _stash_changes(local)
     specs = [
         CloneSpec(repo_url=api.insert_auth(repo.url), dest=repo.path)
         for repo in local
     ]
     # TODO figure out what to do when a local update fails
     clone(specs)
+
+
+def _stash_changes(local_repos: List[plug.StudentRepo]) -> None:
+    for repo in local_repos:
+        captured_run("git stash".split(), cwd=repo.path)
 
 
 def clone(clone_specs: Iterable[CloneSpec]) -> List[CloneSpec]:

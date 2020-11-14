@@ -654,6 +654,41 @@ class TestClone:
         assert local_new_file.is_file()
         assert local_new_file.read_text() == new_file_name
 
+    def test_update_local_stashes_local_changes(
+        self, platform_url, with_student_repos, tmp_path_factory
+    ):
+        """Test that updating local repositories with unstaged changes causes
+        the changes to be stashed, and the update to proceed.
+        """
+        new_file_name = "suspicious_file.txt"
+        workdir = tmp_path_factory.mktemp("workdir")
+        target_repo = funcs.get_repos(platform_url)[-1]
+        self._clone_all_student_repos(platform_url, workdir)
+
+        # update remote repo
+        with funcs.update_repository(target_repo.url) as repo_path:
+            (repo_path / new_file_name).write_text(new_file_name)
+        # update local repo
+        local_repo_path = list(workdir.rglob(target_repo.name))[0]
+        next(
+            file for file in local_repo_path.iterdir() if file.is_file()
+        ).write_text("this is an update!")
+
+        # act
+        funcs.run_repobee(
+            f"repos clone -a {const.TEMPLATE_REPOS_ARG} "
+            f"--update-local "
+            f"--base-url {platform_url}",
+            workdir=workdir,
+        )
+
+        # assert
+        assert local_repo_path.parent.parent == workdir
+        local_new_file = local_repo_path / new_file_name
+        assert local_new_file.is_file()
+        assert local_new_file.read_text() == new_file_name
+        assert git.Repo(local_repo_path).git.stash("list")
+
     def test_does_not_update_local_by_default(
         self, platform_url, with_student_repos, tmp_path_factory, capsys
     ):
