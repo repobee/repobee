@@ -138,6 +138,9 @@ def main(sys_args: List[str], unload_plugins: bool = True):
     """
     try:
         _main(sys_args, unload_plugins)
+    except plug.PlugError:
+        plug.log.error("A plugin exited with an error")
+        sys.exit(1)
     except Exception:
         plug.log.error(
             "RepoBee exited unexpectedly. "
