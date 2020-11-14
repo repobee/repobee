@@ -326,6 +326,26 @@ class TestClone:
                 STUDENT_TEAMS, TEMPLATE_REPO_NAMES, workdir
             )
 
+    def test_clone_local_gitconfig(
+        self, platform_url, with_student_repos, tmp_path_factory
+    ):
+        workdir = tmp_path_factory.mktemp("workdir")
+        funcs.run_repobee(
+            f"repos clone --assignments {TEMPLATE_REPOS_ARG} "
+            f"--base-url {platform_url}",
+            workdir=workdir,
+        )
+
+        # do a spot check on a single repo
+        team = STUDENT_TEAMS[0]
+        assignment_name = TEMPLATE_REPO_NAMES[0]
+        repo = git.Repo(
+            workdir
+            / str(team)
+            / plug.generate_repo_name(team, assignment_name)
+        )
+        assert "pull.ff=only" in repo.git.config("--local", "--list")
+
     def test_use_non_standard_repo_names(self, platform_url, tmp_path_factory):
         """Test cloning repos with non-standard repo names using an
         implementation of the ``generate_repo_name`` hook.
