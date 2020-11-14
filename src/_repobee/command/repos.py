@@ -403,7 +403,7 @@ def _clone_repos_no_check(
     dst_dirpath: pathlib.Path,
     update_local: bool,
     api: plug.PlatformAPI,
-) -> Iterable[plug.StudentRepo]:
+) -> List[plug.StudentRepo]:
     """Clone the specified repo urls into the destination directory without
     making any sanity checks; they must be done in advance.
 
