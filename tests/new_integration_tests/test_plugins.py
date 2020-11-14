@@ -205,3 +205,23 @@ def test_repo_discovery_parser_requires_student_parser():
     assert "REPO_DISCOVERY parser requires STUDENT parser" in str(
         exc_info.value
     )
+
+
+def test_plugin_crash_error_message(capsys, tmp_path_factory):
+    """"""
+    workdir = tmp_path_factory.mktemp("workdir")
+    crash_py = workdir / "crash.py"
+    crash_py.write_text(
+        """
+import repobee_plug as plug
+class Crash(plug.Plugin, plug.cli.Command):
+    def command(self):
+        raise plug.PlugError("this is an error")
+""",
+        encoding="utf8",
+    )
+
+    with pytest.raises(SystemExit):
+        _repobee.main.main(["repobee", "-p", str(crash_py), "crash"])
+
+    assert "A plugin exited with an error" in str(capsys.readouterr().err)
