@@ -13,7 +13,16 @@ import shutil
 import subprocess
 import sys
 import dataclasses
-from typing import Iterable, List, Any, Callable, Tuple, Awaitable, Sequence
+from typing import (
+    Iterable,
+    List,
+    Any,
+    Callable,
+    Tuple,
+    Awaitable,
+    Sequence,
+    Mapping,
+)
 
 import more_itertools
 import git  # type: ignore
@@ -385,3 +394,17 @@ def active_branch(repo_path: pathlib.Path) -> str:
         The active branch of the repo.
     """
     return git.Repo(repo_path).active_branch.name
+
+
+def set_gitconfig_options(
+    repo_path: pathlib.Path, options: Mapping[str, Any]
+) -> None:
+    """Set gitconfig options in the repository.
+
+    Args:
+        repo_path: Path to a repository.
+        options: A mapping (option_name -> option_value)
+    """
+    repo = git.Repo(repo_path)
+    for key, value in options.items():
+        repo.git.config("--local", key, value)

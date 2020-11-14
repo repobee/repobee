@@ -382,6 +382,7 @@ def clone_repos(
         local_repos = _clone_repos_no_check(
             repos, pathlib.Path(tmpdir), update_local, api
         )
+        _set_pull_ff_only(local_repos)
 
     for p in plug.manager.get_plugins():
         if "post_clone" in dir(p):
@@ -390,6 +391,11 @@ def clone_repos(
             )
             return plugin.execute_clone_tasks(local_repos_progress, api)
     return {}
+
+
+def _set_pull_ff_only(local_repos: List[plug.StudentRepo]) -> None:
+    for repo in local_repos:
+        git.set_gitconfig_options(repo.path, {"pull.ff": "only"})
 
 
 def _clone_repos_no_check(
@@ -421,7 +427,11 @@ def _clone_repos_no_check(
             "Local repos were not updated, use `--update-local` to update"
         )
 
-    return [repo for _, repo in cloned_repos]
+    return [
+        repo
+        for status, repo in cloned_repos
+        if status != git.CloneStatus.FAILED
+    ]
 
 
 def migrate_repos(
