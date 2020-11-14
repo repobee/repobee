@@ -295,7 +295,8 @@ def _add_repo_parsers(
     )
     clone.add_argument(
         "--update-local",
-        help="attempt to update local student repositories (beta feature)",
+        help="attempt to update local student repositories, "
+        "stashing any unstaged changes (beta feature)",
         action="store_true",
     )
 
