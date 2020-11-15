@@ -7,7 +7,8 @@ with open("README.md", mode="r", encoding="utf-8") as f:
     readme = f.read()
 
 # parse the version instead of importing it to avoid dependency-related crashes
-with open("src/_repobee/__version.py", mode="r", encoding="utf-8") as f:
+# the version of the core application is the same as that of the plugin system
+with open("src/repobee_plug/__version.py", mode="r", encoding="utf-8") as f:
     line = f.readline()
     __version__ = line.split("=")[1].strip(" '\"\n")
     assert re.match(r"^\d+(\.\d+){2}(-(alpha|beta|rc)(\.\d+)?)?$", __version__)
