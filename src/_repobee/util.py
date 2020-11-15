@@ -43,7 +43,7 @@ def repo_name(repo_url: str) -> str:
     return repo_name
 
 
-def is_git_repo(path: str) -> bool:
+def is_git_repo(path: Union[str, pathlib.Path]) -> bool:
     """Check if a directory has a .git subdirectory.
 
     Args:

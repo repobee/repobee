@@ -5,6 +5,7 @@ import re
 import pytest
 
 import repobee_plug as plug
+import repobee_testhelpers
 
 import _repobee.ext
 import _repobee.command.peer
@@ -136,6 +137,7 @@ class TestClone:
             new_file = new_dir / "file"
             new_file.write_text(str(new_dir), encoding="utf-8")
             expected_dir_hashes.append((new_dir, hash_directory(new_dir)))
+            repobee_testhelpers.funcs.initialize_repo(new_dir)
 
         command = " ".join(
             [

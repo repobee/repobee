@@ -2,6 +2,7 @@
 import pathlib
 import tempfile
 import itertools
+import shutil
 
 from typing import List, Mapping, Tuple, Iterable
 
@@ -736,6 +737,35 @@ class TestClone:
         local_new_file = local_repo_path / new_file_name
         assert not local_new_file.is_file()
         assert "--update-local" in capsys.readouterr().err
+
+    def test_raises_on_path_clash_with_non_git_directory(
+        self, platform_url, tmp_path_factory, with_student_repos
+    ):
+        """Test that an error is raised if there is a path clash between a
+        student repository and a non-git directory.
+        """
+        # arrange
+        workdir = tmp_path_factory.mktemp("workdir")
+        self._clone_all_student_repos(platform_url, workdir)
+        non_git_dir = (
+            workdir
+            / str(STUDENT_TEAMS[0])
+            / plug.generate_repo_name(STUDENT_TEAMS[0], TEMPLATE_REPO_NAMES[0])
+        )
+        shutil.rmtree(non_git_dir / ".git")
+
+        # act/assert
+        with pytest.raises(exception.RepoBeeException) as exc_info:
+            funcs.run_repobee(
+                f"repos clone -a {const.TEMPLATE_REPOS_ARG} "
+                f"--base-url {platform_url}",
+                workdir=workdir,
+            )
+
+        assert (
+            f"name clash with directory that is not a Git repository: "
+            f"'{non_git_dir}'" in str(exc_info)
+        )
 
     @staticmethod
     def _clone_all_student_repos(
