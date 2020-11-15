@@ -379,7 +379,7 @@ def clone_repos(
 
     plug.echo("Cloning into student repos ...")
     with tempfile.TemporaryDirectory() as tmpdir:
-        local_repos = _clone_repos_no_check(
+        local_repos = _clone_repos(
             repos, pathlib.Path(tmpdir), update_local, api
         )
         _set_pull_ff_only(local_repos)
@@ -398,21 +398,18 @@ def _set_pull_ff_only(local_repos: List[plug.StudentRepo]) -> None:
         git.set_gitconfig_options(repo.path, {"pull.ff": "only"})
 
 
-def _clone_repos_no_check(
+def _clone_repos(
     repos: Iterable[plug.StudentRepo],
     dst_dirpath: pathlib.Path,
     update_local: bool,
     api: plug.PlatformAPI,
 ) -> List[plug.StudentRepo]:
-    """Clone the specified repo urls into the destination directory without
-    making any sanity checks; they must be done in advance.
-
-    Return a list of cloned and previously existing repos.
-    """
+    """Clone the specified repo urls into the destination directory."""
     cur_dir = pathlib.Path(".").resolve()
     pathed_repos: List[plug.StudentRepo] = [
         repo.with_path(cur_dir / repo.team.name / repo.name) for repo in repos
     ]
+    _check_for_non_git_dir_path_clashes(pathed_repos)
 
     cloned_repos = git.clone_student_repos(
         pathed_repos, dst_dirpath, update_local, api
@@ -432,6 +429,18 @@ def _clone_repos_no_check(
         for status, repo in cloned_repos
         if status != git.CloneStatus.FAILED
     ]
+
+
+def _check_for_non_git_dir_path_clashes(repos: List[plug.StudentRepo]) -> None:
+    """Raise if any of the student repo paths clash with a non-git
+    directory.
+    """
+    for repo in repos:
+        if repo.path.exists() and not util.is_git_repo(repo.path):
+            raise exception.RepoBeeException(
+                f"name clash with directory that is not a Git repository: "
+                f"'{repo.path}'"
+            )
 
 
 def migrate_repos(

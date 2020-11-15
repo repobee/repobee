@@ -738,11 +738,11 @@ class TestClone:
         assert not local_new_file.is_file()
         assert "--update-local" in capsys.readouterr().err
 
-    def test_raises_on_name_clash_with_non_git_directory(
+    def test_raises_on_path_clash_with_non_git_directory(
         self, platform_url, tmp_path_factory, with_student_repos
     ):
-        """Test that an error is raised if there is a name-clash between a
-        student repository, and a non-git directory.
+        """Test that an error is raised if there is a path clash between a
+        student repository and a non-git directory.
         """
         # arrange
         workdir = tmp_path_factory.mktemp("workdir")
