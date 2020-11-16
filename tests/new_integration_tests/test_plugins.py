@@ -1,7 +1,4 @@
 """Integration tests for plugin functionality."""
-import tempfile
-import pathlib
-
 import pytest
 
 import _repobee
@@ -51,27 +48,25 @@ def test_create_repo_with_plugin(platform_url):
     assert matching_repo.private == private
 
 
-def test_plugin_command_without_category(capsys):
+def test_plugin_command_without_category(capsys, workdir):
     """A plugin command without category should be added as a 'category
     command'.
 
     Note that this test is run with repobee.main, as it previously broke there
     but not with repobee.run due to the implementation of tab completion.
     """
-    with tempfile.TemporaryDirectory() as tmpdir:
-        workdir = pathlib.Path(tmpdir)
-        hello_py = workdir / "hello.py"
-        hello_py.write_text(
-            """
+    hello_py = workdir / "hello.py"
+    hello_py.write_text(
+        """
 import repobee_plug as plug
 class HelloWorld(plug.Plugin, plug.cli.Command):
     def command(self):
         plug.echo("Hello, world!")
 """,
-            encoding="utf8",
-        )
+        encoding="utf8",
+    )
 
-        _repobee.main.main(["repobee", "-p", str(hello_py), "helloworld"])
+    _repobee.main.main(["repobee", "-p", str(hello_py), "helloworld"])
 
     assert "Hello, world!" in capsys.readouterr().out
 
@@ -207,9 +202,8 @@ def test_repo_discovery_parser_requires_student_parser():
     )
 
 
-def test_plugin_crash_error_message(capsys, tmp_path_factory):
+def test_plugin_crash_error_message(capsys, workdir):
     """"""
-    workdir = tmp_path_factory.mktemp("workdir")
     crash_py = workdir / "crash.py"
     crash_py.write_text(
         """
