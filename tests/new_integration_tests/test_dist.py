@@ -76,7 +76,7 @@ class TestPluginInstall:
 
         assert get_pkg_version("repobee") == repobee_initial_version
 
-    def test_install_local_plugin_file(self, capsys):
+    def test_install_local_plugin_file(self, capsys, tmp_path):
         plugin_content = """
 import repobee_plug as plug
 class Hello(plug.Plugin, plug.cli.Command):
@@ -87,51 +87,41 @@ class Hello(plug.Plugin, plug.cli.Command):
             msg='Best message'
         )
 """
-        with tempfile.TemporaryDirectory() as tmpdir:
-            workdir = pathlib.Path(tmpdir)
-            hello_py = workdir / "hello.py"
-            hello_py.write_text(plugin_content, encoding="utf8")
+        hello_py = tmp_path / "hello.py"
+        hello_py.write_text(plugin_content, encoding="utf8")
 
-            repobee.run(shlex.split(f"plugin install --local {hello_py}"))
+        repobee.run(shlex.split(f"plugin install --local {hello_py}"))
 
-            install_info = disthelpers.get_installed_plugins()[str(hello_py)]
-            assert install_info["version"] == "local"
-            assert install_info["path"] == str(hello_py)
+        install_info = disthelpers.get_installed_plugins()[str(hello_py)]
+        assert install_info["version"] == "local"
+        assert install_info["path"] == str(hello_py)
 
-    def test_install_local_plugin_package(self):
+    def test_install_local_plugin_package(self, tmp_path):
         plugin_version = "1.0.0"
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            workdir = pathlib.Path(tmpdir)
-            junit4_local = workdir / "repobee-junit4"
-            repo = git.Repo.clone_from(
-                "https://github.com/repobee/repobee-junit4",
-                to_path=junit4_local,
-            )
-            repo.git.checkout(f"v{plugin_version}")
+        junit4_local = tmp_path / "repobee-junit4"
+        repo = git.Repo.clone_from(
+            "https://github.com/repobee/repobee-junit4", to_path=junit4_local
+        )
+        repo.git.checkout(f"v{plugin_version}")
 
+        repobee.run(shlex.split(f"plugin install --local {junit4_local}"))
+
+        install_info = disthelpers.get_installed_plugins()["junit4"]
+        assert install_info["version"] == "local"
+        assert install_info["path"] == str(junit4_local)
+        assert get_pkg_version("repobee-junit4") == plugin_version
+
+    def test_raises_when_local_package_lacks_repobee_prefix(self, tmp_path):
+        junit4_local = tmp_path / "junit4"
+        git.Repo.clone_from(
+            "https://github.com/repobee/repobee-junit4", to_path=junit4_local
+        )
+
+        with pytest.raises(plug.PlugError) as exc_info:
             repobee.run(shlex.split(f"plugin install --local {junit4_local}"))
 
-            install_info = disthelpers.get_installed_plugins()["junit4"]
-            assert install_info["version"] == "local"
-            assert install_info["path"] == str(junit4_local)
-            assert get_pkg_version("repobee-junit4") == plugin_version
-
-    def test_raises_when_local_package_lacks_repobee_prefix(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            workdir = pathlib.Path(tmpdir)
-            junit4_local = workdir / "junit4"
-            git.Repo.clone_from(
-                "https://github.com/repobee/repobee-junit4",
-                to_path=junit4_local,
-            )
-
-            with pytest.raises(plug.PlugError) as exc_info:
-                repobee.run(
-                    shlex.split(f"plugin install --local {junit4_local}")
-                )
-
-            assert "'repobee-'" in str(exc_info.value)
+        assert "'repobee-'" in str(exc_info.value)
 
     def test_raises_when_local_points_to_non_existing_path(self):
         with tempfile.NamedTemporaryFile() as tmpfile:
