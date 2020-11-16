@@ -56,3 +56,11 @@ def with_student_repos(platform_url):
         f"--org-name {TARGET_ORG_NAME} "
         f"--template-org-name {TEMPLATE_ORG_NAME}"
     )
+
+
+@pytest.fixture
+def workdir(tmp_path_factory):
+    """Temporary working directory for running commands such as ``repos
+    clone``.
+    """
+    yield tmp_path_factory.mktemp("workdir")
