@@ -48,14 +48,14 @@ def test_create_repo_with_plugin(platform_url):
     assert matching_repo.private == private
 
 
-def test_plugin_command_without_category(capsys, workdir):
+def test_plugin_command_without_category(capsys, tmp_path):
     """A plugin command without category should be added as a 'category
     command'.
 
     Note that this test is run with repobee.main, as it previously broke there
     but not with repobee.run due to the implementation of tab completion.
     """
-    hello_py = workdir / "hello.py"
+    hello_py = tmp_path / "hello.py"
     hello_py.write_text(
         """
 import repobee_plug as plug
@@ -202,9 +202,9 @@ def test_repo_discovery_parser_requires_student_parser():
     )
 
 
-def test_plugin_crash_error_message(capsys, workdir):
+def test_plugin_crash_error_message(capsys, tmp_path):
     """"""
-    crash_py = workdir / "crash.py"
+    crash_py = tmp_path / "crash.py"
     crash_py.write_text(
         """
 import repobee_plug as plug

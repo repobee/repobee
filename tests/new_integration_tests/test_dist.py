@@ -76,7 +76,7 @@ class TestPluginInstall:
 
         assert get_pkg_version("repobee") == repobee_initial_version
 
-    def test_install_local_plugin_file(self, capsys, workdir):
+    def test_install_local_plugin_file(self, capsys, tmp_path):
         plugin_content = """
 import repobee_plug as plug
 class Hello(plug.Plugin, plug.cli.Command):
@@ -87,7 +87,7 @@ class Hello(plug.Plugin, plug.cli.Command):
             msg='Best message'
         )
 """
-        hello_py = workdir / "hello.py"
+        hello_py = tmp_path / "hello.py"
         hello_py.write_text(plugin_content, encoding="utf8")
 
         repobee.run(shlex.split(f"plugin install --local {hello_py}"))
@@ -96,10 +96,10 @@ class Hello(plug.Plugin, plug.cli.Command):
         assert install_info["version"] == "local"
         assert install_info["path"] == str(hello_py)
 
-    def test_install_local_plugin_package(self, workdir):
+    def test_install_local_plugin_package(self, tmp_path):
         plugin_version = "1.0.0"
 
-        junit4_local = workdir / "repobee-junit4"
+        junit4_local = tmp_path / "repobee-junit4"
         repo = git.Repo.clone_from(
             "https://github.com/repobee/repobee-junit4", to_path=junit4_local
         )
@@ -112,8 +112,8 @@ class Hello(plug.Plugin, plug.cli.Command):
         assert install_info["path"] == str(junit4_local)
         assert get_pkg_version("repobee-junit4") == plugin_version
 
-    def test_raises_when_local_package_lacks_repobee_prefix(self, workdir):
-        junit4_local = workdir / "junit4"
+    def test_raises_when_local_package_lacks_repobee_prefix(self, tmp_path):
+        junit4_local = tmp_path / "junit4"
         git.Repo.clone_from(
             "https://github.com/repobee/repobee-junit4", to_path=junit4_local
         )
