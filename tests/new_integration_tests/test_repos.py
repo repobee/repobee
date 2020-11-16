@@ -1,6 +1,5 @@
 """Tests for the repos category of commands."""
 import pathlib
-import tempfile
 import itertools
 import shutil
 
@@ -812,31 +811,28 @@ class TestUpdate:
 class TestMigrate:
     """Tests for the ``repos migrate`` command."""
 
-    def test_use_strange_default_branch_name(self, platform_url):
+    def test_use_strange_default_branch_name(self, platform_url, workdir):
         strange_branch_name = "definitelynotmaster"
+        task_99 = workdir / "task-99"
+        create_local_repo(
+            task_99,
+            [("README.md", "Read me plz.")],
+            default_branch=strange_branch_name,
+        )
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            template_repo_dir = pathlib.Path(tmpdir)
-            task_99 = template_repo_dir / "task-99"
-            create_local_repo(
-                task_99,
-                [("README.md", "Read me plz.")],
-                default_branch=strange_branch_name,
-            )
+        funcs.run_repobee(
+            f"repos migrate -a {task_99.name} "
+            f"--base-url {platform_url} "
+            "--allow-local-templates",
+            workdir=workdir,
+        )
 
-            funcs.run_repobee(
-                f"repos migrate -a {task_99.name} "
-                f"--base-url {platform_url} "
-                "--allow-local-templates",
-                workdir=template_repo_dir,
-            )
+        platform_repos = funcs.get_repos(platform_url)
+        assert len(platform_repos) == 1
+        repo = git.Repo(funcs.get_repos(platform_url)[0].path)
 
-            platform_repos = funcs.get_repos(platform_url)
-            assert len(platform_repos) == 1
-            repo = git.Repo(funcs.get_repos(platform_url)[0].path)
-
-            assert len(repo.branches) == 1
-            assert repo.branches[0].name == strange_branch_name
+        assert len(repo.branches) == 1
+        assert repo.branches[0].name == strange_branch_name
 
 
 def create_local_repo(
