@@ -22,9 +22,6 @@ from _repobee.cli import pluginparsers
 
 __all__ = ["create_parser", "create_parser_for_docs"]
 
-CATEGORY = "category"
-ACTION = "action"
-
 _HOOK_RESULTS_PARSER = argparse_ext.RepobeeParser(
     is_core_command=True, add_help=False
 )
@@ -149,7 +146,7 @@ def _add_subparsers(parser, config_file):
         template_org_parser,
     ) = _create_base_parsers(config_file)
 
-    subparsers = parser.add_subparsers(dest=CATEGORY)
+    subparsers = parser.add_subparsers(dest=argparse_ext.CATEGORY_DEST)
     subparsers.required = True
     parsers = {}
 
@@ -157,7 +154,9 @@ def _add_subparsers(parser, config_file):
         category_command = subparsers.add_parser(
             name=category.name, help=help, description=description
         )
-        category_parsers = category_command.add_subparsers(dest=ACTION)
+        category_parsers = category_command.add_subparsers(
+            dest=argparse_ext.ACTION_DEST
+        )
         category_parsers.required = True
         parsers[category] = category_parsers
         return category_parsers

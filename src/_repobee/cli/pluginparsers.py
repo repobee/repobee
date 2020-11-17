@@ -133,7 +133,9 @@ def _create_category_parser(
         help=category.help,
         description=category.description,
     )
-    category_parser = category_cmd.add_subparsers(dest="action")
+    category_parser = category_cmd.add_subparsers(
+        dest=argparse_ext.ACTION_DEST
+    )
     category_parser.required = True
     return category_parser
 

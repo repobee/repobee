@@ -11,7 +11,12 @@ __all__ = [
     "OrderedFormatter",
     "BaseParsers",
     "add_debug_args",
+    "CATEGORY_DEST",
+    "ACTION_DEST",
 ]
+
+CATEGORY_DEST = "category"
+ACTION_DEST = "action"
 
 
 @dataclasses.dataclass
