@@ -1,3 +1,4 @@
+"""Functions for attaching plugin parsers."""
 import argparse
 
 from typing import Mapping, List
@@ -9,13 +10,13 @@ from repobee_plug.cli import categorization
 from _repobee.cli import argparse_ext
 
 
-def add_extension_parsers(
+def add_plugin_parsers(
     subparsers,
     base_parsers: argparse_ext.BaseParsers,
     parsers_mapping,
     parsed_config,
 ):
-    """Add extension parsers defined by plugins."""
+    """Add parsers defined by plugins."""
     command_extension_plugins = [
         p
         for p in plug.manager.get_plugins()

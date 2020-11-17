@@ -228,7 +228,7 @@ def _add_subparsers(parser, config_file):
         base_parser, template_org_parser, _add_action_parser(config_parsers)
     )
 
-    pluginparsers.add_extension_parsers(
+    pluginparsers.add_plugin_parsers(
         subparsers,
         argparse_ext.BaseParsers(
             base_parser=base_parser,
