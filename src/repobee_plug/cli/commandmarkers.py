@@ -3,6 +3,8 @@
 import argparse
 import inspect
 
+from repobee_plug.cli import settings
+
 
 class CommandExtension:
     """Mixin class for use with the Plugin class. Marks the extending class as
@@ -10,6 +12,7 @@ class CommandExtension:
     """
 
     args: argparse.Namespace
+    __settings__: settings.CommandExtensionSettings
 
     def __getattr__(self, key):
         """We implement getattr such that linters won't complain about
@@ -77,6 +80,7 @@ class Command:
     """
 
     args: argparse.Namespace
+    __settings__: settings.CommandSettings
 
     def __getattr__(self, key):
         """We implement getattr such that linters won't complain about
