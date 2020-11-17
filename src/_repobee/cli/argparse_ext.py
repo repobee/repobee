@@ -1,11 +1,26 @@
 """RepoBee extensions of argparse."""
 import argparse
+import dataclasses
 
 from typing import Optional
 
 from _repobee import constants
 
-__all__ = ["RepobeeParser", "OrderedFormatter"]
+__all__ = [
+    "RepobeeParser",
+    "OrderedFormatter",
+    "BaseParsers",
+    "add_debug_args",
+]
+
+
+@dataclasses.dataclass
+class BaseParsers:
+    base_parser: argparse.ArgumentParser
+    student_parser: argparse.ArgumentParser
+    template_org_parser: argparse.ArgumentParser
+    repo_name_parser: argparse.ArgumentParser
+    repo_discovery_parser: argparse.ArgumentParser
 
 
 class RepobeeParser(argparse.ArgumentParser):
@@ -113,3 +128,26 @@ class OrderedFormatter(argparse.HelpFormatter):
 
         actions = sorted(actions, key=key)
         super().add_arguments(actions)
+
+
+def add_debug_args(parser: argparse.ArgumentParser) -> None:
+    """Add RepoBee's standard debug arguments to this parser.
+
+    Args:
+        parser: A parser to add arguments to.
+    """
+    parser.add_argument(
+        "--tb",
+        "--traceback",
+        help="show the full traceback of critical exceptions",
+        action="store_true",
+        dest="traceback",
+    )
+    parser.add_argument(
+        "-q",
+        "--quiet",
+        help="silence output (stacks up to 3 times: x1=only warnings "
+        "and errors, x2=only errors, x3=complete and utter silence)",
+        action="count",
+        default=0,
+    )
