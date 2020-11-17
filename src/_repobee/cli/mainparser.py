@@ -10,11 +10,7 @@ import types
 import argparse
 import pathlib
 
-from typing import Union, Mapping
-
-
 import repobee_plug as plug
-from repobee_plug.cli import categorization
 
 import _repobee
 from _repobee import plugin
@@ -155,10 +151,7 @@ def _add_subparsers(parser, config_file):
 
     subparsers = parser.add_subparsers(dest=CATEGORY)
     subparsers.required = True
-    parsers: Mapping[
-        Union[categorization.Category, categorization.Action],
-        argparse.ArgumentParser,
-    ] = {}
+    parsers = {}
 
     def _create_category_parsers(category, help, description):
         category_command = subparsers.add_parser(

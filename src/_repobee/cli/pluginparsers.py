@@ -1,7 +1,8 @@
 """Functions for attaching plugin parsers."""
 import argparse
+import configparser
 
-from typing import Mapping, List
+from typing import List, Tuple
 
 import repobee_plug as plug
 
@@ -11,10 +12,10 @@ from _repobee.cli import argparse_ext
 
 
 def add_plugin_parsers(
-    subparsers,
+    subparsers: argparse._SubParsersAction,
     base_parsers: argparse_ext.BaseParsers,
-    parsers_mapping,
-    parsed_config,
+    parsers_mapping: dict,
+    parsed_config: configparser.ConfigParser,
 ):
     """Add parsers defined by plugins."""
     command_extension_plugins = [
@@ -22,10 +23,10 @@ def add_plugin_parsers(
         for p in plug.manager.get_plugins()
         if isinstance(p, plug.cli.CommandExtension)
     ]
-    for cmd in command_extension_plugins:
-        for action in cmd.__settings__.actions:
+    for cmd_ext in command_extension_plugins:
+        for action in cmd_ext.__settings__.actions:
             parser = parsers_mapping[action]
-            cmd.attach_options(config=parsed_config, parser=parser)
+            cmd_ext.attach_options(config=parsed_config, parser=parser)
 
     command_plugins = [
         p
@@ -43,7 +44,7 @@ def _attach_command(
     base_parsers: argparse_ext.BaseParsers,
     subparsers: argparse._SubParsersAction,
     parsers_mapping: dict,
-    parsed_config: dict,
+    parsed_config: configparser.ConfigParser,
 ) -> None:
     category, action, is_category_action = _resolve_category_and_action(cmd)
 
@@ -74,7 +75,7 @@ def _attach_command(
 
 def _resolve_category_and_action(
     cmd: plug.cli.Command,
-) -> categorization.Action:
+) -> Tuple[categorization.Category, categorization.Action, bool]:
     settings = cmd.__settings__
     category = (
         settings.action.category
@@ -126,7 +127,7 @@ def _compose_parent_parsers(
 
 def _create_category_parser(
     category: categorization.Category, subparsers: argparse._SubParsersAction
-) -> argparse.ArgumentParser:
+) -> argparse._SubParsersAction:
     category_cmd = subparsers.add_parser(
         name=category.name,
         help=category.help,
@@ -141,8 +142,8 @@ def _create_action_parser(
     cmd: plug.cli.Command,
     action: categorization.Action,
     is_category_action: bool,
-    parsers_mapping: Mapping[categorization.Category, argparse.ArgumentParser],
-    subparsers: argparse.ArgumentParser,
+    parsers_mapping: dict,
+    subparsers: argparse._SubParsersAction,
     parents: List[argparse.ArgumentParser],
 ):
     settings = cmd.__settings__
