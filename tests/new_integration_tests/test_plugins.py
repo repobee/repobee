@@ -241,13 +241,26 @@ def test_get_configurable_args_merges_sections():
         def command(self):
             pass
 
+    configurable_args = None
+    rest = None
+
+    class Collect(plug.Plugin, plug.cli.Command):
+        def command(self):
+            nonlocal configurable_args, rest
+            (
+                configurable_args,
+                *rest,
+            ) = plug.manager.hook.get_configurable_args()
+
     plugin_name = "someplugin"
     plugin_module = types.ModuleType(plugin_name)
+    plugin_module.__package__ = "somepackage"
     plugin_module.FirstCommand = FirstCommand
     plugin_module.SecondCommand = SecondCommand
-    _repobee.plugin.register_plugins([plugin_module])
+    plugin_module.Collect = Collect
 
-    configurable_args, *rest = plug.manager.hook.get_configurable_args()
+    funcs.run_repobee("collect", plugins=[plugin_module])
+
     assert not rest
     assert configurable_args.config_section_name == plugin_name
     assert configurable_args.argnames == ["duplicated_option"]
