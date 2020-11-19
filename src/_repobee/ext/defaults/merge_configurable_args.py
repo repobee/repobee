@@ -3,11 +3,11 @@ are no duplicates in the otuput.
 """
 import collections
 
+import repobee_plug as plug
 from repobee_plug.cli import args
-from repobee_plug.hook import hookimpl
 
 
-@hookimpl(hookwrapper=True)
+@plug.repobee_hook(hookwrapper=True)
 def get_configurable_args():
     """Merge configurable args by section and ensure that there are no
     duplicated argument names for a given section.
