@@ -1,4 +1,6 @@
 """Integration tests for plugin functionality."""
+import types
+
 import pytest
 
 import _repobee
@@ -219,3 +221,33 @@ class Crash(plug.Plugin, plug.cli.Command):
         _repobee.main.main(["repobee", "-p", str(crash_py), "crash"])
 
     assert "A plugin exited with an error" in str(capsys.readouterr().err)
+
+
+def test_get_configurable_args_merges_sections():
+    """If a plugin has two commands with options that have the same name and
+    are both configurable, it results in duplicated configurable args. The
+    config wizard should ignore these.
+    """
+
+    class FirstCommand(plug.Plugin, plug.cli.Command):
+        duplicated_option = plug.cli.option(configurable=True, required=True)
+
+        def command(self):
+            pass
+
+    class SecondCommand(plug.Plugin, plug.cli.Command):
+        duplicated_option = plug.cli.option(configurable=True, required=True)
+
+        def command(self):
+            pass
+
+    plugin_name = "someplugin"
+    plugin_module = types.ModuleType(plugin_name)
+    plugin_module.FirstCommand = FirstCommand
+    plugin_module.SecondCommand = SecondCommand
+    _repobee.plugin.register_plugins([plugin_module])
+
+    configurable_args, *rest = plug.manager.hook.get_configurable_args()
+    assert not rest
+    assert configurable_args.config_section_name == plugin_name
+    assert configurable_args.argnames == ["duplicated_option"]
