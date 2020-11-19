@@ -228,6 +228,7 @@ def test_get_configurable_args_merges_sections():
     are both configurable, it results in duplicated configurable args. The
     config wizard should ignore these.
     """
+    # arrange
 
     class FirstCommand(plug.Plugin, plug.cli.Command):
         duplicated_option = plug.cli.option(configurable=True, required=True)
@@ -259,8 +260,10 @@ def test_get_configurable_args_merges_sections():
     plugin_module.SecondCommand = SecondCommand
     plugin_module.Collect = Collect
 
-    funcs.run_repobee("collect", plugins=[plugin_module])
+    # act
+    funcs.run_repobee(Collect.__name__.lower(), plugins=[plugin_module])
 
+    # assert
     assert not rest
     assert configurable_args.config_section_name == plugin_name
     assert configurable_args.argnames == ["duplicated_option"]
