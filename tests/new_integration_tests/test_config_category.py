@@ -1,6 +1,14 @@
 """Tests for the config category of commands."""
+import tempfile
+
+import pytest
+
 from repobee_testhelpers import funcs
 from repobee_testhelpers import const
+
+import repobee_plug as plug
+
+import _repobee.exception
 
 
 class TestConfigShow:
@@ -23,3 +31,20 @@ class TestConfigShow:
 
         outerr = capsys.readouterr()
         assert const.TOKEN in outerr.out
+
+
+class TestConfigVerify:
+    """Tests for the ``config verify`` command."""
+
+    def test_raises_if_students_file_does_not_exist(self, platform_url):
+        with tempfile.NamedTemporaryFile() as tmpfile:
+            pass
+
+        with pytest.raises(_repobee.exception.RepoBeeException) as exc_info:
+            funcs.run_repobee(
+                f"{plug.cli.CoreCommand.config.verify} "
+                f"--base-url {platform_url} "
+                f"--students-file {tmpfile.name}"
+            )
+
+        assert f"'{tmpfile.name}' is not a file" in str(exc_info.value)

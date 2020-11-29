@@ -10,6 +10,8 @@ import types
 import argparse
 import pathlib
 
+from typing import Union, Callable
+
 import repobee_plug as plug
 
 import _repobee
@@ -140,11 +142,15 @@ def _add_subparsers(parser, config_file):
     `base_` prefixed parser, of course).
     """
 
+    def get_default(arg_name):
+        configured_defaults = config.get_configured_defaults(config_file)
+        return configured_defaults.get(arg_name)
+
     (
         base_parser,
         base_student_parser,
         template_org_parser,
-    ) = _create_base_parsers(config_file)
+    ) = _create_base_parsers(get_default)
 
     subparsers = parser.add_subparsers(dest=argparse_ext.CATEGORY_DEST)
     subparsers.required = True
@@ -217,7 +223,10 @@ def _add_subparsers(parser, config_file):
         _add_action_parser(review_parsers),
     )
     _add_config_parsers(
-        base_parser, template_org_parser, _add_action_parser(config_parsers)
+        base_parser,
+        template_org_parser,
+        _add_action_parser(config_parsers),
+        get_default,
     )
 
     pluginparsers.add_plugin_parsers(
@@ -337,7 +346,12 @@ def _add_teams_parsers(
     )
 
 
-def _add_config_parsers(base_parser, template_org_parser, add_parser):
+def _add_config_parsers(
+    base_parser,
+    template_org_parser,
+    add_parser,
+    get_default: Callable[[str], str],
+):
     show_config = add_parser(
         plug.cli.CoreCommand.config.show,
         help="show the configuration file",
@@ -355,13 +369,14 @@ def _add_config_parsers(base_parser, template_org_parser, add_parser):
     )
     argparse_ext.add_debug_args(show_config)
 
-    add_parser(
+    verify = add_parser(
         plug.cli.CoreCommand.config.verify,
         help="verify core settings",
         description="Verify core settings by trying various API requests.",
         parents=[base_parser, template_org_parser],
         formatter_class=argparse_ext.OrderedFormatter,
     )
+    _add_students_file_arg(verify, get_default)
 
 
 def _add_peer_review_parsers(base_parsers, add_parser):
@@ -541,19 +556,11 @@ def _add_issue_parsers(base_parsers, add_parser):
     list_parser.set_defaults(state=plug.IssueState.OPEN)
 
 
-def _create_base_parsers(config_file):
+def _create_base_parsers(get_default: Callable[[str], str]):
     """Create the base parsers."""
-    configured_defaults = config.get_configured_defaults(config_file)
-
-    def default(arg_name):
-        return (
-            configured_defaults[arg_name]
-            if arg_name in configured_defaults
-            else None
-        )
 
     def configured(arg_name):
-        return arg_name in configured_defaults
+        return get_default(arg_name) is not None
 
     def api_requires(arg_name):
         return arg_name in plug.manager.hook.api_init_requires()
@@ -570,9 +577,6 @@ def _create_base_parsers(config_file):
 
     # other configurable args help sections
     # these should not be checked against the api_requires function
-    students_file_help = (
-        "path to a list of student usernames or groups of students"
-    )
     template_org_help = (
         "name of the organization containing the template repos "
         "(defaults to the same value as `-o|--org-name`)"
@@ -587,7 +591,7 @@ def _create_base_parsers(config_file):
         help=user_help,
         type=str,
         required=not configured("user") and api_requires("user"),
-        default=default("user"),
+        default=get_default("user"),
     )
 
     base_parser.add_argument(
@@ -596,7 +600,7 @@ def _create_base_parsers(config_file):
         help=org_name_help,
         type=str,
         required=not configured("org_name") and api_requires("org_name"),
-        default=default("org_name"),
+        default=get_default("org_name"),
     )
     base_parser.add_argument(
         "--bu",
@@ -604,7 +608,7 @@ def _create_base_parsers(config_file):
         help=base_url_help,
         type=str,
         required=not configured("base_url") and api_requires("base_url"),
-        default=default("base_url"),
+        default=get_default("base_url"),
         dest="base_url",
     )
     base_parser.add_argument(
@@ -613,7 +617,7 @@ def _create_base_parsers(config_file):
         help=token_help,
         type=str,
         required=not configured("token") and api_requires("token"),
-        default=default("token"),
+        default=get_default("token"),
     )
 
     argparse_ext.add_debug_args(base_parser)
@@ -624,14 +628,7 @@ def _create_base_parsers(config_file):
     students = base_student_parser.add_argument_group(
         "core"
     ).add_mutually_exclusive_group(required=not configured("students_file"))
-    students.add_argument(
-        "--sf",
-        "--students-file",
-        help=students_file_help,
-        type=str,
-        default=default("students_file"),
-        dest="students_file",
-    )
+    _add_students_file_arg(students, get_default)
     students.add_argument(
         "-s",
         "--students",
@@ -647,8 +644,24 @@ def _create_base_parsers(config_file):
         "--to",
         "--template-org-name",
         help=template_org_help,
-        default=default("template_org_name"),
+        default=get_default("template_org_name"),
         dest="template_org_name",
     )
 
     return (base_parser, base_student_parser, template_org_parser)
+
+
+def _add_students_file_arg(
+    parser_like: Union[
+        argparse.ArgumentParser, argparse._MutuallyExclusiveGroup
+    ],
+    get_default: Callable[[str], str],
+) -> None:
+    parser_like.add_argument(
+        "--sf",
+        "--students-file",
+        help="path to a list of student usernames or groups of students",
+        type=str,
+        default=get_default("students_file"),
+        dest="students_file",
+    )
