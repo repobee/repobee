@@ -82,8 +82,54 @@ otherwise changed after installing RepoBee. To fix this, remove the
 RepoBee crashes
 ===============
 
-First try to upgrade RepoBee to the latest version with ``repobee manage
-upgrade``. If that does not resolve the issue, try uninstalling plugins
-one-by-one with ``repobee --no-plugins plugin uninstall`` until RepoBee works
-again. If that has no effect either, then you should remove the ``~/.repobee``
-directory and execute the installer again (see :ref:`install`).
+Very often, RepoBee crashing is due to a faulty plugin, or bad configuration of
+a plugin. When this is the case, use the ``--no-plugins`` option for the
+preparser to disable plugins.
+
+.. note::
+
+    ``--no-plugins`` is a *preparser* option, meaning that it should be passed
+    directly after typing ``repobee``. For example, to run ``repobee plugin
+    uninstall`` without plugins, run like so:
+
+    .. code-block::
+        :caption: Uninstalling plugins with all installed plugins disabled
+
+        $ repobee --no-plugins plugin uninstall
+
+All of the troubleshooting steps in this section will use ``--no-plugins``.
+
+An option in the config file is causing problems
+------------------------------------------------
+
+If you have misconfigured a plugin, or have an outdated option, you may
+sometimes need to  manually remove the option from the config file.
+Run the following to find out where the config file is located.
+
+.. code-block::
+    :caption: Finding out where the config file is located
+
+    $ repobee --no-plugins config show
+
+The location of the config file is printed at the very top of the message.
+Edit it with any text editor and remove the option that causes issues.
+
+A plugin has broken down
+------------------------
+
+If a plugin isn't working (even after removing faulty options), try to upgrade
+both the plugin and RepoBee itself.
+
+.. code-block::
+    :caption: Upgrade RepoBee and install the plugin again
+
+    $ repobee --no-plugins manage upgrade
+    $ repobee --no-plugins plugin install
+
+Nothing works, it's still broken
+--------------------------------
+
+If none of that works, the simplest thing is to reinstall RepoBee. This does
+*not* affect your settings in the config file, it only affects installed
+plugins, and so is low-risk to do. To do it, just remove the directory at
+``~/.repobee`` and install RepoBee again, as described in :ref:`install`.
