@@ -54,7 +54,7 @@ If you want to reference RepoBee in a paper, please cite the following paper:
     - The only requirement is to have an Organization/Group with private repository
       capabilities!
 * No local configuration required
-    - Although [setting a few defaults](https://repobee.readthedocs.io/en/stable/configuration.html#configuration)
+    - Although [setting a few defaults](https://repobee.readthedocs.io/en/stable/getting_started.html#configure-repobee-for-the-target-organization-the-config-category)
       is highly recommended
 
 ### Install
