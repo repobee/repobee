@@ -71,8 +71,33 @@ for `zsh they typically go in ~/.zshenv
     With bash, the ``.profile`` file can be overridden by the
     ``~/.bash_profile`` file.
 
-Error message `bad interpreter: No such file or directory"`
-===========================================================
+Common error messages
+=====================
+
+Some error messages in RepoBee are quite common and can be a bit hard to
+troubleshoot for beginners. This section contains the most common error
+messages and solutions to them.
+
+[ERROR] FileError: '<some filepath>' is not a file
+--------------------------------------------------
+
+This happens when a filepath is given to RepoBee, but there's no file to be
+found. If you get this but you are certain that the file in question actually
+exists, it's often due to incorrectly escaped whitespace.
+
+* On the command line, whitespace must be escaped with ``\``, or enclosed
+  within quotation marks
+
+    - Example 1: ``--students-file /path/with\ whitespace/students.txt``
+    - Example 2: ``--students-file "/path/with whitespace/students.txt"``
+
+* In the config file, whitespace should **not** be escaped at all
+
+    - Example: ``students_file = /path/with whitespace/students.txt``
+
+
+[ERROR] bad interpreter: No such file or directory
+--------------------------------------------------
 
 This is typically caused by the system wide Python executable being upgraded or
 otherwise changed after installing RepoBee. To fix this, remove the
