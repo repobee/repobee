@@ -1,5 +1,6 @@
 """Tests for the config category of commands."""
 import tempfile
+import pathlib
 
 import pytest
 
@@ -47,4 +48,5 @@ class TestConfigVerify:
                 f"--students-file {tmpfile.name}"
             )
 
-        assert f"'{tmpfile.name}' is not a file" in str(exc_info.value)
+        expected_path = pathlib.Path(tmpfile.name).resolve(strict=False)
+        assert f"'{expected_path}' is not a file" in str(exc_info.value)
