@@ -41,12 +41,13 @@ class TestConfigVerify:
         with tempfile.NamedTemporaryFile() as tmpfile:
             pass
 
+        non_existing_file = pathlib.Path(tmpfile.name).resolve(strict=False)
+
         with pytest.raises(_repobee.exception.RepoBeeException) as exc_info:
             funcs.run_repobee(
                 f"{plug.cli.CoreCommand.config.verify} "
                 f"--base-url {platform_url} "
-                f"--students-file {tmpfile.name}"
+                f"--students-file {non_existing_file}"
             )
 
-        expected_path = pathlib.Path(tmpfile.name).resolve(strict=False)
-        assert f"'{expected_path}' is not a file" in str(exc_info.value)
+        assert f"'{non_existing_file}' is not a file" in str(exc_info.value)
