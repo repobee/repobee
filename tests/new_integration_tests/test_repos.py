@@ -301,6 +301,36 @@ class TestSetup:
         ]
         assert sorted(actual_repo_names) == sorted(expected_repo_names)
 
+    def test_post_setup_hook_called_on_correct_repos(self, platform_url):
+        """Test that the repos are correctly marked as newly created or not."""
+        # arrange
+        first_template = TEMPLATE_REPO_NAMES[0]
+        funcs.run_repobee(
+            f"repos setup -a {first_template} --base-url {platform_url}"
+        )
+        executed = False
+
+        class PostSetupRecorder(plug.Plugin):
+            def post_setup(self, repo, api, newly_created):
+                nonlocal executed
+                executed = True
+                if first_template in repo.name:
+                    assert (
+                        not newly_created
+                    ), f"expected {repo.name} to be newly created"
+                else:
+                    assert (
+                        newly_created
+                    ), f"expected {repo.name} to be existing"
+
+        # act/assert
+        funcs.run_repobee(
+            f"repos setup -a {TEMPLATE_REPOS_ARG} --base-url {platform_url}",
+            plugins=[PostSetupRecorder],
+        )
+
+        assert executed, "Test plugin was never executed"
+
 
 class TestClone:
     """Tests for the ``repos clone`` command."""
