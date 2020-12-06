@@ -80,27 +80,16 @@ def setup_student_repos(
             template_repos, api, cwd=pathlib.Path(tmpdir)
         )
 
-        platform_teams = list(
-            plug.cli.io.progress_bar(
-                _repobee.command.teams.create_teams(
-                    teams, plug.TeamPermission.PUSH, api
-                ),
-                total=len(teams),
-                desc="Creating student teams",
-            )
-        )
+        platform_teams = _create_platform_teams(teams, api)
 
-        push_tuple_iter = _create_push_tuples(
+        to_push, pre_existing = _create_state_separated_push_tuples(
             platform_teams, template_repos, api
         )
-        push_tuple_iter_progress = plug.cli.io.progress_bar(
-            push_tuple_iter,
-            desc="Setting up student repos",
-            total=len(teams) * len(template_repos),
-        )
-        successful_pts, _ = git.push(push_tuples=push_tuple_iter_progress)
+        successful_pts, _ = git.push(push_tuples=to_push)
 
-        post_setup_results = _execute_post_setup_hook(successful_pts, api)
+        post_setup_results = _execute_post_setup_hook(
+            successful_pts, pre_existing, api
+        )
 
     return _combine_dicts(pre_setup_results, post_setup_results)
 
@@ -120,8 +109,22 @@ def _combine_dicts(*dicts):
     return base
 
 
+def _create_platform_teams(
+    teams: List[plug.StudentTeam], api: plug.PlatformAPI
+) -> List[plug.Team]:
+    return list(
+        plug.cli.io.progress_bar(
+            _repobee.command.teams.create_teams(
+                teams, plug.TeamPermission.PUSH, api
+            ),
+            total=len(teams),
+            desc="Creating student teams",
+        )
+    )
+
+
 def _execute_post_setup_hook(
-    push_tuples: List[git.Push], api: plug.PlatformAPI
+    pushed: List[git.Push], preexisting: List[git.Push], api: plug.PlatformAPI,
 ) -> Mapping[Any, Any]:
     """Execute the post_setup hook on the given push tuples. Note that the push
     tuples are expected to have the "team" and "repo" keys set in the metadata.
@@ -129,11 +132,22 @@ def _execute_post_setup_hook(
     post_setup_exists = any(
         ["post_setup" in dir(p) for p in plug.manager.get_plugins()]
     )
-    if not post_setup_exists or not push_tuples:
+    if not post_setup_exists or not pushed and not preexisting:
         return {}
 
+    pushed_results = _post_setup(pushed, newly_created=True, api=api)
+    preexisting_results = _post_setup(
+        preexisting, newly_created=False, api=api
+    )
+
+    return _combine_dicts(pushed_results, preexisting_results)
+
+
+def _post_setup(
+    pts: List[git.Push], newly_created: bool, api: plug.PlatformAPI
+) -> Mapping[Any, Any]:
     teams_and_repos = [
-        (pt.metadata["team"], pt.metadata["repo"]) for pt in push_tuples
+        (pt.metadata["team"], pt.metadata["repo"]) for pt in pts
     ]
     student_repos = [
         plug.StudentRepo(
@@ -153,14 +167,42 @@ def _execute_post_setup_hook(
         api,
         cwd=None,
         copy_repos=False,
+        extra_kwargs=dict(newly_created=newly_created),
     )
 
 
+def _create_state_separated_push_tuples(
+    teams: List[plug.Team],
+    template_repos: List[plug.TemplateRepo],
+    api: plug.PlatformAPI,
+) -> Tuple[List[Push], List[Push]]:
+    """Return a tuple of lists of template repos, where the first list contains
+    push tuples for newly created repos and the second list contains push
+    tuples for repos that already existed.
+    """
+    push_tuple_iter = _create_push_tuples(teams, template_repos, api)
+    push_tuple_iter_progress = plug.cli.io.progress_bar(
+        push_tuple_iter,
+        desc="Setting up student repos",
+        total=len(teams) * len(template_repos),
+    )
+
+    newly_created = []
+    pre_existing = []
+    for created, pt in push_tuple_iter_progress:
+        if created:
+            newly_created.append(pt)
+        else:
+            pre_existing.append(pt)
+
+    return newly_created, pre_existing
+
+
 def _create_push_tuples(
-    teams: Iterable[plug.Team],
+    teams: List[plug.Team],
     template_repos: Iterable[plug.TemplateRepo],
     api: plug.PlatformAPI,
-) -> Iterable[Push]:
+) -> Iterable[Tuple[bool, Push]]:
     """Create push tuples for newly created repos. Repos that already exist are
     ignored.
 
@@ -169,8 +211,9 @@ def _create_push_tuples(
         template_repos: Template repositories.
         api: A platform API instance.
     Returns:
-        A list of Push namedtuples for all student repo urls that relate to
-        any of the master repo urls.
+        A list of tuples (created, push_tuple) for all student repo urls
+        that relate to any of the master repo urls. ``created`` indicates
+        whether or not the student repo was created in this invocation.
     """
     for team, template_repo in itertools.product(teams, template_repos):
         repo_name = plug.generate_repo_name(team, template_repo.name)
@@ -182,13 +225,12 @@ def _create_push_tuples(
             api=api,
         )
 
-        if created:
-            yield git.Push(
-                local_path=template_repo.path,
-                repo_url=api.insert_auth(repo.url),
-                branch=git.active_branch(template_repo.path),
-                metadata=dict(repo=repo, team=team),
-            )
+        yield created, git.Push(
+            local_path=template_repo.path,
+            repo_url=api.insert_auth(repo.url),
+            branch=git.active_branch(template_repo.path),
+            metadata=dict(repo=repo, team=team),
+        )
 
 
 def _create_or_fetch_repo(

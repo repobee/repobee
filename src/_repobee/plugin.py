@@ -16,7 +16,16 @@ import pathlib
 import importlib
 import os
 from types import ModuleType
-from typing import List, Optional, Iterable, Mapping, Union, Callable
+from typing import (
+    List,
+    Optional,
+    Iterable,
+    Mapping,
+    Union,
+    Callable,
+    Any,
+    DefaultDict,
+)
 
 
 import _repobee
@@ -415,6 +424,7 @@ def execute_tasks(
     api: plug.PlatformAPI,
     cwd: Optional[pathlib.Path],
     copy_repos: bool = True,
+    extra_kwargs: Optional[Mapping[Any, Any]] = None,
 ) -> Mapping[str, List[plug.Result]]:
     """Execute plugin tasks on the provided repos."""
     cwd = cwd or pathlib.Path(".")
@@ -423,16 +433,23 @@ def execute_tasks(
         copies_root = pathlib.Path(tmpdir)
 
         plug.log.info("Executing tasks ...")
-        results = collections.defaultdict(list)
+        all_results: DefaultDict[
+            str, List[plug.Result]
+        ] = collections.defaultdict(list)
         for repo in (
             _copy_repos(repos, basedir=copies_root) if copy_repos else repos
         ):
             plug.log.info("Processing {}".format(repo.name))
 
-            for result in hook_function(repo=repo, api=api):  # type: ignore
-                if result:
-                    results[repo.name].append(result)
-    return results
+            valid_results: List[plug.Result] = [
+                result
+                for result in hook_function(
+                    repo=repo, api=api, **(extra_kwargs or {})
+                )  # type: ignore
+                if result
+            ]
+            all_results[repo.name].extend(valid_results)
+    return all_results
 
 
 def _copy_repos(
