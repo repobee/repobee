@@ -82,13 +82,13 @@ def setup_student_repos(
 
         platform_teams = _create_platform_teams(teams, api)
 
-        to_push, pre_existing = _create_state_separated_push_tuples(
+        to_push, preexisting = _create_state_separated_push_tuples(
             platform_teams, template_repos, api
         )
         successful_pts, _ = git.push(push_tuples=to_push)
 
         post_setup_results = _execute_post_setup_hook(
-            successful_pts, pre_existing, api
+            successful_pts, preexisting, api
         )
 
     return _combine_dicts(pre_setup_results, post_setup_results)
@@ -124,7 +124,7 @@ def _create_platform_teams(
 
 
 def _execute_post_setup_hook(
-    pushed: List[git.Push], preexisting: List[git.Push], api: plug.PlatformAPI,
+    pushed: List[git.Push], preexisting: List[git.Push], api: plug.PlatformAPI
 ) -> Mapping[Any, Any]:
     """Execute the post_setup hook on the given push tuples. Note that the push
     tuples are expected to have the "team" and "repo" keys set in the metadata.
@@ -188,14 +188,14 @@ def _create_state_separated_push_tuples(
     )
 
     newly_created = []
-    pre_existing = []
+    preexisting = []
     for created, pt in push_tuple_iter_progress:
         if created:
             newly_created.append(pt)
         else:
-            pre_existing.append(pt)
+            preexisting.append(pt)
 
-    return newly_created, pre_existing
+    return newly_created, preexisting
 
 
 def _create_push_tuples(
