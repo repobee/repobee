@@ -85,17 +85,15 @@ def pre_setup(repo: TemplateRepo, api: PlatformAPI) -> Optional[Result]:
 
 
 @hookspec
-def post_setup(repo: StudentRepo, api: PlatformAPI) -> Optional[Result]:
+def post_setup(
+    repo: StudentRepo, api: PlatformAPI, newly_created: bool
+) -> Optional[Result]:
     """Operate on a student repo after the setup command has executed.
-
-    .. important::
-
-        This hook is only called on freshly created student repos that did
-        not already exist when the setup command was invoked.
 
     Args:
         repo: A student repository.
         api: An instance of the platform API.
+        newly_created: False if the student repo already existed.
     Returns:
         Optionally returns a Result for reporting the outcome of the hook.
         May also return None, in which case no reporting will be performed
