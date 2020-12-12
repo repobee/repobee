@@ -5,14 +5,8 @@ import pathlib
 import gitlab
 import repobee_plug as plug
 
-from .const import (
-    ORG_NAME,
-    LOCAL_BASE_URL,
-    TOKEN,
-    TEACHER,
-    TASK_CONTENTS_SHAS,
-)
-from .helpers import gitlab_and_groups, hash_directory, get_group
+from .const import ORG_NAME, LOCAL_BASE_URL, TOKEN, TEACHER, TASK_CONTENTS_SHAS
+from .helpers import hash_directory, get_group
 
 
 def assert_template_repos_exist(assignment_names, org_name):
