@@ -23,6 +23,9 @@ jobs:
     - name: Install RepoBee
       run: pip install -e .[TEST]
     - name: Run system tests
+      env:
+      - REPOBEE_NO_VERIFY_SSL: true
+      - PYTHONWARNINGS: "ignore:Unverified HTTPS request"
       run: |
         cd system_tests
         pytest test_gitlab_system.py -vv --showlocals
