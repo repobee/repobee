@@ -61,7 +61,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build RepoBee container
-      run: docker build -t repobee;test -f Dockerfile.test .
+      run: docker build -t repobee:test -f Dockerfile.test .
     - name: Set up Python 3.6
       uses: actions/setup-python@v2
       with:
