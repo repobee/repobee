@@ -14,9 +14,6 @@ on:
 jobs:
   build:
 
-    on:
-      push:
-        branches-ignore: '**'
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
