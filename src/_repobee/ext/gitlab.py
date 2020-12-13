@@ -94,6 +94,11 @@ class GitLabAPI(plug.PlatformAPI):
 
     def __init__(self, base_url, token, org_name):
         # ssl turns off only for
+
+        plug.log.debug(
+            f"Initializing GitLab API: url={base_url}, target group={org_name}"
+        )
+
         self._user = "oauth2"
         self._gitlab = gitlab.Gitlab(
             base_url, private_token=token, ssl_verify=self._ssl_verify()
@@ -105,7 +110,7 @@ class GitLabAPI(plug.PlatformAPI):
         with _try_api_request():
             self._gitlab.auth()
             self._actual_user = self._gitlab.user.username
-            self._group = self._get_organization(self._group_name)
+            self._group = self._get_group(self._group_name, self._gitlab)
 
     def create_team(
         self,
@@ -320,15 +325,19 @@ class GitLabAPI(plug.PlatformAPI):
             plug.log.warning("SSL verification turned off, only for testing")
         return ssl_verify
 
-    def _get_organization(self, org_name):
+    @staticmethod
+    def _get_group(group_name, gl):
+        plug.log.debug(f"Searching for groups with name {group_name}")
         matches = [
             g
-            for g in self._gitlab.groups.list(search=org_name)
-            if g.path == org_name
+            for g in gl.groups.list(search=group_name, all=True)
+            if g.path == group_name
         ]
 
         if not matches:
-            raise plug.NotFoundError(org_name, status=404)
+            raise plug.NotFoundError(group_name, status=404)
+
+        plug.log.debug(f"Found groups: {[group.path for group in matches]}")
 
         return matches[0]
 
@@ -433,18 +442,7 @@ class GitLabAPI(plug.PlatformAPI):
         user = gl.user.username
 
         plug.echo(f"Trying to fetch group {group_name}")
-        slug_matched = [
-            group
-            for group in gl.groups.list(search=group_name)
-            if group.path == group_name
-        ]
-        if not slug_matched:
-            raise plug.NotFoundError(
-                f"Could not find group with slug {group_name}. Verify that "
-                f"you have access to the group, and that you've provided "
-                f"the slug (the name in the address bar)."
-            )
-        group = slug_matched[0]
+        group = GitLabAPI._get_group(group_name, gl)
         plug.echo(f"SUCCESS: Found group {group.name}")
 
         plug.echo(
