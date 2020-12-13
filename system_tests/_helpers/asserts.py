@@ -5,20 +5,13 @@ import pathlib
 import gitlab
 import repobee_plug as plug
 
-from .const import (
-    ORG_NAME,
-    LOCAL_BASE_URL,
-    TOKEN,
-    TEACHER,
-    TASK_CONTENTS_SHAS,
-)
-from .helpers import gitlab_and_groups, hash_directory
+from .const import ORG_NAME, LOCAL_BASE_URL, TOKEN, TEACHER, TASK_CONTENTS_SHAS
+from .helpers import hash_directory, get_group
 
 
 def assert_template_repos_exist(assignment_names, org_name):
     """Assert that the template repos are in the specified group."""
-    gl, *_ = gitlab_and_groups()
-    group = gl.groups.list(search=org_name)[0]
+    group = get_group(org_name)
     actual_repo_names = [g.name for g in group.projects.list(all=True)]
     assert sorted(actual_repo_names) == sorted(assignment_names)
 
@@ -27,7 +20,7 @@ def assert_repos_exist(student_teams, assignment_names, org_name=ORG_NAME):
     """Assert that the associated student repos exist."""
     repo_names = plug.generate_repo_names(student_teams, assignment_names)
     gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
-    target_group = gl.groups.list(search=ORG_NAME)[0]
+    target_group = get_group(org_name, gl=gl)
     student_groups = gl.groups.list(id=target_group.id)
 
     projects = [p for g in student_groups for p in g.projects.list(all=True)]
@@ -42,7 +35,7 @@ def assert_repos_contain(
     """Assert that each of the student repos contain the given file."""
     repo_names = plug.generate_repo_names(student_teams, assignment_names)
     gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
-    target_group = gl.groups.list(search=ORG_NAME)[0]
+    target_group = get_group(org, gl=gl)
     student_groups = gl.groups.list(id=target_group.id)
 
     projects = [
@@ -77,7 +70,7 @@ def assert_on_groups(
     provided, this is used INSTEAD of the default all-groups assertion.
     """
     gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
-    target_group = gl.groups.list(search=ORG_NAME)[0]
+    target_group = get_group(org_name, gl=gl)
     sorted_teams = sorted(list(student_teams), key=lambda t: t.name)
     team_names = set(t.name for t in sorted_teams)
 
@@ -116,7 +109,7 @@ def _assert_on_projects(student_teams, assignment_names, assertion):
     """
     gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
     repo_names = plug.generate_repo_names(student_teams, assignment_names)
-    target_group = gl.groups.list(search=ORG_NAME)[0]
+    target_group = get_group(ORG_NAME, gl=gl)
     student_groups = gl.groups.list(id=target_group.id)
     projects = [
         gl.projects.get(p.id)

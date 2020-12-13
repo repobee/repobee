@@ -6,6 +6,8 @@ import subprocess
 import sys
 import tempfile
 
+from typing import Optional
+
 import _repobee.ext
 import gitlab
 
@@ -30,9 +32,21 @@ def gitlab_and_groups():
     target group.
     """
     gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
-    master_group = gl.groups.list(search=TEMPLATE_ORG_NAME)[0]
-    target_group = gl.groups.list(search=ORG_NAME)[0]
+    master_group = get_group(TEMPLATE_ORG_NAME, gl=gl)
+    target_group = get_group(ORG_NAME, gl=gl)
     return gl, master_group, target_group
+
+
+def get_group(group_slug: str, gl: Optional[gitlab.Gitlab] = None):
+    """Return a group with the given slug."""
+    gl = gl or gitlab.Gitlab(
+        LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False
+    )
+    return [
+        group
+        for group in gl.groups.list(search=group_slug)
+        if group.path == group_slug
+    ][0]
 
 
 def run_in_docker_with_coverage(command, extra_args=None):

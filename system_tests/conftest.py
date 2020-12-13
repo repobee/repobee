@@ -32,6 +32,7 @@ from _helpers.const import (
 from _helpers.helpers import (
     run_in_docker,
     expected_num_members_group_assertion,
+    get_group,
 )
 
 assert os.getenv(
@@ -149,7 +150,7 @@ def open_issues(with_student_repos):
     )
     issues = [task_issue, correction_issue]
     gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
-    target_group = gl.groups.list(search=ORG_NAME)[0]
+    target_group = get_group(ORG_NAME, gl=gl)
     projects = (
         gl.projects.get(p.id)
         for p in target_group.projects.list(include_subgroups=True, all=True)
