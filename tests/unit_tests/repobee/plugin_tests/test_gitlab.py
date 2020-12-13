@@ -510,9 +510,7 @@ class TestVerifySettings:
                 token=TOKEN,
             )
 
-        assert "Could not find group with slug {}".format(
-            non_existing_group
-        ) in str(exc_info.value)
+        assert non_existing_group in str(exc_info.value)
 
     def test_raises_if_master_group_cant_be_found(self):
         non_existing_group = "some-garbage-group"
@@ -525,9 +523,7 @@ class TestVerifySettings:
                 template_org_name=non_existing_group,
             )
 
-        assert "Could not find group with slug {}".format(
-            non_existing_group
-        ) in str(exc_info.value)
+        assert non_existing_group in str(exc_info.value)
 
     def test_raises_when_user_is_not_member(self, mocker):
         gl = GitLabMock(BASE_URL, TOKEN, False)
