@@ -45,9 +45,7 @@ def _convert_404_to_not_found_error(msg):
     except gitlab.exceptions.GitlabError as exc:
         if exc.response_code == 404:
             raise plug.NotFoundError(msg)
-        raise plug.UnexpectedException(
-            f"An unexpected exception occured. {type(exc).__name__}: {exc}"
-        )
+        raise plug.PlatformError(str(exc), status=exc.response_code) from exc
 
 
 @contextlib.contextmanager
@@ -63,8 +61,8 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
     """Context manager for trying API requests.
 
     Args:
-        ignore_statuses: One or more status codes to ignore (only
-        applicable if the exception is a gitlab.exceptions.GitlabError).
+        ignore_statuses: One or more status codes to ignore (only applicable if
+            the exception is a gitlab.exceptions.GitlabError).
     """
     try:
         yield
@@ -323,7 +321,9 @@ class GitLabAPI(plug.PlatformAPI):
     def _get_group(group_name, gl):
         plug.log.debug(f"Fetching group {group_name}")
 
-        with _try_api_request():
+        with _convert_404_to_not_found_error(
+            f"could not find group '{group_name}'"
+        ):
             return gl.groups.get(group_name)
 
     def _get_users(self, usernames):

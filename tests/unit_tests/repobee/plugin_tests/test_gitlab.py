@@ -281,11 +281,16 @@ class GitLabMock:
         return list(groups)[: (PAGE_SIZE if not all else None)]
 
     def _get_group(self, id):
-        if id not in self._groups:
-            raise gitlab.exceptions.GitlabGetError(
-                response_code=404, error_message="Group Not Found"
-            )
-        return self._groups[id]
+        if id in self._groups:
+            return self._groups[id]
+
+        for gid, group in self._groups.items():
+            if group.path == id:
+                return group
+
+        raise gitlab.exceptions.GitlabGetError(
+            response_code=404, error_message="Group Not Found"
+        )
 
     def _list_users(self, username=None):
         if username:
