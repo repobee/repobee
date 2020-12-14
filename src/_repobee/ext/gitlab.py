@@ -93,12 +93,6 @@ class GitLabAPI(plug.PlatformAPI):
     _User = collections.namedtuple("_User", ("id", "login"))
 
     def __init__(self, base_url, token, org_name):
-        # ssl turns off only for
-
-        plug.log.debug(
-            f"Initializing GitLab API: url={base_url}, target group={org_name}"
-        )
-
         self._user = "oauth2"
         self._gitlab = gitlab.Gitlab(
             base_url, private_token=token, ssl_verify=self._ssl_verify()
