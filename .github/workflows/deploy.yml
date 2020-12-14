@@ -22,4 +22,4 @@ jobs:
         python setup.py sdist bdist_wheel
     - name: Publish RepoBee to PyPi
       run:
-        tree dist
+        ls dist
