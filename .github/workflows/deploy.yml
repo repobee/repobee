@@ -1,0 +1,29 @@
+# Workflow for deploying RepoBee to PyPi
+
+name: deploy
+
+on:
+  create:
+    tags:
+      - "/^v\\d+\\.\\d+\\.\\d+(-(alpha|beta|rc)(\\.\\d+)?)?$/"
+
+jobs:
+  deploy-to-pypi:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.6
+    - name: Package RepoBee
+      run: |
+        python -m pip install --upgrade pip wheel
+        python -m pip install -r requirements/app.txt -r requirements/test.txt
+        python -m pip install .
+        python setup.py sdist bdist_wheel
+    - name: Publish RepoBee to PyPi
+      uses: pypa/gh-action-pypi-publish@m54b39fb9371c0b3a6f9f14bb8a67394defc7a806 # v1.4.1
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
