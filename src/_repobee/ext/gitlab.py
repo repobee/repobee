@@ -45,9 +45,7 @@ def _convert_404_to_not_found_error(msg):
     except gitlab.exceptions.GitlabError as exc:
         if exc.response_code == 404:
             raise plug.NotFoundError(msg)
-        raise plug.UnexpectedException(
-            f"An unexpected exception occured. {type(exc).__name__}: {exc}"
-        )
+        raise plug.PlatformError(str(exc), status=exc.response_code) from exc
 
 
 @contextlib.contextmanager
@@ -63,8 +61,8 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
     """Context manager for trying API requests.
 
     Args:
-        ignore_statuses: One or more status codes to ignore (only
-        applicable if the exception is a gitlab.exceptions.GitlabError).
+        ignore_statuses: One or more status codes to ignore (only applicable if
+            the exception is a gitlab.exceptions.GitlabError).
     """
     try:
         yield
@@ -93,7 +91,6 @@ class GitLabAPI(plug.PlatformAPI):
     _User = collections.namedtuple("_User", ("id", "login"))
 
     def __init__(self, base_url, token, org_name):
-        # ssl turns off only for
         self._user = "oauth2"
         self._gitlab = gitlab.Gitlab(
             base_url, private_token=token, ssl_verify=self._ssl_verify()
@@ -105,7 +102,7 @@ class GitLabAPI(plug.PlatformAPI):
         with _try_api_request():
             self._gitlab.auth()
             self._actual_user = self._gitlab.user.username
-            self._group = self._get_organization(self._group_name)
+            self._group = self._get_group(self._group_name, self._gitlab)
 
     def create_team(
         self,
@@ -320,17 +317,14 @@ class GitLabAPI(plug.PlatformAPI):
             plug.log.warning("SSL verification turned off, only for testing")
         return ssl_verify
 
-    def _get_organization(self, org_name):
-        matches = [
-            g
-            for g in self._gitlab.groups.list(search=org_name)
-            if g.path == org_name
-        ]
+    @staticmethod
+    def _get_group(group_name, gl):
+        plug.log.debug(f"Fetching group {group_name}")
 
-        if not matches:
-            raise plug.NotFoundError(org_name, status=404)
-
-        return matches[0]
+        with _convert_404_to_not_found_error(
+            f"could not find group '{group_name}'"
+        ):
+            return gl.groups.get(group_name)
 
     def _get_users(self, usernames):
         users = []
@@ -433,18 +427,7 @@ class GitLabAPI(plug.PlatformAPI):
         user = gl.user.username
 
         plug.echo(f"Trying to fetch group {group_name}")
-        slug_matched = [
-            group
-            for group in gl.groups.list(search=group_name)
-            if group.path == group_name
-        ]
-        if not slug_matched:
-            raise plug.NotFoundError(
-                f"Could not find group with slug {group_name}. Verify that "
-                f"you have access to the group, and that you've provided "
-                f"the slug (the name in the address bar)."
-            )
-        group = slug_matched[0]
+        group = GitLabAPI._get_group(group_name, gl)
         plug.echo(f"SUCCESS: Found group {group.name}")
 
         plug.echo(
