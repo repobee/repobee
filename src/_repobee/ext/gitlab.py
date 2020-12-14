@@ -327,19 +327,10 @@ class GitLabAPI(plug.PlatformAPI):
 
     @staticmethod
     def _get_group(group_name, gl):
-        plug.log.debug(f"Searching for groups with name {group_name}")
-        matches = [
-            g
-            for g in gl.groups.list(search=group_name, all=True)
-            if g.path == group_name
-        ]
+        plug.log.debug(f"Fetching group {group_name}")
 
-        if not matches:
-            raise plug.NotFoundError(group_name, status=404)
-
-        plug.log.debug(f"Found groups: {[group.path for group in matches]}")
-
-        return matches[0]
+        with _try_api_request():
+            return gl.groups.get(group_name)
 
     def _get_users(self, usernames):
         users = []
