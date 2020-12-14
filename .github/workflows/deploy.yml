@@ -3,9 +3,12 @@
 name: deploy
 
 on:
-  create:
-    tags:
-      - "/^v\\d+\\.\\d+\\.\\d+(-(alpha|beta|rc)(\\.\\d+)?)?$/"
+  workflow_run:
+    workflows: "tests"
+    types: completed
+    create:
+      tags:
+        - "/^v\\d+\\.\\d+\\.\\d+(-(alpha|beta|rc)(\\.\\d+)?)?$/"
 
 jobs:
   deploy-to-pypi:
