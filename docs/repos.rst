@@ -214,7 +214,7 @@ directory (i.e. local repos), all we have to do is this:
 
 .. code-block:: bash
 
-    $ repobee repos migrate --assignments task-1 task-2
+    $ repobee repos migrate --allow-local-templates --assignments task-1 task-2
 
 .. note::
 
@@ -222,6 +222,11 @@ directory (i.e. local repos), all we have to do is this:
     the repos to migrate. This is an implementation detail that makes it easier
     to handle the command, but may be changed in the future for better
     usability.
+    
+    The --allow-local-templates oprion is necessary to permit the use of a local
+    template on your computer, i.e., the assignment templates that you are migrating.
+    Repobee prohibits using local templates by default for safety, but this is
+    precisely what you want in this case.
 
 .. important::
 
