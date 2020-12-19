@@ -11,6 +11,7 @@ GitHubAPI are mostly high-level bulk operations.
 .. moduleauthor:: Simon Larsén
 """
 import pathlib
+import urllib.parse
 from typing import List, Iterable, Optional, Generator
 from socket import gaierror
 import contextlib
@@ -367,6 +368,10 @@ class GitHubAPI(plug.PlatformAPI):
                 if not org_name
                 else self._github.get_organization(org_name)
             )
+
+        scheme, netloc, org_path, *_ = urllib.parse.urlsplit(org.html_url)
+        base_html_url = urllib.parse.urlunsplit([scheme, netloc, *([""] * 3)])
+
         repo_names = (
             assignment_names
             if not team_names
@@ -375,7 +380,7 @@ class GitHubAPI(plug.PlatformAPI):
         return [
             self.insert_auth(url) if insert_auth else url
             for url in (
-                "{}/{}".format(org.html_url, repo_name)
+                urllib.parse.urljoin(base_html_url, f"{org_path}/{repo_name}")
                 for repo_name in list(repo_names)
             )
         ]
@@ -386,11 +391,18 @@ class GitHubAPI(plug.PlatformAPI):
 
     def insert_auth(self, url: str) -> str:
         """See :py:meth:`repobee_plug.PlatformAPI.insert_auth`."""
-        html_base_url = self._org.html_url[: -len(self._org_name) - 1]
+        scheme, netloc, path, query, fragment = urllib.parse.urlsplit(
+            self._org.html_url
+        )
+
+        html_base_url = urllib.parse.urlunsplit([scheme, netloc, *([""] * 3)])
         if html_base_url not in url:
             raise plug.InvalidURL(f"url not found on platform: '{url}'")
+
         auth = "{}:{}".format(self._user, self.token)
-        return url.replace("https://", f"https://{auth}@")
+        return urllib.parse.urlunsplit(
+            [scheme, f"{auth}@{netloc}", path, query, fragment]
+        )
 
     def _get_repos_by_name(
         self, repo_names: Iterable[str]

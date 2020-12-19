@@ -8,6 +8,8 @@ import os
 import collections
 import contextlib
 import pathlib
+import urllib.parse
+import functools
 from typing import List, Iterable, Optional, Generator
 
 import gitlab  # type: ignore
@@ -344,16 +346,19 @@ class GitLabAPI(plug.PlatformAPI):
     ) -> List[str]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repo_urls`."""
         group_name = org_name if org_name else self._group_name
-        group_url = f"{self._base_url}/{group_name}"
-        repo_urls = (
-            [f"{group_url}/{repo_name}.git" for repo_name in assignment_names]
+        relative_repo_urls = (
+            [f"{group_name}/{repo_name}.git" for repo_name in assignment_names]
             if not team_names
             else [
-                f"{group_url}/{team}/"
+                f"{group_name}/{team}/"
                 f"{plug.generate_repo_name(str(team), assignment_name)}.git"
                 for team in team_names
                 for assignment_name in assignment_names
             ]
+        )
+        repo_urls = map(
+            functools.partial(urllib.parse.urljoin, self._base_url),
+            relative_repo_urls,
         )
         return (
             list(repo_urls)
@@ -373,12 +378,15 @@ class GitLabAPI(plug.PlatformAPI):
         Returns:
             the input url with an authentication token inserted.
         """
-        if not repo_url.startswith("https://"):
+        scheme, netloc, path, query, fragment = urllib.parse.urlsplit(repo_url)
+        if scheme != "https":
             raise ValueError(
                 f"unsupported protocol in '{repo_url}', please use https:// "
             )
         auth = f"{self._user}:{self._token}"
-        return repo_url.replace("https://", f"https://{auth}@")
+        return urllib.parse.urlunsplit(
+            [scheme, f"{auth}@{netloc}", path, query, fragment]
+        )
 
     @staticmethod
     def verify_settings(
