@@ -357,8 +357,11 @@ class GitLabAPI(plug.PlatformAPI):
             ]
         )
         repo_urls = map(
-            functools.partial(urllib.parse.urljoin, self._base_url),
-            relative_repo_urls,
+            str,  # need this map as urljoin returns AnyStr, and not str
+            map(
+                functools.partial(urllib.parse.urljoin, str(self._base_url)),
+                [str(r) for r in relative_repo_urls],
+            ),
         )
         return list(
             repo_urls if not insert_auth else map(self.insert_auth, repo_urls)
