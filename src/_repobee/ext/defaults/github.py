@@ -377,13 +377,13 @@ class GitHubAPI(plug.PlatformAPI):
             if not team_names
             else plug.generate_repo_names(team_names, assignment_names)
         )
-        return [
-            self.insert_auth(url) if insert_auth else url
-            for url in (
-                urllib.parse.urljoin(base_html_url, f"{org_path}/{repo_name}")
-                for repo_name in list(repo_names)
-            )
+        repo_urls = [
+            urllib.parse.urljoin(base_html_url, f"{org_path}/{repo_name}")
+            for repo_name in list(repo_names)
         ]
+        return list(
+            repo_urls if not insert_auth else map(self.insert_auth, repo_urls)
+        )
 
     def extract_repo_name(self, repo_url: str) -> str:
         """See :py:meth:`repobee_plug.PlatformAPI.extract_repo_name`."""

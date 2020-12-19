@@ -360,10 +360,8 @@ class GitLabAPI(plug.PlatformAPI):
             functools.partial(urllib.parse.urljoin, self._base_url),
             relative_repo_urls,
         )
-        return (
-            list(repo_urls)
-            if not insert_auth
-            else [self.insert_auth(url) for url in repo_urls]
+        return list(
+            repo_urls if not insert_auth else map(self.insert_auth, repo_urls)
         )
 
     def extract_repo_name(self, repo_url: str) -> str:
