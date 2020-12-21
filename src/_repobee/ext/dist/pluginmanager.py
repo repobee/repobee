@@ -63,7 +63,10 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
     __settings__ = plug.cli.command_settings(
         action=plugin_category.install,
         help="install a plugin",
-        description="Install a plugin.",
+        description="Install a plugin. Running this command without options "
+        "starts an interactive installer, where you can select plugin and "
+        "version to install. Plugins can also be installed non-interactively "
+        "with the (mutually exclusive) '--plugin-spec' or '--local' options.",
     )
 
     non_interactive_install_options = plug.cli.mutually_exclusive_group(
