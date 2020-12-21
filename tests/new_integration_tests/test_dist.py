@@ -139,7 +139,7 @@ class Hello(plug.Plugin, plug.cli.Command):
         cmd = [
             *pluginmanager.plugin_category.install.as_name_tuple(),
             "--plugin-spec",
-            f"{plugin_name}@{plugin_version}",
+            f"{plugin_name}{pluginmanager.PLUGIN_SPEC_SEP}{plugin_version}",
         ]
 
         repobee.run(cmd)
@@ -147,6 +147,43 @@ class Hello(plug.Plugin, plug.cli.Command):
         assert get_pkg_version(
             f"repobee-{plugin_name}"
         ) == plugin_version.lstrip("v")
+
+    def test_raises_on_non_interactive_install_of_non_existing_plugin(self):
+        """An error should be raised if one tries to install a plugin that
+        does not exist.
+        """
+        plugin_name = "somepluginthatdoesntexist"
+        plugin_version = "v1.0.0"
+        cmd = [
+            *pluginmanager.plugin_category.install.as_name_tuple(),
+            "--plugin-spec",
+            f"{plugin_name}{pluginmanager.PLUGIN_SPEC_SEP}{plugin_version}",
+        ]
+
+        with pytest.raises(plug.PlugError) as exc_info:
+            repobee.run(cmd)
+
+        assert f"no plugin with name '{plugin_name}'" in str(exc_info.value)
+
+    def test_raises_on_non_interactive_install_of_non_existing_version(self):
+        """An error should be raised if one tries to install a version that
+        does not exist, but the plugin does.
+        """
+        plugin_name = "junit4"
+        plugin_version = "v0.32.0"
+        cmd = [
+            *pluginmanager.plugin_category.install.as_name_tuple(),
+            "--plugin-spec",
+            f"{plugin_name}{pluginmanager.PLUGIN_SPEC_SEP}{plugin_version}",
+        ]
+
+        with pytest.raises(plug.PlugError) as exc_info:
+            repobee.run(cmd)
+
+        assert (
+            f"plugin '{plugin_name}' has no version '{plugin_version}'"
+            in str(exc_info.value)
+        )
 
 
 class TestPluginUninstall:

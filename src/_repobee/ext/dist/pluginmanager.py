@@ -22,6 +22,8 @@ from _repobee import __version__
 
 PLUGIN = "pluginmanager"
 
+PLUGIN_SPEC_SEP = "@"
+
 plugin_category = plug.cli.category(
     name="plugin",
     action_names=["install", "uninstall", "list", "activate"],
@@ -72,7 +74,7 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
         ),
         plugin_spec=plug.cli.option(
             help="a plugin specifier on the form '<NAME>@<VERSION>' (e.g. "
-            "'junit4@v1.0.0' to do a non-interactive install of an official "
+            "'junit4@v1.0.0') to do a non-interactive install of an official "
             "plugin"
         ),
     )
@@ -94,7 +96,9 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
 
             if self.plugin_spec:
                 # non-interactive install
-                name, version = self.plugin_spec.split("@")
+                name, version = self._split_plugin_spec(
+                    self.plugin_spec, plugins
+                )
             else:
                 # interactive install
                 _list_all_plugins(plugins, installed_plugins, active_plugins)
@@ -103,13 +107,23 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
             if name in installed_plugins:
                 _uninstall_plugin(name, installed_plugins)
 
-            plug.echo(f"Installing {name}@{version}")
+            plug.echo(f"Installing {name}{PLUGIN_SPEC_SEP}{version}")
             _install_plugin(name, version, plugins)
 
             plug.echo(f"Successfully installed {name}@{version}")
 
             installed_plugins[name] = dict(version=version)
             disthelpers.write_installed_plugins(installed_plugins)
+
+    @staticmethod
+    def _split_plugin_spec(plugin_spec: str, plugins: dict) -> Tuple[str, str]:
+        name, version = plugin_spec.split(PLUGIN_SPEC_SEP)
+        if name not in plugins:
+            raise plug.PlugError(f"no plugin with name '{name}'")
+        elif version not in plugins[name]["versions"]:
+            raise plug.PlugError(f"plugin '{name}' has no version '{version}'")
+
+        return name, version
 
 
 def _install_local_plugin(plugin_path: pathlib.Path, installed_plugins: dict):
