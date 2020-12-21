@@ -64,10 +64,17 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
         description="Install a plugin.",
     )
 
-    local = plug.cli.option(
-        converter=pathlib.Path,
-        help="path to a local plugin to install, either a single file or a "
-        "plugin package",
+    non_interactive_install_options = plug.cli.mutually_exclusive_group(
+        local=plug.cli.option(
+            converter=pathlib.Path,
+            help="path to a local plugin to install, either a single file or "
+            "a plugin package",
+        ),
+        plugin_spec=plug.cli.option(
+            help="a plugin specifier on the form '<NAME>@<VERSION>' (e.g. "
+            "'junit4@v1.0.0' to do a non-interactive install of an official "
+            "plugin"
+        ),
     )
 
     def command(self) -> None:
@@ -84,8 +91,14 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
             _install_local_plugin(abspath, installed_plugins)
         else:
             plug.echo("Available plugins:")
-            _list_all_plugins(plugins, installed_plugins, active_plugins)
-            name, version = _select_plugin(plugins)
+
+            if self.plugin_spec:
+                # non-interactive install
+                name, version = self.plugin_spec.split("@")
+            else:
+                # interactive install
+                _list_all_plugins(plugins, installed_plugins, active_plugins)
+                name, version = _select_plugin(plugins)
 
             if name in installed_plugins:
                 _uninstall_plugin(name, installed_plugins)

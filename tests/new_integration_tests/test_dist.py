@@ -24,6 +24,7 @@ import repobee
 import _repobee
 
 from _repobee import disthelpers, distinfo
+from _repobee.ext.dist import pluginmanager
 
 
 INSTALL_SCRIPT = (
@@ -131,6 +132,21 @@ class Hello(plug.Plugin, plug.cli.Command):
             repobee.run(shlex.split(f"plugin install --local {tmpfile.name}"))
 
         assert "no such file or directory" in str(exc_info.value)
+
+    def test_non_interactive_install(self):
+        plugin_name = "junit4"
+        plugin_version = "v1.0.0"
+        cmd = [
+            *pluginmanager.plugin_category.install.as_name_tuple(),
+            "--plugin-spec",
+            f"{plugin_name}@{plugin_version}",
+        ]
+
+        repobee.run(cmd)
+
+        assert get_pkg_version(
+            f"repobee-{plugin_name}"
+        ) == plugin_version.lstrip("v")
 
 
 class TestPluginUninstall:
