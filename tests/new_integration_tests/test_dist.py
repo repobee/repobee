@@ -185,6 +185,24 @@ class Hello(plug.Plugin, plug.cli.Command):
             in str(exc_info.value)
         )
 
+    def test_raises_on_malformed_plugin_spec(self):
+        """An error should be raised if a plugin spec is malformed."""
+        malformed_spec = pluginmanager.PLUGIN_SPEC_SEP.join(
+            ["too", "many", "parts"]
+        )
+        cmd = [
+            *pluginmanager.plugin_category.install.as_name_tuple(),
+            "--plugin-spec",
+            malformed_spec,
+        ]
+
+        with pytest.raises(plug.PlugError) as exc_info:
+            repobee.run(cmd)
+
+        assert f"malformed plugin spec '{malformed_spec}'" in str(
+            exc_info.value
+        )
+
 
 class TestPluginUninstall:
     """Tests for the ``plugin uninstall`` command."""

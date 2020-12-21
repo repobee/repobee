@@ -117,7 +117,12 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
 
     @staticmethod
     def _split_plugin_spec(plugin_spec: str, plugins: dict) -> Tuple[str, str]:
-        name, version = plugin_spec.split(PLUGIN_SPEC_SEP)
+        parts = plugin_spec.split(PLUGIN_SPEC_SEP)
+        if len(parts) != 2:
+            raise plug.PlugError(f"malformed plugin spec '{plugin_spec}'")
+
+        name, version = parts
+
         if name not in plugins:
             raise plug.PlugError(f"no plugin with name '{name}'")
         elif version not in plugins[name]["versions"]:
