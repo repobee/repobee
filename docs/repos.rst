@@ -223,9 +223,9 @@ directory (i.e. local repos), all we have to do is this:
     to handle the command, but may be changed in the future for better
     usability.
     
-    The --allow-local-templates oprion is necessary to permit the use of a local
+    The ``--allow-local-templates`` option is necessary to permit the use of a local
     template on your computer, i.e., the assignment templates that you are migrating.
-    Repobee prohibits using local templates by default for safety, but this is
+    RepoBee prohibits using local templates by default to avoid user error, but this is
     precisely what you want in this case.
 
 .. important::
