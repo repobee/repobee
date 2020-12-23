@@ -22,6 +22,8 @@ from _repobee import __version__
 
 PLUGIN = "pluginmanager"
 
+PLUGIN_SPEC_SEP = "@"
+
 plugin_category = plug.cli.category(
     name="plugin",
     action_names=["install", "uninstall", "list", "activate"],
@@ -61,13 +63,23 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
     __settings__ = plug.cli.command_settings(
         action=plugin_category.install,
         help="install a plugin",
-        description="Install a plugin.",
+        description="Install a plugin. Running this command without options "
+        "starts an interactive installer, where you can select plugin and "
+        "version to install. Plugins can also be installed non-interactively "
+        "with the (mutually exclusive) '--plugin-spec' or '--local' options.",
     )
 
-    local = plug.cli.option(
-        converter=pathlib.Path,
-        help="path to a local plugin to install, either a single file or a "
-        "plugin package",
+    non_interactive_install_options = plug.cli.mutually_exclusive_group(
+        local=plug.cli.option(
+            converter=pathlib.Path,
+            help="path to a local plugin to install, either a single file or "
+            "a plugin package",
+        ),
+        plugin_spec=plug.cli.option(
+            help="a plugin specifier on the form '<NAME>@<VERSION>' (e.g. "
+            "'junit4@v1.0.0') to do a non-interactive install of an official "
+            "plugin"
+        ),
     )
 
     def command(self) -> None:
@@ -84,19 +96,42 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
             _install_local_plugin(abspath, installed_plugins)
         else:
             plug.echo("Available plugins:")
-            _list_all_plugins(plugins, installed_plugins, active_plugins)
-            name, version = _select_plugin(plugins)
+
+            if self.plugin_spec:
+                # non-interactive install
+                name, version = self._split_plugin_spec(
+                    self.plugin_spec, plugins
+                )
+            else:
+                # interactive install
+                _list_all_plugins(plugins, installed_plugins, active_plugins)
+                name, version = _select_plugin(plugins)
 
             if name in installed_plugins:
                 _uninstall_plugin(name, installed_plugins)
 
-            plug.echo(f"Installing {name}@{version}")
+            plug.echo(f"Installing {name}{PLUGIN_SPEC_SEP}{version}")
             _install_plugin(name, version, plugins)
 
             plug.echo(f"Successfully installed {name}@{version}")
 
             installed_plugins[name] = dict(version=version)
             disthelpers.write_installed_plugins(installed_plugins)
+
+    @staticmethod
+    def _split_plugin_spec(plugin_spec: str, plugins: dict) -> Tuple[str, str]:
+        parts = plugin_spec.split(PLUGIN_SPEC_SEP)
+        if len(parts) != 2:
+            raise plug.PlugError(f"malformed plugin spec '{plugin_spec}'")
+
+        name, version = parts
+
+        if name not in plugins:
+            raise plug.PlugError(f"no plugin with name '{name}'")
+        elif version not in plugins[name]["versions"]:
+            raise plug.PlugError(f"plugin '{name}' has no version '{version}'")
+
+        return name, version
 
 
 def _install_local_plugin(plugin_path: pathlib.Path, installed_plugins: dict):
