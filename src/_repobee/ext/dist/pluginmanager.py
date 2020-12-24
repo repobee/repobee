@@ -197,7 +197,10 @@ class UninstallPluginCommand(plug.Plugin, plug.cli.Command):
     __settings__ = plug.cli.command_settings(
         action=plugin_category.uninstall,
         help="uninstall a plugin",
-        description="Uninstall a plugin.",
+        description="Uninstall a plugin. Running this command without options "
+        "starts an interactive uninstall wizard. Running with the "
+        "'--plugin-name' option non-interactively uninstall the specified "
+        "plugin.",
     )
 
     plugin_name = plug.cli.option(
