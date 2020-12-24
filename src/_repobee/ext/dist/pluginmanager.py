@@ -200,6 +200,10 @@ class UninstallPluginCommand(plug.Plugin, plug.cli.Command):
         description="Uninstall a plugin.",
     )
 
+    plugin_name = plug.cli.option(
+        help="name of a plugin to uninstall (non-interactive)"
+    )
+
     def command(self) -> None:
         """Uninstall a plugin."""
         installed_plugins = {
@@ -208,19 +212,29 @@ class UninstallPluginCommand(plug.Plugin, plug.cli.Command):
             if not attrs.get("builtin")
         }
 
-        if not installed_plugins:
-            plug.echo("No plugins installed")
-            return
+        if self.plugin_name:
+            # non-interactive uninstall
+            if self.plugin_name not in installed_plugins:
+                raise plug.PlugError(
+                    f"no plugin '{self.plugin_name}' installed"
+                )
+            selected_plugin_name = self.plugin_name
+        else:
+            # interactive uninstall
+            if not installed_plugins:
+                plug.echo("No plugins installed")
+                return
 
-        plug.echo("Installed plugins:")
-        _list_installed_plugins(
-            installed_plugins, disthelpers.get_active_plugins()
-        )
+            plug.echo("Installed plugins:")
+            _list_installed_plugins(
+                installed_plugins, disthelpers.get_active_plugins()
+            )
 
-        selected_plugin_name = bullet.Bullet(
-            prompt="Select a plugin to uninstall:",
-            choices=list(installed_plugins.keys()),
-        ).launch()
+            selected_plugin_name = bullet.Bullet(
+                prompt="Select a plugin to uninstall:",
+                choices=list(installed_plugins.keys()),
+            ).launch()
+
         _uninstall_plugin(selected_plugin_name, installed_plugins)
 
 

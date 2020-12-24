@@ -216,6 +216,35 @@ class TestPluginUninstall:
 
         assert not get_pkg_version(f"repobee-{plugin_name}")
 
+    def test_non_interactive_uninstall_of_installed_plugin(self):
+        plugin_name = "junit4"
+        install_plugin(plugin_name, version="v1.0.0")
+
+        cmd = [
+            *pluginmanager.plugin_category.uninstall.as_name_tuple(),
+            "--plugin-name",
+            plugin_name,
+        ]
+        repobee.run(cmd)
+
+        assert not get_pkg_version(f"repobee-{plugin_name}")
+
+    def test_raises_on_non_interactive_uninstall_of_non_installed_plugin(self):
+        """An error should be raised when trying to uninstall a plugin that
+        isn't installed.
+        """
+        plugin_name = "junit4"
+        cmd = [
+            *pluginmanager.plugin_category.uninstall.as_name_tuple(),
+            "--plugin-name",
+            plugin_name,
+        ]
+
+        with pytest.raises(plug.PlugError) as exc_info:
+            repobee.run(cmd)
+
+        assert f"no plugin '{plugin_name}' installed" in str(exc_info.value)
+
 
 class TestPluginList:
     """Tests for the ``plugin list`` command."""
