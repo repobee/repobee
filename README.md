@@ -27,7 +27,7 @@ is [`repobee-junit4`](https://github.com/repobee/repobee-junit4), which runs
 teacher-defined JUnit4 test classes on Java code in cloned student repos.
 
 RepoBee is currently being used for the introductory courses in computer science at
-[KTH Royal Technical Institute of Technology](https://www.kth.se/en/eecs). The
+[KTH Royal Institute of Technology](https://www.kth.se/en/eecs). The
 courses have roughly 200 students and several thousands of repositories,
 allowing us to test RepoBee at quite a large scale.
 
@@ -92,7 +92,7 @@ It covers the use of RepoBee's varous commands by way of practical example,
 and should set you on the right path with little effort.
 
 ## Why RepoBee?
-RepoBee is being developed at KTH Royal Technical Institute of Technology to
+RepoBee is being developed at KTH Royal Institute of Technology to
 help teachers and TAs administrate student repositories. It's a tool for
 teachers, by teachers, and we use it in our everyday work. All of the features
 in RepoBee are being actively used by us, and so should also be useful to other
