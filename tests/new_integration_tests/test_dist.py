@@ -285,6 +285,72 @@ class TestPluginList:
         assert "https://github.com" in out_err.out
 
 
+class TestPluginActivate:
+    """Tests for the ``plugin activate`` command."""
+
+    def test_non_interactive_activate_of_installed_plugin(self, install_dir):
+        plugin_name = "junit4"
+        install_plugin(plugin_name, "v1.0.0")
+
+        cmd = [
+            *pluginmanager.plugin_category.activate.as_name_tuple(),
+            "--plugin-name",
+            plugin_name,
+        ]
+        repobee.run(cmd)
+
+        assert plugin_name in disthelpers.get_active_plugins(
+            install_dir / "installed_plugins.json"
+        )
+
+    def test_non_interactive_deactivate_of_builtin_plugin(self, install_dir):
+        # arrange
+        plugin_name = "ghclassroom"
+        cmd = [
+            *pluginmanager.plugin_category.activate.as_name_tuple(),
+            "--plugin-name",
+            plugin_name,
+        ]
+        repobee.run(cmd)
+
+        # act
+        repobee.run(cmd)
+
+        # assert
+        assert plugin_name not in disthelpers.get_active_plugins(
+            install_dir / "installed_plugins.json"
+        )
+
+    def test_non_interactive_activate_of_builtin_plugin(self, install_dir):
+        plugin_name = "ghclassroom"
+
+        cmd = [
+            *pluginmanager.plugin_category.activate.as_name_tuple(),
+            "--plugin-name",
+            plugin_name,
+        ]
+        repobee.run(cmd)
+
+        assert plugin_name in disthelpers.get_active_plugins(
+            install_dir / "installed_plugins.json"
+        )
+
+    def test_raises_on_non_interactive_activate_of_non_installed_plugin(self):
+        plugin_name = "junit4"
+        cmd = [
+            *pluginmanager.plugin_category.activate.as_name_tuple(),
+            "--plugin-name",
+            plugin_name,
+        ]
+
+        with pytest.raises(plug.PlugError) as exc_info:
+            repobee.run(cmd)
+
+        assert f"no plugin named '{plugin_name}' installed" in str(
+            exc_info.value
+        )
+
+
 class TestManageUpgrade:
     """Tests for the ``manage upgrade`` command."""
 

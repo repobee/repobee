@@ -273,8 +273,16 @@ class ActivatePluginCommand(plug.Plugin, plug.cli.Command):
 
     __settings__ = plug.cli.command_settings(
         action=plugin_category.activate,
-        help="activate a plugin",
-        description="Activate a plugin.",
+        help="activate and deactivate plugins",
+        description="Activate and deactivate plugins. Running the command "
+        "without options starts an interactive wizard for toggling the "
+        "active-status of all installed plugins. Specifying the "
+        "'--plugin-name' option non-interactively toggles the active-status "
+        "for a single plugin.",
+    )
+
+    plugin_name = plug.cli.option(
+        help="a plugin to toggle activation status for (non-interactive)"
     )
 
     def command(self) -> None:
@@ -286,14 +294,40 @@ class ActivatePluginCommand(plug.Plugin, plug.cli.Command):
             disthelpers.get_builtin_plugins().keys()
         )
 
-        default = [i for i, name in enumerate(names) if name in active]
-        selection = bullet.Check(
-            choices=names,
-            prompt="Select plugins to activate (space to check/un-check, "
-            "enter to confirm selection):",
-        ).launch(default=default)
+        if self.plugin_name:
+            # non-interactive activate
+            if self.plugin_name not in names:
+                raise plug.PlugError(
+                    f"no plugin named '{self.plugin_name}' installed"
+                )
+            selection = (
+                active + [self.plugin_name]
+                if self.plugin_name not in active
+                else list(set(active) - {self.plugin_name})
+            )
+        else:
+            # interactive activate
+            default = [i for i, name in enumerate(names) if name in active]
+            selection = bullet.Check(
+                choices=names,
+                prompt="Select plugins to activate (space to check/un-check, "
+                "enter to confirm selection):",
+            ).launch(default=default)
 
         disthelpers.write_active_plugins(selection)
+
+        self._echo_state_change(active_before=active, active_after=selection)
+
+    @staticmethod
+    def _echo_state_change(
+        active_before: List[str], active_after: List[str]
+    ) -> None:
+        activations = set(active_after) - set(active_before)
+        deactivations = set(active_before) - set(active_after)
+        if activations:
+            plug.echo(f"Activating: {' '.join(activations)}")
+        if deactivations:
+            plug.echo(f"Deactivating: {' '.join(deactivations)}")
 
 
 def _wrap_cell(text: str, width: int = 40) -> str:
