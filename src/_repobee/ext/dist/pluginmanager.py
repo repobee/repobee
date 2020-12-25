@@ -273,12 +273,16 @@ class ActivatePluginCommand(plug.Plugin, plug.cli.Command):
 
     __settings__ = plug.cli.command_settings(
         action=plugin_category.activate,
-        help="activate a plugin",
-        description="Activate a plugin.",
+        help="activate and deactivate plugins",
+        description="Activate and deactivate plugins. Running the command "
+        "without options starts an interactive wizard for toggling the "
+        "active-status of all installed plugins. Specifying the "
+        "'--plugin-name' option non-interactively toggles the active-status "
+        "for a single plugin.",
     )
 
     plugin_name = plug.cli.option(
-        help="a plugin to toggle activation status for"
+        help="a plugin to toggle activation status for (non-interactive)"
     )
 
     def command(self) -> None:
