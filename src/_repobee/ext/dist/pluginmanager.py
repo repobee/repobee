@@ -316,6 +316,19 @@ class ActivatePluginCommand(plug.Plugin, plug.cli.Command):
 
         disthelpers.write_active_plugins(selection)
 
+        self._echo_state_change(active_before=active, active_after=selection)
+
+    @staticmethod
+    def _echo_state_change(
+        active_before: List[str], active_after: List[str]
+    ) -> None:
+        activations = set(active_after) - set(active_before)
+        deactivations = set(active_before) - set(active_after)
+        if activations:
+            plug.echo(f"Activating: {' '.join(activations)}")
+        if deactivations:
+            plug.echo(f"Deactivating: {' '.join(deactivations)}")
+
 
 def _wrap_cell(text: str, width: int = 40) -> str:
     return "\n".join(textwrap.wrap(text, width=width))
