@@ -94,6 +94,15 @@ install``, and a menu system much like the ``config wizard`` will guide you
 through the install process. To upgrade a plugin, simply run the ``install``
 action again and select a newer version.
 
+It's possible to perform a non-interactive install of a specific plugin and
+version. This is useful for scripts and the like. For example, installing
+``junit4`` version ``v1.0.0`` can be done like so:
+
+.. code-block:: bash
+    :caption: Non-interactive install of a plugin
+
+    $ repobee plugin install --plugin-spec junit4@v1.0.0
+
 The ``install`` action also allows for a *local* install. This is useful if you
 want to install an unofficial plugin, or perhaps something that you wrote
 yourself. To perform a local install, simply provide the path to the file (if
@@ -124,6 +133,17 @@ you through the process of uninstalling any installed plugin.
     .. code-block:: bash
 
         $ repobee --no-plugins plugin uninstall
+
+Much like for installing plugins, it's possible to uninstall plugins
+non-interactively. It is however sufficient to specify the name of the plugin,
+as it is not possible to have multiple versions of a plugin installed at the
+same time. A non-interactive uninstall of the ``junit4`` plugin can for example
+be executed like so:
+
+.. code-block::
+    :caption: Non-interactive uninstall of a plugin
+
+    $ repobee plugin uninstall --plugin-name junit4
 
 .. _activate_plugins:
 
@@ -189,6 +209,19 @@ indefinitely, such as plugins that add commands, or plugins that fundamentally
 change how RepoBee operates. For example, the ``gitlab`` plugin is a good
 candidate for persistent activation, as is the ``feedback`` plugin, while the
 ``junit4`` plugin may be better suited for temporary activation.
+
+As with the ``uninstall`` action, it's possible to run the ``activate`` action
+non-interactively. For example, one can *toggle* the active-status of a single
+plugin like so.
+
+.. code-block:: bash
+    :caption: Non-interactive toggling of the active-status of a single plugin
+
+    $ repobee plugin activate --plugin-name gitlab
+
+If the ``gitlab`` plugin was not active prior to running ``activate``
+non-interactively, it would now be active. If it was already active, it would
+now be deactivated.
 
 Plugin configuration
 --------------------
