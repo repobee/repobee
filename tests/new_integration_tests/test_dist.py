@@ -303,6 +303,20 @@ class TestPluginActivate:
             install_dir / "installed_plugins.json"
         )
 
+    def test_non_interactive_activate_of_builtin_plugin(self, install_dir):
+        plugin_name = "ghclassroom"
+
+        cmd = [
+            *pluginmanager.plugin_category.activate.as_name_tuple(),
+            "--plugin-name",
+            plugin_name,
+        ]
+        repobee.run(cmd)
+
+        assert plugin_name in disthelpers.get_active_plugins(
+            install_dir / "installed_plugins.json"
+        )
+
     def test_raises_on_non_interactive_activate_of_non_installed_plugin(self):
         plugin_name = "junit4"
         cmd = [

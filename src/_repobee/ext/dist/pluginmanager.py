@@ -292,9 +292,9 @@ class ActivatePluginCommand(plug.Plugin, plug.cli.Command):
 
         if self.plugin_name:
             # non-interactive activate
-            if self.plugin_name not in installed_plugins:
+            if self.plugin_name not in names:
                 raise plug.PlugError(
-                    f"no plugin with name '{self.plugin_name}' installed"
+                    f"no plugin named '{self.plugin_name}' installed"
                 )
             selection = (
                 active + [self.plugin_name]
