@@ -277,6 +277,10 @@ class ActivatePluginCommand(plug.Plugin, plug.cli.Command):
         description="Activate a plugin.",
     )
 
+    plugin_name = plug.cli.option(
+        help="a plugin to toggle activation status for"
+    )
+
     def command(self) -> None:
         """Activate a plugin."""
         installed_plugins = disthelpers.get_installed_plugins()
@@ -286,12 +290,25 @@ class ActivatePluginCommand(plug.Plugin, plug.cli.Command):
             disthelpers.get_builtin_plugins().keys()
         )
 
-        default = [i for i, name in enumerate(names) if name in active]
-        selection = bullet.Check(
-            choices=names,
-            prompt="Select plugins to activate (space to check/un-check, "
-            "enter to confirm selection):",
-        ).launch(default=default)
+        if self.plugin_name:
+            # non-interactive activate
+            if self.plugin_name not in installed_plugins:
+                raise plug.PlugError(
+                    f"no plugin with name '{self.plugin_name}' installed"
+                )
+            selection = (
+                active + [self.plugin_name]
+                if self.plugin_name not in active
+                else list(set(active) - {self.plugin_name})
+            )
+        else:
+            # interactive activate
+            default = [i for i, name in enumerate(names) if name in active]
+            selection = bullet.Check(
+                choices=names,
+                prompt="Select plugins to activate (space to check/un-check, "
+                "enter to confirm selection):",
+            ).launch(default=default)
 
         disthelpers.write_active_plugins(selection)
 
