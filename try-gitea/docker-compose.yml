@@ -27,7 +27,7 @@ services:
     networks:
       dev-net:
         aliases:
-          - gitlab.integrationtest.local
+          - gitea.test.local
 
 networks:
   dev-net:
