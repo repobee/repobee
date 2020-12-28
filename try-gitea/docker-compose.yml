@@ -1,0 +1,35 @@
+version: "3"
+
+networks:
+  gitea:
+    external: false
+
+services:
+  server:
+    image: gitea/gitea:1.13.0
+    container_name: gitea
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+    restart: always
+    networks:
+      - gitea
+    volumes:
+      - ./gitea:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - ./certs:/etc/ssl/certs/
+      - ./private:/etc/ssl/private/
+    ports:
+      - "3000:443"
+      - "222:22"
+      - "3080:3080"
+    networks:
+      dev-net:
+        aliases:
+          - gitlab.integrationtest.local
+
+networks:
+  dev-net:
+    external:
+      name: development
