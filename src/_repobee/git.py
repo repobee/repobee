@@ -13,7 +13,16 @@ import shutil
 import subprocess
 import sys
 import dataclasses
-from typing import Iterable, List, Any, Callable, Tuple, Awaitable, Sequence
+from typing import (
+    Iterable,
+    List,
+    Any,
+    Callable,
+    Tuple,
+    Awaitable,
+    Sequence,
+    Mapping,
+)
 
 import more_itertools
 import git  # type: ignore
@@ -46,8 +55,7 @@ class CloneSpec:
     metadata: dict = dataclasses.field(default_factory=dict)
 
 
-_EMPTY_REPO_ERROR = b"""fatal: Couldn't find remote ref HEAD
-fatal: the remote end hung up unexpectedly"""
+_EMPTY_REPO_ERROR = b"""fatal: Couldn't find remote ref HEAD"""
 
 
 def _ensure_repo_dir_exists(clone_spec: CloneSpec) -> None:
@@ -202,12 +210,18 @@ def _update_local_repos(
     assert all(
         map(lambda repo: repo.path.parent.parent == expected_basedir, local)
     )
+    _stash_changes(local)
     specs = [
         CloneSpec(repo_url=api.insert_auth(repo.url), dest=repo.path)
         for repo in local
     ]
     # TODO figure out what to do when a local update fails
     clone(specs)
+
+
+def _stash_changes(local_repos: List[plug.StudentRepo]) -> None:
+    for repo in local_repos:
+        captured_run("git stash".split(), cwd=repo.path)
 
 
 def clone(clone_specs: Iterable[CloneSpec]) -> List[CloneSpec]:
@@ -380,3 +394,17 @@ def active_branch(repo_path: pathlib.Path) -> str:
         The active branch of the repo.
     """
     return git.Repo(repo_path).active_branch.name
+
+
+def set_gitconfig_options(
+    repo_path: pathlib.Path, options: Mapping[str, Any]
+) -> None:
+    """Set gitconfig options in the repository.
+
+    Args:
+        repo_path: Path to a repository.
+        options: A mapping (option_name -> option_value)
+    """
+    repo = git.Repo(repo_path)
+    for key, value in options.items():
+        repo.git.config("--local", key, value)

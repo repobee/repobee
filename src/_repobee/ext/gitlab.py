@@ -1,19 +1,15 @@
-"""GitLab API module.
+"""GitLab compatibility plugin.
 
-This module contains the :py:class:`GitLabAPI` class, which is meant to be the
-prime means of interacting with the GitLab API in RepoBee. The methods of
-GitLabAPI are mostly high-level bulk operations.
-
-.. module:: gitlab
-    :synopsis: Top level interface for interacting with a GitLab instance
-        within _repobee.
-
-.. moduleauthor:: Simon Larsén
+This plugin allows RepoBee to be used with GitLab. If you want to use RepoBee
+with GitLab, then you should first activate this plugin persistently. See
+:ref:`activate_plugins` for details on how to do that.
 """
 import os
 import collections
 import contextlib
 import pathlib
+import urllib.parse
+import functools
 from typing import List, Iterable, Optional, Generator
 
 import gitlab  # type: ignore
@@ -51,9 +47,7 @@ def _convert_404_to_not_found_error(msg):
     except gitlab.exceptions.GitlabError as exc:
         if exc.response_code == 404:
             raise plug.NotFoundError(msg)
-        raise plug.UnexpectedException(
-            f"An unexpected exception occured. {type(exc).__name__}: {exc}"
-        )
+        raise plug.PlatformError(str(exc), status=exc.response_code) from exc
 
 
 @contextlib.contextmanager
@@ -69,8 +63,8 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
     """Context manager for trying API requests.
 
     Args:
-        ignore_statuses: One or more status codes to ignore (only
-        applicable if the exception is a gitlab.exceptions.GitlabError).
+        ignore_statuses: One or more status codes to ignore (only applicable if
+            the exception is a gitlab.exceptions.GitlabError).
     """
     try:
         yield
@@ -99,7 +93,6 @@ class GitLabAPI(plug.PlatformAPI):
     _User = collections.namedtuple("_User", ("id", "login"))
 
     def __init__(self, base_url, token, org_name):
-        # ssl turns off only for
         self._user = "oauth2"
         self._gitlab = gitlab.Gitlab(
             base_url, private_token=token, ssl_verify=self._ssl_verify()
@@ -111,7 +104,7 @@ class GitLabAPI(plug.PlatformAPI):
         with _try_api_request():
             self._gitlab.auth()
             self._actual_user = self._gitlab.user.username
-            self._group = self._get_organization(self._group_name)
+            self._group = self._get_group(self._group_name, self._gitlab)
 
     def create_team(
         self,
@@ -326,17 +319,14 @@ class GitLabAPI(plug.PlatformAPI):
             plug.log.warning("SSL verification turned off, only for testing")
         return ssl_verify
 
-    def _get_organization(self, org_name):
-        matches = [
-            g
-            for g in self._gitlab.groups.list(search=org_name)
-            if g.path == org_name
-        ]
+    @staticmethod
+    def _get_group(group_name, gl):
+        plug.log.debug(f"Fetching group {group_name}")
 
-        if not matches:
-            raise plug.NotFoundError(org_name, status=404)
-
-        return matches[0]
+        with _convert_404_to_not_found_error(
+            f"could not find group '{group_name}'"
+        ):
+            return gl.groups.get(group_name)
 
     def _get_users(self, usernames):
         users = []
@@ -356,21 +346,25 @@ class GitLabAPI(plug.PlatformAPI):
     ) -> List[str]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repo_urls`."""
         group_name = org_name if org_name else self._group_name
-        group_url = f"{self._base_url}/{group_name}"
-        repo_urls = (
-            [f"{group_url}/{repo_name}.git" for repo_name in assignment_names]
+        relative_repo_urls = (
+            [f"{group_name}/{repo_name}.git" for repo_name in assignment_names]
             if not team_names
             else [
-                f"{group_url}/{team}/"
+                f"{group_name}/{team}/"
                 f"{plug.generate_repo_name(str(team), assignment_name)}.git"
                 for team in team_names
                 for assignment_name in assignment_names
             ]
         )
-        return (
-            list(repo_urls)
-            if not insert_auth
-            else [self.insert_auth(url) for url in repo_urls]
+        repo_urls = map(
+            str,  # need this map as urljoin returns AnyStr, and not str
+            map(
+                functools.partial(urllib.parse.urljoin, str(self._base_url)),
+                [str(r) for r in relative_repo_urls],
+            ),
+        )
+        return list(
+            repo_urls if not insert_auth else map(self.insert_auth, repo_urls)
         )
 
     def extract_repo_name(self, repo_url: str) -> str:
@@ -385,12 +379,15 @@ class GitLabAPI(plug.PlatformAPI):
         Returns:
             the input url with an authentication token inserted.
         """
-        if not repo_url.startswith("https://"):
+        scheme, netloc, path, query, fragment = urllib.parse.urlsplit(repo_url)
+        if scheme != "https":
             raise ValueError(
                 f"unsupported protocol in '{repo_url}', please use https:// "
             )
         auth = f"{self._user}:{self._token}"
-        return repo_url.replace("https://", f"https://{auth}@")
+        return urllib.parse.urlunsplit(
+            [scheme, f"{auth}@{netloc}", path, query, fragment]
+        )
 
     @staticmethod
     def verify_settings(
@@ -439,18 +436,7 @@ class GitLabAPI(plug.PlatformAPI):
         user = gl.user.username
 
         plug.echo(f"Trying to fetch group {group_name}")
-        slug_matched = [
-            group
-            for group in gl.groups.list(search=group_name)
-            if group.path == group_name
-        ]
-        if not slug_matched:
-            raise plug.NotFoundError(
-                f"Could not find group with slug {group_name}. Verify that "
-                f"you have access to the group, and that you've provided "
-                f"the slug (the name in the address bar)."
-            )
-        group = slug_matched[0]
+        group = GitLabAPI._get_group(group_name, gl)
         plug.echo(f"SUCCESS: Found group {group.name}")
 
         plug.echo(

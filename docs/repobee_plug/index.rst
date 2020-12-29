@@ -23,6 +23,5 @@ web site <https://repobee.org/contact.html>`_.
    :maxdepth: 2
    :caption: Contents:
 
-   overview
    creating_plugins
    code

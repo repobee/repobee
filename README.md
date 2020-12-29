@@ -1,6 +1,6 @@
 ![RepoBee Logo](docs/images/RepoBee_large-black.png)
 
-[![Build Status](https://travis-ci.com/repobee/repobee.svg)](https://travis-ci.com/repobee/repobee)
+![Build Status](https://github.com/repobee/repobee/workflows/tests/badge.svg)
 [![Code Coverage](https://codecov.io/gh/repobee/repobee/branch/master/graph/badge.svg)](https://codecov.io/gh/repobee/repobee)
 [![Documentation Status](https://readthedocs.org/projects/repobee/badge/?version=stable)](http://repobee.readthedocs.io/en/stable/)
 [![PyPi Version](https://badge.fury.io/py/repobee.svg)](https://badge.fury.io/py/repobee)
@@ -13,22 +13,21 @@
 RepoBee is a command line tool that allows teachers and teaching assistants
 to administrate large amounts of Git repositories on the GitHub and GitLab
 platforms (cloud and self-hosted). The most basic use case is to automate
-generation of student repositories based on _master_ (i.e. template)
-repositories, that can contain for example instructions and skeleton code. Given
-one or more master repositories, generating copies of these for students or
-groups is a single command away! That is however just scratching the surface:
-RepoBee also has functionality for updating student repos (maybe you forgot
-something?), batch cloning of student repos (convenient when correcting tasks),
-giving students read-only access to other students' repos for peer review, and
-more at that! There is also a [plugin
-system](https://github.com/repobee/repobee-plug) in place that allows Python
-programmers to expand RepoBee in various ways, and end users can simply install
-plugins created by others. An example of such a plugin is
-[`repobee-junit4`](https://github.com/repobee/repobee-junit4), which runs
+generation of student repositories based on template repositories, that can
+contain for example instructions and skeleton code. Given one or more template
+repositories, generating copies of these for students or groups is a single
+command away! That is however just scratching the surface: RepoBee also has
+functionality for updating student repos (maybe you forgot something?), batch
+cloning of student repos (convenient when correcting tasks), giving students
+read-only access to other students' repos for peer review, and more at that!
+There is also a [plugin system](https://github.com/repobee/repobee-plug) in
+place that allows Python programmers to expand RepoBee in various ways, and end
+users can simply install plugins created by others. An example of such a plugin
+is [`repobee-junit4`](https://github.com/repobee/repobee-junit4), which runs
 teacher-defined JUnit4 test classes on Java code in cloned student repos.
 
 RepoBee is currently being used for the introductory courses in computer science at
-[KTH Royal Technical Institute of Technology](https://www.kth.se/en/eecs). The
+[KTH Royal Institute of Technology](https://www.kth.se/en/eecs). The
 courses have roughly 200 students and several thousands of repositories,
 allowing us to test RepoBee at quite a large scale.
 
@@ -42,8 +41,8 @@ If you want to reference RepoBee in a paper, please cite the following paper:
 
 ### Feature highlights
 * Compatible with both GitHub and GitLab (both cloud and self-hosted)
-* Generate repositories for students based on master (template) repositories
-* Clone student repositories in batches
+* Generate repositories for students based on template repositories
+* Batch cloning of student repositories
 * Peer review features: give students read access to other students'
   repositories to do code review. Easily revoke read access once reviews are
   done.
@@ -55,7 +54,7 @@ If you want to reference RepoBee in a paper, please cite the following paper:
     - The only requirement is to have an Organization/Group with private repository
       capabilities!
 * No local configuration required
-    - Although [setting a few defaults](https://repobee.readthedocs.io/en/stable/configuration.html#configuration)
+    - Although [setting a few defaults](https://repobee.readthedocs.io/en/stable/getting_started.html#configure-repobee-for-the-target-organization-the-config-category)
       is highly recommended
 
 ### Install
@@ -93,7 +92,7 @@ It covers the use of RepoBee's varous commands by way of practical example,
 and should set you on the right path with little effort.
 
 ## Why RepoBee?
-RepoBee is being developed at KTH Royal Technical Institute of Technology to
+RepoBee is being developed at KTH Royal Institute of Technology to
 help teachers and TAs administrate student repositories. It's a tool for
 teachers, by teachers, and we use it in our everyday work. All of the features
 in RepoBee are being actively used by us, and so should also be useful to other

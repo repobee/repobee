@@ -19,36 +19,9 @@ Set up student repositories (the ``setup`` action)
 
 Now that the template repos are set up, it's time to create the student repos.
 While student usernames *can* be specified on the command line, it's often
-convenient to have them written down in a file instead. Let's pretend I have
-three students with usernames ``slarse``, ``glassey`` and ``glennol``. I'll
-simply create a file called ``students.txt`` and type each username on a
-separate line.
-
-.. code-block:: bash
-   :caption: students.txt
-
-    slarse
-    glassey
-    glennol
-
-.. note::
-
-   It is possible to specify groups of students to get access to the same repos
-   by putting multiple usernames on the same line, separated by spaces. For
-   example, the following file will put `slarse` and `glassey` in the same
-   group.
-
-   .. code-block:: bash
-
-      slarse glassey
-      glennol
-
-   See :ref:`groups` for details.
-
-An absolute file path to this file can be added to the config file with the
-``students_file`` option (see :ref:`config`). If you manage multiple sets of
-students, this probably isn't useful to you, but if you always have a single set
-of students to manage it might be.
+convenient to have them written down in a file instead. Let's pretend like we
+have the single-student team ``students.txt`` file from :ref:`config` at our
+disposal.
 
 Now, what we want to accomplish is to create one copy of each template repo for
 each student. The repo names will be on the form
@@ -184,6 +157,8 @@ connection issues and misaligned planets.
     rejecting repos will still reject the push. However, be careful not to run
     ``update`` with ``-i`` multiple times, as it will then open multiple issues.
 
+.. _clone_action:
+
 Cloning Repos in Bulk (the ``clone`` action)
 ============================================
 
@@ -239,7 +214,7 @@ directory (i.e. local repos), all we have to do is this:
 
 .. code-block:: bash
 
-    $ repobee repos migrate --assignments task-1 task-2
+    $ repobee repos migrate --allow-local-templates --assignments task-1 task-2
 
 .. note::
 
@@ -247,6 +222,11 @@ directory (i.e. local repos), all we have to do is this:
     the repos to migrate. This is an implementation detail that makes it easier
     to handle the command, but may be changed in the future for better
     usability.
+    
+    The ``--allow-local-templates`` option is necessary to permit the use of a local
+    template on your computer, i.e., the assignment templates that you are migrating.
+    RepoBee prohibits using local templates by default to avoid user error, but this is
+    precisely what you want in this case.
 
 .. important::
 

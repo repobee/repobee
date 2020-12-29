@@ -5,11 +5,11 @@ Creating plugins
 
 We've put a lot of effort into making the creation of plugins as easy as
 possible, and you do not need to be a seasoned Python developer in order to
-make something that is genuinely useful.  While it is possible to develop
+make something that is genuinely useful. While it is possible to develop
 plugins according to all of the best practices of Python development, you don't
 need to. In fact, all you need to create your first plugin is to write a little
 bit of code in a Python source file. Let's have a go at extending the RepoBee
-CLI with the mandatory Hello World example.  Copy the following lines of code
+CLI with the mandatory Hello World example. Copy the following lines of code
 into a file called ``hello.py``.
 
 .. code-block:: python
@@ -24,11 +24,13 @@ into a file called ``hello.py``.
 
 This plugin will add a command called ``helloworld`` to the command line. As we
 haven't specified a category nor action, it will simply be a top-level command.
-You can call it like this:
+As the plugin is contained in a single file, we call it a *single-file plugin*.
+You can activate the plugin temporarily with ``-p /path/to/hello.py`` in order
+to call the command defined in it.
 
 .. code-block:: bash
 
-    $ repobee --plug hello.py helloworld
+    $ repobee -p hello.py helloworld
     Hello, world!
 
 Of course, this plugin is useless. We will elaborate upon this useless plugin
@@ -560,3 +562,208 @@ The usage of this command would then look something like the following.
 .. code-block:: bash
 
     $ repobee -p cicheck.py repos clone --cicheck-reference-yml /path/to/ci.yml [OTHER ARGUMENTS]
+
+
+.. _packaging_plugins:
+
+Packaging plugins
+=================
+
+Single-file plugins are great for experimentation, but they're not very
+maintainable in the long run. When plugins grow large, it becomes very
+inconvenient to keep them in a single file, and testing becomes a pain. In
+order to make a plugin more maintainable, it is possible to create a proper
+Python package. This may sound daunting if it's something you've never done
+before, but we provide a template to get started from, and so it should not be
+too much of a challange. In this section, we'll walk through how to get
+started.
+
+Installing ``cookiecutter``
+---------------------------
+
+To use the template, you must have the ``cookiecutter`` Python package
+installed. The easiest way to get it is to perform a *user* install.
+
+.. code-block:: bash
+
+    $ python3 -m pip install --user cookiecutter
+    # check that it was installed correctly
+    $ python3 -m cookiecutter --version
+
+See the `cookiecutter GitHub page for more details
+<https://github.com/cookiecutter/cookiecutter>`_.
+
+The ``repobee-plugin-cookiecutter`` template
+--------------------------------------------
+
+To use the template, simply execute the following command and answer the
+prompts, of course replacing them with the details that are relevant for
+you.
+
+.. code-block:: bash
+
+    $ python3 -m cookiecutter gh:repobee/repobee-plugin-cookiecutter
+    author []: Repo Bee
+    email []: repobee@repobee.org
+    plugin_name []: example
+    short_description []: An example plugin
+
+With the details entered above, a plugin package will be created in the
+directory ``repobee-example``. Its directory structure looks like this.
+
+.. code-block:: bash
+
+  repobee-example
+    ├── LICENSE
+    ├── README.md
+    ├── repobee_example
+    │   ├── example.py
+    │   ├── __init__.py
+    │   └── __version.py
+    ├── setup.py
+    └── tests
+        └── test_example.py
+
+Note the following details:
+
+
+* A plugin with the *name* ``example`` belongs in a directory called
+  ``repobee-example``
+
+    - In the before time, long ago, all RepoBee plugins were distributed on
+      PyPi, and this would then have been the name of the package
+
+* There is a file called ``setup.py``
+
+    - This is a barebones rendition of a setup file that makes this an
+      installable Python package
+    - There is a variable in ``setup.py`` called ``required``. Add dependencies
+      to this if you require additional Python packages, and they will be
+      installed along with your plugin.
+    - See the `Python Packaging Guide
+      <https://packaging.python.org/tutorials/packaging-projects/>`_ for more
+      details
+
+* The directory with the source code is called ``repobee_example``
+
+    - This is the name of the actual Python package, and it's very important
+      that the package is called precisely ``repobee_<plugin_name>``, or
+      RepoBee will not find it
+
+* There is a module called ``example.py`` in ``repobee_example``
+
+    - This is the *primary plugin module*
+    - It must exist, and it must be called ``<plugin_name>.py``
+
+* The ``tests`` directory comes pre-stocked with a rudimentary test setup for
+  `pytest <https://docs.pytest.org/en/latest/>`_
+
+For examples of existing plugins that adhere to these conventions, see for
+example `repobee-junit4 <https://github.com/repobee/repobee-junit4>`_ and
+`repobee-feedback <https://github.com/repobee/repobee-feedback>`_ Now, let's
+talk a bit more about the primary plugin module.
+
+The primary plugin module
+-------------------------
+
+The primary plugin module is the only module in a plugin package that RepoBee
+actually attempts to load. Therefore, any ``plug.Plugin`` class or
+``plug.repobee_hook`` function that you want RepoBee to find, must be found in
+this module. This does *not* mean that they must all be defined in the primary
+plugin module; it's sufficient that they are imported into it.
+
+The primary plugin module is essentially the same as a single-file plugin,
+except that it's packaged such that it can import other modules in the same
+package. It can also take advantage of additional dependencies defined in
+``setup.py``. Of course, all of the concepts discussed in relation to
+single-file plugins apply to packaged plugins, with one important exception: a
+packaged plugin must be installed.
+
+Installing a plugin package
+---------------------------
+
+Currently, RepoBee only supports installing unofficial plugin packages if they
+are local on disk. Assuming your plugin is located at
+``/path/to/repobee-example``, you can install it like so.
+
+.. code-block:: bash
+
+    $ repobee plugin install --local /path/to/repobee-example
+
+You can then use it as usual with a plugin, either by activating it
+persistently or temporarily. See :ref:`activate_plugins` for details on plugin
+activation.
+
+The example plugin generated by the template contains an example "Hello world"
+command, so after installing it, you should be able to execute the following
+command.
+
+.. code-block:: bash
+
+    $ repobee -p example helloworld
+
+And those are all of the basics of packaging plugins!
+
+Optional: Developing in a virtual environment
+---------------------------------------------
+
+Now that you've got everything setup, it's time for one last thing if you want
+to do get serious with developing and maintaining your plugin. That thing is a
+*virtual environment*, which allows you to install Python dependencies for your
+project in an isolated environment. Installing Python packages with a system or
+user install should be avoided if at all possible, as you quickly end up in the
+dreaded *package hell*. Creating a virtual environment is very easy, as there is
+a module for doing so that ships with Python, called ``venv``. In the root
+directory of your project (so in this case, in ``repobee-example``), execute the
+following.
+
+.. code-block:: bash
+
+    $ python3 -m venv env
+
+
+.. note::
+
+    On some Linux distributions, ``venv`` is separate from ``python``. For
+    example, on Debian you must install it with ``apt install python3-venv``.
+
+This creates a directory called ``env`` in your current working directory,
+containing the virtual environment. You can then enter and exit the virtual
+environment like so.
+
+.. code-block:: bash
+
+    # activate the virtual environment
+    $ source env/bin/activate
+    # install the project with an editable install and test requirements
+    (env) $ pip install -e .[TEST]
+    # run the tests
+    (env) $ pytest tests/
+    ========================= test session starts =========================
+    platform linux -- Python 3.8.6, pytest-6.1.2, py-1.9.0, pluggy-0.13.1
+    rootdir: /home/slarse/Documents/github/repobee/repobee-example
+    plugins: repobee-3.3.0
+    collected 1 item
+
+    tests/test_example.py .                                         [100%]
+
+    ========================== 1 passed in 0.01s ==========================
+    # exit the virtual environment
+    $ deactivate
+
+When you do development on the project, make sure to enter the virtual
+environment first. You don't need to install the local project each time you
+enter, but make sure to do so if you 1) add new dependencies in ``setup.py``, or
+2) change the version number in ``__version.py``.
+
+.. hint::
+
+    Installing the local directory with ``.[TEST]`` may seem cryptic, but it's
+    quite simple. The ``.`` simply means "this directory", and the ``[TEST]``
+    means "also install the requirements listed in ``extras_require`` with key
+    ``TEST`` in the ``setup.py`` file.
+
+And that's just about what you need to know to do some rudimentary Python
+development. For a more in-depth tutorial on using virtual environments,
+`see this great article on RealPython
+<https://realpython.com/python-virtual-environments-a-primer/>`_.

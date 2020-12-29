@@ -44,6 +44,7 @@ for prospective users to get a clear understanding of what RepoBee can do.
    fundamentals
    install
    userguide
+   taquickstart
    faq
    cli
    contributing

@@ -24,6 +24,7 @@ import repobee
 import _repobee
 
 from _repobee import disthelpers, distinfo
+from _repobee.ext.dist import pluginmanager
 
 
 INSTALL_SCRIPT = (
@@ -76,7 +77,7 @@ class TestPluginInstall:
 
         assert get_pkg_version("repobee") == repobee_initial_version
 
-    def test_install_local_plugin_file(self, capsys):
+    def test_install_local_plugin_file(self, capsys, tmp_path):
         plugin_content = """
 import repobee_plug as plug
 class Hello(plug.Plugin, plug.cli.Command):
@@ -87,51 +88,41 @@ class Hello(plug.Plugin, plug.cli.Command):
             msg='Best message'
         )
 """
-        with tempfile.TemporaryDirectory() as tmpdir:
-            workdir = pathlib.Path(tmpdir)
-            hello_py = workdir / "hello.py"
-            hello_py.write_text(plugin_content, encoding="utf8")
+        hello_py = tmp_path / "hello.py"
+        hello_py.write_text(plugin_content, encoding="utf8")
 
-            repobee.run(shlex.split(f"plugin install --local {hello_py}"))
+        repobee.run(shlex.split(f"plugin install --local {hello_py}"))
 
-            install_info = disthelpers.get_installed_plugins()[str(hello_py)]
-            assert install_info["version"] == "local"
-            assert install_info["path"] == str(hello_py)
+        install_info = disthelpers.get_installed_plugins()[str(hello_py)]
+        assert install_info["version"] == "local"
+        assert install_info["path"] == str(hello_py)
 
-    def test_install_local_plugin_package(self):
+    def test_install_local_plugin_package(self, tmp_path):
         plugin_version = "1.0.0"
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            workdir = pathlib.Path(tmpdir)
-            junit4_local = workdir / "repobee-junit4"
-            repo = git.Repo.clone_from(
-                "https://github.com/repobee/repobee-junit4",
-                to_path=junit4_local,
-            )
-            repo.git.checkout(f"v{plugin_version}")
+        junit4_local = tmp_path / "repobee-junit4"
+        repo = git.Repo.clone_from(
+            "https://github.com/repobee/repobee-junit4", to_path=junit4_local
+        )
+        repo.git.checkout(f"v{plugin_version}")
 
+        repobee.run(shlex.split(f"plugin install --local {junit4_local}"))
+
+        install_info = disthelpers.get_installed_plugins()["junit4"]
+        assert install_info["version"] == "local"
+        assert install_info["path"] == str(junit4_local)
+        assert get_pkg_version("repobee-junit4") == plugin_version
+
+    def test_raises_when_local_package_lacks_repobee_prefix(self, tmp_path):
+        junit4_local = tmp_path / "junit4"
+        git.Repo.clone_from(
+            "https://github.com/repobee/repobee-junit4", to_path=junit4_local
+        )
+
+        with pytest.raises(plug.PlugError) as exc_info:
             repobee.run(shlex.split(f"plugin install --local {junit4_local}"))
 
-            install_info = disthelpers.get_installed_plugins()["junit4"]
-            assert install_info["version"] == "local"
-            assert install_info["path"] == str(junit4_local)
-            assert get_pkg_version("repobee-junit4") == plugin_version
-
-    def test_raises_when_local_package_lacks_repobee_prefix(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            workdir = pathlib.Path(tmpdir)
-            junit4_local = workdir / "junit4"
-            git.Repo.clone_from(
-                "https://github.com/repobee/repobee-junit4",
-                to_path=junit4_local,
-            )
-
-            with pytest.raises(plug.PlugError) as exc_info:
-                repobee.run(
-                    shlex.split(f"plugin install --local {junit4_local}")
-                )
-
-            assert "'repobee-'" in str(exc_info.value)
+        assert "'repobee-'" in str(exc_info.value)
 
     def test_raises_when_local_points_to_non_existing_path(self):
         with tempfile.NamedTemporaryFile() as tmpfile:
@@ -141,6 +132,76 @@ class Hello(plug.Plugin, plug.cli.Command):
             repobee.run(shlex.split(f"plugin install --local {tmpfile.name}"))
 
         assert "no such file or directory" in str(exc_info.value)
+
+    def test_non_interactive_install(self):
+        plugin_name = "junit4"
+        plugin_version = "v1.0.0"
+        cmd = [
+            *pluginmanager.plugin_category.install.as_name_tuple(),
+            "--plugin-spec",
+            f"{plugin_name}{pluginmanager.PLUGIN_SPEC_SEP}{plugin_version}",
+        ]
+
+        repobee.run(cmd)
+
+        assert get_pkg_version(
+            f"repobee-{plugin_name}"
+        ) == plugin_version.lstrip("v")
+
+    def test_raises_on_non_interactive_install_of_non_existing_plugin(self):
+        """An error should be raised if one tries to install a plugin that
+        does not exist.
+        """
+        plugin_name = "somepluginthatdoesntexist"
+        plugin_version = "v1.0.0"
+        cmd = [
+            *pluginmanager.plugin_category.install.as_name_tuple(),
+            "--plugin-spec",
+            f"{plugin_name}{pluginmanager.PLUGIN_SPEC_SEP}{plugin_version}",
+        ]
+
+        with pytest.raises(plug.PlugError) as exc_info:
+            repobee.run(cmd)
+
+        assert f"no plugin with name '{plugin_name}'" in str(exc_info.value)
+
+    def test_raises_on_non_interactive_install_of_non_existing_version(self):
+        """An error should be raised if one tries to install a version that
+        does not exist, but the plugin does.
+        """
+        plugin_name = "junit4"
+        plugin_version = "v0.32.0"
+        cmd = [
+            *pluginmanager.plugin_category.install.as_name_tuple(),
+            "--plugin-spec",
+            f"{plugin_name}{pluginmanager.PLUGIN_SPEC_SEP}{plugin_version}",
+        ]
+
+        with pytest.raises(plug.PlugError) as exc_info:
+            repobee.run(cmd)
+
+        assert (
+            f"plugin '{plugin_name}' has no version '{plugin_version}'"
+            in str(exc_info.value)
+        )
+
+    def test_raises_on_malformed_plugin_spec(self):
+        """An error should be raised if a plugin spec is malformed."""
+        malformed_spec = pluginmanager.PLUGIN_SPEC_SEP.join(
+            ["too", "many", "parts"]
+        )
+        cmd = [
+            *pluginmanager.plugin_category.install.as_name_tuple(),
+            "--plugin-spec",
+            malformed_spec,
+        ]
+
+        with pytest.raises(plug.PlugError) as exc_info:
+            repobee.run(cmd)
+
+        assert f"malformed plugin spec '{malformed_spec}'" in str(
+            exc_info.value
+        )
 
 
 class TestPluginUninstall:
@@ -154,6 +215,35 @@ class TestPluginUninstall:
         repobee.run("plugin uninstall".split())
 
         assert not get_pkg_version(f"repobee-{plugin_name}")
+
+    def test_non_interactive_uninstall_of_installed_plugin(self):
+        plugin_name = "junit4"
+        install_plugin(plugin_name, version="v1.0.0")
+
+        cmd = [
+            *pluginmanager.plugin_category.uninstall.as_name_tuple(),
+            "--plugin-name",
+            plugin_name,
+        ]
+        repobee.run(cmd)
+
+        assert not get_pkg_version(f"repobee-{plugin_name}")
+
+    def test_raises_on_non_interactive_uninstall_of_non_installed_plugin(self):
+        """An error should be raised when trying to uninstall a plugin that
+        isn't installed.
+        """
+        plugin_name = "junit4"
+        cmd = [
+            *pluginmanager.plugin_category.uninstall.as_name_tuple(),
+            "--plugin-name",
+            plugin_name,
+        ]
+
+        with pytest.raises(plug.PlugError) as exc_info:
+            repobee.run(cmd)
+
+        assert f"no plugin '{plugin_name}' installed" in str(exc_info.value)
 
 
 class TestPluginList:
@@ -193,6 +283,72 @@ class TestPluginList:
         out_err = capsys.readouterr()
         assert "truncating: 'URL'" not in out_err.err
         assert "https://github.com" in out_err.out
+
+
+class TestPluginActivate:
+    """Tests for the ``plugin activate`` command."""
+
+    def test_non_interactive_activate_of_installed_plugin(self, install_dir):
+        plugin_name = "junit4"
+        install_plugin(plugin_name, "v1.0.0")
+
+        cmd = [
+            *pluginmanager.plugin_category.activate.as_name_tuple(),
+            "--plugin-name",
+            plugin_name,
+        ]
+        repobee.run(cmd)
+
+        assert plugin_name in disthelpers.get_active_plugins(
+            install_dir / "installed_plugins.json"
+        )
+
+    def test_non_interactive_deactivate_of_builtin_plugin(self, install_dir):
+        # arrange
+        plugin_name = "ghclassroom"
+        cmd = [
+            *pluginmanager.plugin_category.activate.as_name_tuple(),
+            "--plugin-name",
+            plugin_name,
+        ]
+        repobee.run(cmd)
+
+        # act
+        repobee.run(cmd)
+
+        # assert
+        assert plugin_name not in disthelpers.get_active_plugins(
+            install_dir / "installed_plugins.json"
+        )
+
+    def test_non_interactive_activate_of_builtin_plugin(self, install_dir):
+        plugin_name = "ghclassroom"
+
+        cmd = [
+            *pluginmanager.plugin_category.activate.as_name_tuple(),
+            "--plugin-name",
+            plugin_name,
+        ]
+        repobee.run(cmd)
+
+        assert plugin_name in disthelpers.get_active_plugins(
+            install_dir / "installed_plugins.json"
+        )
+
+    def test_raises_on_non_interactive_activate_of_non_installed_plugin(self):
+        plugin_name = "junit4"
+        cmd = [
+            *pluginmanager.plugin_category.activate.as_name_tuple(),
+            "--plugin-name",
+            plugin_name,
+        ]
+
+        with pytest.raises(plug.PlugError) as exc_info:
+            repobee.run(cmd)
+
+        assert f"no plugin named '{plugin_name}' installed" in str(
+            exc_info.value
+        )
 
 
 class TestManageUpgrade:

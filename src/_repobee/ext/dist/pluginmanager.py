@@ -22,6 +22,8 @@ from _repobee import __version__
 
 PLUGIN = "pluginmanager"
 
+PLUGIN_SPEC_SEP = "@"
+
 plugin_category = plug.cli.category(
     name="plugin",
     action_names=["install", "uninstall", "list", "activate"],
@@ -61,13 +63,23 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
     __settings__ = plug.cli.command_settings(
         action=plugin_category.install,
         help="install a plugin",
-        description="Install a plugin.",
+        description="Install a plugin. Running this command without options "
+        "starts an interactive installer, where you can select plugin and "
+        "version to install. Plugins can also be installed non-interactively "
+        "with the (mutually exclusive) '--plugin-spec' or '--local' options.",
     )
 
-    local = plug.cli.option(
-        converter=pathlib.Path,
-        help="path to a local plugin to install, either a single file or a "
-        "plugin package",
+    non_interactive_install_options = plug.cli.mutually_exclusive_group(
+        local=plug.cli.option(
+            converter=pathlib.Path,
+            help="path to a local plugin to install, either a single file or "
+            "a plugin package",
+        ),
+        plugin_spec=plug.cli.option(
+            help="a plugin specifier on the form '<NAME>@<VERSION>' (e.g. "
+            "'junit4@v1.0.0') to do a non-interactive install of an official "
+            "plugin"
+        ),
     )
 
     def command(self) -> None:
@@ -84,19 +96,42 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
             _install_local_plugin(abspath, installed_plugins)
         else:
             plug.echo("Available plugins:")
-            _list_all_plugins(plugins, installed_plugins, active_plugins)
-            name, version = _select_plugin(plugins)
+
+            if self.plugin_spec:
+                # non-interactive install
+                name, version = self._split_plugin_spec(
+                    self.plugin_spec, plugins
+                )
+            else:
+                # interactive install
+                _list_all_plugins(plugins, installed_plugins, active_plugins)
+                name, version = _select_plugin(plugins)
 
             if name in installed_plugins:
                 _uninstall_plugin(name, installed_plugins)
 
-            plug.echo(f"Installing {name}@{version}")
+            plug.echo(f"Installing {name}{PLUGIN_SPEC_SEP}{version}")
             _install_plugin(name, version, plugins)
 
             plug.echo(f"Successfully installed {name}@{version}")
 
             installed_plugins[name] = dict(version=version)
             disthelpers.write_installed_plugins(installed_plugins)
+
+    @staticmethod
+    def _split_plugin_spec(plugin_spec: str, plugins: dict) -> Tuple[str, str]:
+        parts = plugin_spec.split(PLUGIN_SPEC_SEP)
+        if len(parts) != 2:
+            raise plug.PlugError(f"malformed plugin spec '{plugin_spec}'")
+
+        name, version = parts
+
+        if name not in plugins:
+            raise plug.PlugError(f"no plugin with name '{name}'")
+        elif version not in plugins[name]["versions"]:
+            raise plug.PlugError(f"plugin '{name}' has no version '{version}'")
+
+        return name, version
 
 
 def _install_local_plugin(plugin_path: pathlib.Path, installed_plugins: dict):
@@ -162,7 +197,14 @@ class UninstallPluginCommand(plug.Plugin, plug.cli.Command):
     __settings__ = plug.cli.command_settings(
         action=plugin_category.uninstall,
         help="uninstall a plugin",
-        description="Uninstall a plugin.",
+        description="Uninstall a plugin. Running this command without options "
+        "starts an interactive uninstall wizard. Running with the "
+        "'--plugin-name' option non-interactively uninstall the specified "
+        "plugin.",
+    )
+
+    plugin_name = plug.cli.option(
+        help="name of a plugin to uninstall (non-interactive)"
     )
 
     def command(self) -> None:
@@ -173,19 +215,29 @@ class UninstallPluginCommand(plug.Plugin, plug.cli.Command):
             if not attrs.get("builtin")
         }
 
-        if not installed_plugins:
-            plug.echo("No plugins installed")
-            return
+        if self.plugin_name:
+            # non-interactive uninstall
+            if self.plugin_name not in installed_plugins:
+                raise plug.PlugError(
+                    f"no plugin '{self.plugin_name}' installed"
+                )
+            selected_plugin_name = self.plugin_name
+        else:
+            # interactive uninstall
+            if not installed_plugins:
+                plug.echo("No plugins installed")
+                return
 
-        plug.echo("Installed plugins:")
-        _list_installed_plugins(
-            installed_plugins, disthelpers.get_active_plugins()
-        )
+            plug.echo("Installed plugins:")
+            _list_installed_plugins(
+                installed_plugins, disthelpers.get_active_plugins()
+            )
 
-        selected_plugin_name = bullet.Bullet(
-            prompt="Select a plugin to uninstall:",
-            choices=list(installed_plugins.keys()),
-        ).launch()
+            selected_plugin_name = bullet.Bullet(
+                prompt="Select a plugin to uninstall:",
+                choices=list(installed_plugins.keys()),
+            ).launch()
+
         _uninstall_plugin(selected_plugin_name, installed_plugins)
 
 
@@ -221,8 +273,16 @@ class ActivatePluginCommand(plug.Plugin, plug.cli.Command):
 
     __settings__ = plug.cli.command_settings(
         action=plugin_category.activate,
-        help="activate a plugin",
-        description="Activate a plugin.",
+        help="activate and deactivate plugins",
+        description="Activate and deactivate plugins. Running the command "
+        "without options starts an interactive wizard for toggling the "
+        "active-status of all installed plugins. Specifying the "
+        "'--plugin-name' option non-interactively toggles the active-status "
+        "for a single plugin.",
+    )
+
+    plugin_name = plug.cli.option(
+        help="a plugin to toggle activation status for (non-interactive)"
     )
 
     def command(self) -> None:
@@ -234,14 +294,40 @@ class ActivatePluginCommand(plug.Plugin, plug.cli.Command):
             disthelpers.get_builtin_plugins().keys()
         )
 
-        default = [i for i, name in enumerate(names) if name in active]
-        selection = bullet.Check(
-            choices=names,
-            prompt="Select plugins to activate (space to check/un-check, "
-            "enter to confirm selection):",
-        ).launch(default=default)
+        if self.plugin_name:
+            # non-interactive activate
+            if self.plugin_name not in names:
+                raise plug.PlugError(
+                    f"no plugin named '{self.plugin_name}' installed"
+                )
+            selection = (
+                active + [self.plugin_name]
+                if self.plugin_name not in active
+                else list(set(active) - {self.plugin_name})
+            )
+        else:
+            # interactive activate
+            default = [i for i, name in enumerate(names) if name in active]
+            selection = bullet.Check(
+                choices=names,
+                prompt="Select plugins to activate (space to check/un-check, "
+                "enter to confirm selection):",
+            ).launch(default=default)
 
         disthelpers.write_active_plugins(selection)
+
+        self._echo_state_change(active_before=active, active_after=selection)
+
+    @staticmethod
+    def _echo_state_change(
+        active_before: List[str], active_after: List[str]
+    ) -> None:
+        activations = set(active_after) - set(active_before)
+        deactivations = set(active_before) - set(active_after)
+        if activations:
+            plug.echo(f"Activating: {' '.join(activations)}")
+        if deactivations:
+            plug.echo(f"Deactivating: {' '.join(deactivations)}")
 
 
 def _wrap_cell(text: str, width: int = 40) -> str:

@@ -70,6 +70,8 @@ And there we go, easy as pie!
     announcement``, and nothing else. Not even an extra space or linebreak is
     allowed.
 
+.. _issues_list:
+
 Listing Issues (the ``list`` action)
 ====================================
 It can often be interesting to check what issues exist in a set of repos,

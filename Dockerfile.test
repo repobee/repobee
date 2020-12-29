@@ -2,7 +2,7 @@ FROM python:3.7.4-stretch
 
 COPY . /app
 WORKDIR /workdir
-RUN pip install /app[TEST]
+RUN pip install --upgrade pip && pip install /app[TEST]
 ENV REPOBEE_NO_VERIFY_SSL=true
 ENV PYTHONWARNINGS="ignore:Unverified HTTPS request"
 
