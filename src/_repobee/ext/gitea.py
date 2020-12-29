@@ -1,5 +1,7 @@
 import pathlib
+import json
 import re
+import os
 from typing import Optional, List, Iterable
 
 import repobee_plug as plug
@@ -21,8 +23,31 @@ class GiteaAPI(plug.PlatformAPI):
 
     def _request(self, func, endpoint, **kwargs):
         url = f"{self._base_url}{endpoint}"
-        authed_kwargs = {"headers": self._headers, **kwargs}
+
+        if "data" in kwargs:
+            data = json.dumps(kwargs["data"])
+            headers = {"Content-Type": "application/json", **self._headers}
+        else:
+            data = None
+            headers = self._headers
+
+        authed_kwargs = dict(kwargs)
+        authed_kwargs["data"] = data
+        authed_kwargs["headers"] = headers
+        authed_kwargs["verify"] = self._ssl_verify()
+
+        plug.log.warning(
+            f"Sending {func} request to '{url}' with kwargs {authed_kwargs}"
+        )
+
         return func(url, **authed_kwargs)
+
+    @staticmethod
+    def _ssl_verify():
+        ssl_verify = not os.getenv("REPOBEE_NO_VERIFY_SSL") == "true"
+        if not ssl_verify:
+            plug.log.warning("SSL verification turned off, only for testing")
+        return ssl_verify
 
     def create_team(
         self,
