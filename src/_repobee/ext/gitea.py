@@ -2,6 +2,7 @@ import pathlib
 import json
 import re
 import os
+import urllib.parse
 from typing import Optional, List, Iterable
 
 import repobee_plug as plug
@@ -209,8 +210,10 @@ class GiteaAPI(plug.PlatformAPI):
 
     def insert_auth(self, url: str) -> str:
         """See :py:meth:`repobee_plug.PlatformAPI.insert_auth`."""
+        scheme, netloc, *rest = urllib.parse.urlsplit(url)
         auth = f"{self._user}:{self._token}"
-        return url.replace("http://", f"http://{auth}@")
+        authed_netloc = f"{auth}@{netloc}"
+        return urllib.parse.urlunsplit((scheme, authed_netloc, *rest))
 
     def _org_base_url(self, org_name) -> str:
         base_html_url = self._base_url[: -len("/api/v1")]
