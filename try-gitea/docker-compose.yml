@@ -18,8 +18,6 @@ services:
       - ./gitea:/data
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - ./certs:/etc/ssl/certs/
-      - ./private:/etc/ssl/private/
     ports:
       - "3000:443"
       - "222:22"
