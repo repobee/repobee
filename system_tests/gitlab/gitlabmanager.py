@@ -15,16 +15,12 @@ from _helpers.const import (
     TEACHER,
     STUDENT_TEAM_NAMES,
     TOKEN,
+    TEMPLATE_REPO_PATHS,
 )
 
 CURRENT_DIR = pathlib.Path(__file__).parent
 
 BASE_URL = "https://localhost:50443"
-LOCAL_MASTER_REPOS = list(
-    dir_.absolute()
-    for dir_ in (CURRENT_DIR / "dd1337-master-repos").iterdir()
-    if dir_.is_dir()
-)
 
 DOCKER_START_COMMANDS = [
     "docker network create development",
@@ -90,7 +86,7 @@ def backup():
 def restore():
     delete_groups()
     create_groups_and_projects(
-        local_master_repos=LOCAL_MASTER_REPOS,
+        local_master_repos=TEMPLATE_REPO_PATHS,
         teacher=TEACHER,
         master_group_name=TEMPLATE_ORG_NAME,
         course_round_group_name=ORG_NAME,

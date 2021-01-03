@@ -76,5 +76,5 @@ jobs:
         REPOBEE_NO_VERIFY_SSL: true
         PYTHONWARNINGS: "ignore:Unverified HTTPS request"
       run: |
-        cd system_tests
+        cd system_tests/gitlab
         pytest test_gitlab_system.py -vv --showlocals

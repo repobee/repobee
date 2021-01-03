@@ -5,7 +5,11 @@ import repobee_plug as plug
 
 VOLUME_DST = "/workdir"
 COVERAGE_VOLUME_DST = "/coverage"
+
 DIR = pathlib.Path(__file__).resolve().parent
+RESOURCES_DIR = DIR.parent.parent / "resources"
+TEMPLATE_REPOS_DIR = RESOURCES_DIR / "course-template-repos"
+
 TOKEN = (DIR.parent / "token").read_text(encoding="utf-8").strip()
 OAUTH_USER = "oauth2"
 BASE_DOMAIN = "gitlab.integrationtest.local"
@@ -15,11 +19,10 @@ LOCAL_BASE_URL = "https://" + LOCAL_DOMAIN
 ORG_NAME = "dd1337-fall2020"
 TEMPLATE_ORG_NAME = "dd1337-master"
 TEACHER = "ric"
-assignment_names = [
-    p.name
-    for p in (DIR.parent / "dd1337-master-repos").iterdir()
-    if p.is_dir()
-]
+assignment_names = [p.name for p in TEMPLATE_REPOS_DIR.iterdir() if p.is_dir()]
+TEMPLATE_REPO_PATHS = list(
+    dir_.absolute() for dir_ in TEMPLATE_REPOS_DIR.iterdir() if dir_.is_dir()
+)
 STUDENT_TEAMS = [
     plug.StudentTeam(members=[s.strip()])
     for s in (DIR.parent / "students.txt").read_text().strip().split("\n")

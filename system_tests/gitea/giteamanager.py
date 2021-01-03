@@ -23,7 +23,9 @@ BASE_URL = "https://localhost:3000"
 API_URL = f"{BASE_URL}/api/v1"
 LOCAL_TEMPLATE_REPOS = list(
     dir_.absolute()
-    for dir_ in (CURRENT_DIR / "course-template-repos").iterdir()
+    for dir_ in (
+        CURRENT_DIR.parent / "resources" / "course-template-repos"
+    ).iterdir()
     if dir_.is_dir()
 )
 
