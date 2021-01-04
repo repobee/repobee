@@ -90,7 +90,7 @@ class GiteaAPI(plug.PlatformAPI):
         self, team_names: Optional[Iterable[str]] = None
     ) -> Iterable[plug.Team]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_teams`."""
-        team_names = set(team_names)
+        team_names = set(team_names or {})
 
         endpoint = f"/orgs/{self._org_name}/teams"
         response = self._request(requests.get, endpoint)

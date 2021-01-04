@@ -15,4 +15,5 @@ def teardown_gitea():
 
 @pytest.fixture(autouse=True, scope="session")
 def teardown_after():
+    yield
     giteamanager.teardown()
