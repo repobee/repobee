@@ -20,6 +20,7 @@ def run_in_docker(command, extra_args=None):
         "sudo docker run {} --net development --rm --name repobee "
         "repobee:test /bin/sh -c '{}'"
     ).format(extra_args, command)
+    print(docker_command)
     proc = subprocess.run(
         docker_command,
         shell=True,

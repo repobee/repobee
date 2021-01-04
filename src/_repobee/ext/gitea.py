@@ -216,8 +216,8 @@ class GiteaAPI(plug.PlatformAPI):
         return urllib.parse.urlunsplit((scheme, authed_netloc, *rest))
 
     def _org_base_url(self, org_name) -> str:
-        base_html_url = self._base_url[: -len("/api/v1")]
-        return f"{base_html_url}/{org_name or self._org_name}"
+        scheme, netloc, *_ = urllib.parse.urlsplit(self._base_url)
+        return urllib.parse.urlunsplit((scheme, netloc, org_name, "", ""))
 
     def extract_repo_name(self, repo_url: str) -> str:
         """See :py:meth:`repobee_plug.PlatformAPI.extract_repo_name`."""

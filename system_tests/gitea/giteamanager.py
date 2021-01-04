@@ -14,6 +14,8 @@ import requests
 
 import repobee_plug as plug
 
+import repobee_testhelpers._internal.templates as template_helpers
+
 CURRENT_DIR = pathlib.Path(__file__).parent
 
 TARGET_ORG_NAME = "course-fall-2020"
@@ -22,11 +24,7 @@ TEMPLATE_ORG_NAME = "template-repos"
 BASE_URL = "https://localhost:3000"
 API_URL = f"{BASE_URL}/api/v1"
 LOCAL_TEMPLATE_REPOS = list(
-    dir_.absolute()
-    for dir_ in (
-        CURRENT_DIR.parent / "resources" / "course-template-repos"
-    ).iterdir()
-    if dir_.is_dir()
+    dir_.absolute() for dir_ in template_helpers.TEMPLATE_REPOS_DIR.iterdir()
 )
 
 DOCKER_START_COMMANDS = [
@@ -35,6 +33,7 @@ DOCKER_START_COMMANDS = [
     "docker-compose up -d",
 ]
 DOCKER_VOLUME = CURRENT_DIR / "gitea"
+REPOSITORIES_ROOT = DOCKER_VOLUME / "git" / "repositories"
 
 DOCKER_TEARDOWN_COMMANDS = [
     "docker-compose down",

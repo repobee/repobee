@@ -13,6 +13,7 @@ from repobee_testhelpers._internal.docker import (
     run_in_docker,
     VOLUME_DST,
 )
+from repobee_testhelpers._internal.asserts import assert_cloned_repos
 
 import _repobee.ext
 import _repobee.command.peer
@@ -27,7 +28,6 @@ from _helpers.asserts import (
     assert_on_groups,
     assert_issues_exist,
     assert_num_issues,
-    assert_cloned_repos,
 )
 from _helpers.const import (
     BASE_DOMAIN,
