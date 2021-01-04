@@ -46,6 +46,10 @@ def hash_directory(dirpath: pathlib.Path) -> str:
     with tempfile.TemporaryDirectory() as tmpdir:
         target_dir = pathlib.Path(tmpdir) / "repo"
         shutil.copytree(dirpath, target_dir)
+
+        if (target_dir / ".git").exists():
+            shutil.rmtree(target_dir / ".git")
+
         repo = initialize_repo(target_dir)
         return repo.head.commit.tree.hexsha
 
