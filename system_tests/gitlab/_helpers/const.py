@@ -3,12 +3,9 @@ import pathlib
 
 import repobee_plug as plug
 
-VOLUME_DST = "/workdir"
-COVERAGE_VOLUME_DST = "/coverage"
+from repobee_testhelpers._internal.templates import TEMPLATE_REPOS_DIR
 
 DIR = pathlib.Path(__file__).resolve().parent
-RESOURCES_DIR = DIR.parent.parent / "resources"
-TEMPLATE_REPOS_DIR = RESOURCES_DIR / "course-template-repos"
 
 TOKEN = (DIR.parent / "token").read_text(encoding="utf-8").strip()
 OAUTH_USER = "oauth2"
@@ -35,8 +32,3 @@ BASE_ARGS = [*BASE_ARGS_NO_TB, "--tb"]
 STUDENTS_ARG = ["-s", " ".join(STUDENT_TEAM_NAMES)]
 MASTER_REPOS_ARG = ["-a", " ".join(assignment_names)]
 TEMPLATE_ORG_ARG = ["--template-org-name", TEMPLATE_ORG_NAME]
-TASK_CONTENTS_SHAS = {
-    "task-1": b"\xb0\xb0,t\xd1\xe9a bu\xdfX\xcf,\x98\xd2\x04\x1a\xe8\x88",
-    "task-2": b"\x1d\xdc\xa6A\xd7\xec\xdc\xc6FSN\x01\xdf|\x95`U\xb5\xdc\x9d",
-    "task-3": b"Q\xd1x\x13r\x02\xd9\x98\xa2\xb2\xd9\xe3\xa9J^\xa2/X\xbe\x1b",
-}
