@@ -1,6 +1,7 @@
 """Helper functions for running RepoBee in Docker, for the system tests."""
 import subprocess
 import sys
+import shlex
 
 VOLUME_DST = "/workdir"
 COVERAGE_VOLUME_DST = "/coverage"
@@ -22,8 +23,7 @@ def run_in_docker(command, extra_args=None):
     ).format(extra_args, command)
     print(docker_command)
     proc = subprocess.run(
-        docker_command,
-        shell=True,
+        shlex.split(docker_command),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
