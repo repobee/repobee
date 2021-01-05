@@ -32,6 +32,7 @@ jobs:
       run: |
         #pytest system_tests/gitea
         python system_tests/gitea/giteamanager.py prime
-        tree system_tests/gitea
+        ls -l system_tests/gitea
+        ls -l system_tests/gitea/gitea
         python system_tests/gitea/giteamanager.py setup
         curl -k https://localhost:3000
