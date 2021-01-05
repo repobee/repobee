@@ -1,3 +1,4 @@
+"""Plugin for compatibility with the Gitea platform."""
 import pathlib
 import json
 import re
