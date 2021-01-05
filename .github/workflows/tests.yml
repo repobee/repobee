@@ -33,4 +33,5 @@ jobs:
         #pytest system_tests/gitea
         python system_tests/gitea/giteamanager.py prime
         cd system_tests/gitea
+        docker network create development
         docker-compose up
