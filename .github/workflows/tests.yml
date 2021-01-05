@@ -25,8 +25,6 @@ jobs:
       run: |
         #pytest system_tests/gitea -vv --showlocals
         #python system_tests/gitea/giteamanager.py setup
-        pwd
-        ls -l
         ls -l system_tests/gitea
         chown 1000:1000 -r system_tests/gitea/gitea
         ls -l system_tests/gitea
