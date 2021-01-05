@@ -194,7 +194,7 @@ def gitea_request(
 
 def await_gitea_start() -> bool:
     tries = 0
-    max_tries = 1000
+    max_tries = 100
     while tries < max_tries:
         time.sleep(0.1)
         if gitea_is_running():
