@@ -34,6 +34,7 @@ jobs:
       run: |
         #pytest system_tests/gitea -vv --showlocals
         ls -l system_tests/gitea
-        chown 1000:1000 -R system_tests/gitea/gitea
+        sudo chown 1000:1000 -R system_tests/gitea/gitea
         ls -l system_tests/gitea
         ls -l system_tests/gitea/gitea
+        python system_tests/gitea/giteamanager.py setup
