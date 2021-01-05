@@ -21,8 +21,6 @@ def coverage_volume():
     covdir = pathlib.Path(".").resolve() / ".coverage_files"
     yield "-v {}:{}".format(str(covdir), COVERAGE_VOLUME_DST)
     covfile = covdir / ".coverage"
-    print(list(pathlib.Path(".").iterdir()))
-    print(list(covdir.iterdir()))
     assert covfile.is_file()
 
 

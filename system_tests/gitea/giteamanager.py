@@ -83,7 +83,12 @@ def setup():
 
     print("Setting up Gitea instance")
     for cmd in DOCKER_START_COMMANDS:
-        subprocess.run(shlex.split(cmd), cwd=CURRENT_DIR, capture_output=True)
+        subprocess.run(
+            shlex.split(cmd),
+            cwd=CURRENT_DIR,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
 
     if not await_gitea_start():
         print("failed to start Gitea instance", file=sys.stderr)
