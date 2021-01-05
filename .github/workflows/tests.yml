@@ -23,6 +23,8 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.6
+    - name: Build RepoBee container
+      run: docker build -t repobee:test -f Dockerfile.test .
     - name: Install RepoBee
       run: pip install -e .[TEST]
     - name: Run Gitea system tests
@@ -30,8 +32,4 @@ jobs:
         REPOBEE_NO_VERIFY_SSL: true
         PYTHONWARNINGS: "ignore:Unverified HTTPS request"
       run: |
-        #pytest system_tests/gitea
-        python system_tests/gitea/giteamanager.py prime
-        cd system_tests/gitea
-        docker network create development
-        docker-compose up
+        pytest -vv --showlocals system_tests/gitea
