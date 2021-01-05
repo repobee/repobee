@@ -23,15 +23,6 @@ services:
       - "3000:3000"
       - "222:22"
       - "3080:3080"
-    networks:
-      dev-net:
-        aliases:
-          - gitea.test.local
-
-networks:
-  dev-net:
-    external:
-      name: development
 
 volumes:
   ssh-files:
