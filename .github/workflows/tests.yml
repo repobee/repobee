@@ -32,9 +32,6 @@ jobs:
         REPOBEE_NO_VERIFY_SSL: true
         PYTHONWARNINGS: "ignore:Unverified HTTPS request"
       run: |
-        #pytest system_tests/gitea -vv --showlocals
-        ls -l system_tests/gitea
-        sudo chown 1000:1000 -R system_tests/gitea/gitea
-        ls -l system_tests/gitea
-        ls -l system_tests/gitea/gitea
+        python system_tests/gitea/giteamanager.py prime
         python system_tests/gitea/giteamanager.py setup
+        curl -k https://localhost:3000
