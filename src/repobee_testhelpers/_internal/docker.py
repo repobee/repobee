@@ -18,7 +18,7 @@ def run_in_docker_with_coverage(command, extra_args=None):
 def run_in_docker(command, extra_args=None):
     extra_args = " ".join(extra_args) if extra_args else ""
     docker_command = (
-        "sudo docker run {} --net development --rm --name repobee "
+        "docker run {} --net development --rm --name repobee "
         "repobee:test /bin/sh -c '{}'"
     ).format(extra_args, command)
     print(docker_command)
