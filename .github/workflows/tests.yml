@@ -32,5 +32,5 @@ jobs:
       run: |
         #pytest system_tests/gitea
         python system_tests/gitea/giteamanager.py prime
-        python system_tests/gitea/giteamanager.py setup
+        sudo python system_tests/gitea/giteamanager.py setup
         curl -k https://localhost:3000
