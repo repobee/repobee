@@ -6,12 +6,6 @@ import gitlab
 import pytest
 import repobee_plug as plug
 
-from repobee_testhelpers._internal.docker import (
-    run_in_docker,
-    VOLUME_DST,
-    COVERAGE_VOLUME_DST,
-)
-
 import gitlabmanager
 import repobee_plug.cli
 from _helpers.asserts import (
@@ -32,8 +26,14 @@ from _helpers.const import (
     TOKEN,
     ORG_NAME,
     STUDENT_TEAM_NAMES,
+    VOLUME_DST,
+    COVERAGE_VOLUME_DST,
 )
-from _helpers.helpers import expected_num_members_group_assertion, get_group
+from _helpers.helpers import (
+    expected_num_members_group_assertion,
+    get_group,
+    run_in_docker,
+)
 
 assert os.getenv(
     "REPOBEE_NO_VERIFY_SSL"
