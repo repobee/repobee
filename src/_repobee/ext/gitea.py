@@ -44,7 +44,7 @@ class GiteaAPI(plug.PlatformAPI):
 
         response = func(url, **authed_kwargs)
 
-        plug.log.warning(response.content)
+        plug.log.warning(response.content.decode("utf8"))
 
         return response
 
