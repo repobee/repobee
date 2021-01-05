@@ -19,7 +19,7 @@ class TestSetup:
             r"\s+",
             " ",
             f"""
-repobee -p gitea repos setup --bu https://gitea.test.local/api/v1
+repobee -p gitea repos setup --bu https://gitea.test.local:3000/api/v1
     --token {giteamanager.TEACHER_TOKEN}
     --user {giteamanager.TEACHER_USER}
     --org-name {giteamanager.TARGET_ORG_NAME}
