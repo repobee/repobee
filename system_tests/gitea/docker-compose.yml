@@ -9,8 +9,8 @@ services:
     image: gitea/gitea:1.13.0
     container_name: gitea
     environment:
-      - USER_UID=1000
-      - USER_GID=1000
+      - USER_UID=<REPLACE_UID>
+      - USER_GID=<REPLACE_GID>
     restart: always
     networks:
       - gitea

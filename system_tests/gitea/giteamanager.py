@@ -1,6 +1,7 @@
 import pathlib
 import shutil
 import sys
+import os
 import subprocess
 import shlex
 import time
@@ -27,9 +28,9 @@ LOCAL_TEMPLATE_REPOS = list(
     dir_.absolute() for dir_ in template_helpers.TEMPLATE_REPOS_DIR.iterdir()
 )
 
+COMPOSE_FILE = CURRENT_DIR / "docker-compose.yml"
 DOCKER_VOLUME = CURRENT_DIR / "gitea"
 DOCKER_START_COMMANDS = [
-    f"chown -R 1000:1000 {DOCKER_VOLUME}",
     "docker network create development",
     "docker-compose up -d",
 ]
@@ -39,7 +40,8 @@ DOCKER_TEARDOWN_COMMANDS = [
     "docker-compose down",
     "docker network rm development",
     f"rm -rf {str(DOCKER_VOLUME)}",
-    f"git checkout {str(DOCKER_VOLUME.relative_to(CURRENT_DIR))}",
+    f"git checkout {DOCKER_VOLUME}",
+    f"git checkout {COMPOSE_FILE}",
 ]
 
 TEACHER_USER = "teacher"
@@ -80,6 +82,14 @@ def main(args: List[str]) -> None:
 def setup():
     if gitea_is_running():
         teardown()
+
+    print(f"Modifying {COMPOSE_FILE}")
+    modified_compose_content = (
+        COMPOSE_FILE.read_text("utf8")
+        .replace("<REPLACE_UID>", str(os.getuid()))
+        .replace("<REPLACE_GID>", str(os.getgid()))
+    )
+    COMPOSE_FILE.write_text(modified_compose_content, encoding="utf8")
 
     print("Setting up Gitea instance")
     for cmd in DOCKER_START_COMMANDS:
