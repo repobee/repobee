@@ -28,7 +28,8 @@ LOCAL_TEMPLATE_REPOS = list(
     dir_.absolute() for dir_ in template_helpers.TEMPLATE_REPOS_DIR.iterdir()
 )
 
-COMPOSE_FILE = CURRENT_DIR / "docker-compose.yml"
+COMPOSE_FILE_TEMPLATE = CURRENT_DIR / "docker-compose.yml.template"
+COMPOSE_FILE_OUTPUT = CURRENT_DIR / "docker-compose.yml"
 DOCKER_VOLUME = CURRENT_DIR / "gitea"
 DOCKER_START_COMMANDS = [
     "docker network create development",
@@ -41,7 +42,6 @@ DOCKER_TEARDOWN_COMMANDS = [
     "docker network rm development",
     f"rm -rf {str(DOCKER_VOLUME)}",
     f"git checkout {DOCKER_VOLUME}",
-    f"git checkout {COMPOSE_FILE}",
 ]
 
 TEACHER_USER = "teacher"
@@ -64,14 +64,16 @@ STUDENT_TEAMS = [
 
 def main(args: List[str]) -> None:
     def _usage():
-        print("usage: python giteamanager.py <setup|teardown>")
+        print("usage: python giteamanager.py <prime|setup|teardown>")
         sys.exit()
 
     if len(args) != 2:
         _usage()
 
     cmd = args[1]
-    if cmd == "setup":
+    if cmd == "prime":
+        prime()
+    elif cmd == "setup":
         setup()
     elif cmd == "teardown":
         teardown()
@@ -79,17 +81,23 @@ def main(args: List[str]) -> None:
         _usage()
 
 
-def setup():
-    if gitea_is_running():
-        teardown()
+def prime():
+    if os.getuid() == 0:
+        raise RuntimeError("prime must be run as non-root")
 
-    print(f"Modifying {COMPOSE_FILE}")
+    print(f"Creating {COMPOSE_FILE_OUTPUT}")
     modified_compose_content = (
-        COMPOSE_FILE.read_text("utf8")
+        COMPOSE_FILE_TEMPLATE.read_text("utf8")
         .replace("<REPLACE_UID>", str(os.getuid()))
         .replace("<REPLACE_GID>", str(os.getgid()))
     )
-    COMPOSE_FILE.write_text(modified_compose_content, encoding="utf8")
+    COMPOSE_FILE_OUTPUT.write_text(modified_compose_content, encoding="utf8")
+    print("Done!")
+
+
+def setup():
+    if gitea_is_running():
+        teardown()
 
     print("Setting up Gitea instance")
     for cmd in DOCKER_START_COMMANDS:
