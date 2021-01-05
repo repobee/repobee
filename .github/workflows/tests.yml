@@ -35,5 +35,6 @@ jobs:
         cat system_tests/gitea/docker-compose.yml
         ls -l system_tests/gitea
         ls -l system_tests/gitea/gitea
+        ls -l system_tests/gitea/gitea/ssh
         python system_tests/gitea/giteamanager.py setup
         curl -k https://localhost:3000
