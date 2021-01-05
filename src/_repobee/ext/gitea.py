@@ -41,7 +41,11 @@ class GiteaAPI(plug.PlatformAPI):
             f"Sending {func} request to '{url}' with kwargs {authed_kwargs}"
         )
 
-        return func(url, **authed_kwargs)
+        response = func(url, **authed_kwargs)
+
+        plug.log.warning(response.content)
+
+        return response
 
     @staticmethod
     def _ssl_verify():
