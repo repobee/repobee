@@ -27,12 +27,12 @@ LOCAL_TEMPLATE_REPOS = list(
     dir_.absolute() for dir_ in template_helpers.TEMPLATE_REPOS_DIR.iterdir()
 )
 
+DOCKER_VOLUME = CURRENT_DIR / "gitea"
 DOCKER_START_COMMANDS = [
-    f"chown -R 1000:1000 {CURRENT_DIR}",
+    f"chown -R 1000:1000 {DOCKER_VOLUME}",
     "docker network create development",
     "docker-compose up -d",
 ]
-DOCKER_VOLUME = CURRENT_DIR / "gitea"
 REPOSITORIES_ROOT = DOCKER_VOLUME / "git" / "repositories"
 
 DOCKER_TEARDOWN_COMMANDS = [
@@ -181,7 +181,7 @@ def gitea_request(
 
 def await_gitea_start() -> bool:
     tries = 0
-    max_tries = 100
+    max_tries = 1000
     while tries < max_tries:
         time.sleep(0.1)
         if gitea_is_running():
