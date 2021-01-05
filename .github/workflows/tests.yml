@@ -32,6 +32,7 @@ jobs:
       run: |
         #pytest system_tests/gitea
         python system_tests/gitea/giteamanager.py prime
+        cat system_tests/gitea/docker-compose.yml
         ls -l system_tests/gitea
         ls -l system_tests/gitea/gitea
         python system_tests/gitea/giteamanager.py setup
