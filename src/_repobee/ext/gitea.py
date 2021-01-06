@@ -24,6 +24,11 @@ _TEAM_PERMISSION_MAPPING = {
 
 class GiteaAPI(plug.PlatformAPI):
     def __init__(self, base_url: str, user: str, token: str, org_name: str):
+        plug.log.warning(
+            "The Gitea plugin is in very early development, "
+            "use at your own risk!"
+        )
+
         self._base_url = base_url.rstrip("/")
         self._user = user
         self._token = token

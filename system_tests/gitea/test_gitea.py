@@ -27,6 +27,21 @@ class TestCreateTeam:
             next(gitea_api.get_teams(team_names=[team_name])).name == team_name
         )
 
+    def test_create_team_with_members(self, gitea_api):
+        # arrange
+        members = "mema memb memc memd".split()
+        for member in members:
+            giteamanager.create_user(member)
+
+        team_name = "best-team"
+
+        # act
+        gitea_api.create_team(team_name, members=members)
+
+        # assert
+        fetched_team = next(gitea_api.get_teams([team_name]))
+        assert sorted(fetched_team.members) == sorted(members)
+
 
 class TestGetTeams:
     """Tests for the get_teams function."""
