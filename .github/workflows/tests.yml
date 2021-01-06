@@ -94,5 +94,6 @@ jobs:
         REPOBEE_NO_VERIFY_SSL: true
         PYTHONWARNINGS: "ignore:Unverified HTTPS request"
       run: |
+        git config --global http.sslverify false
         python system_tests/gitea/giteamanager.py prime
         pytest -vv --showlocals system_tests/gitea
