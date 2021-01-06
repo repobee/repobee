@@ -133,3 +133,58 @@ class TestGetRepo:
             target_api.get_repo("non-existing-repo", None)
 
         assert exc_info.value.status == 404
+
+
+class TestAssignRepo:
+    """Tests for the assign_repo function."""
+
+    def test_assign_existing_repo_to_existing_team(self, target_api):
+        # arrange
+        repo = target_api.create_repo(
+            "best-repo", description="some description", private=True
+        )
+        team = target_api.create_team("best-team")
+
+        # act
+        target_api.assign_repo(team, repo, permission=plug.TeamPermission.PUSH)
+
+        # assert
+        team_repo, *rest = list(target_api.get_team_repos(team))
+        assert team_repo == repo
+        assert not rest
+
+
+class TestGetTeamRepos:
+    """Tests for the get_team_repos function."""
+
+    def test_get_repos_from_team_without_repos(self, target_api):
+        # arrange
+        team = target_api.create_team("best-team")
+
+        # act
+        team_repos = list(target_api.get_team_repos(team))
+
+        # assert
+        assert not team_repos
+
+    def test_get_repos_from_team_with_repos(self, target_api):
+        # arrange
+        team = target_api.create_team("best-team")
+        repos = [
+            target_api.create_repo(
+                name, description="some description", private=True
+            )
+            for name in "a b c d".split()
+        ]
+        for repo in repos:
+            target_api.assign_repo(
+                team, repo, permission=plug.TeamPermission.PUSH
+            )
+
+        # act
+        team_repos = target_api.get_team_repos(team)
+
+        # assert
+        assert sorted(t.name for t in team_repos) == sorted(
+            t.name for t in repos
+        )

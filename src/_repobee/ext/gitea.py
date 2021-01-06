@@ -193,14 +193,7 @@ class GiteaAPI(plug.PlatformAPI):
                 status=response.status_code,
             )
 
-        repo_data = response.json()
-        return plug.Repo(
-            name=repo_name,
-            description=repo_data["description"],
-            private=repo_data["private"],
-            url=repo_data["clone_url"],
-            implementation=repo_data,
-        )
+        return self._wrap_repo(response.json())
 
     def get_repos(
         self, repo_urls: Optional[List[str]] = None
@@ -213,6 +206,28 @@ class GiteaAPI(plug.PlatformAPI):
         """See :py:meth:`repobee_plug.PlatformAPI.assign_repo`."""
         endpoint = f"/teams/{team.id}/repos/{self._org_name}/{repo.name}"
         self._request(requests.put, endpoint)
+
+    def get_team_repos(self, team: plug.Team) -> Iterable[plug.Repo]:
+        """See :py:meth:`repobee_plug.PlatformAPI.get_team_repos`."""
+        endpoint = f"/teams/{team.id}/repos"
+        response = self._request(requests.get, endpoint)
+
+        if response.status_code != 200:
+            raise plug.PlatformError(
+                f"could not fetch repos for team {team.name}",
+                status=response.status_code,
+            )
+
+        return (self._wrap_repo(repo_data) for repo_data in response.json())
+
+    def _wrap_repo(self, repo_data: dict) -> plug.Repo:
+        return plug.Repo(
+            name=repo_data["name"],
+            description=repo_data["description"],
+            private=repo_data["private"],
+            url=repo_data["clone_url"],
+            implementation=repo_data,
+        )
 
     def get_repo_urls(
         self,
