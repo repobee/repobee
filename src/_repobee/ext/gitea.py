@@ -63,6 +63,7 @@ class GiteaAPI(plug.PlatformAPI):
         """
         url = f"{self._base_url}{endpoint}"
 
+        data: Optional[str]
         if "data" in kwargs:
             data = json.dumps(kwargs["data"])
             headers = {"Content-Type": "application/json", **self._headers}
