@@ -160,25 +160,6 @@ class TestGetRepos:
         )
 
 
-class TestAssignRepo:
-    """Tests for the assign_repo function."""
-
-    def test_assign_existing_repo_to_existing_team(self, target_api):
-        # arrange
-        repo = target_api.create_repo(
-            "best-repo", description="some description", private=True
-        )
-        team = target_api.create_team("best-team")
-
-        # act
-        target_api.assign_repo(team, repo, permission=plug.TeamPermission.PUSH)
-
-        # assert
-        team_repo, *rest = list(target_api.get_team_repos(team))
-        assert team_repo == repo
-        assert not rest
-
-
 class TestGetTeamRepos:
     """Tests for the get_team_repos function."""
 
