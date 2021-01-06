@@ -81,13 +81,12 @@ class GiteaAPI(plug.PlatformAPI):
         )
 
         response = requests_func(url, **authed_kwargs)
-
-        if response.status_code != 200 and error_msg:
-            raise plug.PlatformError(error_msg, response.status_code)
-
         plug.log.debug(
             f"Received {response}: {response.content.decode('utf8')}"
         )
+
+        if response.status_code != 200 and error_msg:
+            raise plug.PlatformError(error_msg, response.status_code)
 
         return response
 
