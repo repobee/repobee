@@ -3,6 +3,9 @@ import pathlib
 
 import repobee_plug as plug
 
+from repobee_testhelpers._internal.templates import TEMPLATE_REPOS_DIR
+
+
 VOLUME_DST = "/workdir"
 COVERAGE_VOLUME_DST = "/coverage"
 DIR = pathlib.Path(__file__).resolve().parent
@@ -15,11 +18,10 @@ LOCAL_BASE_URL = "https://" + LOCAL_DOMAIN
 ORG_NAME = "dd1337-fall2020"
 TEMPLATE_ORG_NAME = "dd1337-master"
 TEACHER = "ric"
-assignment_names = [
-    p.name
-    for p in (DIR.parent / "dd1337-master-repos").iterdir()
-    if p.is_dir()
-]
+assignment_names = [p.name for p in TEMPLATE_REPOS_DIR.iterdir() if p.is_dir()]
+TEMPLATE_REPO_PATHS = list(
+    dir_.absolute() for dir_ in TEMPLATE_REPOS_DIR.iterdir() if dir_.is_dir()
+)
 STUDENT_TEAMS = [
     plug.StudentTeam(members=[s.strip()])
     for s in (DIR.parent / "students.txt").read_text().strip().split("\n")
@@ -32,8 +34,3 @@ BASE_ARGS = [*BASE_ARGS_NO_TB, "--tb"]
 STUDENTS_ARG = ["-s", " ".join(STUDENT_TEAM_NAMES)]
 MASTER_REPOS_ARG = ["-a", " ".join(assignment_names)]
 TEMPLATE_ORG_ARG = ["--template-org-name", TEMPLATE_ORG_NAME]
-TASK_CONTENTS_SHAS = {
-    "task-1": b"\xb0\xb0,t\xd1\xe9a bu\xdfX\xcf,\x98\xd2\x04\x1a\xe8\x88",
-    "task-2": b"\x1d\xdc\xa6A\xd7\xec\xdc\xc6FSN\x01\xdf|\x95`U\xb5\xdc\x9d",
-    "task-3": b"Q\xd1x\x13r\x02\xd9\x98\xa2\xb2\xd9\xe3\xa9J^\xa2/X\xbe\x1b",
-}

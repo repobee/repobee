@@ -1,7 +1,7 @@
 """Helper functions for the integration tests."""
-import hashlib
 import os
 import pathlib
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -60,12 +60,12 @@ def run_in_docker_with_coverage(command, extra_args=None):
 def run_in_docker(command, extra_args=None):
     extra_args = " ".join(extra_args) if extra_args else ""
     docker_command = (
-        "sudo docker run {} --net development --rm --name repobee "
+        "docker run {} --net development --rm --name repobee "
         "repobee:test /bin/sh -c '{}'"
     ).format(extra_args, command)
+    print(docker_command)
     proc = subprocess.run(
-        docker_command,
-        shell=True,
+        shlex.split(docker_command),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
@@ -120,18 +120,6 @@ def update_repo(repo_name, filename, text):
         assert push_proc.returncode == 0
 
     assert proj.files.get(filename, "master").decode().decode("utf8") == text
-
-
-def hash_directory(path):
-    shas = []
-    for dirpath, _, filenames in os.walk(str(path)):
-        if ".git" in dirpath:
-            continue
-        files = list(
-            pathlib.Path(dirpath) / filename for filename in filenames
-        )
-        shas += (hashlib.sha1(file.read_bytes()).digest() for file in files)
-    return hashlib.sha1(b"".join(sorted(shas))).digest()
 
 
 def expected_num_members_group_assertion(expected_num_members):

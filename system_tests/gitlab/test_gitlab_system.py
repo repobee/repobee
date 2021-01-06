@@ -7,6 +7,8 @@ import pytest
 import repobee_plug as plug
 import repobee_testhelpers
 
+from repobee_testhelpers.funcs import hash_directory
+
 import _repobee.ext
 import _repobee.command.peer
 import _repobee.ext.gitlab
@@ -44,7 +46,6 @@ from _helpers.helpers import (
     run_in_docker_with_coverage,
     run_in_docker,
     update_repo,
-    hash_directory,
     expected_num_members_group_assertion,
 )
 
@@ -73,7 +74,8 @@ class TestClone:
         assert_cloned_repos(STUDENT_TEAMS, assignment_names, tmpdir)
 
     def test_clone_twice(self, with_student_repos, tmpdir, extra_args):
-        """Cloning twice in a row should have the same effect as cloning once.
+        """Cloning twice in a row should have the same effect as cloning
+        once.
         """
         command = " ".join(
             [

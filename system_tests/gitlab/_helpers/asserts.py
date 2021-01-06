@@ -2,11 +2,16 @@
 import itertools
 import pathlib
 
+from typing import List
+
 import gitlab
 import repobee_plug as plug
 
-from .const import ORG_NAME, LOCAL_BASE_URL, TOKEN, TEACHER, TASK_CONTENTS_SHAS
-from .helpers import hash_directory, get_group
+from repobee_testhelpers.funcs import hash_directory
+from repobee_testhelpers._internal import templates
+
+from .const import ORG_NAME, LOCAL_BASE_URL, TOKEN, TEACHER
+from .helpers import get_group
 
 
 def assert_template_repos_exist(assignment_names, org_name):
@@ -163,7 +168,11 @@ def assert_num_issues(student_teams, assignment_names, num_issues):
     _assert_on_projects(student_teams, assignment_names, assertion)
 
 
-def assert_cloned_repos(student_teams, template_repo_names, tmpdir):
+def assert_cloned_repos(
+    student_teams: List[plug.StudentTeam],
+    template_repo_names: List[str],
+    tmpdir: pathlib.Path,
+) -> None:
     """Check that the cloned repos have the expected contents.
 
     NOTE: Only checks the contents of the root of the project.
@@ -176,7 +185,7 @@ def assert_cloned_repos(student_teams, template_repo_names, tmpdir):
         path = plug.fileutils.generate_repo_path(
             root, student_team.name, template_repo_name
         )
-        expected_sha = TASK_CONTENTS_SHAS[template_repo_name]
+        expected_sha = templates.TASK_CONTENTS_SHAS[template_repo_name]
         sha = hash_directory(path)
         assert sha == expected_sha
         assert (path / ".git").is_dir()

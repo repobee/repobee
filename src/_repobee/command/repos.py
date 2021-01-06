@@ -270,6 +270,7 @@ def _clone_all(
         cwd: Working directory. Use temporary directory for automatic cleanup.
         api: An instance of the platform API.
     """
+
     try:
         for repo in plug.cli.io.progress_bar(
             repos, desc="Cloning template repositories", unit="repos"
