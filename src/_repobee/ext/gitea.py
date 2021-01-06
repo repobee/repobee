@@ -43,9 +43,27 @@ class GiteaAPI(plug.PlatformAPI):
         self._org_name = org_name
         self._headers = {"Authorization": f"token {token}"}
 
-    def _request(self, requests_func, endpoint, **kwargs):
+    def _request(
+        self,
+        requests_func,
+        endpoint,
+        error_msg: Optional[str] = None,
+        **kwargs,
+    ):
+        """Wrapper for using requests with the Gitea API.
+
+        Args:
+            requests_func: A requests function, e.g. :py:func:`requests.get`.
+            endpoint: The endpoint to hit.
+            error_msg: If provided, any response that is not 200 (OK) will
+                result in a platform error with the provided message.
+            kwargs: Keyword arguments to the requests function.
+        Returns:
+            The response.
+        """
         url = f"{self._base_url}{endpoint}"
 
+        data: Optional[str]
         if "data" in kwargs:
             data = json.dumps(kwargs["data"])
             headers = {"Content-Type": "application/json", **self._headers}
@@ -64,10 +82,12 @@ class GiteaAPI(plug.PlatformAPI):
         )
 
         response = requests_func(url, **authed_kwargs)
-
         plug.log.debug(
             f"Received {response}: {response.content.decode('utf8')}"
         )
+
+        if response.status_code != 200 and error_msg:
+            raise plug.PlatformError(error_msg, response.status_code)
 
         return response
 
@@ -186,13 +206,11 @@ class GiteaAPI(plug.PlatformAPI):
     def get_repo(self, repo_name: str, team_name: Optional[str]) -> plug.Repo:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repo`."""
         endpoint = f"/repos/{self._org_name}/{repo_name}"
-        response = self._request(requests.get, endpoint)
-        if response.status_code != 200:
-            raise plug.PlatformError(
-                f"could not fetch repo {self._org_name}/{repo_name}",
-                status=response.status_code,
-            )
-
+        response = self._request(
+            requests.get,
+            endpoint,
+            error_msg=f"could not fetch repo {self._org_name}/{repo_name}",
+        )
         return self._wrap_repo(response.json())
 
     def get_repos(
@@ -203,22 +221,19 @@ class GiteaAPI(plug.PlatformAPI):
             return map(self._get_repo_by_url, repo_urls)
 
         endpoint = f"/orgs/{self._org_name}/repos"
-        response = self._request(requests.get, endpoint)
-        if response.status_code != 200:
-            raise plug.PlatformError(
-                f"could not fetch repos from {self._org_name}",
-                status=response.status_code,
-            )
+        response = self._request(
+            requests.get,
+            endpoint,
+            error_msg=f"could not fetch repos from {self._org_name}",
+        )
 
         return (self._wrap_repo(repo_data) for repo_data in response.json())
 
     def _get_repo_by_url(self, url: str) -> plug.Repo:
         endpoint = f"/repos/{self._org_name}/{self.extract_repo_name(url)}"
-        response = self._request(requests.get, endpoint)
-
-        if response.status_code != 200:
-            raise plug.PlatformError(f"failed to fetch repo at {url}")
-
+        response = self._request(
+            requests.get, endpoint, error_msg=f"failed to fetch repo at {url}"
+        )
         return self._wrap_repo(response.json())
 
     def assign_repo(
@@ -231,14 +246,11 @@ class GiteaAPI(plug.PlatformAPI):
     def get_team_repos(self, team: plug.Team) -> Iterable[plug.Repo]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_team_repos`."""
         endpoint = f"/teams/{team.id}/repos"
-        response = self._request(requests.get, endpoint)
-
-        if response.status_code != 200:
-            raise plug.PlatformError(
-                f"could not fetch repos for team {team.name}",
-                status=response.status_code,
-            )
-
+        response = self._request(
+            requests.get,
+            endpoint,
+            error_msg=f"could not fetch repos for team {team.name}",
+        )
         return (self._wrap_repo(repo_data) for repo_data in response.json())
 
     def _wrap_repo(self, repo_data: dict) -> plug.Repo:
