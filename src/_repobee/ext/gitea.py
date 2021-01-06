@@ -4,7 +4,8 @@ This plugin allows RepoBee to be used with Gitea.
 
 .. warning::
 
-    This plugin is in very early stages of development. Use at your own risk.
+    This plugin is in very early stages of development. It should only be used
+    for development purposes at this time.
 """
 import pathlib
 import json
@@ -20,6 +21,13 @@ _TEAM_PERMISSION_MAPPING = {
     plug.TeamPermission.PULL: "read",
     plug.TeamPermission.PUSH: "write",
 }
+
+PLUGIN_DESCRIPTION = """
+Gitea compatibility plugin (WARNING: This plugin is in very early development,
+use at your own risk)
+""".replace(
+    "\n", " "
+).strip()
 
 
 class GiteaAPI(plug.PlatformAPI):
