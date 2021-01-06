@@ -57,6 +57,10 @@ class GiteaAPI(plug.PlatformAPI):
 
         response = requests_func(url, **authed_kwargs)
 
+        plug.log.debug(
+            f"Received {response}: {response.content.decode('utf8')}"
+        )
+
         return response
 
     @staticmethod

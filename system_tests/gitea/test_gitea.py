@@ -63,3 +63,15 @@ class TestGetTeams:
 
         assert len(all_teams) == 1
         assert all_teams[0].name == "Owners"
+
+    def test_get_100_teams(self, gitea_api):
+        # arrange
+        team_names = list(map(str, range(100)))
+        for team_name in team_names:
+            gitea_api.create_team(team_name)
+
+        # act
+        fetched_team_names = [team.name for team in gitea_api.get_teams()]
+
+        # assert
+        assert sorted(fetched_team_names) == sorted(team_names + ["Owners"])
