@@ -38,3 +38,13 @@ class TestGetTeams:
         assert len(matches) == 1
         assert matches[0].name == owners_team_name
         assert matches[0].members == [giteamanager.TEACHER_USER]
+
+    def test_get_all_default_teams(self, gitea_api):
+        """Test getting the default teams of an organization (which
+        is only the owners team), without specifying any team
+        names.
+        """
+        all_teams = list(gitea_api.get_teams())
+
+        assert len(all_teams) == 1
+        assert all_teams[0].name == "Owners"

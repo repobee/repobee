@@ -1,4 +1,11 @@
-"""Plugin for compatibility with the Gitea platform."""
+"""Gitea compatibility plugin.
+
+This plugin allows RepoBee to be used with Gitea.
+
+.. warning::
+
+    This plugin is in very early stages of development. Use at your own risk.
+"""
 import pathlib
 import json
 import re
@@ -23,7 +30,7 @@ class GiteaAPI(plug.PlatformAPI):
         self._org_name = org_name
         self._headers = {"Authorization": f"token {token}"}
 
-    def _request(self, func, endpoint, **kwargs):
+    def _request(self, requests_func, endpoint, **kwargs):
         url = f"{self._base_url}{endpoint}"
 
         if "data" in kwargs:
@@ -38,13 +45,12 @@ class GiteaAPI(plug.PlatformAPI):
         authed_kwargs["headers"] = headers
         authed_kwargs["verify"] = self._ssl_verify()
 
-        plug.log.warning(
-            f"Sending {func} request to '{url}' with kwargs {authed_kwargs}"
+        plug.log.debug(
+            f"Sending {requests_func.__name__} request to '{url}' "
+            f"with kwargs {authed_kwargs}"
         )
 
-        response = func(url, **authed_kwargs)
-
-        plug.log.warning(response.content.decode("utf8"))
+        response = requests_func(url, **authed_kwargs)
 
         return response
 
@@ -101,7 +107,7 @@ class GiteaAPI(plug.PlatformAPI):
         response = self._request(requests.get, endpoint)
         for team_dict in response.json():
             team_name = team_dict["name"]
-            if team_name not in team_names:
+            if team_names and team_name not in team_names:
                 continue
 
             members_endpoint = f"/teams/{team_dict['id']}/members"
