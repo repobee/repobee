@@ -5,11 +5,10 @@ import repobee_plug as plug
 
 from repobee_testhelpers._internal.templates import TEMPLATE_REPOS_DIR
 
-DIR = pathlib.Path(__file__).resolve().parent
 
 VOLUME_DST = "/workdir"
 COVERAGE_VOLUME_DST = "/coverage"
-
+DIR = pathlib.Path(__file__).resolve().parent
 TOKEN = (DIR.parent / "token").read_text(encoding="utf-8").strip()
 OAUTH_USER = "oauth2"
 BASE_DOMAIN = "gitlab.integrationtest.local"

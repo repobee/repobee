@@ -25,6 +25,7 @@ from _helpers.asserts import (
     assert_cloned_repos,
 )
 from _helpers.const import (
+    VOLUME_DST,
     BASE_DOMAIN,
     LOCAL_DOMAIN,
     ORG_NAME,
@@ -39,12 +40,11 @@ from _helpers.const import (
     MASTER_REPOS_ARG,
     TEMPLATE_ORG_ARG,
     TEACHER,
-    VOLUME_DST,
 )
 from _helpers.helpers import (
+    api_instance,
     run_in_docker_with_coverage,
     run_in_docker,
-    api_instance,
     update_repo,
     expected_num_members_group_assertion,
 )

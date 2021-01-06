@@ -1,6 +1,6 @@
 """Integration test fixtures."""
-import pathlib
 import os
+import pathlib
 
 import gitlab
 import pytest
@@ -15,6 +15,8 @@ from _helpers.asserts import (
     assert_issues_exist,
 )
 from _helpers.const import (
+    VOLUME_DST,
+    COVERAGE_VOLUME_DST,
     REPOBEE_GITLAB,
     BASE_ARGS,
     TEMPLATE_ORG_ARG,
@@ -26,18 +28,37 @@ from _helpers.const import (
     TOKEN,
     ORG_NAME,
     STUDENT_TEAM_NAMES,
-    VOLUME_DST,
-    COVERAGE_VOLUME_DST,
 )
 from _helpers.helpers import (
+    run_in_docker,
     expected_num_members_group_assertion,
     get_group,
-    run_in_docker,
 )
 
 assert os.getenv(
     "REPOBEE_NO_VERIFY_SSL"
 ), "The env variable REPOBEE_NO_VERIFY_SSL must be set to 'true'"
+
+
+@pytest.fixture(autouse=True, scope="session")
+def setup_gitlab_instance():
+    """Perform first-time setup of the GitLab instance."""
+    gitlabmanager.setup()
+
+
+@pytest.fixture(autouse=True, scope="session")
+def teardown_gitlab_instance():
+    """Teardown the GitLab instance after all tests have finished."""
+    yield
+    gitlabmanager.teardown()
+
+
+@pytest.fixture(autouse=True)
+def restore():
+    """Run the script that restores the GitLab instance to its initial
+    state.
+    """
+    gitlabmanager.restore()
 
 
 @pytest.fixture
@@ -90,27 +111,6 @@ def handle_coverage_file(extra_args):
 def extra_args(tmpdir_volume_arg, coverage_volume):
     """Extra arguments to pass to run_in_docker when executing a test."""
     return [tmpdir_volume_arg, coverage_volume]
-
-
-@pytest.fixture(autouse=True, scope="session")
-def setup_gitlab_instance():
-    """Perform first-time setup of the GitLab instance."""
-    gitlabmanager.setup()
-
-
-@pytest.fixture(autouse=True, scope="session")
-def teardown_gitlab_instance():
-    """Teardown the GitLab instance after all tests have finished."""
-    yield
-    gitlabmanager.teardown()
-
-
-@pytest.fixture(autouse=True)
-def restore():
-    """Run the script that restores the GitLab instance to its initial
-    state.
-    """
-    gitlabmanager.restore()
 
 
 @pytest.fixture
