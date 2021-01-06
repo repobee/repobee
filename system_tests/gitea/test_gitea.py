@@ -135,6 +135,31 @@ class TestGetRepo:
         assert exc_info.value.status == 404
 
 
+class TestGetRepos:
+    """Tests for the get_repos function."""
+
+    def test_get_all_repos_from_template_org(self, template_api):
+        repos = template_api.get_repos()
+        assert sorted(repo.name for repo in repos) == sorted(
+            templates.TEMPLATE_REPO_NAMES
+        )
+
+    def test_get_template_repos_by_urls(self, template_api):
+        # arrange
+        expected_repo_names = [
+            name for name in templates.TEMPLATE_REPO_NAMES[:-1]
+        ]
+        repo_urls = template_api.get_repo_urls(list(expected_repo_names))
+
+        # act
+        repos = template_api.get_repos(repo_urls)
+
+        # assert
+        assert sorted(repo.name for repo in repos) == sorted(
+            expected_repo_names
+        )
+
+
 class TestAssignRepo:
     """Tests for the assign_repo function."""
 

@@ -199,6 +199,27 @@ class GiteaAPI(plug.PlatformAPI):
         self, repo_urls: Optional[List[str]] = None
     ) -> Iterable[plug.Repo]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repos`."""
+        if repo_urls:
+            return map(self._get_repo_by_url, repo_urls)
+
+        endpoint = f"/orgs/{self._org_name}/repos"
+        response = self._request(requests.get, endpoint)
+        if response.status_code != 200:
+            raise plug.PlatformError(
+                f"could not fetch repos from {self._org_name}",
+                status=response.status_code,
+            )
+
+        return (self._wrap_repo(repo_data) for repo_data in response.json())
+
+    def _get_repo_by_url(self, url: str) -> plug.Repo:
+        endpoint = f"/repos/{self._org_name}/{self.extract_repo_name(url)}"
+        response = self._request(requests.get, endpoint)
+
+        if response.status_code != 200:
+            raise plug.PlatformError(f"failed to fetch repo at {url}")
+
+        return self._wrap_repo(response.json())
 
     def assign_repo(
         self, team: plug.Team, repo: plug.Repo, permission: plug.TeamPermission
@@ -237,7 +258,7 @@ class GiteaAPI(plug.PlatformAPI):
         insert_auth: bool = False,
     ) -> List[str]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repo_urls`."""
-        org_html_url = self._org_base_url(org_name)
+        org_html_url = self._org_base_url(org_name or self._org_name)
         repo_names = (
             assignment_names
             if not team_names
