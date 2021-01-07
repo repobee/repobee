@@ -236,6 +236,7 @@ class TestCreateIssue:
         assert created_issue.body == body
         assert created_issue.number == 1
         assert created_issue.state == plug.IssueState.OPEN
+        assert created_issue.implementation is not None
         assert created_issue == fetched_issue
 
 

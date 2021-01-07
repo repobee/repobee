@@ -330,6 +330,7 @@ class GiteaAPI(plug.PlatformAPI):
             author=issue_data["user"]["login"],
             created_at=issue_data["created_at"],
             state=plug.IssueState(issue_data["state"]),
+            implementation=issue_data,
         )
 
     def _org_base_url(self, org_name) -> str:
