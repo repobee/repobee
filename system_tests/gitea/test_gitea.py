@@ -240,6 +240,26 @@ class TestCreateIssue:
         assert created_issue == fetched_issue
 
 
+class TestCloseIssue:
+    """tests for the close_issue function."""
+
+    def test_close_open_issue(self, target_api):
+        # arrange
+        repo = target_api.create_repo("some-repo", "some description", True)
+        issue = target_api.create_issue(
+            title="issue title", body="issue body", repo=repo
+        )
+
+        # act
+        target_api.close_issue(issue)
+
+        # assert
+        assert (
+            next(target_api.get_repo_issues(repo)).state
+            == plug.IssueState.CLOSED
+        )
+
+
 class TestGetRepoIssues:
     """Tests for the get_repo_issues function."""
 
