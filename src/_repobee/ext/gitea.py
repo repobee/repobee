@@ -313,6 +313,7 @@ class GiteaAPI(plug.PlatformAPI):
 
     def close_issue(self, issue: plug.Issue) -> None:
         """See :py:meth:`repobee_plug.PlatformAPI.close_issue`."""
+        assert issue.implementation
         repo_full_name = issue.implementation["repository"]["full_name"]
         endpoint = f"/repos/{repo_full_name}/issues/{issue.number}"
         self._request(
