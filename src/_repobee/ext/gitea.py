@@ -37,6 +37,9 @@ class GiteaAPI(plug.PlatformAPI):
             "use at your own risk!"
         )
 
+        if not self._ssl_verify():
+            plug.log.warning("SSL verification turned off, only for testing")
+
         self._base_url = base_url.rstrip("/")
         self._user = user
         self._token = token
@@ -55,8 +58,9 @@ class GiteaAPI(plug.PlatformAPI):
         Args:
             requests_func: A requests function, e.g. :py:func:`requests.get`.
             endpoint: The endpoint to hit.
-            error_msg: If provided, any response that is not 200 (OK) will
-                result in a platform error with the provided message.
+            error_msg: If provided, any response that is not 200 (OK) or 201
+                (OK created) will result in a platform error with the provided
+                message.
             kwargs: Keyword arguments to the requests function.
         Returns:
             The response.
@@ -86,7 +90,7 @@ class GiteaAPI(plug.PlatformAPI):
             f"Received {response}: {response.content.decode('utf8')}"
         )
 
-        if response.status_code != 200 and error_msg:
+        if response.status_code not in [200, 201] and error_msg:
             raise plug.PlatformError(error_msg, response.status_code)
 
         return response
@@ -94,8 +98,6 @@ class GiteaAPI(plug.PlatformAPI):
     @staticmethod
     def _ssl_verify():
         ssl_verify = not os.getenv("REPOBEE_NO_VERIFY_SSL") == "true"
-        if not ssl_verify:
-            plug.log.warning("SSL verification turned off, only for testing")
         return ssl_verify
 
     def create_team(
@@ -290,6 +292,48 @@ class GiteaAPI(plug.PlatformAPI):
         auth = f"{self._user}:{self._token}"
         authed_netloc = f"{auth}@{netloc}"
         return urllib.parse.urlunsplit((scheme, authed_netloc, *rest))
+
+    def create_issue(
+        self,
+        title: str,
+        body: str,
+        repo: plug.Repo,
+        assignees: Optional[Iterable[str]] = None,
+    ) -> plug.Issue:
+        """See :py:meth:`repobee_plug.PlatformAPI.create_issue`."""
+        owner = repo.implementation["owner"]["login"]
+        endpoint = f"/repos/{owner}/{repo.name}/issues"
+        response = self._request(
+            requests.post,
+            endpoint,
+            error_msg=f"could not open issue in {owner}/{repo.name}",
+            data=dict(title=title, body=body),
+        )
+        return self._wrap_issue(response.json())
+
+    def close_issue(self, issue: plug.Issue) -> None:
+        """See :py:meth:`repobee_plug.PlatformAPI.close_issue`."""
+
+    def get_repo_issues(self, repo: plug.Repo) -> Iterable[plug.Issue]:
+        """See :py:meth:`repobee_plug.PlatformAPI.get_repo_issues`."""
+        owner = repo.implementation["owner"]["login"]
+        endpoint = f"/repos/{owner}/{repo.name}/issues"
+        response = self._request(
+            requests.get,
+            endpoint,
+            error_msg="could not fetch issues from {owner}/{repo.name}",
+        )
+        return (self._wrap_issue(issue_data) for issue_data in response.json())
+
+    def _wrap_issue(self, issue_data: dict) -> plug.Issue:
+        return plug.Issue(
+            title=issue_data["title"],
+            body=issue_data["body"],
+            number=issue_data["number"],
+            author=issue_data["user"]["login"],
+            created_at=issue_data["created_at"],
+            state=plug.IssueState(issue_data["state"]),
+        )
 
     def _org_base_url(self, org_name) -> str:
         scheme, netloc, *_ = urllib.parse.urlsplit(self._base_url)

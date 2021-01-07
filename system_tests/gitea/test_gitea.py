@@ -213,3 +213,60 @@ class TestGetTeamRepos:
         assert sorted(t.name for t in team_repos) == sorted(
             t.name for t in repos
         )
+
+
+class TestCreateIssue:
+    """Tests for the create_issue function."""
+
+    def test_create_issue_without_asignees(self, target_api):
+        # arrange
+        repo = target_api.create_repo("some-repo", "some description", True)
+        title = "This is the issue title"
+        body = "This is the issue body\nAnd it's the best!"
+
+        # act
+        created_issue = target_api.create_issue(
+            title=title, body=body, repo=repo
+        )
+
+        # assert
+        fetched_issue = next(target_api.get_repo_issues(repo))
+
+        assert created_issue.title == title
+        assert created_issue.body == body
+        assert created_issue.number == 1
+        assert created_issue.state == plug.IssueState.OPEN
+        assert created_issue == fetched_issue
+
+
+class TestCloseIssue:
+    """Tests for the close_issue function."""
+
+
+class TestGetRepoIssues:
+    """Tests for the get_repo_issues function."""
+
+    def test_get_issues_from_repo_without_issues(self, target_api):
+        repo = target_api.create_repo("some-repo", "some description", True)
+
+        assert not list(target_api.get_repo_issues(repo))
+
+    def test_get_issues_from_repo_with_multiple_issues(self, target_api):
+        # arrange
+        repo = target_api.create_repo("some-repo", "some description", True)
+        issues = [
+            target_api.create_issue(
+                title=f"{phrase} issue",
+                body=f"body of {phrase} issue",
+                repo=repo,
+            )
+            for phrase in "first second third fourth".split()
+        ]
+        assert len(issues) == 4, "expected 4 issues before test"
+
+        # act
+        fetched_issues = list(target_api.get_repo_issues(repo))
+
+        # assert
+        key = lambda issue: issue.number  # noqa
+        assert sorted(fetched_issues, key=key) == sorted(issues, key=key)
