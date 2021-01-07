@@ -311,9 +311,6 @@ class GiteaAPI(plug.PlatformAPI):
         )
         return self._wrap_issue(response.json())
 
-    def close_issue(self, issue: plug.Issue) -> None:
-        """See :py:meth:`repobee_plug.PlatformAPI.close_issue`."""
-
     def get_repo_issues(self, repo: plug.Repo) -> Iterable[plug.Issue]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repo_issues`."""
         owner = repo.implementation["owner"]["login"]

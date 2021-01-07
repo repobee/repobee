@@ -239,10 +239,6 @@ class TestCreateIssue:
         assert created_issue == fetched_issue
 
 
-class TestCloseIssue:
-    """Tests for the close_issue function."""
-
-
 class TestGetRepoIssues:
     """Tests for the get_repo_issues function."""
 
