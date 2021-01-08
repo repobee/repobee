@@ -311,6 +311,18 @@ class GiteaAPI(plug.PlatformAPI):
         )
         return self._wrap_issue(response.json())
 
+    def close_issue(self, issue: plug.Issue) -> None:
+        """See :py:meth:`repobee_plug.PlatformAPI.close_issue`."""
+        assert issue.implementation
+        repo_full_name = issue.implementation["repository"]["full_name"]
+        endpoint = f"/repos/{repo_full_name}/issues/{issue.number}"
+        self._request(
+            requests.patch,
+            endpoint,
+            error_msg=f"could not close issue {repo_full_name}#{issue.number}",
+            data=dict(state=plug.IssueState.CLOSED.value),
+        )
+
     def get_repo_issues(self, repo: plug.Repo) -> Iterable[plug.Issue]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repo_issues`."""
         owner = repo.implementation["owner"]["login"]
@@ -318,6 +330,7 @@ class GiteaAPI(plug.PlatformAPI):
         response = self._request(
             requests.get,
             endpoint,
+            params=dict(state=plug.IssueState.ALL.value),
             error_msg="could not fetch issues from {owner}/{repo.name}",
         )
         return (self._wrap_issue(issue_data) for issue_data in response.json())
