@@ -247,6 +247,30 @@ class TestCreateIssue:
         assert created_issue.state == plug.IssueState.OPEN
         assert created_issue.implementation is not None
         assert created_issue == fetched_issue
+        assert not fetched_issue.implementation["assignees"]
+
+    def test_create_issue_with_assignees(self, target_api):
+        # arrange
+        repo = target_api.create_repo("some-repo", "some description", True)
+        title = "This is the issue title"
+        body = "This is the issue body\nAnd it's the best!"
+        assignees = [t.members[0] for t in giteamanager.STUDENT_TEAMS]
+        assert assignees, "expected at least one assignee for the test ..."
+        # assignees must have access to the repo
+        team = target_api.create_team("best-team", members=assignees)
+        target_api.assign_repo(team, repo, plug.TeamPermission.PUSH)
+
+        # act
+        target_api.create_issue(
+            title=title, body=body, repo=repo, assignees=list(assignees)
+        )
+
+        # assert
+        fetched_issue = next(target_api.get_repo_issues(repo))
+        fetched_assigness = [
+            user["login"] for user in fetched_issue.implementation["assignees"]
+        ]
+        assert sorted(fetched_assigness) == sorted(assignees)
 
 
 class TestCloseIssue:
