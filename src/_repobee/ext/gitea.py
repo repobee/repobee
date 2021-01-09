@@ -395,10 +395,8 @@ class GiteaAPI(plug.PlatformAPI):
 
     def _verify_user(self) -> None:
         endpoint = "/user"
-        response = self._request(requests.get, endpoint)
-        if response.status_code != 200:
-            raise plug.BadCredentials("bad token")
-        elif response.json()["login"] != self._user:
+        response = self._request(requests.get, endpoint, error_msg="bad token")
+        if response.json()["login"] != self._user:
             raise plug.BadCredentials(
                 f"token does not belong to user '{self._user}'"
             )
@@ -416,12 +414,10 @@ class GiteaAPI(plug.PlatformAPI):
 
 def _raise_platform_error(error_msg: str, status_code: int) -> NoReturn:
     """Raise an appropriate platform error for the given status code."""
-    if status_code == 404:
-        raise plug.NotFoundError(error_msg, status=status_code)
-    elif status_code == 401:
-        raise plug.BadCredentials(error_msg, status=status_code)
-    else:
-        raise plug.PlatformError(error_msg, status=status_code)
+    error = {404: plug.NotFoundError, 401: plug.BadCredentials}.get(
+        status_code
+    ) or plug.PlatformError
+    raise error(error_msg, status=status_code)
 
 
 class GiteaAPIHook(plug.Plugin):
