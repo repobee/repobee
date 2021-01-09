@@ -313,6 +313,19 @@ class TestVerifySettings:
         last_line = capsys.readouterr().out.strip().split("\n")[-1]
         assert "GREAT SUCCESS" in last_line
 
+    def test_prints_great_success_when_all_settings_good_without_template_org(
+        self, capsys
+    ):
+        gitea.GiteaAPI.verify_settings(
+            user=giteamanager.TEACHER_USER,
+            org_name=giteamanager.TARGET_ORG_NAME,
+            base_url=giteamanager.API_URL,
+            token=giteamanager.TEACHER_TOKEN,
+        )
+
+        last_line = capsys.readouterr().out.strip().split("\n")[-1]
+        assert "GREAT SUCCESS" in last_line
+
     def test_raises_on_bad_url(self):
         with pytest.raises(plug.ServiceNotFoundError) as exc_info:
             gitea.GiteaAPI.verify_settings(
