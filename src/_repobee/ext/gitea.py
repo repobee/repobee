@@ -12,7 +12,7 @@ import json
 import re
 import os
 import urllib.parse
-from typing import Optional, List, Iterable
+from typing import Optional, List, Iterable, NoReturn
 
 import repobee_plug as plug
 import requests
@@ -94,7 +94,7 @@ class GiteaAPI(plug.PlatformAPI):
             return response
         else:
             plug.log.error(response.content.decode("utf8"))
-            raise plug.PlatformError(error_msg, response.status_code)
+            _raise_platform_error(error_msg, response.status_code)
 
     @staticmethod
     def _ssl_verify():
@@ -364,6 +364,60 @@ class GiteaAPI(plug.PlatformAPI):
         """See :py:meth:`repobee_plug.PlatformAPI.extract_repo_name`."""
         repo_html_url = re.sub(r"\.git$", "", repo_url)
         return pathlib.Path(repo_html_url).stem
+
+    @staticmethod
+    def verify_settings(
+        user: str,
+        org_name: str,
+        base_url: str,
+        token: str,
+        template_org_name: Optional[str] = None,
+    ):
+        """See :py:meth:`repobee_plug.PlatformAPI.verify_settings`."""
+        target_api = GiteaAPI(
+            user=user, org_name=org_name, base_url=base_url, token=token
+        )
+        target_api._verify_base_url()
+        target_api._verify_user()
+        target_api._verify_org(org_name)
+        if template_org_name:
+            target_api._verify_org(template_org_name)
+
+        plug.echo("GREAT SUCCESS: All settings check out!")
+
+    def _verify_base_url(self) -> None:
+        response = self._request(requests.get, "/version")
+        if response.status_code != 200:
+            raise plug.ServiceNotFoundError(
+                f"bad base url '{self._base_url}'", status=response.status_code
+            )
+        plug.echo(f"Base url '{self._base_url}' OK")
+
+    def _verify_user(self) -> None:
+        endpoint = "/user"
+        response = self._request(requests.get, endpoint, error_msg="bad token")
+        if response.json()["login"] != self._user:
+            raise plug.BadCredentials(
+                f"token does not belong to user '{self._user}'"
+            )
+        plug.echo("Token and user OK")
+
+    def _verify_org(self, org_name: str) -> None:
+        endpoint = f"/orgs/{org_name}"
+        self._request(
+            requests.get,
+            endpoint,
+            error_msg=f"could not find organization '{org_name}'",
+        )
+        plug.echo(f"Organization '{org_name}' OK")
+
+
+def _raise_platform_error(error_msg: str, status_code: int) -> NoReturn:
+    """Raise an appropriate platform error for the given status code."""
+    error = {404: plug.NotFoundError, 401: plug.BadCredentials}.get(
+        status_code
+    ) or plug.PlatformError
+    raise error(error_msg, status=status_code)
 
 
 class GiteaAPIHook(plug.Plugin):

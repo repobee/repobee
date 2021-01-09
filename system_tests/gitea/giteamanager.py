@@ -49,6 +49,7 @@ TEACHER_TOKEN = (
     (CURRENT_DIR / "teacher_token.txt").read_text(encoding="utf8").strip()
 )
 
+ADMIN_USER = "root"
 ADMIN_TOKEN = (
     (CURRENT_DIR / "admin_token.txt").read_text(encoding="utf8").strip()
 )

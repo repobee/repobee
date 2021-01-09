@@ -1,9 +1,7 @@
 import pytest
 
-from repobee_testhelpers._internal import templates
-
 import repobee_plug as plug
-
+from repobee_testhelpers._internal import templates
 from _repobee.ext import gitea
 
 import giteamanager
@@ -298,3 +296,101 @@ class TestGetRepoIssues:
         # assert
         key = lambda issue: issue.number  # noqa
         assert sorted(fetched_issues, key=key) == sorted(issues, key=key)
+
+
+class TestVerifySettings:
+    """Tests for the verify_settings function."""
+
+    def test_prints_great_success_when_all_settings_good(self, capsys):
+        gitea.GiteaAPI.verify_settings(
+            user=giteamanager.TEACHER_USER,
+            org_name=giteamanager.TARGET_ORG_NAME,
+            base_url=giteamanager.API_URL,
+            token=giteamanager.TEACHER_TOKEN,
+            template_org_name=giteamanager.TEMPLATE_ORG_NAME,
+        )
+
+        last_line = capsys.readouterr().out.strip().split("\n")[-1]
+        assert "GREAT SUCCESS" in last_line
+
+    def test_prints_great_success_when_all_settings_good_without_template_org(
+        self, capsys
+    ):
+        gitea.GiteaAPI.verify_settings(
+            user=giteamanager.TEACHER_USER,
+            org_name=giteamanager.TARGET_ORG_NAME,
+            base_url=giteamanager.API_URL,
+            token=giteamanager.TEACHER_TOKEN,
+        )
+
+        last_line = capsys.readouterr().out.strip().split("\n")[-1]
+        assert "GREAT SUCCESS" in last_line
+
+    def test_raises_on_bad_url(self):
+        with pytest.raises(plug.ServiceNotFoundError) as exc_info:
+            gitea.GiteaAPI.verify_settings(
+                user=giteamanager.TEACHER_USER,
+                org_name=giteamanager.TARGET_ORG_NAME,
+                base_url=giteamanager.BASE_URL,  # this url is missing /api/v1
+                token=giteamanager.TEACHER_TOKEN,
+                template_org_name=giteamanager.TEMPLATE_ORG_NAME,
+            )
+
+        assert "bad base url" in str(exc_info.value)
+
+    def test_raises_on_bad_token(self):
+        with pytest.raises(plug.BadCredentials) as exc_info:
+            gitea.GiteaAPI.verify_settings(
+                user=giteamanager.TEACHER_USER,
+                org_name=giteamanager.TARGET_ORG_NAME,
+                base_url=giteamanager.API_URL,
+                token="nopetoken",
+                template_org_name=giteamanager.TEMPLATE_ORG_NAME,
+            )
+
+        assert "bad token" in str(exc_info.value)
+
+    def test_raises_on_token_user_mismatch(self):
+        with pytest.raises(plug.BadCredentials) as exc_info:
+            gitea.GiteaAPI.verify_settings(
+                user=giteamanager.ADMIN_USER,
+                token=giteamanager.TEACHER_TOKEN,
+                org_name=giteamanager.TARGET_ORG_NAME,
+                base_url=giteamanager.API_URL,
+                template_org_name=giteamanager.TEMPLATE_ORG_NAME,
+            )
+
+        assert (
+            f"token does not belong to user '{giteamanager.ADMIN_USER}'"
+            in str(exc_info.value)
+        )
+
+    def test_raises_on_missing_target_org(self):
+        non_existant_org = "nopeorg"
+        with pytest.raises(plug.NotFoundError) as exc_info:
+            gitea.GiteaAPI.verify_settings(
+                user=giteamanager.TEACHER_USER,
+                org_name=non_existant_org,
+                base_url=giteamanager.API_URL,
+                token=giteamanager.TEACHER_TOKEN,
+                template_org_name=giteamanager.TEMPLATE_ORG_NAME,
+            )
+
+        assert f"could not find organization '{non_existant_org}'" in str(
+            exc_info.value
+        )
+
+    def test_raises_on_missing_template_org(self):
+        non_existant_org = "nopeorg"
+        with pytest.raises(plug.NotFoundError) as exc_info:
+            gitea.GiteaAPI.verify_settings(
+                user=giteamanager.TEACHER_USER,
+                org_name=giteamanager.TARGET_ORG_NAME,
+                base_url=giteamanager.API_URL,
+                token=giteamanager.TEACHER_TOKEN,
+                template_org_name=non_existant_org,
+            )
+
+        assert f"could not find organization '{non_existant_org}'" in str(
+            exc_info.value
+        )
