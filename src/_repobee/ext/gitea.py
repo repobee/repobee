@@ -317,7 +317,7 @@ class GiteaAPI(plug.PlatformAPI):
             requests.post,
             endpoint,
             error_msg=f"could not open issue in {owner}/{repo.name}",
-            data=dict(title=title, body=body),
+            data=dict(title=title, body=body, assignees=assignees or []),
         )
         return self._wrap_issue(response.json())
 
