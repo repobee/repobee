@@ -374,7 +374,26 @@ class GiteaAPI(plug.PlatformAPI):
         template_org_name: Optional[str] = None,
     ):
         """See :py:meth:`repobee_plug.PlatformAPI.verify_settings`."""
+        target_api = GiteaAPI(
+            user=user, org_name=org_name, base_url=base_url, token=token
+        )
+        target_api._verify_base_url()
+        target_api._verify_user()
+
         plug.echo("GREAT SUCCESS: All settings check out!")
+
+    def _verify_base_url(self) -> None:
+        response = self._request(requests.get, "/version")
+        if response.status_code != 200:
+            raise plug.ServiceNotFoundError(
+                f"bad base url '{self._base_url}'", status=response.status_code
+            )
+
+    def _verify_user(self) -> str:
+        endpoint = "/user"
+        response = self._request(requests.get, endpoint)
+        if response.status_code != 200:
+            raise plug.BadCredentials("bad token")
 
 
 class GiteaAPIHook(plug.Plugin):

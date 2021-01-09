@@ -1,9 +1,7 @@
 import pytest
 
-from repobee_testhelpers._internal import templates
-
 import repobee_plug as plug
-
+from repobee_testhelpers._internal import templates
 from _repobee.ext import gitea
 
 import giteamanager
@@ -314,3 +312,27 @@ class TestVerifySettings:
 
         last_line = capsys.readouterr().out.strip().split("\n")[-1]
         assert "GREAT SUCCESS" in last_line
+
+    def test_raises_on_bad_url(self):
+        with pytest.raises(plug.ServiceNotFoundError) as exc_info:
+            gitea.GiteaAPI.verify_settings(
+                user=giteamanager.TEACHER_USER,
+                org_name=giteamanager.TARGET_ORG_NAME,
+                base_url=giteamanager.BASE_URL,  # this url is missing /api/v1
+                token=giteamanager.TEACHER_TOKEN,
+                template_org_name=giteamanager.TEMPLATE_ORG_NAME,
+            )
+
+        assert "bad base url" in str(exc_info.value)
+
+    def test_raises_on_bad_token(self):
+        with pytest.raises(plug.BadCredentials) as exc_info:
+            gitea.GiteaAPI.verify_settings(
+                user=giteamanager.TEACHER_USER,
+                org_name=giteamanager.TARGET_ORG_NAME,
+                base_url=giteamanager.API_URL,
+                token="nopetoken",
+                template_org_name=giteamanager.TEMPLATE_ORG_NAME,
+            )
+
+        assert "bad token" in str(exc_info.value)
