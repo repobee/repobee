@@ -58,6 +58,17 @@ class TestCreateTeam:
         assert sorted(fetched_team.members) == sorted(members)
 
 
+class TestDeleteTeam:
+    """Tests for the delete_team function."""
+
+    def test_delete_existing_team(self, target_api):
+        team = target_api.create_team("the-team")
+
+        target_api.delete_team(team)
+
+        assert not list(target_api.get_teams([team.name]))
+
+
 class TestGetTeams:
     """Tests for the get_teams function."""
 

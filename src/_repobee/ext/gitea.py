@@ -58,8 +58,8 @@ class GiteaAPI(plug.PlatformAPI):
         Args:
             requests_func: A requests function, e.g. :py:func:`requests.get`.
             endpoint: The endpoint to hit.
-            error_msg: If provided, any response that is not 200 (OK) or 201
-                (OK created) will result in a platform error with the provided
+            error_msg: If provided, any response that is with a code that is
+                not 2xx  will result in a platform error with the provided
                 message.
             kwargs: Keyword arguments to the requests function.
         Returns:
@@ -90,10 +90,11 @@ class GiteaAPI(plug.PlatformAPI):
             f"Received {response}: {response.content.decode('utf8')}"
         )
 
-        if response.status_code not in [200, 201] and error_msg:
+        if 200 <= response.status_code < 300 or not error_msg:
+            return response
+        else:
+            plug.log.error(response.content.decode("utf8"))
             raise plug.PlatformError(error_msg, response.status_code)
-
-        return response
 
     @staticmethod
     def _ssl_verify():
@@ -135,6 +136,15 @@ class GiteaAPI(plug.PlatformAPI):
         )
         self.assign_members(team, members or [])
         return team
+
+    def delete_team(self, team: plug.Team) -> None:
+        """See :py:meth:`repobee_plug.PlatformAPI.delete_team`."""
+        endpoint = f"/teams/{team.implementation['id']}"
+        self._request(
+            requests.delete,
+            endpoint,
+            error_msg=f"could not delete '{self._org_name}/{team.name}'",
+        )
 
     def get_teams(
         self, team_names: Optional[Iterable[str]] = None
