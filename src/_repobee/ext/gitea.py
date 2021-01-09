@@ -380,6 +380,8 @@ class GiteaAPI(plug.PlatformAPI):
         target_api._verify_base_url()
         target_api._verify_user()
         target_api._verify_org(org_name)
+        if template_org_name:
+            target_api._verify_org(template_org_name)
 
         plug.echo("GREAT SUCCESS: All settings check out!")
 
