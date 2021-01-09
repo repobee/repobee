@@ -394,6 +394,10 @@ class GiteaAPI(plug.PlatformAPI):
         response = self._request(requests.get, endpoint)
         if response.status_code != 200:
             raise plug.BadCredentials("bad token")
+        elif response.json()["login"] != self._user:
+            raise plug.BadCredentials(
+                f"token does not belong to user '{self._user}'"
+            )
 
 
 class GiteaAPIHook(plug.Plugin):

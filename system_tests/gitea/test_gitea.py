@@ -336,3 +336,18 @@ class TestVerifySettings:
             )
 
         assert "bad token" in str(exc_info.value)
+
+    def test_raises_on_token_user_mismatch(self):
+        with pytest.raises(plug.BadCredentials) as exc_info:
+            gitea.GiteaAPI.verify_settings(
+                user=giteamanager.ADMIN_USER,
+                token=giteamanager.TEACHER_TOKEN,
+                org_name=giteamanager.TARGET_ORG_NAME,
+                base_url=giteamanager.API_URL,
+                template_org_name=giteamanager.TEMPLATE_ORG_NAME,
+            )
+
+        assert (
+            f"token does not belong to user '{giteamanager.ADMIN_USER}'"
+            in str(exc_info.value)
+        )
