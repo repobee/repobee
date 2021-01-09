@@ -391,6 +391,7 @@ class GiteaAPI(plug.PlatformAPI):
             raise plug.ServiceNotFoundError(
                 f"bad base url '{self._base_url}'", status=response.status_code
             )
+        plug.echo(f"Base url '{self._base_url}' OK")
 
     def _verify_user(self) -> None:
         endpoint = "/user"
@@ -401,6 +402,7 @@ class GiteaAPI(plug.PlatformAPI):
             raise plug.BadCredentials(
                 f"token does not belong to user '{self._user}'"
             )
+        plug.echo("Token and user OK")
 
     def _verify_org(self, org_name: str) -> None:
         endpoint = f"/orgs/{org_name}"
@@ -409,6 +411,7 @@ class GiteaAPI(plug.PlatformAPI):
             endpoint,
             error_msg=f"could not find organization '{org_name}'",
         )
+        plug.echo(f"Organization '{org_name}' OK")
 
 
 def _raise_platform_error(error_msg: str, status_code: int) -> NoReturn:
