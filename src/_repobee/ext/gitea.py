@@ -12,7 +12,7 @@ import json
 import re
 import os
 import urllib.parse
-from typing import Optional, List, Iterable
+from typing import Optional, List, Iterable, NoReturn
 
 import repobee_plug as plug
 import requests
@@ -94,7 +94,7 @@ class GiteaAPI(plug.PlatformAPI):
             return response
         else:
             plug.log.error(response.content.decode("utf8"))
-            raise plug.PlatformError(error_msg, response.status_code)
+            _raise_platform_error(error_msg, response.status_code)
 
     @staticmethod
     def _ssl_verify():
@@ -379,6 +379,7 @@ class GiteaAPI(plug.PlatformAPI):
         )
         target_api._verify_base_url()
         target_api._verify_user()
+        target_api._verify_org(org_name)
 
         plug.echo("GREAT SUCCESS: All settings check out!")
 
@@ -389,7 +390,7 @@ class GiteaAPI(plug.PlatformAPI):
                 f"bad base url '{self._base_url}'", status=response.status_code
             )
 
-    def _verify_user(self) -> str:
+    def _verify_user(self) -> None:
         endpoint = "/user"
         response = self._request(requests.get, endpoint)
         if response.status_code != 200:
@@ -398,6 +399,24 @@ class GiteaAPI(plug.PlatformAPI):
             raise plug.BadCredentials(
                 f"token does not belong to user '{self._user}'"
             )
+
+    def _verify_org(self, org_name: str) -> None:
+        endpoint = f"/orgs/{org_name}"
+        self._request(
+            requests.get,
+            endpoint,
+            error_msg=f"could not find organization '{org_name}'",
+        )
+
+
+def _raise_platform_error(error_msg: str, status_code: int) -> NoReturn:
+    """Raise an appropriate platform error for the given status code."""
+    if status_code == 404:
+        raise plug.NotFoundError(error_msg, status=status_code)
+    elif status_code == 401:
+        raise plug.BadCredentials(error_msg, status=status_code)
+    else:
+        raise plug.PlatformError(error_msg, status=status_code)
 
 
 class GiteaAPIHook(plug.Plugin):

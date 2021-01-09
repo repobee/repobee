@@ -364,3 +364,18 @@ class TestVerifySettings:
             f"token does not belong to user '{giteamanager.ADMIN_USER}'"
             in str(exc_info.value)
         )
+
+    def test_raises_on_missing_target_org(self):
+        non_existant_org = "nopeorg"
+        with pytest.raises(plug.NotFoundError) as exc_info:
+            gitea.GiteaAPI.verify_settings(
+                user=giteamanager.TEACHER_USER,
+                org_name=non_existant_org,
+                base_url=giteamanager.API_URL,
+                token=giteamanager.TEACHER_TOKEN,
+                template_org_name=giteamanager.TEMPLATE_ORG_NAME,
+            )
+
+        assert f"could not find organization '{non_existant_org}'" in str(
+            exc_info.value
+        )
