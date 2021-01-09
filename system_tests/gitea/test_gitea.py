@@ -298,3 +298,19 @@ class TestGetRepoIssues:
         # assert
         key = lambda issue: issue.number  # noqa
         assert sorted(fetched_issues, key=key) == sorted(issues, key=key)
+
+
+class TestVerifySettings:
+    """Tests for the verify_settings function."""
+
+    def test_prints_great_success_when_all_settings_good(self, capsys):
+        gitea.GiteaAPI.verify_settings(
+            user=giteamanager.TEACHER_USER,
+            org_name=giteamanager.TARGET_ORG_NAME,
+            base_url=giteamanager.API_URL,
+            token=giteamanager.TEACHER_TOKEN,
+            template_org_name=giteamanager.TEMPLATE_ORG_NAME,
+        )
+
+        last_line = capsys.readouterr().out.strip().split("\n")[-1]
+        assert "GREAT SUCCESS" in last_line

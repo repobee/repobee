@@ -365,6 +365,17 @@ class GiteaAPI(plug.PlatformAPI):
         repo_html_url = re.sub(r"\.git$", "", repo_url)
         return pathlib.Path(repo_html_url).stem
 
+    @staticmethod
+    def verify_settings(
+        user: str,
+        org_name: str,
+        base_url: str,
+        token: str,
+        template_org_name: Optional[str] = None,
+    ):
+        """See :py:meth:`repobee_plug.PlatformAPI.verify_settings`."""
+        plug.echo("GREAT SUCCESS: All settings check out!")
+
 
 class GiteaAPIHook(plug.Plugin):
     def api_init_requires(self):
