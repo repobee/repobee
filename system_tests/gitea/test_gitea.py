@@ -128,6 +128,18 @@ class TestCreateRepo:
 
         assert exc_info.value.status == 409
 
+    def test_create_repo_with_team(self, target_api):
+        repo_name = "best-repo"
+        description = "The epicest repo!"
+        private = True
+        team = target_api.create_team("some-team")
+
+        created_repo = target_api.create_repo(
+            name=repo_name, description=description, private=private, team=team
+        )
+
+        assert next(target_api.get_team_repos(team)) == created_repo
+
 
 class TestGetRepo:
     """Tests for the get_repo function."""

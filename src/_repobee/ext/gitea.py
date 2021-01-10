@@ -207,13 +207,18 @@ class GiteaAPI(plug.PlatformAPI):
             )
 
         resp_data = response.json()
-        return plug.Repo(
+        repo = plug.Repo(
             name=name,
             description=description,
             private=private,
             url=resp_data["clone_url"],
             implementation=resp_data,
         )
+
+        if team:
+            self.assign_repo(team, repo, plug.TeamPermission.PUSH)
+
+        return repo
 
     def get_repo(self, repo_name: str, team_name: Optional[str]) -> plug.Repo:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repo`."""
