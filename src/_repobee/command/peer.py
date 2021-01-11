@@ -12,11 +12,17 @@ self-contained program.
 import itertools
 import collections
 import re
-from typing import Iterable, Optional
+import hashlib
+import tempfile
+import pathlib
+import shutil
+from typing import Iterable, Optional, Dict, List, Tuple
 
+import git
 import repobee_plug as plug
 
 import _repobee.command.teams
+import _repobee.git
 from _repobee import formatters
 
 from _repobee.command import progresswrappers
@@ -26,12 +32,15 @@ DEFAULT_REVIEW_ISSUE = plug.Issue(
     body="You have been assigned to peer review this repo.",
 )
 
+_DEFAULT_BRANCH = "master"
+
 
 def assign_peer_reviews(
     assignment_names: Iterable[str],
     teams: Iterable[plug.StudentTeam],
     num_reviews: int,
     issue: Optional[plug.Issue],
+    double_blind_salt: Optional[str],
     api: plug.PlatformAPI,
 ) -> None:
     """Assign peer reviewers among the students to each student repo. Each
@@ -51,6 +60,8 @@ def assign_peer_reviews(
             (consequently, the amount of reviews of each repo)
         issue: An issue with review instructions to be opened in the considered
             repos.
+        double_blind_salt: If provided, use salt to make double-blind review
+            allocation.
         api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
@@ -59,14 +70,22 @@ def assign_peer_reviews(
     fetched_teams = progresswrappers.get_teams(
         teams, api, desc="Fetching teams and repos"
     )
+    team_repo_tuples = [
+        (team, list(api.get_team_repos(team))) for team in fetched_teams
+    ]
     fetched_repos = list(
-        itertools.chain.from_iterable(map(api.get_team_repos, fetched_teams))
+        itertools.chain.from_iterable(repos for _, repos in team_repo_tuples)
     )
     fetched_repo_dict = {r.name: r for r in fetched_repos}
 
     missing = set(expected_repo_names) - set(fetched_repo_dict.keys())
     if missing:
         raise plug.NotFoundError(f"Can't find repos: {', '.join(missing)}")
+
+    if double_blind_salt:
+        fetched_repo_dict = _create_anonymized_repos(
+            team_repo_tuples, double_blind_salt, api
+        )
 
     for assignment_name in assignment_names:
         plug.echo("Allocating reviews")
@@ -80,8 +99,11 @@ def assign_peer_reviews(
                     (
                         plug.StudentTeam(
                             members=alloc.review_team.members,
-                            name=plug.generate_review_team_name(
-                                str(alloc.reviewed_team), assignment_name
+                            name=_hash_if_salt(
+                                plug.generate_review_team_name(
+                                    str(alloc.reviewed_team), assignment_name
+                                ),
+                                salt=double_blind_salt,
                             ),
                         ),
                         alloc.reviewed_team,
@@ -106,12 +128,13 @@ def assign_peer_reviews(
             reviewed_repo = fetched_repo_dict[
                 plug.generate_repo_name(reviewed_team_name, assignment_name)
             ]
+
             review_teams_progress.write(  # type: ignore
                 f"Assigning {' and '.join(review_team.members)} "
                 f"to review {reviewed_repo.name}"
             )
             api.assign_repo(
-                review_team, reviewed_repo, plug.TeamPermission.PULL
+                review_team, reviewed_repo, plug.TeamPermission.PUSH
             )
             api.create_issue(
                 issue.title,
@@ -119,6 +142,102 @@ def assign_peer_reviews(
                 reviewed_repo,
                 assignees=review_team.members,
             )
+
+
+def _create_anonymized_repos(
+    team_repo_tuples: List[Tuple[plug.Team, List[plug.Repo]]],
+    salt: str,
+    api: plug.PlatformAPI,
+) -> Dict[str, plug.Repo]:
+    with tempfile.TemporaryDirectory() as tmp_clone_dir, tempfile.TemporaryDirectory() as tmp_workdir:  # noqa
+        workdir = pathlib.Path(tmp_workdir)
+        clone_dir = pathlib.Path(tmp_clone_dir)
+        student_repos = _clone_to_student_repos(
+            team_repo_tuples, workdir, clone_dir, api
+        )
+        student_repos_iter = plug.cli.io.progress_bar(
+            student_repos, desc="Creating anonymized repos"
+        )
+        repo_mapping = {}
+        anonymized_repos = []
+        for student_repo in student_repos_iter:
+            anonymized_repo_name = _hash_if_salt(student_repo.name, salt=salt)
+            platform_repo = api.create_repo(
+                name=anonymized_repo_name,
+                description="Review copy",
+                private=True,
+            )
+            _anonymize_commit_history(student_repo.path)
+            anonymized_repos.append(
+                plug.StudentRepo(
+                    name=anonymized_repo_name,
+                    team=student_repo.team,
+                    url=student_repo.url.replace(
+                        student_repo.name, anonymized_repo_name
+                    ),
+                    _path=student_repo.path,
+                )
+            )
+            repo_mapping[student_repo.name] = platform_repo
+
+        _push_to_platform(anonymized_repos, api)
+
+        return repo_mapping
+
+
+def _anonymize_commit_history(repo_path: pathlib.Path) -> None:
+    shutil.rmtree(repo_path / ".git")
+    repo = git.Repo.init(repo_path)
+    repo.git.add(".", "--force")
+    repo.git.commit("-m", "Add project")
+    repo.git.checkout(_DEFAULT_BRANCH)
+
+
+def _clone_to_student_repos(
+    team_repo_tuples: List[Tuple[plug.Team, List[plug.Repo]]],
+    workdir: pathlib.Path,
+    clone_dir: pathlib.Path,
+    api: plug.PlatformAPI,
+) -> List[plug.StudentRepo]:
+    student_repos = [
+        plug.StudentRepo(
+            name=repo.name,
+            team=plug.StudentTeam(name=team.name, members=list(team.members)),
+            url=repo.url,
+            _path=workdir / team.name / repo.name,
+        )
+        for team, repos in team_repo_tuples
+        for repo in repos
+    ]
+    list(
+        _repobee.git.clone_student_repos(
+            student_repos, clone_dir, update_local=False, api=api
+        )
+    )
+    return student_repos
+
+
+def _push_to_platform(
+    student_repos: List[plug.StudentRepo], api: plug.PlatformAPI
+) -> None:
+    push_tuples = [
+        _repobee.git.Push(
+            repo.path, api.insert_auth(repo.url), _DEFAULT_BRANCH
+        )
+        for repo in student_repos
+    ]
+    _repobee.git.push(push_tuples)
+
+
+def _hash_if_salt(s: str, salt: Optional[str], max_hash_size: int = 20) -> str:
+    """Hash the string with the salt, if provided. Otherwise, return the input
+    string.
+    """
+    return (
+        hashlib.sha256(s.encode("utf8")).hexdigest()[:max_hash_size]
+        if salt
+        else s
+    )
 
 
 def purge_review_teams(
