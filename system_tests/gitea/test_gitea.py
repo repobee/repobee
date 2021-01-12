@@ -7,26 +7,6 @@ from _repobee.ext import gitea
 import giteamanager
 
 
-@pytest.fixture
-def target_api():
-    return gitea.GiteaAPI(
-        giteamanager.API_URL,
-        giteamanager.TEACHER_USER,
-        giteamanager.TEACHER_TOKEN,
-        giteamanager.TARGET_ORG_NAME,
-    )
-
-
-@pytest.fixture
-def template_api():
-    return gitea.GiteaAPI(
-        giteamanager.API_URL,
-        giteamanager.TEACHER_USER,
-        giteamanager.TEACHER_TOKEN,
-        giteamanager.TEMPLATE_ORG_NAME,
-    )
-
-
 class TestCreateTeam:
     """Tests for the create_team function."""
 
