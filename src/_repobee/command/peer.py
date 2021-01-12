@@ -23,6 +23,7 @@ import repobee_plug as plug
 
 import _repobee.command.teams
 import _repobee.git
+import _repobee.ext.gitea
 from _repobee import formatters
 
 from _repobee.command import progresswrappers
@@ -140,7 +141,11 @@ def assign_peer_reviews(
                 issue.title,
                 issue.body,
                 reviewed_repo,
-                assignees=review_team.members,
+                # It's not possible to assign users with read-access in Gitea
+                # FIXME redesign so Gitea does not require special handling
+                assignees=review_team.members
+                if not isinstance(api, _repobee.ext.gitea.GiteaAPI)
+                else None,
             )
 
 
