@@ -35,7 +35,7 @@ def initialize_repo(
     return repo
 
 
-def hash_directory(dirpath: pathlib.Path) -> str:
+def hash_directory(dirpath: Union[str, pathlib.Path]) -> str:
     """Compute the directory hash using Git.
 
     Args:

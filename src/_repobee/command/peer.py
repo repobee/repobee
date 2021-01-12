@@ -12,18 +12,18 @@ self-contained program.
 import itertools
 import collections
 import re
-import hashlib
 import tempfile
 import pathlib
 import shutil
 from typing import Iterable, Optional, Dict, List, Tuple
 
-import git
+import git  # type: ignore
 import repobee_plug as plug
 
 import _repobee.command.teams
 import _repobee.git
 import _repobee.ext.gitea
+import _repobee.hash
 from _repobee import formatters
 
 from _repobee.command import progresswrappers
@@ -238,11 +238,7 @@ def _hash_if_salt(s: str, salt: Optional[str], max_hash_size: int = 20) -> str:
     """Hash the string with the salt, if provided. Otherwise, return the input
     string.
     """
-    return (
-        hashlib.sha256(s.encode("utf8")).hexdigest()[:max_hash_size]
-        if salt
-        else s
-    )
+    return _repobee.hash.salted_hash(s, salt, max_hash_size) if salt else s
 
 
 def purge_review_teams(
