@@ -49,7 +49,7 @@ required = [
     "colored",
     "daiquiri",
     "dataclasses>='0.7';python_version<'3.7'",
-    "git-python",
+    "gitpython",
     "more-itertools>=8.4.0",
     "pluggy>=0.13.1",
     "pygithub",
