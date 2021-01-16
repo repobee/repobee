@@ -380,6 +380,15 @@ def _add_config_parsers(
 
 
 def _add_peer_review_parsers(base_parsers, add_parser):
+    double_blind_parser = argparse_ext.RepobeeParser(add_help=False)
+    double_blind_parser.add_argument(
+        "--double-blind-salt",
+        help="salt (a string) to use for double-blind peer review assignment "
+        "(alpha feature)",
+        metavar="SALT",
+    )
+    base_review_parsers = [*base_parsers, double_blind_parser]
+
     assign_parser = add_parser(
         plug.cli.CoreCommand.reviews.assign,
         description=(
@@ -392,7 +401,7 @@ def _add_peer_review_parsers(base_parsers, add_parser):
             "by plugins."
         ),
         help="assign students to peer review each others' repos",
-        parents=base_parsers,
+        parents=base_review_parsers,
         formatter_class=argparse_ext.OrderedFormatter,
     )
     assign_parser.add_argument(
@@ -410,6 +419,7 @@ def _add_peer_review_parsers(base_parsers, add_parser):
         "student repos (NOTE: first line is assumed to be the title)",
         type=str,
     )
+
     check_review_progress = add_parser(
         plug.cli.CoreCommand.reviews.check,
         description=(
@@ -421,7 +431,7 @@ def _add_peer_review_parsers(base_parsers, add_parser):
             "this command fow grading purposes is not recommended."
         ),
         help="check which students have opened peer review issues",
-        parents=base_parsers,
+        parents=base_review_parsers,
         formatter_class=argparse_ext.OrderedFormatter,
     )
     check_review_progress.add_argument(
@@ -439,6 +449,7 @@ def _add_peer_review_parsers(base_parsers, add_parser):
         type=int,
         required=True,
     )
+
     add_parser(
         plug.cli.CoreCommand.reviews.end,
         description=(
@@ -455,7 +466,7 @@ def _add_peer_review_parsers(base_parsers, add_parser):
         ),
         help="delete review allocations created by `assign-reviews` "
         "(DESTRUCTIVE ACTION: read help section before using)",
-        parents=base_parsers,
+        parents=base_review_parsers,
         formatter_class=argparse_ext.OrderedFormatter,
     )
 
