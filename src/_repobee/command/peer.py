@@ -84,6 +84,9 @@ def assign_peer_reviews(
         raise plug.NotFoundError(f"Can't find repos: {', '.join(missing)}")
 
     if double_blind_salt:
+        plug.log.info(
+            f"Creating anonymous repos with salt: {double_blind_salt}"
+        )
         fetched_repo_dict = _create_anonymized_repos(
             team_repo_tuples, double_blind_salt, api
         )
