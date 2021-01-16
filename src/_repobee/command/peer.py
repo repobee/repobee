@@ -135,7 +135,7 @@ def assign_peer_reviews(
                 f"to review {reviewed_repo.name}"
             )
             api.assign_repo(
-                review_team, reviewed_repo, plug.TeamPermission.PUSH
+                review_team, reviewed_repo, plug.TeamPermission.PULL
             )
             api.create_issue(
                 issue.title,
