@@ -141,7 +141,7 @@ class TestEnd:
         )
         assert not fetched_review_teams
 
-    @pytest.xfail(reason="PlatformAPI does not support deleting repos")
+    @pytest.mark.xfail(reason="PlatformAPI does not support deleting repos")
     def test_end_double_blind_reviews_removes_repos(
         self, target_api, with_student_repos
     ):
