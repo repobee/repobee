@@ -258,6 +258,7 @@ def _hash_if_salt(s: str, salt: Optional[str], max_hash_size: int = 20) -> str:
 def purge_review_teams(
     assignment_names: Iterable[str],
     students: Iterable[plug.StudentTeam],
+    double_blind_salt: Optional[str],
     api: plug.PlatformAPI,
 ) -> None:
     """Delete all review teams associated with the given assignment names and
@@ -266,11 +267,16 @@ def purge_review_teams(
     Args:
         assignment_names: Names of assignments.
         students: An iterble of student teams.
+        double_blind_salt: If not None, double-blind review is assumed and the
+            salt is used to compute hashed review team names.
         api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     review_team_names = [
-        plug.generate_review_team_name(student, assignment_name)
+        _hash_if_salt(
+            plug.generate_review_team_name(student, assignment_name),
+            salt=double_blind_salt,
+        )
         for student in students
         for assignment_name in assignment_names
     ]

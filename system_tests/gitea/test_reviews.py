@@ -3,6 +3,7 @@ import re
 import shlex
 
 import git
+import pytest
 
 import repobee_plug as plug
 import repobee
@@ -57,24 +58,10 @@ reviews assign --bu {giteamanager.API_URL}
         double_blind_salt = "12345"
         num_reviews = 1
 
-        command = re.sub(
-            r"\s+",
-            " ",
-            f"""
-reviews assign --bu {giteamanager.API_URL}
-    --token {giteamanager.TEACHER_TOKEN}
-    --user {giteamanager.TEACHER_USER}
-    --org-name {giteamanager.TARGET_ORG_NAME}
-    --students {' '.join(map(str, giteamanager.STUDENT_TEAMS))}
-    --assignments {assignment_name}
-    --double-blind-salt {double_blind_salt}
-    --num-reviews {num_reviews}
-    --tb
-""",
-        )
-
         # act
-        repobee.run(shlex.split(command), plugins=[gitea])
+        assign_reviews_with_salt(
+            assignment_name, num_reviews, double_blind_salt
+        )
 
         # assert
         for student_team in giteamanager.STUDENT_TEAMS:
@@ -122,3 +109,103 @@ reviews assign --bu {giteamanager.API_URL}
             assert hash_directory(
                 orig_repo.working_tree_dir
             ) == hash_directory(anon_repo.working_tree_dir)
+
+
+class TestEnd:
+    def test_end_double_blind_reviews_removes_review_teams(
+        self, target_api, with_student_repos
+    ):
+        # arrange
+        random.seed(1)
+        assignment_name = template_helpers.TEMPLATE_REPO_NAMES[0]
+        double_blind_salt = "12345"
+        num_reviews = 1
+        assign_reviews_with_salt(
+            assignment_name, num_reviews, double_blind_salt
+        )
+
+        # act
+        end_reviews_with_salt(assignment_name, double_blind_salt)
+
+        # assert
+        review_team_names = [
+            salted_hash(
+                plug.generate_review_team_name(student_team, assignment_name),
+                salt=double_blind_salt,
+                max_hash_size=20,
+            )
+            for student_team in giteamanager.STUDENT_TEAMS
+        ]
+        fetched_review_teams = list(
+            target_api.get_teams(team_names=review_team_names)
+        )
+        assert not fetched_review_teams
+
+    @pytest.xfail(reason="PlatformAPI does not support deleting repos")
+    def test_end_double_blind_reviews_removes_repos(
+        self, target_api, with_student_repos
+    ):
+        # arrange
+        random.seed(1)
+        assignment_name = template_helpers.TEMPLATE_REPO_NAMES[0]
+        double_blind_salt = "12345"
+        num_reviews = 1
+        assign_reviews_with_salt(
+            assignment_name, num_reviews, double_blind_salt
+        )
+
+        # act
+        end_reviews_with_salt(assignment_name, double_blind_salt)
+
+        # assert
+        fetched_repos = [
+            target_api.get_repo(
+                salted_hash(
+                    plug.generate_repo_name(student_team, assignment_name),
+                    salt=double_blind_salt,
+                    max_hash_size=20,
+                ),
+                student_team.name,
+            )
+            for student_team in giteamanager.STUDENT_TEAMS
+        ]
+        assert not fetched_repos
+
+
+def end_reviews_with_salt(assignment_name: str, salt: str) -> None:
+    command = re.sub(
+        r"\s+",
+        " ",
+        f"""
+reviews end --bu {giteamanager.API_URL}
+    --token {giteamanager.TEACHER_TOKEN}
+    --user {giteamanager.TEACHER_USER}
+    --org-name {giteamanager.TARGET_ORG_NAME}
+    --students {' '.join(map(str, giteamanager.STUDENT_TEAMS))}
+    --assignments {assignment_name}
+    --double-blind-salt {salt}
+    --tb
+        """,
+    )
+    repobee.run(shlex.split(command), plugins=[gitea])
+
+
+def assign_reviews_with_salt(
+    assignment_name: str, num_reviews: int, salt: str
+) -> None:
+    command = re.sub(
+        r"\s+",
+        " ",
+        f"""
+reviews assign --bu {giteamanager.API_URL}
+    --token {giteamanager.TEACHER_TOKEN}
+    --user {giteamanager.TEACHER_USER}
+    --org-name {giteamanager.TARGET_ORG_NAME}
+    --students {' '.join(map(str, giteamanager.STUDENT_TEAMS))}
+    --assignments {assignment_name}
+    --double-blind-salt {salt}
+    --num-reviews {num_reviews}
+    --tb
+""",
+    )
+    repobee.run(shlex.split(command), plugins=[gitea])
