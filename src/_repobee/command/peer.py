@@ -154,6 +154,9 @@ def _create_anonymized_repos(
     salt: str,
     api: plug.PlatformAPI,
 ) -> Dict[str, plug.Repo]:
+    """Create anonymous copies of the given repositories, push them to the
+    platform and return a mapping from repo name to platform repo.
+    """
     with tempfile.TemporaryDirectory() as tmp_clone_dir, tempfile.TemporaryDirectory() as tmp_workdir:  # noqa
         workdir = pathlib.Path(tmp_workdir)
         clone_dir = pathlib.Path(tmp_clone_dir)
@@ -166,28 +169,36 @@ def _create_anonymized_repos(
         repo_mapping = {}
         anonymized_repos = []
         for student_repo in student_repos_iter:
-            anonymized_repo_name = _hash_if_salt(student_repo.name, salt=salt)
-            platform_repo = api.create_repo(
-                name=anonymized_repo_name,
-                description="Review copy",
-                private=True,
+            anon_student_repo, anon_platform_repo = _create_anonymized_repo(
+                student_repo, salt, api
             )
-            _anonymize_commit_history(student_repo.path)
-            anonymized_repos.append(
-                plug.StudentRepo(
-                    name=anonymized_repo_name,
-                    team=student_repo.team,
-                    url=student_repo.url.replace(
-                        student_repo.name, anonymized_repo_name
-                    ),
-                    _path=student_repo.path,
-                )
-            )
-            repo_mapping[student_repo.name] = platform_repo
+            anonymized_repos.append(anon_student_repo)
+            repo_mapping[student_repo.name] = anon_platform_repo
 
         _push_to_platform(anonymized_repos, api)
 
         return repo_mapping
+
+
+def _create_anonymized_repo(
+    student_repo: plug.StudentRepo, salt: str, api: plug.PlatformAPI
+) -> Tuple[plug.StudentRepo, plug.Repo]:
+    anonymized_repo_name = _hash_if_salt(student_repo.name, salt=salt)
+    platform_repo = api.create_repo(
+        name=anonymized_repo_name, description="Review copy", private=True
+    )
+    _anonymize_commit_history(student_repo.path)
+    return (
+        plug.StudentRepo(
+            name=anonymized_repo_name,
+            team=student_repo.team,
+            url=student_repo.url.replace(
+                student_repo.name, anonymized_repo_name
+            ),
+            _path=student_repo.path,
+        ),
+        platform_repo,
+    )
 
 
 def _anonymize_commit_history(repo_path: pathlib.Path) -> None:
