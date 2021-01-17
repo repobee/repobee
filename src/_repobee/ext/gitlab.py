@@ -191,6 +191,11 @@ class GitLabAPI(plug.PlatformAPI):
             )
             return self._wrap_project(project)
 
+    def delete_repo(self, repo: plug.Repo) -> None:
+        """See :py:meth:`repobee_plug.PlatformAPI.delete_repo`."""
+        with _try_api_request():
+            repo.implementation.delete()
+
     def get_repo(self, repo_name: str, team_name: Optional[str]) -> plug.Repo:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repo`."""
         with _try_api_request():

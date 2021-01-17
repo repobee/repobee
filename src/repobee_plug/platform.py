@@ -247,6 +247,17 @@ class _APISpec:
         """
         _not_implemented()
 
+    def delete_repo(self, repo: Repo) -> None:
+        """Delete a repository.
+
+        Args:
+            repo: The repository to delete.
+        Raises:
+            :py:class:`exceptions.PlatformError`: If something goes wrong in
+                communicating with the platform.
+        """
+        _not_implemented()
+
     def get_repos(
         self, repo_urls: Optional[List[str]] = None
     ) -> Iterable[Repo]:

@@ -1,5 +1,6 @@
 from collections import namedtuple
 import itertools
+import unittest.mock
 
 import requests.exceptions
 import pytest
@@ -447,6 +448,28 @@ class TestGetRepoUrls:
 
         # assert
         assert sorted(actual_urls) == sorted(expected_urls)
+
+
+class TestDeleteRepo:
+    """Tests for delete_repo."""
+
+    def test_delete_repo_calls_correct_function(self):
+        # arrange
+        platform_repo_mock = unittest.mock.MagicMock()
+        repo = plug.Repo(
+            name="some-repo",
+            description="a repo",
+            private=True,
+            url="doesntmatter",
+            implementation=platform_repo_mock,
+        )
+        api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
+
+        # act
+        api.delete_repo(repo)
+
+        # assert
+        platform_repo_mock.delete.assert_called_once()
 
 
 class TestGetRepos:

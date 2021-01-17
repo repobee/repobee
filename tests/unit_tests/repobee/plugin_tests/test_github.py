@@ -343,6 +343,24 @@ class TestGetRepos:
         assert len(list(api.get_repos())) == len(repos)
 
 
+class TestDeleteRepo:
+    """Tests for delete_repo."""
+
+    def test_delete_repo(self, api):
+        platform_repo = MagicMock()
+        repo = plug.Repo(
+            "some-repo",
+            "Some description",
+            True,
+            "url-doesnt-matter",
+            implementation=platform_repo,
+        )
+
+        api.delete_repo(repo)
+
+        platform_repo.delete.assert_called_once()
+
+
 class TestInsertAuth:
     """Tests for insert_auth."""
 
