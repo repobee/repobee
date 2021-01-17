@@ -203,7 +203,7 @@ class LocalAPI(plug.PlatformAPI):
         del repo_bucket[repo.name]
         for team in self._teams[self._org_name].values():
             try:
-                team.implementation.repos.remove(repo)
+                team.repos.remove(repo.implementation)
             except ValueError:
                 pass
 
