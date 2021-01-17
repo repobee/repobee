@@ -11,6 +11,7 @@ import pathlib
 import pickle
 import datetime
 import dataclasses
+import shutil
 
 from typing import List, Iterable, Optional, Set
 
@@ -188,6 +189,23 @@ class LocalAPI(plug.PlatformAPI):
             self._get_team(team.id).repos.add(repo)
 
         return repo.to_plug_repo()
+
+    def delete_repo(self, repo: plug.Repo) -> None:
+        """See :py:meth:`repobee_plug.PlatformAPI.delete_repo`."""
+        repo_bucket = self._repos.get(self._org_name, {})
+        if repo.name not in repo_bucket:
+            raise plug.NotFoundError(
+                f"no such repo '{self._org_name}/{repo.name}'"
+            )
+
+        repo_path = self._repodir / self._org_name / repo.name
+        shutil.rmtree(repo_path)
+        del repo_bucket[repo.name]
+        for team in self._teams[self._org_name].values():
+            try:
+                team.implementation.repos.remove(repo)
+            except ValueError:
+                pass
 
     def get_repo(self, repo_name: str, team_name: Optional[str]) -> plug.Repo:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repo`."""
