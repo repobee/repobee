@@ -142,11 +142,18 @@ def _dispatch_reviews_command(
     action = args.action
     if action == reviews.assign:
         command.assign_peer_reviews(
-            args.assignments, args.students, args.num_reviews, args.issue, api
+            args.assignments,
+            args.students,
+            args.num_reviews,
+            args.issue,
+            args.double_blind_salt,
+            api,
         )
         return None
     elif action == reviews.end:
-        command.purge_review_teams(args.assignments, args.students, api)
+        command.purge_review_teams(
+            args.assignments, args.students, args.double_blind_salt, api
+        )
         return None
     elif action == reviews.check:
         command.check_peer_review_progress(

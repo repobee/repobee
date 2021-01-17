@@ -77,6 +77,7 @@ VALID_PARSED_ARGS = dict(
     ],
     secrets=False,
     update_local=False,
+    double_blind_salt=None,
 )
 
 
