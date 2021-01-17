@@ -204,7 +204,7 @@ class LocalAPI(plug.PlatformAPI):
         for team in self._teams[self._org_name].values():
             try:
                 team.repos.remove(repo.implementation)
-            except ValueError:
+            except KeyError:
                 pass
 
     def get_repo(self, repo_name: str, team_name: Optional[str]) -> plug.Repo:
