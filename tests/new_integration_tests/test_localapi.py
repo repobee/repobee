@@ -28,6 +28,7 @@ class TestDeleteRepo:
 
     def test_delete_repo_assigned_to_team(self, api):
         # arrange
+        api.create_team("smoke-and-mirrors-team")
         team = api.create_team("some-team")
         repo = api.create_repo("some-repo", "Some description", True, team)
         assert next(api.get_team_repos(team)) == repo
