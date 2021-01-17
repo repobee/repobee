@@ -1,7 +1,7 @@
 from _repobee.command.issues import open_issue, close_issue, list_issues
 from _repobee.command.peer import (
     assign_peer_reviews,
-    purge_review_teams,
+    end_reviews,
     check_peer_review_progress,
 )
 from _repobee.command.repos import (
@@ -20,7 +20,7 @@ __all__ = [
     "close_issue",
     "list_issues",
     "assign_peer_reviews",
-    "purge_review_teams",
+    "end_reviews",
     "check_peer_review_progress",
     "setup_student_repos",
     "clone_repos",

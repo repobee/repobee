@@ -255,14 +255,17 @@ def _hash_if_salt(s: str, salt: Optional[str], max_hash_size: int = 20) -> str:
     return _repobee.hash.salted_hash(s, salt, max_hash_size) if salt else s
 
 
-def purge_review_teams(
+def end_reviews(
     assignment_names: Iterable[str],
     students: Iterable[plug.StudentTeam],
     double_blind_salt: Optional[str],
     api: plug.PlatformAPI,
 ) -> None:
-    """Delete all review teams associated with the given assignment names and
-    student teams.
+    """Clean up review allocations.
+
+    If normal no-blind review has been performed (i.e. ``double_blind_salt`` is
+    ``None``), then only review teams are deleted. If ``double_blind_salt`` is
+    provided, both review teams and anonymous repo copies are deleted.
 
     Args:
         assignment_names: Names of assignments.
