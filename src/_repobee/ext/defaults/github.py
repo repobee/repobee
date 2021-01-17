@@ -244,6 +244,11 @@ class GitHubAPI(plug.PlatformAPI):
             repo = self._org.create_repo(name, **kwargs)  # type: ignore
             return self._wrap_repo(repo)
 
+    def delete_repo(self, repo: plug.Repo) -> None:
+        """See :py:meth:`repobee_plug.PlatformAPI.delete_repo`."""
+        with _try_api_request():
+            repo.implementation.delete()
+
     def get_repo(self, repo_name: str, team_name: Optional[str]) -> plug.Repo:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repo`."""
         # the GitHub API does not need the team name, as teams do not form
