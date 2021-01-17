@@ -121,6 +121,35 @@ class TestCreateRepo:
         assert next(target_api.get_team_repos(team)) == created_repo
 
 
+class TestDeleteRepo:
+    """Tests for the delete_repo function."""
+
+    def test_delete_existing_repo(self, target_api):
+        # arrange
+        created_repo = target_api.create_repo(
+            "super-repo", "Most super repo!", True
+        )
+        assert target_api.get_repo(created_repo.name, None)
+
+        # act
+        target_api.delete_repo(created_repo)
+
+        # assert
+        with pytest.raises(plug.NotFoundError):
+            target_api.get_repo(created_repo.name, None)
+
+    def test_raises_on_deleting_non_existing_repo(self, target_api):
+        # arrange
+        created_repo = target_api.create_repo(
+            "super-repo", "Most super repo!", True
+        )
+        target_api.delete_repo(created_repo)
+
+        # act/assert
+        with pytest.raises(plug.NotFoundError):
+            target_api.delete_repo(created_repo)
+
+
 class TestGetRepo:
     """Tests for the get_repo function."""
 

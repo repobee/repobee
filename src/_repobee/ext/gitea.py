@@ -220,6 +220,15 @@ class GiteaAPI(plug.PlatformAPI):
 
         return repo
 
+    def delete_repo(self, repo: plug.Repo) -> None:
+        """See :py:meth:`repobee_plug.PlatformAPI.delete_repo`."""
+        endpoint = f"/repos/{self._org_name}/{repo.name}"
+        self._request(
+            requests.delete,
+            endpoint,
+            error_msg=f"could not delete repo '{self._org_name}/{repo.name}'",
+        )
+
     def get_repo(self, repo_name: str, team_name: Optional[str]) -> plug.Repo:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repo`."""
         endpoint = f"/repos/{self._org_name}/{repo_name}"
