@@ -287,8 +287,14 @@ def end_reviews(
         review_team_names, api, desc="Deleting review teams"
     )
     for team in teams:
+        if double_blind_salt:
+            for team_repo in api.get_team_repos(team):
+                api.delete_repo(team_repo)
+                plug.log.info(f"Deleted anonymous repo {team_repo.name}")
+
         api.delete_team(team)
-        plug.log.info(f"Deleted {team.name}")
+
+        plug.log.info(f"Deleted team {team.name}")
 
 
 def check_peer_review_progress(
