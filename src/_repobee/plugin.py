@@ -379,8 +379,8 @@ def get_module_names(pkg: ModuleType) -> List[str]:
         for file_finder, name, _ in pkgutil.iter_modules(pkg_path)
         # only include modules (i.e. files), not subpackages
         if (
-            pathlib.Path(file_finder.path) / (name + ".py")
-        ).is_file()  # type: ignore
+            pathlib.Path(file_finder.path) / (name + ".py")  # type: ignore
+        ).is_file()
     ]
 
 
