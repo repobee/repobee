@@ -151,7 +151,7 @@ def _dispatch_reviews_command(
         )
         return None
     elif action == reviews.end:
-        command.purge_review_teams(
+        command.end_reviews(
             args.assignments, args.students, args.double_blind_salt, api
         )
         return None

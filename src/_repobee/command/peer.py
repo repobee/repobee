@@ -186,18 +186,24 @@ def _create_anonymized_repos(
 def _create_anonymized_repo(
     student_repo: plug.StudentRepo, salt: str, api: plug.PlatformAPI
 ) -> Tuple[plug.StudentRepo, plug.Repo]:
-    anonymized_repo_name = _hash_if_salt(student_repo.name, salt=salt)
+    anon_repo_name = _hash_if_salt(student_repo.name, salt=salt)
+    anon_review_team_name = _hash_if_salt(
+        f"{student_repo.name}-review", salt=salt
+    )
+    fingerprint = _anonymous_repo_fingerprint(
+        anon_review_team_name, anon_repo_name
+    )
     platform_repo = api.create_repo(
-        name=anonymized_repo_name, description="Review copy", private=True
+        name=anon_repo_name,
+        description=f"Review copy. Fingerprint: {fingerprint}",
+        private=True,
     )
     _anonymize_commit_history(student_repo.path)
     return (
         plug.StudentRepo(
-            name=anonymized_repo_name,
+            name=anon_repo_name,
             team=student_repo.team,
-            url=student_repo.url.replace(
-                student_repo.name, anonymized_repo_name
-            ),
+            url=student_repo.url.replace(student_repo.name, anon_repo_name),
             _path=student_repo.path,
         ),
         platform_repo,
@@ -210,6 +216,10 @@ def _anonymize_commit_history(repo_path: pathlib.Path) -> None:
     repo.git.add(".", "--force")
     repo.git.commit("-m", "Add project")
     repo.git.checkout(_DEFAULT_BRANCH)
+
+
+def _anonymous_repo_fingerprint(team_name: str, repo_name: str) -> str:
+    return _repobee.hash.hash(team_name + repo_name)
 
 
 def _clone_to_student_repos(
@@ -255,14 +265,17 @@ def _hash_if_salt(s: str, salt: Optional[str], max_hash_size: int = 20) -> str:
     return _repobee.hash.salted_hash(s, salt, max_hash_size) if salt else s
 
 
-def purge_review_teams(
+def end_reviews(
     assignment_names: Iterable[str],
     students: Iterable[plug.StudentTeam],
     double_blind_salt: Optional[str],
     api: plug.PlatformAPI,
 ) -> None:
-    """Delete all review teams associated with the given assignment names and
-    student teams.
+    """Clean up review allocations.
+
+    If normal no-blind review has been performed (i.e. ``double_blind_salt`` is
+    ``None``), then only review teams are deleted. If ``double_blind_salt`` is
+    provided, both review teams and anonymous repo copies are deleted.
 
     Args:
         assignment_names: Names of assignments.
@@ -284,8 +297,31 @@ def purge_review_teams(
         review_team_names, api, desc="Deleting review teams"
     )
     for team in teams:
+        if double_blind_salt:
+            _delete_anonymous_repos(team, double_blind_salt, api)
         api.delete_team(team)
-        plug.log.info(f"Deleted {team.name}")
+
+        plug.log.info(f"Deleted team {team.name}")
+
+
+def _delete_anonymous_repos(
+    team: plug.Team, salt: str, api: plug.PlatformAPI
+) -> None:
+    """Delete all repos assigned to this team that have an anoymous repo
+    fingerprint in their descriptions.
+    """
+    for team_repo in api.get_team_repos(team):
+        fingerprint = _anonymous_repo_fingerprint(team.name, team_repo.name)
+        if fingerprint in team_repo.description:
+            api.delete_repo(team_repo)
+            plug.log.info(f"Deleted anonymous repo {team_repo.name}")
+        else:
+            plug.log.warning(
+                f"Repo '{team_repo.name}' of anonymous review team "
+                f"'{team.name}' does not have expected fingerprint "
+                f"'{fingerprint}'. Repo may have been added by "
+                "accident or maliciously. Not deleting."
+            )
 
 
 def check_peer_review_progress(

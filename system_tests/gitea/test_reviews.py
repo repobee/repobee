@@ -141,10 +141,12 @@ class TestEnd:
         )
         assert not fetched_review_teams
 
-    @pytest.mark.xfail(reason="PlatformAPI does not support deleting repos")
-    def test_end_double_blind_reviews_removes_repos(
+    def test_end_double_blind_reviews_removes_anonymous_repos(
         self, target_api, with_student_repos
     ):
+        """Test that the anonymous repo copies are removed, but not the
+        original repos.
+        """
         # arrange
         random.seed(1)
         assignment_name = template_helpers.TEMPLATE_REPO_NAMES[0]
@@ -158,18 +160,59 @@ class TestEnd:
         end_reviews_with_salt(assignment_name, double_blind_salt)
 
         # assert
-        fetched_repos = [
-            target_api.get_repo(
-                salted_hash(
-                    plug.generate_repo_name(student_team, assignment_name),
-                    salt=double_blind_salt,
-                    max_hash_size=20,
-                ),
-                student_team.name,
+        assert_iterations = 0
+        for student_team in giteamanager.STUDENT_TEAMS:
+            repo_name = plug.generate_repo_name(student_team, assignment_name)
+            anonymous_repo_name = salted_hash(
+                repo_name, salt=double_blind_salt, max_hash_size=20
             )
-            for student_team in giteamanager.STUDENT_TEAMS
-        ]
-        assert not fetched_repos
+
+            with pytest.raises(plug.NotFoundError):
+                target_api.get_repo(anonymous_repo_name, student_team.name)
+
+            assert target_api.get_repo(repo_name, student_team.name)
+
+            assert_iterations += 1
+
+        assert assert_iterations > 0
+
+    def test_end_double_blind_reviews_does_not_remove_non_anonymous_repos(
+        self, target_api, with_student_repos
+    ):
+        """Test that adding repos that are not the anonymous repo copies to the
+        anonymous review teams does NOT cause them to be deleted. That would be
+        badness.
+        """
+        # arrange
+        random.seed(1)
+        assignment_name = template_helpers.TEMPLATE_REPO_NAMES[0]
+        double_blind_salt = "12345"
+        num_reviews = 1
+        assign_reviews_with_salt(
+            assignment_name, num_reviews, double_blind_salt
+        )
+
+        # add an original repo to one of the review teams
+        orig_team_name = giteamanager.STUDENT_TEAMS[0].name
+        orig_repo_name = plug.generate_repo_name(
+            orig_team_name, assignment_name
+        )
+        orig_repo = target_api.get_repo(orig_repo_name, orig_team_name)
+        review_team_name = salted_hash(
+            plug.generate_review_team_name(orig_team_name, assignment_name),
+            salt=double_blind_salt,
+            max_hash_size=20,
+        )
+        review_team = next(target_api.get_teams([review_team_name]))
+        target_api.assign_repo(
+            review_team, orig_repo, plug.TeamPermission.PULL
+        )
+
+        # act
+        end_reviews_with_salt(assignment_name, double_blind_salt)
+
+        # assert
+        assert target_api.get_repo(orig_repo_name, orig_team_name) == orig_repo
 
 
 def end_reviews_with_salt(assignment_name: str, salt: str) -> None:

@@ -156,7 +156,7 @@ def command_all_raise_mock(command_mock, dummyapi_instance, request):
     command_mock.clone_repos.side_effect = raise_
     command_mock.check_peer_review_progress.side_effect = raise_
     command_mock.show_config.side_effect = raise_
-    command_mock.purge_review_teams.side_effect = raise_
+    command_mock.end_reviews.side_effect = raise_
     command_mock.assign_peer_reviews.side_effect = raise_
     command_mock.list_issues.side_effect = raise_
     dummyapi_instance.verify_settings = raise_
