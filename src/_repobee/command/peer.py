@@ -186,18 +186,24 @@ def _create_anonymized_repos(
 def _create_anonymized_repo(
     student_repo: plug.StudentRepo, salt: str, api: plug.PlatformAPI
 ) -> Tuple[plug.StudentRepo, plug.Repo]:
-    anonymized_repo_name = _hash_if_salt(student_repo.name, salt=salt)
+    anon_repo_name = _hash_if_salt(student_repo.name, salt=salt)
+    anon_review_team_name = _hash_if_salt(
+        f"{student_repo.name}-review", salt=salt
+    )
+    fingerprint = _anonymous_repo_fingerprint(
+        anon_review_team_name, anon_repo_name
+    )
     platform_repo = api.create_repo(
-        name=anonymized_repo_name, description="Review copy", private=True
+        name=anon_repo_name,
+        description=f"Review copy. Fingerprint: {fingerprint}",
+        private=True,
     )
     _anonymize_commit_history(student_repo.path)
     return (
         plug.StudentRepo(
-            name=anonymized_repo_name,
+            name=anon_repo_name,
             team=student_repo.team,
-            url=student_repo.url.replace(
-                student_repo.name, anonymized_repo_name
-            ),
+            url=student_repo.url.replace(student_repo.name, anon_repo_name),
             _path=student_repo.path,
         ),
         platform_repo,
@@ -210,6 +216,10 @@ def _anonymize_commit_history(repo_path: pathlib.Path) -> None:
     repo.git.add(".", "--force")
     repo.git.commit("-m", "Add project")
     repo.git.checkout(_DEFAULT_BRANCH)
+
+
+def _anonymous_repo_fingerprint(team_name: str, repo_name: str) -> str:
+    return _repobee.hash.hash(team_name + repo_name)
 
 
 def _clone_to_student_repos(
@@ -289,8 +299,19 @@ def end_reviews(
     for team in teams:
         if double_blind_salt:
             for team_repo in api.get_team_repos(team):
-                api.delete_repo(team_repo)
-                plug.log.info(f"Deleted anonymous repo {team_repo.name}")
+                fingerprint = _anonymous_repo_fingerprint(
+                    team.name, team_repo.name
+                )
+                if fingerprint in team_repo.description:
+                    api.delete_repo(team_repo)
+                    plug.log.info(f"Deleted anonymous repo {team_repo.name}")
+                else:
+                    plug.log.warning(
+                        f"Repo '{team_repo.name}' of anonymous review team "
+                        f"'{team.name}' does not have expected fingerprint "
+                        f"'{fingerprint}'. Repo may have been added by "
+                        "accident or maliciously. Not deleting."
+                    )
 
         api.delete_team(team)
 

@@ -4,6 +4,20 @@ from typing import Any, Optional
 import hashlib
 
 
+def hash(obj: Any, max_hash_size: Optional[int] = None) -> str:
+    """Return the hexdigest of a sha256 hash of the string representation of
+    the input object, salted with the giiven salt and truncated to the given
+    hash size.
+
+    Args:
+        obj: Any object to hash.
+        max_hash_size: Maximum size of the returned hash.
+    Returns:
+        A hash.
+    """
+    return hashlib.sha256(str(obj).encode("utf8")).hexdigest()[:max_hash_size]
+
+
 def salted_hash(
     obj: Any, salt: Any, max_hash_size: Optional[int] = None
 ) -> str:
@@ -23,6 +37,4 @@ def salted_hash(
     Returns:
         A hash as described.
     """
-    return hashlib.sha256((str(obj) + salt).encode("utf8")).hexdigest()[
-        :max_hash_size
-    ]
+    return hash(str(obj) + salt, max_hash_size=max_hash_size)
