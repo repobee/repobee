@@ -161,6 +161,7 @@ def _dispatch_reviews_command(
             args.students,
             args.title_regex,
             args.num_reviews,
+            args.double_blind_salt,
             api,
         )
         return None

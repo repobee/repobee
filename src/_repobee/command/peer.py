@@ -329,6 +329,7 @@ def check_peer_review_progress(
     teams: Iterable[plug.Team],
     title_regex: str,
     num_reviews: int,
+    double_blind_salt: Optional[str],
     api: plug.PlatformAPI,
 ) -> None:
     """Check which teams have opened peer review issues in their allotted
@@ -347,10 +348,17 @@ def check_peer_review_progress(
     reviews = collections.defaultdict(list)
 
     review_team_names = [
-        plug.generate_review_team_name(team, assignment_name)
-        for team in teams
+        _hash_if_salt(
+            plug.generate_review_team_name(student_team, assignment_name),
+            salt=double_blind_salt,
+        )
+        for student_team in teams
         for assignment_name in assignment_names
     ]
+    rainbow_table = {
+        _hash_if_salt(repo_name, salt=double_blind_salt): repo_name
+        for repo_name in plug.generate_repo_names(teams, assignment_names)
+    }
 
     review_teams = progresswrappers.get_teams(
         review_team_names, api, desc="Processing review teams"
@@ -378,7 +386,7 @@ def check_peer_review_progress(
         for team in reviewing_teams:
             reviews[str(team)].append(
                 plug.Review(
-                    repo=reviewed_repo.name,
+                    repo=rainbow_table[reviewed_repo.name],
                     done=any(
                         map(review_issue_authors.__contains__, team.members)
                     ),
