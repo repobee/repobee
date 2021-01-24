@@ -215,6 +215,60 @@ class TestEnd:
         assert target_api.get_repo(orig_repo_name, orig_team_name) == orig_repo
 
 
+class TestCheck:
+    def test_check_double_blind_review_contains_original_repo_names(
+        self, target_api, with_student_repos, capsys
+    ):
+        """Weak test for checking double-blind review: just verify that the
+        original repo names are contained in the output.
+        """
+        # arrange
+        random.seed(1)
+        assignment_name = template_helpers.TEMPLATE_REPO_NAMES[0]
+        double_blind_salt = "12345"
+        num_reviews = 1
+        assign_reviews_with_salt(
+            assignment_name, num_reviews, double_blind_salt
+        )
+
+        # act
+        check_reviews_with_salt(
+            assignment_name, num_reviews, double_blind_salt
+        )
+
+        # assert
+        expected_repo_names = plug.generate_repo_names(
+            giteamanager.STUDENT_TEAMS, [assignment_name]
+        )
+        sout = capsys.readouterr().out
+        for assert_iters, expected_repo_name in enumerate(expected_repo_names):
+            assert expected_repo_name in sout
+
+        assert assert_iters > 0
+
+
+def check_reviews_with_salt(
+    assignment_name: str, num_reviews, salt: str
+) -> None:
+    command = re.sub(
+        r"\s+",
+        " ",
+        f"""
+reviews check --bu {giteamanager.API_URL}
+    --token {giteamanager.TEACHER_TOKEN}
+    --user {giteamanager.TEACHER_USER}
+    --org-name {giteamanager.TARGET_ORG_NAME}
+    --students {' '.join(map(str, giteamanager.STUDENT_TEAMS))}
+    --assignments {assignment_name}
+    --double-blind-salt {salt}
+    --num-reviews {num_reviews}
+    --title-regex Review
+    --tb
+""",
+    )
+    repobee.run(shlex.split(command), plugins=[gitea])
+
+
 def end_reviews_with_salt(assignment_name: str, salt: str) -> None:
     command = re.sub(
         r"\s+",
