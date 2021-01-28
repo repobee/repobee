@@ -10,7 +10,7 @@ import repobee
 from repobee_testhelpers._internal import templates as template_helpers
 from repobee_testhelpers.funcs import hash_directory
 from _repobee.ext import gitea
-from _repobee.hash import salted_hash
+from _repobee.hash import keyed_hash
 
 import giteamanager
 
@@ -55,26 +55,24 @@ reviews assign --bu {giteamanager.API_URL}
         # arrange
         random.seed(1)
         assignment_name = template_helpers.TEMPLATE_REPO_NAMES[0]
-        double_blind_salt = "12345"
+        double_blind_key = "12345"
         num_reviews = 1
 
         # act
-        assign_reviews_with_salt(
-            assignment_name, num_reviews, double_blind_salt
-        )
+        assign_reviews_with_key(assignment_name, num_reviews, double_blind_key)
 
         # assert
         for student_team in giteamanager.STUDENT_TEAMS:
-            review_team_name = salted_hash(
+            review_team_name = keyed_hash(
                 plug.generate_review_team_name(student_team, assignment_name),
-                salt=double_blind_salt,
+                key=double_blind_key,
                 max_hash_size=20,
             )
             original_repo_name = plug.generate_repo_name(
                 student_team, assignment_name
             )
-            anonymous_repo_name = salted_hash(
-                original_repo_name, salt=double_blind_salt, max_hash_size=20
+            anonymous_repo_name = keyed_hash(
+                original_repo_name, key=double_blind_key, max_hash_size=20
             )
 
             review_team, *other_teams = list(
@@ -118,20 +116,18 @@ class TestEnd:
         # arrange
         random.seed(1)
         assignment_name = template_helpers.TEMPLATE_REPO_NAMES[0]
-        double_blind_salt = "12345"
+        double_blind_key = "12345"
         num_reviews = 1
-        assign_reviews_with_salt(
-            assignment_name, num_reviews, double_blind_salt
-        )
+        assign_reviews_with_key(assignment_name, num_reviews, double_blind_key)
 
         # act
-        end_reviews_with_salt(assignment_name, double_blind_salt)
+        end_reviews_with_key(assignment_name, double_blind_key)
 
         # assert
         review_team_names = [
-            salted_hash(
+            keyed_hash(
                 plug.generate_review_team_name(student_team, assignment_name),
-                salt=double_blind_salt,
+                key=double_blind_key,
                 max_hash_size=20,
             )
             for student_team in giteamanager.STUDENT_TEAMS
@@ -150,21 +146,19 @@ class TestEnd:
         # arrange
         random.seed(1)
         assignment_name = template_helpers.TEMPLATE_REPO_NAMES[0]
-        double_blind_salt = "12345"
+        double_blind_key = "12345"
         num_reviews = 1
-        assign_reviews_with_salt(
-            assignment_name, num_reviews, double_blind_salt
-        )
+        assign_reviews_with_key(assignment_name, num_reviews, double_blind_key)
 
         # act
-        end_reviews_with_salt(assignment_name, double_blind_salt)
+        end_reviews_with_key(assignment_name, double_blind_key)
 
         # assert
         assert_iterations = 0
         for student_team in giteamanager.STUDENT_TEAMS:
             repo_name = plug.generate_repo_name(student_team, assignment_name)
-            anonymous_repo_name = salted_hash(
-                repo_name, salt=double_blind_salt, max_hash_size=20
+            anonymous_repo_name = keyed_hash(
+                repo_name, key=double_blind_key, max_hash_size=20
             )
 
             with pytest.raises(plug.NotFoundError):
@@ -186,11 +180,9 @@ class TestEnd:
         # arrange
         random.seed(1)
         assignment_name = template_helpers.TEMPLATE_REPO_NAMES[0]
-        double_blind_salt = "12345"
+        double_blind_key = "12345"
         num_reviews = 1
-        assign_reviews_with_salt(
-            assignment_name, num_reviews, double_blind_salt
-        )
+        assign_reviews_with_key(assignment_name, num_reviews, double_blind_key)
 
         # add an original repo to one of the review teams
         orig_team_name = giteamanager.STUDENT_TEAMS[0].name
@@ -198,9 +190,9 @@ class TestEnd:
             orig_team_name, assignment_name
         )
         orig_repo = target_api.get_repo(orig_repo_name, orig_team_name)
-        review_team_name = salted_hash(
+        review_team_name = keyed_hash(
             plug.generate_review_team_name(orig_team_name, assignment_name),
-            salt=double_blind_salt,
+            key=double_blind_key,
             max_hash_size=20,
         )
         review_team = next(target_api.get_teams([review_team_name]))
@@ -209,7 +201,7 @@ class TestEnd:
         )
 
         # act
-        end_reviews_with_salt(assignment_name, double_blind_salt)
+        end_reviews_with_key(assignment_name, double_blind_key)
 
         # assert
         assert target_api.get_repo(orig_repo_name, orig_team_name) == orig_repo
@@ -225,16 +217,12 @@ class TestCheck:
         # arrange
         random.seed(1)
         assignment_name = template_helpers.TEMPLATE_REPO_NAMES[0]
-        double_blind_salt = "12345"
+        double_blind_key = "12345"
         num_reviews = 1
-        assign_reviews_with_salt(
-            assignment_name, num_reviews, double_blind_salt
-        )
+        assign_reviews_with_key(assignment_name, num_reviews, double_blind_key)
 
         # act
-        check_reviews_with_salt(
-            assignment_name, num_reviews, double_blind_salt
-        )
+        check_reviews_with_key(assignment_name, num_reviews, double_blind_key)
 
         # assert
         expected_repo_names = plug.generate_repo_names(
@@ -247,8 +235,8 @@ class TestCheck:
         assert assert_iters > 0
 
 
-def check_reviews_with_salt(
-    assignment_name: str, num_reviews, salt: str
+def check_reviews_with_key(
+    assignment_name: str, num_reviews, key: str
 ) -> None:
     command = re.sub(
         r"\s+",
@@ -260,7 +248,7 @@ reviews check --bu {giteamanager.API_URL}
     --org-name {giteamanager.TARGET_ORG_NAME}
     --students {' '.join(map(str, giteamanager.STUDENT_TEAMS))}
     --assignments {assignment_name}
-    --double-blind-salt {salt}
+    --double-blind-key {key}
     --num-reviews {num_reviews}
     --title-regex Review
     --tb
@@ -269,7 +257,7 @@ reviews check --bu {giteamanager.API_URL}
     repobee.run(shlex.split(command), plugins=[gitea])
 
 
-def end_reviews_with_salt(assignment_name: str, salt: str) -> None:
+def end_reviews_with_key(assignment_name: str, key: str) -> None:
     command = re.sub(
         r"\s+",
         " ",
@@ -280,15 +268,15 @@ reviews end --bu {giteamanager.API_URL}
     --org-name {giteamanager.TARGET_ORG_NAME}
     --students {' '.join(map(str, giteamanager.STUDENT_TEAMS))}
     --assignments {assignment_name}
-    --double-blind-salt {salt}
+    --double-blind-key {key}
     --tb
         """,
     )
     repobee.run(shlex.split(command), plugins=[gitea])
 
 
-def assign_reviews_with_salt(
-    assignment_name: str, num_reviews: int, salt: str
+def assign_reviews_with_key(
+    assignment_name: str, num_reviews: int, key: str
 ) -> None:
     command = re.sub(
         r"\s+",
@@ -300,7 +288,7 @@ reviews assign --bu {giteamanager.API_URL}
     --org-name {giteamanager.TARGET_ORG_NAME}
     --students {' '.join(map(str, giteamanager.STUDENT_TEAMS))}
     --assignments {assignment_name}
-    --double-blind-salt {salt}
+    --double-blind-key {key}
     --num-reviews {num_reviews}
     --tb
 """,
