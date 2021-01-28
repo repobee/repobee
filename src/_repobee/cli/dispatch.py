@@ -146,13 +146,13 @@ def _dispatch_reviews_command(
             args.students,
             args.num_reviews,
             args.issue,
-            args.double_blind_salt,
+            args.double_blind_key,
             api,
         )
         return None
     elif action == reviews.end:
         command.end_reviews(
-            args.assignments, args.students, args.double_blind_salt, api
+            args.assignments, args.students, args.double_blind_key, api
         )
         return None
     elif action == reviews.check:
@@ -161,7 +161,7 @@ def _dispatch_reviews_command(
             args.students,
             args.title_regex,
             args.num_reviews,
-            args.double_blind_salt,
+            args.double_blind_key,
             api,
         )
         return None

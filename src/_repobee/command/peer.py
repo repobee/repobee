@@ -41,7 +41,7 @@ def assign_peer_reviews(
     teams: Iterable[plug.StudentTeam],
     num_reviews: int,
     issue: Optional[plug.Issue],
-    double_blind_salt: Optional[str],
+    double_blind_key: Optional[str],
     api: plug.PlatformAPI,
 ) -> None:
     """Assign peer reviewers among the students to each student repo. Each
@@ -61,7 +61,7 @@ def assign_peer_reviews(
             (consequently, the amount of reviews of each repo)
         issue: An issue with review instructions to be opened in the considered
             repos.
-        double_blind_salt: If provided, use salt to make double-blind review
+        double_blind_key: If provided, use key to make double-blind review
             allocation.
         api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
@@ -83,12 +83,10 @@ def assign_peer_reviews(
     if missing:
         raise plug.NotFoundError(f"Can't find repos: {', '.join(missing)}")
 
-    if double_blind_salt:
-        plug.log.info(
-            f"Creating anonymous repos with salt: {double_blind_salt}"
-        )
+    if double_blind_key:
+        plug.log.info(f"Creating anonymous repos with key: {double_blind_key}")
         fetched_repo_dict = _create_anonymized_repos(
-            team_repo_tuples, double_blind_salt, api
+            team_repo_tuples, double_blind_key, api
         )
 
     for assignment_name in assignment_names:
@@ -103,11 +101,11 @@ def assign_peer_reviews(
                     (
                         plug.StudentTeam(
                             members=alloc.review_team.members,
-                            name=_hash_if_salt(
+                            name=_hash_if_key(
                                 plug.generate_review_team_name(
                                     str(alloc.reviewed_team), assignment_name
                                 ),
-                                salt=double_blind_salt,
+                                key=double_blind_key,
                             ),
                         ),
                         alloc.reviewed_team,
@@ -154,7 +152,7 @@ def assign_peer_reviews(
 
 def _create_anonymized_repos(
     team_repo_tuples: List[Tuple[plug.Team, List[plug.Repo]]],
-    salt: str,
+    key: str,
     api: plug.PlatformAPI,
 ) -> Dict[str, plug.Repo]:
     """Create anonymous copies of the given repositories, push them to the
@@ -173,7 +171,7 @@ def _create_anonymized_repos(
         anonymized_repos = []
         for student_repo in student_repos_iter:
             anon_student_repo, anon_platform_repo = _create_anonymized_repo(
-                student_repo, salt, api
+                student_repo, key, api
             )
             anonymized_repos.append(anon_student_repo)
             repo_mapping[student_repo.name] = anon_platform_repo
@@ -184,11 +182,11 @@ def _create_anonymized_repos(
 
 
 def _create_anonymized_repo(
-    student_repo: plug.StudentRepo, salt: str, api: plug.PlatformAPI
+    student_repo: plug.StudentRepo, key: str, api: plug.PlatformAPI
 ) -> Tuple[plug.StudentRepo, plug.Repo]:
-    anon_repo_name = _hash_if_salt(student_repo.name, salt=salt)
-    anon_review_team_name = _hash_if_salt(
-        f"{student_repo.name}-review", salt=salt
+    anon_repo_name = _hash_if_key(student_repo.name, key=key)
+    anon_review_team_name = _hash_if_key(
+        f"{student_repo.name}-review", key=key
     )
     fingerprint = _anonymous_repo_fingerprint(
         anon_review_team_name, anon_repo_name
@@ -258,37 +256,37 @@ def _push_to_platform(
     _repobee.git.push(push_tuples)
 
 
-def _hash_if_salt(s: str, salt: Optional[str], max_hash_size: int = 20) -> str:
-    """Hash the string with the salt, if provided. Otherwise, return the input
+def _hash_if_key(s: str, key: Optional[str], max_hash_size: int = 20) -> str:
+    """Hash the string with the key, if provided. Otherwise, return the input
     string.
     """
-    return _repobee.hash.salted_hash(s, salt, max_hash_size) if salt else s
+    return _repobee.hash.keyed_hash(s, key, max_hash_size) if key else s
 
 
 def end_reviews(
     assignment_names: Iterable[str],
     students: Iterable[plug.StudentTeam],
-    double_blind_salt: Optional[str],
+    double_blind_key: Optional[str],
     api: plug.PlatformAPI,
 ) -> None:
     """Clean up review allocations.
 
-    If normal no-blind review has been performed (i.e. ``double_blind_salt`` is
-    ``None``), then only review teams are deleted. If ``double_blind_salt`` is
+    If normal no-blind review has been performed (i.e. ``double_blind_key`` is
+    ``None``), then only review teams are deleted. If ``double_blind_key`` is
     provided, both review teams and anonymous repo copies are deleted.
 
     Args:
         assignment_names: Names of assignments.
         students: An iterble of student teams.
-        double_blind_salt: If not None, double-blind review is assumed and the
-            salt is used to compute hashed review team names.
+        double_blind_key: If not None, double-blind review is assumed and the
+            key is used to compute hashed review team names.
         api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     review_team_names = [
-        _hash_if_salt(
+        _hash_if_key(
             plug.generate_review_team_name(student, assignment_name),
-            salt=double_blind_salt,
+            key=double_blind_key,
         )
         for student in students
         for assignment_name in assignment_names
@@ -297,15 +295,15 @@ def end_reviews(
         review_team_names, api, desc="Deleting review teams"
     )
     for team in teams:
-        if double_blind_salt:
-            _delete_anonymous_repos(team, double_blind_salt, api)
+        if double_blind_key:
+            _delete_anonymous_repos(team, double_blind_key, api)
         api.delete_team(team)
 
         plug.log.info(f"Deleted team {team.name}")
 
 
 def _delete_anonymous_repos(
-    team: plug.Team, salt: str, api: plug.PlatformAPI
+    team: plug.Team, key: str, api: plug.PlatformAPI
 ) -> None:
     """Delete all repos assigned to this team that have an anoymous repo
     fingerprint in their descriptions.
@@ -329,7 +327,7 @@ def check_peer_review_progress(
     teams: Iterable[plug.Team],
     title_regex: str,
     num_reviews: int,
-    double_blind_salt: Optional[str],
+    double_blind_key: Optional[str],
     api: plug.PlatformAPI,
 ) -> None:
     """Check which teams have opened peer review issues in their allotted
@@ -348,15 +346,15 @@ def check_peer_review_progress(
     reviews = collections.defaultdict(list)
 
     review_team_names = [
-        _hash_if_salt(
+        _hash_if_key(
             plug.generate_review_team_name(student_team, assignment_name),
-            salt=double_blind_salt,
+            key=double_blind_key,
         )
         for student_team in teams
         for assignment_name in assignment_names
     ]
     rainbow_table = {
-        _hash_if_salt(repo_name, salt=double_blind_salt): repo_name
+        _hash_if_key(repo_name, key=double_blind_key): repo_name
         for repo_name in plug.generate_repo_names(teams, assignment_names)
     }
 

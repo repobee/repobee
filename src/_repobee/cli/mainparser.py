@@ -382,10 +382,10 @@ def _add_config_parsers(
 def _add_peer_review_parsers(base_parsers, add_parser):
     double_blind_parser = argparse_ext.RepobeeParser(add_help=False)
     double_blind_parser.add_argument(
-        "--double-blind-salt",
-        help="salt (a string) to use for double-blind peer review assignment "
+        "--double-blind-key",
+        help="key (any string) to use for double-blind peer review"
         "(alpha feature)",
-        metavar="SALT",
+        metavar="KEY",
     )
     base_review_parsers = [*base_parsers, double_blind_parser]
 
