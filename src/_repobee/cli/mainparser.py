@@ -74,6 +74,14 @@ _LOCAL_TEMPLATES_PARSER.add_argument(
     action="store_true",
 )
 
+_DOUBLE_BLIND_PARSER = argparse_ext.RepobeeParser(add_help=False)
+_DOUBLE_BLIND_PARSER.add_argument(
+    "--double-blind-key",
+    help="key (any string) to use for double-blind peer review"
+    "(alpha feature)",
+    metavar="KEY",
+)
+
 
 def create_parser_for_docs() -> argparse.ArgumentParser:
     """Create a parser showing all options for the default CLI
@@ -380,14 +388,7 @@ def _add_config_parsers(
 
 
 def _add_peer_review_parsers(base_parsers, add_parser):
-    double_blind_parser = argparse_ext.RepobeeParser(add_help=False)
-    double_blind_parser.add_argument(
-        "--double-blind-key",
-        help="key (any string) to use for double-blind peer review"
-        "(alpha feature)",
-        metavar="KEY",
-    )
-    base_review_parsers = [*base_parsers, double_blind_parser]
+    base_review_parsers = [*base_parsers, _DOUBLE_BLIND_PARSER]
 
     assign_parser = add_parser(
         plug.cli.CoreCommand.reviews.assign,
@@ -524,6 +525,7 @@ def _add_issue_parsers(base_parsers, add_parser):
             base_student_parser,
             _REPO_DISCOVERY_PARSER,
             _HOOK_RESULTS_PARSER,
+            _DOUBLE_BLIND_PARSER,
         ],
         formatter_class=argparse_ext.OrderedFormatter,
     )
