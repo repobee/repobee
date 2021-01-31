@@ -15,7 +15,7 @@ import re
 import tempfile
 import pathlib
 import shutil
-from typing import Iterable, Optional, Dict, List, Tuple, Set
+from typing import Iterable, Optional, Dict, List, Tuple
 
 import git  # type: ignore
 import repobee_plug as plug
@@ -156,7 +156,7 @@ def assign_peer_reviews(
 
 
 def _only_expected_repos(
-    repos: List[plug.Repo], expected_repo_names: Set[str]
+    repos: List[plug.Repo], expected_repo_names: Iterable[str]
 ) -> List[plug.Repo]:
     return [repo for repo in repos if repo.name in expected_repo_names]
 
