@@ -136,14 +136,12 @@ class TestList:
             f"--base-url {platform_url}"
         )
 
-        api = funcs.get_api(platform_url)
         stdout = capsys.readouterr().out
-        for team in const.STUDENT_TEAMS:
-            review_team = _get_anonymous_review_team(
-                team, assignment, key, api
-            )
-            anon_repo = next(api.get_team_repos(review_team))
-            assert re.search(fr"{anon_repo.name}.*{review_title}", stdout)
+        expected_repo_names = plug.generate_repo_names(
+            const.STUDENT_TEAMS, [assignment]
+        )
+        for repo_name in expected_repo_names:
+            assert re.search(fr"{repo_name}.*{review_title}", stdout)
 
 
 def _get_anonymous_review_team(
@@ -152,9 +150,8 @@ def _get_anonymous_review_team(
     key: str,
     api: plug.PlatformAPI,
 ) -> plug.Team:
-    review_team_name = plug.generate_review_team_name(student_team, assignment)
     review_team, *_ = list(
-        api.get_teams([_repobee.hash.keyed_hash(review_team_name, key, 20)])
+        api.get_teams([_repobee.hash.keyed_hash(student_team.name, key, 20)])
     )
     return review_team
 
