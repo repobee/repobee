@@ -86,7 +86,19 @@ def assign_peer_reviews(
     if double_blind_key:
         plug.log.info(f"Creating anonymous repos with key: {double_blind_key}")
         fetched_repo_dict = _create_anonymized_repos(
-            team_repo_tuples, double_blind_key, api
+            [
+                (
+                    team,
+                    [
+                        repo
+                        for repo in repos
+                        if repo.name in expected_repo_names
+                    ],
+                )
+                for team, repos in team_repo_tuples
+            ],
+            double_blind_key,
+            api,
         )
 
     for assignment_name in assignment_names:
