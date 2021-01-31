@@ -15,7 +15,7 @@ import re
 import tempfile
 import pathlib
 import shutil
-from typing import Iterable, Optional, Dict, List, Tuple
+from typing import Iterable, Optional, Dict, List, Tuple, Set
 
 import git  # type: ignore
 import repobee_plug as plug
@@ -67,7 +67,9 @@ def assign_peer_reviews(
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     issue = issue or DEFAULT_REVIEW_ISSUE
-    expected_repo_names = plug.generate_repo_names(teams, assignment_names)
+    expected_repo_names = set(
+        plug.generate_repo_names(teams, assignment_names)
+    )
     fetched_teams = progresswrappers.get_teams(
         teams, api, desc="Fetching teams and repos"
     )
@@ -79,14 +81,19 @@ def assign_peer_reviews(
     )
     fetched_repo_dict = {r.name: r for r in fetched_repos}
 
-    missing = set(expected_repo_names) - set(fetched_repo_dict.keys())
+    missing = expected_repo_names - fetched_repo_dict.keys()
     if missing:
         raise plug.NotFoundError(f"Can't find repos: {', '.join(missing)}")
 
     if double_blind_key:
         plug.log.info(f"Creating anonymous repos with key: {double_blind_key}")
         fetched_repo_dict = _create_anonymized_repos(
-            team_repo_tuples, double_blind_key, api
+            [
+                (team, _only_expected_repos(repos, expected_repo_names))
+                for team, repos in team_repo_tuples
+            ],
+            double_blind_key,
+            api,
         )
 
     for assignment_name in assignment_names:
@@ -148,6 +155,12 @@ def assign_peer_reviews(
                 if not isinstance(api, _repobee.ext.gitea.GiteaAPI)
                 else None,
             )
+
+
+def _only_expected_repos(
+    repos: List[plug.Repo], expected_repo_names: Set[str]
+) -> List[plug.Repo]:
+    return [repo for repo in repos if repo.name in expected_repo_names]
 
 
 def _create_anonymized_repos(
