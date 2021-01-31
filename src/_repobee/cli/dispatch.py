@@ -111,6 +111,7 @@ def _dispatch_issues_command(
             title_regex=args.title_regex or "",
             show_body=args.show_body,
             author=args.author,
+            double_blind_key=args.double_blind_key,
         )
     _raise_illegal_action_error(args)
 
