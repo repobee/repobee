@@ -17,7 +17,15 @@ from colored import bg, fg, style  # type: ignore
 
 import repobee_plug as plug
 
+import _repobee.hash
 from _repobee.command import progresswrappers
+
+
+def _hash_if_key(s: str, key: Optional[str], max_hash_size: int = 20) -> str:
+    """Hash the string with the key, if provided. Otherwise, return the input
+    string.
+    """
+    return _repobee.hash.keyed_hash(s, key, max_hash_size) if key else s
 
 
 def list_issues(
@@ -27,6 +35,7 @@ def list_issues(
     title_regex: str = "",
     show_body: bool = False,
     author: Optional[str] = None,
+    double_blind_key: Optional[str] = None,
 ) -> Mapping[str, List[plug.Result]]:
     """List all issues in the specified repos.
 
@@ -41,13 +50,26 @@ def list_issues(
         show_body: If True, the body of the issue is displayed along with the
             default info.
         author: Only show issues by this author.
+        double_blind_key: If provided, use to deanonymize anonymous repos.
     """
     # TODO optimize by not getting all repos at once
     repos = list(repos)
     repo_names = [repo.name for repo in repos]
     max_repo_name_length = max(map(len, repo_names))
 
-    platform_repos = api.get_repos([repo.url for repo in repos])
+    rainbow_table = {
+        _hash_if_key(repo.name, key=double_blind_key): repo.name
+        for repo in repos
+    }
+
+    platform_repos = api.get_repos(
+        [
+            repo.url.replace(
+                repo.name, _hash_if_key(repo.name, key=double_blind_key)
+            )
+            for repo in repos
+        ]
+    )
     issues_per_repo = _get_issue_generator(
         platform_repos,
         title_regex=title_regex,
@@ -66,7 +88,7 @@ def list_issues(
 
     # for writing to JSON
     hook_result_mapping = {
-        repo_name: [
+        rainbow_table[repo_name]: [
             plug.Result(
                 name="list-issues",
                 status=plug.Status.SUCCESS,
@@ -85,6 +107,7 @@ def list_issues(
             data={"state": state.value},
         )
     ]
+
     return hook_result_mapping
 
 

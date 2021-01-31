@@ -12,6 +12,8 @@ import repobee_plug as plug
 from repobee_testhelpers import funcs
 from repobee_testhelpers import const
 
+import _repobee.hash
+
 _TestIssue = collections.namedtuple("_TestIssue", "title body path")
 
 
@@ -108,7 +110,7 @@ class TestList:
         funcs.run_repobee(
             f"issues list -a {const.TEMPLATE_REPOS_ARG} "
             f"--base-url {platform_url} "
-            "--show-body",
+            "--show-body"
         )
 
         stdout = capsys.readouterr().out
@@ -117,6 +119,65 @@ class TestList:
         )
         for issue in issues:
             assert len(re.findall(issue.body, stdout)) == expected_num_bodies
+
+    def test_list_double_blind_issues(
+        self, platform_url, with_student_repos, capsys
+    ):
+        key = "1234"
+        assignment = const.TEMPLATE_REPO_NAMES[0]
+        review_title = "This is the peer review"
+        _setup_double_blind_reviews_with_review_issues(
+            assignment, key, platform_url, review_title
+        )
+
+        funcs.run_repobee(
+            f"issues list --assignments {assignment} "
+            f"--double-blind-key {key} "
+            f"--base-url {platform_url}"
+        )
+
+        api = funcs.get_api(platform_url)
+        stdout = capsys.readouterr().out
+        for team in const.STUDENT_TEAMS:
+            review_team = _get_anonymous_review_team(
+                team, assignment, key, api
+            )
+            anon_repo = next(api.get_team_repos(review_team))
+            assert re.search(fr"{anon_repo.name}.*{review_title}", stdout)
+
+
+def _get_anonymous_review_team(
+    student_team: plug.StudentTeam,
+    assignment: str,
+    key: str,
+    api: plug.PlatformAPI,
+) -> plug.Team:
+    review_team_name = plug.generate_review_team_name(student_team, assignment)
+    review_team, *_ = list(
+        api.get_teams([_repobee.hash.keyed_hash(review_team_name, key, 20)])
+    )
+    return review_team
+
+
+def _setup_double_blind_reviews_with_review_issues(
+    assignment: str, key: str, platform_url: str, review_title: str
+) -> None:
+    funcs.run_repobee(
+        f"reviews assign --double-blind-key {key} "
+        f"--assignments {assignment} "
+        f"--base-url {platform_url}"
+    )
+    api = funcs.get_api(platform_url)
+
+    for team in const.STUDENT_TEAMS:
+        review_team = _get_anonymous_review_team(team, assignment, key, api)
+
+        student = review_team.members[0]
+        anon_repo = next(api.get_team_repos(review_team))
+        issue = api.create_issue(
+            review_title, "This is an excellent review", anon_repo
+        )
+        issue.implementation.author = student
 
 
 @pytest.fixture
