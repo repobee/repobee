@@ -74,7 +74,9 @@ _LOCAL_TEMPLATES_PARSER.add_argument(
     action="store_true",
 )
 
-_DOUBLE_BLIND_PARSER = argparse_ext.RepobeeParser(add_help=False)
+_DOUBLE_BLIND_PARSER = argparse_ext.RepobeeParser(
+    is_core_command=True, add_help=False
+)
 _DOUBLE_BLIND_PARSER.add_argument(
     "--double-blind-key",
     help="key (any string) to use for double-blind peer review"
