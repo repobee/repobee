@@ -15,7 +15,7 @@ import re
 import tempfile
 import pathlib
 import shutil
-from typing import Iterable, Optional, Dict, List, Tuple
+from typing import Iterable, Optional, Dict, List, Tuple, Set
 
 import git  # type: ignore
 import repobee_plug as plug
@@ -87,14 +87,7 @@ def assign_peer_reviews(
         plug.log.info(f"Creating anonymous repos with key: {double_blind_key}")
         fetched_repo_dict = _create_anonymized_repos(
             [
-                (
-                    team,
-                    [
-                        repo
-                        for repo in repos
-                        if repo.name in expected_repo_names
-                    ],
-                )
+                (team, _only_expected_repos(repos, expected_repo_names))
                 for team, repos in team_repo_tuples
             ],
             double_blind_key,
@@ -160,6 +153,12 @@ def assign_peer_reviews(
                 if not isinstance(api, _repobee.ext.gitea.GiteaAPI)
                 else None,
             )
+
+
+def _only_expected_repos(
+    repos: List[plug.Repo], expected_repo_names: Set[str]
+) -> List[plug.Repo]:
+    return [repo for repo in repos if repo.name in expected_repo_names]
 
 
 def _create_anonymized_repos(
