@@ -57,24 +57,12 @@ def list_issues(
     repo_names = [repo.name for repo in repos]
     max_repo_name_length = max(map(len, repo_names))
 
-    rainbow_table = {
-        _hash_if_key(repo.name, key=double_blind_key): repo.name
-        for repo in repos
-    }
-
-    platform_repos = api.get_repos(
-        [
-            repo.url.replace(
-                repo.name, _hash_if_key(repo.name, key=double_blind_key)
-            )
-            for repo in repos
-        ]
-    )
     issues_per_repo = _get_issue_generator(
-        platform_repos,
+        repos,
         title_regex=title_regex,
         author=author,
         state=state,
+        double_blind_key=double_blind_key,
         api=api,
     )
 
@@ -88,15 +76,15 @@ def list_issues(
 
     # for writing to JSON
     hook_result_mapping = {
-        rainbow_table[repo_name]: [
+        repo.name: [
             plug.Result(
                 name="list-issues",
                 status=plug.Status.SUCCESS,
-                msg="Fetched {} issues from {}".format(len(issues), repo_name),
+                msg="Fetched {} issues from {}".format(len(issues), repo.name),
                 data={issue.number: issue.to_dict() for issue in issues},
             )
         ]
-        for repo_name, issues in pers_issues_per_repo
+        for repo, issues in pers_issues_per_repo
     }
     # meta hook result
     hook_result_mapping["list-issues"] = [
@@ -112,49 +100,51 @@ def list_issues(
 
 
 def _get_issue_generator(
-    repos: Iterable[plug.Repo],
+    repos: Iterable[plug.StudentRepo],
     title_regex: str,
     author: Optional[str],
     state: plug.IssueState,
+    double_blind_key: Optional[str],
     api: plug.PlatformAPI,
-) -> Iterable[Tuple[str, Iterable[plug.Issue]]]:
-    issues_per_repo = (
-        (
-            repo.name,
-            [
-                issue
-                for issue in api.get_repo_issues(repo)
-                if re.match(title_regex, issue.title)
-                and (state == plug.IssueState.ALL or state == issue.state)
-                and (not author or issue.author == author)
-            ],
-        )
-        for repo in repos
-    )
-    return issues_per_repo
+) -> Iterable[Tuple[plug.StudentRepo, Iterable[plug.Issue]]]:
+    for repo in repos:
+        if double_blind_key:
+            team_name = _hash_if_key(repo.team.name, double_blind_key)
+            repo_name = _hash_if_key(repo.name, double_blind_key)
+            platform_repo = api.get_repo(repo_name, team_name)
+        else:
+            platform_repo = api.get_repo(repo.name, repo.team.name)
+
+        yield repo, [
+            issue
+            for issue in api.get_repo_issues(platform_repo)
+            if re.match(title_regex, issue.title)
+            and (state == plug.IssueState.ALL or state == issue.state)
+            and (not author or issue.author == author)
+        ]
 
 
 def _log_repo_issues(
-    issues_per_repo: Iterable[Tuple[str, Iterable[plug.Issue]]],
+    issues_per_repo: Iterable[Tuple[plug.StudentRepo, Iterable[plug.Issue]]],
     show_body: bool,
     title_alignment: int,
 ) -> List[Tuple[Any, list]]:
     """Log repo issues.
 
     Args:
-        issues_per_repo: (repo_name, issue generator) pairs
+        issues_per_repo: (repo, issue generator) pairs
         show_body: Include the body of the issue in the output.
         title_alignment: Where the issue title should start counting from the
             start of the line.
     """
     even = True
     persistent_issues_per_repo = []
-    for repo_name, issues in issues_per_repo:
+    for repo, issues in issues_per_repo:
         issues = list(issues)
-        persistent_issues_per_repo.append((repo_name, issues))
+        persistent_issues_per_repo.append((repo, issues))
 
         if not issues:
-            plug.log.warning("{}: No matching issues".format(repo_name))
+            plug.log.warning("{}: No matching issues".format(repo.name))
 
         for issue in issues:
             color = (bg("grey_30") if even else bg("grey_15")) + fg("white")
@@ -163,7 +153,7 @@ def _log_repo_issues(
                 color
             )  # color takes character space
 
-            id_ = "{}{}/#{}:".format(color, repo_name, issue.number).ljust(
+            id_ = "{}{}/#{}:".format(color, repo.name, issue.number).ljust(
                 adjusted_alignment
             )
             out = "{}{}{}{}created {!s} by {}".format(

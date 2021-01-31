@@ -15,7 +15,7 @@ import re
 import tempfile
 import pathlib
 import shutil
-from typing import Iterable, Optional, Dict, List, Tuple, Set
+from typing import Iterable, Optional, Dict, List, Tuple, Set, Union
 
 import git  # type: ignore
 import repobee_plug as plug
@@ -108,10 +108,9 @@ def assign_peer_reviews(
                     (
                         plug.StudentTeam(
                             members=alloc.review_team.members,
-                            name=_hash_if_key(
-                                plug.generate_review_team_name(
-                                    str(alloc.reviewed_team), assignment_name
-                                ),
+                            name=_review_team_name(
+                                alloc.reviewed_team,
+                                assignment_name,
                                 key=double_blind_key,
                             ),
                         ),
@@ -198,9 +197,7 @@ def _create_anonymized_repo(
     student_repo: plug.StudentRepo, key: str, api: plug.PlatformAPI
 ) -> Tuple[plug.StudentRepo, plug.Repo]:
     anon_repo_name = _hash_if_key(student_repo.name, key=key)
-    anon_review_team_name = _hash_if_key(
-        f"{student_repo.name}-review", key=key
-    )
+    anon_review_team_name = _hash_if_key(student_repo.team.name, key=key)
     fingerprint = _anonymous_repo_fingerprint(
         anon_review_team_name, anon_repo_name
     )
@@ -297,10 +294,7 @@ def end_reviews(
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     review_team_names = [
-        _hash_if_key(
-            plug.generate_review_team_name(student, assignment_name),
-            key=double_blind_key,
-        )
+        _review_team_name(student, assignment_name, double_blind_key)
         for student in students
         for assignment_name in assignment_names
     ]
@@ -359,10 +353,7 @@ def check_peer_review_progress(
     reviews = collections.defaultdict(list)
 
     review_team_names = [
-        _hash_if_key(
-            plug.generate_review_team_name(student_team, assignment_name),
-            key=double_blind_key,
-        )
+        _review_team_name(student_team, assignment_name, double_blind_key)
         for student_team in teams
         for assignment_name in assignment_names
     ]
@@ -409,6 +400,17 @@ def check_peer_review_progress(
             reviews, [team.name for team in teams], num_reviews
         )
     )
+
+
+def _review_team_name(
+    team: Union[str, plug.Team, plug.StudentTeam],
+    assignment: str,
+    key: Optional[str],
+) -> str:
+    if key:
+        return _hash_if_key(str(team), key)
+    else:
+        return plug.generate_review_team_name(team, assignment)
 
 
 def _extract_reviewing_teams(teams, reviewers):

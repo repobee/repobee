@@ -64,9 +64,7 @@ reviews assign --bu {giteamanager.API_URL}
         # assert
         for student_team in giteamanager.STUDENT_TEAMS:
             review_team_name = keyed_hash(
-                plug.generate_review_team_name(student_team, assignment_name),
-                key=double_blind_key,
-                max_hash_size=20,
+                student_team.name, key=double_blind_key, max_hash_size=20
             )
             original_repo_name = plug.generate_repo_name(
                 student_team, assignment_name
@@ -126,9 +124,7 @@ class TestEnd:
         # assert
         review_team_names = [
             keyed_hash(
-                plug.generate_review_team_name(student_team, assignment_name),
-                key=double_blind_key,
-                max_hash_size=20,
+                student_team.name, key=double_blind_key, max_hash_size=20
             )
             for student_team in giteamanager.STUDENT_TEAMS
         ]
@@ -191,9 +187,7 @@ class TestEnd:
         )
         orig_repo = target_api.get_repo(orig_repo_name, orig_team_name)
         review_team_name = keyed_hash(
-            plug.generate_review_team_name(orig_team_name, assignment_name),
-            key=double_blind_key,
-            max_hash_size=20,
+            orig_team_name, key=double_blind_key, max_hash_size=20
         )
         review_team = next(target_api.get_teams([review_team_name]))
         target_api.assign_repo(
