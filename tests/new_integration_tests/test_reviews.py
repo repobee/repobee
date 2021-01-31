@@ -21,7 +21,7 @@ class TestAssign:
 
         funcs.run_repobee(
             f"reviews assign -n 1 --base-url {platform_url} "
-            f"--assignments {const.TEMPLATE_REPOS_ARG}",
+            f"--assignments {const.TEMPLATE_REPOS_ARG}"
         )
 
         review_teams = [
@@ -32,6 +32,24 @@ class TestAssign:
 
         assert {t.name for t in review_teams} == expected_review_team_names
         assert all(map(lambda t: len(t.members) == 1, review_teams))
+
+    def test_double_blind_creates_correct_amount_of_anonymous_copies(
+        self, platform_url, with_student_repos
+    ):
+        assignment_name = const.TEMPLATE_REPO_NAMES[0]
+        api = funcs.get_api(platform_url)
+        num_repos_before = len(list(api.get_repos()))
+
+        funcs.run_repobee(
+            f"reviews assign --num-reviews 1 "
+            f"--base-url {platform_url} "
+            f"--double-blind-key 1234 "
+            f"--assignments {assignment_name}"
+        )
+
+        api._restore_state()
+        num_repos_after = len(list(api.get_repos()))
+        assert num_repos_after == num_repos_before + len(const.STUDENT_TEAMS)
 
 
 class TestEnd:
@@ -45,7 +63,7 @@ class TestEnd:
         }
         funcs.run_repobee(
             f"reviews assign -n 1 --base-url {platform_url} "
-            f"--assignments {const.TEMPLATE_REPOS_ARG}",
+            f"--assignments {const.TEMPLATE_REPOS_ARG}"
         )
 
         funcs.run_repobee(
@@ -71,7 +89,7 @@ class TestCheck:
         template_repo_name = const.TEMPLATE_REPO_NAMES[0]
         funcs.run_repobee(
             f"reviews assign -n 1 --base-url {platform_url} "
-            f"--assignments {template_repo_name}",
+            f"--assignments {template_repo_name}"
         )
 
         funcs.run_repobee(
