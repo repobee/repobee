@@ -64,7 +64,7 @@ class RepobeeParser(argparse.ArgumentParser):
             "--base-url",
         }
         debug_args = {"--traceback", "--quiet"}
-        alpha_args = {"--hook-results-file"}
+        alpha_args = {"--hook-results-file", "--double-blind-key"}
 
         for arg in args:
             if arg in platform_args:
