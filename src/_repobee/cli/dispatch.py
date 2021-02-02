@@ -10,6 +10,7 @@ CLI into commands for RepoBee's core.
 """
 import argparse
 import pathlib
+import json
 from typing import Optional, List, Mapping, NoReturn
 
 import repobee_plug as plug
@@ -98,7 +99,14 @@ def _dispatch_issues_command(
     issues = plug.cli.CoreCommand.issues
     action = args.action
     if action == issues.open:
-        command.open_issue(args.issue, args.assignments, args.students, api)
+        if args.issue:
+            command.open_issue(
+                args.issue, args.assignments, args.students, api
+            )
+        else:
+            command.open_issues_from_hook_results(
+                json.loads(args.hook_results_file.read_text()), args.repos, api
+            )
         return None
     elif action == issues.close:
         command.close_issue(args.title_regex, args.repos, api)

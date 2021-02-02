@@ -489,13 +489,19 @@ def _add_issue_parsers(base_parsers, add_parser):
         parents=base_parsers,
         formatter_class=argparse_ext.OrderedFormatter,
     )
-    open_parser.add_argument(
+
+    issue_mutex = open_parser.add_mutually_exclusive_group(required=True)
+    issue_mutex.add_argument(
         "-i",
         "--issue",
         help="path to an issue file (NOTE: first line is assumed to be the "
         "title)",
         type=str,
-        required=True,
+    )
+    issue_mutex.add_argument(
+        "--hook-results-file",
+        help="path to a hook result JSON file with issues to open",
+        type=pathlib.Path,
     )
 
     close_parser = add_parser(
