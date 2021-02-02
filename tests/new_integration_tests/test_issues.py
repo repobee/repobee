@@ -49,6 +49,51 @@ class TestOpen:
 
         assert num_asserts == len(expected_repo_names)
 
+    def test_open_issues_from_double_blind_hook_results(
+        self, with_student_repos, platform_url, tmp_path
+    ):
+        """Test opening issues from a hook results file gathered from listing
+        issues from double-blind peer review.
+        """
+
+        # arrange
+        results_file = tmp_path / "hf.json"
+        key = "1234"
+        assignment = const.TEMPLATE_REPO_NAMES[0]
+        review_title = "This is the peer review"
+        _setup_double_blind_reviews_with_review_issues(
+            assignment, key, platform_url, review_title
+        )
+        funcs.run_repobee(
+            f"issues list --assignments {assignment} "
+            f"--double-blind-key {key} "
+            f"--base-url {platform_url} "
+            f"--hook-results-file {results_file}"
+        )
+
+        # act
+        funcs.run_repobee(
+            f"issues open --assignments {assignment} "
+            f"--base-url {platform_url} "
+            f"--hook-results-file {results_file}"
+        )
+
+        # assert
+        expected_repo_names = set(
+            plug.generate_repo_names(
+                [t.name for t in const.STUDENT_TEAMS], [assignment]
+            )
+        )
+        repos = [
+            repo
+            for repo in funcs.get_repos(platform_url)
+            if repo.name in expected_repo_names
+        ]
+        assert repos
+        for repo in repos:
+            assert len(repo.issues) == 2
+            assert review_title in [i.title for i in repo.issues]
+
 
 class TestClose:
     """Tests for the ``issues close`` command."""
