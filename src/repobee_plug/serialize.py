@@ -19,7 +19,6 @@ def result_mapping_to_json(result_mapping: Mapping[str, List[Result]]) -> str:
             for h in hook_results
         }
         for repo_name, hook_results in result_mapping.items()
-        if not repo_name.startswith("_")
     }
     return json.dumps(hook_results_as_dicts, indent=4, ensure_ascii=False)
 

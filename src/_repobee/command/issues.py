@@ -105,7 +105,7 @@ def list_issues(
         repos_data[repo.url]["issues"] = {
             issue.number: issue.to_dict() for issue in issues
         }
-    hook_result_mapping["_repos"] = [
+    hook_result_mapping["repos"] = [
         plug.Result("repos", plug.Status.SUCCESS, "repo_data", data=repos_data)
     ]
 
@@ -226,7 +226,7 @@ def open_issues_from_hook_results(
         api: plug.PlatformAPI,
     """
     url_to_repo = {repo.url: repo for repo in repos}
-    for repo_url, repo_data in hook_results["_repos"]["repos"]["data"].items():
+    for repo_url, repo_data in hook_results["repos"]["repos"]["data"].items():
         if repo_url in url_to_repo and repo_data["issues"]:
             repo = url_to_repo[repo_url]
             platform_repo = api.get_repo(repo.name, repo.team.name)
