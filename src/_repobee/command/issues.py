@@ -11,6 +11,7 @@ self-contained program.
 """
 import os
 import re
+import dataclasses
 from typing import Iterable, Optional, List, Tuple, Any, Mapping
 
 from colored import bg, fg, style  # type: ignore
@@ -86,6 +87,7 @@ def list_issues(
         ]
         for repo, issues in pers_issues_per_repo
     }
+
     # meta hook result
     hook_result_mapping["list-issues"] = [
         plug.Result(
@@ -94,6 +96,17 @@ def list_issues(
             msg="Meta info about the list-issues hook results",
             data={"state": state.value},
         )
+    ]
+
+    # new experimental format for repo data used by `issues list` with
+    # --hook-results-file
+    repos_data = {repo.url: dataclasses.asdict(repo) for repo in repos}
+    for repo, issues in pers_issues_per_repo:
+        repos_data[repo.url]["issues"] = {
+            issue.number: issue.to_dict() for issue in issues
+        }
+    hook_result_mapping["repos"] = [
+        plug.Result("repos", plug.Status.SUCCESS, "repo_data", data=repos_data)
     ]
 
     return hook_result_mapping
@@ -196,6 +209,36 @@ def _limit_line_length(s: str, max_line_length: int = 100) -> str:
             cur = idx + 1
         out += line[cur : cur + max_line_length] + os.linesep
     return out
+
+
+def open_issues_from_hook_results(
+    hook_results: Mapping[str, List[plug.Result]],
+    repos: Iterable[plug.StudentRepo],
+    api: plug.PlatformAPI,
+) -> None:
+    """Open all issues from the hook results in the given repos. Issues given
+    in the hook results that do not belong to the repos are ignored, and repos
+    provided without corresponding issues in the hook results have no effect.
+
+    Args:
+        hook_results: A hook results dictionary.
+        repos: Student repos to open issues in.
+        api: plug.PlatformAPI,
+    """
+    url_to_repo = {repo.url: repo for repo in repos}
+    for repo_url, repo_data in hook_results["repos"][0].data.items():
+        if repo_url in url_to_repo and repo_data["issues"]:
+            repo = url_to_repo[repo_url]
+            platform_repo = api.get_repo(repo.name, repo.team.name)
+
+            for issue_data in repo_data["issues"].values():
+                issue = api.create_issue(
+                    issue_data["title"], issue_data["body"], platform_repo
+                )
+                msg = (
+                    f"Opened issue {repo.name}/#{issue.number}-'{issue.title}'"
+                )
+                plug.echo(msg)
 
 
 def open_issue(
