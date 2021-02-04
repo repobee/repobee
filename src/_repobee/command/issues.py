@@ -212,7 +212,7 @@ def _limit_line_length(s: str, max_line_length: int = 100) -> str:
 
 
 def open_issues_from_hook_results(
-    hook_results: dict,
+    hook_results: Mapping[str, List[plug.Result]],
     repos: Iterable[plug.StudentRepo],
     api: plug.PlatformAPI,
 ) -> None:
@@ -226,7 +226,7 @@ def open_issues_from_hook_results(
         api: plug.PlatformAPI,
     """
     url_to_repo = {repo.url: repo for repo in repos}
-    for repo_url, repo_data in hook_results["repos"]["repos"]["data"].items():
+    for repo_url, repo_data in hook_results["repos"][0].data.items():
         if repo_url in url_to_repo and repo_data["issues"]:
             repo = url_to_repo[repo_url]
             platform_repo = api.get_repo(repo.name, repo.team.name)

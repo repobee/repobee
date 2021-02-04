@@ -10,7 +10,7 @@ CLI into commands for RepoBee's core.
 """
 import argparse
 import pathlib
-import json
+import sys
 from typing import Optional, List, Mapping, NoReturn
 
 import repobee_plug as plug
@@ -105,7 +105,13 @@ def _dispatch_issues_command(
             )
         else:
             command.open_issues_from_hook_results(
-                json.loads(args.hook_results_file.read_text()), args.repos, api
+                plug.json_to_result_mapping(
+                    args.hook_results_file.read_text(
+                        encoding=sys.getdefaultencoding()
+                    )
+                ),
+                args.repos,
+                api,
             )
         return None
     elif action == issues.close:
