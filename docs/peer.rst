@@ -87,7 +87,7 @@ Specifying a custom issue
 
 The default issue is really meant to be replaced with something more specific to
 the course and assignment. For example, say that there were five tasks in the
-``task-2`` repo, and the students should review tasks 2 and 3 based on
+``task-1`` repo, and the students should review tasks 2 and 3 based on
 some criteria. It would then be beneficial to specify this in the peer review
 issue, so we'll write up our own little issue to replace the default one.
 Remember that the first line is taken to be the title, in exactly the same way
@@ -95,7 +95,7 @@ as issue files are treated in :ref:`open`.
 
 .. code-block:: none
 
-    Review of task-2
+    Review of task-1
 
     Hello! The students assigned to this issue have been tasked to review this
     repo. Each of you should open _one_ issue with the title `Peer review` and
@@ -118,7 +118,7 @@ specifying the issue like this:
 
 .. code-block:: bash
 
-   $ repobee reviews assign -a task-2 --sf students.txt --num-reviews 2 --issue issue.md
+   $ repobee reviews assign -a task-1 --sf students.txt --num-reviews 2 --issue issue.md
 
 This will have the same effect as last time, but with the custom issue being
 opened instead.
@@ -141,11 +141,11 @@ teams. Here's an example call:
 
 .. code-block:: bash
 
-   $ repobee reviews check -a task-2 --sf students.txt --num-reviews 2 --title-regex '\APeer review\Z'
+   $ repobee reviews check -a task-1 --sf students.txt --num-reviews 2 --title-regex '\APeer review\Z'
    reviewer        num done        num remaining   repos remaining
-   glennol         0               2               glassey-task-2,slarse-task-2
+   glennol         0               2               glassey-task-1,slarse-task-1
    slarse          2               0
-   glassey         0               2               glennol-task-2,slarse-task-2
+   glassey         0               2               glennol-task-1,slarse-task-1
 
 The output is color-coded in the terminal, making it easier to parse. We make use
 of this when doing peer reviews in a classroom settings, as it allows us to
@@ -203,30 +203,30 @@ Messing up and getting back on track
 Let's say you messed something up with allocating the peer reviews. For example,
 if you left out a student, there is no easy way to rectify the allocations such
 that that student is included. Let's say we did just that, and forgot to include
-the student ``cabbage`` in the reviews for ``task-2`` back at
+the student ``cabbage`` in the reviews for ``task-1`` back at
 :ref:`assign reviews`. We then do the following:
 
 1. Check if any reviews have already been posted. This can easily be performed
-   with ``repobee reviews check -a task-2 --sf students.txt -r '^Peer
+   with ``repobee reviews check -a task-1 --sf students.txt -r '^Peer
    review$' --num-reviews 2`` (assuming the naming conventions were followed!). Take appropriate
    action if you find any reviews already posted (appropriate being anything you
    see fit to alleviate the situation of affected students possibly being
    assigned new repos to review).
-2. Delete the review teams with ``repobee reviews end -a task-2
+2. Delete the review teams with ``repobee reviews end -a task-1
    --sf students.txt``
-3. Close all review issues with ``repobee issues close -a task-2 --sf
-   students.txt -r '^Review of task-2$'``
+3. Close all review issues with ``repobee issues close -a task-1 --sf
+   students.txt -r '^Review of task-1$'``
 4. Create a new ``issue.md`` file apologetically explaining that you messed up:
 
 .. code-block:: none
 
-    Review of task-2 (for real this time!)
+    Review of task-1 (for real this time!)
 
     Sorry, I messed up with the allocations previously. Disregard the previous
     allocations (repo access has been revoked anyway).
 
 5. Assign peer reviews again, with the new issue, with ``repobee
-   reviews assign -a task-2 --sf students.txt --num-reviews 2
+   reviews assign -a task-1 --sf students.txt --num-reviews 2
    --issue issue.md``
 
 And that's it! Disaster averted.
@@ -300,8 +300,6 @@ Double-blind ``reviews assign``
 
 I order to run ``reviews assign`` in double-blind mode, all you need to do in
 addition to the no-blind usage is to supply the ``--double-blind-key`` argument.
-The double-blind equivalent of the usage shown in :ref:`assign reviews` is
-shown below.
 
 .. code-block:: bash
     :caption: Assigning double-blind reviews
@@ -333,14 +331,13 @@ Double-blind ``reviews check``
 ------------------------------
 
 Just like with ``reviews assign``, the only thing you need to add in addition to
-normal usage is the ``--double-blind-key`` argument. The double-blind
-equivalent of the usage shown in :ref:`reviews check` is shown below.
+normal usage is the ``--double-blind-key`` argument.
 
 .. code-block:: bash
     :caption: Checking the status of double-blind reviews
 
     $ repobee reviews check \
-        --assignments task-2 \
+        --assignments task-1 \
         --sf students.txt \
         --num-reviews 1 \
         --title-regex '\APeer review\Z' \
@@ -366,7 +363,7 @@ like so.
     :caption: Collecting double-blind review issues
 
     $ repobee issues list \
-        --assignments task-2 \
+        --assignments task-1 \
         --sf students.txt \
         --double-blind-key SUPER_SECRET_KEY \
         --hook-results-file results.json \
@@ -393,7 +390,7 @@ the issues need to be distributed to the original repos. To do this, execute
     :caption: Distributing double-blind reviews from a hook results file
 
     $ repobee issues open \
-        --assignments task-2 \
+        --assignments task-1 \
         --sf students.txt \
         --hook-results-file results.json
 
@@ -416,7 +413,7 @@ your key.
     :caption: Ending double-blind reviews
 
     $ repobee reviews end \
-        --assignments task-2 \
+        --assignments task-1 \
         --sf students.txt \
         --double-blind-key SUPER_SECRET_KEY
 
