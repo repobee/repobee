@@ -123,6 +123,8 @@ specifying the issue like this:
 This will have the same effect as last time, but with the custom issue being
 opened instead.
 
+.. _reviews check:
+
 Checking review progress (the ``check`` action)
 ===============================================
 The ``check`` action provides a quick and easy way of checking which
@@ -252,3 +254,176 @@ scheme, you add ``-p pairwise`` in front of the command.
 Note that the pairwise algorithm ignores the ``--num-reviews`` argument, and
 will issue a warning if this is set (to anything but 1, but you should just not
 specify it). For more details on plugins in RepoBee, see :ref:`plugins`.
+
+Double-blind peer review
+========================
+
+RepoBee 3.6 adds experimental support for double-blind peer review. The user
+experience is not finalized, but the functionality is all there. This section
+provides a walkthrough for how to assign double-blind peer review. It assumes
+that you've read through the prior sections of the peer review documentation.
+
+Overview
+--------
+
+The general idea of the double-blind peer review is to assign reviewers to
+review copies of their peers' repositories. The whole procedure is something
+like this:
+
+1. ``reviews assign`` Create copies of all student repositories under review and assign reviewers to them
+
+    - The commit history is anonymized
+
+    - The repository name is anonymized
+
+2. ``reviews check`` Verify that students have performed their reviews
+
+3. ``issues list`` Collect reviews from anonymous repos and store them locally
+
+4. ``issues open`` Distribute anonymously submitted reviews to original repositories
+
+    - They are opened with your user account, so as long as reviewers haven't put their names in the reviews they will be anonymous!
+
+5. (Optional) ``reviews end`` Delete repo copies and associated review teams
+
+    - **Always** run ``issues list`` to collect the reviews before running
+      ``reviews end``, or all reviews will be lost!
+
+
+As you may note, this is the same sequence of commands as for no-blind review,
+except that ``issues list`` and ``issues open`` are sprinkled into the middle.
+Usage of all commands shown is as usual, with they key exception that you'll be
+providing them with a secret key for the anonymization.
+
+Double-blind ``reviews assign``
+-------------------------------
+
+I order to run ``reviews assign`` in double-blind mode, all you need to do in
+addition to the no-blind usage is to supply the ``--double-blind-key`` argument.
+The double-blind equivalent of the usage shown in :ref:`assign reviews` is
+shown below.
+
+.. code-block:: bash
+    :caption: Assigning double-blind reviews
+
+    $ repobee reviews assign -a task-1 --sf students.txt --double-blind-key SUPER_SECRET_KEY
+
+The key is a secret, do not share it with the students. After assigning reviews
+with a given key, you must also remember or otherwise store that key until those
+reviews are closed, or you will be unable to interact with the anonymous repos.
+
+.. important::
+
+    The double-blind key is a **secret**. Given the key, all repositories can be
+    deanonymized.
+
+.. important::
+
+    For each review, you must **remember** or **store** the key until reviews
+    are closed. Otherwise, you can't deanonymize the repos, and consequently
+    can't collect and distribute reviews.
+
+.. important::
+
+    If you run double-blind ``reviews assign`` for with ``--num-reviews``
+    larger than ``1``, reviewers reviewing the same repository will be able to
+    see each others' reviews.
+
+Double-blind ``reviews check``
+------------------------------
+
+Just like with ``reviews assign``, the only thing you need to add in addition to
+normal usage is the ``--double-blind-key`` argument. The double-blind
+equivalent of the usage shown in :ref:`reviews check` is shown below.
+
+.. code-block:: bash
+    :caption: Checking the status of double-blind reviews
+
+    $ repobee reviews check \
+        --assignments task-2 \
+        --sf students.txt \
+        --num-reviews 1 \
+        --title-regex '\APeer review\Z' \
+        --double-blind-key SUPER_SECRET_KEY
+
+The repositories are deanonymized, and the output looks precisely like that of
+no-blind review. Needless to say, your students should not be shown this
+output.
+
+``SUPER_SECRET_KEY`` must match the key you supplied to ``reviews assign``.
+
+Collecting double-blind reviews with ``issues list``
+----------------------------------------------------
+
+Once you've verified that the students have performed their reviews with
+``reviews check``, you can collect reviews with ``issues list``. Here, you need
+to specify two arguments out of the ordinary: ``--double-blind-key`` with your
+secret key, as well as ``--hook-results-file`` to store the issues locally.
+To collect only the reviews, with title "Peer review", the command could look
+like so.
+
+.. code-block:: bash
+    :caption: Collecting double-blind review issues
+
+    $ repobee issues list \
+        --assignments task-2 \
+        --sf students.txt \
+        --double-blind-key SUPER_SECRET_KEY \
+        --hook-results-file results.json \
+        --title-regex '\APeer review\Z'
+
+By specifying the title regex your students use for review, you don't collect
+the instructions. If you'd like to also collect and distribute the instructions
+to the original repos, you can either use a carefully crafted regex for it, or
+simply provide the empty strigle (i.e. ``--title-regex ""``), which will match
+any issue.
+
+Note that you can now also browse the reviews before distribution by viewing
+the ``results.json`` file.
+
+Distributing double-blind reviews with ``issues open``
+------------------------------------------------------
+
+In order for students to actually be able to read the reviews by their peers,
+the issues need to be distributed to the original repos. To do this, execute
+``issues open`` as per usual, but supply ``--hook-results-file`` instead of
+``--issue``.
+
+.. code-block:: bash
+    :caption: Distributing double-blind reviews from a hook results file
+
+    $ repobee issues open \
+        --assignments task-2 \
+        --sf students.txt \
+        --hook-results-file results.json
+
+Note that you do not need the key here: the issues in the hook results file are
+already deanonymized.
+
+Double-blind ``reviews end``
+----------------------------
+
+``reviews end`` is a cleanup command. When doing no-blind peer review, it's
+often necessary to run it as students otherwise maintain read access to
+their peers' repositories, and may then be able to view feedback from teachers
+or TAs. With double-blind reviews, this isn't the case as the reviewers only
+get access to copies of the reviewed repositories. However, it does leave quite
+a mess of repositories and review teams with strange names, so cleaning up may
+be desirable. If you want to do that, simply run ``reviews end`` and supply
+your key.
+
+.. code-block:: bash
+    :caption: Ending double-blind reviews
+
+    $ repobee reviews end \
+        --assignments task-2 \
+        --sf students.txt \
+        --double-blind-key SUPER_SECRET_KEY
+
+.. danger::
+
+    Running ``reviews end`` irrevocably destroys all traces of the reviews,
+    including deleting the anonymous repositories and review teams. Make sure
+    to collect reviews with ``issues list`` before doing this.
+
+And that's pretty much all there is to double-blind review with RepoBee!
