@@ -365,9 +365,9 @@ like so.
     $ repobee issues list \
         --assignments task-1 \
         --sf students.txt \
-        --double-blind-key SUPER_SECRET_KEY \
+        --title-regex '\APeer review\Z' \
         --hook-results-file results.json \
-        --title-regex '\APeer review\Z'
+        --double-blind-key SUPER_SECRET_KEY
 
 By specifying the title regex your students use for review, you don't collect
 the instructions. If you'd like to also collect and distribute the instructions
