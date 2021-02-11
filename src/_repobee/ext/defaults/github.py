@@ -396,11 +396,14 @@ class GitHubAPI(plug.PlatformAPI):
 
     def insert_auth(self, url: str) -> str:
         """See :py:meth:`repobee_plug.PlatformAPI.insert_auth`."""
-        scheme, netloc, path, query, fragment = urllib.parse.urlsplit(
+        scheme, netloc, path, query, fragment = urllib.parse.urlsplit(url)
+
+        base_scheme, base_netloc, *_ = urllib.parse.urlsplit(
             self._org.html_url
         )
-
-        html_base_url = urllib.parse.urlunsplit([scheme, netloc, *([""] * 3)])
+        html_base_url = urllib.parse.urlunsplit(
+            [base_scheme, base_netloc, *([""] * 3)]
+        )
         if html_base_url not in url:
             raise plug.InvalidURL(f"url not found on platform: '{url}'")
 

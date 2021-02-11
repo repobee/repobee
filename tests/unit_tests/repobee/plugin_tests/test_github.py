@@ -377,6 +377,12 @@ class TestInsertAuth:
 
         assert "url not found on platform" in str(exc_info.value)
 
+    def test_retains_endpoint(self, api):
+        endpoint = "some/repo"
+        url = f"{BASE_URL}/some/repo"
+        authed_url = api.insert_auth(url)
+        assert endpoint in authed_url
+
 
 class TestGetRepoUrls:
     """Tests for get_repo_urls."""
