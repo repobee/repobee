@@ -396,9 +396,7 @@ class GitHubAPI(plug.PlatformAPI):
 
     def insert_auth(self, url: str) -> str:
         """See :py:meth:`repobee_plug.PlatformAPI.insert_auth`."""
-        scheme, netloc, path, query, fragment = urllib.parse.urlsplit(
-            self._org.html_url
-        )
+        scheme, netloc, path, query, fragment = urllib.parse.urlsplit(url)
 
         html_base_url = urllib.parse.urlunsplit([scheme, netloc, *([""] * 3)])
         if html_base_url not in url:
