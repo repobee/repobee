@@ -10,6 +10,7 @@ from repobee_testhelpers import const
 import repobee_plug as plug
 
 import _repobee.exception
+import _repobee.main
 
 
 class TestConfigShow:
@@ -32,6 +33,21 @@ class TestConfigShow:
 
         outerr = capsys.readouterr()
         assert const.TOKEN in outerr.out
+
+    def test_prints_local_config(self, capsys, tmp_path):
+        """Local (in the working dir) repobee.ini files should take precedence
+        over the default config file.
+        """
+        config_content = "[repobee]\nuser = some-unlikely-user"
+        local_config = tmp_path / "repobee.ini"
+        local_config.write_text(config_content, encoding="utf8")
+
+        _repobee.main.main(
+            ["repobee", *plug.cli.CoreCommand.config.show.as_name_tuple()],
+            workdir=tmp_path,
+        )
+
+        assert config_content in capsys.readouterr().out
 
 
 class TestConfigVerify:
