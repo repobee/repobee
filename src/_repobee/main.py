@@ -22,6 +22,7 @@ import _repobee.cli.dispatch
 import _repobee.cli.parsing
 import _repobee.cli.preparser
 import _repobee.cli.mainparser
+import _repobee.constants
 from _repobee import plugin
 from _repobee import exception
 from _repobee import config
@@ -87,16 +88,7 @@ def run(
         A mapping (plugin_name -> plugin_results).
     """
     config_file = pathlib.Path(config_file)
-    cur_workdir = pathlib.Path(".").absolute()
     requested_workdir = pathlib.Path(str(workdir)).resolve(strict=True)
-
-    @contextlib.contextmanager
-    def _in_requested_workdir():
-        try:
-            os.chdir(requested_workdir)
-            yield
-        finally:
-            os.chdir(cur_workdir)
 
     def _ensure_is_module(p: Union[ModuleType, plug.Plugin]):
         if isinstance(p, type) and issubclass(p, plug.Plugin):
@@ -111,7 +103,7 @@ def run(
 
     wrapped_plugins = list(map(_ensure_is_module, plugins or []))
 
-    with _in_requested_workdir():
+    with _in_workdir(requested_workdir):
         try:
             _repobee.cli.parsing.setup_logging()
             # FIXME calling _initialize_plugins like this is ugly, should be
@@ -128,16 +120,22 @@ def run(
             plugin.unregister_all_plugins()
 
 
-def main(sys_args: List[str], unload_plugins: bool = True):
+def main(
+    sys_args: List[str],
+    unload_plugins: bool = True,
+    workdir: pathlib.Path = pathlib.Path(".").resolve(),
+):
     """Start the repobee CLI.
 
     Args:
         sys_args: Arguments from the command line.
         unload_plugins: If True, plugins are automatically unloaded just before
             the function returns.
+        workdir: The working directory to operate in.
     """
     try:
-        _main(sys_args, unload_plugins)
+        with _in_workdir(workdir):
+            _main(sys_args, unload_plugins)
     except plug.PlugError:
         plug.log.error("A plugin exited with an error")
         sys.exit(1)
@@ -158,7 +156,7 @@ def _main(sys_args: List[str], unload_plugins: bool = True):
     try:
         preparser_args, app_args = separate_args(args)
         parsed_preparser_args = _repobee.cli.preparser.parse_args(
-            preparser_args
+            preparser_args, default_config_file=_resolve_config_file()
         )
 
         _initialize_plugins(parsed_preparser_args)
@@ -195,6 +193,17 @@ def _main(sys_args: List[str], unload_plugins: bool = True):
     finally:
         if unload_plugins:
             plugin.unregister_all_plugins()
+
+
+def _resolve_config_file() -> pathlib.Path:
+    local_config_path = (
+        pathlib.Path(".").resolve() / _repobee.constants.LOCAL_CONFIG_NAME
+    )
+    return (
+        local_config_path
+        if local_config_path.is_file()
+        else _repobee.constants.DEFAULT_CONFIG_FILE
+    )
 
 
 def _initialize_plugins(parsed_preparser_args: argparse.Namespace) -> None:
@@ -262,6 +271,16 @@ def _set_output_verbosity(quietness: int):
         # 1) the generator must yeld
         # 2) it must yield precisely once
         yield
+
+
+@contextlib.contextmanager
+def _in_workdir(workdir: pathlib.Path):
+    cur_workdir = pathlib.Path(".").resolve()
+    try:
+        os.chdir(workdir)
+        yield
+    finally:
+        os.chdir(cur_workdir)
 
 
 if __name__ == "__main__":

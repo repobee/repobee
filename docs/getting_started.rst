@@ -129,8 +129,8 @@ Configure RepoBee for the target organization (the ``config`` category)
 In this section, we'll cover the ``config`` category of commands. These are used
 to configure RepoBee.
 
-Editing the configuration file (the ``wizard`` and ``show`` actions)
---------------------------------------------------------------------
+Editing the global configuration file (the ``wizard`` and ``show`` actions)
+---------------------------------------------------------------------------
 
 For RepoBee to work at all, it needs to be provided with an access token to
 whichever platform instance you intend to use. See the `GitHub access token
@@ -203,6 +203,14 @@ got everything set correctly.
 Note that the token is not shown. To show secrets in the configuration file,
 provide the ``--secrets`` option to ``config show``. If you ever want to
 re-configure some of the options, simply run ``config wizard`` again.
+
+Local config files
+------------------
+
+When executing a command, RepoBee will first look for a file called
+``repobee.ini`` in the current working directory. If such a file is found, it
+completely overrides the global config file. This is useful for managing
+different courses or groups within courses, with different settings.
 
 The students file
 -----------------

@@ -29,12 +29,16 @@ PRE_PARSER_NO_PLUGS = "--no-plugins"
 PRE_PARSER_FLAGS = [PRE_PARSER_NO_PLUGS]
 
 
-def parse_args(sys_args: List[str]) -> argparse.Namespace:
+def parse_args(
+    sys_args: List[str], default_config_file: pathlib.Path
+) -> argparse.Namespace:
     """Parse all arguments that can somehow alter the end-user CLI, such
     as plugins.
 
     Args:
         sys_args: Command line arguments.
+        default_config_file: The default config file to use if none is
+            specified.
     Returns:
         The parsed arguments.
     """
@@ -46,7 +50,7 @@ def parse_args(sys_args: List[str]) -> argparse.Namespace:
         *PRE_PARSER_CONFIG_OPTS,
         help="Specify path to the config file to use.",
         type=pathlib.Path,
-        default=_repobee.constants.DEFAULT_CONFIG_FILE,
+        default=default_config_file,
     )
 
     mutex_grp = parser.add_mutually_exclusive_group()

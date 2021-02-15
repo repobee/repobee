@@ -17,6 +17,7 @@ CONFIG_DIR = pathlib.Path(
         appname=_repobee._external_package_name, appauthor=_repobee.__author__
     )
 )
+LOCAL_CONFIG_NAME = "repobee.ini"
 LOG_DIR = pathlib.Path(
     appdirs.user_log_dir(
         appname=_repobee._external_package_name, appauthor=_repobee.__author__
