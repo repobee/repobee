@@ -130,12 +130,15 @@ def _read_config(config_file: pathlib.Path) -> plug.FileBackedConfigParser:
     try:
         config_parser.refresh()
     except configparser.MissingSectionHeaderError:
-        pass  # handled by the next check
+        pass
 
     if constants.CORE_SECTION_HDR not in config_parser:
-        raise exception.FileError(
-            "config file at '{!s}' does not contain the required "
-            "[repobee] header".format(config_file)
-        )
+        if config_file.exists() and config_file.read_text("utf8").strip():
+            raise exception.FileError(
+                f"config file at '{config_file}' does not contain the "
+                f"required [{constants.CORE_SECTION_HDR}] header"
+            )
+        else:
+            config_parser.add_section(constants.CORE_SECTION_HDR)
 
     return config_parser

@@ -232,7 +232,7 @@ def empty_config_mock(mocker, isfile_mock, tmpdir, monkeypatch):
     monkeypatch.setattr(
         "_repobee.constants.DEFAULT_CONFIG_FILE", pathlib.Path(str(file))
     )
-    yield file
+    yield pathlib.Path(str(file))
 
 
 _config_user = "user = {}".format(constants.USER)
@@ -259,7 +259,7 @@ def config_missing_option(request, empty_config_mock, students_file):
     if not missing_option == "--to":
         config_contents.append(_config_template_org)
 
-    empty_config_mock.write(os.linesep.join(config_contents))
+    empty_config_mock.write_text(os.linesep.join(config_contents))
 
     yield missing_option
 
@@ -278,7 +278,7 @@ def config_mock(empty_config_mock, students_file):
             "token = {}".format(constants.CONFIG_TOKEN),
         ]
     )
-    empty_config_mock.write(config_contents)
+    empty_config_mock.write_text(config_contents)
     yield empty_config_mock
 
 

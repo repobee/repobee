@@ -28,11 +28,8 @@ class TestGetConfiguredDefaults:
         assert defaults == dict(token=constants.TOKEN)
 
     def test_get_configured_defaults_empty_file(self, empty_config_mock):
-        with pytest.raises(exception.FileError) as exc_info:
-            config.get_configured_defaults(str(empty_config_mock))
-        assert "does not contain the required [repobee] header" in str(
-            exc_info.value
-        )
+        defaults = config.get_configured_defaults(str(empty_config_mock))
+        assert defaults == dict(token=constants.TOKEN)
 
     def test_get_configured_defaults_reads_full_config(
         self, config_mock, students_file, mock_getenv
@@ -69,7 +66,7 @@ class TestGetConfiguredDefaults:
                 "{} = whatever".format(invalid_key),
             ]
         )
-        empty_config_mock.write(config_contents)
+        empty_config_mock.write_text(config_contents)
 
         with pytest.raises(exception.FileError) as exc_info:
             config.get_configured_defaults(str(empty_config_mock))
@@ -91,7 +88,7 @@ class TestGetConfiguredDefaults:
                 "students_file = {!s}".format(students_file),
             ]
         )
-        empty_config_mock.write(config_contents)
+        empty_config_mock.write_text(config_contents)
 
         with pytest.raises(exception.FileError) as exc_info:
             config.get_configured_defaults(str(empty_config_mock))
@@ -106,7 +103,9 @@ class TestExecuteConfigHooks:
 
     def test_with_no_config_file(self, unused_path, plugin_manager_mock):
         config.execute_config_hooks(config_file=unused_path)
-        assert not plugin_manager_mock.hook.config_hook.called
+        plugin_manager_mock.hook.config_hook.assert_called_once_with(
+            config_parser=mock.ANY
+        )
 
     def test_with_config_file(self, config_mock, plugin_manager_mock):
         config.execute_config_hooks(str(config_mock))
@@ -126,7 +125,7 @@ class TestCheckConfigIntegrity:
 
     def test_with_well_formed_plugin_options(self, config_mock):
         """Should not raise."""
-        config_mock.write(
+        config_mock.write_text(
             os.linesep
             + os.linesep.join(["[some_config]", "option = value", "bla = blu"])
         )
@@ -138,7 +137,7 @@ class TestCheckConfigIntegrity:
         assert str(unused_path) in str(exc_info.value)
 
     def test_with_invalid_defaults_key_raises(self, empty_config_mock):
-        empty_config_mock.write(
+        empty_config_mock.write_text(
             os.linesep.join(
                 [
                     "[{}]".format(_repobee.constants.CORE_SECTION_HDR),
@@ -159,7 +158,7 @@ class TestCheckConfigIntegrity:
     def test_with_valid_but_malformed_default_args_raises(
         self, empty_config_mock
     ):
-        empty_config_mock.write(
+        empty_config_mock.write_text(
             os.linesep.join(
                 [
                     "[{}]".format(_repobee.constants.CORE_SECTION_HDR),
