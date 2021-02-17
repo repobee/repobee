@@ -9,13 +9,13 @@ cloning repos.
 """
 
 import argparse
-import configparser
 from typing import Optional
 
 from repobee_plug.cli.args import ConfigurableArguments
 from repobee_plug.platform import PlatformAPI
 from repobee_plug.hook import hookspec, Result
 from repobee_plug.deprecation import deprecate
+from repobee_plug.config import FileBackedConfigParser
 
 from repobee_plug.localreps import StudentRepo, TemplateRepo
 
@@ -120,11 +120,11 @@ def get_configurable_args() -> ConfigurableArguments:
 
 
 @hookspec
-def config_hook(config_parser: configparser.ConfigParser) -> None:
+def config_hook(config_parser: FileBackedConfigParser) -> None:
     """Hook into the config file parsing.
 
     Args:
-        config: the config parser after config has been read.
+        config_parser: The config parser after config has been read.
     """
 
 

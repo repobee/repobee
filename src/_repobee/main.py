@@ -230,6 +230,8 @@ def _initialize_plugins(parsed_preparser_args: argparse.Namespace) -> None:
 
 
 def _parse_args(args, config_file):
+    if not config_file.exists():
+        config.init_config(config_file)
     config.execute_config_hooks(config_file)
     parsed_args, api = _repobee.cli.parsing.handle_args(
         args, config_file=config_file

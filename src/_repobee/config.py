@@ -15,6 +15,8 @@ from typing import Union, Mapping
 
 import repobee_plug as plug
 
+import _repobee.constants
+
 from _repobee import exception
 from _repobee import constants
 
@@ -64,10 +66,19 @@ def execute_config_hooks(config_file: Union[str, pathlib.Path]) -> None:
         config_file: path to the config file.
     """
     config_file = pathlib.Path(config_file)
-    if not config_file.is_file():
-        return
     config_parser = _read_config(config_file)
     plug.manager.hook.config_hook(config_parser=config_parser)
+
+
+def init_config(config_file: pathlib.Path) -> None:
+    """Initialize a config file.
+
+    Args:
+        config_file: Path to the config file.
+    """
+    config_file.write_text(
+        f"[{_repobee.constants.CORE_SECTION_HDR}]", encoding="utf8"
+    )
 
 
 def check_config_integrity(config_file: Union[str, pathlib.Path]) -> None:
@@ -114,10 +125,10 @@ def _read_defaults(config_file: pathlib.Path) -> dict:
     return defaults
 
 
-def _read_config(config_file: pathlib.Path) -> configparser.ConfigParser:
-    config_parser = configparser.ConfigParser()
+def _read_config(config_file: pathlib.Path) -> plug.FileBackedConfigParser:
+    config_parser = plug.FileBackedConfigParser(config_file)
     try:
-        config_parser.read(str(config_file))
+        config_parser.refresh()
     except configparser.MissingSectionHeaderError:
         pass  # handled by the next check
 

@@ -7,11 +7,10 @@ a short configuration wizard that lets the user set RepoBee's defaults.
 .. moduleauthor:: Simon Larsén
 """
 import argparse
-import configparser
 import collections
 import os
 
-from typing import Mapping, List
+from typing import Mapping, List, Optional
 
 import bullet  # type: ignore
 
@@ -31,25 +30,26 @@ class Wizard(plug.Plugin, plug.cli.Command):
         ),
     )
 
+    def __init__(self, plugin_name: str):
+        super().__init__(plugin_name)
+        self._config_parser: Optional[plug.FileBackedConfigParser] = None
+
     def command(self) -> None:
-        return callback(self.args)
+        assert self._config_parser is not None
+        return callback(self.args, self._config_parser)
+
+    def config_hook(self, config_parser: plug.FileBackedConfigParser):
+        self._config_parser = config_parser
 
 
-def callback(args: argparse.Namespace) -> None:
+def callback(
+    args: argparse.Namespace, parser: plug.FileBackedConfigParser
+) -> None:
     """Run through a configuration wizard."""
-    parser = configparser.ConfigParser()
+    if parser.config_path.exists():
+        plug.echo(f"Editing config file at {parser.config_path}")
 
-    if constants.DEFAULT_CONFIG_FILE.exists():
-        plug.echo(
-            "Editing config file at {}".format(
-                str(constants.DEFAULT_CONFIG_FILE)
-            )
-        )
-        parser.read(str(constants.DEFAULT_CONFIG_FILE))
-
-    os.makedirs(
-        str(constants.DEFAULT_CONFIG_FILE.parent), mode=0o700, exist_ok=True
-    )
+    os.makedirs(parser.config_path.parent, mode=0o700, exist_ok=True)
     if constants.CORE_SECTION_HDR not in parser:
         parser.add_section(constants.CORE_SECTION_HDR)
 
@@ -90,11 +90,6 @@ Current defaults are shown in brackets [].
                 parser.add_section(section)
             parser[section][option] = default
 
-    with open(str(constants.DEFAULT_CONFIG_FILE), "w", encoding="utf8") as f:
-        parser.write(f)
+    parser.store()
 
-    plug.echo(
-        "Configuration file written to {}".format(
-            constants.DEFAULT_CONFIG_FILE
-        )
-    )
+    plug.echo(f"Configuration file written to {parser.config_path}")
