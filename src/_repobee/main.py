@@ -13,6 +13,7 @@ import logging
 import os
 import pathlib
 import sys
+import tempfile
 from typing import List, Optional, Union, Mapping
 from types import ModuleType
 
@@ -40,10 +41,12 @@ and supply the stack trace below.""".replace(
     "\n", " "
 )
 
+_NO_FILE = pathlib.Path("")
+
 
 def run(
     cmd: List[str],
-    config_file: Union[str, pathlib.Path] = "",
+    config_file: Union[str, pathlib.Path] = _NO_FILE,
     plugins: Optional[List[Union[ModuleType, plug.Plugin]]] = None,
     workdir: Union[str, pathlib.Path] = ".",
 ) -> Mapping[str, List[plug.Result]]:
@@ -87,7 +90,6 @@ def run(
     Returns:
         A mapping (plugin_name -> plugin_results).
     """
-    config_file = pathlib.Path(config_file)
     requested_workdir = pathlib.Path(str(workdir)).resolve(strict=True)
 
     def _ensure_is_module(p: Union[ModuleType, plug.Plugin]):
@@ -103,14 +105,19 @@ def run(
 
     wrapped_plugins = list(map(_ensure_is_module, plugins or []))
 
-    with _in_workdir(requested_workdir):
+    with _in_workdir(
+        requested_workdir
+    ), tempfile.NamedTemporaryFile() as tmp_config:
         try:
             _repobee.cli.parsing.setup_logging()
             # FIXME calling _initialize_plugins like this is ugly, should be
             # refactored
             _initialize_plugins(argparse.Namespace(no_plugins=False, plug=[]))
             plugin.register_plugins(wrapped_plugins)
-            parsed_args, api = _parse_args(cmd, config_file)
+            resolved_config_file = pathlib.Path(
+                tmp_config.name if config_file is _NO_FILE else config_file
+            )
+            parsed_args, api = _parse_args(cmd, resolved_config_file)
 
             with _set_output_verbosity(getattr(parsed_args, "quiet", 0)):
                 return _repobee.cli.dispatch.dispatch_command(
