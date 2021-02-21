@@ -10,25 +10,14 @@ from typing_extensions import Protocol
 __all__ = ["Config"]
 
 
-class _SectionProxyIsh(Protocol):
+class ConfigSection(Protocol):
+    """Protocol defining how a section of the config behaves."""
+
     def __getitem__(self, key: str) -> Any:
         ...
 
     def __setitem__(self, key: str, value: Any) -> None:
         ...
-
-
-class _ConfigSection:
-    """A section of the config."""
-
-    def __init__(self, section: _SectionProxyIsh):
-        self._section = section
-
-    def __getitem__(self, key: str):
-        return self._section[key]
-
-    def __setitem__(self, key: str, value: Any):
-        self._section[key] = value
 
 
 class Config:
@@ -54,5 +43,18 @@ class Config:
         with open(self._config_path, encoding="utf8", mode="w") as f:
             self._config_parser.write(f)
 
-    def __getitem__(self, section_key: str) -> _ConfigSection:
+    def __getitem__(self, section_key: str) -> ConfigSection:
         return _ConfigSection(self._config_parser[section_key])
+
+
+class _ConfigSection:
+    """A section of the config."""
+
+    def __init__(self, section: ConfigSection):
+        self._section = section
+
+    def __getitem__(self, key: str):
+        return self._section[key]
+
+    def __setitem__(self, key: str, value: Any):
+        self._section[key] = value
