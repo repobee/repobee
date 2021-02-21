@@ -8,7 +8,6 @@ a short configuration wizard that lets the user set RepoBee's defaults.
 """
 import argparse
 import collections
-import os
 
 from typing import Mapping, List
 
@@ -43,9 +42,6 @@ def callback(args: argparse.Namespace, config: plug.Config) -> None:
             )
         )
 
-    os.makedirs(
-        str(constants.DEFAULT_CONFIG_FILE.parent), mode=0o700, exist_ok=True
-    )
     if constants.CORE_SECTION_HDR not in config:
         config.create_section(constants.CORE_SECTION_HDR)
 

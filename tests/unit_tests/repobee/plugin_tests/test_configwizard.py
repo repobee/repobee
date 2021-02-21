@@ -1,6 +1,5 @@
 import string
 import sys
-import os
 import collections
 import builtins  # noqa: F401
 import configparser
@@ -149,16 +148,10 @@ def test_retains_values_that_are_not_specified(
         assert parser[plugin_section][option] == value
 
 
-def test_creates_directory(
-    config_mock, tmpdir, defaults_options, select_repobee_section
-):
-    with patch(
-        "builtins.input", side_effect=list(defaults_options.values())
-    ), patch("os.makedirs", autospec=True) as makedirs_mock, patch(
-        "pathlib.Path.exists", autospec=True, return_value=False
-    ):
-        configwizard.callback(None, plug.Config(config_mock))
+def test_creates_directory(defaults_options, select_repobee_section, tmp_path):
+    config_file = tmp_path / "path" / "to" / "config.ini"
 
-    makedirs_mock.assert_called_once_with(
-        os.path.dirname(str(config_mock)), mode=0o700, exist_ok=True
-    )
+    with patch("builtins.input", side_effect=list(defaults_options.values())):
+        configwizard.callback(None, plug.Config(config_file))
+
+    assert config_file.exists()

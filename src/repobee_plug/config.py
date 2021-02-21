@@ -50,7 +50,7 @@ class Config:
         directory does not exist, it is created.
         """
         if not self._config_path.exists():
-            os.makedirs(self._config_path.parent, exist_ok=True)
+            os.makedirs(self._config_path.parent, mode=0o700, exist_ok=True)
 
         with open(self._config_path, encoding="utf8", mode="w") as f:
             self._config_parser.write(f)
