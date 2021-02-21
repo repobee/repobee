@@ -29,7 +29,7 @@ from repobee_plug.name import (
     generate_review_team_name,
 )
 from repobee_plug import fileutils
-from repobee_plug.config import FileBackedConfigParser
+from repobee_plug.config import Config
 
 # API wrappers
 from repobee_plug.platform import (
@@ -109,7 +109,7 @@ __all__ = [
     "generate_review_team_name",
     "deprecate",
     "deprecated_hooks",
-    "FileBackedConfigParser",
+    "Config",
     # Modules/Packages
     "cli",
     "fileutils",
