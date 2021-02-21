@@ -8,6 +8,8 @@ from unittest.mock import patch
 
 import pytest
 
+import repobee_plug as plug
+
 import _repobee.constants
 from _repobee.ext.defaults import configwizard
 
@@ -39,7 +41,7 @@ def test_enters_values_if_config_file_exists(
     enters yes the wizard should proceed as usuall.
     """
     with patch("builtins.input", side_effect=list(defaults_options.values())):
-        configwizard.callback(None)
+        configwizard.callback(None, plug.Config(config_mock))
 
     confparser = configparser.ConfigParser()
     confparser.read(str(config_mock))
@@ -57,7 +59,7 @@ def test_enters_values_if_no_config_exists(
     with patch(
         "builtins.input", side_effect=list(defaults_options.values())
     ), patch("pathlib.Path.exists", autospec=True, return_value=False):
-        configwizard.callback(None)
+        configwizard.callback(None, plug.Config(config_mock))
 
     confparser = configparser.ConfigParser()
     confparser.read(str(config_mock))
@@ -83,7 +85,7 @@ def test_skips_empty_values(
     with patch(
         "builtins.input", side_effect=list(defaults_options.values())
     ), patch("pathlib.Path.exists", autospec=True, return_value=False):
-        configwizard.callback(None)
+        configwizard.callback(None, plug.Config(empty_config_mock))
 
     del defaults_options[empty_option]
     confparser = configparser.ConfigParser()
@@ -130,7 +132,7 @@ def test_retains_values_that_are_not_specified(
 
     # act
     with patch("builtins.input", side_effect=list(defaults_options.values())):
-        configwizard.callback(None)
+        configwizard.callback(None, plug.Config(config_mock))
 
     # assert
     del defaults_options[empty_option]
@@ -155,7 +157,7 @@ def test_creates_directory(
     ), patch("os.makedirs", autospec=True) as makedirs_mock, patch(
         "pathlib.Path.exists", autospec=True, return_value=False
     ):
-        configwizard.callback(None)
+        configwizard.callback(None, plug.Config(config_mock))
 
     makedirs_mock.assert_called_once_with(
         os.path.dirname(str(config_mock)), mode=0o700, exist_ok=True

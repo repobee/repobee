@@ -7,7 +7,6 @@ a short configuration wizard that lets the user set RepoBee's defaults.
 .. moduleauthor:: Simon Larsén
 """
 import argparse
-import configparser
 import collections
 import os
 
@@ -32,26 +31,23 @@ class Wizard(plug.Plugin, plug.cli.Command):
     )
 
     def command(self) -> None:
-        return callback(self.args)
+        return callback(self.args, plug.Config(constants.DEFAULT_CONFIG_FILE))
 
 
-def callback(args: argparse.Namespace) -> None:
+def callback(args: argparse.Namespace, config: plug.Config) -> None:
     """Run through a configuration wizard."""
-    parser = configparser.ConfigParser()
-
     if constants.DEFAULT_CONFIG_FILE.exists():
         plug.echo(
             "Editing config file at {}".format(
                 str(constants.DEFAULT_CONFIG_FILE)
             )
         )
-        parser.read(str(constants.DEFAULT_CONFIG_FILE))
 
     os.makedirs(
         str(constants.DEFAULT_CONFIG_FILE.parent), mode=0o700, exist_ok=True
     )
-    if constants.CORE_SECTION_HDR not in parser:
-        parser.add_section(constants.CORE_SECTION_HDR)
+    if constants.CORE_SECTION_HDR not in config:
+        config.create_section(constants.CORE_SECTION_HDR)
 
     configurable_args = [
         plug.ConfigurableArguments(
@@ -82,16 +78,15 @@ Current defaults are shown in brackets [].
     )
     for option in configurable_args_dict[section]:
         prompt = "Enter default for '{}': [{}] ".format(
-            option, parser.get(section, option, fallback="")
+            option, config.get(section, option, fallback="")
         )
         default = input(prompt)
         if default:
-            if section not in parser:
-                parser.add_section(section)
-            parser[section][option] = default
+            if section not in config:
+                config.create_section(section)
+            config[section][option] = default
 
-    with open(str(constants.DEFAULT_CONFIG_FILE), "w", encoding="utf8") as f:
-        parser.write(f)
+    config.store()
 
     plug.echo(
         "Configuration file written to {}".format(
