@@ -67,10 +67,7 @@ def execute_config_hooks(config_file: Union[str, pathlib.Path]) -> None:
     if not config_file.is_file():
         return
     config_parser = _read_config(config_file)
-    plug.manager.hook.config_hook(
-        config_parser=config_parser
-    )  # TODO remove by 3.8.0
-    plug.manager.hook.handle_config(config=plug.Config(config_file))
+    plug.manager.hook.config_hook(config_parser=config_parser)
 
 
 def check_config_integrity(config_file: Union[str, pathlib.Path]) -> None:
