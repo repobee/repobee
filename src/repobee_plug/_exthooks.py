@@ -125,7 +125,7 @@ def get_configurable_args() -> ConfigurableArguments:
 def config_hook(config_parser: configparser.ConfigParser) -> None:
     """Hook into the config file parsing.
 
-    .. deprecated::
+    .. deprecated:: 3.6.0
 
         Use :py:func:`handle_config` instead.
 
