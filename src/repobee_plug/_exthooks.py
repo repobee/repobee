@@ -9,8 +9,8 @@ cloning repos.
 """
 
 import argparse
+import configparser
 from typing import Optional
-from configparser import ConfigParser
 
 from repobee_plug.cli.args import ConfigurableArguments
 from repobee_plug.platform import PlatformAPI
@@ -122,7 +122,7 @@ def get_configurable_args() -> ConfigurableArguments:
 
 @deprecate(remove_by_version="3.8.0", replacement="handle_config")
 @hookspec
-def config_hook(config_parser: ConfigParser) -> None:
+def config_hook(config_parser: configparser.ConfigParser) -> None:
     """Hook into the config file parsing.
 
     .. deprecated::
