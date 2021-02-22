@@ -1,6 +1,9 @@
 """Tests for the config category of commands."""
 import tempfile
 import pathlib
+import shlex
+
+from unittest import mock
 
 import pytest
 
@@ -67,3 +70,31 @@ class TestConfigVerify:
             )
 
         assert f"'{non_existing_file}' is not a file" in str(exc_info.value)
+
+
+class TestConfigWizard:
+    """Tests for the ``config wizard`` command."""
+
+    def test_respects_config_file_argument(self, platform_url, tmp_path):
+        # arrange
+        config_file = tmp_path / "repobee.ini"
+        unlikely_value = "badabimbadabum"
+
+        # act
+        with mock.patch(
+            "bullet.Bullet.launch",
+            autospec=True,
+            return_value=_repobee.constants.CORE_SECTION_HDR,
+        ), mock.patch("builtins.input", return_value=unlikely_value):
+            _repobee.main.main(
+                shlex.split(
+                    f"repobee --config-file {config_file} config wizard"
+                )
+            )
+
+        # assert
+        config = plug.Config(config_file)
+        assert (
+            config.get(_repobee.constants.CORE_SECTION_HDR, "students_file")
+            == unlikely_value
+        )

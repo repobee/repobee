@@ -9,7 +9,7 @@ a short configuration wizard that lets the user set RepoBee's defaults.
 import argparse
 import collections
 
-from typing import Mapping, List
+from typing import Mapping, List, Optional
 
 import bullet  # type: ignore
 
@@ -29,8 +29,14 @@ class Wizard(plug.Plugin, plug.cli.Command):
         ),
     )
 
+    _config: Optional[plug.Config]
+
     def command(self) -> None:
-        return callback(self.args, plug.Config(constants.DEFAULT_CONFIG_FILE))
+        assert self._config is not None
+        return callback(self.args, self._config)
+
+    def handle_config(self, config: plug.Config) -> None:
+        self._config = config
 
 
 def callback(args: argparse.Namespace, config: plug.Config) -> None:
