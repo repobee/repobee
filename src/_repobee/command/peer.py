@@ -302,11 +302,37 @@ def end_reviews(
         review_team_names, api, desc="Deleting review teams"
     )
     for team in teams:
-        if double_blind_key:
-            _delete_anonymous_repos(team, double_blind_key, api)
         api.delete_team(team)
-
         plug.log.info(f"Deleted team {team.name}")
+
+    if double_blind_key:
+        _delete_anon_repos(assignment_names, students, double_blind_key, api)
+
+
+def _delete_anon_repos(
+    assignment_names: Iterable[str],
+    student_teams: Iterable[plug.StudentTeam],
+    double_blind_key: str,
+    api: plug.PlatformAPI,
+):
+    anon_repo_names = [
+        _hash_if_key(
+            plug.generate_repo_name(student_team, assignment_name),
+            key=double_blind_key,
+        )
+        for student_team, assignment_name in itertools.product(
+            student_teams, assignment_names
+        )
+    ]
+    anon_repo_urls = api.get_repo_urls(anon_repo_names)
+    anon_repos = api.get_repos(anon_repo_urls)
+    plug.cli.io.progress_bar(
+        anon_repos,
+        desc="Deleting anonymous repo copies",
+        total=len(anon_repo_names),
+    )
+    for repo in anon_repos:
+        api.delete_repo(repo)
 
 
 def _delete_anonymous_repos(
