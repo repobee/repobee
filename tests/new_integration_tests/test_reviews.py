@@ -79,6 +79,46 @@ class TestEnd:
         assert not review_teams
         assert len(platform_teams) == len(const.STUDENT_TEAMS)
 
+    def test_end_double_blind_reviews_when_review_teams_are_missing(
+        self, platform_url, with_student_repos
+    ):
+        """Even if the review teams are missing, the anonymous repos should be
+        deleted when running end. Such cases can occurr when there is failure
+        in setup, see issue #825 for details.
+        """
+        # arrange
+        assignment_name = const.TEMPLATE_REPO_NAMES[0]
+        api = funcs.get_api(platform_url)
+        num_repos_before = len(list(api.get_repos()))
+        key = 1234
+
+        funcs.run_repobee(
+            f"reviews assign --num-reviews 1 "
+            f"--base-url {platform_url} "
+            f"--double-blind-key {key} "
+            f"--assignments {assignment_name}"
+        )
+
+        api._restore_state()
+        review_teams = [
+            team for team in api.get_teams() if "-" not in team.name
+        ]
+        for team in review_teams:
+            api.delete_team(team)
+
+        # act
+        funcs.run_repobee(
+            f"reviews end "
+            f"--base-url {platform_url} "
+            f"--double-blind-key {key} "
+            f"--assignments {assignment_name}"
+        )
+
+        # assert
+        api._restore_state()
+        num_repos_after = len(list(api.get_repos()))
+        assert num_repos_after == num_repos_before
+
 
 class TestCheck:
     """Tests for the ``reviews check`` command."""
