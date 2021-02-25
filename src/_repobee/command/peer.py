@@ -306,15 +306,20 @@ def end_reviews(
         plug.log.info(f"Deleted team {team.name}")
 
     if double_blind_key:
-        _delete_anon_repos(assignment_names, students, double_blind_key, api)
+        _delete_anonymous_repos(
+            assignment_names, students, double_blind_key, api
+        )
 
 
-def _delete_anon_repos(
+def _delete_anonymous_repos(
     assignment_names: Iterable[str],
     student_teams: Iterable[plug.StudentTeam],
     double_blind_key: str,
     api: plug.PlatformAPI,
 ):
+    """Delete any anonymous repos created for these students and
+    assignments.
+    """
     anon_repo_names = [
         _hash_if_key(
             plug.generate_repo_name(student_team, assignment_name),
@@ -333,26 +338,6 @@ def _delete_anon_repos(
     )
     for repo in anon_repos:
         api.delete_repo(repo)
-
-
-def _delete_anonymous_repos(
-    team: plug.Team, key: str, api: plug.PlatformAPI
-) -> None:
-    """Delete all repos assigned to this team that have an anoymous repo
-    fingerprint in their descriptions.
-    """
-    for team_repo in api.get_team_repos(team):
-        fingerprint = _anonymous_repo_fingerprint(team.name, team_repo.name)
-        if fingerprint in team_repo.description:
-            api.delete_repo(team_repo)
-            plug.log.info(f"Deleted anonymous repo {team_repo.name}")
-        else:
-            plug.log.warning(
-                f"Repo '{team_repo.name}' of anonymous review team "
-                f"'{team.name}' does not have expected fingerprint "
-                f"'{fingerprint}'. Repo may have been added by "
-                "accident or maliciously. Not deleting."
-            )
 
 
 def check_peer_review_progress(
