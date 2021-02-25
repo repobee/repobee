@@ -302,31 +302,42 @@ def end_reviews(
         review_team_names, api, desc="Deleting review teams"
     )
     for team in teams:
-        if double_blind_key:
-            _delete_anonymous_repos(team, double_blind_key, api)
         api.delete_team(team)
-
         plug.log.info(f"Deleted team {team.name}")
+
+    if double_blind_key:
+        _delete_anonymous_repos(
+            assignment_names, students, double_blind_key, api
+        )
 
 
 def _delete_anonymous_repos(
-    team: plug.Team, key: str, api: plug.PlatformAPI
-) -> None:
-    """Delete all repos assigned to this team that have an anoymous repo
-    fingerprint in their descriptions.
+    assignment_names: Iterable[str],
+    student_teams: Iterable[plug.StudentTeam],
+    double_blind_key: str,
+    api: plug.PlatformAPI,
+):
+    """Delete any anonymous repos created for these students and
+    assignments.
     """
-    for team_repo in api.get_team_repos(team):
-        fingerprint = _anonymous_repo_fingerprint(team.name, team_repo.name)
-        if fingerprint in team_repo.description:
-            api.delete_repo(team_repo)
-            plug.log.info(f"Deleted anonymous repo {team_repo.name}")
-        else:
-            plug.log.warning(
-                f"Repo '{team_repo.name}' of anonymous review team "
-                f"'{team.name}' does not have expected fingerprint "
-                f"'{fingerprint}'. Repo may have been added by "
-                "accident or maliciously. Not deleting."
-            )
+    anon_repo_names = [
+        _hash_if_key(
+            plug.generate_repo_name(student_team, assignment_name),
+            key=double_blind_key,
+        )
+        for student_team, assignment_name in itertools.product(
+            student_teams, assignment_names
+        )
+    ]
+    anon_repo_urls = api.get_repo_urls(anon_repo_names)
+    anon_repos = api.get_repos(anon_repo_urls)
+    plug.cli.io.progress_bar(
+        anon_repos,
+        desc="Deleting anonymous repo copies",
+        total=len(anon_repo_names),
+    )
+    for repo in anon_repos:
+        api.delete_repo(repo)
 
 
 def check_peer_review_progress(
