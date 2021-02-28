@@ -50,10 +50,12 @@ version number of RepoBee.
 In further listings, we'll use the prefix ``bash-5.1$`` to denote that we're
 *inside* the Docker container. Once in the session, you can use RepoBee mostly
 as described in the rest of this user guide, with a few exceptions in regards
-to installing plugins and managing the installation. Note also that we always
-do a line-break in the Docker command, and specify the command to run inside
-Docker on a separate line (here ``/bin/bash``). This is for added clarity, and
-nothing you need to do yourself.
+to installing plugins and managing the installation. Tab completion is enabled
+by default.
+
+Note that we always do a line-break in the Docker command, and specify the
+command to run inside Docker on a separate line (here ``/bin/bash``). This is
+for added clarity, and nothing you need to do yourself.
 
 Note that pulling and running ``repobee/repobee`` without specifying a version
 will use the ``latest`` tag, which points to the most recent uploaded image.
