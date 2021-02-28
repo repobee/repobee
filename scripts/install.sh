@@ -204,27 +204,10 @@ $($REGISTER_PYTHON_ARGCOMPLETE repobee)
 function auto_complete_msg() {
     echo "
 ### TAB COMPLETION INSTRUCTIONS ###
-RepoBee supports tab completion (aka auto completion, shell completion, etc), but you need to do just a little bit of the legwork yourself. To activate tab completion for RepoBee, do the following (depending on your shell):
 
-### bash ###
-Add the following to your ~/.bashrc:
+To enable tab completion, see https://docs.repobee.org/en/stable/install.html#tab-completion
 
-    source \"$REPOBEE_BASH_COMPLETION\"
-
-### zsh ###
-Add the following to your ~/.zshrc:
-
-    autoload -Uz compinit
-    compinit
-    autoload -Uz bashcompinit
-    bashcompinit
-    source \"$REPOBEE_BASH_COMPLETION\"
-
-IMPORTANT: You should _not_ have multiple occurences of compinit and bashcompinit in your .zshrc, they should be loaded and executed only once. If you already have them in there, just make sure to source the RepoBee bash completion script after compinit and bashcompinit have been called.
-
-### other shells ###
-Sorry, we don't support tab completion for any other shells at this time :(
-
+###################################
 "
 }
 

@@ -34,3 +34,52 @@ Note that it requires ``curl`` to be installed.
 
 .. _WSL: https://docs.microsoft.com/en-us/windows/wsl/install-win10
 .. _issue tracker: https://github.com/repobee/repobee/issues
+
+.. _completion:
+
+Tab completion
+--------------
+
+RepoBee supports tab completion (aka auto completion, shell completion, etc) for
+``bash`` and ``zsh``, but it must be enabled separately after installing RepoBee
+by executing a script found in the install directory. The procedure differs
+slightly between the two shells.
+
+.. note::
+
+    This guide assumes you've installed RepoBee at ``~/.repobee``. If you don't
+    make an active choice saying otherwise, that's where RepoBee is installed.
+    The install script also explicitly tells you where it's installing RepoBee.
+    If you've chosen to install RepoBee in any other directory, then you need to
+    make the proper path substitutions in the below instructions.
+
+bash
+++++
+
+For ``bash``, simply add the following line to your ``~/.bashrc`` file.
+
+.. code-block:: bash
+
+    source ~/.repobee/completion/bash_completion.sh
+
+zsh
++++
+
+For ``zsh``, you must make sure to enable bash completion, and then source the
+completion script. The entire thing looks like so.
+
+.. code-block:: bash
+
+    autoload -Uz compinit
+    compinit
+    autoload -Uz bashcompinit
+    bashcompinit
+    source ~/.repobee/completion/bash_completion.sh
+
+.. important::
+
+    You should *not* have multiple occurences of ``compinit`` and
+    ``bashcompinit`` in your .zshrc, they should be loaded and executed only
+    once. If you already have them in there, just make sure to source the
+    RepoBee bash completion script after compinit and bashcompinit have been
+    called.
