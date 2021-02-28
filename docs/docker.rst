@@ -162,7 +162,7 @@ the following Dockerfile installs the ``junit4`` and ``csvgrades`` plugins.
 .. code-block:: docker
     :caption: Dockerfile that installs junit4 and csvgrades plugins
 
-    FROM repobee/repobee
+    FROM repobee/repobee # Optionally, append version tag (e.g. :v3.6.0)
 
     RUN repobee plugin install --version-spec junit4@v1.2.1
     RUN repobee plugin install --version-spec csvgrades@v0.2.1
