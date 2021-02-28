@@ -1,4 +1,4 @@
-.. _using_docker:
+.. _docker_usage:
 
 Using RepoBee with Docker
 *************************

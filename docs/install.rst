@@ -3,6 +3,14 @@
 Install
 *******
 
+We offer an easy-to-use install script to install RepoBee on your machine, as
+outlined in this section.
+
+.. hint::
+
+    If you'd rather not install RepoBee for some reason, or want to use it for
+    automation scripts, we also offer a Docker image. See :ref:`docker_usage`.
+
 Requirements
 ------------
 
