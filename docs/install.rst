@@ -47,20 +47,21 @@ slightly between the two shells.
 
 .. note::
 
-    This guide assumes you've installed RepoBee at ``~/.repobee``. If you don't
-    make an active choice saying otherwise, that's where RepoBee is installed.
-    The install script also explicitly tells you where it's installing RepoBee.
-    If you've chosen to install RepoBee in any other directory, then you need to
-    make the proper path substitutions in the below instructions.
+    This guide assumes you've installed RepoBee at ``$HOME/.repobee``. If you
+    don't make an active choice saying otherwise, that's where RepoBee is
+    installed.  The install script also explicitly tells you where it's
+    installing RepoBee.  If you've chosen to install RepoBee in any other
+    directory, then you need to make the proper path substitutions in the below
+    instructions.
 
 bash
 ++++
 
-For ``bash``, simply add the following line to your ``~/.bashrc`` file.
+For ``bash``, simply add the following line to your ``$HOME/.bashrc`` file.
 
 .. code-block:: bash
 
-    source ~/.repobee/completion/bash_completion.sh
+    source "$HOME/.repobee/completion/bash_completion.sh"
 
 zsh
 +++
@@ -74,7 +75,7 @@ completion script. The entire thing looks like so.
     compinit
     autoload -Uz bashcompinit
     bashcompinit
-    source ~/.repobee/completion/bash_completion.sh
+    source "$HOME/.repobee/completion/bash_completion.sh"
 
 .. important::
 
