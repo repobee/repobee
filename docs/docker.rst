@@ -42,7 +42,7 @@ version number of RepoBee.
     :caption: Starting an interactive ``bash`` shell in a RepoBee Docker
         container
 
-    $ docker run -it repobee/repobee \
+    $ docker run --rm -it repobee/repobee \
         /bin/bash
     bash5.1$ repobee --version
     v3.7.0-dev
@@ -67,7 +67,7 @@ For example, to use ``v3.6.0``, the command would look like so:
     :caption: Starting an interactive ``bash`` shell with a stable release of
         RepoBee in Docker
 
-    $ docker run -it repobee/repobee:v3.6.0 \
+    $ docker run --rm -it repobee/repobee:v3.6.0 \
         /bin/bash
     bash-5.1$ repobee --version
     v3.6.0
@@ -86,7 +86,7 @@ but can run the RepoBee command directly. For example, we could run ``repobee
     :caption: Running ``repobee --version`` without first starting a bash
         shell
 
-    $ docker run -it repobee/repobee \
+    $ docker run --rm -it repobee/repobee \
         repobee --version
 
 In several of the following examples, we will execute single commands like
@@ -107,7 +107,7 @@ create a local config file in it with the ``config wizard`` command.
 .. code-block:: bash
     :caption: Using a named volume called ``repobee-workdir`` for persistent storage
 
-    $ docker run -v repobee-workdir:/home/repobee/workdir -it repobee/repobee \
+    $ docker run --rm -v repobee-workdir:/home/repobee/workdir -it repobee/repobee \
         repobee --config-file repobee.ini config wizard
     # follow the prompts to configure RepoBee
 
@@ -118,7 +118,7 @@ to how local config files work in RepoBee.
 
 .. code-block:: bash
 
-    $ docker run -v repobee-workdir:/home/repobee -it repobee/repobee \
+    $ docker run --rm -v repobee-workdir:/home/repobee -it repobee/repobee \
         repobee config show
     # should show the config
 
@@ -140,7 +140,7 @@ idea to use a local directory instead. Here's an example of how to do that.
 
     $ mkdir repobee-workdir # create local directory
     $ chown 1000:1000 repobee-workdir # set UID:GID to match the image's repobee user
-    $ docker run -v "$PWD/repobee-workdir":/home/repobee/workdir -it repobee/repobee \
+    $ docker run --rm -v "$PWD/repobee-workdir":/home/repobee/workdir -it repobee/repobee \
         /bin/bash
     bash-5.1$ # do stuff
 
@@ -174,6 +174,6 @@ image and run a container from it it like so.
     :caption: Building and executing a custom RepoBee Docker image
 
     $ docker build -t my-repobee-img .
-    $ docker run -it my-repobee-img \
+    $ docker run --rm -it my-repobee-img \
         repobee plugin list
     # should show that junit4 and csvgrades are installed
