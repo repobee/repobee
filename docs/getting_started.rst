@@ -204,6 +204,8 @@ Note that the token is not shown. To show secrets in the configuration file,
 provide the ``--secrets`` option to ``config show``. If you ever want to
 re-configure some of the options, simply run ``config wizard`` again.
 
+.. _local_config:
+
 Local config files
 ------------------
 
