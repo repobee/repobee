@@ -6,11 +6,6 @@ Install
 We offer an easy-to-use install script to install RepoBee on your machine, as
 outlined in this section.
 
-.. hint::
-
-    If you'd rather not install RepoBee for some reason, or want to use it for
-    automation scripts, we also offer a Docker image. See :ref:`docker_usage`.
-
 Requirements
 ------------
 
@@ -92,3 +87,11 @@ completion script. The entire thing looks like so.
     once. If you already have them in there, just make sure to source the
     RepoBee bash completion script after compinit and bashcompinit have been
     called.
+
+Docker
+------
+
+If you'd rather not install RepoBee for some reason, or want to use it for
+automation scripts, we also offer a Docker image. For this, all you need
+to do is install Docker, and then follow the instructions in
+:ref:`docker_usage`.
