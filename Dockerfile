@@ -14,3 +14,5 @@ RUN mkdir /home/repobee/workdir
 WORKDIR /home/repobee/workdir
 
 RUN bash ~/repobee/scripts/install.sh ~/repobee
+
+RUN echo "source $HOME/.repobee/completion/bash_completion.sh" >> "$HOME/.bashrc"
