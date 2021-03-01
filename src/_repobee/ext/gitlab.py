@@ -153,7 +153,13 @@ class GitLabAPI(plug.PlatformAPI):
         group = team.implementation
 
         with _try_api_request():
-            for user in self._get_users(members):
+            # never assign the token owner to a group as the creator of a group
+            # is automatically a member. See issue #812.
+            token_owner = self._gitlab.user.username
+            members_without_owner = [
+                member for member in members if member != token_owner
+            ]
+            for user in self._get_users(members_without_owner):
                 group.members.create(
                     {"user_id": user.id, "access_level": raw_permission}
                 )
