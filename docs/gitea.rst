@@ -22,13 +22,15 @@ plugins. This is one of those plugins that you'll want to activate persistently
 with ``plugin activate``. Other than that, usage with Gitea is identical to
 that with GitHub.
 
+.. _gitea_access_token:
 
-.. hint::
+Getting an access token for Gitea
+---------------------------------
 
-    To create a **personal access token** for a Gitea instance, log in and then
-    click your profile picture in the top right corner. From there, click
-    ``Settings`` and then go to the ``Applications`` menu.  At the top you'll
-    find a small section for generating a new token.
+To create a personal access token for a Gitea instance, log in and then click
+your profile picture in the top right corner. From there, click ``Settings``
+and then go to the ``Applications`` menu.  At the top you'll find a small
+section for generating a new token.
 
 Trying out RepoBee with the Gitea test instance
 ===============================================

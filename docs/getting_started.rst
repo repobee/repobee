@@ -12,7 +12,8 @@ Getting started
 .. important::
 
    Whenever you see specific mentions of GitHub, refer to the :ref:`gitlab`
-   section for how this translates to use with GitLab.
+   section for how this translates to use with GitLab and :ref:`gitea` for
+   the equivalent information for Gitea.
 
 The basic workflow of RepoBee is best described by example. This guide will
 take you through most of RepoBee's core functionality with using less realistic
@@ -143,6 +144,10 @@ it in the configuration file as described next.
 
    See :ref:`gitlab access token` if you use GitLab!
 
+.. note::
+
+    See :ref:`gitea_access_token` if you use Gitea!
+
 The ``config wizard`` command starts a configuration wizard that prompts you
 for default values for the available settings. The defaults that are set in the
 configuration file are *just defaults*, and can always be overridden on the
@@ -178,11 +183,13 @@ value. Here are some pointers regarding the different values:
     - The ``base_url`` should be to the host, not to the API endpoint. I.e. if
       you are using https://gitlab.com, then the ``base_url`` option should
       simply read ``https://gitlab.com``.
+* **If you are using Gitea**:
+    - The ``base_url`` should be ``https://yourgiteadomain/api/v1``.
 
 .. note::
 
-    If you use GitLab, you must also activate the GitLab plugin. See
-    :ref:`plugins`.
+    If you use GitLab or Gitea, you must also activate the corresponding
+    plugin. See :ref:`plugins`.
 
 That's it for configuration. The ``show`` action can be used to check that you
 got everything set correctly.
