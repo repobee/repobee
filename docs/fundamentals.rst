@@ -2,51 +2,13 @@
 
 Introduction
 ************
-RepoBee is an opinionated tool for managing anything from a handful to
-thousands of Git repositories on the GitHub and GitLab platforms. There were two
-primary reasons for RepoBee's inception. First, the old teachers_pet_ tool that
-we used previously lacked some functionality that we needed and had been
-archived in favor of the new `GitHub Classroom`_. Second, `GitHub Classroom`_
-did not support GitHub Enterprise at the time, was not customizable enough, and
-also gone closed source, which runs contrary to our values and goals.
-
-RepoBee is our answer to these needs. It is heavily inspired by teachers_pet_,
-as we enjoyed the overall workflow, but improves on the user experience in
-every conceivable way.
-
-Philosophy and goals
-====================
-When RepoBee was first created, it's goals were simple: facilitate creation and
-management of student repositories for courses at KTH, using GitHub Enterprise.
-Since then, the scope of the project has grown to incorporate many new features,
-including support for the GitLab platform. For new users of Git+GitHub/GitLab in
-education, RepoBee provides both a tool to make it happen, and an opinionated
-workflow to ease the transition. For the more experienced user, the plugin system
-can be used to extend or modify the behavior of RepoBee. While creating a plugin
-requires some rudimentary skills with Python programming, installing a plugin is
-effortless. The plugin system enables RepoBee to both be easy to get up and
-running *without* any required customization, while still *allowing* for a
-degree of customization to those that want it. See :ref:`plugins` for details.
-
-Another key goal is to keep RepoBee simple to use and simple to maintain.
-RepoBee requires a minimal amount of static data to operate (such as a list of
-students, a URL to the platform instance and an access token to said platform),
-which can all be provided in configuration files or on the command line. It
-does not require any kind of backing database to keep track of repositories.
-In fact, RepoBee itself keeps track of little more than its own version, and
-which plugins are currently installed and active. All of the complex state
-state is more or less implicitly stored on the hosting platform. This allows
-RepoBee to be simple to set up and use on multiple machines, which is crucial
-in a course where multiple teachers and TAs are managing the student
-repositories.
-
-RepoBee is very intentionally designed *not* to be a service, but an on-demand
-tool that is only in use when explicitly being used. This means that nothing
-needs to be installed server-side for RepoBee to function, which also happens
-to be key to supporting multiple hosting platforms. For an experienced user,
-installing RepoBee and setting everything up for a new course can literally
-take minutes  For the novice, the :ref:`userguide` will hopefully prove
-sufficient to get started within the hour.
+RepoBee is a command line tool for enabling teachers and teaching assistants to
+manage anything from a handful to thousands of Git repositories for students on
+the GitHub, GitLab and Gitea platforms. It has two key features that separates
+it from contemporary solutions: support for multiple hosting platforms, and a
+plugin system for extending and customizing its behavior. Our vision for
+RepoBee is to make it simple to pick up for the novice user, yet extensible and
+customizable for the more seasoned user.
 
 Key concepts
 ============
@@ -58,13 +20,12 @@ the default platform, these concepts are based on and often refer to
 GitHub-specific terms. For a mapping to GitLab terms and concepts, please see
 the :ref:`gitlab` section.
 
-* *Platform*: Or *hosting platform*, refers to services such as GitHub and
-  GitLab.
+* *Platform*: Or *hosting platform*, refers a service such as Github.
 * *Platform instance:* A specific instance of a hosting platform. For example,
   https://github.com is one instance, and an arbitrary GitLab Enterprise
   installation is another.
-* *Target organization*: The GitHub Organization_ related to the current course
-  round.
+* *Target organization*: The organization (or with GitLab, group) related to
+  the current course round.
 * *Assignment*: What you would expect; an assignment to be handed in.
 * *Template repository*: Or *template repo*, is a template from which student
   repositories are created for a given assignment. Each assignment has one
@@ -96,7 +57,7 @@ The following conventions are fundamental to working with RepoBee.
     but it is sufficient for e.g. cloning repositories and opening issues on
     the issue trackers.
 
-* Template repos should be available as private repos in one of three places:
+* Template repos should be available as private or public repos in one of three places:
 
   - The template organization (recommended if the template repos are being
     maintained and improved across course rounds).
@@ -136,11 +97,11 @@ Usage with different platforms (GitHub, GitHub Enterprise and GitLab)
 RepoBee was originally designed for use with GitHub Enterprise, but also works
 well with the public cloud service at https://github.com. Usage of RepoBee
 should be identical, but there are two differences between the two that one
-should be aware of. RepoBee also supports GitLab through the ``gitlab`` plugin.
+should be aware of. RepoBee also supports GitLab through the ``gitlab`` plugin,
+and Gitea through the ``gitea`` plugin.
 
 In the following sections, we outline the platform-dependent variations in
 usage that we are aware of.
-
 
 The Organization must have support for private repositories
 -----------------------------------------------------------
@@ -155,6 +116,7 @@ others' work, and thereby avoid a few avenues for plagiarism.
   <https://help.github.com/en/articles/applying-for-an-educator-or-researcher-discount>`_.
 * **GitLab:** All GitLab groups (self-hosted and on https://gitlab.com) support
   private repositories.
+* **Gitea:** All Gitea organizations support private repositories.
 
 Students are added to the target Organization slightly differently
 ------------------------------------------------------------------
@@ -164,6 +126,7 @@ happens differs slightly.
 * **Enterprise:** Students are automatically added to their Teams in the Organization.
 * **github.com:** Students are invited to the Organization and added to their Teams upon accepting.
 * **GitLab:** Students are automatically added, both on self-hosted and https://gitlab.com.
+* **Gitea:** Students are automatically added.
 
 .. _teachers_pet: https://github.com/education/teachers_pet
 .. _GitHub Classroom: https://classroom.github.com/
