@@ -1,4 +1,4 @@
-.. _gitea:
+.. _gitea_instructions:
 
 RepoBee and Gitea
 *****************

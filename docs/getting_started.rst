@@ -12,8 +12,8 @@ Getting started
 .. important::
 
    Whenever you see specific mentions of GitHub, refer to the :ref:`gitlab`
-   section for how this translates to use with GitLab and :ref:`gitea` for
-   the equivalent information for Gitea.
+   section for how this translates to use with GitLab and
+   :ref:`gitea_instructions` for the equivalent information for Gitea.
 
 The basic workflow of RepoBee is best described by example. This guide will
 take you through most of RepoBee's core functionality with using less realistic
