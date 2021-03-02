@@ -220,6 +220,28 @@ class TestSetup:
         assert_repos_exist(STUDENT_TEAMS, assignment_names)
         assert_on_groups(STUDENT_TEAMS)
 
+    def test_setup_with_token_owner_as_student(self, extra_args):
+        """Setting up with the token owner as a student should not cause
+        a crash (see #812)
+        """
+        command = " ".join(
+            [
+                REPOBEE_GITLAB,
+                *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
+                *BASE_ARGS,
+                *TEMPLATE_ORG_ARG,
+                *MASTER_REPOS_ARG,
+                "--students",
+                TEACHER,
+            ]
+        )
+
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
+        assert result.returncode == 0
+        assert_repos_exist(
+            [plug.StudentTeam(members=[TEACHER])], assignment_names
+        )
+
 
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
 class TestUpdate:
