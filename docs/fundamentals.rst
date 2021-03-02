@@ -127,8 +127,3 @@ happens differs slightly.
 * **github.com:** Students are invited to the Organization and added to their Teams upon accepting.
 * **GitLab:** Students are automatically added, both on self-hosted and https://gitlab.com.
 * **Gitea:** Students are automatically added.
-
-.. _teachers_pet: https://github.com/education/teachers_pet
-.. _GitHub Classroom: https://classroom.github.com/
-.. _Organization: https://help.github.com/articles/about-organizations/
-.. _faculty: https://help.github.com/en/articles/applying-for-an-educator-or-researcher-discount
