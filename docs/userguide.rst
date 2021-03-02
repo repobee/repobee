@@ -15,4 +15,5 @@ RepoBee User Guide
    builtins
    group_assignments
    gitlab
+   gitea
    docker
