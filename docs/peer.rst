@@ -400,6 +400,11 @@ already deanonymized.
 Double-blind ``reviews end``
 ----------------------------
 
+.. important::
+
+    If using GitHub, your access token must have the ``delete_repo`` scope in
+    order to run this command.
+
 ``reviews end`` is a cleanup command. When doing no-blind peer review, it's
 often necessary to run it as students otherwise maintain read access to
 their peers' repositories, and may then be able to view feedback from teachers
