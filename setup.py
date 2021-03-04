@@ -11,7 +11,9 @@ with open("README.md", mode="r", encoding="utf-8") as f:
 with open("src/repobee_plug/__version.py", mode="r", encoding="utf-8") as f:
     line = f.readline()
     __version__ = line.split("=")[1].strip(" '\"\n")
-    assert re.match(r"^\d+(\.\d+){2}(-(alpha|beta|rc)(\.\d+)?)?$", __version__)
+    assert re.match(
+        r"^\d+(\.\d+){2}(-(alpha|beta|rc|dev)(\.\d+)?)?$", __version__
+    )
 
 install_dir = os.getenv("REPOBEE_INSTALL_DIR")
 if install_dir:  # install with RepoBee's install script
