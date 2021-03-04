@@ -73,7 +73,7 @@ on how to use RepoBee with Gitea.
 ### Install
 We provide an install script that sets up an isolated and correctly configured
 environment for RepoBee, granted that you have [Python 3.6+ and Git
-installed](https://docs.repobee.org/en/stable/install.html#install). The script
+installed](https://docs.repobee.org/en/stable/install.html#requirements). The script
 supports macOS, Linux and Windows Subsystem for Linux (WSL). You can execute it
 directly using `curl`, with either `bash` or `zsh`.
 
