@@ -60,12 +60,13 @@ For a full list of RepoBee's built-in (i.e. non-plugin) features, see the
 First, either [install RepoBee](#install) or grab the [Docker image](#docker).
 Then, start exploring the [Docs](https://repobee.readthedocs.io/en/stable/),
 where you (among other things) will find the [user
-guide](https://repobee.readthedocs.io/en/stable/userguide.html).  It covers the
-use of RepoBee's varous commands by way of practical example, and should set
-you on the right path with little effort.
+guide](https://repobee.readthedocs.io/en/stable/userguide.html). It covers use
+of RepoBee's various commands by way of practical example, and should set you
+on the right path with little effort.
 
 We also provide a [Gitea test instance](https://gitea.repobee.org) for playing
-around around with RepoBee. See the
+around around with RepoBee in an environment where messing up has no
+consequence. See the
 [RepoBee Gitea docs](https://docs.repobee.org/en/stable/gitea.html) for details
 on how to use RepoBee with Gitea.
 
