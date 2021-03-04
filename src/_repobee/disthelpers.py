@@ -146,8 +146,8 @@ def pip(command: str, *args, **kwargs) -> subprocess.CompletedProcess:
     Returns:
         True iff the command exited with a zero exit status.
     Raises:
-        DependencyResolutionError: If the 2020-resolver encounters fails to
-            resolve dependencies.
+        DependencyResolutionError: If the 2020-resolver fails to resolve
+            dependencies.
     """
     cli_kwargs = [
         f"--{key.replace('_', '-')}"
@@ -157,9 +157,11 @@ def pip(command: str, *args, **kwargs) -> subprocess.CompletedProcess:
     ]
     env = dict(os.environ)
     if command == "install":
-        # the resolver allows us to avoid installing plugins that are
-        # incompatible with the current version of RepoBee
-        cli_kwargs.append("--use-feature=2020-resolver")
+        if "pip" not in args:
+            # always upgrade pip before running an install to ensure that the
+            # 2020-resolver is available
+            pip_upgrade_rc = pip("install", "-U", "pip").returncode
+            assert pip_upgrade_rc == 0
 
         # REPOBEE_INSTALL_DIR must be available when upgrading RepoBee,
         # or the dist plugins aren't activated
