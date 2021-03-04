@@ -52,6 +52,10 @@ of:
     - Although [setting a few defaults](https://docs.repobee.org/en/stable/getting_started.html#configure-repobee-for-the-target-organization-the-config-category)
       is highly recommended
 
+For a full list of RepoBee's built-in (i.e. non-plugin) features, see the
+[user guide](https://docs.repobee.org/en/stable/userguide.html) and
+[CLI reference](https://docs.repobee.org/en/stable/cli.html).
+
 ### Getting started
 First, either [install RepoBee](#install) or grab the [Docker image](#docker).
 Then, start exploring the [Docs](https://repobee.readthedocs.io/en/stable/),
