@@ -61,7 +61,7 @@ def dispatch_command(
         plug.cli.CoreCommand.repos.update,
         plug.cli.CoreCommand.repos.clone,
     ]:
-        if hook_results:
+        if hook_results and any(hook_results.values()):
             plug.echo(formatters.format_hook_results_output(hook_results))
     if hook_results and "hook_results_file" in args and args.hook_results_file:
         _handle_hook_results(
