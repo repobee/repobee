@@ -203,6 +203,43 @@ class Hello(plug.Plugin, plug.cli.Command):
             exc_info.value
         )
 
+    def test_auto_updates_pip(self):
+        """Installing a plugin should automatically update pip if it's
+        out-of-date.
+        """
+        # arrange
+        old_pip_version = "20.0.1"
+        assert (
+            subprocess.run(
+                [
+                    disthelpers.get_pip_path(),
+                    "install",
+                    "-U",
+                    f"pip=={old_pip_version}",
+                ]
+            ).returncode
+            == 0
+        )
+        assert version.Version(get_pkg_version("pip")) == version.Version(
+            old_pip_version
+        )
+
+        plugin_name = "junit4"
+        plugin_version = "v1.0.0"
+        cmd = [
+            *pluginmanager.plugin_category.install.as_name_tuple(),
+            "--plugin-spec",
+            f"{plugin_name}{pluginmanager.PLUGIN_SPEC_SEP}{plugin_version}",
+        ]
+
+        # act
+        repobee.run(cmd)
+
+        # assert
+        assert version.Version(get_pkg_version("pip")) > version.Version(
+            old_pip_version
+        )
+
 
 class TestPluginUninstall:
     """Tests for the ``plugin uninstall`` command."""
