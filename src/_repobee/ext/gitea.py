@@ -153,7 +153,14 @@ class GiteaAPI(plug.PlatformAPI):
         team_names = set(team_names or {})
 
         endpoint = f"/orgs/{self._org_name}/teams"
-        response = self._request(requests.get, endpoint)
+        response = self._request(
+            requests.get,
+            endpoint,
+            error_msg=(
+                f"failed to fetch teams from org '{self._org_name}', "
+                "verify that it exists and that token has access!"
+            ),
+        )
         for team_dict in response.json():
             team_name = team_dict["name"]
             if team_names and team_name not in team_names:
