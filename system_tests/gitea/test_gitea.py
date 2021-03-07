@@ -80,6 +80,22 @@ class TestGetTeams:
         # assert
         assert sorted(fetched_team_names) == sorted(team_names + ["Owners"])
 
+    def test_when_target_org_does_not_exist(self):
+        """When the target org does not exist, fetching teams from it should
+        raise an appropriate NotFoundError.
+        """
+        non_existing_org = "some-non-existing-org"
+        api = gitea.GiteaAPI(
+            giteamanager.API_URL,
+            giteamanager.TEACHER_USER,
+            giteamanager.TEACHER_TOKEN,
+            non_existing_org,
+        )
+        with pytest.raises(plug.NotFoundError) as exc_info:
+            list(api.get_teams())
+
+        assert non_existing_org in str(exc_info.value)
+
 
 class TestCreateRepo:
     """Tests for the create_repo function."""
