@@ -331,6 +331,17 @@ class TestSetup:
 
         assert executed, "Test plugin was never executed"
 
+    def test_does_not_print_empty_hook_results(self, platform_url, capsys):
+        funcs.run_repobee(
+            f"repos setup --assignments {TEMPLATE_REPOS_ARG} "
+            f"--base-url {platform_url}"
+        )
+
+        out_err = capsys.readouterr()
+
+        assert "hook results" not in out_err.out.lower()
+        assert "hook results" not in out_err.err.lower()
+
 
 class TestClone:
     """Tests for the ``repos clone`` command."""
