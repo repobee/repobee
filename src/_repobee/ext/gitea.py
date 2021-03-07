@@ -156,10 +156,8 @@ class GiteaAPI(plug.PlatformAPI):
         response = self._request(
             requests.get,
             endpoint,
-            error_msg=(
-                f"failed to fetch teams from org '{self._org_name}', "
-                "verify that it exists and that token has access!"
-            ),
+            error_msg="failed to fetch teams from organization: "
+            f"'{self._org_name}'",
         )
         for team_dict in response.json():
             team_name = team_dict["name"]
