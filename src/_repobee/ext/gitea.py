@@ -249,13 +249,14 @@ class GiteaAPI(plug.PlatformAPI):
     ) -> Iterable[plug.Repo]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repos`."""
         if repo_urls:
-            return filter(
-                lambda v: v is not None,
-                map(
+            return [
+                repo
+                for repo in map(
                     lambda url: self._get_repo_by_url(url, ignore_errors=True),
                     repo_urls,
-                ),
-            )
+                )
+                if repo is not None
+            ]
 
         endpoint = f"/orgs/{self._org_name}/repos"
         response = self._request(
