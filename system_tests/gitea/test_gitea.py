@@ -205,6 +205,24 @@ class TestGetRepos:
             expected_repo_names
         )
 
+    def test_getting_repos_that_do_not_exist(
+        self, target_api, with_student_repos
+    ):
+        # arrange
+        bad_repo_urls = [
+            url[:-5]
+            for url in target_api.get_repo_urls(
+                templates.TEMPLATE_REPO_NAMES,
+                team_names=giteamanager.STUDENT_TEAMS,
+            )
+        ]
+
+        # act
+        repos = list(target_api.get_repos(bad_repo_urls))
+
+        # assert
+        assert repos == []
+
 
 class TestAssignRepo:
     """Tests for the assign_repo function."""
