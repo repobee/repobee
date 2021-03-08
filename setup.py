@@ -55,7 +55,7 @@ required = [
     "more-itertools>=8.4.0",
     "pluggy>=0.13.1",
     "pygithub",
-    "python-gitlab==2.4.0",
+    "python-gitlab==2.6.0",
     "tabulate",
     "tqdm>=4.48.2",
     "typing-extensions",
