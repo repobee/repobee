@@ -249,7 +249,14 @@ class GiteaAPI(plug.PlatformAPI):
     ) -> Iterable[plug.Repo]:
         """See :py:meth:`repobee_plug.PlatformAPI.get_repos`."""
         if repo_urls:
-            return map(self._get_repo_by_url, repo_urls)
+            return [
+                repo
+                for repo in map(
+                    lambda url: self._get_repo_by_url(url, ignore_errors=True),
+                    repo_urls,
+                )
+                if repo is not None
+            ]
 
         endpoint = f"/orgs/{self._org_name}/repos"
         response = self._request(
@@ -260,12 +267,17 @@ class GiteaAPI(plug.PlatformAPI):
 
         return (self._wrap_repo(repo_data) for repo_data in response.json())
 
-    def _get_repo_by_url(self, url: str) -> plug.Repo:
+    def _get_repo_by_url(
+        self, url: str, ignore_errors: bool = False
+    ) -> Optional[plug.Repo]:
+        error_msg = None if ignore_errors else f"failed to fetch repo at {url}"
         endpoint = f"/repos/{self._org_name}/{self.extract_repo_name(url)}"
-        response = self._request(
-            requests.get, endpoint, error_msg=f"failed to fetch repo at {url}"
+        response = self._request(requests.get, endpoint, error_msg=error_msg)
+        return (
+            self._wrap_repo(response.json())
+            if response.status_code == 200
+            else None
         )
-        return self._wrap_repo(response.json())
 
     def assign_repo(
         self, team: plug.Team, repo: plug.Repo, permission: plug.TeamPermission
