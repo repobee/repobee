@@ -54,3 +54,12 @@ def get_teams(
     return plug.cli.io.progress_bar(
         fetched_teams, desc=desc, total=len(teams), **kwargs
     )
+
+
+def end_progress(progress: Iterable[Any]) -> None:
+    """End a tqdm progress bar.
+
+    Args:
+        progress: A tqdm iterable.
+    """
+    progress.update(progress.total - progress.n)  # type: ignore
