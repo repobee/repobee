@@ -304,6 +304,7 @@ def end_reviews(
     for team in teams:
         api.delete_team(team)
         plug.log.info(f"Deleted team {team.name}")
+    progresswrappers.end_progress(teams)
 
     if double_blind_key:
         _delete_anonymous_repos(
@@ -331,13 +332,14 @@ def _delete_anonymous_repos(
     ]
     anon_repo_urls = api.get_repo_urls(anon_repo_names)
     anon_repos = api.get_repos(anon_repo_urls)
-    plug.cli.io.progress_bar(
+    anon_repos_progress = plug.cli.io.progress_bar(
         anon_repos,
         desc="Deleting anonymous repo copies",
         total=len(anon_repo_names),
     )
-    for repo in anon_repos:
+    for repo in anon_repos_progress:
         api.delete_repo(repo)
+    progresswrappers.end_progress(anon_repos_progress)
 
 
 def check_peer_review_progress(
