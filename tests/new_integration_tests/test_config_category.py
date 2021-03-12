@@ -98,3 +98,27 @@ class TestConfigWizard:
             config.get(_repobee.constants.CORE_SECTION_HDR, "students_file")
             == unlikely_value
         )
+
+    def test_end_message_respects_config_file_argument(
+        self, platform_url, tmp_path, capsys
+    ):
+        # arrange
+        config_file = tmp_path / "repobee.ini"
+
+        # act
+        with mock.patch(
+            "bullet.Bullet.launch",
+            autospec=True,
+            return_value=_repobee.constants.CORE_SECTION_HDR,
+        ), mock.patch("builtins.input", return_value="dontcare"):
+            _repobee.main.main(
+                shlex.split(
+                    f"repobee --config-file {config_file} config wizard"
+                )
+            )
+
+        # assert
+        assert (
+            f"Configuration file written to {config_file}"
+            in capsys.readouterr().out
+        )
