@@ -79,6 +79,11 @@ class Config:
         """
         return self._config_parser.get(section_name, key, fallback=fallback)
 
+    @property
+    def path(self) -> pathlib.Path:
+        """Path to the config file."""
+        return self._config_path
+
     def __getitem__(self, section_key: str) -> ConfigSection:
         return _ConfigSection(self._config_parser[section_key])
 

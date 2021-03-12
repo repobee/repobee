@@ -90,8 +90,4 @@ Current defaults are shown in brackets [].
 
     config.store()
 
-    plug.echo(
-        "Configuration file written to {}".format(
-            constants.DEFAULT_CONFIG_FILE
-        )
-    )
+    plug.echo(f"Configuration file written to {config.path}")
