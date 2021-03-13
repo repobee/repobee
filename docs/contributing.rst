@@ -42,7 +42,7 @@ preferences.
    $ python3 -m pip install --user pipenv
    # move into the repobee directory and install the repobee package with pipenv
    $ cd repobee
-   $ python3 -m pipenv install -e .[TEST]
+   $ python3 -m pipenv install -e ".[TEST]"
 
 The last thing takes a while, so just be patient. When it's done, you can verify
 that everything was installed correctly by running the tests in the virtual
@@ -135,7 +135,7 @@ argument+return value descriptions. Here are two examples:
 
 Contributing to Docs
 ====================
-To be able to build the documentation, you must install the dependencies liste
+To be able to build the documentation, you must install the dependencies listed
 in ``requirements/docs.txt``, in addition to installing the package itself.
 In your virtual environment, run the following from the root of the repository:
 
