@@ -153,7 +153,10 @@ def mock_getenv(mocker):
     def _side_effect(name):
         if name not in EXPECTED_ENV_VARIABLES:
             raise ValueError("no such environment variable")
-        return constants.TOKEN
+        elif name == _repobee.constants.TOKEN_ENV:
+            return constants.TOKEN
+        else:
+            return None
 
     mock = mocker.patch("os.getenv", side_effect=_side_effect)
     return mock
