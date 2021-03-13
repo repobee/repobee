@@ -15,6 +15,7 @@ import repobee_plug as plug
 import _repobee.constants
 import _repobee.config
 import _repobee.plugin
+import _repobee.featflags
 
 import constants
 
@@ -23,6 +24,7 @@ import _repobee  # noqa: E402
 EXPECTED_ENV_VARIABLES = [
     _repobee.constants.TOKEN_ENV,
     "REPOBEE_NO_VERIFY_SSL",
+    *[flag.value for flag in _repobee.featflags.FeatureFlag],
 ]
 
 
