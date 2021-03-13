@@ -1,10 +1,15 @@
 """Tests for the reviews category of commands."""
 import re
+import os
+
+import pytest
 
 import repobee_plug as plug
 
 from repobee_testhelpers import funcs
 from repobee_testhelpers import const
+
+import _repobee.constants
 
 
 class TestAssign:
@@ -119,6 +124,47 @@ class TestEnd:
         num_repos_after = len(list(api.get_repos()))
         assert num_repos_after == num_repos_before
 
+    def test_end_with_allocations_file(
+        self,
+        platform_url,
+        with_student_repos,
+        tmp_path,
+        activate_review_command_preview,
+    ):
+        """Test the RepoBee 4 version of `reviews end`, that just takes an
+        allocations file.
+        """
+        # arrange
+        workdir = tmp_path / "workdir"
+        workdir.mkdir(exist_ok=False)
+        alloc_file = workdir / "review_allocations.json"
+
+        funcs.run_repobee(
+            f"{plug.cli.CoreCommand.reviews.assign} "
+            "--base-url {platform_url} "
+            "-n 1 "
+            f"--assignments {const.TEMPLATE_REPOS_ARG}",
+            workdir=workdir,
+        )
+
+        # act
+        funcs.run_repobee(
+            f"{plug.cli.CoreCommand.reviews.end} --base-url {platform_url} "
+            f"--allocations-file {alloc_file}",
+            workdir=workdir,
+        )
+
+        # assert
+        api = funcs.get_api(platform_url)
+        review_team_names = {
+            plug.generate_review_team_name(team, template_repo_name)
+            for team in const.STUDENT_TEAMS
+            for template_repo_name in const.TEMPLATE_REPO_NAMES
+        }
+
+        existing_team_names = {team.name for team in api.get_teams()}
+        assert not existing_team_names.intersection(review_team_names)
+
 
 class TestCheck:
     """Tests for the ``reviews check`` command."""
@@ -144,3 +190,10 @@ class TestCheck:
         stdout = capsys.readouterr().out
         for team in const.STUDENT_TEAMS:
             assert re.search(fr"{team.name}\s+0\s+1", stdout)
+
+
+@pytest.fixture
+def activate_review_command_preview():
+    os.environ[_repobee.constants.ACTIVATE_REPOBEE_4_REVIEW_COMMANDS] = "true"
+    yield
+    del os.environ[_repobee.constants.NEW_REVIEW_COMMANDS_FEATURE_FLAG]
