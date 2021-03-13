@@ -141,8 +141,8 @@ class TestEnd:
 
         funcs.run_repobee(
             f"{plug.cli.CoreCommand.reviews.assign} "
-            "--base-url {platform_url} "
-            "-n 1 "
+            f"--base-url {platform_url} "
+            f"-n 1 "
             f"--assignments {const.TEMPLATE_REPOS_ARG}",
             workdir=workdir,
         )
@@ -191,9 +191,45 @@ class TestCheck:
         for team in const.STUDENT_TEAMS:
             assert re.search(fr"{team.name}\s+0\s+1", stdout)
 
+    def test_check_with_allocations_file(
+        self,
+        platform_dir,
+        platform_url,
+        with_student_repos,
+        capsys,
+        activate_review_command_preview,
+        tmp_path,
+    ):
+        """Test the RepoBee 4 preview version of `reviews check`."""
+        # arrange
+        workdir = tmp_path / "workdir"
+        workdir.mkdir(exist_ok=False)
+        alloc_file = workdir / "review_allocations.json"
+
+        funcs.run_repobee(
+            f"{plug.cli.CoreCommand.reviews.assign} "
+            f"--base-url {platform_url} "
+            "-n 1 "
+            f"--assignments {const.TEMPLATE_REPOS_ARG}",
+            workdir=workdir,
+        )
+
+        # act
+        funcs.run_repobee(
+            f"{plug.cli.CoreCommand.reviews.check} "
+            f"--base-url {platform_url} "
+            f"--allocations-file {alloc_file}",
+            workdir=workdir,
+        )
+
+        # assert
+        stdout = capsys.readouterr().out
+        for team in const.STUDENT_TEAMS:
+            assert re.search(fr"{team.name}\s+0\s+1", stdout)
+
 
 @pytest.fixture
 def activate_review_command_preview():
     os.environ[_repobee.constants.ACTIVATE_REPOBEE_4_REVIEW_COMMANDS] = "true"
     yield
-    del os.environ[_repobee.constants.NEW_REVIEW_COMMANDS_FEATURE_FLAG]
+    del os.environ[_repobee.constants.ACTIVATE_REPOBEE_4_REVIEW_COMMANDS]
