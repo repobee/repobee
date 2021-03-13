@@ -455,12 +455,12 @@ def _add_peer_review_parsers(base_parsers, add_parser):
     )
 
     if (
-        os.getenv(_repobee.constants.NEW_REVIEW_COMMANDS_FEATURE_FLAG)
+        os.getenv(_repobee.constants.ACTIVATE_REPOBEE_4_REVIEW_COMMANDS)
         == "true"
     ):
         plug.log.warning(
             "Activating preview feature "
-            f"{_repobee.constants.NEW_REVIEW_COMMANDS_FEATURE_FLAG}"
+            f"{_repobee.constants.ACTIVATE_REPOBEE_4_REVIEW_COMMANDS}"
         )
         allocation_parser = argparse_ext.RepobeeParser(add_help=False)
         allocation_parser.add_argument(
@@ -470,19 +470,20 @@ def _add_peer_review_parsers(base_parsers, add_parser):
             type=pathlib.Path,
             required=True,
         )
+        preview_base_parsers = [base_parsers[0], allocation_parser]
 
         add_parser(
             plug.cli.CoreCommand.reviews.check,
             description="Check on the progress of reviews.",
             help=check_help,
-            parents=[allocation_parser],
+            parents=preview_base_parsers,
         )
 
         add_parser(
             plug.cli.CoreCommand.reviews.end,
             description=end_description,
             help=end_help,
-            parents=[allocation_parser],
+            parents=preview_base_parsers,
         )
     else:
         check_review_progress = add_parser(
