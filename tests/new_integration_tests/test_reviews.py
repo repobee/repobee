@@ -3,6 +3,8 @@ import re
 import os
 
 import pytest
+import packaging.version
+
 
 import repobee_plug as plug
 
@@ -10,6 +12,7 @@ from repobee_testhelpers import funcs
 from repobee_testhelpers import const
 
 import _repobee.constants
+from _repobee import featflags
 
 
 class TestAssign:
@@ -230,6 +233,14 @@ class TestCheck:
 
 @pytest.fixture
 def activate_review_command_preview():
-    os.environ[_repobee.constants.ACTIVATE_REPOBEE_4_REVIEW_COMMANDS] = "true"
+    if packaging.version.Version(
+        _repobee.__version__
+    ) >= packaging.version.Version("4.0.0"):
+        raise RuntimeError(
+            "Peer review command preview feature should be removed!"
+        )
+    os.environ[
+        featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS.value
+    ] = featflags.FEATURE_ENABLED_VALUE
     yield
-    del os.environ[_repobee.constants.ACTIVATE_REPOBEE_4_REVIEW_COMMANDS]
+    del os.environ[featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS.value]

@@ -9,7 +9,6 @@
 import types
 import argparse
 import pathlib
-import os
 
 from typing import Union, Callable
 
@@ -18,6 +17,7 @@ import repobee_plug as plug
 import _repobee
 from _repobee import plugin
 from _repobee import config
+from _repobee import featflags
 
 from _repobee.cli import argparse_ext
 
@@ -454,13 +454,12 @@ def _add_peer_review_parsers(base_parsers, add_parser):
         "(DESTRUCTIVE ACTION: read help section before using)"
     )
 
-    if (
-        os.getenv(_repobee.constants.ACTIVATE_REPOBEE_4_REVIEW_COMMANDS)
-        == "true"
+    if featflags.is_feature_enabled(
+        featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS
     ):
         plug.log.warning(
             "Activating preview feature "
-            f"{_repobee.constants.ACTIVATE_REPOBEE_4_REVIEW_COMMANDS}"
+            f"{featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS.value}"
         )
         allocation_parser = argparse_ext.RepobeeParser(add_help=False)
         allocation_parser.add_argument(

@@ -15,7 +15,6 @@ import re
 import tempfile
 import pathlib
 import shutil
-import os
 import sys
 import json
 from typing import Iterable, Optional, Dict, List, Tuple, Set, Union
@@ -29,6 +28,7 @@ import _repobee.ext.gitea
 import _repobee.hash
 import _repobee.exception
 from _repobee import formatters
+from _repobee import featflags
 
 from _repobee.command import progresswrappers
 
@@ -164,9 +164,8 @@ def assign_peer_reviews(
                 "reviewed_repo_url": reviewed_repo.url
             }
 
-        if (
-            os.getenv(_repobee.constants.ACTIVATE_REPOBEE_4_REVIEW_COMMANDS)
-            == "true"
+        if featflags.is_feature_enabled(
+            featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS
         ):
             pathlib.Path("review_allocations.json").write_text(
                 json.dumps(allocations_by_assignment),
