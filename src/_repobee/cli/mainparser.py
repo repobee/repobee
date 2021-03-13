@@ -472,7 +472,7 @@ def _add_peer_review_parsers(base_parsers, add_parser):
         )
         preview_base_parsers = [base_parsers[0], allocation_parser]
 
-        add_parser(
+        check_review_progress = add_parser(
             plug.cli.CoreCommand.reviews.check,
             description="Check on the progress of reviews.",
             help=check_help,
@@ -494,12 +494,6 @@ def _add_peer_review_parsers(base_parsers, add_parser):
             formatter_class=argparse_ext.OrderedFormatter,
         )
         check_review_progress.add_argument(
-            "-r",
-            "--title-regex",
-            help="issues matching this regex will count as review issues.",
-            required=True,
-        )
-        check_review_progress.add_argument(
             "-n",
             "--num-reviews",
             metavar="N",
@@ -515,6 +509,13 @@ def _add_peer_review_parsers(base_parsers, add_parser):
             parents=base_review_parsers,
             formatter_class=argparse_ext.OrderedFormatter,
         )
+
+    check_review_progress.add_argument(
+        "-r",
+        "--title-regex",
+        help="issues matching this regex will count as review issues.",
+        required=True,
+    )
 
 
 def _add_issue_parsers(base_parsers, add_parser):

@@ -176,8 +176,11 @@ def assign_peer_reviews(
         if featflags.is_feature_enabled(
             featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS
         ):
+            output = dict(
+                allocations=allocations_for_output, num_reviews=num_reviews
+            )
             pathlib.Path("review_allocations.json").write_text(
-                json.dumps(allocations_for_output, indent=4),
+                json.dumps(output, indent=4),
                 encoding=sys.getdefaultencoding(),
             )
 
@@ -344,8 +347,7 @@ def end_reviews_repobee_4(
     """Preview version of RepoBee 4's version of :py:fync:`end_reviews`."""
     review_allocations = json.loads(
         allocations_file.read_text(sys.getdefaultencoding())
-    )
-    print(review_allocations)
+    )["allocations"]
     review_team_names = {
         allocation["review_team"]["name"] for allocation in review_allocations
     }
@@ -452,6 +454,47 @@ def check_peer_review_progress(
     plug.echo(
         formatters.format_peer_review_progress_output(
             reviews, [team.name for team in teams], num_reviews
+        )
+    )
+
+
+def check_reviews_repobee_4(
+    allocations_file: pathlib.Path, title_regex: str, api: plug.PlatformAPI
+) -> None:
+    """Preview version of the `reviews check` command for RepoBee 4."""
+    data = json.loads(allocations_file.read_text(sys.getdefaultencoding()))
+    review_allocations = data["allocations"]
+    num_reviews = int(data["num_reviews"])
+
+    expected_reviewers = {
+        allocation["reviewed_repo"]["url"]: allocation["review_team"][
+            "members"
+        ]
+        for allocation in review_allocations
+    }
+
+    reviewed_repos = progresswrappers.get_repos(expected_reviewers.keys(), api)
+    reviews = collections.defaultdict(list)
+
+    for reviewed_repo in reviewed_repos:
+        review_issue_authors = {
+            issue.author
+            for issue in api.get_repo_issues(reviewed_repo)
+            if re.match(title_regex, issue.title)
+        }
+        for expected_reviewer in expected_reviewers[reviewed_repo.url]:
+            reviews[expected_reviewer].append(
+                plug.Review(
+                    repo=reviewed_repo.name,
+                    done=expected_reviewer in review_issue_authors,
+                )
+            )
+
+    plug.echo(
+        formatters.format_peer_review_progress_output(
+            reviews,
+            list(itertools.chain.from_iterable(expected_reviewers.values()),),
+            num_reviews,
         )
     )
 

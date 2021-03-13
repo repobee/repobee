@@ -169,7 +169,6 @@ def _dispatch_reviews_command(
         if featflags.is_feature_enabled(
             featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS
         ):
-            print(args)
             command.peer.end_reviews_repobee_4(args.allocations_file, api)
         else:
             command.end_reviews(
@@ -177,14 +176,21 @@ def _dispatch_reviews_command(
             )
         return None
     elif action == reviews.check:
-        command.check_peer_review_progress(
-            args.assignments,
-            args.students,
-            args.title_regex,
-            args.num_reviews,
-            args.double_blind_key,
-            api,
-        )
+        if featflags.is_feature_enabled(
+            featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS
+        ):
+            command.peer.check_reviews_repobee_4(
+                args.allocations_file, args.title_regex, api
+            )
+        else:
+            command.check_peer_review_progress(
+                args.assignments,
+                args.students,
+                args.title_regex,
+                args.num_reviews,
+                args.double_blind_key,
+                api,
+            )
         return None
     _raise_illegal_action_error(args)
 

@@ -213,7 +213,7 @@ class TestCheck:
             f"{plug.cli.CoreCommand.reviews.assign} "
             f"--base-url {platform_url} "
             "-n 1 "
-            f"--assignments {const.TEMPLATE_REPOS_ARG}",
+            f"--assignments {const.TEMPLATE_REPO_NAMES[0]}",
             workdir=workdir,
         )
 
@@ -221,7 +221,8 @@ class TestCheck:
         funcs.run_repobee(
             f"{plug.cli.CoreCommand.reviews.check} "
             f"--base-url {platform_url} "
-            f"--allocations-file {alloc_file}",
+            f"--allocations-file {alloc_file} "
+            "--title-regex 'Peer review'",
             workdir=workdir,
         )
 
