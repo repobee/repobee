@@ -15,6 +15,8 @@ import re
 import tempfile
 import pathlib
 import shutil
+import sys
+import json
 from typing import Iterable, Optional, Dict, List, Tuple, Set, Union
 
 import git  # type: ignore
@@ -24,7 +26,9 @@ import _repobee.command.teams
 import _repobee.git
 import _repobee.ext.gitea
 import _repobee.hash
+import _repobee.exception
 from _repobee import formatters
+from _repobee import featflags
 
 from _repobee.command import progresswrappers
 
@@ -96,6 +100,7 @@ def assign_peer_reviews(
             api,
         )
 
+    allocations_for_output = []
     for assignment_name in assignment_names:
         plug.echo("Allocating reviews")
         allocations = plug.manager.hook.generate_review_allocations(
@@ -153,6 +158,30 @@ def assign_peer_reviews(
                 assignees=review_team.members
                 if not isinstance(api, _repobee.ext.gitea.GiteaAPI)
                 else None,
+            )
+
+            allocations_for_output.append(
+                {
+                    "reviewed_repo": {
+                        "name": reviewed_repo.name,
+                        "url": reviewed_repo.url,
+                    },
+                    "review_team": {
+                        "name": review_team.name,
+                        "members": review_team.members,
+                    },
+                }
+            )
+
+        if featflags.is_feature_enabled(
+            featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS
+        ):
+            output = dict(
+                allocations=allocations_for_output, num_reviews=num_reviews
+            )
+            pathlib.Path("review_allocations.json").write_text(
+                json.dumps(output, indent=4),
+                encoding=sys.getdefaultencoding(),
             )
 
 
@@ -312,6 +341,20 @@ def end_reviews(
         )
 
 
+def end_reviews_repobee_4(
+    allocations_file: pathlib.Path, api: plug.PlatformAPI
+) -> None:
+    """Preview version of RepoBee 4's version of :py:fync:`end_reviews`."""
+    review_allocations = json.loads(
+        allocations_file.read_text(sys.getdefaultencoding())
+    )["allocations"]
+    review_team_names = {
+        allocation["review_team"]["name"] for allocation in review_allocations
+    }
+    for team in progresswrappers.get_teams(review_team_names, api):
+        api.delete_team(team)
+
+
 def _delete_anonymous_repos(
     assignment_names: Iterable[str],
     student_teams: Iterable[plug.StudentTeam],
@@ -411,6 +454,47 @@ def check_peer_review_progress(
     plug.echo(
         formatters.format_peer_review_progress_output(
             reviews, [team.name for team in teams], num_reviews
+        )
+    )
+
+
+def check_reviews_repobee_4(
+    allocations_file: pathlib.Path, title_regex: str, api: plug.PlatformAPI
+) -> None:
+    """Preview version of the `reviews check` command for RepoBee 4."""
+    data = json.loads(allocations_file.read_text(sys.getdefaultencoding()))
+    review_allocations = data["allocations"]
+    num_reviews = int(data["num_reviews"])
+
+    expected_reviewers = {
+        allocation["reviewed_repo"]["url"]: allocation["review_team"][
+            "members"
+        ]
+        for allocation in review_allocations
+    }
+
+    reviewed_repos = progresswrappers.get_repos(expected_reviewers.keys(), api)
+    reviews = collections.defaultdict(list)
+
+    for reviewed_repo in reviewed_repos:
+        review_issue_authors = {
+            issue.author
+            for issue in api.get_repo_issues(reviewed_repo)
+            if re.match(title_regex, issue.title)
+        }
+        for expected_reviewer in expected_reviewers[reviewed_repo.url]:
+            reviews[expected_reviewer].append(
+                plug.Review(
+                    repo=reviewed_repo.name,
+                    done=expected_reviewer in review_issue_authors,
+                )
+            )
+
+    plug.echo(
+        formatters.format_peer_review_progress_output(
+            reviews,
+            list(itertools.chain.from_iterable(expected_reviewers.values()),),
+            num_reviews,
         )
     )
 

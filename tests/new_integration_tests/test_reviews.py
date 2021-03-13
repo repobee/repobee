@@ -1,10 +1,18 @@
 """Tests for the reviews category of commands."""
 import re
+import os
+
+import pytest
+import packaging.version
+
 
 import repobee_plug as plug
 
 from repobee_testhelpers import funcs
 from repobee_testhelpers import const
+
+import _repobee.constants
+from _repobee import featflags
 
 
 class TestAssign:
@@ -119,6 +127,47 @@ class TestEnd:
         num_repos_after = len(list(api.get_repos()))
         assert num_repos_after == num_repos_before
 
+    def test_end_with_allocations_file(
+        self,
+        platform_url,
+        with_student_repos,
+        tmp_path,
+        activate_review_command_preview,
+    ):
+        """Test the RepoBee 4 version of `reviews end`, that just takes an
+        allocations file.
+        """
+        # arrange
+        workdir = tmp_path / "workdir"
+        workdir.mkdir(exist_ok=False)
+        alloc_file = workdir / "review_allocations.json"
+
+        funcs.run_repobee(
+            f"{plug.cli.CoreCommand.reviews.assign} "
+            f"--base-url {platform_url} "
+            f"-n 1 "
+            f"--assignments {const.TEMPLATE_REPOS_ARG}",
+            workdir=workdir,
+        )
+
+        # act
+        funcs.run_repobee(
+            f"{plug.cli.CoreCommand.reviews.end} --base-url {platform_url} "
+            f"--allocations-file {alloc_file}",
+            workdir=workdir,
+        )
+
+        # assert
+        api = funcs.get_api(platform_url)
+        review_team_names = {
+            plug.generate_review_team_name(team, template_repo_name)
+            for team in const.STUDENT_TEAMS
+            for template_repo_name in const.TEMPLATE_REPO_NAMES
+        }
+
+        existing_team_names = {team.name for team in api.get_teams()}
+        assert not existing_team_names.intersection(review_team_names)
+
 
 class TestCheck:
     """Tests for the ``reviews check`` command."""
@@ -144,3 +193,55 @@ class TestCheck:
         stdout = capsys.readouterr().out
         for team in const.STUDENT_TEAMS:
             assert re.search(fr"{team.name}\s+0\s+1", stdout)
+
+    def test_check_with_allocations_file(
+        self,
+        platform_dir,
+        platform_url,
+        with_student_repos,
+        capsys,
+        activate_review_command_preview,
+        tmp_path,
+    ):
+        """Test the RepoBee 4 preview version of `reviews check`."""
+        # arrange
+        workdir = tmp_path / "workdir"
+        workdir.mkdir(exist_ok=False)
+        alloc_file = workdir / "review_allocations.json"
+
+        funcs.run_repobee(
+            f"{plug.cli.CoreCommand.reviews.assign} "
+            f"--base-url {platform_url} "
+            "-n 1 "
+            f"--assignments {const.TEMPLATE_REPO_NAMES[0]}",
+            workdir=workdir,
+        )
+
+        # act
+        funcs.run_repobee(
+            f"{plug.cli.CoreCommand.reviews.check} "
+            f"--base-url {platform_url} "
+            f"--allocations-file {alloc_file} "
+            "--title-regex 'Peer review'",
+            workdir=workdir,
+        )
+
+        # assert
+        stdout = capsys.readouterr().out
+        for team in const.STUDENT_TEAMS:
+            assert re.search(fr"{team.name}\s+0\s+1", stdout)
+
+
+@pytest.fixture
+def activate_review_command_preview():
+    if packaging.version.Version(
+        _repobee.__version__
+    ) >= packaging.version.Version("4.0.0"):
+        raise RuntimeError(
+            "Peer review command preview feature should be removed!"
+        )
+    os.environ[
+        featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS.value
+    ] = featflags.FEATURE_ENABLED_VALUE
+    yield
+    del os.environ[featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS.value]

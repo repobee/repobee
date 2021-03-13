@@ -15,6 +15,7 @@ import repobee_plug as plug
 import _repobee.constants
 import _repobee.config
 import _repobee.plugin
+import _repobee.featflags
 
 import constants
 
@@ -23,6 +24,7 @@ import _repobee  # noqa: E402
 EXPECTED_ENV_VARIABLES = [
     _repobee.constants.TOKEN_ENV,
     "REPOBEE_NO_VERIFY_SSL",
+    *[flag.value for flag in _repobee.featflags.FeatureFlag],
 ]
 
 
@@ -151,7 +153,10 @@ def mock_getenv(mocker):
     def _side_effect(name):
         if name not in EXPECTED_ENV_VARIABLES:
             raise ValueError("no such environment variable")
-        return constants.TOKEN
+        elif name == _repobee.constants.TOKEN_ENV:
+            return constants.TOKEN
+        else:
+            return None
 
     mock = mocker.patch("os.getenv", side_effect=_side_effect)
     return mock
