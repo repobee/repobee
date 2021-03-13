@@ -100,7 +100,7 @@ def assign_peer_reviews(
             api,
         )
 
-    allocations_by_assignment = collections.defaultdict(dict)
+    allocations_for_output = []
     for assignment_name in assignment_names:
         plug.echo("Allocating reviews")
         allocations = plug.manager.hook.generate_review_allocations(
@@ -160,15 +160,24 @@ def assign_peer_reviews(
                 else None,
             )
 
-            allocations_by_assignment[assignment_name][review_team.name] = {
-                "reviewed_repo_url": reviewed_repo.url
-            }
+            allocations_for_output.append(
+                {
+                    "reviewed_repo": {
+                        "name": reviewed_repo.name,
+                        "url": reviewed_repo.url,
+                    },
+                    "review_team": {
+                        "name": review_team.name,
+                        "members": review_team.members,
+                    },
+                }
+            )
 
         if featflags.is_feature_enabled(
             featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS
         ):
             pathlib.Path("review_allocations.json").write_text(
-                json.dumps(allocations_by_assignment),
+                json.dumps(allocations_for_output, indent=4),
                 encoding=sys.getdefaultencoding(),
             )
 
@@ -330,9 +339,13 @@ def end_reviews(
 
 
 def end_reviews_repobee_4(
-    review_allocations: List[dict], api: plug.PlatformAPI
+    allocations_file: pathlib.Path, api: plug.PlatformAPI
 ) -> None:
     """Preview version of RepoBee 4's version of :py:fync:`end_reviews`."""
+    review_allocations = json.loads(
+        allocations_file.read_text(sys.getdefaultencoding())
+    )
+    print(review_allocations)
     review_team_names = {
         allocation["review_team"]["name"] for allocation in review_allocations
     }

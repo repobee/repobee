@@ -468,6 +468,7 @@ def _add_peer_review_parsers(base_parsers, add_parser):
             help="path to an allocations file created by `reviews assign`",
             type=pathlib.Path,
             required=True,
+            dest="allocations_file",
         )
         preview_base_parsers = [base_parsers[0], allocation_parser]
 
