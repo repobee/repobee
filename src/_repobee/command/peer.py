@@ -15,6 +15,9 @@ import re
 import tempfile
 import pathlib
 import shutil
+import os
+import sys
+import json
 from typing import Iterable, Optional, Dict, List, Tuple, Set, Union
 
 import git  # type: ignore
@@ -24,6 +27,7 @@ import _repobee.command.teams
 import _repobee.git
 import _repobee.ext.gitea
 import _repobee.hash
+import _repobee.exception
 from _repobee import formatters
 
 from _repobee.command import progresswrappers
@@ -96,6 +100,7 @@ def assign_peer_reviews(
             api,
         )
 
+    allocations_by_assignment = collections.defaultdict(dict)
     for assignment_name in assignment_names:
         plug.echo("Allocating reviews")
         allocations = plug.manager.hook.generate_review_allocations(
@@ -153,6 +158,19 @@ def assign_peer_reviews(
                 assignees=review_team.members
                 if not isinstance(api, _repobee.ext.gitea.GiteaAPI)
                 else None,
+            )
+
+            allocations_by_assignment[assignment_name][review_team.name] = {
+                "reviewed_repo_url": reviewed_repo.url
+            }
+
+        if (
+            os.getenv(_repobee.constants.ACTIVATE_REPOBEE_4_REVIEW_COMMANDS)
+            == "true"
+        ):
+            pathlib.Path("review_allocations.json").write_text(
+                json.dumps(allocations_by_assignment),
+                encoding=sys.getdefaultencoding(),
             )
 
 
@@ -310,6 +328,17 @@ def end_reviews(
         _delete_anonymous_repos(
             assignment_names, students, double_blind_key, api
         )
+
+
+def end_reviews_repobee_4(
+    review_allocations: List[dict], api: plug.PlatformAPI
+) -> None:
+    """Preview version of RepoBee 4's version of :py:fync:`end_reviews`."""
+    review_team_names = {
+        allocation["review_team"]["name"] for allocation in review_allocations
+    }
+    for team in progresswrappers.get_teams(review_team_names, api):
+        api.delete_team(team)
 
 
 def _delete_anonymous_repos(
