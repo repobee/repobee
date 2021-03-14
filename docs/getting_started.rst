@@ -51,8 +51,6 @@ target organization.
     this documentation, so it may not be an exact match, but you should find it
     somewhere around there.
 
-.. _configure_repobee:
-
 RepoBee command structure
 =========================
 
