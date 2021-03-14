@@ -16,7 +16,7 @@ probably most interested in the :ref:`modindex`. Developers looking to create
 plugins should head over to the :ref:`repobee-plug`.
 
 If you use the :ref:`userguide` in any way and feel like skipping
-:ref:`getting_started`, make sure to read :ref:`configure_repobee` anyway! The
+:ref:`getting_started`, make sure to read :ref:`config` anyway! The
 rest of the guide assumes a configuration as described there.
 
 The entire core CLI (i.e. without plugins) is also documented in the
