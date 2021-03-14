@@ -211,13 +211,25 @@ re-configure some of the options, simply run ``config wizard`` again.
 
 .. _local_config:
 
-Local config files
-------------------
+Local ``repobee.ini`` config files
+----------------------------------
 
 When executing a command, RepoBee will first look for a file called
 ``repobee.ini`` in the current working directory. If such a file is found, it
 completely overrides the global config file. This is useful for managing
 different courses or groups within courses, with different settings.
+
+The easiest way to create a local config file is to use the ``config wizard``
+command, while explicitly specifying the config file path.
+
+.. code-block:: bash
+
+    $ repobee --config-file repobee.ini config wizard
+
+The ``config wizard`` command will proceed as usual, but it will write the
+results to the local ``repobee.ini`` file. After having created
+``repobee.ini``, there is no need to explicitly specify it when running
+RepoBee, so long as it's in the current working directory.
 
 The students file
 -----------------
