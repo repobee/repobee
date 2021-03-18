@@ -214,10 +214,12 @@ re-configure some of the options, simply run ``config wizard`` again.
 Local ``repobee.ini`` config files
 ----------------------------------
 
-When executing a command, RepoBee will first look for a file called
-``repobee.ini`` in the current working directory. If such a file is found, it
-completely overrides the global config file. This is useful for managing
-different courses or groups within courses, with different settings.
+When executing a command, RepoBee will first look for a "local" config file
+called ``repobee.ini``. It starts looking for this file in the current working
+directory, and then proceeds searching up the directory tree until it hits the
+root of the file system. If a ``repobee.ini`` file is found, it completely
+overrides the global config file. This is useful for managing different courses
+or groups within courses, with different settings.
 
 The easiest way to create a local config file is to use the ``config wizard``
 command, while explicitly specifying the config file path.
