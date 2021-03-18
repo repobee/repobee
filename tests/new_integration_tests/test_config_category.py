@@ -52,6 +52,27 @@ class TestConfigShow:
 
         assert config_content in capsys.readouterr().out
 
+    def test_finds_local_config_in_parent_directory(self, capsys, tmp_path):
+        """The config lookup should walk up the directory structure and use the
+        first repobee.ini that's encountered.
+        """
+        # arrange
+        config_content = "[repobee]\nuser = some-unlikely-user"
+        local_config = tmp_path / "repobee.ini"
+        local_config.write_text(config_content, encoding="utf8")
+
+        workdir = tmp_path / "some" / "sub" / "dir"
+        workdir.mkdir(parents=True)
+
+        # act
+        _repobee.main.main(
+            ["repobee", *plug.cli.CoreCommand.config.show.as_name_tuple()],
+            workdir=workdir,
+        )
+
+        # assert
+        assert config_content in capsys.readouterr().out
+
 
 class TestConfigVerify:
     """Tests for the ``config verify`` command."""
