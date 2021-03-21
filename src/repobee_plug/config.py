@@ -7,7 +7,7 @@ from typing import Any, Optional
 
 from typing_extensions import Protocol
 
-__all__ = ["Config"]
+__all__ = ["Config", "ConfigSection"]
 
 
 class ConfigSection(Protocol):
@@ -32,10 +32,13 @@ class Config:
         method is called.
     """
 
-    def __init__(self, config_path: pathlib.Path):
+    def __init__(
+        self, config_path: pathlib.Path, parent: Optional["Config"] = None
+    ):
         super().__init__()
         self._config_path = config_path
         self._config_parser = configparser.ConfigParser()
+        self._parent = parent
         self.refresh()
 
     def refresh(self) -> None:
@@ -77,7 +80,13 @@ class Config:
             The value for the section and key, or the fallback value if neither
             exist.
         """
-        return self._config_parser.get(section_name, key, fallback=fallback)
+        return self._config_parser.get(
+            section_name,
+            key,
+            fallback=self._parent.get(section_name, key, fallback)
+            if self._parent
+            else fallback,
+        )
 
     @property
     def path(self) -> pathlib.Path:
