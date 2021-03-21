@@ -94,23 +94,28 @@ class Config:
         return self._config_path
 
     def __getitem__(self, section_key: str) -> ConfigSection:
-        return _ConfigSection(self._config_parser[section_key])
+        return _ParentAwareConfigSection(self, section_key)
 
     def __contains__(self, section_name: str) -> bool:
         return section_name in self._config_parser
 
 
-class _ConfigSection:
-    """A section of the config."""
+class _ParentAwareConfigSection:
+    """A section of the config that respects sections from parent configs."""
 
-    def __init__(self, section: ConfigSection):
-        self._section = section
+    def __init__(self, config: Config, section_key: str):
+        self._config = config
+        self._section_key = section_key
 
     def __getitem__(self, key: str):
-        return self._section[key]
+        value = self._config.get(self._section_key, key)
+        if value is None:
+            raise KeyError(key)
+        else:
+            return value
 
     def __setitem__(self, key: str, value: Any):
-        self._section[key] = value
+        self._config._config_parser.set(self._section_key, key, value)
 
     def __contains__(self, key: str) -> bool:
-        return key in self._section
+        return self._config.get(self._section_key, key) is not None
