@@ -30,6 +30,11 @@ class Config:
 
         Changes to the config are only persisted if the :py:meth:`Config.store`
         method is called.
+
+    .. warning::
+
+        The behavior of this class is currently not stable. Any minor release
+        of RepoBee might bring breaking changes.
     """
 
     def __init__(
