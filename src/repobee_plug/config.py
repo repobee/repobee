@@ -26,6 +26,15 @@ class ConfigSection(Protocol):
 class Config:
     """Object representing RepoBee's config.
 
+    This class defines read-only inheritance. This means that when you read a
+    value from the config, for example with :py:meth:`get`, it will do a
+    recursive lookup in parent configs.
+
+    Writing to a config object, e.g. ``config[section][option] = value`` does
+    *not* respect inheritance, and unconditionally writes to *this* config, and
+    not any of its parents. Similarly, writing to disk with :py:meth:`store`
+    only writes to the most local config, and not to any of the parent configs.
+
     .. important::
 
         Changes to the config are only persisted if the :py:meth:`Config.store`
