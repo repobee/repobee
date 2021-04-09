@@ -9,6 +9,7 @@ import pathlib
 import textwrap
 import os
 import sys
+import subprocess
 
 from typing import Tuple, List, Any, Dict
 
@@ -80,6 +81,10 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
             "'junit4@v1.0.0') to do a non-interactive install of an official "
             "plugin"
         ),
+        git_url=plug.cli.option(
+            help="url to a Git repository to install a plugin from (e.g. "
+            "'https://github.com/repobee/repobee-junit4')"
+        ),
     )
 
     def command(self) -> None:
@@ -94,6 +99,9 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
                 raise plug.PlugError(f"no such file or directory: '{abspath}'")
 
             _install_local_plugin(abspath, installed_plugins)
+        elif self.git_url:
+            pip_git_url = f"git+{self.git_url}"
+            _install_plugin_from_url(pip_git_url)
         else:
             plug.echo("Available plugins:")
 
@@ -181,14 +189,24 @@ def _select_plugin(plugins: dict) -> Tuple[str, str]:
 
 def _install_plugin(name: str, version: str, plugins: dict) -> None:
     install_url = f"git+{plugins[name]['url']}@{version}"
-    install_proc = disthelpers.pip(
+    install_proc = _install_plugin_from_url_nocheck(install_url)
+    if install_proc.returncode != 0:
+        raise plug.PlugError(f"could not install {name} {version}")
+
+
+def _install_plugin_from_url(install_url: str) -> None:
+    _install_plugin_from_url_nocheck(install_url)
+
+
+def _install_plugin_from_url_nocheck(
+    install_url: str,
+) -> subprocess.CompletedProcess:
+    return disthelpers.pip(
         "install",
         install_url,
         f"repobee=={__version__}",  # force RepoBee to stay the same version
         upgrade=True,
     )
-    if install_proc.returncode != 0:
-        raise plug.PlugError(f"could not install {name} {version}")
 
 
 class UninstallPluginCommand(plug.Plugin, plug.cli.Command):
