@@ -83,7 +83,9 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
         ),
         git_url=plug.cli.option(
             help="url to a Git repository to install a plugin from (e.g. "
-            "'https://github.com/repobee/repobee-junit4')"
+            "'https://github.com/repobee/repobee-junit4.git'), optionally "
+            "followed by a version specifier '@<VERSION>' (e.g. "
+            "'https://github.com/repobee/repobee-junit4.git@v1.0.0')"
         ),
     )
 
