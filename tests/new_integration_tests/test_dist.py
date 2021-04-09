@@ -247,6 +247,14 @@ class Hello(plug.Plugin, plug.cli.Command):
 
         assert get_pkg_version("repobee-junit4")
 
+    def test_raises_on_non_existing_git_url(self):
+        url = "https://repobee.org/no/repo/here.git"
+
+        with pytest.raises(plug.PlugError) as exc_info:
+            repobee.run(f"plugin install --git-url {url}".split())
+
+        assert f"could not install plugin from {url}" in str(exc_info.value)
+
 
 class TestPluginUninstall:
     """Tests for the ``plugin uninstall`` command."""

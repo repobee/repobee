@@ -149,6 +149,7 @@ def pip(command: str, *args, **kwargs) -> subprocess.CompletedProcess:
         DependencyResolutionError: If the 2020-resolver fails to resolve
             dependencies.
     """
+    cli_args = set(args)
     cli_kwargs = [
         f"--{key.replace('_', '-')}"
         # True is interpreted as a flag
@@ -157,7 +158,7 @@ def pip(command: str, *args, **kwargs) -> subprocess.CompletedProcess:
     ]
     env = dict(os.environ)
     if command == "install":
-        if "pip" not in args:
+        if "pip" not in cli_args:
             # always upgrade pip before running an install to ensure that the
             # 2020-resolver is available
             pip_upgrade_rc = pip("install", "-U", "pip").returncode
@@ -171,7 +172,10 @@ def pip(command: str, *args, **kwargs) -> subprocess.CompletedProcess:
         # RepoBee from source
         cli_kwargs.append("--no-binary=repobee")
 
-    cmd = [str(get_pip_path()), command, *args, *cli_kwargs]
+    # we don't want any prompting
+    cli_args.add("--no-input")
+
+    cmd = [str(get_pip_path()), command, *cli_args, *cli_kwargs]
     proc = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
     )
