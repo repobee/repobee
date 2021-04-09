@@ -240,6 +240,13 @@ class Hello(plug.Plugin, plug.cli.Command):
             old_pip_version
         )
 
+    def test_install_junit4_plugin_from_remote_git_repository(self):
+        url = "https://github.com/repobee/repobee-junit4.git"
+
+        repobee.run(f"plugin install --git-url {url}".split())
+
+        assert get_pkg_version("repobee-junit4")
+
 
 class TestPluginUninstall:
     """Tests for the ``plugin uninstall`` command."""
