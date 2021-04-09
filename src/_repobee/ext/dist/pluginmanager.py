@@ -195,7 +195,7 @@ def _install_plugin(name: str, version: str, plugins: dict) -> None:
         raise plug.PlugError(f"could not install {name} {version}")
 
 
-def _install_plugin_from_git_repo(repo_url: str) -> bool:
+def _install_plugin_from_git_repo(repo_url: str) -> None:
     install_url = f"git+{repo_url}"
     install_proc = _install_plugin_from_url_nocheck(install_url)
     if install_proc.returncode != 0:
