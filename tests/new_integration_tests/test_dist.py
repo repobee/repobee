@@ -245,18 +245,18 @@ class Hello(plug.Plugin, plug.cli.Command):
 
         repobee.run(f"plugin install --git-url {url}".split())
 
-        install_info = disthelpers.get_installed_plugins()[url]
-        assert install_info["version"] == "remote"
+        install_info = disthelpers.get_installed_plugins()["junit4"]
+        assert install_info["version"] == url
         assert get_pkg_version("repobee-junit4")
 
-    def test_install_specific_plugin_from_remote_git_repository(self,):
+    def test_install_specific_version_from_remote_git_repository(self,):
         url = "https://github.com/repobee/repobee-junit4.git"
         version = "v1.0.0"
 
         repobee.run(f"plugin install --git-url {url}@{version}".split())
 
-        install_info = disthelpers.get_installed_plugins()[url]
-        assert install_info["version"] == f"remote@{version}"
+        install_info = disthelpers.get_installed_plugins()["junit4"]
+        assert install_info["version"] == f"{url}@{version}"
         assert get_pkg_version("repobee-junit4") == version.lstrip("v")
 
     def test_raises_on_non_existing_git_url(self):

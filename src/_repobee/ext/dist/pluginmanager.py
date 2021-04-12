@@ -205,12 +205,16 @@ def _install_plugin_from_git_repo(
 
     url, *version = repo_url.split(PLUGIN_SPEC_SEP)
 
-    install_info = dict(
-        name=url, version="remote" if not version else f"remote@{version[0]}"
-    )
-    installed_plugins[url] = install_info
+    install_info = dict(name=url, version=repo_url)
+    plugin_name = _parse_plugin_name_from_git_url(url)
+    installed_plugins[plugin_name] = install_info
     disthelpers.write_installed_plugins(installed_plugins)
-    plug.echo(f"Installed {repo_url}")
+    plug.echo(f"Installed {plugin_name} from {repo_url}")
+
+
+def _parse_plugin_name_from_git_url(url: str) -> str:
+    stripped_url = url[:-4] if url.endswith(".git") else url
+    return pathlib.Path(stripped_url).name[len("repobee-") :]
 
 
 def _install_plugin_from_url_nocheck(
