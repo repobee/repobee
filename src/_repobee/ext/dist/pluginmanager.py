@@ -25,6 +25,8 @@ PLUGIN = "pluginmanager"
 
 PLUGIN_SPEC_SEP = "@"
 
+PLUGIN_PREFIX = "repobee-"
+
 plugin_category = plug.cli.category(
     name="plugin",
     action_names=["install", "uninstall", "list", "activate"],
@@ -147,11 +149,7 @@ def _install_local_plugin(plugin_path: pathlib.Path, installed_plugins: dict):
     install_info: Dict[str, Any] = dict(version="local", path=str(plugin_path))
 
     if plugin_path.is_dir():
-        if not plugin_path.name.startswith("repobee-"):
-            raise plug.PlugError(
-                "RepoBee plugin package names must be prefixed with "
-                "'repobee-'"
-            )
+        _check_has_plugin_prefix(plugin_path.name)
 
         disthelpers.pip(
             "install",
@@ -160,7 +158,7 @@ def _install_local_plugin(plugin_path: pathlib.Path, installed_plugins: dict):
             f"repobee=={__version__}",
             upgrade=True,
         )
-        ident = plugin_path.name[len("repobee-") :]
+        ident = plugin_path.name[len(PLUGIN_PREFIX) :]
     else:
         ident = str(plugin_path)
         install_info["single_file"] = True
@@ -198,15 +196,15 @@ def _install_plugin(name: str, version: str, plugins: dict) -> None:
 def _install_plugin_from_git_repo(
     repo_url: str, installed_plugins: dict
 ) -> None:
+    url, *version = repo_url.split(PLUGIN_SPEC_SEP)
+    plugin_name = _parse_plugin_name_from_git_url(url)
+
     install_url = f"git+{repo_url}"
     install_proc = _install_plugin_from_url_nocheck(install_url)
     if install_proc.returncode != 0:
         raise plug.PlugError(f"could not install plugin from {repo_url}")
 
-    url, *version = repo_url.split(PLUGIN_SPEC_SEP)
-
     install_info = dict(name=url, version=repo_url)
-    plugin_name = _parse_plugin_name_from_git_url(url)
     installed_plugins[plugin_name] = install_info
     disthelpers.write_installed_plugins(installed_plugins)
     plug.echo(f"Installed {plugin_name} from {repo_url}")
@@ -214,7 +212,17 @@ def _install_plugin_from_git_repo(
 
 def _parse_plugin_name_from_git_url(url: str) -> str:
     stripped_url = url[:-4] if url.endswith(".git") else url
-    return pathlib.Path(stripped_url).name[len("repobee-") :]
+    repo_name = pathlib.Path(stripped_url).name
+    _check_has_plugin_prefix(repo_name)
+    return pathlib.Path(stripped_url).name[len(PLUGIN_PREFIX) :]
+
+
+def _check_has_plugin_prefix(s: str) -> None:
+    if not s.startswith(PLUGIN_PREFIX):
+        raise plug.PlugError(
+            "RepoBee plugin package names must be prefixed with "
+            f"'{PLUGIN_PREFIX}'"
+        )
 
 
 def _install_plugin_from_url_nocheck(
@@ -298,7 +306,9 @@ def _uninstall_plugin(plugin_name: str, installed_plugins: dict):
 
 def _pip_uninstall_plugin(plugin_name: str) -> None:
     uninstalled = (
-        disthelpers.pip("uninstall", "-y", f"repobee-{plugin_name}").returncode
+        disthelpers.pip(
+            "uninstall", "-y", f"{PLUGIN_PREFIX}{plugin_name}"
+        ).returncode
         == 0
     )
     if not uninstalled:
