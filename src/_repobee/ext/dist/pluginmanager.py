@@ -102,7 +102,7 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
 
             _install_local_plugin(abspath, installed_plugins)
         elif self.git_url:
-            _install_plugin_from_git_repo(self.git_url)
+            _install_plugin_from_git_repo(self.git_url, installed_plugins)
         else:
             plug.echo("Available plugins:")
 
@@ -195,11 +195,22 @@ def _install_plugin(name: str, version: str, plugins: dict) -> None:
         raise plug.PlugError(f"could not install {name} {version}")
 
 
-def _install_plugin_from_git_repo(repo_url: str) -> None:
+def _install_plugin_from_git_repo(
+    repo_url: str, installed_plugins: dict
+) -> None:
     install_url = f"git+{repo_url}"
     install_proc = _install_plugin_from_url_nocheck(install_url)
     if install_proc.returncode != 0:
         raise plug.PlugError(f"could not install plugin from {repo_url}")
+
+    url, *version = repo_url.split(PLUGIN_SPEC_SEP)
+
+    install_info = dict(
+        name=url, version="remote" if not version else f"remote@{version[0]}"
+    )
+    installed_plugins[url] = install_info
+    disthelpers.write_installed_plugins(installed_plugins)
+    plug.echo(f"Installed {repo_url}")
 
 
 def _install_plugin_from_url_nocheck(
