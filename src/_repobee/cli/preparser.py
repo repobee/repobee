@@ -19,6 +19,7 @@ from typing import List, Tuple
 
 import _repobee.cli
 import _repobee.constants
+from _repobee import util
 
 PRE_PARSER_PLUG_OPTS = ["-p", "--plug"]
 PRE_PARSER_CONFIG_OPTS = ["-c", "--config-file"]
@@ -46,11 +47,18 @@ def parse_args(
         prog="repobee", description="plugin pre-parser for _repobee."
     )
 
+    add_arguments(parser)
+    args = parser.parse_args(sys_args)
+
+    return args
+
+
+def add_arguments(parser: argparse.ArgumentParser,) -> None:
     parser.add_argument(
         *PRE_PARSER_CONFIG_OPTS,
         help="Specify path to the config file to use.",
         type=pathlib.Path,
-        default=default_config_file,
+        default=util.resolve_config_file(pathlib.Path(".").resolve()),
     )
 
     mutex_grp = parser.add_mutually_exclusive_group()
@@ -64,10 +72,6 @@ def parse_args(
     mutex_grp.add_argument(
         PRE_PARSER_NO_PLUGS, help="Disable plugins.", action="store_true"
     )
-
-    args = parser.parse_args(sys_args)
-
-    return args
 
 
 def separate_args(args: List[str]) -> Tuple[List[str], List[str]]:

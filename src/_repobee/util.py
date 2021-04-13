@@ -14,6 +14,7 @@ import tempfile
 from typing import Iterable, Generator, Union, Callable, TypeVar
 
 import repobee_plug as plug
+import _repobee.constants
 
 T = TypeVar("T")
 
@@ -111,3 +112,14 @@ def call_if_defined(func: Callable[..., T], *args, **kwargs) -> T:
         What ``func`` returns, or ``None`` if ``func`` is ``None``.
     """
     return None if func is None else func(*args, **kwargs)
+
+
+def resolve_config_file(path: pathlib.Path,) -> pathlib.Path:
+    local_config_path = path / _repobee.constants.LOCAL_CONFIG_NAME
+
+    if local_config_path.is_file():
+        return local_config_path
+    elif path.parent == path:  # file system root
+        return _repobee.constants.DEFAULT_CONFIG_FILE
+    else:
+        return resolve_config_file(path.parent)

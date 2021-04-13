@@ -11,6 +11,7 @@ import argparse
 import pathlib
 
 from typing import Union, Callable
+from _repobee.cli import preparser
 
 import repobee_plug as plug
 
@@ -141,6 +142,8 @@ def create_parser(config_file: pathlib.Path) -> argparse.ArgumentParser:
         action="version",
         version="{}".format(_repobee.__version__),
     )
+    # re-add the preparser arguments, though these have already been parsed
+    preparser.add_arguments(parser)
     _add_subparsers(parser, config_file)
 
     return parser
