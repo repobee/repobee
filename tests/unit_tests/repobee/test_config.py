@@ -60,13 +60,13 @@ class TestGetConfiguredDefaults:
         invalid_key = "not_valid_key"
         config_contents = os.linesep.join(
             [
-                "[{}]".format(_repobee.constants.CORE_SECTION_HDR),
-                "base_url = {}".format(BASE_URL),
-                "user = {}".format(USER),
-                "org_name = {}".format(ORG_NAME),
-                "template_org_name = {}".format(TEMPLATE_ORG_NAME),
-                "students_file = {!s}".format(students_file),
-                "{} = whatever".format(invalid_key),
+                f"[{_repobee.constants.CORE_SECTION_HDR}]"
+                f"base_url = {BASE_URL}",
+                f"user = {USER}",
+                f"org_name = {ORG_NAME}",
+                f"template_org_name = {TEMPLATE_ORG_NAME}",
+                f"students_file = {str(students_file)}",
+                f"{invalid_key} = whatever",
             ]
         )
         empty_config_mock.write(config_contents)
@@ -74,8 +74,8 @@ class TestGetConfiguredDefaults:
         with pytest.raises(exception.FileError) as exc_info:
             config.get_configured_defaults(str(empty_config_mock))
 
-        assert "config file at {} contains invalid default keys".format(
-            empty_config_mock
+        assert (
+            f"config file at {empty_config_mock} contains invalid default keys"
         ) in str(exc_info.value)
         assert str(empty_config_mock) in str(exc_info.value)
         assert invalid_key in str(exc_info.value)
@@ -85,10 +85,10 @@ class TestGetConfiguredDefaults:
     ):
         config_contents = os.linesep.join(
             [
-                "base_url = {}".format(BASE_URL),
-                "user = {}".format(USER),
-                "org_name = {}".format(ORG_NAME),
-                "students_file = {!s}".format(students_file),
+                f"base_url = {BASE_URL}",
+                f"user = {USER}",
+                f"org_name = {ORG_NAME}",
+                f"students_file = {str(students_file)}",
             ]
         )
         empty_config_mock.write(config_contents)
@@ -141,7 +141,7 @@ class TestCheckConfigIntegrity:
         empty_config_mock.write(
             os.linesep.join(
                 [
-                    "[{}]".format(_repobee.constants.CORE_SECTION_HDR),
+                    f"[{_repobee.constants.CORE_SECTION_HDR}]",
                     "user = someone",
                     "option = value",
                 ]
@@ -150,8 +150,8 @@ class TestCheckConfigIntegrity:
         with pytest.raises(exception.FileError) as exc_info:
             config.check_config_integrity(str(empty_config_mock))
 
-        assert "config file at {} contains invalid default keys".format(
-            empty_config_mock
+        assert (
+            f"config file at {empty_config_mock} contains invalid default keys"
         ) in str(exc_info.value)
         assert "option" in str(exc_info.value)
         assert "user" not in str(exc_info.value)
@@ -162,7 +162,7 @@ class TestCheckConfigIntegrity:
         empty_config_mock.write(
             os.linesep.join(
                 [
-                    "[{}]".format(_repobee.constants.CORE_SECTION_HDR),
+                    f"[{_repobee.constants.CORE_SECTION_HDR}]",
                     "user = someone",
                     "base_url",
                     "org_name = cool",
