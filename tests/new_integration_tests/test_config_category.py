@@ -164,7 +164,6 @@ class TestConfigWizard:
             )
 
         # assert
-        assert (
-            f"Configuration file written to {config_file}"
-            in capsys.readouterr().out
+        assert capsys.readouterr().out.endswith(
+            f"Configuration file written to {config_file}\n"
         )
