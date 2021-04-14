@@ -198,9 +198,7 @@ def _main(sys_args: List[str], unload_plugins: bool = True):
             plugin.unregister_all_plugins()
 
 
-def _resolve_config_file(
-    path: pathlib.Path,
-) -> pathlib.Path:
+def _resolve_config_file(path: pathlib.Path,) -> pathlib.Path:
     local_config_path = path / _repobee.constants.LOCAL_CONFIG_NAME
 
     if local_config_path.is_file():
