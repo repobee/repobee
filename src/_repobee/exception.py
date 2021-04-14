@@ -25,7 +25,7 @@ class RepoBeeException(Exception):
         return self.msg
 
     def __repr__(self):
-        return "<{}(msg='{}')>".format(type(self).__name__, str(self.msg))
+        return f"<{type(self).__name__}(msg='{self.msg}')>"
 
 
 class ParseError(RepoBeeException):
@@ -50,9 +50,7 @@ class GitError(RepoBeeException):
         # sanitize from secure token
         err = re.sub("https://.*?@", "https://", err)
 
-        msg_ = ("{}{}return code: {}{}{}").format(
-            msg, os.linesep, returncode, os.linesep, err
-        )
+        msg_ = f"{msg}{os.linesep}return code: {returncode}{os.linesep}{err}"
         super().__init__(msg_)
         self.returncode = returncode
         self.stderr = stderr

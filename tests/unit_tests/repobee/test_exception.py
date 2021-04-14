@@ -9,7 +9,7 @@ USER = constants.USER
 
 def test_repobee_exception_repr():
     msg = "an exception message"
-    expected_repr = "<RepoBeeException(msg='{}')>".format(msg)
+    expected_repr = f"<RepoBeeException(msg='{msg}')>"
     exc = exception.RepoBeeException(msg)
 
     assert repr(exc) == expected_repr
@@ -37,13 +37,14 @@ class TestGitError:
         """
         msg = "something something dark side"
         fatal = "fatal: this is the part we want!"
-        stderr = "Some error stuff\n{}\nmore lines\nmore lines".format(
-            fatal
-        ).encode(sys.getdefaultencoding())
+        stderr = f"Some error stuff\n{fatal}\nmore lines\nmore lines".encode(
+            sys.getdefaultencoding()
+        )
         returncode = 128
 
-        expected_msg = "{}{}return code: {}{}{}".format(
-            msg, os.linesep, returncode, os.linesep, fatal
+        expected_msg = (
+            f"{msg}{os.linesep}return code: "
+            f"{returncode}{os.linesep}{fatal}"
         )
 
         err = exception.GitError(msg, returncode, stderr)
@@ -68,15 +69,13 @@ class TestGitError:
             token in fatal
         )  # meta assert, make sure we are testing something
         msg = "something went wrong!"
-        stderr = "some lines\n{}\nlast line".format(fatal).encode(
+        stderr = f"some lines\n{fatal}\nlast line".encode(
             sys.getdefaultencoding()
         )
-        expected_msg = "{}{}return code: {}{}{}".format(
-            msg,
-            os.linesep,
-            returncode,
-            os.linesep,
-            "fatal: repo '{}' could not be found".format(repo_url),
+        expected_msg = (
+            f"{msg}{os.linesep}return code: "
+            f"{returncode}{os.linesep}fatal: "
+            f"repo '{repo_url}' could not be found"
         )
 
         err = exception.GitError(msg, returncode, stderr)
@@ -105,15 +104,13 @@ class TestGitError:
         )  # meta assert, make sure we are testing something
         assert USER in fatal
         msg = "something went wrong!"
-        stderr = "some lines\n{}\nlast line".format(fatal).encode(
+        stderr = f"some lines\n{fatal}\nlast line".encode(
             sys.getdefaultencoding()
         )
-        expected_msg = "{}{}return code: {}{}{}".format(
-            msg,
-            os.linesep,
-            returncode,
-            os.linesep,
-            "fatal: repo '{}' could not be found".format(repo_url),
+        expected_msg = (
+            f"{msg}{os.linesep}return code: "
+            f"{returncode}{os.linesep}fatal: "
+            f"repo '{repo_url}' could not be found"
         )
 
         err = exception.GitError(msg, returncode, stderr)
