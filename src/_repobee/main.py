@@ -29,7 +29,6 @@ from _repobee import config
 from _repobee.cli.preparser import separate_args
 from _repobee import distinfo
 from _repobee import disthelpers
-from _repobee import util
 
 
 _PRE_INIT_ERROR_MESSAGE = """exception was raised before pre-initialization was
@@ -158,7 +157,7 @@ def _main(sys_args: List[str], unload_plugins: bool = True):
         preparser_args, app_args = separate_args(args)
         parsed_preparser_args = _repobee.cli.preparser.parse_args(
             preparser_args,
-            default_config_file=util.resolve_config_file(
+            default_config_file=_resolve_config_file(
                 pathlib.Path(".").resolve()
             ),
         )
@@ -197,6 +196,19 @@ def _main(sys_args: List[str], unload_plugins: bool = True):
     finally:
         if unload_plugins:
             plugin.unregister_all_plugins()
+
+
+def _resolve_config_file(
+    path: pathlib.Path,
+) -> pathlib.Path:
+    local_config_path = path / _repobee.constants.LOCAL_CONFIG_NAME
+
+    if local_config_path.is_file():
+        return local_config_path
+    elif path.parent == path:  # file system root
+        return _repobee.constants.DEFAULT_CONFIG_FILE
+    else:
+        return _resolve_config_file(path.parent)
 
 
 def _initialize_plugins(parsed_preparser_args: argparse.Namespace) -> None:

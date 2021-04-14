@@ -142,7 +142,9 @@ def create_parser(config_file: pathlib.Path) -> argparse.ArgumentParser:
         action="version",
         version="{}".format(_repobee.__version__),
     )
-    # re-add the preparser arguments, though these have already been parsed
+    # re-add the preparser arguments, so that they show up in the help
+    # output in the cli. these arguments are trimmed from the parsed args
+    # to prevent them being passed along
     preparser.add_arguments(parser)
     _add_subparsers(parser, config_file)
 

@@ -15,11 +15,10 @@ The preparser solves this.
 
 import argparse
 import pathlib
-from typing import List, Tuple
+from typing import Optional, List, Tuple
 
 import _repobee.cli
 import _repobee.constants
-from _repobee import util
 
 PRE_PARSER_PLUG_OPTS = ["-p", "--plug"]
 PRE_PARSER_CONFIG_OPTS = ["-c", "--config-file"]
@@ -47,18 +46,31 @@ def parse_args(
         prog="repobee", description="plugin pre-parser for _repobee."
     )
 
-    add_arguments(parser)
+    add_arguments(parser, default_config_file)
     args = parser.parse_args(sys_args)
 
     return args
 
 
-def add_arguments(parser: argparse.ArgumentParser,) -> None:
+def add_arguments(
+    parser: argparse.ArgumentParser,
+    default_config_file: Optional[pathlib.Path] = None,
+) -> None:
+    """Add argument flags that the preparser handles to the parser. When
+    called for the preprocessor, the second argument should be defined,
+    and when called from the main parser, it can be ignored as the argument
+    will be deleted from the parsed args.
+
+    Args:
+        parser: Parser to add the argument flags to
+        default_config_file: The default config file to use if none is
+            specified.
+    """
     parser.add_argument(
         *PRE_PARSER_CONFIG_OPTS,
         help="Specify path to the config file to use.",
         type=pathlib.Path,
-        default=util.resolve_config_file(pathlib.Path(".").resolve()),
+        default=default_config_file,
     )
 
     mutex_grp = parser.add_mutually_exclusive_group()
@@ -72,6 +84,20 @@ def add_arguments(parser: argparse.ArgumentParser,) -> None:
     mutex_grp.add_argument(
         PRE_PARSER_NO_PLUGS, help="Disable plugins.", action="store_true"
     )
+
+
+def clean_arguments(
+    args: argparse.Namespace,
+) -> None:
+    """Cleans the namespace of arguments that were already handled by the
+    preprocessor.
+
+    Args:
+        args: namespace to clean
+    """
+    delattr(args, "plug")
+    delattr(args, "config_file")
+    delattr(args, "no_plugins")
 
 
 def separate_args(args: List[str]) -> Tuple[List[str], List[str]]:
