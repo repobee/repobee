@@ -54,17 +54,13 @@ def parse_args(
 
 def add_arguments(
     parser: argparse.ArgumentParser,
-    default_config_file: Optional[pathlib.Path] = None,
+    default_config_file: Optional[pathlib.Path],
 ) -> None:
-    """Add argument flags that the preparser handles to the parser. When
-    called for the preprocessor, the second argument should be defined,
-    and when called from the main parser, it can be ignored as the argument
-    will be deleted from the parsed args.
+    """Add argument flags that the preparser handles to the given parser.
 
     Args:
         parser: Parser to add the argument flags to
-        default_config_file: The default config file to use if none is
-            specified.
+        default_config_file: The default config file to use
     """
     parser.add_argument(
         *PRE_PARSER_CONFIG_OPTS,
