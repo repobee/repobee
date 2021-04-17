@@ -25,6 +25,7 @@ from repobee_plug.cli import categorization
 
 import _repobee
 import _repobee.cli.mainparser
+import _repobee.cli.preparser
 from _repobee import util, exception, constants, cli
 
 from _repobee.command import progresswrappers
@@ -81,6 +82,7 @@ def _parse_args(
     argcomplete.autocomplete(parser)
 
     args = parser.parse_args(_handle_deprecation(sys_args))
+    cli.preparser.clean_arguments(args)
 
     if "_extension_command" in args:
         return args, _ArgsProcessing.EXT

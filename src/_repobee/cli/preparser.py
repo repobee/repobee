@@ -15,7 +15,7 @@ The preparser solves this.
 
 import argparse
 import pathlib
-from typing import List, Tuple
+from typing import Optional, List, Tuple
 
 import _repobee.cli
 import _repobee.constants
@@ -46,6 +46,22 @@ def parse_args(
         prog="repobee", description="plugin pre-parser for _repobee."
     )
 
+    add_arguments(parser, default_config_file)
+    args = parser.parse_args(sys_args)
+
+    return args
+
+
+def add_arguments(
+    parser: argparse.ArgumentParser,
+    default_config_file: Optional[pathlib.Path],
+) -> None:
+    """Add argument flags that the preparser handles to the given parser.
+
+    Args:
+        parser: Parser to add the argument flags to
+        default_config_file: The default config file to use
+    """
     parser.add_argument(
         *PRE_PARSER_CONFIG_OPTS,
         help="Specify path to the config file to use.",
@@ -65,9 +81,17 @@ def parse_args(
         PRE_PARSER_NO_PLUGS, help="Disable plugins.", action="store_true"
     )
 
-    args = parser.parse_args(sys_args)
 
-    return args
+def clean_arguments(args: argparse.Namespace,) -> None:
+    """Cleans the namespace of arguments that were already handled by the
+    preprocessor.
+
+    Args:
+        args: namespace to clean
+    """
+    delattr(args, "plug")
+    delattr(args, "config_file")
+    delattr(args, "no_plugins")
 
 
 def separate_args(args: List[str]) -> Tuple[List[str], List[str]]:
