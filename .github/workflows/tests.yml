@@ -59,7 +59,7 @@ jobs:
 
   gitlab-system-tests:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'create' }}
+    if: ${{ github.event_name == 'create' || contains(github.event.head_commit.message, '[gitlab-system-tests]') }}
     steps:
     - uses: actions/checkout@v2
       with:
