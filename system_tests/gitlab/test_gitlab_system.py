@@ -245,46 +245,44 @@ class TestSetup:
             [plug.StudentTeam(members=[TEACHER])], assignment_names
         )
 
-        def test_setup_with_default_branch_protection_does_not_carry_over(
-            self, extra_args
-        ):
-            """Student repositories created when global default branch
-            protection is enabled on the GitLab instance, should still not have
-            default branch protection.
-            """
-            # arrange
-            gl = gitlab.Gitlab(
-                url=LOCAL_BASE_URL, private_token=ADMIN_TOKEN, ssl_verify=False
-            )
-            print(gl.settings.default_branch_protection)
-            settings = gl.settings.get()
-            settings.default_branch_protection = 2
-            settings.save()
-            command = " ".join(
-                [
-                    REPOBEE_GITLAB,
-                    *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
-                    *BASE_ARGS,
-                    *TEMPLATE_ORG_ARG,
-                    *MASTER_REPOS_ARG,
-                    *STUDENTS_ARG,
-                ]
-            )
+    def test_setup_with_default_branch_protection_does_not_carry_over(
+        self, extra_args
+    ):
+        """Student repositories created when global default branch
+        protection is enabled on the GitLab instance, should still not have
+        default branch protection.
+        """
+        # arrange
+        gl = gitlab.Gitlab(
+            url=LOCAL_BASE_URL, private_token=ADMIN_TOKEN, ssl_verify=False
+        )
+        print(gl.settings.default_branch_protection)
+        settings = gl.settings.get()
+        settings.default_branch_protection = 2
+        settings.save()
+        command = " ".join(
+            [
+                REPOBEE_GITLAB,
+                *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
+                *BASE_ARGS,
+                *TEMPLATE_ORG_ARG,
+                *MASTER_REPOS_ARG,
+                *STUDENTS_ARG,
+            ]
+        )
 
-            # act
-            result = run_in_docker_with_coverage(
-                command, extra_args=extra_args
-            )
+        # act
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
 
-            # assert
-            assert result.returncode == 0
-            api = api_instance(ORG_NAME)
-            loop_ran = False
-            for repo in api.get_repos():
-                loop_ran = True
-                assert not repo.implementation.protectedbranches.list()
+        # assert
+        assert result.returncode == 0
+        api = api_instance(ORG_NAME)
+        loop_ran = False
+        for repo in api.get_repos():
+            loop_ran = True
+            assert not repo.implementation.protectedbranches.list()
 
-            assert loop_ran, "assertion loop did not execute"
+        assert loop_ran, "assertion loop did not execute"
 
 
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
