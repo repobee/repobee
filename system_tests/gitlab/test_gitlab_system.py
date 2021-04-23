@@ -29,9 +29,8 @@ from _helpers.const import (
     VOLUME_DST,
     BASE_DOMAIN,
     LOCAL_DOMAIN,
-    ORG_NAME,
     TEMPLATE_ORG_NAME,
-    TARGET_ORG_NAME,
+    ORG_NAME,
     assignment_names,
     STUDENT_TEAMS,
     STUDENT_TEAM_NAMES,
@@ -279,7 +278,7 @@ class TestSetup:
 
             # assert
             assert result.returncode == 0
-            api = api_instance(TARGET_ORG_NAME)
+            api = api_instance(ORG_NAME)
             loop_ran = False
             for repo in api.get_repos():
                 loop_ran = True
