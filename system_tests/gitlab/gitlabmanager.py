@@ -15,6 +15,7 @@ from _helpers.const import (
     TEACHER,
     STUDENT_TEAM_NAMES,
     TOKEN,
+    ADMIN_TOKEN,
     TEMPLATE_REPO_PATHS,
 )
 
@@ -67,7 +68,12 @@ def setup():
     if not await_gitlab_started():
         raise OSError("GitLab failed to start")
 
-    setup_users(students=STUDENT_TEAM_NAMES, teacher=TEACHER, token=TOKEN)
+    setup_users(
+        students=STUDENT_TEAM_NAMES,
+        teacher=TEACHER,
+        teacher_token=TOKEN,
+        admin_token=ADMIN_TOKEN,
+    )
 
 
 def teardown():
@@ -105,7 +111,9 @@ def exec_gitlab_rails_cmd(cmd: str) -> subprocess.CompletedProcess:
     )
 
 
-def setup_users(students: List[str], teacher: str, token: str) -> None:
+def setup_users(
+    students: List[str], teacher: str, teacher_token: str, admin_token: str
+) -> None:
     print("Setting up users")
     users = students + [teacher]
     create_users_cmd = (
@@ -128,14 +136,19 @@ teacher_user = User.find_by_username('{teacher}')
 token = teacher_user.personal_access_tokens.create(
     name: 'repobee',
     scopes: [:api, :read_repository, :write_repository])
-token.set_token('{token}')
+token.set_token('{teacher_token}')
 token.save!
 """
-    set_root_password_cmd = """
+    set_root_password_cmd = f"""
 root_user = User.where(id: 1).first
 root_user.password = 'password'
 root_user.password_confirmation = 'password'
 root_user.save!
+token = root_user.personal_access_tokens.create(
+    name: 'repobee',
+    scopes: [:api, :read_repository, :write_repository, :sudo])
+token.set_token('{admin_token}')
+token.save!
 """
     compound_cmd = create_users_cmd + create_token_cmd + set_root_password_cmd
     exec_gitlab_rails_cmd(compound_cmd)
