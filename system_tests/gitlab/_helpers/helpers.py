@@ -45,7 +45,7 @@ def get_group(group_slug: str, gl: Optional[gitlab.Gitlab] = None):
     return [
         group
         for group in gl.groups.list(search=group_slug)
-        if group.path == group_slug
+        if group.path == group_slug or group.full_path == group_slug
     ][0]
 
 
