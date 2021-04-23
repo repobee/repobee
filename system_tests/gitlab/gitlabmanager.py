@@ -148,6 +148,7 @@ token = root_user.personal_access_tokens.create(
     name: 'repobee',
     scopes: [:api, :read_repository, :write_repository, :sudo])
 token.set_token('{admin_token}')
+token.save!
 """
     compound_cmd = create_users_cmd + create_token_cmd + set_root_password_cmd
     exec_gitlab_rails_cmd(compound_cmd)
