@@ -140,13 +140,13 @@ async def _clone_async(clone_spec: CloneSpec):
 
     if rc != 0 and _EMPTY_REPO_ERROR not in stderr:
         raise exception.CloneFailedError(
-            "Failed to clone {}".format(clone_spec.repo_url),
+            f"Failed to clone {clone_spec.repo_url}",
             returncode=rc,
             stderr=stderr,
             clone_spec=clone_spec,
         )
     else:
-        plug.log.info("Cloned into {}".format(clone_spec.repo_url))
+        plug.log.info(f"Cloned into {clone_spec.repo_url}")
 
 
 class CloneStatus(enum.Enum):
@@ -258,15 +258,15 @@ async def _push_async(pt: Push):
 
     if proc.returncode != 0:
         raise exception.PushFailedError(
-            "Failed to push to {}".format(pt.repo_url),
+            f"Failed to push to {pt.repo_url}",
             proc.returncode or -sys.maxsize,
             stderr,
             pt.repo_url,
         )
     elif b"Everything up-to-date" in stderr:
-        plug.log.info("{} is up-to-date".format(pt.repo_url))
+        plug.log.info(f"{pt.repo_url} is up-to-date")
     else:
-        plug.log.info("Pushed files to {} {}".format(pt.repo_url, pt.branch))
+        plug.log.info(f"Pushed files to {pt.repo_url} {pt.branch}")
 
 
 def _push_no_retry(push_tuples: Iterable[Push]) -> List[str]:
@@ -311,12 +311,12 @@ def push(
     # confusing, but failed_pts needs an initial value
     failed_pts = list(push_tuples)
     for i in range(tries):
-        plug.log.info("Pushing, attempt {}/{}".format(i + 1, tries))
+        plug.log.info(f"Pushing, attempt {i + 1}/{tries}")
         failed_urls = set(_push_no_retry(failed_pts))
         failed_pts = [pt for pt in failed_pts if pt.repo_url in failed_urls]
         if not failed_pts:
             break
-        plug.log.warning("{} pushes failed ...".format(len(failed_pts)))
+        plug.log.warning(f"{len(failed_pts)} pushes failed ...")
 
     successful_pts = [pt for pt in push_tuples if pt not in failed_pts]
     return successful_pts, failed_pts
