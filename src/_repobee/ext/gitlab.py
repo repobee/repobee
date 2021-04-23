@@ -221,7 +221,7 @@ class GitLabAPI(plug.PlatformAPI):
         """See :py:meth:`repobee_plug.PlatformAPI.get_repo`."""
         with _try_api_request():
             path = (
-                [self._group.path]
+                [self._group.full_path]
                 + ([team_name] if team_name is not None else [])
                 + [repo_name]
             )
