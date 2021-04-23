@@ -256,9 +256,11 @@ class TestSetup:
         gl = gitlab.Gitlab(
             url=LOCAL_BASE_URL, private_token=ADMIN_TOKEN, ssl_verify=False
         )
-        print(gl.settings.attributes)
+        gl.auth()
         settings = gl.settings.get()
-        settings.attributes["default_branch_protection"] = 2
+        settings.default_branch_protection = (
+            2  # this is the default, but we want to make sure it's set
+        )
         settings.save()
         command = " ".join(
             [
