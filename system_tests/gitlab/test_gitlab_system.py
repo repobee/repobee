@@ -259,7 +259,7 @@ class TestSetup:
         gl.auth()
         settings = gl.settings.get()
         settings.default_branch_protection = (
-            2  # this is the default, but we want to make sure it's set
+            _repobee.ext.gitlab.DefaultBranchProtection.FULL.value
         )
         settings.save()
         command = " ".join(
