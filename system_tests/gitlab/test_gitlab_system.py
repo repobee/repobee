@@ -47,6 +47,7 @@ from _helpers.helpers import (
     run_in_docker,
     update_repo,
     expected_num_members_group_assertion,
+    gitlab_and_groups,
 )
 
 
@@ -200,6 +201,40 @@ class TestSetup:
         assert result.returncode == 0
         assert_repos_exist(STUDENT_TEAMS, assignment_names)
         assert_on_groups(STUDENT_TEAMS)
+
+    def test_clean_setup_in_subgroup(self, extra_args):
+        """It should be possible to use a subgroup as the target org."""
+        gl, template_group, target_group = gitlab_and_groups()
+        subgroup_name = "bestgroup"
+        subgroup_full_path = f"{target_group.path}/{subgroup_name}"
+        gl.groups.create(
+            dict(
+                name=subgroup_name,
+                path=subgroup_name,
+                parent_id=target_group.id,
+            )
+        )
+
+        base_args = [
+            arg if arg != ORG_NAME else subgroup_full_path for arg in BASE_ARGS
+        ]
+
+        command = " ".join(
+            [
+                REPOBEE_GITLAB,
+                *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
+                *base_args,
+                *TEMPLATE_ORG_ARG,
+                *MASTER_REPOS_ARG,
+                *STUDENTS_ARG,
+            ]
+        )
+
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
+        assert result.returncode == 0
+        assert_repos_exist(
+            STUDENT_TEAMS, assignment_names, org_name=subgroup_full_path
+        )
 
     def test_setup_twice(self, extra_args):
         """Setting up twice should have the same effect as setting up once."""
