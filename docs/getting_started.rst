@@ -134,9 +134,10 @@ Editing the global configuration file (the ``wizard`` and ``show`` actions)
 For RepoBee to work at all, it needs to be provided with an access token to
 whichever platform instance you intend to use. See the `GitHub access token
 docs`_ for how to create a token. The token should have the ``repo`` and
-``admin:org`` scopes. You can either set this token in the ``REPOBEE_TOKEN``
-environment variable with whatever method you deem appropriate, or you can put
-it in the configuration file as described next.
+``admin:org`` scopes. If you will be using GitHub Actions, the token should have
+the ``workflow`` scope as well. You can either set this token in the
+``REPOBEE_TOKEN`` environment variable with whatever method you deem
+appropriate, or you can put it in the configuration file as described next.
 
 .. note::
 
