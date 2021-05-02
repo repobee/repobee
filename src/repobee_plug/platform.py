@@ -62,6 +62,9 @@ class Team(APIObject):
     id: Any = dataclasses.field(compare=False)
     implementation: Any = dataclasses.field(compare=False, repr=False)
 
+    def __post_init__(self):
+        object.__setattr__(self, "members", [m.lower() for m in self.members])
+
     def __str__(self):
         return self.name
 

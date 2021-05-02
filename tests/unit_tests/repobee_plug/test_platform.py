@@ -156,3 +156,22 @@ class TestIssue:
         reconstructed = platform.Issue.from_dict(asdict)
 
         assert reconstructed == issue
+
+
+class TestTeam:
+    """Tests for the Team class."""
+
+    def test_lowercases_usernames(self):
+        """While all of the platforms currently supported are case insensitive,
+        some still allow usernames to contain e.g. capital letters. We don't
+        want this to appear in RepoBee, as it can case problems such as those
+        reported in https://github.com/repobee/repobee/issues/900.
+        """
+        usernames = ["siMon", "ALICE", "eVe"]
+        lowercase_usernames = ["simon", "alice", "eve"]
+
+        team = platform.Team(
+            members=usernames, name="yep", id=1, implementation="fake"
+        )
+
+        assert team.members == lowercase_usernames
