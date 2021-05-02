@@ -3,6 +3,7 @@ import pathlib
 import re
 
 import pytest
+import gitlab
 
 import repobee_plug as plug
 import repobee_testhelpers
@@ -28,8 +29,8 @@ from _helpers.const import (
     VOLUME_DST,
     BASE_DOMAIN,
     LOCAL_DOMAIN,
-    ORG_NAME,
     TEMPLATE_ORG_NAME,
+    ORG_NAME,
     assignment_names,
     STUDENT_TEAMS,
     STUDENT_TEAM_NAMES,
@@ -40,6 +41,8 @@ from _helpers.const import (
     MASTER_REPOS_ARG,
     TEMPLATE_ORG_ARG,
     TEACHER,
+    ADMIN_TOKEN,
+    LOCAL_BASE_URL,
 )
 from _helpers.helpers import (
     api_instance,
@@ -47,6 +50,7 @@ from _helpers.helpers import (
     run_in_docker,
     update_repo,
     expected_num_members_group_assertion,
+    gitlab_and_groups,
 )
 
 
@@ -201,6 +205,40 @@ class TestSetup:
         assert_repos_exist(STUDENT_TEAMS, assignment_names)
         assert_on_groups(STUDENT_TEAMS)
 
+    def test_clean_setup_in_subgroup(self, extra_args):
+        """It should be possible to use a subgroup as the target org."""
+        gl, template_group, target_group = gitlab_and_groups()
+        subgroup_name = "bestgroup"
+        subgroup_full_path = f"{target_group.path}/{subgroup_name}"
+        gl.groups.create(
+            dict(
+                name=subgroup_name,
+                path=subgroup_name,
+                parent_id=target_group.id,
+            )
+        )
+
+        base_args = [
+            arg if arg != ORG_NAME else subgroup_full_path for arg in BASE_ARGS
+        ]
+
+        command = " ".join(
+            [
+                REPOBEE_GITLAB,
+                *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
+                *base_args,
+                *TEMPLATE_ORG_ARG,
+                *MASTER_REPOS_ARG,
+                *STUDENTS_ARG,
+            ]
+        )
+
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
+        assert result.returncode == 0
+        assert_repos_exist(
+            STUDENT_TEAMS, assignment_names, org_name=subgroup_full_path
+        )
+
     def test_setup_twice(self, extra_args):
         """Setting up twice should have the same effect as setting up once."""
         command = " ".join(
@@ -241,6 +279,47 @@ class TestSetup:
         assert_repos_exist(
             [plug.StudentTeam(members=[TEACHER])], assignment_names
         )
+
+    def test_setup_with_default_branch_protection_does_not_carry_over(
+        self, extra_args
+    ):
+        """Student repositories created when global default branch
+        protection is enabled on the GitLab instance, should still not have
+        default branch protection.
+        """
+        # arrange
+        gl = gitlab.Gitlab(
+            url=LOCAL_BASE_URL, private_token=ADMIN_TOKEN, ssl_verify=False
+        )
+        gl.auth()
+        settings = gl.settings.get()
+        settings.default_branch_protection = (
+            _repobee.ext.gitlab.DefaultBranchProtection.FULL.value
+        )
+        settings.save()
+        command = " ".join(
+            [
+                REPOBEE_GITLAB,
+                *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
+                *BASE_ARGS,
+                *TEMPLATE_ORG_ARG,
+                *MASTER_REPOS_ARG,
+                *STUDENTS_ARG,
+            ]
+        )
+
+        # act
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
+
+        # assert
+        assert result.returncode == 0
+        api = api_instance(ORG_NAME)
+        loop_ran = False
+        for repo in api.get_repos():
+            loop_ran = True
+            assert not repo.implementation.protectedbranches.list()
+
+        assert loop_ran, "assertion loop did not execute"
 
     def test_setup_with_twice_with_wrong_case_on_second_setup(
         self, extra_args

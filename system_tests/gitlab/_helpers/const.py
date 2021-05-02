@@ -10,6 +10,7 @@ VOLUME_DST = "/workdir"
 COVERAGE_VOLUME_DST = "/coverage"
 DIR = pathlib.Path(__file__).resolve().parent
 TOKEN = (DIR.parent / "token").read_text(encoding="utf-8").strip()
+ADMIN_TOKEN = "".join(reversed(TOKEN))
 OAUTH_USER = "oauth2"
 BASE_DOMAIN = "gitlab.integrationtest.local"
 BASE_URL = "https://" + BASE_DOMAIN
