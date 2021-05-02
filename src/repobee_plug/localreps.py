@@ -38,7 +38,7 @@ class StudentTeam:
         return self.name
 
     def __post_init__(self):
-        object.__setattr__(self, "memebers", list(self.members))
+        object.__setattr__(self, "members", [m.lower() for m in self.members])
         object.__setattr__(
             self, "name", self.name or "-".join(sorted(self.members))
         )
