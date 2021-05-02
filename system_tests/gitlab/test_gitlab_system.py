@@ -287,6 +287,38 @@ class TestSetup:
             [plug.StudentTeam(members=[student])], assignment_names
         )
 
+    def test_setup_with_wrong_case_on_student(self, extra_args):
+        """User names are case insensitive on GitLab, and so setup should work
+        fine even if the case of some character in a student's username is
+        "incorrect".
+
+        See https://github.com/repobee/repobee/issues/900
+        """
+        student = STUDENT_TEAMS[0].members[0]
+        student_wrong_case = student.upper()
+        assert (
+            student != student_wrong_case
+        ), "cases match, test is pointless :("
+
+        command = " ".join(
+            [
+                REPOBEE_GITLAB,
+                *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
+                *BASE_ARGS,
+                *TEMPLATE_ORG_ARG,
+                *MASTER_REPOS_ARG,
+                "--students",
+                student_wrong_case,
+            ]
+        )
+
+        result = run_in_docker_with_coverage(command, extra_args=extra_args)
+
+        assert result.returncode == 0
+        assert_repos_exist(
+            [plug.StudentTeam(members=student)], assignment_names
+        )
+
 
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
 class TestUpdate:
