@@ -316,7 +316,7 @@ class TestSetup:
 
         assert result.returncode == 0
         assert_repos_exist(
-            [plug.StudentTeam(members=student)], assignment_names
+            [plug.StudentTeam(members=[student])], assignment_names
         )
 
 
