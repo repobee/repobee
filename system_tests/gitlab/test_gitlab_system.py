@@ -242,6 +242,51 @@ class TestSetup:
             [plug.StudentTeam(members=[TEACHER])], assignment_names
         )
 
+    def test_setup_with_twice_with_wrong_case_on_second_setup(
+        self, extra_args
+    ):
+        """User names on GitLab are case insensitive, and so setting up repos
+        for the same student with two different cases of characters should work
+        the same as setting up just once
+
+        See
+        https://github.com/repobee/repobee/issues/900#issuecomment-830075510
+        for a bug where this was not the case.
+        """
+        student = STUDENT_TEAMS[0].members[0]
+        student_lowercase = STUDENT_TEAMS[0].members[0].lower()
+        # the original should be lowercase
+        assert (
+            student == student_lowercase
+        ), "expected real student username to be lowercase"
+
+        student_uppercase = student_lowercase.upper()
+        base_command = [
+            REPOBEE_GITLAB,
+            *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
+            *BASE_ARGS,
+            *TEMPLATE_ORG_ARG,
+            *MASTER_REPOS_ARG,
+            "--students",
+        ]
+
+        def _cmd(student):
+            return " ".join(base_command + [student])
+
+        result_lowercase = run_in_docker_with_coverage(
+            _cmd(student_lowercase), extra_args=extra_args
+        )
+        result_uppercase = run_in_docker_with_coverage(
+            _cmd(student_uppercase), extra_args=extra_args
+        )
+
+        assert result_lowercase.returncode == 0
+        assert result_uppercase.returncode == 0
+
+        assert_repos_exist(
+            [plug.StudentTeam(members=[student])], assignment_names
+        )
+
 
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
 class TestUpdate:
