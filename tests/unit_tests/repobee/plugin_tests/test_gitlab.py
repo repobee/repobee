@@ -615,4 +615,4 @@ class TestForOrganization:
         )
 
         new_api = api.for_organization(new_group_name)
-        assert new_api.group == new_group
+        assert new_api._group == new_group
