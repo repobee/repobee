@@ -597,3 +597,22 @@ class TestVerifySettings:
         )
 
         log_mock.assert_called_with("GREAT SUCCESS: All settings check out!")
+
+
+class TestForOrganization:
+    """Tests for the for_organization function."""
+
+    def test_correctly_sets_provided_group(self, api, mocker):
+        """Test that the provided group is respected."""
+        new_group_name = "some-other-group"
+        gl = GitLabMock(BASE_URL, TOKEN, False)
+        new_group = gl.groups.create(
+            dict(name=new_group_name, path=new_group_name)
+        )
+        mocker.patch(
+            "_repobee.ext.gitlab.gitlab.Gitlab",
+            side_effect=lambda base_url, private_token, ssl_verify: gl,
+        )
+
+        new_api = api.for_organization(new_group_name)
+        assert new_api.group == new_group
