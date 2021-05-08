@@ -473,3 +473,13 @@ class TestVerifySettings:
         assert f"could not find organization '{non_existant_org}'" in str(
             exc_info.value
         )
+
+
+class TestForOrganization:
+    """Tests for the for_organization function."""
+
+    def test_correctly_sets_provided_group(self, target_api):
+        """Test that the provided group is respected."""
+        new_api = target_api.for_organization(giteamanager.TEMPLATE_ORG_NAME)
+
+        assert new_api._org_name == giteamanager.TEMPLATE_ORG_NAME
