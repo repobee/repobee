@@ -2,6 +2,8 @@ import itertools
 import pytest
 from unittest.mock import MagicMock, PropertyMock, patch
 
+from typing import List
+
 import github
 
 import repobee_plug as plug
@@ -161,18 +163,27 @@ def organization(happy_github):
     """Attaches an Organization mock to github.Github.get_organization, and
     returns the mock.
     """
+    return create_mock_organization(
+        happy_github, ORG_NAME, ["blablabla", "hello", USER]
+    )
+
+
+def create_mock_organization(
+    github_impl: MagicMock, org_name: str, members: List[str]
+) -> MagicMock:
     organization = MagicMock()
 
     def get_members(role=""):
-        return [User(login="blablabla"), User(login="hello"), User(login=USER)]
+        return [User(login=member) for member in members]
 
     organization.get_members = get_members
     type(organization).html_url = PropertyMock(
-        return_value=generate_repo_url("", ORG_NAME).rstrip("/")
+        return_value=generate_repo_url("", org_name).rstrip("/")
     )
-    happy_github.get_organization.side_effect = (
-        lambda org_name: organization if org_name == ORG_NAME else raise_404()
+    github_impl.get_organization.side_effect = (
+        lambda n: organization if n == org_name else raise_404()
     )
+
     return organization
 
 
@@ -578,3 +589,16 @@ class TestCreateIssue:
         impl_mock.create_issue.assert_called_once_with(
             "Title", body="Body", assignees=github.GithubObject.NotSet
         )
+
+
+class TestForOrganization:
+    """Tests for the for_organization function."""
+
+    def test_correctly_sets_provided_org(self, happy_github, api):
+        """Test that the provided organization is respected."""
+        new_org_name = "some-other-org"
+        mock_org = create_mock_organization(happy_github, new_org_name, [])
+        assert api.org != new_org_name
+        new_api = api.for_organization(new_org_name)
+
+        assert new_api.org is mock_org

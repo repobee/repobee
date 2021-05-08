@@ -162,6 +162,10 @@ class GitHubAPI(plug.PlatformAPI):
     def token(self):
         return self._token
 
+    def for_organization(self, org_name: str) -> "GitHubAPI":
+        """See :py:meth:`repobee_plug.PlatformAPI.for_organization`."""
+        return GitHubAPI(self._base_url, self._token, org_name, self._user)
+
     def create_team(
         self,
         name: str,
