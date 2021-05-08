@@ -597,8 +597,11 @@ class TestForOrganization:
     def test_correctly_sets_provided_org(self, happy_github, api):
         """Test that the provided organization is respected."""
         new_org_name = "some-other-org"
+        assert (
+            api._org_name != new_org_name
+        ), "test makes no sense if the new org name matches the existing one"
         mock_org = create_mock_organization(happy_github, new_org_name, [])
-        assert api.org != new_org_name
+
         new_api = api.for_organization(new_org_name)
 
         assert new_api.org is mock_org
