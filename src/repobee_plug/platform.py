@@ -405,6 +405,18 @@ class _APISpec:
         """
         _not_implemented()
 
+    def for_organization(self, org_name: str) -> "PlatformAPI":
+        """Create a copy of this API instance, targeting the given
+        organization.
+
+        Args:
+            org_name: Name of the organization to target.
+        Returns:
+            A copy of the receiver API, but targeting the provided
+            organization.
+        """
+        _not_implemented()
+
     @staticmethod
     def verify_settings(
         user: str,

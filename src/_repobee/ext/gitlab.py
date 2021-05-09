@@ -116,6 +116,10 @@ class GitLabAPI(plug.PlatformAPI):
             self._actual_user = self._gitlab.user.username
             self._group = self._get_group(self._group_name, self._gitlab)
 
+    def for_organization(self, org_name: str) -> "GitLabAPI":
+        """See :py:meth:`repobee_plug.PlatformAPI.for_organization`."""
+        return GitLabAPI(self._base_url, self._token, org_name)
+
     def create_team(
         self,
         name: str,
