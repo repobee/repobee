@@ -39,7 +39,7 @@ test_requirements = [
     "virtualenv",
 ]
 docs_requirements = [
-    "sphinx>=1.8.2",
+    "sphinx>=3.1.1,<=3.5.4",
     "sphinx-autodoc-typehints",
     "sphinx_rtd_theme",
     "sphinx-argparse",
