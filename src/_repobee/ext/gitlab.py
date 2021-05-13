@@ -4,6 +4,7 @@ This plugin allows RepoBee to be used with GitLab. If you want to use RepoBee
 with GitLab, then you should first activate this plugin persistently. See
 :ref:`activate_plugins` for details on how to do that.
 """
+import enum
 import os
 import collections
 import contextlib
@@ -23,7 +24,6 @@ PLUGIN_DESCRIPTION = "Makes RepoBee compatible with GitLab"
 
 ISSUE_GENERATOR = Generator[plug.Issue, None, None]
 
-
 # see https://docs.gitlab.com/ee/api/issues.html for mapping details
 _ISSUE_STATE_MAPPING = {
     plug.IssueState.OPEN: "opened",
@@ -38,6 +38,16 @@ _TEAM_PERMISSION_MAPPING = {
     plug.TeamPermission.PULL: gitlab.REPORTER_ACCESS,
     plug.TeamPermission.PUSH: gitlab.DEVELOPER_ACCESS,
 }
+
+
+class DefaultBranchProtection(enum.Enum):
+    """Default branch protection values, see
+    https://docs.gitlab.com/ee/api/groups.html#options-for-default_branch_protection
+    """
+
+    NONE = 0
+    PARTIAL = 1
+    FULL = 2
 
 
 @contextlib.contextmanager
@@ -106,6 +116,10 @@ class GitLabAPI(plug.PlatformAPI):
             self._actual_user = self._gitlab.user.username
             self._group = self._get_group(self._group_name, self._gitlab)
 
+    def for_organization(self, org_name: str) -> "GitLabAPI":
+        """See :py:meth:`repobee_plug.PlatformAPI.for_organization`."""
+        return GitLabAPI(self._base_url, self._token, org_name)
+
     def create_team(
         self,
         name: str,
@@ -116,7 +130,12 @@ class GitLabAPI(plug.PlatformAPI):
         with _try_api_request():
             team = self._wrap_group(
                 self._gitlab.groups.create(
-                    {"name": name, "path": name, "parent_id": self._group.id}
+                    {
+                        "name": name,
+                        "path": name,
+                        "parent_id": self._group.id,
+                        "default_branch_protection": DefaultBranchProtection.NONE.value,  # noqa: E501
+                    }
                 )
             )
 
@@ -206,7 +225,7 @@ class GitLabAPI(plug.PlatformAPI):
         """See :py:meth:`repobee_plug.PlatformAPI.get_repo`."""
         with _try_api_request():
             path = (
-                [self._group.path]
+                [self._group.full_path]
                 + ([team_name] if team_name is not None else [])
                 + [repo_name]
             )

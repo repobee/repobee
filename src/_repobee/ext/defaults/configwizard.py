@@ -23,7 +23,7 @@ class Wizard(plug.Plugin, plug.cli.Command):
         category=plug.cli.CoreCommand.config,
         help="Interactive configuration wizard to set up the config file.",
         description=(
-            "A configuration wizard that sets up the configuration file."
+            "A configuration wizard that sets up the configuration file. "
             "Warns if there already is a configuration file, as it will be "
             "overwritten."
         ),
@@ -41,12 +41,8 @@ class Wizard(plug.Plugin, plug.cli.Command):
 
 def callback(args: argparse.Namespace, config: plug.Config) -> None:
     """Run through a configuration wizard."""
-    if constants.DEFAULT_CONFIG_FILE.exists():
-        plug.echo(
-            "Editing config file at {}".format(
-                str(constants.DEFAULT_CONFIG_FILE)
-            )
-        )
+    if config.path.exists():
+        plug.echo("Editing config file at {}".format(str(config.path)))
 
     if constants.CORE_SECTION_HDR not in config:
         config.create_section(constants.CORE_SECTION_HDR)

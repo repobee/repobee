@@ -101,6 +101,15 @@ class GiteaAPI(plug.PlatformAPI):
         ssl_verify = not os.getenv("REPOBEE_NO_VERIFY_SSL") == "true"
         return ssl_verify
 
+    def for_organization(self, org_name: str) -> "GiteaAPI":
+        """See :py:meth:`repobee_plug.PlatformAPI.for_organization`."""
+        return GiteaAPI(
+            base_url=self._base_url,
+            token=self._token,
+            org_name=org_name,
+            user=self._user,
+        )
+
     def create_team(
         self,
         name: str,

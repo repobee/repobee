@@ -50,10 +50,8 @@ def check_defaults(
         configured - constants.CONFIGURABLE_ARGS
     ):  # there are surpluss arguments
         raise exception.FileError(
-            "config file at {} contains invalid default keys: {}".format(
-                config_file,
-                ", ".join(configured - constants.CONFIGURABLE_ARGS),
-            )
+            f"config file at {config_file} contains invalid default keys: "
+            f"{', '.join(configured - constants.CONFIGURABLE_ARGS)}"
         )
 
 
@@ -91,12 +89,12 @@ def check_config_integrity(config_file: Union[str, pathlib.Path]) -> None:
         defaults = _read_defaults(config_file)
     except configparser.ParsingError as exc:
         errors = ", ".join(
-            "(line {}: {})".format(line_nr, line)
-            for line_nr, line in exc.errors
+            f"(line {line_nr}: {line})" for line_nr, line in exc.errors
         )
         raise exception.FileError(
-            msg="config file at {} contains syntax errors: {}".format(
-                config_file, errors
+            msg=(
+                f"config file at {config_file} contains syntax errors: "
+                f"{errors}"
             )
         )
     check_defaults(defaults, config_file)
@@ -126,8 +124,8 @@ def _read_config(config_file: pathlib.Path) -> configparser.ConfigParser:
 
     if constants.CORE_SECTION_HDR not in config_parser:
         raise exception.FileError(
-            "config file at '{!s}' does not contain the required "
-            "[repobee] header".format(config_file)
+            f"config file at '{str(config_file)}' does not contain the "
+            f"required [repobee] header"
         )
 
     return config_parser

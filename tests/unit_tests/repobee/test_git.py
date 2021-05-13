@@ -104,7 +104,7 @@ def test_clone_single_raises_on_non_zero_exit_from_git_pull(env_setup, mocker):
     subprocess.run.return_value = RunTuple(1, "", stderr)
 
     with pytest.raises(exception.CloneFailedError) as exc:
-        git.clone_single("{}".format(URL_TEMPLATE.format("")))
+        git.clone_single(f"{URL_TEMPLATE.format('')}")
     assert "Failed to clone" in str(exc.value)
 
 
@@ -172,7 +172,7 @@ class TestPush:
         """
         expected_calls = [
             call(
-                *"git push {} {}".format(url, branch).split(),
+                *f"git push {url} {branch}".split(),
                 cwd=os.path.abspath(local_repo),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -246,7 +246,7 @@ class TestPush:
 
         expected_calls = [
             call(
-                *"git push {}".format(pt.repo_url).split(),
+                *f"git push {pt.repo_url}".split(),
                 pt.branch,
                 cwd=os.path.abspath(pt.local_path),
                 stdout=subprocess.PIPE,
@@ -278,7 +278,7 @@ class TestClone:
     def test_happy_path(self, env_setup, push_tuples, specs, aio_subproc):
         expected_subproc_calls = [
             call(
-                *"git pull {}".format(spec.repo_url).split(),
+                *f"git pull {spec.repo_url}".split(),
                 cwd=str(spec.dest),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -325,7 +325,7 @@ class TestClone:
         """
         expected_calls = [
             call(
-                *"git pull {}".format(spec.repo_url).split(),
+                *f"git pull {spec.repo_url}".split(),
                 cwd=str(spec.dest),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,

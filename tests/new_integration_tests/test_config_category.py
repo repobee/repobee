@@ -31,7 +31,7 @@ class TestConfigShow:
         assert const.TOKEN not in outerr.err
 
     def test_prints_token_when_asked(self, capsys):
-        """It should be possible to show the token on deman."""
+        """It should be possible to show the token on demand."""
         funcs.run_repobee("config show --secrets")
 
         outerr = capsys.readouterr()
@@ -120,6 +120,31 @@ class TestConfigWizard:
             == unlikely_value
         )
 
+    def test_start_message_respects_config_file_argument(
+        self, platform_url, tmp_path, capsys
+    ):
+        # arrange
+        config_file = tmp_path / "repobee.ini"
+
+        config_file.write_text("[repobee]\n")
+
+        # act
+        with mock.patch(
+            "bullet.Bullet.launch",
+            autospec=True,
+            return_value=_repobee.constants.CORE_SECTION_HDR,
+        ), mock.patch("builtins.input", return_value="dontcare"):
+            _repobee.main.main(
+                shlex.split(
+                    f"repobee --config-file {config_file} config wizard"
+                )
+            )
+
+        # assert
+        assert capsys.readouterr().out.startswith(
+            f"Editing config file at {config_file}\n"
+        )
+
     def test_end_message_respects_config_file_argument(
         self, platform_url, tmp_path, capsys
     ):
@@ -139,7 +164,6 @@ class TestConfigWizard:
             )
 
         # assert
-        assert (
-            f"Configuration file written to {config_file}"
-            in capsys.readouterr().out
+        assert capsys.readouterr().out.endswith(
+            f"Configuration file written to {config_file}\n"
         )

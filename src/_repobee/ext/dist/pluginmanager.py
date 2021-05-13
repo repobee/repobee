@@ -9,6 +9,7 @@ import pathlib
 import textwrap
 import os
 import sys
+import subprocess
 
 from typing import Tuple, List, Any, Dict
 
@@ -23,6 +24,8 @@ from _repobee import __version__
 PLUGIN = "pluginmanager"
 
 PLUGIN_SPEC_SEP = "@"
+
+PLUGIN_PREFIX = "repobee-"
 
 plugin_category = plug.cli.category(
     name="plugin",
@@ -80,6 +83,12 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
             "'junit4@v1.0.0') to do a non-interactive install of an official "
             "plugin"
         ),
+        git_url=plug.cli.option(
+            help="url to a Git repository to install a plugin from (e.g. "
+            "'https://github.com/repobee/repobee-junit4.git'), optionally "
+            "followed by a version specifier '@<VERSION>' (e.g. "
+            "'https://github.com/repobee/repobee-junit4.git@v1.0.0')"
+        ),
     )
 
     def command(self) -> None:
@@ -94,6 +103,8 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
                 raise plug.PlugError(f"no such file or directory: '{abspath}'")
 
             _install_local_plugin(abspath, installed_plugins)
+        elif self.git_url:
+            _install_plugin_from_git_repo(self.git_url, installed_plugins)
         else:
             plug.echo("Available plugins:")
 
@@ -138,11 +149,7 @@ def _install_local_plugin(plugin_path: pathlib.Path, installed_plugins: dict):
     install_info: Dict[str, Any] = dict(version="local", path=str(plugin_path))
 
     if plugin_path.is_dir():
-        if not plugin_path.name.startswith("repobee-"):
-            raise plug.PlugError(
-                "RepoBee plugin package names must be prefixed with "
-                "'repobee-'"
-            )
+        _check_has_plugin_prefix(plugin_path.name)
 
         disthelpers.pip(
             "install",
@@ -151,7 +158,7 @@ def _install_local_plugin(plugin_path: pathlib.Path, installed_plugins: dict):
             f"repobee=={__version__}",
             upgrade=True,
         )
-        ident = plugin_path.name[len("repobee-") :]
+        ident = plugin_path.name[len(PLUGIN_PREFIX) :]
     else:
         ident = str(plugin_path)
         install_info["single_file"] = True
@@ -181,14 +188,52 @@ def _select_plugin(plugins: dict) -> Tuple[str, str]:
 
 def _install_plugin(name: str, version: str, plugins: dict) -> None:
     install_url = f"git+{plugins[name]['url']}@{version}"
-    install_proc = disthelpers.pip(
+    install_proc = _install_plugin_from_url_nocheck(install_url)
+    if install_proc.returncode != 0:
+        raise plug.PlugError(f"could not install {name} {version}")
+
+
+def _install_plugin_from_git_repo(
+    repo_url: str, installed_plugins: dict
+) -> None:
+    url, *version = repo_url.split(PLUGIN_SPEC_SEP)
+    plugin_name = _parse_plugin_name_from_git_url(url)
+
+    install_url = f"git+{repo_url}"
+    install_proc = _install_plugin_from_url_nocheck(install_url)
+    if install_proc.returncode != 0:
+        raise plug.PlugError(f"could not install plugin from {repo_url}")
+
+    install_info = dict(name=url, version=repo_url)
+    installed_plugins[plugin_name] = install_info
+    disthelpers.write_installed_plugins(installed_plugins)
+    plug.echo(f"Installed {plugin_name} from {repo_url}")
+
+
+def _parse_plugin_name_from_git_url(url: str) -> str:
+    stripped_url = url[:-4] if url.endswith(".git") else url
+    repo_name = pathlib.Path(stripped_url).name
+    _check_has_plugin_prefix(repo_name)
+    return pathlib.Path(stripped_url).name[len(PLUGIN_PREFIX) :]
+
+
+def _check_has_plugin_prefix(s: str) -> None:
+    if not s.startswith(PLUGIN_PREFIX):
+        raise plug.PlugError(
+            "RepoBee plugin package names must be prefixed with "
+            f"'{PLUGIN_PREFIX}'"
+        )
+
+
+def _install_plugin_from_url_nocheck(
+    install_url: str,
+) -> subprocess.CompletedProcess:
+    return disthelpers.pip(
         "install",
         install_url,
         f"repobee=={__version__}",  # force RepoBee to stay the same version
         upgrade=True,
     )
-    if install_proc.returncode != 0:
-        raise plug.PlugError(f"could not install {name} {version}")
 
 
 class UninstallPluginCommand(plug.Plugin, plug.cli.Command):
@@ -261,7 +306,9 @@ def _uninstall_plugin(plugin_name: str, installed_plugins: dict):
 
 def _pip_uninstall_plugin(plugin_name: str) -> None:
     uninstalled = (
-        disthelpers.pip("uninstall", "-y", f"repobee-{plugin_name}").returncode
+        disthelpers.pip(
+            "uninstall", "-y", f"{PLUGIN_PREFIX}{plugin_name}"
+        ).returncode
         == 0
     )
     if not uninstalled:

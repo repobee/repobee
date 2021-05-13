@@ -62,6 +62,9 @@ class Team(APIObject):
     id: Any = dataclasses.field(compare=False)
     implementation: Any = dataclasses.field(compare=False, repr=False)
 
+    def __post_init__(self):
+        object.__setattr__(self, "members", [m.lower() for m in self.members])
+
     def __str__(self):
         return self.name
 
@@ -399,6 +402,18 @@ class _APISpec:
             repo_url: A URL to a repository.
         Returns:
             The name of the repository corresponding to the url.
+        """
+        _not_implemented()
+
+    def for_organization(self, org_name: str) -> "PlatformAPI":
+        """Create a copy of this API instance, targeting the given
+        organization.
+
+        Args:
+            org_name: Name of the organization to target.
+        Returns:
+            A copy of the receiver API, but targeting the provided
+            organization.
         """
         _not_implemented()
 

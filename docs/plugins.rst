@@ -118,6 +118,25 @@ Note that a local install may sometimes be dependent on its location in the
 local file system. If you move or delete the local plugin, it may break
 RepoBee's installation of it.
 
+Finally, one can also install plugins directly from a remote Git repository,
+which is primarily intended to allow users to easily install unofficial plugins.
+For example, we can install the ``junit4`` plugin directly from its repository
+like so:
+
+.. code-block:: bash
+    :caption: Example of install of plugin from Git repository
+
+    $ repobee plugin install --git-url https://github.com/repobee/repobee-junit4@v1.0.0
+
+The version specifier (here, ``@v1.0.0``) can be any Git ref (e.g. branch, tag
+or commit sha), **and is optional**. If omitted, RepoBee will install the latest
+version from the default branch of the repository.
+
+.. important::
+
+    For a plugin to be installable directly from a Git repository, the project
+    must follow the packaging conventions detailed in :ref:`packaging_plugins`.
+
 Uninstalling plugins (the ``uninstall`` action)
 ===============================================
 

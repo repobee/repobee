@@ -11,6 +11,7 @@ import argparse
 import pathlib
 
 from typing import Union, Callable
+from _repobee.cli import preparser
 
 import repobee_plug as plug
 
@@ -141,6 +142,11 @@ def create_parser(config_file: pathlib.Path) -> argparse.ArgumentParser:
         action="version",
         version="{}".format(_repobee.__version__),
     )
+    # Re-add the preparser arguments, so that they show up in the help
+    # output in the cli. These arguments are trimmed from the parsed args
+    # to prevent them being passed along, so we do not need to care
+    # about the defaults.
+    preparser.add_arguments(parser, None)
     _add_subparsers(parser, config_file)
 
     return parser
