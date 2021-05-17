@@ -97,8 +97,8 @@ class Config:
         return self._config_parser.get(
             section_name,
             key,
-            fallback=self._parent.get(section_name, key, fallback)
-            if self._parent
+            fallback=self.parent.get(section_name, key, fallback)
+            if self.parent
             else fallback,
         )
 
@@ -106,6 +106,11 @@ class Config:
     def path(self) -> pathlib.Path:
         """Path to the config file."""
         return self._config_path
+
+    @property
+    def parent(self) -> Optional["Config"]:
+        """Returns the parent config if defined, otherwise None."""
+        return self._parent
 
     def __getitem__(self, section_key: str) -> ConfigSection:
         return _ParentAwareConfigSection(self, section_key)
