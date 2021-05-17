@@ -3,9 +3,11 @@ import configparser
 import pathlib
 import os
 
-from typing import Any, Optional
+from typing import Any, Optional, List
 
 from typing_extensions import Protocol
+
+from repobee_plug import exceptions
 
 __all__ = ["Config", "ConfigSection"]
 
@@ -53,6 +55,7 @@ class Config:
         self._config_path = config_path
         self._config_parser = configparser.ConfigParser()
         self._parent = parent
+        self._check_for_cycle(paths=[])
         self.refresh()
 
     def refresh(self) -> None:
@@ -117,6 +120,16 @@ class Config:
 
     def __contains__(self, section_name: str) -> bool:
         return section_name in self._config_parser
+
+    def _check_for_cycle(self, paths: List[str]) -> None:
+        """Check if there's a cycle in the inheritance."""
+        if self.path in paths:
+            cycle = " -> ".join(map(str, paths + [self.path]))
+            raise exceptions.PlugError(
+                f"Cyclic inheritance detected in config: {cycle}"
+            )
+        elif self.parent is not None:
+            self.parent._check_for_cycle(paths + [self.path])
 
 
 class _ParentAwareConfigSection:

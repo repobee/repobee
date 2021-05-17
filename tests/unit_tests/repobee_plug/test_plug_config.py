@@ -1,9 +1,33 @@
 import pytest
 from repobee_plug import config
+from repobee_plug import exceptions
 
 
 class TestConfig:
     """Tests for the Config class."""
+
+    def test_detects_cyclic_inheritance(self, tmp_path):
+        # arrange
+
+        grandparent_path = tmp_path / "otherdir" / "grandparent.ini"
+        parent_path = tmp_path / "dir" / "parent.ini"
+        child_path = tmp_path / "repobee.ini"
+
+        grandparent = config.Config(
+            grandparent_path, parent=config.Config(child_path)
+        )
+        parent = config.Config(parent_path, parent=grandparent)
+
+        # act/assert
+        with pytest.raises(exceptions.PlugError) as exc_info:
+            config.Config(child_path, parent=parent)
+
+        cycle = " -> ".join(
+            map(str, [child_path, parent_path, grandparent_path, child_path])
+        )
+        assert f"Cyclic inheritance detected in config: {cycle}" in str(
+            exc_info.value
+        )
 
     def test_get_option_from_parent(self, tmp_path):
         # arrange
