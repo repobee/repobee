@@ -121,7 +121,7 @@ class Config:
     def __contains__(self, section_name: str) -> bool:
         return section_name in self._config_parser
 
-    def _check_for_cycle(self, paths: List[str]) -> None:
+    def _check_for_cycle(self, paths: List[pathlib.Path]) -> None:
         """Check if there's a cycle in the inheritance."""
         if self.path in paths:
             cycle = " -> ".join(map(str, paths + [self.path]))
