@@ -17,6 +17,12 @@ localreps
 .. automodule:: repobee_plug.localreps
     :members:
 
+config
+======
+
+.. automodule:: repobee_plug.config
+    :members:
+
 exceptions
 ==========
 
