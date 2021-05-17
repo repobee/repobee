@@ -3,11 +3,13 @@ import configparser
 import pathlib
 import os
 
-from typing import Any, Optional
+from typing import Any, Optional, List
 
 from typing_extensions import Protocol
 
-__all__ = ["Config"]
+from repobee_plug import exceptions
+
+__all__ = ["Config", "ConfigSection"]
 
 
 class ConfigSection(Protocol):
@@ -26,16 +28,34 @@ class ConfigSection(Protocol):
 class Config:
     """Object representing RepoBee's config.
 
+    This class defines read-only inheritance. This means that when you read a
+    value from the config, for example with :py:meth:`get`, it will do a
+    recursive lookup in parent configs.
+
+    Writing to a config object, e.g. ``config[section][option] = value`` does
+    *not* respect inheritance, and unconditionally writes to *this* config, and
+    not any of its parents. Similarly, writing to disk with :py:meth:`store`
+    only writes to the most local config, and not to any of the parent configs.
+
     .. important::
 
         Changes to the config are only persisted if the :py:meth:`Config.store`
         method is called.
+
+    .. warning::
+
+        The behavior of this class is currently not stable. Any minor release
+        of RepoBee might bring breaking changes.
     """
 
-    def __init__(self, config_path: pathlib.Path):
+    def __init__(
+        self, config_path: pathlib.Path, parent: Optional["Config"] = None
+    ):
         super().__init__()
         self._config_path = config_path
         self._config_parser = configparser.ConfigParser()
+        self._parent = parent
+        self._check_for_cycle(paths=[])
         self.refresh()
 
     def refresh(self) -> None:
@@ -77,31 +97,57 @@ class Config:
             The value for the section and key, or the fallback value if neither
             exist.
         """
-        return self._config_parser.get(section_name, key, fallback=fallback)
+        return self._config_parser.get(
+            section_name,
+            key,
+            fallback=self.parent.get(section_name, key, fallback)
+            if self.parent
+            else fallback,
+        )
 
     @property
     def path(self) -> pathlib.Path:
         """Path to the config file."""
         return self._config_path
 
+    @property
+    def parent(self) -> Optional["Config"]:
+        """Returns the parent config if defined, otherwise None."""
+        return self._parent
+
     def __getitem__(self, section_key: str) -> ConfigSection:
-        return _ConfigSection(self._config_parser[section_key])
+        return _ParentAwareConfigSection(self, section_key)
 
     def __contains__(self, section_name: str) -> bool:
         return section_name in self._config_parser
 
+    def _check_for_cycle(self, paths: List[pathlib.Path]) -> None:
+        """Check if there's a cycle in the inheritance."""
+        if self.path in paths:
+            cycle = " -> ".join(map(str, paths + [self.path]))
+            raise exceptions.PlugError(
+                f"Cyclic inheritance detected in config: {cycle}"
+            )
+        elif self.parent is not None:
+            self.parent._check_for_cycle(paths + [self.path])
 
-class _ConfigSection:
-    """A section of the config."""
 
-    def __init__(self, section: ConfigSection):
-        self._section = section
+class _ParentAwareConfigSection:
+    """A section of the config that respects sections from parent configs."""
+
+    def __init__(self, config: Config, section_key: str):
+        self._config = config
+        self._section_key = section_key
 
     def __getitem__(self, key: str):
-        return self._section[key]
+        value = self._config.get(self._section_key, key)
+        if value is None:
+            raise KeyError(key)
+        else:
+            return value
 
     def __setitem__(self, key: str, value: Any):
-        self._section[key] = value
+        self._config._config_parser.set(self._section_key, key, value)
 
     def __contains__(self, key: str) -> bool:
-        return key in self._section
+        return self._config.get(self._section_key, key) is not None

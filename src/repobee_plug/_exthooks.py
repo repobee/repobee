@@ -141,6 +141,11 @@ def handle_config(config: Config) -> None:
     This hook is allowed both to read the config, and to modify it before it's
     passed to the core RepoBee application.
 
+    .. warning::
+
+        The :py:class:`Config` class is currently not stable and its behavior
+        may change.
+
     Args:
         config: RepoBee's config.
     """
