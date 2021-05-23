@@ -1,6 +1,1 @@
--r app.txt
-
-sphinx>=4.0.1
-sphinx-autodoc-typehints
-sphinx_rtd_theme
-sphinx-argparse
+.[DOCS]
