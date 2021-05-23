@@ -30,12 +30,12 @@ test_requirements = [
     "bandit",
     "black",
     "codecov",
-    "flake8",
-    "mypy",
+    "flake8>=3.8.3",
+    "mypy>=0.770",
     "pylint",
     "pytest-cov>=2.6.1",
     "pytest-mock",
-    "pytest>=4.0.0",
+    "pytest>=6.0.0",
     "virtualenv",
 ]
 docs_requirements = [
