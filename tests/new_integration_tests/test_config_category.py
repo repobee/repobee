@@ -14,6 +14,7 @@ import repobee_plug as plug
 
 import _repobee.exception
 import _repobee.main
+import repobee
 
 
 class TestConfigShow:
@@ -167,3 +168,49 @@ class TestConfigWizard:
         assert capsys.readouterr().out.endswith(
             f"Configuration file written to {config_file}\n"
         )
+
+
+class TestConfigInheritance:
+    """Various tests to verify that config inheritance works as expected."""
+
+    def test_handle_config_hook_recieves_config_with_inherited_properties(
+        self, tmp_path_factory
+    ):
+        first_tmpdir = tmp_path_factory.mktemp("configs")
+        second_tmpdir = tmp_path_factory.mktemp("other-configs")
+
+        section_name = "repobee"
+        parent_key = "template_org_name"
+        parent_value = "some-value"
+        child_key = "org_name"
+        child_value = "something"
+
+        parent_config = plug.Config(second_tmpdir / "base-config.ini")
+        parent_config.create_section(section_name)
+        parent_config[section_name][parent_key] = parent_value
+        parent_config.store()
+
+        child_config = plug.Config(
+            first_tmpdir / "config.ini", parent=parent_config
+        )
+        child_config.create_section(section_name)
+        child_config[section_name][child_key] = child_value
+        child_config.store()
+
+        fetched_child_value = None
+        fetched_parent_value = None
+
+        class HandleConfig(plug.Plugin):
+            def handle_config(self, config: plug.Config) -> None:
+                nonlocal fetched_child_value, fetched_parent_value
+                fetched_child_value = config.get(section_name, child_key)
+                fetched_parent_value = config.get(section_name, parent_key)
+
+        repobee.run(
+            list(plug.cli.CoreCommand.config.show.as_name_tuple()),
+            config_file=child_config.path,
+            plugins=[HandleConfig],
+        )
+
+        assert fetched_child_value == child_value
+        assert fetched_parent_value == parent_value
