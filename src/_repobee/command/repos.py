@@ -23,11 +23,11 @@ from typing import Iterable, List, Optional, Mapping, Union, Tuple, Any
 import repobee_plug as plug
 
 import _repobee.command.teams
+import _repobee.config
 
 from _repobee import git
 from _repobee import util
 from _repobee import exception
-from _repobee import config
 from _repobee import plugin
 from _repobee.git import Push
 
@@ -537,17 +537,17 @@ def migrate_repos(
     plug.echo("Done!")
 
 
-def show_config(config_file: pathlib.Path, show_secrets: bool) -> None:
+def show_config(config: plug.Config, show_secrets: bool) -> None:
     """Echo the config file.
 
     Args:
-        config_file: The config file to echo.
+        config: The config to show.
         show_secrets: Whether or not to show configured secrets.
     """
-    config.check_config_integrity(config_file)
+    _repobee.config.check_config_integrity(config.path)
 
-    plug.echo(f"Found valid config file at {config_file}")
-    with config_file.open(encoding=sys.getdefaultencoding()) as f:
+    plug.echo(f"Found valid config file at {config.path}")
+    with config.path.open(encoding=sys.getdefaultencoding()) as f:
         config_contents = "".join(f.readlines())
 
     output = (

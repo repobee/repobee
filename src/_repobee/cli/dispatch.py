@@ -19,7 +19,7 @@ from _repobee import command, exception, formatters, util, featflags
 
 
 def dispatch_command(
-    args: argparse.Namespace, api: plug.PlatformAPI, config_file: pathlib.Path
+    args: argparse.Namespace, api: plug.PlatformAPI, config: plug.Config
 ) -> Mapping[str, List[plug.Result]]:
     """Handle parsed CLI arguments and dispatch commands to the appropriate
     functions. Expected exceptions are caught and turned into SystemExit
@@ -53,7 +53,7 @@ def dispatch_command(
     else:
         category = args.category
         hook_results = (
-            dispatch_table[category](args, config_file, api) or hook_results
+            dispatch_table[category](args, config, api) or hook_results
         )
 
     if is_ext_command or args.action in [
@@ -72,7 +72,7 @@ def dispatch_command(
 
 
 def _dispatch_repos_command(
-    args: argparse.Namespace, config_file: pathlib.Path, api: plug.PlatformAPI
+    args: argparse.Namespace, config: plug.Config, api: plug.PlatformAPI
 ) -> Optional[Mapping[str, List[plug.Result]]]:
     repos = plug.cli.CoreCommand.repos
     action = args.action
@@ -94,7 +94,7 @@ def _dispatch_repos_command(
 
 
 def _dispatch_issues_command(
-    args: argparse.Namespace, config_file: pathlib.Path, api: plug.PlatformAPI
+    args: argparse.Namespace, config: plug.Config, api: plug.PlatformAPI
 ) -> Optional[Mapping[str, List[plug.Result]]]:
     issues = plug.cli.CoreCommand.issues
     action = args.action
@@ -131,11 +131,11 @@ def _dispatch_issues_command(
 
 
 def _dispatch_config_command(
-    args: argparse.Namespace, config_file: pathlib.Path, api: plug.PlatformAPI
+    args: argparse.Namespace, config: plug.Config, api: plug.PlatformAPI
 ) -> Optional[Mapping[str, List[plug.Result]]]:
-    config = plug.cli.CoreCommand.config
+    config_category = plug.cli.CoreCommand.config
     action = args.action
-    if action == config.verify:
+    if action == config_category.verify:
         plug.manager.hook.get_api_class().verify_settings(
             args.user,
             args.org_name,
@@ -144,14 +144,14 @@ def _dispatch_config_command(
             args.template_org_name,
         )
         return None
-    elif action == config.show:
-        command.show_config(config_file, show_secrets=args.secrets)
+    elif action == config_category.show:
+        command.show_config(config, show_secrets=args.secrets)
         return None
     _raise_illegal_action_error(args)
 
 
 def _dispatch_reviews_command(
-    args: argparse.Namespace, config_file: pathlib.Path, api: plug.PlatformAPI
+    args: argparse.Namespace, config: plug.Config, api: plug.PlatformAPI
 ) -> Optional[Mapping[str, List[plug.Result]]]:
     reviews = plug.cli.CoreCommand.reviews
     action = args.action
@@ -196,7 +196,7 @@ def _dispatch_reviews_command(
 
 
 def _dispatch_teams_command(
-    args: argparse.Namespace, config_file: pathlib.Path, api: plug.PlatformAPI
+    args: argparse.Namespace, config: plug.Config, api: plug.PlatformAPI
 ) -> Optional[Mapping[str, List[plug.Result]]]:
     teams = plug.cli.CoreCommand.teams
     action = args.action
