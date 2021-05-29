@@ -23,9 +23,9 @@ import _repobee.cli.parsing
 import _repobee.cli.preparser
 import _repobee.cli.mainparser
 import _repobee.constants
+import _repobee.config
 from _repobee import plugin
 from _repobee import exception
-from _repobee import config
 from _repobee.cli.preparser import separate_args
 from _repobee import distinfo
 from _repobee import disthelpers
@@ -229,9 +229,9 @@ def _initialize_plugins(parsed_preparser_args: argparse.Namespace) -> None:
         plugin.initialize_plugins(plugin_names, allow_filepath=True)
 
 
-def _parse_args(args, conf):
-    config.execute_config_hooks(conf)
-    parsed_args, api = _repobee.cli.parsing.handle_args(args, conf)
+def _parse_args(args: List[str], config: plug.Config):
+    _repobee.config.execute_config_hooks(config)
+    parsed_args, api = _repobee.cli.parsing.handle_args(args, config)
     plug.manager.hook.handle_processed_args(args=parsed_args)
     return parsed_args, api
 

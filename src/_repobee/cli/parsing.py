@@ -40,8 +40,7 @@ class _ArgsProcessing(enum.Enum):
 
 
 def handle_args(
-    sys_args: Iterable[str],
-    config_file: pathlib.Path = constants.DEFAULT_CONFIG_FILE,
+    sys_args: Iterable[str], config: plug.Config
 ) -> Tuple[argparse.Namespace, Optional[plug.PlatformAPI]]:
     """Parse and process command line arguments and instantiate the platform
     API (if it's needed).
@@ -49,12 +48,12 @@ def handle_args(
 
     Args:
         sys_args: Raw command line arguments for the primary parser.
-        config_file: Path to the config file.
+        config: RepoBee's configuration.
     Returns:
         A tuple of a namespace with parsed and processed arguments, and an
         instance of the platform API if it is required for the command.
     """
-    args, processing = _parse_args(sys_args, config_file)
+    args, processing = _parse_args(sys_args, config)
     plug.manager.hook.handle_parsed_args(args=args)
 
     if processing == _ArgsProcessing.CORE:
@@ -65,7 +64,7 @@ def handle_args(
 
 
 def _parse_args(
-    sys_args: Iterable[str], config_file: pathlib.Path
+    sys_args: Iterable[str], config: plug.Config
 ) -> Tuple[argparse.Namespace, _ArgsProcessing]:
     """Parse the command line arguments with some light processing. Any
     processing that requires external resources (such as a network connection)
@@ -73,12 +72,12 @@ def _parse_args(
 
     Args:
         sys_args: A list of command line arguments.
-        config_file: Path to the config file.
+        config: RepoBee's configuration.
     Returns:
         A namespace of parsed arpuments and a boolean that specifies whether or
         not further processing is required.
     """
-    parser = cli.mainparser.create_parser(config_file)
+    parser = cli.mainparser.create_parser(config)
     argcomplete.autocomplete(parser)
 
     args = parser.parse_args(_handle_deprecation(sys_args))
