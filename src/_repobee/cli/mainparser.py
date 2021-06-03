@@ -9,15 +9,15 @@
 import types
 import argparse
 import pathlib
+import functools
 
-from typing import Union, Callable
+from typing import Union, Callable, Optional
 from _repobee.cli import preparser
 
 import repobee_plug as plug
 
 import _repobee
 from _repobee import plugin
-from _repobee import config
 from _repobee import featflags
 
 from _repobee.cli import argparse_ext
@@ -161,9 +161,7 @@ def _add_subparsers(parser, config: plug.Config):
     `base_` prefixed parser, of course).
     """
 
-    def get_default(arg_name):
-        configured_defaults = config.get_configured_defaults(config)
-        return configured_defaults.get(arg_name)
+    get_default = functools.partial(config.get, "repobee")
 
     (
         base_parser,
@@ -258,7 +256,7 @@ def _add_subparsers(parser, config: plug.Config):
             repo_discovery_parser=_REPO_DISCOVERY_PARSER,
         ),
         parsers,
-        config._read_config(config_file) if config_file.is_file() else {},
+        config,
     )
 
 
@@ -629,7 +627,7 @@ def _add_issue_parsers(base_parsers, add_parser):
     list_parser.set_defaults(state=plug.IssueState.OPEN)
 
 
-def _create_base_parsers(get_default: Callable[[str], str]):
+def _create_base_parsers(get_default: Callable[[str], Optional[str]]):
     """Create the base parsers."""
 
     def configured(arg_name):

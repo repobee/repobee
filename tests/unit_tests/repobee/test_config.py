@@ -3,6 +3,8 @@ from unittest import mock
 
 import pytest
 
+import repobee_plug as plug
+
 import _repobee.constants
 from _repobee import config
 from _repobee import exception
@@ -105,11 +107,11 @@ class TestExecuteConfigHooks:
     """Tests for execute_config_hooks."""
 
     def test_with_no_config_file(self, unused_path, plugin_manager_mock):
-        config.execute_config_hooks(config_file=unused_path)
+        config.execute_config_hooks(config=plug.Config(unused_path))
         assert not plugin_manager_mock.hook.config_hook.called
 
-    def test_with_config_file(self, config_mock, plugin_manager_mock):
-        config.execute_config_hooks(str(config_mock))
+    def test_with_config_file(self, full_config, plugin_manager_mock):
+        config.execute_config_hooks(full_config)
 
         # TODO assert with a real value instead of mock.ANY
         plugin_manager_mock.hook.config_hook.assert_called_once_with(
