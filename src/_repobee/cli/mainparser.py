@@ -11,7 +11,7 @@ import argparse
 import pathlib
 import functools
 
-from typing import Union, Callable, Optional
+from typing import Union, Callable, Optional, Any
 from _repobee.cli import preparser
 
 import repobee_plug as plug
@@ -367,7 +367,7 @@ def _add_config_parsers(
     base_parser,
     template_org_parser,
     add_parser,
-    get_default: Callable[[str], str],
+    get_default: Callable[[str], Optional[Any]],
 ):
     show_config = add_parser(
         plug.cli.CoreCommand.config.show,
@@ -726,7 +726,7 @@ def _add_students_file_arg(
     parser_like: Union[
         argparse.ArgumentParser, argparse._MutuallyExclusiveGroup
     ],
-    get_default: Callable[[str], str],
+    get_default: Callable[[str], Optional[Any]],
 ) -> None:
     parser_like.add_argument(
         "--sf",
