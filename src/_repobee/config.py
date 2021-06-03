@@ -19,23 +19,7 @@ from _repobee import exception
 from _repobee import constants
 
 
-def get_configured_defaults(config_file: Union[str, pathlib.Path]) -> dict:
-    """Access the config file and return a ConfigParser instance with
-    its contents.
-
-    Args:
-        config_file: Path to the config file.
-    Returns:
-        a dict with the contents of the config file. If there is no config
-        file, the return value is an empty dict.
-    """
-    config_file = pathlib.Path(config_file)
-    defaults = _read_defaults(config_file)
-    check_defaults(defaults, config_file)
-    return defaults
-
-
-def check_defaults(
+def _check_defaults(
     defaults: Mapping[str, str], config_file: Union[str, pathlib.Path]
 ):
     """Raise an exception if defaults contain keys that are not configurable
@@ -96,7 +80,7 @@ def check_config_integrity(config_file: Union[str, pathlib.Path]) -> None:
                 f"{errors}"
             )
         )
-    check_defaults(defaults, config_file)
+    _check_defaults(defaults, config_file)
 
 
 def _read_defaults(config_file: pathlib.Path) -> dict:

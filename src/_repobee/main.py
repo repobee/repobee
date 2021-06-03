@@ -87,7 +87,7 @@ def run(
     Returns:
         A mapping (plugin_name -> plugin_results).
     """
-    conf = plug.Config(pathlib.Path(config_file))
+    conf = _to_config(pathlib.Path(config_file))
     requested_workdir = pathlib.Path(str(workdir)).resolve(strict=True)
 
     def _ensure_is_module(p: Union[ModuleType, plug.Plugin]):
@@ -164,7 +164,7 @@ def _main(sys_args: List[str], unload_plugins: bool = True):
 
         _initialize_plugins(parsed_preparser_args)
 
-        conf = plug.Config(parsed_preparser_args.config_file)
+        conf = _to_config(parsed_preparser_args.config_file)
         parsed_args, api = _parse_args(app_args, conf)
         traceback = parsed_args.traceback
         pre_init = False
@@ -193,6 +193,12 @@ def _main(sys_args: List[str], unload_plugins: bool = True):
     finally:
         if unload_plugins:
             plugin.unregister_all_plugins()
+
+
+def _to_config(config_file: pathlib.Path) -> plug.Config:
+    if config_file.is_file():
+        _repobee.config.check_config_integrity(config_file)
+    return plug.Config(config_file)
 
 
 def _resolve_config_file(path: pathlib.Path,) -> pathlib.Path:
