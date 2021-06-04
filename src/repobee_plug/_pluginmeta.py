@@ -2,11 +2,11 @@ import argparse
 import shlex
 import itertools
 import inspect
-import configparser
 import re
 
 from typing import List, Tuple, Union, Iterator, Any, Optional
 
+import repobee_plug.config
 from repobee_plug import exceptions
 from repobee_plug import _corehooks
 from repobee_plug import _exthooks
@@ -170,7 +170,7 @@ def _extract_flat_cli_options(
     return itertools.chain.from_iterable(map(_flatten_arg, cli_args))
 
 
-def _attach_options(self, config, parser):
+def _attach_options(self, config: repobee_plug.config.Config, parser):
     parser = (
         parser
         if not isinstance(self, cli.CommandExtension)
@@ -179,27 +179,31 @@ def _attach_options(self, config, parser):
             description=f"Arguments for the {self.__plugin_name__} plugin",
         )
     )
-    config_name = self.__settings__.config_section_name or self.__plugin_name__
-    config_section = dict(config[config_name]) if config_name in config else {}
-
+    section_name = (
+        self.__settings__.config_section_name or self.__plugin_name__
+    )
     opts = _extract_cli_options(self.__class__.__dict__)
 
-    for (name, opt) in opts:
-        configured_value = _get_configured_value(name, opt, config_section)
-        if configured_value and not (
-            hasattr(opt, "configurable") and opt.configurable
-        ):
+    for (arg_name, opt) in opts:
+        configured_value = config.get(section_name, arg_name)
+        if configured_value and not getattr(opt, "configurable", None):
             raise exceptions.PlugError(
                 f"Plugin '{self.__plugin_name__}' does not allow "
-                f"'{name}' to be configured"
+                f"'{arg_name}' to be configured"
             )
-        _add_option(name, opt, configured_value, parser)
+
+        converted_value = (
+            _convert_configured_value(opt, configured_value)
+            if isinstance(opt, _Option)
+            else None
+        )
+        _add_option(arg_name, opt, converted_value, parser)
 
     return parser
 
 
-def _get_configured_value(
-    arg_name: str, opt: _Option, config_section: configparser.SectionProxy
+def _convert_configured_value(
+    opt: _Option, configured_value: Optional[Any]
 ) -> Optional[Any]:
     """Try to fetch a configured value from the config, respecting the
     converter of the option and also handling list-like arguments.
@@ -207,7 +211,6 @@ def _get_configured_value(
     Returns:
         The configured value, or none if there was no configured value.
     """
-    configured_value = config_section.get(arg_name)
     if (
         configured_value
         and opt.argparse_kwargs
@@ -251,7 +254,7 @@ def _flatten_arg(arg_tup):
 def _add_option(
     name: str,
     opt: Union[_Option, _MutuallyExclusiveGroup],
-    configured_value: str,
+    configured_value: Optional[Any],
     parser: Union[argparse.ArgumentParser, argparse._MutuallyExclusiveGroup],
 ) -> None:
     """Add an option to the parser based on the cli option."""

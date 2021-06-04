@@ -1,6 +1,5 @@
 """Functions for attaching plugin parsers."""
 import argparse
-import configparser
 
 from typing import List, Tuple
 
@@ -15,7 +14,7 @@ def add_plugin_parsers(
     subparsers: argparse._SubParsersAction,
     base_parsers: argparse_ext.BaseParsers,
     parsers_mapping: dict,
-    parsed_config: configparser.ConfigParser,
+    config: plug.Config,
 ):
     """Add parsers defined by plugins."""
     command_extension_plugins = [
@@ -26,7 +25,7 @@ def add_plugin_parsers(
     for cmd_ext in command_extension_plugins:
         for action in cmd_ext.__settings__.actions:
             parser = parsers_mapping[action]
-            cmd_ext.attach_options(config=parsed_config, parser=parser)
+            cmd_ext.attach_options(config=config, parser=parser)
 
     command_plugins = [
         p
@@ -34,9 +33,7 @@ def add_plugin_parsers(
         if isinstance(p, plug.cli.Command)
     ]
     for cmd in command_plugins:
-        _attach_command(
-            cmd, base_parsers, subparsers, parsers_mapping, parsed_config
-        )
+        _attach_command(cmd, base_parsers, subparsers, parsers_mapping, config)
 
 
 def _attach_command(
@@ -44,7 +41,7 @@ def _attach_command(
     base_parsers: argparse_ext.BaseParsers,
     subparsers: argparse._SubParsersAction,
     parsers_mapping: dict,
-    parsed_config: configparser.ConfigParser,
+    config: plug.Config,
 ) -> None:
     category, action, is_category_action = _resolve_category_and_action(cmd)
 
@@ -66,7 +63,7 @@ def _attach_command(
         subparsers=subparsers,
         parents=parents,
     )
-    cmd.attach_options(config=parsed_config, parser=ext_parser)
+    cmd.attach_options(config=config, parser=ext_parser)
 
     settings_dict = settings._asdict()
     settings_dict.update(dict(action=action, category=category))

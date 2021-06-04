@@ -19,23 +19,7 @@ from _repobee import exception
 from _repobee import constants
 
 
-def get_configured_defaults(config_file: Union[str, pathlib.Path]) -> dict:
-    """Access the config file and return a ConfigParser instance with
-    its contents.
-
-    Args:
-        config_file: Path to the config file.
-    Returns:
-        a dict with the contents of the config file. If there is no config
-        file, the return value is an empty dict.
-    """
-    config_file = pathlib.Path(config_file)
-    defaults = _read_defaults(config_file)
-    check_defaults(defaults, config_file)
-    return defaults
-
-
-def check_defaults(
+def _check_defaults(
     defaults: Mapping[str, str], config_file: Union[str, pathlib.Path]
 ):
     """Raise an exception if defaults contain keys that are not configurable
@@ -55,17 +39,16 @@ def check_defaults(
         )
 
 
-def execute_config_hooks(config_file: Union[str, pathlib.Path]) -> None:
+def execute_config_hooks(config: plug.Config) -> None:
     """Execute all config hooks.
 
     Args:
-        config_file: path to the config file.
+        config: The current configuration.
     """
-    config_file = pathlib.Path(config_file)
-    plug.manager.hook.handle_config(config=plug.Config(config_file))
-    if not config_file.is_file():
+    plug.manager.hook.handle_config(config=config)
+    if not config.path.is_file():
         return
-    config_parser = _read_config(config_file)
+    config_parser = _read_config(config.path)
     plug.manager.hook.config_hook(
         config_parser=config_parser
     )  # TODO remove by 3.8.0
@@ -97,7 +80,7 @@ def check_config_integrity(config_file: Union[str, pathlib.Path]) -> None:
                 f"{errors}"
             )
         )
-    check_defaults(defaults, config_file)
+    _check_defaults(defaults, config_file)
 
 
 def _read_defaults(config_file: pathlib.Path) -> dict:

@@ -1,7 +1,7 @@
 import os
 import argparse
 import types
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock, call, ANY
 from collections import namedtuple
 
 import pytest
@@ -97,11 +97,9 @@ def test_happy_path(
 
     main.main(sys_args)
 
-    handle_args_mock.assert_called_once_with(
-        sys_args[1:], config_file=_repobee.constants.DEFAULT_CONFIG_FILE
-    )
+    handle_args_mock.assert_called_once_with(sys_args[1:], ANY)
     dispatch_command_mock.assert_called_once_with(
-        PARSED_ARGS, api_instance_mock, _repobee.constants.DEFAULT_CONFIG_FILE
+        PARSED_ARGS, api_instance_mock, ANY
     )
 
 
@@ -116,9 +114,7 @@ def test_exit_status_1_on_exception_in_parsing(
         main.main(sys_args)
 
     assert exc_info.value.code == 1
-    handle_args_mock.assert_called_once_with(
-        sys_args[1:], config_file=_repobee.constants.DEFAULT_CONFIG_FILE
-    )
+    handle_args_mock.assert_called_once_with(sys_args[1:], config=ANY)
     assert not dispatch_command_mock.called
 
 
@@ -134,9 +130,7 @@ def test_exit_status_1_on_exception_in_handling_parsed_args(
         main.main(sys_args)
 
     assert exc_info.value.code == 1
-    handle_args_mock.assert_called_once_with(
-        sys_args[1:], config_file=_repobee.constants.DEFAULT_CONFIG_FILE
-    )
+    handle_args_mock.assert_called_once_with(sys_args[1:], config=ANY)
 
 
 def test_plugins_args(
@@ -154,9 +148,7 @@ def test_plugins_args(
         ],
         any_order=True,
     )
-    handle_args_mock.assert_called_once_with(
-        CLONE_ARGS, config_file=_repobee.constants.DEFAULT_CONFIG_FILE
-    )
+    handle_args_mock.assert_called_once_with(CLONE_ARGS, config=ANY)
 
 
 def test_no_plugins_arg(
@@ -172,9 +164,7 @@ def test_no_plugins_arg(
     init_plugins_mock.assert_called_once_with(
         DEFAULT_PLUGIN_NAMES, allow_qualified=True
     )
-    handle_args_mock.assert_called_once_with(
-        CLONE_ARGS, config_file=_repobee.constants.DEFAULT_CONFIG_FILE
-    )
+    handle_args_mock.assert_called_once_with(CLONE_ARGS, config=ANY)
 
 
 def test_no_plugins_with_configured_plugins(
@@ -190,9 +180,7 @@ def test_no_plugins_with_configured_plugins(
     init_plugins_mock.assert_called_once_with(
         DEFAULT_PLUGIN_NAMES, allow_qualified=True
     )
-    handle_args_mock.assert_called_once_with(
-        CLONE_ARGS, config_file=_repobee.constants.DEFAULT_CONFIG_FILE
-    )
+    handle_args_mock.assert_called_once_with(CLONE_ARGS, config=ANY)
 
 
 def test_dist_plugins_are_loaded_when_dist_install(monkeypatch):
@@ -252,9 +240,7 @@ def test_plugin_with_subparser_name(
         ],
         any_order=True,
     )
-    handle_args_mock.assert_called_once_with(
-        CLONE_ARGS, config_file=_repobee.constants.DEFAULT_CONFIG_FILE
-    )
+    handle_args_mock.assert_called_once_with(CLONE_ARGS, config=ANY)
 
 
 def test_plug_arg_incompatible_with_no_plugins(
@@ -333,8 +319,7 @@ def test_logs_traceback_on_exception_in_dispatch_if_traceback(
     assert exc_info.value.code == 1
     assert logger_exception_mock.called
     handle_args_mock.assert_called_once_with(
-        [*CLONE_ARGS, "--traceback"],
-        config_file=_repobee.constants.DEFAULT_CONFIG_FILE,
+        [*CLONE_ARGS, "--traceback"], config=ANY
     )
 
 

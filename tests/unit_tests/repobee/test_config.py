@@ -3,6 +3,8 @@ from unittest import mock
 
 import pytest
 
+import repobee_plug as plug
+
 import _repobee.constants
 from _repobee import config
 from _repobee import exception
@@ -18,98 +20,15 @@ PLUGINS = constants.PLUGINS
 CONFIG_TOKEN = constants.CONFIG_TOKEN
 
 
-class TestGetConfiguredDefaults:
-    """Tests for get_configured_defaults"""
-
-    def test_get_configured_defaults_no_config_file(
-        self, isfile_mock, unused_path
-    ):
-        defaults = config.get_configured_defaults(unused_path)
-        assert defaults == dict(token=constants.TOKEN)
-
-    def test_get_configured_defaults_empty_file(self, empty_config_mock):
-        with pytest.raises(exception.FileError) as exc_info:
-            config.get_configured_defaults(str(empty_config_mock))
-        assert "does not contain the required [repobee] header" in str(
-            exc_info.value
-        )
-
-    def test_get_configured_defaults_reads_full_config(
-        self, config_mock, students_file, mock_getenv
-    ):
-        mock_getenv.side_effect = lambda name: None
-
-        defaults = config.get_configured_defaults(str(config_mock))
-
-        assert defaults["user"] == USER
-        assert defaults["base_url"] == BASE_URL
-        assert defaults["org_name"] == ORG_NAME
-        assert defaults["students_file"] == str(students_file)
-        assert defaults["template_org_name"] == TEMPLATE_ORG_NAME
-        assert defaults["token"] == CONFIG_TOKEN
-
-    def test_token_in_env_variable_overrides_configuration_file(
-        self, config_mock
-    ):
-        defaults = config.get_configured_defaults(str(config_mock))
-        assert defaults["token"] == constants.TOKEN
-
-    def test_get_configured_defaults_raises_on_invalid_keys(
-        self, empty_config_mock, students_file
-    ):
-        invalid_key = "not_valid_key"
-        config_contents = os.linesep.join(
-            [
-                f"[{_repobee.constants.CORE_SECTION_HDR}]"
-                f"base_url = {BASE_URL}",
-                f"user = {USER}",
-                f"org_name = {ORG_NAME}",
-                f"template_org_name = {TEMPLATE_ORG_NAME}",
-                f"students_file = {str(students_file)}",
-                f"{invalid_key} = whatever",
-            ]
-        )
-        empty_config_mock.write(config_contents)
-
-        with pytest.raises(exception.FileError) as exc_info:
-            config.get_configured_defaults(str(empty_config_mock))
-
-        assert (
-            f"config file at {empty_config_mock} contains invalid default keys"
-        ) in str(exc_info.value)
-        assert str(empty_config_mock) in str(exc_info.value)
-        assert invalid_key in str(exc_info.value)
-
-    def test_get_configured_defaults_raises_on_missing_header(
-        self, empty_config_mock, students_file
-    ):
-        config_contents = os.linesep.join(
-            [
-                f"base_url = {BASE_URL}",
-                f"user = {USER}",
-                f"org_name = {ORG_NAME}",
-                f"students_file = {str(students_file)}",
-            ]
-        )
-        empty_config_mock.write(config_contents)
-
-        with pytest.raises(exception.FileError) as exc_info:
-            config.get_configured_defaults(str(empty_config_mock))
-
-        assert "does not contain the required [repobee] header" in str(
-            exc_info.value
-        )
-
-
 class TestExecuteConfigHooks:
     """Tests for execute_config_hooks."""
 
     def test_with_no_config_file(self, unused_path, plugin_manager_mock):
-        config.execute_config_hooks(config_file=unused_path)
+        config.execute_config_hooks(config=plug.Config(unused_path))
         assert not plugin_manager_mock.hook.config_hook.called
 
-    def test_with_config_file(self, config_mock, plugin_manager_mock):
-        config.execute_config_hooks(str(config_mock))
+    def test_with_config_file(self, full_config, plugin_manager_mock):
+        config.execute_config_hooks(full_config)
 
         # TODO assert with a real value instead of mock.ANY
         plugin_manager_mock.hook.config_hook.assert_called_once_with(
