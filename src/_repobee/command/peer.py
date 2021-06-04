@@ -493,7 +493,7 @@ def check_reviews_repobee_4(
     plug.echo(
         formatters.format_peer_review_progress_output(
             reviews,
-            list(itertools.chain.from_iterable(expected_reviewers.values()),),
+            list(itertools.chain.from_iterable(expected_reviewers.values())),
             num_reviews,
         )
     )

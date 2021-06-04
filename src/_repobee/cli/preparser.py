@@ -82,7 +82,7 @@ def add_arguments(
     )
 
 
-def clean_arguments(args: argparse.Namespace,) -> None:
+def clean_arguments(args: argparse.Namespace) -> None:
     """Cleans the namespace of arguments that were already handled by the
     preprocessor.
 
