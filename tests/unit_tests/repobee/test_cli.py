@@ -437,7 +437,7 @@ class TestDispatchCommand:
 
 
 @pytest.mark.parametrize("action", repobee_plug.cli.CoreCommand.iter_actions())
-def test_help_calls_add_arguments(monkeypatch, action):
+def test_help_calls_add_arguments(config_for_tests, monkeypatch, action):
     """Test that the --help command causes _OrderedFormatter.add_arguments to
     be called. The reason this may not be the case is that
     HelpFormatter.add_arguments is not technically public, and so it could be
@@ -456,7 +456,9 @@ def test_help_calls_add_arguments(monkeypatch, action):
     )
 
     with pytest.raises(SystemExit) as exc_info:
-        _repobee.cli.parsing.handle_args([*action.as_name_tuple(), "--help"])
+        _repobee.cli.parsing.handle_args(
+            [*action.as_name_tuple(), "--help"], config_for_tests
+        )
 
     assert exc_info.value.code == 0
     assert called
@@ -480,9 +482,13 @@ class TestBaseParsing:
         ],
     )
     def test_template_org_overrides_target_org_for_master_repos(
-        self, command_mock, dummyapi_instance, students_file, action
+        self,
+        command_mock,
+        dummyapi_instance,
+        students_file,
+        config_for_tests,
+        action,
     ):
-        print(plug.manager.get_plugins())
         parsed_args, _ = _repobee.cli.parsing.handle_args(
             [
                 *action.as_name_tuple(),
@@ -491,7 +497,8 @@ class TestBaseParsing:
                 str(students_file),
                 "--to",
                 TEMPLATE_ORG_NAME,
-            ]
+            ],
+            config_for_tests,
         )
 
         assert all(
@@ -509,7 +516,7 @@ class TestBaseParsing:
         ],
     )
     def test_template_org_name_defaults_to_org_name(
-        self, dummyapi_instance, students_file, action
+        self, dummyapi_instance, students_file, config_for_tests, action
     ):
         parsed_args, _ = _repobee.cli.parsing.handle_args(
             [
@@ -517,7 +524,8 @@ class TestBaseParsing:
                 *COMPLETE_PUSH_ARGS,
                 "--sf",
                 str(students_file),
-            ]
+            ],
+            config_for_tests,
         )
 
         assert all(
@@ -535,7 +543,7 @@ class TestBaseParsing:
         ],
     )
     def test_token_env_variable_picked_up(
-        self, dummyapi_instance, students_file, action
+        self, dummyapi_instance, students_file, config_for_tests, action
     ):
         parsed_args, _ = _repobee.cli.parsing.handle_args(
             [
@@ -543,7 +551,8 @@ class TestBaseParsing:
                 *COMPLETE_PUSH_ARGS,
                 "--sf",
                 str(students_file),
-            ]
+            ],
+            config_for_tests,
         )
 
         assert parsed_args.token == TOKEN
@@ -556,7 +565,12 @@ class TestBaseParsing:
         ],
     )
     def test_token_cli_arg_picked_up(
-        self, mocker, dummyapi_instance, students_file, action
+        self,
+        mocker,
+        dummyapi_instance,
+        students_file,
+        config_for_tests,
+        action,
     ):
         mocker.patch("os.getenv", return_value="")
         token = "supersecretothertoken"
@@ -568,7 +582,8 @@ class TestBaseParsing:
                 str(students_file),
                 "-t",
                 token,
-            ]
+            ],
+            config_for_tests,
         )
 
         assert parsed_args.token == token
@@ -581,7 +596,7 @@ class TestBaseParsing:
         ],
     )
     def test_raises_on_non_tls_api_url(
-        self, dummyapi_instance, students_file, url
+        self, dummyapi_instance, students_file, config_for_tests, url
     ):
         """Test that a non https url causes parse-args to raise. Sending the token
         over an unencrypted connection would be a security risk, so https is
@@ -598,15 +613,17 @@ class TestBaseParsing:
             *BASE_PUSH_ARGS,
             "--sf",
             str(students_file),
+            "-t",
+            "dontcare",
         ]
 
         with pytest.raises(exception.ParseError) as exc_info:
-            _repobee.cli.parsing.handle_args(sys_args)
+            _repobee.cli.parsing.handle_args(sys_args, config_for_tests)
 
         assert "unsupported protocol in {}".format(url) in str(exc_info.value)
 
     def test_correctly_parsers_teams_create(
-        self, dummyapi_instance, students_file
+        self, dummyapi_instance, students_file, config_for_tests
     ):
         """Test that the ``teams create`` command is correctly parsed."""
         sys_args = [
@@ -616,7 +633,9 @@ class TestBaseParsing:
             str(students_file),
         ]
 
-        parsed_args, api = _repobee.cli.parsing.handle_args(sys_args)
+        parsed_args, api = _repobee.cli.parsing.handle_args(
+            sys_args, config_for_tests
+        )
 
         assert api == dummyapi_instance
         assert parsed_args.students == list(STUDENTS)
@@ -650,7 +669,9 @@ class TestStudentParsing:
     ]
 
     @pytest.mark.parametrize(*STUDENT_PARSING_PARAMS, ids=STUDENT_PARSING_IDS)
-    def test_raises_if_students_file_is_not_a_file(self, action, extra_args):
+    def test_raises_if_students_file_is_not_a_file(
+        self, config_for_tests, action, extra_args
+    ):
         not_a_file = "this-is-not-a-file"
         sys_args = [
             *action.as_name_tuple(),
@@ -661,13 +682,13 @@ class TestStudentParsing:
         ]
 
         with pytest.raises(exception.FileError) as exc_info:
-            _repobee.cli.parsing.handle_args(sys_args)
+            _repobee.cli.parsing.handle_args(sys_args, config_for_tests)
 
         assert not_a_file in str(exc_info.value)
 
     @pytest.mark.parametrize(*STUDENT_PARSING_PARAMS, ids=STUDENT_PARSING_IDS)
     def test_parser_listing_students(
-        self, read_issue_mock, action, extra_args
+        self, config_for_tests, read_issue_mock, action, extra_args
     ):
         """Test that the different subparsers parse arguments corectly when
         students are listed directly on the command line.
@@ -680,13 +701,20 @@ class TestStudentParsing:
             *extra_args,
         ]
 
-        parsed_args, _ = _repobee.cli.parsing.handle_args(sys_args)
+        parsed_args, _ = _repobee.cli.parsing.handle_args(
+            sys_args, config_for_tests
+        )
 
         assert parsed_args.students == list(STUDENTS)
 
     @pytest.mark.parametrize(*STUDENT_PARSING_PARAMS, ids=STUDENT_PARSING_IDS)
     def test_parser_student_file(
-        self, students_file, read_issue_mock, action, extra_args
+        self,
+        config_for_tests,
+        students_file,
+        read_issue_mock,
+        action,
+        extra_args,
     ):
         """Test that the different subparsers read students correctly from
         file.
@@ -699,13 +727,20 @@ class TestStudentParsing:
             *extra_args,
         ]
 
-        parsed_args, _ = _repobee.cli.parsing.handle_args(sys_args)
+        parsed_args, _ = _repobee.cli.parsing.handle_args(
+            sys_args, config_for_tests
+        )
 
         assert parsed_args.students == list(STUDENTS)
 
     @pytest.mark.parametrize(*STUDENT_PARSING_PARAMS, ids=STUDENT_PARSING_IDS)
     def test_student_parsers_raise_on_empty_student_file(
-        self, read_issue_mock, empty_students_file, action, extra_args
+        self,
+        config_for_tests,
+        read_issue_mock,
+        empty_students_file,
+        action,
+        extra_args,
     ):
         """Test that an error is raised if the student file is empty."""
         sys_args = [
@@ -717,13 +752,18 @@ class TestStudentParsing:
         ]
 
         with pytest.raises(exception.FileError) as exc_info:
-            _repobee.cli.parsing.handle_args(sys_args)
+            _repobee.cli.parsing.handle_args(sys_args, config_for_tests)
 
         assert "is empty" in str(exc_info.value)
 
     @pytest.mark.parametrize(*STUDENT_PARSING_PARAMS, ids=STUDENT_PARSING_IDS)
     def test_parsers_raise_if_both_file_and_listing(
-        self, read_issue_mock, students_file, action, extra_args
+        self,
+        config_for_tests,
+        read_issue_mock,
+        students_file,
+        action,
+        extra_args,
     ):
         """Test that the student subparsers raise if students are both listed
         on the CLI, and a file is specified.
@@ -739,11 +779,16 @@ class TestStudentParsing:
         ]
 
         with pytest.raises(SystemExit):
-            _repobee.cli.parsing.handle_args(sys_args)
+            _repobee.cli.parsing.handle_args(sys_args, config_for_tests)
 
     @pytest.mark.parametrize(*STUDENT_PARSING_PARAMS, ids=STUDENT_PARSING_IDS)
     def test_student_groups_parsed_correcly(
-        self, empty_students_file, read_issue_mock, action, extra_args
+        self,
+        config_for_tests,
+        empty_students_file,
+        read_issue_mock,
+        action,
+        extra_args,
     ):
         """Test that putting multiple students on the same line in the students
         file results in them being in the same group.
@@ -770,14 +815,21 @@ class TestStudentParsing:
         ]
 
         # act
-        parsed_args, _ = _repobee.cli.parsing.handle_args(sys_args)
+        parsed_args, _ = _repobee.cli.parsing.handle_args(
+            sys_args, config_for_tests
+        )
 
         # assert
         assert sorted(parsed_args.students) == expected_groups
 
     @pytest.mark.parametrize(*STUDENT_PARSING_PARAMS, ids=STUDENT_PARSING_IDS)
     def test_raises_if_generated_team_name_too_long(
-        self, empty_students_file, read_issue_mock, action, extra_args
+        self,
+        config_for_tests,
+        empty_students_file,
+        read_issue_mock,
+        action,
+        extra_args,
     ):
         """Test that the parser raises a ValueError if the team name generated
         from a group of students is longer than the maximum allowed by GitHub.
@@ -802,7 +854,7 @@ class TestStudentParsing:
 
         # act
         with pytest.raises(ValueError) as exc_info:
-            _repobee.cli.parsing.handle_args(sys_args)
+            _repobee.cli.parsing.handle_args(sys_args, config_for_tests)
 
         # assert
         assert "generated Team/Repository name is too long" in str(
@@ -861,7 +913,7 @@ class TestConfig:
         ],
     )
     def test_full_config(
-        self, config_mock, read_issue_mock, action, extra_args
+        self, full_config, read_issue_mock, action, extra_args
     ):
         """Test that a fully configured file works. This means that
         base_url, org_name, user and student list are all
@@ -869,13 +921,17 @@ class TestConfig:
         """
         sys_args = [*action.as_name_tuple(), *extra_args]
 
-        parsed_args, _ = _repobee.cli.parsing.handle_args(sys_args)
+        parsed_args, _ = _repobee.cli.parsing.handle_args(
+            sys_args, full_config
+        )
         assert_config_args(action, parsed_args)
 
     # TODO test that not having base_url, org_name, user or
     # students_file in the config makes them required!
 
-    def test_missing_option_is_required(self, config_missing_option):
+    def test_missing_option_is_required(
+        self, config_missing_option, config_for_tests
+    ):
         """Test that a config that is missing one option (that is not
         specified on the command line) causes a SystemExit on parsing.
         """
@@ -890,11 +946,13 @@ class TestConfig:
         ]
 
         with pytest.raises(SystemExit):
-            parsed_args, _ = _repobee.cli.parsing.handle_args(sys_args)
+            parsed_args, _ = _repobee.cli.parsing.handle_args(
+                sys_args, config_for_tests
+            )
         # TODO actually verify that the SystemExit came from the parsing!
 
     def test_missing_option_can_be_specified(
-        self, config_missing_option, mocker, students_file
+        self, config_missing_option, config_for_tests, students_file
     ):
         """Test that a missing config option can be specified on the command
         line. Does not assert that the options are parsed correctly, only that
@@ -916,7 +974,7 @@ class TestConfig:
         ]
 
         # only asserts that there is no crash
-        _repobee.cli.parsing.handle_args(sys_args)
+        _repobee.cli.parsing.handle_args(sys_args, config_for_tests)
 
 
 @pytest.mark.parametrize(
@@ -929,7 +987,7 @@ class TestConfig:
 class TestSetupAndUpdateParsers:
     """Tests that are in common for setup and update."""
 
-    def test_happy_path(self, action):
+    def test_happy_path(self, config_for_tests, action):
         """Tests standard operation of the parsers."""
         sys_args = [
             *action.as_name_tuple(),
@@ -938,11 +996,15 @@ class TestSetupAndUpdateParsers:
             *STUDENTS_STRING.split(),
         ]
 
-        parsed_args, _ = _repobee.cli.parsing.handle_args(sys_args)
+        parsed_args, _ = _repobee.cli.parsing.handle_args(
+            sys_args, config_for_tests
+        )
 
         assert_base_push_args(parsed_args)
 
-    def test_finds_local_repo(self, mocker, dummyapi_instance, action):
+    def test_finds_local_repo(
+        self, config_for_tests, mocker, dummyapi_instance, action
+    ):
         """Tests that the parsers pick up local repos when they are not
         found in the organization.
         """
@@ -967,7 +1029,9 @@ class TestSetupAndUpdateParsers:
             "--allow-local-templates",
         ]
 
-        parsed_args, _ = _repobee.cli.parsing.handle_args(sys_args)
+        parsed_args, _ = _repobee.cli.parsing.handle_args(
+            sys_args, config_for_tests
+        )
 
         assert sorted(parsed_args.template_repo_urls) == sorted(expected)
 
@@ -986,14 +1050,14 @@ class TestMigrateParser:
             "_repobee.util.is_git_repo", autospec=True, return_value=True
         )
 
-    def assert_migrate_args(self, parsed_args) -> bool:
+    def assert_migrate_args(self, parsed_args) -> None:
         assert parsed_args.user == USER
         assert parsed_args.org_name == ORG_NAME
         assert parsed_args.base_url == BASE_URL
         assert parsed_args.assignments == self.NAMES
         assert parsed_args.template_repo_urls == self.LOCAL_URIS
 
-    def test_happy_path(self):
+    def test_happy_path(self, config_for_tests):
         sys_args = [
             *repobee_plug.cli.CoreCommand.repos.migrate.as_name_tuple(),
             *BASE_ARGS,
@@ -1002,7 +1066,9 @@ class TestMigrateParser:
             "--allow-local-templates",
         ]
 
-        parsed_args, _ = _repobee.cli.parsing.handle_args(sys_args)
+        parsed_args, _ = _repobee.cli.parsing.handle_args(
+            sys_args, config_for_tests
+        )
 
         self.assert_migrate_args(parsed_args)
 
@@ -1010,11 +1076,11 @@ class TestMigrateParser:
 class TestVerifyParser:
     """Tests for the VERIFY_PARSER."""
 
-    def test_happy_path(self):
+    def test_happy_path(self, config_for_tests):
         action = repobee_plug.cli.CoreCommand.config.verify
         sys_args = [*action.as_name_tuple(), *BASE_ARGS]
 
-        args, _ = _repobee.cli.parsing.handle_args(sys_args)
+        args, _ = _repobee.cli.parsing.handle_args(sys_args, config_for_tests)
 
         assert (args.category, args.action) == action.astuple()
         assert args.org_name == ORG_NAME
@@ -1025,7 +1091,7 @@ class TestVerifyParser:
 class TestCloneParser:
     """Tests for the CLONE_PARSER."""
 
-    def test_happy_path(self, students_file):
+    def test_happy_path(self, students_file, config_for_tests):
         action = repobee_plug.cli.CoreCommand.repos.clone
         sys_args = [
             *action.as_name_tuple(),
@@ -1036,7 +1102,7 @@ class TestCloneParser:
             str(students_file),
         ]
 
-        args, _ = _repobee.cli.parsing.handle_args(sys_args)
+        args, _ = _repobee.cli.parsing.handle_args(sys_args, config_for_tests)
 
         assert (args.category, args.action) == action.astuple()
         assert args.org_name == ORG_NAME
@@ -1047,9 +1113,10 @@ class TestCloneParser:
 class TestShowConfigParser:
     """Tests for repobee show-config"""
 
-    def test_happy_path(self):
+    def test_happy_path(self, config_for_tests):
         args, _ = _repobee.cli.parsing.handle_args(
-            repobee_plug.cli.CoreCommand.config.show.as_name_tuple()
+            repobee_plug.cli.CoreCommand.config.show.as_name_tuple(),
+            config_for_tests,
         )
 
         assert (

@@ -246,9 +246,16 @@ _config_org = "org_name = {}".format(constants.ORG_NAME)
 _config_template_org = "template_org_name = {}".format(
     constants.TEMPLATE_ORG_NAME
 )
+_config_token = f"token = {constants.TOKEN}"
 
 
-@pytest.fixture(params=["--bu", "-u", "--sf", "-o", "--to"])
+@pytest.fixture
+def config_for_tests(empty_config_mock):
+    """Returns the Config used in the tests and by other fixtures."""
+    return plug.Config(empty_config_mock)
+
+
+@pytest.fixture(params=["--bu", "-u", "--sf", "-o", "--to", "-t"])
 def config_missing_option(request, empty_config_mock, students_file):
     missing_option = request.param
 
@@ -263,6 +270,8 @@ def config_missing_option(request, empty_config_mock, students_file):
         config_contents.append(_config_user)
     if not missing_option == "--to":
         config_contents.append(_config_template_org)
+    if not missing_option == "-t":
+        config_contents.append(_config_token)
 
     empty_config_mock.write(os.linesep.join(config_contents))
 
@@ -285,6 +294,12 @@ def config_mock(empty_config_mock, students_file):
     )
     empty_config_mock.write(config_contents)
     yield empty_config_mock
+
+
+@pytest.fixture
+def full_config(config_mock):
+    # TODO remove use of config_mock here
+    return plug.Config(pathlib.Path(config_mock))
 
 
 @pytest.fixture

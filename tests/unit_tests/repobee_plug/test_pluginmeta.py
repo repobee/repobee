@@ -11,6 +11,12 @@ from repobee_plug import exceptions
 import repobee
 
 
+@pytest.fixture
+def empty_config(tmp_path_factory):
+    path = tmp_path_factory.mktemp("dir") / "config.ini"
+    return plug.Config(path)
+
+
 class TestPluginInheritance:
     def test_raises_on_non_hook_public_method(self):
         with pytest.raises(exceptions.HookNameError) as exc_info:
@@ -122,7 +128,7 @@ class TestDeclarativeExtensionCommand:
 
         return Greeting
 
-    def test_default_settings(self, basic_greeting_command):
+    def test_default_settings(self, basic_greeting_command, empty_config):
         """Test declaring an command with no explicit metadata, and checking
         that the defaults are as expected.
         """
@@ -134,17 +140,17 @@ class TestDeclarativeExtensionCommand:
         assert settings.base_parsers is None
         assert settings.category is None
 
-    def test_generated_parser(self, basic_greeting_command):
+    def test_generated_parser(self, basic_greeting_command, empty_config):
         """Test the parser that's generated automatically."""
         plugin_instance = basic_greeting_command("g")
         parser = argparse.ArgumentParser()
-        plugin_instance.attach_options(config={}, parser=parser)
+        plugin_instance.attach_options(config=empty_config, parser=parser)
         args = parser.parse_args("--name Eve".split())
 
         assert args.name == "Eve"
         assert args.age == 30  # this is the default for --age
 
-    def test_configuration(self):
+    def test_configuration(self, empty_config):
         """Test configuring a default value for an option."""
 
         class Greeting(plug.Plugin, plug.cli.Command):
@@ -157,7 +163,10 @@ class TestDeclarativeExtensionCommand:
 
         plugin_name = "greeting"
         configured_name = "Alice"
-        config = {plugin_name: {"name": configured_name}}
+        config = empty_config
+        config.create_section(plugin_name)
+        config[plugin_name]["name"] = configured_name
+
         plugin_instance = Greeting("greeting")
         parser = argparse.ArgumentParser()
         plugin_instance.attach_options(config=config, parser=parser)
@@ -165,7 +174,7 @@ class TestDeclarativeExtensionCommand:
 
         assert args.name == configured_name
 
-    def test_configure_list_like_args(self):
+    def test_configure_list_like_args(self, empty_config):
         """Test setting configured values for list-like arguments (i.e. with
         `nargs` in argparse).
         """
@@ -209,18 +218,17 @@ class TestDeclarativeExtensionCommand:
             "Eve Evesson",
         )
         expected_location = ("Stockholm", "Sweden")
-        config = {
-            plugin_name: {
-                "names": " ".join(expected_configured_names),
-                "fullnames": " ".join(
-                    # the full names must be quoted as they contain a space
-                    f"'{fn}'"
-                    for fn in expected_configured_fullnames
-                ),
-                "numbers": " ".join(map(str, expected_configured_numbers)),
-                "location": " ".join(expected_location),
-            },
-        }
+        config = empty_config
+        config.create_section(plugin_name)
+        section = config[plugin_name]
+        section["names"] = " ".join(expected_configured_names)
+        section["fullnames"] = " ".join(
+            # the full names must be quoted as they contain a space
+            f"'{fn}'"
+            for fn in expected_configured_fullnames
+        )
+        section["numbers"] = " ".join(map(str, expected_configured_numbers))
+        section["location"] = " ".join(expected_location)
 
         plugin_instance = Greeting(plugin_name)
         parser = argparse.ArgumentParser()
@@ -299,7 +307,7 @@ class TestDeclarativeExtensionCommand:
             in str(exc_info.value)
         )
 
-    def test_override_opt_names(self):
+    def test_override_opt_names(self, empty_config):
         """It should be possible to override both the long and short option
         names of an option.
         """
@@ -317,7 +325,7 @@ class TestDeclarativeExtensionCommand:
 
         plugin_instance = Greeting("g")
         parser = argparse.ArgumentParser()
-        plugin_instance.attach_options(config={}, parser=parser)
+        plugin_instance.attach_options(config=empty_config, parser=parser)
         name = "Alice"
 
         short_opt_args = parser.parse_args(f"-n {name}".split())
@@ -326,7 +334,7 @@ class TestDeclarativeExtensionCommand:
         assert short_opt_args.name == name
         assert long_opt_args.name == name
 
-    def test_positional_arguments(self):
+    def test_positional_arguments(self, empty_config):
         class Greeting(plug.Plugin, plug.cli.Command):
             name = plug.cli.positional()
             age = plug.cli.positional(converter=int)
@@ -336,7 +344,7 @@ class TestDeclarativeExtensionCommand:
 
         plugin_instance = Greeting("g")
         parser = argparse.ArgumentParser()
-        plugin_instance.attach_options(config={}, parser=parser)
+        plugin_instance.attach_options(config=empty_config, parser=parser)
 
         name = "Alice"
         age = 33
@@ -345,7 +353,9 @@ class TestDeclarativeExtensionCommand:
         assert parsed_args.name == name
         assert parsed_args.age == age
 
-    def test_mutex_group_arguments_are_mutually_exclusive(self, capsys):
+    def test_mutex_group_arguments_are_mutually_exclusive(
+        self, capsys, empty_config
+    ):
         """Test that mutually exclusive arguments can't be provided at the same
         time.
         """
@@ -362,7 +372,7 @@ class TestDeclarativeExtensionCommand:
 
         plugin_instance = Greeting("g")
         parser = argparse.ArgumentParser()
-        plugin_instance.attach_options(config={}, parser=parser)
+        plugin_instance.attach_options(config=empty_config, parser=parser)
 
         with pytest.raises(SystemExit):
             parser.parse_args("--age 12 --old".split())
@@ -385,7 +395,7 @@ class TestDeclarativeExtensionCommand:
         arg_type_str = plug.cli.args._ArgumentType.POSITIONAL.value
         assert f"{arg_type_str} not allowed in mutex" in str(exc_info.value)
 
-    def test_mutex_group_allows_one_argument(self):
+    def test_mutex_group_allows_one_argument(self, empty_config):
         """Test that a mutex group allows one argument to be specified."""
         old = 1337
 
@@ -401,7 +411,7 @@ class TestDeclarativeExtensionCommand:
 
         plugin_instance = Greeting("g")
         parser = argparse.ArgumentParser()
-        plugin_instance.attach_options(config={}, parser=parser)
+        plugin_instance.attach_options(config=empty_config, parser=parser)
 
         parsed_args = parser.parse_args(["--old"])
 

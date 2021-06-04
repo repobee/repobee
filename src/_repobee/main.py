@@ -23,9 +23,9 @@ import _repobee.cli.parsing
 import _repobee.cli.preparser
 import _repobee.cli.mainparser
 import _repobee.constants
+import _repobee.config
 from _repobee import plugin
 from _repobee import exception
-from _repobee import config
 from _repobee.cli.preparser import separate_args
 from _repobee import distinfo
 from _repobee import disthelpers
@@ -87,7 +87,7 @@ def run(
     Returns:
         A mapping (plugin_name -> plugin_results).
     """
-    config_file = pathlib.Path(config_file)
+    conf = _to_config(pathlib.Path(config_file))
     requested_workdir = pathlib.Path(str(workdir)).resolve(strict=True)
 
     def _ensure_is_module(p: Union[ModuleType, plug.Plugin]):
@@ -110,11 +110,11 @@ def run(
             # refactored
             _initialize_plugins(argparse.Namespace(no_plugins=False, plug=[]))
             plugin.register_plugins(wrapped_plugins)
-            parsed_args, api = _parse_args(cmd, config_file)
+            parsed_args, api = _parse_args(cmd, conf)
 
             with _set_output_verbosity(getattr(parsed_args, "quiet", 0)):
                 return _repobee.cli.dispatch.dispatch_command(
-                    parsed_args, api, config_file
+                    parsed_args, api, conf
                 )
         finally:
             plugin.unregister_all_plugins()
@@ -164,16 +164,13 @@ def _main(sys_args: List[str], unload_plugins: bool = True):
 
         _initialize_plugins(parsed_preparser_args)
 
-        parsed_args, api = _parse_args(
-            app_args, parsed_preparser_args.config_file
-        )
+        conf = _to_config(parsed_preparser_args.config_file)
+        parsed_args, api = _parse_args(app_args, conf)
         traceback = parsed_args.traceback
         pre_init = False
 
         with _set_output_verbosity(getattr(parsed_args, "quiet", 0)):
-            _repobee.cli.dispatch.dispatch_command(
-                parsed_args, api, parsed_preparser_args.config_file
-            )
+            _repobee.cli.dispatch.dispatch_command(parsed_args, api, conf)
     except exception.PluginLoadError as exc:
         plug.log.error(f"{exc.__class__.__name__}: {exc}")
         raise
@@ -196,6 +193,12 @@ def _main(sys_args: List[str], unload_plugins: bool = True):
     finally:
         if unload_plugins:
             plugin.unregister_all_plugins()
+
+
+def _to_config(config_file: pathlib.Path) -> plug.Config:
+    if config_file.is_file():
+        _repobee.config.check_config_integrity(config_file)
+    return plug.Config(config_file)
 
 
 def _resolve_config_file(path: pathlib.Path,) -> pathlib.Path:
@@ -232,11 +235,9 @@ def _initialize_plugins(parsed_preparser_args: argparse.Namespace) -> None:
         plugin.initialize_plugins(plugin_names, allow_filepath=True)
 
 
-def _parse_args(args, config_file):
-    config.execute_config_hooks(config_file)
-    parsed_args, api = _repobee.cli.parsing.handle_args(
-        args, config_file=config_file
-    )
+def _parse_args(args: List[str], config: plug.Config):
+    _repobee.config.execute_config_hooks(config)
+    parsed_args, api = _repobee.cli.parsing.handle_args(args, config)
     plug.manager.hook.handle_processed_args(args=parsed_args)
     return parsed_args, api
 
