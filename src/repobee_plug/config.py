@@ -54,7 +54,7 @@ class Config:
         super().__init__()
         self._config_path = config_path
         self._config_parser = configparser.ConfigParser()
-        self._parent = None
+        self._parent: Optional[Config] = None
         self.create_section(self._CORE_SECTION)
         self._check_for_cycle(paths=[])
         self.refresh()
