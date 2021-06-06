@@ -36,6 +36,7 @@ ORDERED_CONFIGURABLE_ARGS = (
     "template_org_name",
     "token",
     "students_file",
+    "parent",
 )
 CONFIGURABLE_ARGS = set(ORDERED_CONFIGURABLE_ARGS)
 

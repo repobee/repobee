@@ -186,15 +186,12 @@ class TestConfigInheritance:
         child_value = "something"
 
         parent_config = plug.Config(second_tmpdir / "base-config.ini")
-        parent_config.create_section(section_name)
         parent_config[section_name][parent_key] = parent_value
         parent_config.store()
 
-        child_config = plug.Config(
-            first_tmpdir / "config.ini", parent=parent_config
-        )
-        child_config.create_section(section_name)
+        child_config = plug.Config(first_tmpdir / "config.ini")
         child_config[section_name][child_key] = child_value
+        child_config.parent = parent_config
         child_config.store()
 
         fetched_child_value = None
