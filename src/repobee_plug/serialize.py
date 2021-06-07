@@ -23,7 +23,7 @@ def result_mapping_to_json(result_mapping: Mapping[str, List[Result]]) -> str:
     return json.dumps(hook_results_as_dicts, indent=4, ensure_ascii=False)
 
 
-def json_to_result_mapping(json_string: str,) -> Mapping[str, List[Result]]:
+def json_to_result_mapping(json_string: str) -> Mapping[str, List[Result]]:
     """Deserialize a JSON string to a mapping ``repo_name: str -> hook_results:
     List[Result]``
     """

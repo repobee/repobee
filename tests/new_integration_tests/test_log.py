@@ -5,8 +5,7 @@ from repobee_testhelpers import funcs
 
 
 def test_auto_truncates_log_file(monkeypatch, tmp_path_factory):
-    """The log file should be truncated by any command when it gets too large.
-    """
+    """The log file should be truncated by any command when it gets too large."""
     # arrange
     log_dir = tmp_path_factory.mktemp("logs")
     logfile = log_dir / "repobee.log"
@@ -26,8 +25,7 @@ def test_auto_truncates_log_file(monkeypatch, tmp_path_factory):
 
 
 def test_auto_truncation_retains_final_lines(monkeypatch, tmp_path_factory):
-    """The log file should be truncated by any command when it gets too large.
-    """
+    """The log file should be truncated by any command when it gets too large."""
     # arrange
     log_dir = tmp_path_factory.mktemp("logs")
     logfile = log_dir / "repobee.log"

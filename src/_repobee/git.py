@@ -196,7 +196,7 @@ def clone_student_repos(
     )
 
 
-def _warn_local_repos(local: List[plug.StudentRepo],):
+def _warn_local_repos(local: List[plug.StudentRepo]):
     local_repo_ids = [f"{repo.team.name}/{repo.name}" for repo in local]
     plug.log.warning(
         f"Found local repos, skipping: {', '.join(local_repo_ids)}"

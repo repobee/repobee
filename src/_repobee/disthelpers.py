@@ -7,7 +7,7 @@ import sys
 import types
 import os
 
-from typing import Optional, List
+from typing import Optional, List, Any
 
 import requests
 import repobee_plug as plug
@@ -150,28 +150,55 @@ def pip(command: str, *args, **kwargs) -> subprocess.CompletedProcess:
             dependencies.
     """
     cli_args = list(args)
-    cli_kwargs = [
+    cli_kwargs = [_to_cli_kwarg(key, val) for key, val in kwargs.items()]
+    env = dict(os.environ)
+    run_pip_func = (
+        _run_pip_install if command == "install" else _run_pip_without_prompts
+    )
+    return run_pip_func(command, cli_args, cli_kwargs, env)
+
+
+def _to_cli_kwarg(key: str, val: Any) -> str:
+    return (
         f"--{key.replace('_', '-')}"
         # True is interpreted as a flag
         + (f"={val}" if val is not True else "")
-        for key, val in kwargs.items()
-    ]
-    env = dict(os.environ)
-    if command == "install":
-        if "pip" not in cli_args:
-            # always upgrade pip before running an install to ensure that the
-            # 2020-resolver is available
-            pip_upgrade_rc = pip("install", "-U", "pip").returncode
-            assert pip_upgrade_rc == 0
+    )
 
-        # REPOBEE_INSTALL_DIR must be available when upgrading RepoBee,
-        # or the dist plugins aren't activated
-        env["REPOBEE_INSTALL_DIR"] = str(distinfo.INSTALL_DIR)
 
-        # due to the hack in setup.py to edit the distinfo, we must build
-        # RepoBee from source
-        cli_kwargs.append("--no-binary=repobee")
+def _run_pip_install(
+    command: str, cli_args: List[str], cli_kwargs: List[str], env: dict
+) -> subprocess.CompletedProcess:
+    """When running ``pip install``, we must take some extra steps to ensure that
+    the environment is ammenable to installing RepoBee. E.g. upgrading pip and
+    ensuring that RepoBee's install dir is in the environment.
+    """
+    cli_args = list(cli_args)
+    cli_kwargs = list(cli_kwargs)
+    env = dict(env)
 
+    if "pip" not in cli_args:
+        # always upgrade pip before running an install to ensure that the
+        # 2020-resolver is available
+        pip_upgrade_rc = _run_pip_without_prompts(
+            "install", cli_args=["-U", "pip"], cli_kwargs=[], env=env
+        ).returncode
+        assert pip_upgrade_rc == 0
+
+    # REPOBEE_INSTALL_DIR must be available when upgrading RepoBee,
+    # or the dist plugins aren't activated
+    env["REPOBEE_INSTALL_DIR"] = str(distinfo.INSTALL_DIR)
+
+    # due to the hack in setup.py to edit the distinfo, we must build
+    # RepoBee from source
+    cli_kwargs.append("--no-binary=repobee")
+
+    return _run_pip_without_prompts(command, cli_args, cli_kwargs, env)
+
+
+def _run_pip_without_prompts(
+    command: str, cli_args: List[str], cli_kwargs: List[str], env: dict
+) -> subprocess.CompletedProcess:
     if "--no-input" not in cli_args:
         # we don't want any prompting
         cli_args.insert(0, "--no-input")
@@ -180,10 +207,14 @@ def pip(command: str, *args, **kwargs) -> subprocess.CompletedProcess:
     proc = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
     )
-    if proc.returncode != 0:
-        stderr = proc.stderr.decode(sys.getdefaultencoding())
+    _check_pip_result(proc)
+    return proc
+
+
+def _check_pip_result(pip_proc: subprocess.CompletedProcess) -> None:
+    if pip_proc.returncode != 0:
+        stderr = pip_proc.stderr.decode(sys.getdefaultencoding())
         plug.log.error(stderr)
 
         if "ResolutionImpossible" in stderr:
             raise DependencyResolutionError()
-    return proc

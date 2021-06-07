@@ -201,7 +201,7 @@ def _to_config(config_file: pathlib.Path) -> plug.Config:
     return plug.Config(config_file)
 
 
-def _resolve_config_file(path: pathlib.Path,) -> pathlib.Path:
+def _resolve_config_file(path: pathlib.Path) -> pathlib.Path:
     local_config_path = path / _repobee.constants.LOCAL_CONFIG_NAME
 
     if local_config_path.is_file():
