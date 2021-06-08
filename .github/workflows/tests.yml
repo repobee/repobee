@@ -52,7 +52,10 @@ jobs:
             -m pytest tests/unit_tests tests/new_integration_tests
         coverage xml
     - name: Upload coverage to Codecov
-      run: bash <(curl -s https://codecov.io/bash)
+      uses: codecov/codecov-action@v1
+      with:
+          fail_ci_if_error: true
+          file: ./coverage.xml
 
   gitlab-system-tests:
     runs-on: ubuntu-latest
