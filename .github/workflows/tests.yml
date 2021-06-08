@@ -52,7 +52,7 @@ jobs:
             -m pytest tests/unit_tests tests/new_integration_tests
         coverage xml
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v1
+      uses: slarse/codecov-action@update-bash-uploader-to-1.0.3
       with:
           fail_ci_if_error: true
           file: ./coverage.xml
