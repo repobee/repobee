@@ -9,10 +9,6 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
-https://user-images.githubusercontent.com/14223379/121573132-2d725380-ca25-11eb-8aa0-8f50ac3f28f0.mp4
-
-> Short video demonstration of using RepoBee and writing a simple plugin. [For a higher-quality version of this demo, click this link!](https://repobee.org/media/repobee-demo.mp4)
-
 ## Overview
 RepoBee is a command line tool that allows teachers and teaching assistants to
 work with large amounts of student Git repositories on the GitHub, GitLab and
@@ -37,6 +33,15 @@ Plugins can do a wide range of things, including making RepoBee compatible with
 multiple hosting platforms (GitHub, GitLab, Gitea), providing compatibility
 with repositories managed by GitHub Classroom, or running JUnit4 test classes
 on cloned student repositories.
+
+Still not quite sure what RepoBee actually does? The demo video below briefly
+explains some of the most important concepts, and showcases how RepoBee can be
+used to setup and clone student repositories, as well as how to write a simple
+plugin.
+
+https://user-images.githubusercontent.com/14223379/121573132-2d725380-ca25-11eb-8aa0-8f50ac3f28f0.mp4
+
+> Short video demonstration of using RepoBee and writing a simple plugin. [For a higher-quality version of this demo, click this link!](https://repobee.org/media/repobee-demo.mp4)
 
 ### Feature highlights
 RepoBee has a lot going for it. Here are some of the things we are most proud
