@@ -9,7 +9,6 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
-
 https://user-images.githubusercontent.com/14223379/121573132-2d725380-ca25-11eb-8aa0-8f50ac3f28f0.mp4
 
 > Short video demonstration of using RepoBee and writing a simple plugin. [For a higher-quality version of this demo, click this link!](https://repobee.org/media/repobee-demo.mp4)
