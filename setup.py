@@ -31,7 +31,7 @@ test_requirements = [
     "black",
     "codecov",
     "flake8>=3.8.3",
-    "mypy>=0.770",
+    "mypy>=0.900",
     "pylint",
     "pytest-cov>=2.6.1",
     "pytest-mock",
