@@ -40,7 +40,6 @@ with repositories managed by GitHub Classroom, or running JUnit4 test classes
 on cloned student repositories.
 
 ### Feature highlights
-
 RepoBee has a lot going for it. Here are some of the things we are most proud
 of:
 
