@@ -37,6 +37,11 @@ test_requirements = [
     "pytest-mock",
     "pytest>=6.0.0",
     "virtualenv",
+    # type stubs required for MyPy
+    "types-pkg-resources",
+    "types-requests",
+    "types-tabulate",
+    "types-toml",
 ]
 docs_requirements = [
     "sphinx>=4.0.1",
