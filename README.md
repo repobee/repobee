@@ -35,6 +35,9 @@ with repositories managed by GitHub Classroom, or running JUnit4 test classes
 on cloned student repositories.
 
 ### Feature highlights
+
+![RepoBee demo video](https://raw.githubusercontent.com/repobee/repobee.github.io/f16067d0b061315cf69f75594caed040a008dbde/content/extra/repobee-demo.mp4)
+
 RepoBee has a lot going for it. Here are some of the things we are most proud
 of:
 
