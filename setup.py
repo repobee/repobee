@@ -31,12 +31,17 @@ test_requirements = [
     "black",
     "codecov",
     "flake8>=3.8.3",
-    "mypy>=0.770",
+    "mypy>=0.902",
     "pylint",
     "pytest-cov>=2.6.1",
     "pytest-mock",
     "pytest>=6.0.0",
     "virtualenv",
+    # type stubs required for MyPy
+    "types-pkg-resources",
+    "types-requests",
+    "types-tabulate",
+    "types-toml",
 ]
 docs_requirements = [
     "sphinx>=4.0.1",
