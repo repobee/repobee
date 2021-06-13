@@ -106,7 +106,7 @@ class TestConfigWizard:
         with mock.patch(
             "bullet.Bullet.launch",
             autospec=True,
-            return_value=_repobee.constants.CORE_SECTION_HDR,
+            return_value=plug.Config.CORE_SECTION_NAME,
         ), mock.patch("builtins.input", return_value=unlikely_value):
             _repobee.main.main(
                 shlex.split(
@@ -117,7 +117,7 @@ class TestConfigWizard:
         # assert
         config = plug.Config(config_file)
         assert (
-            config.get(_repobee.constants.CORE_SECTION_HDR, "students_file")
+            config.get(plug.Config.CORE_SECTION_NAME, "students_file")
             == unlikely_value
         )
 
@@ -133,7 +133,7 @@ class TestConfigWizard:
         with mock.patch(
             "bullet.Bullet.launch",
             autospec=True,
-            return_value=_repobee.constants.CORE_SECTION_HDR,
+            return_value=plug.Config.CORE_SECTION_NAME,
         ), mock.patch("builtins.input", return_value="dontcare"):
             _repobee.main.main(
                 shlex.split(
@@ -156,7 +156,7 @@ class TestConfigWizard:
         with mock.patch(
             "bullet.Bullet.launch",
             autospec=True,
-            return_value=_repobee.constants.CORE_SECTION_HDR,
+            return_value=plug.Config.CORE_SECTION_NAME,
         ), mock.patch("builtins.input", return_value="dontcare"):
             _repobee.main.main(
                 shlex.split(

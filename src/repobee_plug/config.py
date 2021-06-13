@@ -48,14 +48,14 @@ class Config:
         of RepoBee might bring breaking changes.
     """
 
-    _CORE_SECTION = "repobee"
+    CORE_SECTION_NAME = "repobee"
 
     def __init__(self, config_path: pathlib.Path):
         super().__init__()
         self._config_path = config_path
         self._config_parser = configparser.ConfigParser()
         self._parent: Optional[Config] = None
-        self.create_section(self._CORE_SECTION)
+        self.create_section(self.CORE_SECTION_NAME)
         self._check_for_cycle(paths=[])
         self.refresh()
 
@@ -65,7 +65,7 @@ class Config:
         """
         if self._config_path.exists():
             self._config_parser.read(self._config_path)
-            parent_path = self.get(self._CORE_SECTION, "parent")
+            parent_path = self.get(self.CORE_SECTION_NAME, "parent")
             if parent_path:
                 self._parent = Config(pathlib.Path(parent_path))
 
@@ -122,7 +122,7 @@ class Config:
     @parent.setter
     def parent(self, value: "Config") -> None:
         self._parent = value
-        self[self._CORE_SECTION]["parent"] = str(value.path)
+        self[self.CORE_SECTION_NAME]["parent"] = str(value.path)
         self._check_for_cycle([])
 
     def __getitem__(self, section_key: str) -> ConfigSection:

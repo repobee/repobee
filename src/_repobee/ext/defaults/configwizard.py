@@ -44,12 +44,12 @@ def callback(args: argparse.Namespace, config: plug.Config) -> None:
     if config.path.exists():
         plug.echo("Editing config file at {}".format(str(config.path)))
 
-    if constants.CORE_SECTION_HDR not in config:
-        config.create_section(constants.CORE_SECTION_HDR)
+    if plug.Config.CORE_SECTION_NAME not in config:
+        config.create_section(plug.Config.CORE_SECTION_NAME)
 
     configurable_args = [
         plug.ConfigurableArguments(
-            config_section_name=constants.CORE_SECTION_HDR,
+            config_section_name=plug.Config.CORE_SECTION_NAME,
             argnames=list(constants.ORDERED_CONFIGURABLE_ARGS),
         )
     ] + plug.manager.hook.get_configurable_args()
