@@ -148,7 +148,7 @@ def main(
         with _in_workdir(workdir), _unregister_plugins_on_exit(
             unregister=unload_plugins
         ):
-            _main(sys_args)
+            _run_cli(sys_args)
     except plug.PlugError:
         plug.log.error("A plugin exited with an error")
         sys.exit(1)
@@ -161,7 +161,7 @@ def main(
         sys.exit(1)
 
 
-def _main(sys_args: List[str]):
+def _run_cli(sys_args: List[str]):
     _repobee.cli.parsing.setup_logging()
     args = sys_args[1:]  # drop the name of the program
     traceback = False
