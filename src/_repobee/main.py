@@ -12,7 +12,7 @@ import logging
 import os
 import pathlib
 import sys
-from typing import List, Optional, Union, Mapping, Any
+from typing import List, Optional, Union, Mapping, Any, NoReturn
 from types import ModuleType
 
 import repobee_plug as plug
@@ -192,21 +192,25 @@ def _main(sys_args: List[str], unload_plugins: bool = True):
         plug.log.error(str(exc))
         raise
     except Exception as exc:
-        # FileErrors can occur during pre-init because of reading the config
-        # and we don't want tracebacks for those (afaik at this time)
-        if traceback or (
-            pre_init and not isinstance(exc, exception.FileError)
-        ):
-            plug.log.error(str(exc))
-            if pre_init:
-                plug.echo(_PRE_INIT_ERROR_MESSAGE)
-            plug.log.exception("Critical exception")
-        else:
-            plug.log.error("{.__class__.__name__}: {}".format(exc, str(exc)))
-        raise
+        _handle_unexpected_exception(exc, traceback, pre_init)
     finally:
         if unload_plugins:
             plugin.unregister_all_plugins()
+
+
+def _handle_unexpected_exception(
+    exc: Exception, traceback: bool, pre_init: bool
+) -> NoReturn:
+    # FileErrors can occur during pre-init because of reading the config
+    # and we don't want tracebacks for those (afaik at this time)
+    if traceback or (pre_init and not isinstance(exc, exception.FileError)):
+        plug.log.error(str(exc))
+        if pre_init:
+            plug.echo(_PRE_INIT_ERROR_MESSAGE)
+        plug.log.exception("Critical exception")
+    else:
+        plug.log.error(f"{exc.__class__.__name__}: {exc}")
+    raise exc
 
 
 def _to_config(config_file: pathlib.Path) -> plug.Config:
