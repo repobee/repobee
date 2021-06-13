@@ -29,7 +29,7 @@ def select_repobee_section(mocker):
     mocker.patch(
         "bullet.Bullet.launch",
         autospec=True,
-        return_value=_repobee.constants.CORE_SECTION_HDR,
+        return_value=plug.Config.CORE_SECTION_NAME,
     )
 
 
@@ -46,7 +46,7 @@ def test_enters_values_if_config_file_exists(
     confparser.read(str(config_mock))
 
     for key, value in defaults_options.items():
-        assert confparser[_repobee.constants.CORE_SECTION_HDR][key] == value
+        assert confparser[plug.Config.CORE_SECTION_NAME][key] == value
 
 
 def test_enters_values_if_no_config_exists(
@@ -64,7 +64,7 @@ def test_enters_values_if_no_config_exists(
     confparser.read(str(config_mock))
 
     for key, value in defaults_options.items():
-        assert confparser[_repobee.constants.CORE_SECTION_HDR][key] == value
+        assert confparser[plug.Config.CORE_SECTION_NAME][key] == value
 
 
 def test_skips_empty_values(
@@ -90,9 +90,9 @@ def test_skips_empty_values(
     confparser = configparser.ConfigParser()
     confparser.read(str(empty_config_mock))
 
-    assert empty_option not in confparser[_repobee.constants.CORE_SECTION_HDR]
+    assert empty_option not in confparser[plug.Config.CORE_SECTION_NAME]
     for key, value in defaults_options.items():
-        assert confparser[_repobee.constants.CORE_SECTION_HDR][key] == value
+        assert confparser[plug.Config.CORE_SECTION_NAME][key] == value
 
 
 def test_retains_values_that_are_not_specified(
@@ -125,9 +125,9 @@ def test_retains_values_that_are_not_specified(
     # remove an option and save expected retained value
     empty_option = list(defaults_options.keys())[3]
     defaults_options[empty_option] = ""
-    expected_retained_default = confparser[
-        _repobee.constants.CORE_SECTION_HDR
-    ][empty_option]
+    expected_retained_default = confparser[plug.Config.CORE_SECTION_NAME][
+        empty_option
+    ]
 
     # act
     with patch("builtins.input", side_effect=list(defaults_options.values())):
@@ -139,11 +139,11 @@ def test_retains_values_that_are_not_specified(
     parser.read(str(config_mock))
 
     assert (
-        parser[_repobee.constants.CORE_SECTION_HDR][empty_option]
+        parser[plug.Config.CORE_SECTION_NAME][empty_option]
         == expected_retained_default
     )
     for option, value in defaults_options.items():
-        assert parser[_repobee.constants.CORE_SECTION_HDR][option] == value
+        assert parser[plug.Config.CORE_SECTION_NAME][option] == value
     for option, value in plugin_options.items():
         assert parser[plugin_section][option] == value
 

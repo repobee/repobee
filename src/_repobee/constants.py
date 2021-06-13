@@ -24,7 +24,6 @@ LOG_DIR = pathlib.Path(
     )
 )
 MAX_LOGFILE_SIZE = 1024 * 1024 * 10  # 10 MiB
-CORE_SECTION_HDR = "repobee"
 DEFAULT_CONFIG_FILE = CONFIG_DIR / "config.ini"
 assert DEFAULT_CONFIG_FILE.is_absolute()
 
@@ -36,6 +35,7 @@ ORDERED_CONFIGURABLE_ARGS = (
     "template_org_name",
     "token",
     "students_file",
+    "parent",
 )
 CONFIGURABLE_ARGS = set(ORDERED_CONFIGURABLE_ARGS)
 

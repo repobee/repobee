@@ -2,6 +2,9 @@ import pytest
 from repobee_plug import config
 from repobee_plug import exceptions
 
+CORE_SECTION = "repobee"
+PARENT = "parent"
+
 
 class TestConfig:
     """Tests for the Config class."""
@@ -13,17 +16,23 @@ class TestConfig:
         parent_path = tmp_path / "dir" / "parent.ini"
         child_path = tmp_path / "repobee.ini"
 
-        grandparent = config.Config(
-            grandparent_path, parent=config.Config(child_path)
-        )
-        parent = config.Config(parent_path, parent=grandparent)
+        grandparent = config.Config(grandparent_path)
+
+        parent = config.Config(parent_path)
+        parent.parent = grandparent
+
+        child = config.Config(child_path)
+        child.parent = parent
 
         # act/assert
         with pytest.raises(exceptions.PlugError) as exc_info:
-            config.Config(child_path, parent=parent)
+            grandparent.parent = child
 
         cycle = " -> ".join(
-            map(str, [child_path, parent_path, grandparent_path, child_path])
+            map(
+                str,
+                [grandparent_path, child_path, parent_path, grandparent_path],
+            )
         )
         assert f"Cyclic inheritance detected in config: {cycle}" in str(
             exc_info.value
@@ -43,7 +52,8 @@ class TestConfig:
         parent[parent_sec][parent_opt] = parent_val
 
         # act
-        child = config.Config(child_path, parent=parent)
+        child = config.Config(child_path)
+        child.parent = parent
         fetched_val = child.get(parent_sec, parent_opt)
 
         # assert
@@ -63,7 +73,8 @@ class TestConfig:
         parent[parent_sec][parent_opt] = parent_val
 
         # act
-        child = config.Config(child_path, parent=parent)
+        child = config.Config(child_path)
+        child.parent = parent
         fetched_section = child[parent_sec]
 
         # assert
@@ -84,7 +95,8 @@ class TestConfig:
 
         child_opt = "other-option"
         child_val = "other-value"
-        child = config.Config(child_path, parent=parent)
+        child = config.Config(child_path)
+        child.parent = parent
         child.create_section("some-section")
         child[parent_sec][child_opt] = child_val
 
@@ -109,7 +121,8 @@ class TestConfig:
         parent.create_section(parent_sec)
         parent[parent_sec][parent_opt] = parent_val
 
-        child = config.Config(child_path, parent=parent)
+        child = config.Config(child_path)
+        child.parent = parent
 
         # act/assert
         non_existing_key = "thiskeydoesntexist"

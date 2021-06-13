@@ -87,7 +87,7 @@ def _read_defaults(config_file: pathlib.Path) -> dict:
     token = os.getenv(constants.TOKEN_ENV)
     if not config_file.is_file():
         return {} if not token else dict(token=token)
-    defaults = dict(_read_config(config_file)[constants.CORE_SECTION_HDR])
+    defaults = dict(_read_config(config_file)[plug.Config.CORE_SECTION_NAME])
     if token:
         if defaults.get("token"):
             plug.log.warning(
@@ -105,7 +105,7 @@ def _read_config(config_file: pathlib.Path) -> configparser.ConfigParser:
     except configparser.MissingSectionHeaderError:
         pass  # handled by the next check
 
-    if constants.CORE_SECTION_HDR not in config_parser:
+    if plug.Config.CORE_SECTION_NAME not in config_parser:
         raise exception.FileError(
             f"config file at '{str(config_file)}' does not contain the "
             f"required [repobee] header"

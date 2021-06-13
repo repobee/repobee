@@ -5,7 +5,6 @@ import pytest
 
 import repobee_plug as plug
 
-import _repobee.constants
 from _repobee import config
 from _repobee import exception
 
@@ -60,7 +59,7 @@ class TestCheckConfigIntegrity:
         empty_config_mock.write(
             os.linesep.join(
                 [
-                    f"[{_repobee.constants.CORE_SECTION_HDR}]",
+                    f"[{plug.Config.CORE_SECTION_NAME}]",
                     "user = someone",
                     "option = value",
                 ]
@@ -81,7 +80,7 @@ class TestCheckConfigIntegrity:
         empty_config_mock.write(
             os.linesep.join(
                 [
-                    f"[{_repobee.constants.CORE_SECTION_HDR}]",
+                    f"[{plug.Config.CORE_SECTION_NAME}]",
                     "user = someone",
                     "base_url",
                     "org_name = cool",
