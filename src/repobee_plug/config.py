@@ -49,7 +49,7 @@ class Config:
     """
 
     CORE_SECTION_NAME = "repobee"
-    PARENT_CONFIG_PATH_KEY = "parent"
+    PARENT_CONFIG_PATH_KEY = "parent_config"
 
     def __init__(self, config_path: pathlib.Path):
         super().__init__()
