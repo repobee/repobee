@@ -145,8 +145,10 @@ def main(
         workdir: The working directory to operate in.
     """
     try:
-        with _in_workdir(workdir):
-            _main(sys_args, unload_plugins)
+        with _in_workdir(workdir), _unregister_plugins_on_exit(
+            unregister=unload_plugins
+        ):
+            _main(sys_args)
     except plug.PlugError:
         plug.log.error("A plugin exited with an error")
         sys.exit(1)
@@ -159,7 +161,7 @@ def main(
         sys.exit(1)
 
 
-def _main(sys_args: List[str], unload_plugins: bool = True):
+def _main(sys_args: List[str]):
     _repobee.cli.parsing.setup_logging()
     args = sys_args[1:]  # drop the name of the program
     traceback = False
@@ -193,9 +195,6 @@ def _main(sys_args: List[str], unload_plugins: bool = True):
         raise
     except Exception as exc:
         _handle_unexpected_exception(exc, traceback, pre_init)
-    finally:
-        if unload_plugins:
-            plugin.unregister_all_plugins()
 
 
 def _handle_unexpected_exception(
