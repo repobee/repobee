@@ -187,11 +187,8 @@ def _run_cli(sys_args: List[str]):
 
         with _set_output_verbosity(getattr(parsed_args, "quiet", 0)):
             _repobee.cli.dispatch.dispatch_command(parsed_args, api, conf)
-    except exception.PluginLoadError as exc:
+    except (exception.ParseError, exception.PluginLoadError) as exc:
         plug.log.error(f"{exc.__class__.__name__}: {exc}")
-        raise
-    except exception.ParseError as exc:
-        plug.log.error(str(exc))
         raise
     except Exception as exc:
         _handle_unexpected_exception(exc, traceback, pre_init)
