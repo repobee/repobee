@@ -10,6 +10,8 @@ import pathlib
 
 import appdirs  # type: ignore
 
+import repobee_plug as plug
+
 import _repobee
 
 CONFIG_DIR = pathlib.Path(
@@ -35,7 +37,7 @@ ORDERED_CONFIGURABLE_ARGS = (
     "template_org_name",
     "token",
     "students_file",
-    "parent",
+    plug.Config.PARENT_CONFIG_KEY,
 )
 CONFIGURABLE_ARGS = set(ORDERED_CONFIGURABLE_ARGS)
 

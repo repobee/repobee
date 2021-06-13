@@ -234,9 +234,9 @@ class TestConfigInheritance:
         parent_config.store()
 
         child_config = plug.Config(child_config_dir / "config.ini")
-        child_config[plug.Config.CORE_SECTION_NAME]["parent"] = str(
-            pathlib.Path("..") / parent_config.path.relative_to(root_dir)
-        )
+        child_config[plug.Config.CORE_SECTION_NAME][
+            plug.Config.PARENT_CONFIG_KEY
+        ] = str(pathlib.Path("..") / parent_config.path.relative_to(root_dir))
         child_config.store()
 
         fetched_value = None
