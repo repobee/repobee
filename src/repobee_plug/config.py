@@ -65,9 +65,22 @@ class Config:
         """
         if self._config_path.exists():
             self._config_parser.read(self._config_path)
-            parent_path = self.get(self.CORE_SECTION_NAME, "parent")
-            if parent_path:
-                self._parent = Config(pathlib.Path(parent_path))
+            raw_parent_path = self.get(self.CORE_SECTION_NAME, "parent")
+            if raw_parent_path:
+                parent_path = self._resolve_absolute_parent_path(
+                    raw_parent_path
+                )
+                self._parent = Config(parent_path)
+
+    def _resolve_absolute_parent_path(
+        self, raw_parent_path: str
+    ) -> pathlib.Path:
+        parent_path = pathlib.Path(raw_parent_path)
+        return (
+            parent_path
+            if parent_path.is_absolute()
+            else (self.path.parent / parent_path).resolve(strict=False)
+        )
 
     def store(self) -> None:
         """Write the current state of the config to the config file. If the
