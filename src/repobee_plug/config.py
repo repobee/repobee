@@ -49,6 +49,7 @@ class Config:
     """
 
     CORE_SECTION_NAME = "repobee"
+    PARENT_CONFIG_PATH_KEY = "parent"
 
     def __init__(self, config_path: pathlib.Path):
         super().__init__()
@@ -65,7 +66,9 @@ class Config:
         """
         if self._config_path.exists():
             self._config_parser.read(self._config_path)
-            raw_parent_path = self.get(self.CORE_SECTION_NAME, "parent")
+            raw_parent_path = self.get(
+                self.CORE_SECTION_NAME, self.PARENT_CONFIG_PATH_KEY
+            )
             if raw_parent_path:
                 parent_path = self._resolve_absolute_parent_path(
                     raw_parent_path
@@ -135,7 +138,9 @@ class Config:
     @parent.setter
     def parent(self, value: "Config") -> None:
         self._parent = value
-        self[self.CORE_SECTION_NAME]["parent"] = str(value.path)
+        self[self.CORE_SECTION_NAME][self.PARENT_CONFIG_PATH_KEY] = str(
+            value.path
+        )
         self._check_for_cycle([])
 
     def __getitem__(self, section_key: str) -> ConfigSection:

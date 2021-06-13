@@ -2,9 +2,6 @@ import pytest
 from repobee_plug import config
 from repobee_plug import exceptions
 
-CORE_SECTION = "repobee"
-PARENT = "parent"
-
 
 class TestConfig:
     """Tests for the Config class."""
