@@ -211,3 +211,47 @@ class TestConfigInheritance:
 
         assert fetched_child_value == child_value
         assert fetched_parent_value == parent_value
+
+    def test_config_parent_path_is_relative_to_config_path(
+        self, tmp_path_factory
+    ):
+        """Tests that the parent path in a config file is relative to that
+        that configs own path (as opposed to the current working directory).
+        """
+        # arrange
+        root_dir = tmp_path_factory.mktemp("configs")
+        parent_config_dir = root_dir / "parent_config_dir"
+        child_config_dir = root_dir / "child_config_dir"
+
+        parent_config_dir.mkdir()
+        child_config_dir.mkdir()
+
+        key = "darth"
+        value = "vader"
+
+        parent_config = plug.Config(parent_config_dir / "base-config.ini")
+        parent_config[plug.Config.CORE_SECTION_NAME][key] = value
+        parent_config.store()
+
+        child_config = plug.Config(child_config_dir / "config.ini")
+        child_config[plug.Config.CORE_SECTION_NAME]["parent"] = str(
+            pathlib.Path("..") / parent_config.path.relative_to(root_dir)
+        )
+        child_config.store()
+
+        fetched_value = None
+
+        class HandleConfig(plug.Plugin):
+            def handle_config(self, config: plug.Config) -> None:
+                nonlocal fetched_value
+                fetched_value = config.get(plug.Config.CORE_SECTION_NAME, key)
+
+        # act
+        repobee.run(
+            list(plug.cli.CoreCommand.config.show.as_name_tuple()),
+            config_file=child_config.path,
+            plugins=[HandleConfig],
+        )
+
+        # assert
+        assert fetched_value == value
