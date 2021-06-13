@@ -10,6 +10,7 @@ import pytest
 
 import _repobee.ext.javac
 import _repobee.ext.pylint
+import _repobee.ext.squash
 
 import repobee_plug as plug
 from repobee_testhelpers import localapi
@@ -341,6 +342,69 @@ class TestSetup:
 
         assert "hook results" not in out_err.out.lower()
         assert "hook results" not in out_err.err.lower()
+
+    def test_squashed_student_repos_have_correct_content(self, platform_url):
+        """When using the squash plugin, student repos should initially only
+        contain the squash commit.
+        """
+        funcs.run_repobee(
+            [
+                *plug.cli.CoreCommand.repos.setup.as_name_tuple(),
+                "--assignments",
+                *TEMPLATE_REPO_NAMES,
+                "--base-url",
+                platform_url,
+            ],
+            plugins=[_repobee.ext.squash],
+        )
+
+        assert_student_repos_match_templates(
+            STUDENT_TEAMS, TEMPLATE_REPO_NAMES, funcs.get_repos(platform_url)
+        )
+
+    def test_squashed_student_repos_contain_only_squash_commit(
+        self, platform_url, tmp_path
+    ):
+        """When using the squash plugin, student repos should initially only
+        contain the squash commit.
+        """
+        assignment_name = "repo-with-multiple-commits"
+        repo_path = tmp_path / assignment_name
+        self._setup_local_repo_with_multiple_commits(repo_path)
+
+        squash_message = "This is a strange commit message"
+        funcs.run_repobee(
+            [
+                *plug.cli.CoreCommand.repos.setup.as_name_tuple(),
+                "--assignments",
+                assignment_name,
+                "--allow-local-templates",
+                "--base-url",
+                platform_url,
+                "--squash-message",
+                squash_message,
+            ],
+            plugins=[_repobee.ext.squash],
+            workdir=tmp_path,
+        )
+
+        repos = funcs.get_repos(platform_url)
+        assert repos
+        for repo in repos:
+            self._assert_single_commit_with_message(repo, squash_message)
+
+    def _assert_single_commit_with_message(
+        self, repo: localapi.Repo, message: str
+    ):
+        first_commit, *rest = list(git.Repo(repo.path).iter_commits())
+        assert not rest, "These commits should not exist"
+        assert first_commit.message.strip() == message
+
+    def _setup_local_repo_with_multiple_commits(self, repo_path: pathlib.Path):
+        create_local_repo(repo_path, [("file.txt", "Great content!")])
+        repo = git.Repo(repo_path)
+        repo.git.commit("--allow-empty", "-m", "Second commit")
+        repo.git.commit("--allow-empty", "-m", "Third commit")
 
 
 class TestClone:
