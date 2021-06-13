@@ -197,15 +197,13 @@ def _run_cli(sys_args: List[str]):
 def _handle_unexpected_exception(
     exc: Exception, traceback: bool, pre_init: bool
 ) -> NoReturn:
+    plug.log.error(f"{exc.__class__.__name__}: {exc}")
     # FileErrors can occur during pre-init because of reading the config
     # and we don't want tracebacks for those (afaik at this time)
     if traceback or (pre_init and not isinstance(exc, exception.FileError)):
-        plug.log.error(str(exc))
         if pre_init:
             plug.echo(_PRE_INIT_ERROR_MESSAGE)
         plug.log.exception("Critical exception")
-    else:
-        plug.log.error(f"{exc.__class__.__name__}: {exc}")
     raise exc
 
 
