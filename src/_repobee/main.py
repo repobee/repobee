@@ -13,7 +13,7 @@ import logging
 import os
 import pathlib
 import sys
-from typing import List, Optional, Union, Mapping
+from typing import List, Optional, Union, Mapping, Any
 from types import ModuleType
 
 import repobee_plug as plug
@@ -90,33 +90,45 @@ def run(
     conf = _to_config(pathlib.Path(config_file))
     requested_workdir = pathlib.Path(str(workdir)).resolve(strict=True)
 
-    def _ensure_is_module(p: Union[ModuleType, plug.Plugin]):
-        if isinstance(p, type) and issubclass(p, plug.Plugin):
-            mod = ModuleType(p.__name__.lower())
-            mod.__package__ = f"__{p.__name__}"
-            setattr(mod, p.__name__, p)
-            return mod
-        elif isinstance(p, ModuleType):
-            return p
-        else:
-            raise TypeError(f"not plugin or module: {p}")
+    with _in_workdir(requested_workdir), _unregister_plugins_on_exit():
+        _initialize_logging_and_plugins_for_run(plugins or [])
+        parsed_args, api = _parse_args(cmd, conf)
 
+        with _set_output_verbosity(getattr(parsed_args, "quiet", 0)):
+            return _repobee.cli.dispatch.dispatch_command(
+                parsed_args, api, conf
+            )
+
+
+def _ensure_is_module(maybe_plugin: Any) -> ModuleType:
+    if isinstance(maybe_plugin, type) and issubclass(
+        maybe_plugin, plug.Plugin
+    ):
+        mod = ModuleType(maybe_plugin.__name__.lower())
+        mod.__package__ = f"__{maybe_plugin.__name__}"
+        setattr(mod, maybe_plugin.__name__, maybe_plugin)
+        return mod
+    elif isinstance(maybe_plugin, ModuleType):
+        return maybe_plugin
+    else:
+        raise TypeError(f"not plugin or module: {maybe_plugin}")
+
+
+def _initialize_logging_and_plugins_for_run(plugins: List[Any]):
     wrapped_plugins = list(map(_ensure_is_module, plugins or []))
+    _repobee.cli.parsing.setup_logging()
+    # FIXME calling _initialize_plugins like this is ugly, should be
+    # refactored
+    _initialize_plugins(argparse.Namespace(no_plugins=False, plug=[]))
+    plugin.register_plugins(wrapped_plugins)
 
-    with _in_workdir(requested_workdir):
-        try:
-            _repobee.cli.parsing.setup_logging()
-            # FIXME calling _initialize_plugins like this is ugly, should be
-            # refactored
-            _initialize_plugins(argparse.Namespace(no_plugins=False, plug=[]))
-            plugin.register_plugins(wrapped_plugins)
-            parsed_args, api = _parse_args(cmd, conf)
 
-            with _set_output_verbosity(getattr(parsed_args, "quiet", 0)):
-                return _repobee.cli.dispatch.dispatch_command(
-                    parsed_args, api, conf
-                )
-        finally:
+@contextlib.contextmanager
+def _unregister_plugins_on_exit(unregister: bool = True):
+    try:
+        yield
+    finally:
+        if unregister:
             plugin.unregister_all_plugins()
 
 
