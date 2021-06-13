@@ -6,7 +6,6 @@
 .. moduleauthor:: Simon Larsén
 """
 
-import argparse
 import contextlib
 import io
 import logging
@@ -119,7 +118,7 @@ def _initialize_logging_and_plugins_for_run(plugins: List[Any]):
     _repobee.cli.parsing.setup_logging()
     # FIXME calling _initialize_plugins like this is ugly, should be
     # refactored
-    _initialize_plugins(argparse.Namespace(no_plugins=False, plug=[]))
+    _initialize_plugins(plugin_names=[], allow_non_default_plugins=True)
     plugin.register_plugins(wrapped_plugins)
 
 
@@ -174,7 +173,10 @@ def _main(sys_args: List[str], unload_plugins: bool = True):
             ),
         )
 
-        _initialize_plugins(parsed_preparser_args)
+        _initialize_plugins(
+            plugin_names=parsed_preparser_args.plug or [],
+            allow_non_default_plugins=not parsed_preparser_args.no_plugins,
+        )
 
         conf = _to_config(parsed_preparser_args.config_file)
         parsed_args, api = _parse_args(app_args, conf)
@@ -224,7 +226,9 @@ def _resolve_config_file(path: pathlib.Path) -> pathlib.Path:
         return _resolve_config_file(path.parent)
 
 
-def _initialize_plugins(parsed_preparser_args: argparse.Namespace) -> None:
+def _initialize_plugins(
+    plugin_names: List[str], allow_non_default_plugins: bool
+) -> None:
     # IMPORTANT: the default plugins must be loaded before user-defined
     # plugins to ensure that the user-defined plugins override the defaults
     # in firstresult hooks
@@ -235,16 +239,19 @@ def _initialize_plugins(parsed_preparser_args: argparse.Namespace) -> None:
         plug.log.debug("Initializing dist plugins")
         plugin.initialize_dist_plugins()
 
-    if not parsed_preparser_args.no_plugins:
-        if distinfo.DIST_INSTALL:
-            plug.log.debug("Initializing active plugins")
-            plugin.initialize_plugins(
-                disthelpers.get_active_plugins(), allow_filepath=True
-            )
+    if allow_non_default_plugins:
+        _initialize_non_default_plugins(plugin_names)
 
-        plug.log.debug("Initializing preparser-specified plugins")
-        plugin_names = parsed_preparser_args.plug or []
-        plugin.initialize_plugins(plugin_names, allow_filepath=True)
+
+def _initialize_non_default_plugins(plugin_names: List[str]) -> None:
+    if distinfo.DIST_INSTALL:
+        plug.log.debug("Initializing active plugins")
+        plugin.initialize_plugins(
+            disthelpers.get_active_plugins(), allow_filepath=True
+        )
+
+    plug.log.debug("Initializing preparser-specified plugins")
+    plugin.initialize_plugins(plugin_names, allow_filepath=True)
 
 
 def _parse_args(args: List[str], config: plug.Config):
