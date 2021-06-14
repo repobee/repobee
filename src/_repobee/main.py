@@ -278,13 +278,11 @@ def _set_output_verbosity(quietness: int):
                 _repobee.cli.parsing.setup_logging(
                     terminal_level=logging.ERROR
                 )
-                pass
             elif quietness >= 3:
                 # additionally silence errors and warnings
                 _repobee.cli.parsing.setup_logging(
                     terminal_level=logging.CRITICAL
                 )
-                pass
 
             yield
     else:
