@@ -101,7 +101,7 @@ def run(
             )
 
 
-def _ensure_is_module(maybe_plugin: Any) -> ModuleType:
+def _wrap_in_plugin_module(maybe_plugin: Any) -> ModuleType:
     if isinstance(maybe_plugin, type) and issubclass(
         maybe_plugin, plug.Plugin
     ):
@@ -116,7 +116,7 @@ def _ensure_is_module(maybe_plugin: Any) -> ModuleType:
 
 
 def _initialize_logging_and_plugins_for_run(plugins: List[Any]):
-    wrapped_plugins = list(map(_ensure_is_module, plugins or []))
+    wrapped_plugins = list(map(_wrap_in_plugin_module, plugins or []))
     _repobee.cli.parsing.setup_logging()
     # FIXME calling _initialize_plugins like this is ugly, should be
     # refactored
@@ -146,11 +146,16 @@ def main(
             the function returns.
         workdir: The working directory to operate in.
     """
+    with _main_error_handler(), _in_workdir(
+        workdir
+    ), _unregister_plugins_on_exit(unregister=unload_plugins):
+        _run_cli(sys_args)
+
+
+@contextlib.contextmanager
+def _main_error_handler():
     try:
-        with _in_workdir(workdir), _unregister_plugins_on_exit(
-            unregister=unload_plugins
-        ):
-            _run_cli(sys_args)
+        yield
     except plug.PlugError:
         plug.log.error("A plugin exited with an error")
         sys.exit(1)
