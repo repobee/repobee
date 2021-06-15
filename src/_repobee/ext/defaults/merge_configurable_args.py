@@ -2,6 +2,9 @@
 are no duplicates in the otuput.
 """
 import collections
+import itertools
+
+from typing import Iterable, Mapping, List
 
 import repobee_plug as plug
 from repobee_plug.cli import args
@@ -13,8 +16,26 @@ def get_configurable_args():
     duplicated argument names for a given section.
     """
     outcome = yield
-    args_by_section = collections.defaultdict(list)
-    for configurable_args in outcome.get_result():
+    merged_arguments = _merge_args_by_section_name(outcome.get_result())
+    outcome.force_result(list(merged_arguments))
+
+
+def _merge_args_by_section_name(
+    unmerged_configurable_args: Iterable[args.ConfigurableArguments],
+) -> Iterable[args.ConfigurableArguments]:
+    args_by_section_name = _get_unique_args_by_section_name(
+        unmerged_configurable_args
+    )
+    return itertools.starmap(
+        args.ConfigurableArguments, args_by_section_name.items()
+    )
+
+
+def _get_unique_args_by_section_name(
+    unmerged_configurable_args: Iterable[args.ConfigurableArguments],
+) -> Mapping[str, List[str]]:
+    args_by_section: Mapping[str, List[str]] = collections.defaultdict(list)
+    for configurable_args in unmerged_configurable_args:
         argnames = args_by_section[configurable_args.config_section_name]
         argnames.extend(
             [
@@ -24,11 +45,4 @@ def get_configurable_args():
             ]
         )
 
-    outcome.force_result(
-        [
-            args.ConfigurableArguments(
-                config_section_name=config_section_name, argnames=argnames
-            )
-            for config_section_name, argnames in args_by_section.items()
-        ]
-    )
+    return args_by_section
