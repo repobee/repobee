@@ -195,10 +195,12 @@ def _run_preparser_and_init_application(
         default_config_file=_resolve_config_file(pathlib.Path(".").resolve()),
     )
 
-    plugin_names: Optional[List[str]] = (
-        [] if parsed_preparser_args.no_plugins else parsed_preparser_args.plug
-    )
-    _initialize_plugins(plugin_names or [])
+    # IMPORTANT: the mandatory plugins must be loaded before user-defined
+    # plugins to ensure that the user-defined plugins override the defaults
+    # in firstresult hooks
+    _initialize_mandatory_plugins()
+    if not parsed_preparser_args.no_plugins:
+        _initialize_non_default_plugins(parsed_preparser_args.plug or [])
 
     conf = _to_config(parsed_preparser_args.config_file)
     parsed_args, api = _parse_args(app_args, conf)
@@ -252,14 +254,6 @@ def _resolve_config_file(path: pathlib.Path) -> pathlib.Path:
         return _repobee.constants.DEFAULT_CONFIG_FILE
     else:
         return _resolve_config_file(path.parent)
-
-
-def _initialize_plugins(plugin_names: List[str]) -> None:
-    # IMPORTANT: the mandatory plugins must be loaded before user-defined
-    # plugins to ensure that the user-defined plugins override the defaults
-    # in firstresult hooks
-    _initialize_mandatory_plugins()
-    _initialize_non_default_plugins(plugin_names)
 
 
 def _initialize_mandatory_plugins():
