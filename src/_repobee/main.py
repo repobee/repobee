@@ -118,9 +118,7 @@ def _wrap_in_plugin_module(maybe_plugin: Any) -> ModuleType:
 def _initialize_logging_and_plugins_for_run(plugins: List[Any]):
     wrapped_plugins = list(map(_wrap_in_plugin_module, plugins or []))
     _repobee.cli.parsing.setup_logging()
-    # FIXME calling _initialize_plugins like this is ugly, should be
-    # refactored
-    _initialize_plugins(plugin_names=[], allow_non_default_plugins=True)
+    _initialize_mandatory_plugins()
     plugin.register_plugins(wrapped_plugins)
 
 
@@ -189,7 +187,7 @@ class _ApplicationInitialization:
 
 
 def _run_preparser_and_init_application(
-    args: List[str]
+    args: List[str],
 ) -> _ApplicationInitialization:
     preparser_args, app_args = separate_args(args)
     parsed_preparser_args = _repobee.cli.preparser.parse_args(
@@ -197,10 +195,10 @@ def _run_preparser_and_init_application(
         default_config_file=_resolve_config_file(pathlib.Path(".").resolve()),
     )
 
-    _initialize_plugins(
-        plugin_names=parsed_preparser_args.plug or [],
-        allow_non_default_plugins=not parsed_preparser_args.no_plugins,
+    plugin_names: Optional[List[str]] = (
+        [] if parsed_preparser_args.no_plugins else parsed_preparser_args.plug
     )
+    _initialize_plugins(plugin_names or [])
 
     conf = _to_config(parsed_preparser_args.config_file)
     parsed_args, api = _parse_args(app_args, conf)
@@ -256,21 +254,21 @@ def _resolve_config_file(path: pathlib.Path) -> pathlib.Path:
         return _resolve_config_file(path.parent)
 
 
-def _initialize_plugins(
-    plugin_names: List[str], allow_non_default_plugins: bool
-) -> None:
-    # IMPORTANT: the default plugins must be loaded before user-defined
+def _initialize_plugins(plugin_names: List[str]) -> None:
+    # IMPORTANT: the mandatory plugins must be loaded before user-defined
     # plugins to ensure that the user-defined plugins override the defaults
     # in firstresult hooks
+    _initialize_mandatory_plugins()
+    _initialize_non_default_plugins(plugin_names)
+
+
+def _initialize_mandatory_plugins():
     plug.log.debug("Initializing default plugins")
     plugin.initialize_default_plugins()
 
     if distinfo.DIST_INSTALL:
         plug.log.debug("Initializing dist plugins")
         plugin.initialize_dist_plugins()
-
-    if allow_non_default_plugins:
-        _initialize_non_default_plugins(plugin_names)
 
 
 def _initialize_non_default_plugins(plugin_names: List[str]) -> None:
