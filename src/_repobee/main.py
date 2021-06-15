@@ -188,7 +188,9 @@ class _ApplicationInitialization:
     config: plug.Config
 
 
-def _run_preparser_and_init_application(args: List[str]) -> plug.Config:
+def _run_preparser_and_init_application(
+    args: List[str]
+) -> _ApplicationInitialization:
     preparser_args, app_args = separate_args(args)
     parsed_preparser_args = _repobee.cli.preparser.parse_args(
         preparser_args,
