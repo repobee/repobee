@@ -6,7 +6,9 @@
 .. moduleauthor:: Simon Larsén
 """
 
+import argparse
 import contextlib
+import dataclasses
 import io
 import logging
 import os
@@ -164,45 +166,68 @@ def main(
 def _run_cli(sys_args: List[str]):
     _repobee.cli.parsing.setup_logging()
     args = sys_args[1:]  # drop the name of the program
-    traceback = False
-    pre_init = True
+
+    with _pre_init_error_handler():
+        app_init = _run_preparser_and_init_application(args)
+
+    with _core_error_handler(
+        traceback=app_init.parsed_args.traceback
+    ), _set_output_verbosity(getattr(app_init.parsed_args, "quiet", 0)):
+        _repobee.cli.dispatch.dispatch_command(*dataclasses.astuple(app_init))
+
+
+@dataclasses.dataclass
+class _ApplicationInitialization:
+    parsed_args: argparse.Namespace
+    platform_api: Optional[plug.PlatformAPI]
+    config: plug.Config
+
+
+def _run_preparser_and_init_application(args: List[str]) -> plug.Config:
+    preparser_args, app_args = separate_args(args)
+    parsed_preparser_args = _repobee.cli.preparser.parse_args(
+        preparser_args,
+        default_config_file=_resolve_config_file(pathlib.Path(".").resolve()),
+    )
+
+    _initialize_plugins(
+        plugin_names=parsed_preparser_args.plug or [],
+        allow_non_default_plugins=not parsed_preparser_args.no_plugins,
+    )
+
+    conf = _to_config(parsed_preparser_args.config_file)
+    parsed_args, api = _parse_args(app_args, conf)
+    return _ApplicationInitialization(parsed_args, api, conf)
+
+
+@contextlib.contextmanager
+def _pre_init_error_handler():
     try:
-        preparser_args, app_args = separate_args(args)
-        parsed_preparser_args = _repobee.cli.preparser.parse_args(
-            preparser_args,
-            default_config_file=_resolve_config_file(
-                pathlib.Path(".").resolve()
-            ),
-        )
-
-        _initialize_plugins(
-            plugin_names=parsed_preparser_args.plug or [],
-            allow_non_default_plugins=not parsed_preparser_args.no_plugins,
-        )
-
-        conf = _to_config(parsed_preparser_args.config_file)
-        parsed_args, api = _parse_args(app_args, conf)
-        traceback = parsed_args.traceback
-        pre_init = False
-
-        with _set_output_verbosity(getattr(parsed_args, "quiet", 0)):
-            _repobee.cli.dispatch.dispatch_command(parsed_args, api, conf)
-    except (exception.ParseError, exception.PluginLoadError) as exc:
+        yield
+    except (
+        exception.ParseError,
+        exception.PluginLoadError,
+        exception.FileError,
+    ) as exc:
+        plug.echo(_PRE_INIT_ERROR_MESSAGE)
         plug.log.error(f"{exc.__class__.__name__}: {exc}")
         raise
     except Exception as exc:
-        _handle_unexpected_exception(exc, traceback, pre_init)
+        plug.echo(_PRE_INIT_ERROR_MESSAGE)
+        _handle_unexpected_exception(exc, traceback=True)
 
 
-def _handle_unexpected_exception(
-    exc: Exception, traceback: bool, pre_init: bool
-) -> NoReturn:
+@contextlib.contextmanager
+def _core_error_handler(traceback: bool):
+    try:
+        yield
+    except Exception as exc:
+        _handle_unexpected_exception(exc, traceback=True)
+
+
+def _handle_unexpected_exception(exc: Exception, traceback: bool) -> NoReturn:
     plug.log.error(f"{exc.__class__.__name__}: {exc}")
-    # FileErrors can occur during pre-init because of reading the config
-    # and we don't want tracebacks for those (afaik at this time)
-    if traceback or (pre_init and not isinstance(exc, exception.FileError)):
-        if pre_init:
-            plug.echo(_PRE_INIT_ERROR_MESSAGE)
+    if traceback:
         plug.log.exception("Critical exception")
     raise exc
 
