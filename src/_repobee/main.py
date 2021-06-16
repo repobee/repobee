@@ -95,7 +95,8 @@ def run(
         _initialize_logging_and_plugins_for_run(plugins or [])
         parsed_args, api = _parse_args(cmd, conf)
 
-        with _set_output_verbosity(getattr(parsed_args, "quiet", 0)):
+        output_verbosity = _get_output_verbosity(parsed_args)
+        with _set_output_verbosity(output_verbosity):
             return _repobee.cli.dispatch.dispatch_command(
                 parsed_args, api, conf
             )
@@ -173,9 +174,11 @@ def _run_cli(sys_args: List[str]):
     with _pre_init_error_handler():
         app_init = _run_preparser_and_init_application(args)
 
-    with _core_error_handler(
-        traceback=app_init.parsed_args.traceback
-    ), _set_output_verbosity(getattr(app_init.parsed_args, "quiet", 0)):
+    output_verbosity = _get_output_verbosity(app_init.parsed_args)
+    show_traceback = app_init.parsed_args.traceback
+    with _set_output_verbosity(output_verbosity), _core_error_handler(
+        show_traceback
+    ):
         _repobee.cli.dispatch.dispatch_command(
             app_init.parsed_args, app_init.platform_api, app_init.config
         )
@@ -317,6 +320,10 @@ def _set_output_verbosity(quietness: int):
         # 1) the generator must yeld
         # 2) it must yield precisely once
         yield
+
+
+def _get_output_verbosity(parsed_args: argparse.Namespace) -> int:
+    return getattr(parsed_args, "quiet", 0)
 
 
 @contextlib.contextmanager
