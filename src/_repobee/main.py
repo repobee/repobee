@@ -184,7 +184,8 @@ def _run_cli(sys_args: List[str]):
 @dataclasses.dataclass
 class _ApplicationInitialization:
     parsed_args: argparse.Namespace
-    platform_api: Optional[plug.PlatformAPI]
+    # FIXME platform_api should be optional, but typing error in dispatch_command prevents this
+    platform_api: plug.PlatformAPI
     config: plug.Config
 
 
