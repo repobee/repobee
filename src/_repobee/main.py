@@ -176,7 +176,9 @@ def _run_cli(sys_args: List[str]):
     with _core_error_handler(
         traceback=app_init.parsed_args.traceback
     ), _set_output_verbosity(getattr(app_init.parsed_args, "quiet", 0)):
-        _repobee.cli.dispatch.dispatch_command(*dataclasses.astuple(app_init))
+        _repobee.cli.dispatch.dispatch_command(
+            app_init.parsed_args, app_init.platform_api, app_init.config
+        )
 
 
 @dataclasses.dataclass
