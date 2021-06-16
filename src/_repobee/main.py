@@ -8,12 +8,13 @@
 
 import argparse
 import contextlib
+import dataclasses
 import io
 import logging
 import os
 import pathlib
 import sys
-from typing import List, Optional, Union, Mapping
+from typing import List, Optional, Union, Mapping, Any, NoReturn
 from types import ModuleType
 
 import repobee_plug as plug
@@ -90,33 +91,44 @@ def run(
     conf = _to_config(pathlib.Path(config_file))
     requested_workdir = pathlib.Path(str(workdir)).resolve(strict=True)
 
-    def _ensure_is_module(p: Union[ModuleType, plug.Plugin]):
-        if isinstance(p, type) and issubclass(p, plug.Plugin):
-            mod = ModuleType(p.__name__.lower())
-            mod.__package__ = f"__{p.__name__}"
-            setattr(mod, p.__name__, p)
-            return mod
-        elif isinstance(p, ModuleType):
-            return p
-        else:
-            raise TypeError(f"not plugin or module: {p}")
+    with _in_workdir(requested_workdir), _unregister_plugins_on_exit():
+        _initialize_logging_and_plugins_for_run(plugins or [])
+        parsed_args, api = _parse_args(cmd, conf)
 
-    wrapped_plugins = list(map(_ensure_is_module, plugins or []))
+        output_verbosity = _get_output_verbosity(parsed_args)
+        with _set_output_verbosity(output_verbosity):
+            return _repobee.cli.dispatch.dispatch_command(
+                parsed_args, api, conf
+            )
 
-    with _in_workdir(requested_workdir):
-        try:
-            _repobee.cli.parsing.setup_logging()
-            # FIXME calling _initialize_plugins like this is ugly, should be
-            # refactored
-            _initialize_plugins(argparse.Namespace(no_plugins=False, plug=[]))
-            plugin.register_plugins(wrapped_plugins)
-            parsed_args, api = _parse_args(cmd, conf)
 
-            with _set_output_verbosity(getattr(parsed_args, "quiet", 0)):
-                return _repobee.cli.dispatch.dispatch_command(
-                    parsed_args, api, conf
-                )
-        finally:
+def _wrap_in_plugin_module(maybe_plugin: Any) -> ModuleType:
+    if isinstance(maybe_plugin, type) and issubclass(
+        maybe_plugin, plug.Plugin
+    ):
+        mod = ModuleType(maybe_plugin.__name__.lower())
+        mod.__package__ = f"__{maybe_plugin.__name__}"
+        setattr(mod, maybe_plugin.__name__, maybe_plugin)
+        return mod
+    elif isinstance(maybe_plugin, ModuleType):
+        return maybe_plugin
+    else:
+        raise TypeError(f"not plugin or module: {maybe_plugin}")
+
+
+def _initialize_logging_and_plugins_for_run(plugins: List[Any]):
+    wrapped_plugins = list(map(_wrap_in_plugin_module, plugins or []))
+    _repobee.cli.parsing.setup_logging()
+    _initialize_mandatory_plugins()
+    plugin.register_plugins(wrapped_plugins)
+
+
+@contextlib.contextmanager
+def _unregister_plugins_on_exit(unregister: bool = True):
+    try:
+        yield
+    finally:
+        if unregister:
             plugin.unregister_all_plugins()
 
 
@@ -133,9 +145,16 @@ def main(
             the function returns.
         workdir: The working directory to operate in.
     """
+    with _main_error_handler(), _in_workdir(
+        workdir
+    ), _unregister_plugins_on_exit(unregister=unload_plugins):
+        _run_cli(sys_args)
+
+
+@contextlib.contextmanager
+def _main_error_handler():
     try:
-        with _in_workdir(workdir):
-            _main(sys_args, unload_plugins)
+        yield
     except plug.PlugError:
         plug.log.error("A plugin exited with an error")
         sys.exit(1)
@@ -148,51 +167,82 @@ def main(
         sys.exit(1)
 
 
-def _main(sys_args: List[str], unload_plugins: bool = True):
+def _run_cli(sys_args: List[str]):
     _repobee.cli.parsing.setup_logging()
     args = sys_args[1:]  # drop the name of the program
-    traceback = False
-    pre_init = True
-    try:
-        preparser_args, app_args = separate_args(args)
-        parsed_preparser_args = _repobee.cli.preparser.parse_args(
-            preparser_args,
-            default_config_file=_resolve_config_file(
-                pathlib.Path(".").resolve()
-            ),
+
+    with _pre_init_error_handler():
+        app_init = _run_preparser_and_init_application(args)
+
+    output_verbosity = _get_output_verbosity(app_init.parsed_args)
+    show_traceback = app_init.parsed_args.traceback
+    with _set_output_verbosity(output_verbosity), _core_error_handler(
+        show_traceback
+    ):
+        _repobee.cli.dispatch.dispatch_command(
+            app_init.parsed_args, app_init.platform_api, app_init.config
         )
 
-        _initialize_plugins(parsed_preparser_args)
 
-        conf = _to_config(parsed_preparser_args.config_file)
-        parsed_args, api = _parse_args(app_args, conf)
-        traceback = parsed_args.traceback
-        pre_init = False
+@dataclasses.dataclass
+class _ApplicationInitialization:
+    parsed_args: argparse.Namespace
+    # FIXME platform_api should be optional, but typing error in dispatch_command prevents this
+    platform_api: plug.PlatformAPI
+    config: plug.Config
 
-        with _set_output_verbosity(getattr(parsed_args, "quiet", 0)):
-            _repobee.cli.dispatch.dispatch_command(parsed_args, api, conf)
-    except exception.PluginLoadError as exc:
+
+def _run_preparser_and_init_application(
+    args: List[str],
+) -> _ApplicationInitialization:
+    preparser_args, app_args = separate_args(args)
+    parsed_preparser_args = _repobee.cli.preparser.parse_args(
+        preparser_args,
+        default_config_file=_resolve_config_file(pathlib.Path(".").resolve()),
+    )
+
+    # IMPORTANT: the mandatory plugins must be loaded before user-defined
+    # plugins to ensure that the user-defined plugins override the defaults
+    # in firstresult hooks
+    _initialize_mandatory_plugins()
+    if not parsed_preparser_args.no_plugins:
+        _initialize_non_default_plugins(parsed_preparser_args.plug or [])
+
+    conf = _to_config(parsed_preparser_args.config_file)
+    parsed_args, api = _parse_args(app_args, conf)
+    return _ApplicationInitialization(parsed_args, api, conf)
+
+
+@contextlib.contextmanager
+def _pre_init_error_handler():
+    try:
+        yield
+    except (
+        exception.ParseError,
+        exception.PluginLoadError,
+        exception.FileError,
+    ) as exc:
+        plug.echo(_PRE_INIT_ERROR_MESSAGE)
         plug.log.error(f"{exc.__class__.__name__}: {exc}")
         raise
-    except exception.ParseError as exc:
-        plug.log.error(str(exc))
-        raise
     except Exception as exc:
-        # FileErrors can occur during pre-init because of reading the config
-        # and we don't want tracebacks for those (afaik at this time)
-        if traceback or (
-            pre_init and not isinstance(exc, exception.FileError)
-        ):
-            plug.log.error(str(exc))
-            if pre_init:
-                plug.echo(_PRE_INIT_ERROR_MESSAGE)
-            plug.log.exception("Critical exception")
-        else:
-            plug.log.error("{.__class__.__name__}: {}".format(exc, str(exc)))
-        raise
-    finally:
-        if unload_plugins:
-            plugin.unregister_all_plugins()
+        plug.echo(_PRE_INIT_ERROR_MESSAGE)
+        _handle_unexpected_exception(exc, traceback=True)
+
+
+@contextlib.contextmanager
+def _core_error_handler(traceback: bool):
+    try:
+        yield
+    except Exception as exc:
+        _handle_unexpected_exception(exc, traceback=True)
+
+
+def _handle_unexpected_exception(exc: Exception, traceback: bool) -> NoReturn:
+    plug.log.error(f"{exc.__class__.__name__}: {exc}")
+    if traceback:
+        plug.log.exception("Critical exception")
+    raise exc
 
 
 def _to_config(config_file: pathlib.Path) -> plug.Config:
@@ -212,10 +262,7 @@ def _resolve_config_file(path: pathlib.Path) -> pathlib.Path:
         return _resolve_config_file(path.parent)
 
 
-def _initialize_plugins(parsed_preparser_args: argparse.Namespace) -> None:
-    # IMPORTANT: the default plugins must be loaded before user-defined
-    # plugins to ensure that the user-defined plugins override the defaults
-    # in firstresult hooks
+def _initialize_mandatory_plugins():
     plug.log.debug("Initializing default plugins")
     plugin.initialize_default_plugins()
 
@@ -223,16 +270,16 @@ def _initialize_plugins(parsed_preparser_args: argparse.Namespace) -> None:
         plug.log.debug("Initializing dist plugins")
         plugin.initialize_dist_plugins()
 
-    if not parsed_preparser_args.no_plugins:
-        if distinfo.DIST_INSTALL:
-            plug.log.debug("Initializing active plugins")
-            plugin.initialize_plugins(
-                disthelpers.get_active_plugins(), allow_filepath=True
-            )
 
-        plug.log.debug("Initializing preparser-specified plugins")
-        plugin_names = parsed_preparser_args.plug or []
-        plugin.initialize_plugins(plugin_names, allow_filepath=True)
+def _initialize_non_default_plugins(plugin_names: List[str]) -> None:
+    if distinfo.DIST_INSTALL:
+        plug.log.debug("Initializing active plugins")
+        plugin.initialize_plugins(
+            disthelpers.get_active_plugins(), allow_filepath=True
+        )
+
+    plug.log.debug("Initializing preparser-specified plugins")
+    plugin.initialize_plugins(plugin_names, allow_filepath=True)
 
 
 def _parse_args(args: List[str], config: plug.Config):
@@ -261,13 +308,11 @@ def _set_output_verbosity(quietness: int):
                 _repobee.cli.parsing.setup_logging(
                     terminal_level=logging.ERROR
                 )
-                pass
             elif quietness >= 3:
                 # additionally silence errors and warnings
                 _repobee.cli.parsing.setup_logging(
                     terminal_level=logging.CRITICAL
                 )
-                pass
 
             yield
     else:
@@ -275,6 +320,10 @@ def _set_output_verbosity(quietness: int):
         # 1) the generator must yeld
         # 2) it must yield precisely once
         yield
+
+
+def _get_output_verbosity(parsed_args: argparse.Namespace) -> int:
+    return getattr(parsed_args, "quiet", 0)
 
 
 @contextlib.contextmanager
