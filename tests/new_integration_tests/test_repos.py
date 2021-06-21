@@ -360,6 +360,9 @@ class TestClone:
     def test_clone_all_repos_flat(
         self, platform_url, with_student_repos, tmp_path
     ):
+        """Test that cloning with flat directory layout results in all
+        repositories ending up in the current working directory.
+        """
         expected_dirnames = plug.generate_repo_names(
             STUDENT_TEAMS, TEMPLATE_REPO_NAMES
         )
