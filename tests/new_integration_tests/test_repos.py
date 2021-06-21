@@ -8,6 +8,7 @@ from typing import List, Mapping, Tuple, Iterable
 import git
 import pytest
 
+import _repobee.command.repos
 import _repobee.ext.javac
 import _repobee.ext.pylint
 
@@ -355,6 +356,26 @@ class TestClone:
         assert_cloned_student_repos_match_templates(
             STUDENT_TEAMS, TEMPLATE_REPO_NAMES, tmp_path
         )
+
+    def test_clone_all_repos_flat(
+        self, platform_url, with_student_repos, tmp_path
+    ):
+        expected_dirnames = plug.generate_repo_names(
+            STUDENT_TEAMS, TEMPLATE_REPO_NAMES
+        )
+
+        funcs.run_repobee(
+            f"repos clone -a {TEMPLATE_REPOS_ARG} "
+            f"--base-url {platform_url} "
+            "--directory-layout "
+            f"{_repobee.command.repos.DirectoryLayout.FLAT.value}",
+            workdir=tmp_path,
+        )
+
+        actual_dirnames = [
+            path.name for path in tmp_path.iterdir() if path.is_dir()
+        ]
+        assert sorted(actual_dirnames) == sorted(expected_dirnames)
 
     def test_clone_local_gitconfig(
         self, platform_url, with_student_repos, tmp_path

@@ -13,6 +13,7 @@ import functools
 
 from typing import Union, Callable, Optional, Any
 from _repobee.cli import preparser
+from _repobee.command.repos import DirectoryLayout
 
 import repobee_plug as plug
 
@@ -329,6 +330,15 @@ def _add_repo_parsers(
         help="attempt to update local student repositories, "
         "stashing any unstaged changes (beta feature)",
         action="store_true",
+    )
+    clone.add_argument(
+        "--dl",
+        "--directory-layout",
+        help="how to arrange cloned repositories",
+        choices=list(DirectoryLayout),
+        dest="directory_layout",
+        default=DirectoryLayout.NESTED_BY_TEAM,
+        type=DirectoryLayout,
     )
 
     add_parser(

@@ -78,6 +78,7 @@ VALID_PARSED_ARGS = dict(
     secrets=False,
     update_local=False,
     double_blind_key=None,
+    directory_layout=_repobee.command.repos.DirectoryLayout.NESTED_BY_TEAM,
 )
 
 
@@ -382,7 +383,10 @@ class TestDispatchCommand:
         )
 
         command_mock.clone_repos.assert_called_once_with(
-            args.repos, False, dummyapi_instance
+            args.repos,
+            False,
+            _repobee.command.repos.DirectoryLayout.NESTED_BY_TEAM,
+            dummyapi_instance,
         )
 
     def test_verify_settings_called_with_correct_args(
