@@ -381,7 +381,7 @@ class TestClone:
         """
         # arrange
         def generate_repo_name(team_name, assignment_name):
-            return f"{assignment_name}-BONKERS-{team_name}"
+            return f"{assignment_name}-bonkers-{team_name}"
 
         class StrangeNamingConvention(plug.Plugin):
             def generate_repo_name(self, team_name, assignment_name):
