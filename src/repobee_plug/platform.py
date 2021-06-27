@@ -121,6 +121,9 @@ class Repo(APIObject):
     url: str
     implementation: Any = dataclasses.field(compare=False, repr=False)
 
+    def __post_init__(self):
+        object.__setattr__(self, "name", self.name.lower())
+
 
 class _APISpec:
     """Wrapper class for API method stubs.
