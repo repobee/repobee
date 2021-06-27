@@ -192,3 +192,16 @@ class TestRepo:
             implementation="fake",
         )
         assert repo.name == name_lowercase
+
+    def test_lowercase_url(self):
+        url = "hTTps://sAmpLe.cOM"
+        url_lowercase = "https://sample.com"
+
+        repo = platform.Repo(
+            name="testrepo",
+            description="descr",
+            private=False,
+            url=url,
+            implementation="fake",
+        )
+        assert repo.url == url_lowercase
