@@ -123,6 +123,7 @@ class Repo(APIObject):
 
     def __post_init__(self):
         object.__setattr__(self, "name", self.name.lower())
+        object.__setattr__(self, "url", self.url.lower())
 
 
 class _APISpec:

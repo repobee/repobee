@@ -94,6 +94,7 @@ class StudentRepo(_RepoPathMixin):
     def __post_init__(self):
         _check_name_length(self.name)
         object.__setattr__(self, "name", self.name.lower())
+        object.__setattr__(self, "url", self.url.lower())
 
 
 @dataclasses.dataclass(frozen=True)
