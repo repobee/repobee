@@ -11,3 +11,18 @@ class TestStudentTeam:
         members_lowercase = ["simon", "alice", "eve"]
         team = plug.StudentTeam(members=members)
         assert team.members == members_lowercase
+
+
+class TestStudentRepo:
+    """Tests for the StudentRepo class"""
+
+    def test_constructor_lowercases_name(self):
+        name = "TeStREpo"
+        name_lowercase = "testrepo"
+
+        members = ["simon", "alice", "eve"]
+        team = plug.StudentTeam(members=members)
+        url = "https://github.com/SpoonLabs/diffmin"
+
+        student_repo = plug.StudentRepo(name, team, url)
+        assert student_repo.name == name_lowercase

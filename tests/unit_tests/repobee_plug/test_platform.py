@@ -175,3 +175,20 @@ class TestTeam:
         )
 
         assert team.members == lowercase_usernames
+
+
+class TestRepo:
+    """Tests for Repo class"""
+
+    def test_lowercase_name(self):
+        name = "TeStREpo"
+        name_lowercase = "testrepo"
+
+        repo = platform.Repo(
+            name=name,
+            description="descr",
+            private=False,
+            url="https://sample.com",
+            implementation="fake",
+        )
+        assert repo.name == name_lowercase
