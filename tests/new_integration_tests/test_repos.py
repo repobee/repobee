@@ -371,7 +371,7 @@ class TestClone:
             f"repos clone -a {TEMPLATE_REPOS_ARG} "
             f"--base-url {platform_url} "
             "--directory-layout "
-            f"{_repobee.command.repos.DirectoryLayout.FLAT.value}",
+            f"{_repobee.command.repos.DirectoryLayout.FLAT}",
             workdir=tmp_path,
         )
 
