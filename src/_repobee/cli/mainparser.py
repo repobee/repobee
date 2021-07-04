@@ -337,7 +337,7 @@ def _add_repo_parsers(
         help="how to arrange cloned repositories",
         choices=list(DirectoryLayout),
         dest="directory_layout",
-        default=DirectoryLayout.NESTED_BY_TEAM,
+        default=DirectoryLayout.BY_TEAM,
         type=DirectoryLayout,
     )
 

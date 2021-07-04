@@ -18,17 +18,7 @@ import re
 import os
 import sys
 import tempfile
-import enum
-from typing import (
-    Iterable,
-    List,
-    Optional,
-    Mapping,
-    Union,
-    Tuple,
-    Any,
-    Callable,
-)
+from typing import Iterable, List, Optional, Mapping, Union, Tuple, Any
 
 import repobee_plug as plug
 
@@ -42,6 +32,7 @@ from _repobee import plugin
 from _repobee.git import Push
 
 from _repobee.command import progresswrappers
+from _repobee.fileutil import DirectoryLayout
 
 
 def setup_student_repos(
@@ -411,14 +402,6 @@ def _open_issue_by_urls(
         plug.log.info(msg)
 
 
-class DirectoryLayout(enum.Enum):
-    FLAT = "flat"
-    NESTED_BY_TEAM = "by-team"
-
-    def __str__(self):
-        return str(self.value)
-
-
 def clone_repos(
     repos: Iterable[plug.StudentRepo],
     update_local: bool,
@@ -467,31 +450,10 @@ def _with_output_paths(
     repos: Iterable[plug.StudentRepo], directory_layout: DirectoryLayout
 ) -> List[plug.StudentRepo]:
     base_dir = pathlib.Path(".").resolve()
-    repo_path_func = _select_repo_path_function(directory_layout)
-    return [repo.with_path(repo_path_func(base_dir, repo)) for repo in repos]
-
-
-def _select_repo_path_function(
-    layout: DirectoryLayout,
-) -> Callable[[pathlib.Path, plug.StudentRepo], pathlib.Path]:
-    if layout == DirectoryLayout.FLAT:
-        return _flat_repo_path
-    elif layout == DirectoryLayout.NESTED_BY_TEAM:
-        return _nested_team_repo_path
-    else:
-        raise ValueError(f"unknown directory layout: {layout}")
-
-
-def _flat_repo_path(
-    base: pathlib.Path, repo: plug.StudentRepo
-) -> pathlib.Path:
-    return base / repo.name
-
-
-def _nested_team_repo_path(
-    base: pathlib.Path, repo: plug.StudentRepo
-) -> pathlib.Path:
-    return base / repo.team.name / repo.name
+    return [
+        repo.with_path(directory_layout.get_repo_path(base_dir, repo))
+        for repo in repos
+    ]
 
 
 def _clone_repos(
