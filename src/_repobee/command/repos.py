@@ -32,6 +32,7 @@ from _repobee import plugin
 from _repobee.git import Push
 
 from _repobee.command import progresswrappers
+from _repobee.fileutil import DirectoryLayout
 
 
 def setup_student_repos(
@@ -404,6 +405,7 @@ def _open_issue_by_urls(
 def clone_repos(
     repos: Iterable[plug.StudentRepo],
     update_local: bool,
+    directory_layout: DirectoryLayout,
     api: plug.PlatformAPI,
 ) -> Mapping[str, List[plug.Result]]:
     """Clone all student repos related to the provided master repos and student
@@ -414,6 +416,8 @@ def clone_repos(
             ``implementation`` attribute, so it does not need to be set.
         update_local: Whether or nut to attempt to update student repos
             that already exist locally.
+        directory_layout: The layout to use for organizing cloned
+            repositories.
         api: An implementation of :py:class:`repobee_plug.PlatformAPI` used to
             interface with the platform (e.g. GitHub or GitLab) instance.
     Returns:
@@ -422,8 +426,9 @@ def clone_repos(
 
     plug.echo("Cloning into student repos ...")
     with tempfile.TemporaryDirectory() as tmpdir:
+        pathed_repos = _with_output_paths(repos, directory_layout)
         local_repos = _clone_repos(
-            repos, pathlib.Path(tmpdir), update_local, api
+            pathed_repos, pathlib.Path(tmpdir), update_local, api
         )
         _set_pull_ff_only(local_repos)
 
@@ -441,17 +446,23 @@ def _set_pull_ff_only(local_repos: List[plug.StudentRepo]) -> None:
         git.set_gitconfig_options(repo.path, {"pull.ff": "only"})
 
 
+def _with_output_paths(
+    repos: Iterable[plug.StudentRepo], directory_layout: DirectoryLayout
+) -> List[plug.StudentRepo]:
+    base_dir = pathlib.Path(".").resolve()
+    return [
+        repo.with_path(directory_layout.get_repo_path(base_dir, repo))
+        for repo in repos
+    ]
+
+
 def _clone_repos(
-    repos: Iterable[plug.StudentRepo],
+    pathed_repos: List[plug.StudentRepo],
     dst_dirpath: pathlib.Path,
     update_local: bool,
     api: plug.PlatformAPI,
 ) -> List[plug.StudentRepo]:
     """Clone the specified repo urls into the destination directory."""
-    cur_dir = pathlib.Path(".").resolve()
-    pathed_repos: List[plug.StudentRepo] = [
-        repo.with_path(cur_dir / repo.team.name / repo.name) for repo in repos
-    ]
     _check_for_non_git_dir_path_clashes(pathed_repos)
 
     cloned_repos = git.clone_student_repos(

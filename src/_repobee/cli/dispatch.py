@@ -89,7 +89,9 @@ def _dispatch_repos_command(
         command.migrate_repos(args.template_repo_urls, api)
         return None
     elif action == repos.clone:
-        return command.clone_repos(args.repos, args.update_local, api)
+        return command.clone_repos(
+            args.repos, args.update_local, args.directory_layout, api
+        )
     _raise_illegal_action_error(args)
 
 
