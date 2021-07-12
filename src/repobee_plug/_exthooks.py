@@ -86,6 +86,30 @@ def pre_setup(repo: TemplateRepo, api: PlatformAPI) -> Optional[Result]:
 
 
 @hookspec
+def preprocess_template(repo: TemplateRepo, api: PlatformAPI) -> None:
+    """Perform on-the-fly preprocessing of a template repository before
+    distributing it to students.
+
+    The intention of this hook is to allow users to perform preprocessing of
+    template repositories before they are pushed to students. A simple example
+    of this would be to squash the commits of the template repo before pushing
+    (see :py:mod:`_repobee.ext.squashtemplates`).
+
+    .. important::
+
+        Only committed changes are respected. It is the responsibility of the
+        hook implementation to commit changes they wish to persist.
+
+    .. warning::
+
+        Using this hook or any plugin that implements it makes running ``repos
+        update`` impossible, as on-the-fly commits are unique by timestamp.
+        There are currently no plans to implement support ``repos update``
+        together with template preprocessing.
+    """
+
+
+@hookspec
 def post_setup(
     repo: StudentRepo, api: PlatformAPI, newly_created: bool
 ) -> Optional[Result]:

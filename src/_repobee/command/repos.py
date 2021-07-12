@@ -278,6 +278,7 @@ def _clone_all(
             url = _try_insert_auth(repo, api)
             plug.log.info(f"Cloning into '{url}'")
             git.clone_single(url, cwd=str(cwd))
+            plug.manager.hook.preprocess_template(repo=repo, api=api)
     except exception.CloneFailedError:
         plug.log.error(f"Error cloning into {url}, aborting ...")
         raise
