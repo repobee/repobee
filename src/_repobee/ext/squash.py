@@ -20,6 +20,7 @@ class Squash(plug.Plugin, plug.cli.CommandExtension):
         help="commit message to use for the squash commit",
         converter=str,
         default="Initial commit",
+        configurable=True,
     )
 
     def preprocess_template(
