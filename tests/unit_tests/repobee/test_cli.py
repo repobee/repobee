@@ -624,7 +624,7 @@ class TestBaseParsing:
         with pytest.raises(exception.ParseError) as exc_info:
             _repobee.cli.parsing.handle_args(sys_args, config_for_tests)
 
-        assert "unsupported protocol in {}".format(url) in str(exc_info.value)
+        assert f"unsupported protocol in {url}" in str(exc_info.value)
 
     def test_correctly_parsers_teams_create(
         self, dummyapi_instance, students_file, config_for_tests
