@@ -62,9 +62,8 @@ def _convert_404_to_not_found_error(msg):
         if exc.status == 404:
             raise plug.NotFoundError(msg)
         raise plug.UnexpectedException(
-            "An unexpected exception occured. {.__name__}: {}".format(
-                type(exc), str(exc)
-            )
+            f"An unexpected exception occured. {type(exc)}: {str(exc)}"
+
         )
 
 
@@ -106,7 +105,7 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
         )
     except Exception as e:
         raise plug.UnexpectedException(
-            "a {} occured unexpectedly: {}".format(type(e).__name__, str(e))
+            f"a {type(e).__name__} occured unexpectedly: {str(e)}"
         )
 
 
@@ -150,9 +149,7 @@ class GitHubAPI(plug.PlatformAPI):
             self._org = self._github.get_organization(self._org_name)
 
     def __repr__(self):
-        return "GitHubAPI(base_url={}, token={}, org_name={})".format(
-            self._base_url, self._token, self._org_name
-        )
+        return f"GitHubAPI(base_url={self._base_url}, token={self._token}, org_name={self._org_name})"
 
     @property
     def org(self):
@@ -360,7 +357,7 @@ class GitHubAPI(plug.PlatformAPI):
                         "Got unexpected response code from the GitHub API",
                         status=exc.status,
                     )
-                plug.log.warning("User {} does not exist".format(name))
+                plug.log.warning(f"User {name} does not exist")
         return existing_users
 
     def get_repo_urls(
@@ -411,7 +408,7 @@ class GitHubAPI(plug.PlatformAPI):
         if html_base_url not in url:
             raise plug.InvalidURL(f"url not found on platform: '{url}'")
 
-        auth = "{}:{}".format(self._user, self.token)
+        auth = f"{self._user}:{self.token}"
         return urllib.parse.urlunsplit(
             [scheme, f"{auth}@{netloc}", path, query, fragment]
         )
@@ -438,7 +435,7 @@ class GitHubAPI(plug.PlatformAPI):
         missing_repos = set(repo_names) - repos
         if missing_repos:
             plug.log.warning(
-                "Can't find repos: {}".format(", ".join(missing_repos))
+                f"Can't find repos: {", ".join(missing_repos)}"
             )
 
     @staticmethod
@@ -462,30 +459,30 @@ class GitHubAPI(plug.PlatformAPI):
         plug.echo("Trying to fetch user information ...")
 
         user_not_found_msg = (
-            "user {} could not be found. Possible reasons: "
-            "bad base url, bad username or bad access token permissions"
-        ).format(user)
+            f"user {user} could not be found. Possible reasons: "
+            f"bad base url, bad username or bad access token permissions"
+        )
         with _convert_404_to_not_found_error(user_not_found_msg):
             user_ = g.get_user(user)
             msg = (
-                "Specified login is {}, "
-                "but the fetched user's login is {}.".format(user, user_.login)
+                f"Specified login is {user}, "
+                f"but the fetched user's login is {user_.login}."
             )
             if user_.login is None:
                 msg = (
-                    "{} Possible reasons: bad api url that points to a "
-                    "GitHub instance, but not to the api endpoint."
-                ).format(msg)
+                    f"{msg} Possible reasons: bad api url that points to a "
+                    f"GitHub instance, but not to the api endpoint."
+                )
                 raise plug.UnexpectedException(msg=msg)
             elif user_.login != user:
                 msg = (
-                    "{} Possible reasons: unknown, rerun with -tb and open an "
-                    "issue on GitHub.".format(msg)
+                    f"{msg} Possible reasons: unknown, rerun with -tb and open an "
+                    f"issue on GitHub."
                 )
                 raise plug.UnexpectedException(msg=msg)
         plug.echo(
-            "SUCCESS: found user {}, "
-            "user exists and base url looks okay".format(user)
+            f"SUCCESS: found user {user}, "
+            f"user exists and base url looks okay"
         )
 
         plug.echo("Verifying access token scopes ...")
@@ -493,8 +490,8 @@ class GitHubAPI(plug.PlatformAPI):
         assert scopes is not None
         if not REQUIRED_TOKEN_SCOPES.issubset(scopes):
             raise plug.BadCredentials(
-                "missing one or more access token scopes. "
-                "Actual: {}. Required {}".format(scopes, REQUIRED_TOKEN_SCOPES)
+                f"missing one or more access token scopes. "
+                f"Actual: {scopes}. Required {REQUIRED_TOKEN_SCOPES}"
             )
         plug.echo("SUCCESS: access token scopes look okay")
 
@@ -507,20 +504,18 @@ class GitHubAPI(plug.PlatformAPI):
     @staticmethod
     def _verify_org(org_name: str, user: str, g: github.MainClass.Github):
         """Check that the organization exists and that the user is an owner."""
-        plug.echo("Trying to fetch organization {} ...".format(org_name))
+        plug.echo(f"Trying to fetch organization {org_name} ...")
         org_not_found_msg = (
-            "organization {} could not be found. Possible "
-            "reasons: org does not exist, user does not have "
-            "sufficient access to organization."
-        ).format(org_name)
+            f"organization {org_name} could not be found. Possible "
+            f"reasons: org does not exist, user does not have "
+            f"sufficient access to organization."
+        )
         with _convert_404_to_not_found_error(org_not_found_msg):
             org = g.get_organization(org_name)
-        plug.echo("SUCCESS: found organization {}".format(org_name))
+        plug.echo(f"SUCCESS: found organization {org_name}")
 
         plug.echo(
-            "Verifying that user {} is an owner of organization {}".format(
-                user, org_name
-            )
+            f"Verifying that user {user} is an owner of organization {org_name}"
         )
         if user not in (m.login for m in org.get_members(role="admin")):
             plug.log.warning(
@@ -533,9 +528,7 @@ class GitHubAPI(plug.PlatformAPI):
                 )
         else:
             plug.echo(
-                "SUCCESS: user {} is an owner of organization {}".format(
-                    user, org_name
-                )
+                f"SUCCESS: user {user} is an owner of organization {org_name}"
             )
 
 
