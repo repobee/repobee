@@ -63,7 +63,6 @@ def _convert_404_to_not_found_error(msg):
             raise plug.NotFoundError(msg)
         raise plug.UnexpectedException(
             f"An unexpected exception occured. {type(exc)}: {str(exc)}"
-
         )
 
 
@@ -434,9 +433,7 @@ class GitHubAPI(plug.PlatformAPI):
 
         missing_repos = set(repo_names) - repos
         if missing_repos:
-            plug.log.warning(
-                f"Can't find repos: {", ".join(missing_repos)}"
-            )
+            plug.log.warning(f"Can't find repos: {', '.join(missing_repos)}")
 
     @staticmethod
     def verify_settings(
