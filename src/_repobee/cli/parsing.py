@@ -210,8 +210,8 @@ def _validate_tls_url(url):
     """Url must use the https protocol."""
     if not url.startswith("https://"):
         raise exception.ParseError(
-            "unsupported protocol in {}: "
-            "for security reasons, only https is supported".format(url)
+            f"unsupported protocol in {url}: "
+            f"for security reasons, only https is supported"
         )
 
 
@@ -242,11 +242,9 @@ def _extract_groups(args: argparse.Namespace) -> List[plug.StudentTeam]:
     elif "students_file" in args and args.students_file:
         students_file = pathlib.Path(args.students_file).resolve()
         if not students_file.is_file():
-            raise exception.FileError(
-                "'{!s}' is not a file".format(students_file)
-            )
+            raise exception.FileError(f"'{students_file}' is not a file")
         if not students_file.stat().st_size:
-            raise exception.FileError("'{!s}' is empty".format(students_file))
+            raise exception.FileError(f"'{students_file}' is empty")
         students = [
             plug.StudentTeam(members=[s for s in group.strip().split()])
             for group in students_file.read_text(
@@ -280,8 +278,8 @@ def _connect_to_api(
     except plug.NotFoundError:
         # more informative message
         raise plug.NotFoundError(
-            "either organization {} could not be found, "
-            "or the base url '{}' is incorrect".format(org_name, base_url)
+            f"either organization {org_name} could not be found, "
+            f"or the base url '{base_url}' is incorrect"
         )
 
 
@@ -369,15 +367,13 @@ def setup_logging(terminal_level: int = logging.WARNING) -> None:
     Args:
         terminal_level: The logging level to use for printing to stderr.
     """
-    logfile = constants.LOG_DIR / "{}.log".format(
-        _repobee._external_package_name
-    )
+    logfile = constants.LOG_DIR / f"{_repobee._external_package_name}.log"
     _ensure_size_less(logfile, max_size=constants.MAX_LOGFILE_SIZE)
     try:
         os.makedirs(str(constants.LOG_DIR), exist_ok=True)
     except Exception as exc:
         raise exception.FileError(
-            "can't create log directory at {}".format(constants.LOG_DIR)
+            f"can't create log directory at {constants.LOG_DIR}"
         ) from exc
 
     daiquiri.setup(

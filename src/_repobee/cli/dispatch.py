@@ -232,4 +232,4 @@ def _handle_hook_results(hook_results, filepath):
     )
     output_file = pathlib.Path(filepath)
     util.atomic_write(plug.result_mapping_to_json(hook_results), output_file)
-    plug.echo("Hook results stored to {}".format(filepath))
+    plug.echo(f"Hook results stored to {filepath}")
