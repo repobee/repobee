@@ -22,8 +22,8 @@ def generate_review_allocations(
         raise ValueError("num_reviews must be greater than 0")
     if len(teams) < 2:
         raise ValueError(
-            "there must be at least 2 teams for peer review, "
-            "but {} were provided".format(len(teams))
+            f"there must be at least 2 teams for peer review, "
+            f"but {len(teams)} were provided"
         )
 
     random.shuffle(teams)
