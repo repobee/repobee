@@ -61,9 +61,7 @@ class _PluginMeta(type):
         method_names = set(methods.keys())
         if not method_names.issubset(hook_names):
             raise exceptions.HookNameError(
-                "public method(s) with non-hook name: {}".format(
-                    ", ".join(method_names - hook_names)
-                )
+                f"public method(s) with non-hook name: {', '.join(method_names - hook_names)}"
             )
 
     @staticmethod
