@@ -115,7 +115,7 @@ def create_parser(config: plug.Config) -> argparse.ArgumentParser:
         """Return the name of the plugin, with version if available."""
         name = plugin_module.__name__.split(".")[-1]
         ver = plugin.resolve_plugin_version(plugin_module)
-        return "{}-{}".format(name, ver) if ver else name
+        return f"{name}-{ver}" if ver else name
 
     loaded_plugins = ", ".join(
         [
@@ -143,7 +143,7 @@ def create_parser(config: plug.Config) -> argparse.ArgumentParser:
         "--version",
         help="display version info",
         action="version",
-        version="{}".format(_repobee.__version__),
+        version=f"{_repobee.__version__}",
     )
     # Re-add the preparser arguments, so that they show up in the help
     # output in the cli. These arguments are trimmed from the parsed args
