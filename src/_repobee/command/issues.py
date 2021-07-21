@@ -81,7 +81,7 @@ def list_issues(
             plug.Result(
                 name="list-issues",
                 status=plug.Status.SUCCESS,
-                msg="Fetched {} issues from {}".format(len(issues), repo.name),
+                msg=f"Fetched {len(issues)} issues from {repo.name}",
                 data={issue.number: issue.to_dict() for issue in issues},
             )
         ]
@@ -157,7 +157,7 @@ def _log_repo_issues(
         persistent_issues_per_repo.append((repo, issues))
 
         if not issues:
-            plug.log.warning("{}: No matching issues".format(repo.name))
+            plug.log.warning(f"{repo.name}: No matching issues")
 
         for issue in issues:
             color = (bg("grey_30") if even else bg("grey_15")) + fg("white")
@@ -166,17 +166,10 @@ def _log_repo_issues(
                 color
             )  # color takes character space
 
-            id_ = "{}{}/#{}:".format(color, repo.name, issue.number).ljust(
+            id_ = f"{color}{repo.name}/#{issue.number}:".ljust(
                 adjusted_alignment
             )
-            out = "{}{}{}{}created {!s} by {}".format(
-                id_,
-                issue.title,
-                style.RESET,
-                " ",
-                issue.created_at,
-                issue.author,
-            )
+            out = f"{id_}{issue.title}{style.RESET} created {issue.created_at} by {issue.author}"
             if show_body:
                 out += os.linesep * 2 + _limit_line_length(issue.body)
             plug.echo(out)
