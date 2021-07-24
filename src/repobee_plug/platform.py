@@ -487,7 +487,7 @@ def check_init_params(reference_params, compare_params):
     extra = set(compare_params) - set(reference_params)
     if extra:
         raise exceptions.APIImplementationError(
-            "unexpected arguments to __init__: {}".format(extra)
+            f"unexpected arguments to __init__: {extra}"
         )
 
 
@@ -507,9 +507,7 @@ def check_parameters(reference, compare):
     for ref, cmp in itertools.zip_longest(reference_params, compare_params):
         if ref != cmp:
             raise exceptions.APIImplementationError(
-                "{}: expected parameter '{}', found '{}'".format(
-                    reference.__name__, ref, cmp
-                )
+                f"{reference.__name__}: expected parameter '{ref}', found '{cmp}'"
             )
 
 
@@ -526,7 +524,7 @@ class _APIMeta(type):
         )
         if non_api_methods:
             raise exceptions.APIImplementationError(
-                "non-API methods may not be public: {}".format(non_api_methods)
+                f"non-API methods may not be public: {non_api_methods}"
             )
         for method_name, method in api_methods.items():
             if method_name in implemented_methods:

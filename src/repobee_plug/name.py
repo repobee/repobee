@@ -47,9 +47,12 @@ def generate_repo_name(
         team_name: Name of the associated team.
         assignment_name: Name of an assignment.
     """
-    return manager.hook.generate_repo_name(
-        team_name=team_name, assignment_name=assignment_name
-    ) or "{}-{}".format(team_name, assignment_name)
+    return (
+        manager.hook.generate_repo_name(
+            team_name=team_name, assignment_name=assignment_name
+        )
+        or f"{team_name}-{assignment_name}"
+    )
 
 
 def generate_review_team_name(

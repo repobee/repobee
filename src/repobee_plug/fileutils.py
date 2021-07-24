@@ -24,9 +24,9 @@ def parse_students_file(path: pathlib.Path) -> List[StudentTeam]:
         :py:class:`exceptions.FileError`
     """
     if not path.is_file():
-        raise exceptions.FileError("'{!s}' is not a file".format(path))
+        raise exceptions.FileError(f"'{path}' is not a file")
     if not path.stat().st_size:
-        raise exceptions.FileError("'{!s}' is empty".format(path))
+        raise exceptions.FileError(f"'{path}' is empty")
     return [
         StudentTeam(members=[s for s in group.strip().split()])
         for group in path.read_text(encoding=sys.getdefaultencoding()).split(

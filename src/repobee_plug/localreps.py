@@ -17,8 +17,8 @@ def _check_name_length(name):
     """
     if len(name) > MAX_NAME_LENGTH:
         raise ValueError(
-            "generated Team/Repository name is too long, was {} chars, "
-            "max is {} chars".format(len(name), MAX_NAME_LENGTH)
+            f"generated Team/Repository name is too long, was {len(name)} chars, "
+            f"max is {MAX_NAME_LENGTH} chars"
         )
 
 
