@@ -38,13 +38,11 @@ import repobee_plug as plug
 
 
 def _plugin_qualname(plugin_name):
-    return "{}.ext.{}".format(_repobee._internal_package_name, plugin_name)
+    return f"{_repobee._internal_package_name}.ext.{plugin_name}"
 
 
 def _external_plugin_qualname(plugin_name):
-    return "{}_{plugin_name}.{plugin_name}".format(
-        _repobee._external_package_name, plugin_name=plugin_name
-    )
+    return f"{_repobee._external_package_name}_{plugin_name}.{plugin_name}"
 
 
 def load_plugin_modules(
@@ -378,9 +376,7 @@ def get_module_names(pkg: ModuleType) -> List[str]:
         name
         for file_finder, name, _ in pkgutil.iter_modules(pkg_path)
         # only include modules (i.e. files), not subpackages
-        if (
-            pathlib.Path(file_finder.path) / (name + ".py")  # type: ignore
-        ).is_file()
+        if (pathlib.Path(file_finder.path) / (name + ".py")).is_file()  # type: ignore
     ]
 
 
@@ -441,15 +437,9 @@ def execute_tasks(
         for repo in (
             _copy_repos(repos, basedir=copies_root) if copy_repos else repos
         ):
-            plug.log.info("Processing {}".format(repo.name))
+            plug.log.info(f"Processing {repo.name}")
 
-            valid_results: List[plug.Result] = [
-                result
-                for result in hook_function(
-                    repo=repo, api=api, **(extra_kwargs or {})
-                )  # type: ignore
-                if result
-            ]
+            valid_results: List[plug.Result] = [result for result in hook_function(repo=repo, api=api, **(extra_kwargs or {})) if result]  # type: ignore
             all_results[repo.name].extend(valid_results)
     return all_results
 
@@ -474,15 +464,13 @@ def _convert_task_exceptions(task):
         yield
     except plug.PlugError as exc:
         raise plug.PlugError(
-            "A task from the module '{}' crashed: {}".format(
-                task.act.__module__, str(exc)
-            )
+            f"A task from the module '{task.act.__module__}' crashed: {str(exc)}"
         )
     except Exception as exc:
         raise plug.PlugError(
-            "A task from the module '{}' crashed unexpectedly. "
+            f"A task from the module '{task.act.__module__}' crashed unexpectedly. "
             "This is a bug, please report it to the plugin "
-            "author.".format(task.act.__module__)
+            "author."
         ) from exc
 
 
@@ -495,16 +483,12 @@ def _handle_deprecation():
             if member in deprecated_hook_names:
                 deprecation = deprecated_hooks[member]
                 msg = (
-                    "A plugin from the module '{}' is using the "
-                    "deprecated '{}' hook, which will stop being supported as "
-                    "of RepoBee {}.".format(
-                        p.__module__ if "__module__" in dir(p) else p.__name__,
-                        member,
-                        deprecation.remove_by_version,
-                    )
+                    f"A plugin from the module '{p.__module__ if '__module__' in dir(p) else p.__name__,}' is using the "
+                    f"deprecated '{member}' hook, which will stop being supported as "
+                    f"of RepoBee {deprecation.remove_by_version}."
                 )
                 if deprecation.replacement:
-                    msg += " '{}' should be used instead.".format(
-                        deprecation.replacement
+                    msg += (
+                        f" '{deprecation.replacement}' should be used instead."
                     )
                 plug.log.warning(msg)
