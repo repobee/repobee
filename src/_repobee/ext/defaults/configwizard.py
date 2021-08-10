@@ -42,7 +42,7 @@ class Wizard(plug.Plugin, plug.cli.Command):
 def callback(args: argparse.Namespace, config: plug.Config) -> None:
     """Run through a configuration wizard."""
     if config.path.exists():
-        plug.echo("Editing config file at {}".format(str(config.path)))
+        plug.echo(f"Editing config file at {str(config.path)}")
 
     if plug.Config.CORE_SECTION_NAME not in config:
         config.create_section(plug.Config.CORE_SECTION_NAME)
@@ -75,9 +75,8 @@ Current defaults are shown in brackets [].
 """
     )
     for option in configurable_args_dict[section]:
-        prompt = "Enter default for '{}': [{}] ".format(
-            option, config.get(section, option, fallback="")
-        )
+        prompt = f"Enter default for '{option}': "
+        f"[{config.get(section, option, fallback='')}]"
         default = input(prompt)
         if default:
             if section not in config:

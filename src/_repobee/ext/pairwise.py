@@ -42,13 +42,13 @@ def generate_review_allocations(
     teams = list(teams)
     if num_reviews != 1:
         plug.log.warning(
-            "num_reviews specified to {}, but in pairwise assignment "
-            "num_reviews is ignored".format(num_reviews)
+            f"num_reviews specified to {num_reviews}, but in pairwise assignment "
+            f"num_reviews is ignored"
         )
     if len(teams) < 2:
         raise ValueError(
-            "there must be at least 2 teams for peer review, "
-            "but {} were provided".format(len(teams))
+            f"there must be at least 2 teams for peer review, "
+            f"but {len(teams)} were provided"
         )
 
     random.shuffle(teams)

@@ -89,10 +89,8 @@ def format_hook_result(hook_result):
         out = bg("dark_green")
     else:
         raise ValueError(
-            "expected hook_result.status to be one of Status.ERROR, "
-            "Status.WARNING or Status.SUCCESS, but was {!r}".format(
-                hook_result.status
-            )
+            f"expected hook_result.status to be one of Status.ERROR, "
+            f"Status.WARNING or Status.SUCCESS, but was {hook_result.status}"
         )
 
     out += (
@@ -111,14 +109,9 @@ def format_hook_result(hook_result):
 def format_hook_results_output(result_mapping):
     out = ""
     for repo_name, results in result_mapping.items():
-        out += "{}hook results for {}{}{}".format(
-            bg("grey_23"), repo_name, style.RESET, os.linesep * 2
-        )
+        out += f"{bg('grey_23')}hook results for {repo_name}{style.RESET}{os.linesep * 2}"
         out += os.linesep.join(
-            [
-                "{}{}".format(format_hook_result(res), os.linesep)
-                for res in results
-            ]
+            [f"{format_hook_result(res)}{os.linesep}" for res in results]
         )
         out += os.linesep * 2
 

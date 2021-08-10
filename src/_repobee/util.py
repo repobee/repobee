@@ -26,7 +26,7 @@ def read_issue(issue_path: str) -> plug.Issue:
         issue_path: Local path to textfile with an issue.
     """
     if not os.path.isfile(issue_path):
-        raise ValueError("{} is not a file".format(issue_path))
+        raise ValueError(f"{issue_path} is not a file")
     with open(issue_path, "r", encoding=sys.getdefaultencoding()) as file:
         return plug.Issue(file.readline().strip(), file.read())
 

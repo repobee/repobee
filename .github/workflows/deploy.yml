@@ -22,7 +22,7 @@ jobs:
         python -m pip install .
         python setup.py sdist bdist_wheel
     - name: Publish RepoBee to PyPi
-      uses: pypa/gh-action-pypi-publish@54b39fb9371c0b3a6f9f14bb8a67394defc7a806 # v1.4.1
+      uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29 # v1.4.1
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}

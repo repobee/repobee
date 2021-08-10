@@ -36,9 +36,7 @@ class Query(plug.Plugin, plug.cli.Command):
     def command(self) -> None:
         hook_results_file = pathlib.Path(self.hook_results_file).resolve()
         if not hook_results_file.exists():
-            raise plug.PlugError(
-                "no such file: {}".format(str(hook_results_file))
-            )
+            raise plug.PlugError(f"no such file: {str(hook_results_file)}")
 
         contents = hook_results_file.read_text(
             encoding=sys.getdefaultencoding()
@@ -67,7 +65,5 @@ def _filter_hook_results(hook_results_mapping, teams, assignment_names):
 def _log_missing_repo_names(missing_repo_names):
     if missing_repo_names:
         plug.log.warning(
-            "No hook results found for {}".format(
-                ", ".join(missing_repo_names)
-            )
+            f"No hook results found for {', '.join(missing_repo_names)}"
         )

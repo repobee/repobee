@@ -34,11 +34,10 @@ class PlugError(Exception):
             if not self._kwargs
             else ". Passed arguments: "
             + ", ".join(
-                "{}={}".format(key, value)
-                for key, value in self._kwargs.items()
+                f"{key}={value}" for key, value in self._kwargs.items()
             )
         )
-        return "{}{}".format(formatted_args, formatted_kwargs)
+        return f"{formatted_args}{formatted_kwargs}"
 
 
 class HookNameError(PlugError):
