@@ -95,17 +95,24 @@ def preprocess_template(repo: TemplateRepo, api: PlatformAPI) -> None:
     of this would be to squash the commits of the template repo before pushing
     (see :py:mod:`_repobee.ext.squashtemplates`).
 
-    .. important::
-
-        Only committed changes are respected. It is the responsibility of the
-        hook implementation to commit changes they wish to persist.
+    Only committed changes are respected. It is the responsibility of the
+    hook implementation to commit changes they wish to persist.
 
     .. warning::
 
-        Using this hook or any plugin that implements it makes running ``repos
-        update`` impossible, as on-the-fly commits are unique by timestamp.
-        There are currently no plans to implement support ``repos update``
-        together with template preprocessing.
+        Committing changes to the template repo with this hook makes it
+        impossible to update student repos with ``repos update``, as on-the-fly
+        commits are unique by timestamp. There are currently no plans to
+        implement support ``repos update`` together with template
+        preprocessing.
+
+    .. danger::
+
+        This hook is unstable and may change without notice.
+
+    Args:
+        repo: Representation of a local template repo.
+        api: An instance of the platform API.
     """
 
 
