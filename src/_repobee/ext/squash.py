@@ -32,8 +32,6 @@ class Squash(plug.Plugin, plug.cli.CommandExtension):
     def preprocess_template(
         self, repo: plug.TemplateRepo, api: plug.PlatformAPI
     ) -> None:
-        assert repo.path
-
         initial_branch = _repobee.git.active_branch(repo.path)
         tmp_branch = hashlib.sha256(
             str(datetime.datetime.now()).replace(" ", "_").encode("utf8")
