@@ -29,7 +29,7 @@ class Squash(plug.Plugin, plug.cli.CommandExtension):
         configurable=True,
     )
 
-    def preprocess_template(
+    def pre_setup(
         self, repo: plug.TemplateRepo, api: plug.PlatformAPI
     ) -> None:
         initial_branch = _repobee.git.active_branch(repo.path)

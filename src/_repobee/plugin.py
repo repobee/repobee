@@ -376,7 +376,9 @@ def get_module_names(pkg: ModuleType) -> List[str]:
         name
         for file_finder, name, _ in pkgutil.iter_modules(pkg_path)
         # only include modules (i.e. files), not subpackages
-        if (pathlib.Path(file_finder.path) / (name + ".py")).is_file()  # type: ignore
+        if (
+            pathlib.Path(file_finder.path) / (name + ".py")
+        ).is_file()  # type: ignore
     ]
 
 
@@ -411,7 +413,9 @@ def execute_setup_tasks(
     Returns:
         A mapping from repo name to hook result.
     """
-    return execute_tasks(repos, plug.manager.hook.pre_setup, api, cwd)
+    return execute_tasks(
+        repos, plug.manager.hook.pre_setup, api, cwd, copy_repos=False
+    )
 
 
 def execute_tasks(
@@ -439,7 +443,13 @@ def execute_tasks(
         ):
             plug.log.info(f"Processing {repo.name}")
 
-            valid_results: List[plug.Result] = [result for result in hook_function(repo=repo, api=api, **(extra_kwargs or {})) if result]  # type: ignore
+            valid_results: List[plug.Result] = [
+                result
+                for result in hook_function(
+                    repo=repo, api=api, **(extra_kwargs or {})
+                )
+                if result
+            ]  # type: ignore
             all_results[repo.name].extend(valid_results)
     return all_results
 

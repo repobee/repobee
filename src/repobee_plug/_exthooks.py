@@ -70,10 +70,12 @@ def pre_setup(repo: TemplateRepo, api: PlatformAPI) -> Optional[Result]:
 
     .. note::
 
-        Structural changes to the master repo are not currently supported.
-        Changes to the repository during the callback will not be reflected
-        in the generated repositories. Support for preprocessing is not
-        planned as it is technically difficult to implement.
+        Changes to the template repo can be persisted by comitting them, making
+        on-the-fly preprocessing possible. An example of this would be squashing
+        the commits of the template repo before pushing it to students. Note
+        that making any commit makes it impossible to later update student
+        repos with the ``repos update`` command, as on-the-fly commits are
+        unique by timestamp.
 
     Args:
         repo: Representation of a local template repo.
@@ -82,37 +84,6 @@ def pre_setup(repo: TemplateRepo, api: PlatformAPI) -> Optional[Result]:
         Optionally returns a Result for reporting the outcome of the hook.
         May also return None, in which case no reporting will be performed
         for the hook.
-    """
-
-
-@hookspec
-def preprocess_template(repo: TemplateRepo, api: PlatformAPI) -> None:
-    """Perform on-the-fly preprocessing of a template repository before
-    distributing it to students.
-
-    The intention of this hook is to allow users to perform preprocessing of
-    template repositories before they are pushed to students. A simple example
-    of this would be to squash the commits of the template repo before pushing
-    (see :py:mod:`_repobee.ext.squashtemplates`).
-
-    Only committed changes are respected. It is the responsibility of the
-    hook implementation to commit changes they wish to persist.
-
-    .. warning::
-
-        Committing changes to the template repo with this hook makes it
-        impossible to update student repos with ``repos update``, as on-the-fly
-        commits are unique by timestamp. There are currently no plans to
-        implement support ``repos update`` together with template
-        preprocessing.
-
-    .. danger::
-
-        This hook is unstable and may change without notice.
-
-    Args:
-        repo: Representation of a local template repo.
-        api: An instance of the platform API.
     """
 
 
