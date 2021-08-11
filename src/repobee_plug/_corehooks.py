@@ -8,8 +8,9 @@ to allow for this dynamic override.
 .. module:: corehooks
     :synopsis: Hookspecs for repobee core hooks.
 """
+import pathlib
 
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Iterable
 
 from repobee_plug import localreps, hook, reviews, platform
 
@@ -113,4 +114,25 @@ def generate_repo_name(
     Args:
         team_name: Name of the associated team.
         assignment_name: Name of an assignment.
+    """
+
+
+@hook.hookspec(firstresult=True)
+def parse_students_file(
+    students_file: pathlib.Path,
+) -> Iterable[localreps.StudentTeam]:
+    """Parse the students file and return any student teams from it.
+
+    This hook is responsible for parsing the students file. The file passed to
+    implementations of this hook is guaranteed to be non-empty, but it is up to
+    implementations to verify that it's syntactically correct.
+
+    .. danger::
+
+        This hook is unstable and may change without notice.
+
+    Args:
+        students_file: Path to a non-empty file.
+    Returns:
+        An iterable of student teams parsed from the file.
     """

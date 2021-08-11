@@ -245,13 +245,10 @@ def _extract_groups(args: argparse.Namespace) -> List[plug.StudentTeam]:
             raise exception.FileError(f"'{students_file}' is not a file")
         if not students_file.stat().st_size:
             raise exception.FileError(f"'{students_file}' is empty")
-        students = [
-            plug.StudentTeam(members=[s for s in group.strip().split()])
-            for group in students_file.read_text(
-                encoding=sys.getdefaultencoding()
-            ).split(os.linesep)
-            if group  # skip blank lines
-        ]
+
+        students = list(
+            plug.manager.hook.parse_students_file(students_file=students_file)
+        )
     else:
         students = []
 
