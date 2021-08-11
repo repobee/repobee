@@ -411,7 +411,9 @@ def execute_setup_tasks(
     Returns:
         A mapping from repo name to hook result.
     """
-    return execute_tasks(repos, plug.manager.hook.pre_setup, api, cwd)
+    return execute_tasks(
+        repos, plug.manager.hook.pre_setup, api, cwd, copy_repos=False
+    )
 
 
 def execute_tasks(
