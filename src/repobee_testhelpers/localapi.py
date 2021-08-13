@@ -92,6 +92,13 @@ class Team:
         )
 
 
+@dataclasses.dataclass
+class PlatformState:
+    teams: dict
+    repos: dict
+    users: dict
+
+
 class LocalAPI(plug.PlatformAPI):
     """A local implementation of the :py:class:`repobee_plug.PlatformAPI`
     specification, which emulates a GitHub-like platform without accessing
@@ -104,10 +111,24 @@ class LocalAPI(plug.PlatformAPI):
         self._user = user
         self._token = token
 
-        self._teams: dict = {self._org_name: {}}
-        self._repos: dict = {self._org_name: {}}
-        self._users: dict = {}
-        self._restore_state()
+        self._platform_state = PlatformState(
+            teams={self._org_name: {}}, repos={self._org_name: {}}, users={}
+        )
+
+        self._pickle_file = self._repodir / "state.pickle"
+        self._restore_platform_state()
+
+    @property
+    def _teams(self) -> dict:
+        return self._platform_state.teams
+
+    @property
+    def _repos(self) -> dict:
+        return self._platform_state.repos
+
+    @property
+    def _users(self) -> dict:
+        return self._platform_state.users
 
     def create_team(
         self,
@@ -316,22 +337,19 @@ class LocalAPI(plug.PlatformAPI):
 
             def _func(*args, **kwargs):
                 res = attr(*args, **kwargs)
-                self._save_state()
+                self._save_platform_state()
                 return res
 
             return _func
 
         return attr
 
-    def _save_state(self):
-        pickle_path = self._repodir / "state.pickle"
-        pickle_path.write_bytes(pickle.dumps(self))
+    def _save_platform_state(self):
+        self._pickle_file.write_bytes(pickle.dumps(self._platform_state))
 
-    def _restore_state(self):
-        pickle_path = self._repodir / "state.pickle"
-        if pickle_path.is_file():
-            state = pickle.loads(pickle_path.read_bytes())
-            self.__dict__ = state.__dict__
+    def _restore_platform_state(self):
+        if self._pickle_file.is_file():
+            self._platform_state = pickle.loads(self._pickle_file.read_bytes())
 
     def _add_users(self, usernames: List[str]) -> None:
         """Add users to this instance.
@@ -343,8 +361,9 @@ class LocalAPI(plug.PlatformAPI):
         Args:
             usernames: A list of usernames to add.
         """
+        self._restore_platform_state()
         self._users.update({name: User(name) for name in usernames})
-        self._save_state()
+        self._save_platform_state()
 
     def _get_user(self, username: str) -> User:
         if username not in self._users:

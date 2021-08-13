@@ -92,6 +92,31 @@ def _assert_repos_match_templates(
 class TestSetup:
     """Tests for the ``repos setup`` command."""
 
+    def test_setup_with_custom_template_repo(
+        self, platform_dir, platform_url, tmp_path_factory
+    ):
+        api = funcs.get_api(platform_url, org_name=const.TEMPLATE_ORG_NAME)
+
+        template_repo = api.create_repo(
+            "epIcRepo", description="dontcare", private=False
+        )
+        local_template_dir = tmp_path_factory.mktemp("template")
+        (local_template_dir / "file.txt").write_text(
+            "this is a brand new file!"
+        )
+
+        branch = "master"
+        local_template_repo = funcs.initialize_repo(
+            local_template_dir, default_branch=branch
+        )
+        local_template_repo.git.push(
+            api.insert_auth(template_repo.url), branch
+        )
+
+        funcs.run_repobee(
+            f"repos setup -a {template_repo.name} --base-url {platform_url}"
+        )
+
     def test_setup_single_template_repo(self, platform_dir, platform_url):
         template_repo_name = TEMPLATE_REPO_NAMES[0]
         funcs.run_repobee(

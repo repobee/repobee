@@ -55,7 +55,7 @@ class TestAssign:
             f"--assignments {assignment_name}"
         )
 
-        api._restore_state()
+        api._restore_platform_state()
         num_repos_after = len(list(api.get_repos()))
         assert num_repos_after == num_repos_before + len(const.STUDENT_TEAMS)
 
@@ -107,7 +107,7 @@ class TestEnd:
             f"--assignments {assignment_name}"
         )
 
-        api._restore_state()
+        api._restore_platform_state()
         review_teams = [
             team for team in api.get_teams() if "-" not in team.name
         ]
@@ -123,7 +123,7 @@ class TestEnd:
         )
 
         # assert
-        api._restore_state()
+        api._restore_platform_state()
         num_repos_after = len(list(api.get_repos()))
         assert num_repos_after == num_repos_before
 
