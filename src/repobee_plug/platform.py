@@ -129,7 +129,7 @@ class _APISpec:
 
         This class should not be inherited from directly, it serves only to
         document the behavior of a platform API. Classes that implement this
-        behavior should inherit from :py:class:`API`.
+        behavior should inherit from :py:class:`PlatformAPI`.
     """
 
     def __init__(self, base_url, token, org_name, user):
