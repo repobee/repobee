@@ -192,7 +192,9 @@ def get_student_teams(
     """
     api = get_api(platform_url, org_name=org_name)
     return [
-        plug.StudentTeam(members=[usr.username for usr in team.members])
+        plug.StudentTeam(
+            name=team.name, members=[usr.username for usr in team.members]
+        )
         for team in api._teams[org_name].values()
     ]
 
