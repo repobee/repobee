@@ -2,6 +2,7 @@
 import pathlib
 import itertools
 import shutil
+import sys
 
 from typing import List, Mapping, Tuple, Iterable
 
@@ -12,6 +13,7 @@ import _repobee.command.repos
 import _repobee.ext.javac
 import _repobee.ext.pylint
 import _repobee.ext.squash
+import _repobee.ext.studentsyml
 
 import repobee_plug as plug
 from repobee_testhelpers import localapi
@@ -431,6 +433,34 @@ class TestSetup:
         repo = git.Repo(repo_path)
         repo.git.commit("--allow-empty", "-m", "Second commit")
         repo.git.commit("--allow-empty", "-m", "Third commit")
+
+    def test_use_extended_students_syntax(self, platform_url, tmp_path):
+        students_file = tmp_path / "students.yml"
+        students_file.write_text(
+            """
+some-team:
+    members: [simon]
+other-team:
+    members: [eve, alice]
+        """.strip(),
+            encoding=sys.getdefaultencoding(),
+        )
+        expected_repo_names = plug.generate_repo_names(
+            team_names=["some-team", "other-team"],
+            assignment_names=const.TEMPLATE_REPO_NAMES,
+        )
+
+        funcs.run_repobee(
+            f"{plug.cli.CoreCommand.repos.setup} --base-url {platform_url} "
+            f"--students-file {students_file} "
+            f"--assignments {const.TEMPLATE_REPOS_ARG}",
+            plugins=[_repobee.ext.studentsyml],
+        )
+
+        actual_repo_names = [
+            repo.name for repo in funcs.get_repos(platform_url)
+        ]
+        assert sorted(actual_repo_names) == sorted(expected_repo_names)
 
 
 class TestClone:
