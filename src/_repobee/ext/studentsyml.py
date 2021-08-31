@@ -38,9 +38,12 @@ from typing import Iterable
 def parse_students_file(
     students_file: pathlib.Path,
 ) -> Iterable[plug.StudentTeam]:
-    students_dict = yamliny.loads(
-        students_file.read_text(encoding=sys.getdefaultencoding())
-    )
+    try:
+        students_dict = yamliny.loads(
+            students_file.read_text(encoding=sys.getdefaultencoding())
+        )
+    except yamliny.YamlinyError as exc:
+        raise plug.PlugError(f"Parse error '{students_file}': {exc}") from exc
     return [
         plug.StudentTeam(name=name, members=data["members"])
         for name, data in students_dict.items()
