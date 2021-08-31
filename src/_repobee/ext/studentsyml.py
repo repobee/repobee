@@ -33,6 +33,8 @@ import repobee_plug as plug
 
 from typing import Iterable
 
+_MEMBERS_KEY = "members"
+
 
 @plug.repobee_hook
 def parse_students_file(
@@ -45,6 +47,12 @@ def parse_students_file(
     except yamliny.YamlinyError as exc:
         raise plug.PlugError(f"Parse error '{students_file}': {exc}") from exc
     return [
-        plug.StudentTeam(name=name, members=data["members"])
+        _to_student_team(name=name, data=data)
         for name, data in students_dict.items()
     ]
+
+
+def _to_student_team(name: str, data: dict) -> plug.StudentTeam:
+    if _MEMBERS_KEY not in data:
+        raise plug.PlugError(f"Missing members mapping for '{name}'")
+    return plug.StudentTeam(name=name, members=data[_MEMBERS_KEY])
