@@ -64,6 +64,7 @@ required = [
     "tabulate",
     "tqdm>=4.48.2",
     "typing-extensions",
+    "yamliny>=0.0.2",
 ]
 
 testhelper_resources_dir = pathlib.Path("src/repobee_testhelpers/resources")
