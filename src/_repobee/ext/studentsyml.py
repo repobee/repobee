@@ -40,16 +40,19 @@ _MEMBERS_KEY = "members"
 def parse_students_file(
     students_file: pathlib.Path,
 ) -> Iterable[plug.StudentTeam]:
+    return [
+        _to_student_team(name=name, data=data)
+        for name, data in _parse_yamliny(students_file).items()
+    ]
+
+
+def _parse_yamliny(students_file: pathlib.Path) -> dict:
     try:
-        students_dict = yamliny.loads(
+        return yamliny.loads(
             students_file.read_text(encoding=sys.getdefaultencoding())
         )
     except yamliny.YamlinyError as exc:
         raise plug.PlugError(f"Parse error '{students_file}': {exc}") from exc
-    return [
-        _to_student_team(name=name, data=data)
-        for name, data in students_dict.items()
-    ]
 
 
 def _to_student_team(name: str, data: dict) -> plug.StudentTeam:
