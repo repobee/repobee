@@ -25,7 +25,6 @@ STUDENT_TEAMS = [
 ]
 STUDENT_TEAM_NAMES = [str(t) for t in STUDENT_TEAMS]
 STUDENT_REPO_NAMES = plug.generate_repo_names(STUDENT_TEAMS, assignment_names)
-REPOBEE_GITLAB = "repobee -p gitlab"
 BASE_ARGS_NO_TB = ["--bu", BASE_URL, "-o", ORG_NAME, "-t", TOKEN]
 BASE_ARGS = [*BASE_ARGS_NO_TB, "--tb"]
 STUDENTS_ARG = ["-s", " ".join(STUDENT_TEAM_NAMES)]

@@ -6,6 +6,8 @@ import repobee_plug as plug
 
 import repobee_testhelpers.funcs
 
+import _repobee.ext.gitlab
+
 import gitlabmanager
 import repobee_plug.cli
 from _helpers.asserts import (
@@ -15,7 +17,6 @@ from _helpers.asserts import (
     assert_issues_exist,
 )
 from _helpers.const import (
-    REPOBEE_GITLAB,
     BASE_ARGS,
     BASE_URL,
     TEMPLATE_ORG_ARG,
@@ -66,7 +67,6 @@ def with_student_repos(restore):
     it runs before this fixture.
     """
     command = [
-        REPOBEE_GITLAB,
         *str(repobee_plug.cli.CoreCommand.repos.setup).split(),
         *BASE_ARGS,
         *TEMPLATE_ORG_ARG,
@@ -74,7 +74,9 @@ def with_student_repos(restore):
         *STUDENTS_ARG,
     ]
 
-    repobee_testhelpers.funcs.run_repobee(command)
+    repobee_testhelpers.funcs.run_repobee(
+        command, plugins=[_repobee.ext.gitlab]
+    )
 
     # pre-test asserts
     assert_repos_exist(STUDENT_TEAMS, assignment_names)
@@ -127,7 +129,6 @@ def with_reviews(with_student_repos):
         for student_team_name in STUDENT_TEAM_NAMES
     ]
     command = [
-        REPOBEE_GITLAB,
         *str(repobee_plug.cli.CoreCommand.reviews.assign).split(),
         *BASE_ARGS,
         "-a",
@@ -137,7 +138,9 @@ def with_reviews(with_student_repos):
         "1",
     ]
 
-    repobee_testhelpers.funcs.run_repobee(command)
+    repobee_testhelpers.funcs.run_repobee(
+        command, plugins=[_repobee.ext.gitlab]
+    )
 
     assert_on_groups(
         expected_review_teams,
