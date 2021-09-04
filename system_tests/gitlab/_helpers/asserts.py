@@ -10,7 +10,7 @@ import repobee_plug as plug
 from repobee_testhelpers.funcs import hash_directory
 from repobee_testhelpers._internal import templates
 
-from .const import ORG_NAME, LOCAL_BASE_URL, TOKEN, TEACHER
+from .const import ORG_NAME, BASE_URL, TOKEN, TEACHER
 from .helpers import get_group
 
 
@@ -24,7 +24,7 @@ def assert_template_repos_exist(assignment_names, org_name):
 def assert_repos_exist(student_teams, assignment_names, org_name=ORG_NAME):
     """Assert that the associated student repos exist."""
     repo_names = plug.generate_repo_names(student_teams, assignment_names)
-    gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
+    gl = gitlab.Gitlab(BASE_URL, private_token=TOKEN, ssl_verify=False)
     target_group = get_group(org_name, gl=gl)
     student_groups = gl.groups.list(id=target_group.id)
 
@@ -39,7 +39,7 @@ def assert_repos_contain(
 ):
     """Assert that each of the student repos contain the given file."""
     repo_names = plug.generate_repo_names(student_teams, assignment_names)
-    gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
+    gl = gitlab.Gitlab(BASE_URL, private_token=TOKEN, ssl_verify=False)
     target_group = get_group(org, gl=gl)
     student_groups = gl.groups.list(id=target_group.id)
 
@@ -74,7 +74,7 @@ def assert_on_groups(
     ``expected`` teams and asserts them against all ``actual`` groups. If
     provided, this is used INSTEAD of the default all-groups assertion.
     """
-    gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
+    gl = gitlab.Gitlab(BASE_URL, private_token=TOKEN, ssl_verify=False)
     target_group = get_group(org_name, gl=gl)
     sorted_teams = sorted(list(student_teams), key=lambda t: t.name)
     team_names = set(t.name for t in sorted_teams)
@@ -112,7 +112,7 @@ def _assert_on_projects(student_teams, assignment_names, assertion):
     """Execute the specified assertion operation on a project. Assertion should
     be a callable taking precisely on project as an argument.
     """
-    gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
+    gl = gitlab.Gitlab(BASE_URL, private_token=TOKEN, ssl_verify=False)
     repo_names = plug.generate_repo_names(student_teams, assignment_names)
     target_group = get_group(ORG_NAME, gl=gl)
     student_groups = gl.groups.list(id=target_group.id)

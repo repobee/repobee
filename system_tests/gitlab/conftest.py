@@ -1,10 +1,10 @@
 """Integration test fixtures."""
 import os
-import pathlib
-
 import gitlab
 import pytest
 import repobee_plug as plug
+
+import repobee_testhelpers.funcs
 
 import gitlabmanager
 import repobee_plug.cli
@@ -15,22 +15,19 @@ from _helpers.asserts import (
     assert_issues_exist,
 )
 from _helpers.const import (
-    VOLUME_DST,
-    COVERAGE_VOLUME_DST,
     REPOBEE_GITLAB,
     BASE_ARGS,
+    BASE_URL,
     TEMPLATE_ORG_ARG,
     MASTER_REPOS_ARG,
     STUDENTS_ARG,
     STUDENT_TEAMS,
     assignment_names,
-    LOCAL_BASE_URL,
     TOKEN,
     ORG_NAME,
     STUDENT_TEAM_NAMES,
 )
 from _helpers.helpers import (
-    run_in_docker,
     expected_num_members_group_assertion,
     get_group,
 )
@@ -62,79 +59,24 @@ def restore():
 
 
 @pytest.fixture
-def tmpdir_volume_arg(tmpdir):
-    """Create a temporary directory and return an argument string that
-    will mount a docker volume to it.
-    """
-    yield "-v {}:{}".format(str(tmpdir), VOLUME_DST)
-
-
-@pytest.fixture(scope="module", autouse=True)
-def coverage_volume():
-    covdir = pathlib.Path(".").resolve() / ".coverage_files"
-    yield "-v {}:{}".format(str(covdir), COVERAGE_VOLUME_DST)
-    covfile = covdir / ".coverage"
-    assert covfile.is_file()
-
-
-@pytest.fixture(scope="module", autouse=True)
-def generate_coverage_report(coverage_volume):
-    """Generate a coverage report after all tests have run."""
-    yield
-    # xml report for Codecov
-    run_in_docker(
-        "cd {} && coverage xml".format(COVERAGE_VOLUME_DST),
-        extra_args=[coverage_volume],
-    )
-    # txt report for manual inspection
-    run_in_docker(
-        "cd {} && coverage report > report.txt".format(COVERAGE_VOLUME_DST),
-        extra_args=[coverage_volume],
-    )
-
-
-@pytest.fixture(autouse=True)
-def handle_coverage_file(extra_args):
-    """Copy the coverage file back and forth."""
-    # copy the previous .coverage file into the workdir
-    run_in_docker(
-        "cp {}/.coverage .".format(COVERAGE_VOLUME_DST), extra_args=extra_args
-    )
-    yield
-    # copy the appended .coverage file into the coverage volume
-    run_in_docker(
-        "cp .coverage {}".format(COVERAGE_VOLUME_DST), extra_args=extra_args
-    )
-
-
-@pytest.fixture
-def extra_args(tmpdir_volume_arg, coverage_volume):
-    """Extra arguments to pass to run_in_docker when executing a test."""
-    return [tmpdir_volume_arg, coverage_volume]
-
-
-@pytest.fixture
 def with_student_repos(restore):
     """Set up student repos before starting tests.
 
     Note that explicitly including restore here is necessary to ensure that
     it runs before this fixture.
     """
-    command = " ".join(
-        [
-            REPOBEE_GITLAB,
-            *str(repobee_plug.cli.CoreCommand.repos.setup).split(),
-            *BASE_ARGS,
-            *TEMPLATE_ORG_ARG,
-            *MASTER_REPOS_ARG,
-            *STUDENTS_ARG,
-        ]
-    )
+    command = [
+        REPOBEE_GITLAB,
+        *str(repobee_plug.cli.CoreCommand.repos.setup).split(),
+        *BASE_ARGS,
+        *TEMPLATE_ORG_ARG,
+        *MASTER_REPOS_ARG,
+        *STUDENTS_ARG,
+    ]
 
-    result = run_in_docker(command)
+    repobee_testhelpers.funcs.run_repobee(command)
 
     # pre-test asserts
-    assert result.returncode == 0
     assert_repos_exist(STUDENT_TEAMS, assignment_names)
     assert_on_groups(STUDENT_TEAMS)
 
@@ -149,7 +91,7 @@ def open_issues(with_student_repos):
         title="Correction required", body="You need to fix this, this and that"
     )
     issues = [task_issue, correction_issue]
-    gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
+    gl = gitlab.Gitlab(BASE_URL, private_token=TOKEN, ssl_verify=False)
     target_group = get_group(ORG_NAME, gl=gl)
     projects = (
         gl.projects.get(p.id)
@@ -184,22 +126,19 @@ def with_reviews(with_student_repos):
         )
         for student_team_name in STUDENT_TEAM_NAMES
     ]
-    command = " ".join(
-        [
-            REPOBEE_GITLAB,
-            *str(repobee_plug.cli.CoreCommand.reviews.assign).split(),
-            *BASE_ARGS,
-            "-a",
-            assignment_name,
-            *STUDENTS_ARG,
-            "-n",
-            "1",
-        ]
-    )
+    command = [
+        REPOBEE_GITLAB,
+        *str(repobee_plug.cli.CoreCommand.reviews.assign).split(),
+        *BASE_ARGS,
+        "-a",
+        assignment_name,
+        *STUDENTS_ARG,
+        "-n",
+        "1",
+    ]
 
-    result = run_in_docker(command)
+    repobee_testhelpers.funcs.run_repobee(command)
 
-    assert result.returncode == 0
     assert_on_groups(
         expected_review_teams,
         single_group_assertion=expected_num_members_group_assertion(1),

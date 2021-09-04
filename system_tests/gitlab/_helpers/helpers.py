@@ -13,25 +13,23 @@ import gitlab
 
 from .const import (
     ORG_NAME,
-    LOCAL_BASE_URL,
+    BASE_URL,
     TOKEN,
     TEMPLATE_ORG_NAME,
-    BASE_DOMAIN,
-    LOCAL_DOMAIN,
     TEACHER,
 )
 
 
 def api_instance(org_name=ORG_NAME):
     """Return a valid instance of the GitLabAPI class."""
-    return _repobee.ext.gitlab.GitLabAPI(LOCAL_BASE_URL, TOKEN, org_name)
+    return _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, org_name)
 
 
 def gitlab_and_groups():
     """Return a valid gitlab instance, along with the master group and the
     target group.
     """
-    gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
+    gl = gitlab.Gitlab(BASE_URL, private_token=TOKEN, ssl_verify=False)
     master_group = get_group(TEMPLATE_ORG_NAME, gl=gl)
     target_group = get_group(ORG_NAME, gl=gl)
     return gl, master_group, target_group
@@ -39,9 +37,7 @@ def gitlab_and_groups():
 
 def get_group(group_slug: str, gl: Optional[gitlab.Gitlab] = None):
     """Return a group with the given slug."""
-    gl = gl or gitlab.Gitlab(
-        LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False
-    )
+    gl = gl or gitlab.Gitlab(BASE_URL, private_token=TOKEN, ssl_verify=False)
     return [
         group
         for group in gl.groups.list(search=group_slug)
@@ -77,7 +73,7 @@ def run_in_docker(command, extra_args=None):
 
 def update_repo(repo_name, filename, text):
     """Add a file with the given filename and text to the repo."""
-    gl = gitlab.Gitlab(LOCAL_BASE_URL, private_token=TOKEN, ssl_verify=False)
+    gl = gitlab.Gitlab(BASE_URL, private_token=TOKEN, ssl_verify=False)
     proj, *_ = [
         p for p in gl.projects.list(search=repo_name) if p.name == repo_name
     ]
@@ -91,7 +87,7 @@ def update_repo(repo_name, filename, text):
         url_with_token = (
             proj.web_url.replace(
                 "https://", "https://oauth2:{}@".format(TOKEN)
-            ).replace(BASE_DOMAIN, LOCAL_DOMAIN)
+            )
             + ".git"
         )
         clone_proc = subprocess.run(

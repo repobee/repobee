@@ -6,7 +6,7 @@ services:
     restart: always
     environment:
       GITLAB_OMNIBUS_CONFIG: |
-        external_url 'https://localhost'
+        external_url 'https://localhost:3000'
         gitlab_rails['time_zone'] = 'Europe/Stockholm'
         gitlab_rails['gitlab_email_from'] = ''
         gitlab_rails['gitlab_email_display_name'] = 'GitLab Administrator'
@@ -19,7 +19,7 @@ services:
         logging['logrotate_compress'] = "compress"
         logging['logrotate_method'] = "copytruncate"
         logging['logrotate_delaycompress'] = "delaycompress"
-        nginx['listen_port'] = 443
+        nginx['listen_port'] = 3000
         nginx['redirect_http_to_https'] = true
         nginx['ssl_certificate'] = "/etc/ssl/certs/gitlab/server-cert.pem"
         nginx['ssl_certificate_key'] = "/etc/ssl/certs/gitlab/server-key.pem"
@@ -32,8 +32,8 @@ services:
         letsencrypt['enable'] = false
         # Add any other gitlab.rb configuration options if desired
     ports:
-      - '50443:443'
-      - '50022:22'
+      - '3000:3000'
+      - '222:22'
     volumes:
       - ./volume_data/conf:/etc/gitlab
       - ./volume_data/ssl:/etc/ssl/certs/gitlab
