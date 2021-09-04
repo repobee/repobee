@@ -6,7 +6,7 @@ services:
     restart: always
     environment:
       GITLAB_OMNIBUS_CONFIG: |
-        external_url 'https://gitlab.integrationtest.local'
+        external_url 'https://localhost'
         gitlab_rails['time_zone'] = 'Europe/Stockholm'
         gitlab_rails['gitlab_email_from'] = ''
         gitlab_rails['gitlab_email_display_name'] = 'GitLab Administrator'
