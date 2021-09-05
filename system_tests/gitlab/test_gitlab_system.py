@@ -4,6 +4,7 @@ import re
 import subprocess
 import contextlib
 import io
+import shlex
 
 import pytest
 import gitlab
@@ -443,7 +444,7 @@ class TestMigrate:
         ]
 
         for cmd in git_commands:
-            subprocess.run(cmd, check=True, cwd=str(tmpdir))
+            subprocess.run(shlex.split(cmd), check=True, cwd=str(tmpdir))
 
         return assignment_names
 
