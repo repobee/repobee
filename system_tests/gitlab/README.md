@@ -75,57 +75,19 @@ following.
 * `teardown`: Tear down the instance and remove any files managed by it.
 * `restore`: Setup the template group (with template repos) and the target group.
 
-Before you can actually run these commands, you must perform some additional
-setup, as explained in the following subsections.
-
-#### Edit the hosts file
-You must add a route to the GitLab instance in your hosts file. You can do that
-by adding the following to `/etc/hosts`.
-
-```
-127.0.2.1       gitlab.integrationtest.local gitlab
-```
-
-It doesn't have to be specifically `127.0.2.1`, any address in the
-`127.0.0.0/8` subnet will loopback to the local host (except of course
-`127.0.0.0`, don't pick the broadcast address!).
-
-#### Changing the `docker-compose.yml` file for local development
-You must alter the `docker-compose.yml` file according to this patch:
-
-```diff
-         nginx['logrotate_delaycompress'] = "delaycompress"
-         # Add any other gitlab.rb configuration options if desired
-     ports:
--      - '50443:443'
--      - '50022:22'
-+      - '443:443'
-+      - '22:22'
-     volumes:
-       - ./volume_data/conf:/etc/gitlab
-       - ./volume_data/ssl:/etc/ssl/certs/gitlab
-```
-
-That should be it. Run `python gitlabmanager.py setup`, and when it's done you
-should be able to connect to the GitLab instance at
-`https://gitlab.integrationtest.local`. Also run `python gitlabmanager.py
-restore` to setup the groups.
-
-> **Important:** Ports `443` and `22` must be unused as you are trying to
-> allocate them for the GitLab instance. Port `22` is often used by the `sshd`
-> service, so you may need to shut that down before running `startup.sh`.
+The base URL for the GitLab instance is `https://localhost:3000`. Of course,
+you will also need to activate the `gitlab` plugin for RepoBee.
 
 #### Login details
 If you've run the `setup` command, you should now be able to access the
-instance at `https://gitlab.integrationtest.local`, and login with the
-following credentials.
+instance at `https://localhost:3000`, and login with the following credentials.
 
 * Username: `root`
 * Password: `password`
 * OAUTH2 token: See the [token file](token)
 
 You can clone a repository using the token. For example, try `git clone
-https://oauth2:<TOKEN>@gitlab.integrationtest.local/dd1337-master/task-3.git`.
+https://oauth2:<TOKEN>@localhost:3000/dd1337-master/task-3.git`.
 Note that you must have executed the `restore` command at least once for
 this to work.
 
@@ -134,7 +96,7 @@ Replace `<TOKEN>` with [this token](token).
 
 ```
 [repobee]
-base_url = https://gitlab.integrationtest.local
+base_url = https://localhost:3000
 token = <TOKEN>
 org_name = dd1337-fall2020
 template_org_name = dd1337-master
