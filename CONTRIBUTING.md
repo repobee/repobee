@@ -34,10 +34,10 @@ yourself with some guidance.
 ### Fixing an outstanding issue
 If you find an issue on the issue tracker that you would like to help fix, then
 _before_ you start working on it, post a comment on the issue stating your
-intentions. This is primarily to avoid starting work on something that I'm
-already working on. If you get the all-clear, then just get to work and check
-back in on the issue a little now and then to let people know that you're still
-working on it!
+intentions. This is to avoid starting work on something that is already being
+worked on. If you get the all-clear, then just get to work and check back in on
+the issue a little now and then to let people know that you're still working on
+it!
 
 ## Working on your thing
 [Fork the repository](https://help.github.com/en/articles/fork-a-repo) and do
@@ -96,13 +96,13 @@ The less involved way of contributing to RepoBee is to write a plugin, as
 plugins do not need to be merged into RepoBee core, but can exist as separate
 repositories. **You do not need any permission to create a plugin**, but it's
 much appreciated if you [open an
-issue](https://github.com/repobee/repobee/issues/new) and let me know about
+issue](https://github.com/repobee/repobee/issues/new) and let us know about
 it. If you're interested in writing a plugin, head over to the [repobee-plug
-documentation](https://repobee-plug.readthedocs.io/en/latest/).  There is a
+documentation](https://repobee-plug.readthedocs.io/en/latest/). There is a
 cookiecutter template to start from, so implementing a basic plugin can
 literally take as little as a few minutes.
 
 > **Note:** Plugins that are useful to a lot of people can be moved into the
 > RepoBee GitHub organization, or even into the core RepoBee repository. Get in
-> touch with me at slarse@slar.se if you are interested in getting your plugin
-> moved here.
+> touch at slarse@slar.se if you are interested in getting your plugin moved
+> here.
