@@ -310,15 +310,13 @@ class TestSetup:
         ), "expected real student username to be lowercase"
 
         student_uppercase = student_lowercase.upper()
-        base_command = " ".join(
-            [
-                *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
-                *BASE_ARGS,
-                *TEMPLATE_ORG_ARG,
-                *MASTER_REPOS_ARG,
-                "--students",
-            ]
-        )
+        base_command = [
+            *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
+            *BASE_ARGS,
+            *TEMPLATE_ORG_ARG,
+            *MASTER_REPOS_ARG,
+            "--students",
+        ]
 
         def _cmd(student):
             return " ".join(base_command + [student])

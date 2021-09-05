@@ -60,7 +60,7 @@ def restore():
 
 
 @pytest.fixture
-def with_student_repos(restore):
+def with_student_repos(restore, tmpdir):
     """Set up student repos before starting tests.
 
     Note that explicitly including restore here is necessary to ensure that
@@ -75,7 +75,7 @@ def with_student_repos(restore):
     ]
 
     repobee_testhelpers.funcs.run_repobee(
-        command, plugins=[_repobee.ext.gitlab]
+        command, workdir=tmpdir, plugins=[_repobee.ext.gitlab]
     )
 
     # pre-test asserts
@@ -117,7 +117,7 @@ def open_issues(with_student_repos):
 
 
 @pytest.fixture
-def with_reviews(with_student_repos):
+def with_reviews(with_student_repos, tmpdir):
     assignment_name = assignment_names[1]
     expected_review_teams = [
         plug.StudentTeam(
@@ -139,7 +139,7 @@ def with_reviews(with_student_repos):
     ]
 
     repobee_testhelpers.funcs.run_repobee(
-        command, plugins=[_repobee.ext.gitlab]
+        command, workdir=tmpdir, plugins=[_repobee.ext.gitlab]
     )
 
     assert_on_groups(
