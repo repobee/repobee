@@ -645,16 +645,14 @@ class TestAssignReviews:
             ]
         )
 
-        with contextlib.redirect_stdout(io.StringIO()) as sio:
+        with pytest.raises(plug.NotFoundError) as exc_info:
             run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
 
-        output = sio.getvalue()
-
-        assert (
-            "[ERROR] NotFoundError: Can't find repos: {}".format(
-                plug.generate_repo_name(non_existing_group, assignment_name)
-            )
-            in output
+        non_existing_repo_name = plug.generate_repo_name(
+            non_existing_group, assignment_name
+        )
+        assert f"Can't find repos: {non_existing_repo_name}" in str(
+            exc_info.value
         )
         assert_num_issues(STUDENT_TEAMS, [assignment_name], 0)
 
