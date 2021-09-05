@@ -66,13 +66,15 @@ def with_student_repos(restore, tmpdir):
     Note that explicitly including restore here is necessary to ensure that
     it runs before this fixture.
     """
-    command = [
-        *str(repobee_plug.cli.CoreCommand.repos.setup).split(),
-        *BASE_ARGS,
-        *TEMPLATE_ORG_ARG,
-        *MASTER_REPOS_ARG,
-        *STUDENTS_ARG,
-    ]
+    command = " ".join(
+        [
+            *str(repobee_plug.cli.CoreCommand.repos.setup).split(),
+            *BASE_ARGS,
+            *TEMPLATE_ORG_ARG,
+            *MASTER_REPOS_ARG,
+            *STUDENTS_ARG,
+        ]
+    )
 
     repobee_testhelpers.funcs.run_repobee(
         command, workdir=tmpdir, plugins=[_repobee.ext.gitlab]
@@ -128,15 +130,17 @@ def with_reviews(with_student_repos, tmpdir):
         )
         for student_team_name in STUDENT_TEAM_NAMES
     ]
-    command = [
-        *str(repobee_plug.cli.CoreCommand.reviews.assign).split(),
-        *BASE_ARGS,
-        "-a",
-        assignment_name,
-        *STUDENTS_ARG,
-        "-n",
-        "1",
-    ]
+    command = " ".join(
+        [
+            *str(repobee_plug.cli.CoreCommand.reviews.assign).split(),
+            *BASE_ARGS,
+            "-a",
+            assignment_name,
+            *STUDENTS_ARG,
+            "-n",
+            "1",
+        ]
+    )
 
     repobee_testhelpers.funcs.run_repobee(
         command, workdir=tmpdir, plugins=[_repobee.ext.gitlab]
