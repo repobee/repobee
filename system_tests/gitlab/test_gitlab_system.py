@@ -750,7 +750,7 @@ class TestCheckReviews:
         for unexpected_pattern in unexpected_output_patterns:
             assert not re.search(unexpected_pattern, output, search_flags)
 
-    def test_expect_too_many_reviews(self, with_reviews, tmpdir):
+    def test_expect_too_many_reviews(self, with_reviews, tmpdir, mocker):
         """Test that warnings are printed if a student is assigned to fewer
         review teams than expected.
         """
@@ -759,10 +759,7 @@ class TestCheckReviews:
         actual_assigned_reviews = 1
         num_expected_reviews = 2
         assignment_name = assignment_names[1]
-        warning_template = (
-            r"\[WARNING\] Expected {} to be assigned to {} review teams, but "
-            "found {}. Review teams may have been tampered with."
-        )
+
         pattern_template = r"{}.*{}.*{}.*\w+-{}.*"
         expected_output_patterns = [
             pattern_template.format(
@@ -772,7 +769,13 @@ class TestCheckReviews:
                 assignment_name,
             )
             for team_name in STUDENT_TEAM_NAMES
-        ] + [
+        ]
+
+        warning_template = (
+            r"Expected {} to be assigned to {} review teams, but "
+            "found {}. Review teams may have been tampered with."
+        )
+        expected_warning_patterns = [
             warning_template.format(
                 team_name,
                 str(num_expected_reviews),
@@ -780,7 +783,6 @@ class TestCheckReviews:
             )
             for team_name in STUDENT_TEAM_NAMES
         ]
-        unexpected_output_patterns = [r"\[ERROR\]"]
 
         command = " ".join(
             [
@@ -796,13 +798,25 @@ class TestCheckReviews:
             ]
         )
 
+        warning_mock = mocker.patch("repobee_plug.log.warning", autospec=True)
+        error_mock = mocker.patch("repobee_plug.log.error", autospec=True)
+
+        # something with redirecting output like this doesn't play nice with
+        # the logging, so we use the warning log mock to track warnings
         with contextlib.redirect_stdout(io.StringIO()) as sio:
             run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
 
         output = sio.getvalue()
 
-        search_flags = re.MULTILINE
         for expected_pattern in expected_output_patterns:
-            assert re.search(expected_pattern, output, search_flags)
-        for unexpected_pattern in unexpected_output_patterns:
-            assert not re.search(unexpected_pattern, output, search_flags)
+            assert re.search(expected_pattern, output, re.MULTILINE)
+
+        warning_logs = "\n".join(
+            [str(call.args[0]) for call in warning_mock.call_args_list]
+        )
+        for expected_warning_pattern in expected_warning_patterns:
+            assert re.search(
+                expected_warning_pattern, warning_logs, re.MULTILINE
+            )
+
+        assert not error_mock.called
