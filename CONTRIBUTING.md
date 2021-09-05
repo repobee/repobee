@@ -29,7 +29,7 @@ enhancements are appreciated.** It may also turn out that you can indeed do it
 yourself with some guidance.
 
 > **Important:** Please report security critical problems to by email to
-> slarse@kth.se instead of posting them on the issue tracker.
+> slarse@slar.se instead of posting them on the issue tracker.
 
 ### Fixing an outstanding issue
 If you find an issue on the issue tracker that you would like to help fix, then
@@ -104,5 +104,5 @@ literally take as little as a few minutes.
 
 > **Note:** Plugins that are useful to a lot of people can be moved into the
 > RepoBee GitHub organization, or even into the core RepoBee repository. Get in
-> touch with me at slarse@kth.se if you are interested in getting your plugin
+> touch with me at slarse@slar.se if you are interested in getting your plugin
 > moved here.
