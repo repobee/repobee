@@ -41,6 +41,25 @@ def test_install_dist(install_dir):
     assert (install_dir / "completion" / "bash_completion.sh").is_file()
 
 
+def test_install_dist_resets_installed_plugins(install_dir):
+    """Test that the install script resets the installed_plugins.json file.
+    This is important as running the install script on an existing installation
+    may wipe the virtual environment depending on the virtual environment
+    backend, thus removing any installed plugins.
+    """
+    # arrange
+    installed_plugins = disthelpers.get_installed_plugins_path()
+    original_content = installed_plugins.read_bytes()
+    installed_plugins.write_text("absolute garbage")
+
+    # act
+    run_install_script(install_dir)
+
+    # assert
+    reset_content = installed_plugins.read_bytes()
+    assert reset_content == original_content
+
+
 class TestPluginInstall:
     """Tests for the ``plugin install`` command.
 
@@ -488,14 +507,17 @@ def install_dir():
     """Install the RepoBee distribution into a temporary directory."""
     with tempfile.TemporaryDirectory() as install_dirname:
         install_dir = pathlib.Path(install_dirname)
-        env = dict(os.environ)
-        env["REPOBEE_INSTALL_DIR"] = str(install_dir)
-
-        proc = subprocess.Popen(str(INSTALL_SCRIPT), env=env)
-        proc.communicate("n")  # 'n' in answering whether or not to add to PATH
-        assert proc.returncode == 0
-
+        run_install_script(install_dir)
         yield install_dir
+
+
+def run_install_script(install_dir: pathlib.Path) -> None:
+    env = dict(os.environ)
+    env["REPOBEE_INSTALL_DIR"] = str(install_dir)
+
+    proc = subprocess.Popen(str(INSTALL_SCRIPT), env=env)
+    proc.communicate("n")  # 'n' in answering whether or not to add to PATH
+    assert proc.returncode == 0
 
 
 @pytest.fixture(scope="session")

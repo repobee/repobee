@@ -81,9 +81,9 @@ function install_repobee() {
     REPOBEE_INSTALL_DIR="$REPOBEE_INSTALL_DIR" pip_install_quiet_failfast "$repobee_pip_uri"
     create_repobee_executable
 
-    if [ ! -f "$REPOBEE_INSTALLED_PLUGINS" ]; then
-        echo "{}" > "$REPOBEE_INSTALLED_PLUGINS"
-    fi
+    # we intentionally clobber the installed plugins file to fix installations
+    # broken by failing or missing plugins
+    echo "{}" > "$REPOBEE_INSTALLED_PLUGINS"
 
     echo "Checking PATH"
     pip_install_quiet_failfast userpath
