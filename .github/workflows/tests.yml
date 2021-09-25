@@ -52,7 +52,7 @@ jobs:
             -m pytest tests/unit_tests tests/new_integration_tests
         coverage xml
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v2.0.3
+      uses: codecov/codecov-action@v2.1.0
       with:
           fail_ci_if_error: true
           file: ./coverage.xml
@@ -87,7 +87,7 @@ jobs:
             --source _repobee,repobee_plug,repobee_testhelpers \
             -m pytest system_tests/gitlab/test_gitlab_system.py -vv --showlocals
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v2.0.3
+      uses: codecov/codecov-action@v2.1.0
       with:
           fail_ci_if_error: true
           file: ./coverage.xml
@@ -120,7 +120,7 @@ jobs:
             -m pytest -vv --showlocals system_tests/gitea
         coverage xml
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v2.0.3
+      uses: codecov/codecov-action@v2.1.0
       with:
           fail_ci_if_error: true
           file: ./coverage.xml
