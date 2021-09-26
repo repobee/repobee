@@ -1,6 +1,10 @@
 import os
 import pathlib
 import re
+import subprocess
+import contextlib
+import io
+import shlex
 
 import pytest
 import gitlab
@@ -8,7 +12,7 @@ import gitlab
 import repobee_plug as plug
 import repobee_testhelpers
 
-from repobee_testhelpers.funcs import hash_directory
+from repobee_testhelpers.funcs import hash_directory, run_repobee
 
 import _repobee.ext
 import _repobee.command.peer
@@ -26,15 +30,11 @@ from _helpers.asserts import (
     assert_cloned_repos,
 )
 from _helpers.const import (
-    VOLUME_DST,
-    BASE_DOMAIN,
-    LOCAL_DOMAIN,
     TEMPLATE_ORG_NAME,
     ORG_NAME,
     assignment_names,
     STUDENT_TEAMS,
     STUDENT_TEAM_NAMES,
-    REPOBEE_GITLAB,
     BASE_ARGS_NO_TB,
     BASE_ARGS,
     STUDENTS_ARG,
@@ -42,12 +42,10 @@ from _helpers.const import (
     TEMPLATE_ORG_ARG,
     TEACHER,
     ADMIN_TOKEN,
-    LOCAL_BASE_URL,
+    BASE_URL,
 )
 from _helpers.helpers import (
     api_instance,
-    run_in_docker_with_coverage,
-    run_in_docker,
     update_repo,
     expected_num_members_group_assertion,
     gitlab_and_groups,
@@ -58,13 +56,12 @@ from _helpers.helpers import (
 class TestClone:
     """Integration tests for the clone command."""
 
-    def test_clean_clone(self, with_student_repos, tmpdir, extra_args):
+    def test_clean_clone(self, with_student_repos, tmpdir):
         """Test cloning student repos when there are no repos in the current
         working directory.
         """
         command = " ".join(
             [
-                REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.repos.clone.as_name_tuple(),
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
@@ -72,18 +69,16 @@ class TestClone:
             ]
         )
 
-        result = run_in_docker_with_coverage(command, extra_args=extra_args)
+        run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
 
-        assert result.returncode == 0
         assert_cloned_repos(STUDENT_TEAMS, assignment_names, tmpdir)
 
-    def test_clone_twice(self, with_student_repos, tmpdir, extra_args):
+    def test_clone_twice(self, with_student_repos, tmpdir):
         """Cloning twice in a row should have the same effect as cloning
         once.
         """
         command = " ".join(
             [
-                REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.repos.clone.as_name_tuple(),
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
@@ -91,19 +86,13 @@ class TestClone:
             ]
         )
 
-        first_result = run_in_docker_with_coverage(
-            command, extra_args=extra_args
-        )
-        second_result = run_in_docker_with_coverage(
-            command, extra_args=extra_args
-        )
+        run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
+        run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
 
-        assert first_result.returncode == 0
-        assert second_result.returncode == 0
         assert_cloned_repos(STUDENT_TEAMS, assignment_names, tmpdir)
 
     def test_clone_does_not_create_dirs_on_fail(
-        self, with_student_repos, tmpdir, extra_args
+        self, with_student_repos, tmpdir
     ):
         """Test that no local directories are created for repos that RepoBee
         fails to pull.
@@ -111,7 +100,6 @@ class TestClone:
         non_existing_assignment_names = ["non-existing-1", "non-existing-2"]
         command = " ".join(
             [
-                REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.repos.clone.as_name_tuple(),
                 *BASE_ARGS,
                 *STUDENTS_ARG,
@@ -120,15 +108,14 @@ class TestClone:
             ]
         )
 
-        result = run_in_docker_with_coverage(command, extra_args=extra_args)
+        run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
 
-        assert result.returncode == 0
         assert [
             dir for dir in os.listdir(str(tmpdir)) if os.path.isdir(dir)
         ] == []
 
     def test_clone_does_not_alter_existing_dirs(
-        self, with_student_repos, tmpdir, extra_args
+        self, with_student_repos, tmpdir
     ):
         """Test that clone does not clobber existing directories."""
         team_with_local_repos = STUDENT_TEAMS[0]
@@ -147,7 +134,6 @@ class TestClone:
 
         command = " ".join(
             [
-                REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.repos.clone.as_name_tuple(),
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
@@ -155,9 +141,8 @@ class TestClone:
             ]
         )
 
-        result = run_in_docker_with_coverage(command, extra_args=extra_args)
+        run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
 
-        assert result.returncode == 0
         assert_cloned_repos(
             teams_without_local_repos, assignment_names, tmpdir
         )
@@ -165,11 +150,10 @@ class TestClone:
             dirhash = hash_directory(dirpath)
             assert dirhash == expected_hash, "hash mismatch for " + dirpath
 
-    def test_discover_repos(self, with_student_repos, tmpdir, extra_args):
+    def test_discover_repos(self, with_student_repos, tmpdir):
         """Test that the --discover-repos option finds all student repos."""
         command = " ".join(
             [
-                REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.repos.clone.as_name_tuple(),
                 *BASE_ARGS,
                 *STUDENTS_ARG,
@@ -177,9 +161,8 @@ class TestClone:
             ]
         )
 
-        result = run_in_docker_with_coverage(command, extra_args=extra_args)
+        run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
 
-        assert result.returncode == 0
         assert_cloned_repos(STUDENT_TEAMS, assignment_names, tmpdir)
 
 
@@ -187,11 +170,10 @@ class TestClone:
 class TestSetup:
     """Integration tests for the setup command."""
 
-    def test_clean_setup(self, extra_args):
+    def test_clean_setup(self, tmpdir):
         """Test a first-time setup with master repos in the master org."""
         command = " ".join(
             [
-                REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
                 *BASE_ARGS,
                 *TEMPLATE_ORG_ARG,
@@ -200,12 +182,11 @@ class TestSetup:
             ]
         )
 
-        result = run_in_docker_with_coverage(command, extra_args=extra_args)
-        assert result.returncode == 0
+        run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
         assert_repos_exist(STUDENT_TEAMS, assignment_names)
         assert_on_groups(STUDENT_TEAMS)
 
-    def test_clean_setup_in_subgroup(self, extra_args):
+    def test_clean_setup_in_subgroup(self, tmpdir):
         """It should be possible to use a subgroup as the target org."""
         gl, template_group, target_group = gitlab_and_groups()
         subgroup_name = "bestgroup"
@@ -224,7 +205,6 @@ class TestSetup:
 
         command = " ".join(
             [
-                REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
                 *base_args,
                 *TEMPLATE_ORG_ARG,
@@ -233,17 +213,15 @@ class TestSetup:
             ]
         )
 
-        result = run_in_docker_with_coverage(command, extra_args=extra_args)
-        assert result.returncode == 0
+        run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
         assert_repos_exist(
             STUDENT_TEAMS, assignment_names, org_name=subgroup_full_path
         )
 
-    def test_setup_twice(self, extra_args):
+    def test_setup_twice(self, tmpdir):
         """Setting up twice should have the same effect as setting up once."""
         command = " ".join(
             [
-                REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
                 *BASE_ARGS,
                 *TEMPLATE_ORG_ARG,
@@ -252,19 +230,17 @@ class TestSetup:
             ]
         )
 
-        result = run_in_docker_with_coverage(command, extra_args=extra_args)
-        result = run_in_docker_with_coverage(command, extra_args=extra_args)
-        assert result.returncode == 0
+        run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
+        run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
         assert_repos_exist(STUDENT_TEAMS, assignment_names)
         assert_on_groups(STUDENT_TEAMS)
 
-    def test_setup_with_token_owner_as_student(self, extra_args):
+    def test_setup_with_token_owner_as_student(self, tmpdir):
         """Setting up with the token owner as a student should not cause
         a crash (see #812)
         """
         command = " ".join(
             [
-                REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
                 *BASE_ARGS,
                 *TEMPLATE_ORG_ARG,
@@ -274,14 +250,13 @@ class TestSetup:
             ]
         )
 
-        result = run_in_docker_with_coverage(command, extra_args=extra_args)
-        assert result.returncode == 0
+        run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
         assert_repos_exist(
             [plug.StudentTeam(members=[TEACHER])], assignment_names
         )
 
     def test_setup_with_default_branch_protection_does_not_carry_over(
-        self, extra_args
+        self, tmpdir
     ):
         """Student repositories created when global default branch
         protection is enabled on the GitLab instance, should still not have
@@ -289,7 +264,7 @@ class TestSetup:
         """
         # arrange
         gl = gitlab.Gitlab(
-            url=LOCAL_BASE_URL, private_token=ADMIN_TOKEN, ssl_verify=False
+            url=BASE_URL, private_token=ADMIN_TOKEN, ssl_verify=False
         )
         gl.auth()
         settings = gl.settings.get()
@@ -299,7 +274,6 @@ class TestSetup:
         settings.save()
         command = " ".join(
             [
-                REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
                 *BASE_ARGS,
                 *TEMPLATE_ORG_ARG,
@@ -309,10 +283,9 @@ class TestSetup:
         )
 
         # act
-        result = run_in_docker_with_coverage(command, extra_args=extra_args)
+        run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
 
         # assert
-        assert result.returncode == 0
         api = api_instance(ORG_NAME)
         loop_ran = False
         for repo in api.get_repos():
@@ -321,9 +294,7 @@ class TestSetup:
 
         assert loop_ran, "assertion loop did not execute"
 
-    def test_setup_with_twice_with_wrong_case_on_second_setup(
-        self, extra_args
-    ):
+    def test_setup_with_twice_with_wrong_case_on_second_setup(self, tmpdir):
         """User names on GitLab are case insensitive, and so setting up repos
         for the same student with two different cases of characters should work
         the same as setting up just once
@@ -341,7 +312,6 @@ class TestSetup:
 
         student_uppercase = student_lowercase.upper()
         base_command = [
-            REPOBEE_GITLAB,
             *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
             *BASE_ARGS,
             *TEMPLATE_ORG_ARG,
@@ -352,21 +322,22 @@ class TestSetup:
         def _cmd(student):
             return " ".join(base_command + [student])
 
-        result_lowercase = run_in_docker_with_coverage(
-            _cmd(student_lowercase), extra_args=extra_args
+        run_repobee(
+            _cmd(student_lowercase),
+            workdir=tmpdir,
+            plugins=[_repobee.ext.gitlab],
         )
-        result_uppercase = run_in_docker_with_coverage(
-            _cmd(student_uppercase), extra_args=extra_args
+        run_repobee(
+            _cmd(student_uppercase),
+            workdir=tmpdir,
+            plugins=[_repobee.ext.gitlab],
         )
-
-        assert result_lowercase.returncode == 0
-        assert result_uppercase.returncode == 0
 
         assert_repos_exist(
             [plug.StudentTeam(members=[student])], assignment_names
         )
 
-    def test_setup_with_wrong_case_on_student(self, extra_args):
+    def test_setup_with_wrong_case_on_student(self, tmpdir):
         """User names are case insensitive on GitLab, and so setup should work
         fine even if the case of some character in a student's username is
         "incorrect".
@@ -381,7 +352,6 @@ class TestSetup:
 
         command = " ".join(
             [
-                REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.repos.setup.as_name_tuple(),
                 *BASE_ARGS,
                 *TEMPLATE_ORG_ARG,
@@ -391,9 +361,8 @@ class TestSetup:
             ]
         )
 
-        result = run_in_docker_with_coverage(command, extra_args=extra_args)
+        run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
 
-        assert result.returncode == 0
         assert_repos_exist(
             [plug.StudentTeam(members=[student])], assignment_names
         )
@@ -403,7 +372,7 @@ class TestSetup:
 class TestUpdate:
     """Integration tests for the update command."""
 
-    def test_happy_path(self, with_student_repos, extra_args):
+    def test_happy_path(self, with_student_repos, tmpdir):
         master_repo = assignment_names[0]
         filename = "superfile.super"
         text = "some epic content\nfor this file!"
@@ -411,7 +380,6 @@ class TestUpdate:
 
         command = " ".join(
             [
-                REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.repos.update.as_name_tuple(),
                 *TEMPLATE_ORG_ARG,
                 *BASE_ARGS,
@@ -421,13 +389,10 @@ class TestUpdate:
             ]
         )
 
-        result = run_in_docker_with_coverage(command, extra_args=extra_args)
-        assert result.returncode == 0
+        run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
         assert_repos_contain(STUDENT_TEAMS, [master_repo], filename, text)
 
-    def test_opens_issue_if_update_rejected(
-        self, tmpdir, with_student_repos, extra_args
-    ):
+    def test_opens_issue_if_update_rejected(self, tmpdir, with_student_repos):
         master_repo = assignment_names[0]
         conflict_repo = plug.generate_repo_name(STUDENT_TEAMS[0], master_repo)
         filename = "superfile.super"
@@ -443,7 +408,6 @@ class TestUpdate:
 
         command = " ".join(
             [
-                REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.repos.update.as_name_tuple(),
                 *TEMPLATE_ORG_ARG,
                 *BASE_ARGS,
@@ -455,9 +419,8 @@ class TestUpdate:
             ]
         )
 
-        result = run_in_docker_with_coverage(command, extra_args=extra_args)
+        run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
 
-        assert result.returncode == 0
         assert_repos_contain(STUDENT_TEAMS[1:], [master_repo], filename, text)
         assert_issues_exist(STUDENT_TEAMS[0:1], [master_repo], issue)
 
@@ -467,33 +430,30 @@ class TestMigrate:
     """Integration tests for the migrate command."""
 
     @pytest.fixture
-    def local_master_repos(self, restore, extra_args):
+    def local_master_repos(self, restore, tmpdir):
         """Clone the master repos to disk. The restore fixture is explicitly
         included as it must be run before this fixture.
         """
         api = api_instance(TEMPLATE_ORG_NAME)
         template_repo_urls = [
-            api.insert_auth(url).replace(LOCAL_DOMAIN, BASE_DOMAIN)
-            for url in api.get_repo_urls(assignment_names)
+            api.insert_auth(url) for url in api.get_repo_urls(assignment_names)
         ]
         # clone the master repos to disk first first
         git_commands = [
             "git clone {}".format(url) for url in template_repo_urls
         ]
-        result = run_in_docker(
-            " && ".join(git_commands), extra_args=extra_args
-        )
 
-        assert result.returncode == 0
+        for cmd in git_commands:
+            subprocess.run(shlex.split(cmd), check=True, cwd=str(tmpdir))
+
         return assignment_names
 
-    def test_happy_path(self, local_master_repos, extra_args):
+    def test_happy_path(self, local_master_repos, tmpdir):
         """Migrate a few repos from the existing master repo into the target
         organization.
         """
         command = " ".join(
             [
-                REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.repos.migrate.as_name_tuple(),
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
@@ -501,9 +461,8 @@ class TestMigrate:
             ]
         )
 
-        result = run_in_docker_with_coverage(command, extra_args=extra_args)
+        run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
 
-        assert result.returncode == 0
         assert_template_repos_exist(local_master_repos, ORG_NAME)
 
 
@@ -513,7 +472,7 @@ class TestOpenIssues:
 
     _ISSUE = plug.Issue(title="This is a title", body="This is a body")
 
-    def test_happy_path(self, tmpdir_volume_arg, tmpdir, extra_args):
+    def test_happy_path(self, tmpdir):
         """Test opening an issue in each student repo."""
         filename = "issue.md"
         text = "{}\n{}".format(self._ISSUE.title, self._ISSUE.body)
@@ -521,19 +480,17 @@ class TestOpenIssues:
 
         command = " ".join(
             [
-                REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.issues.open.as_name_tuple(),
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
                 *STUDENTS_ARG,
                 "-i",
-                "{}/{}".format(VOLUME_DST, filename),
+                f"{tmpdir}/{filename}",
             ]
         )
 
-        result = run_in_docker_with_coverage(command, extra_args=extra_args)
+        run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
 
-        assert result.returncode == 0
         assert_num_issues(STUDENT_TEAMS, assignment_names, 1)
         assert_issues_exist(STUDENT_TEAMS, assignment_names, self._ISSUE)
 
@@ -542,14 +499,13 @@ class TestOpenIssues:
 class TestCloseIssues:
     """Tests for the close-issues command."""
 
-    def test_closes_only_matched_issues(self, open_issues, extra_args):
+    def test_closes_only_matched_issues(self, open_issues, tmpdir):
         """Test that close-issues respects the regex."""
         assert len(open_issues) == 2, "expected there to be only 2 open issues"
         close_issue = open_issues[0]
         open_issue = open_issues[1]
         command = " ".join(
             [
-                REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.issues.close.as_name_tuple(),
                 *BASE_ARGS,
                 *MASTER_REPOS_ARG,
@@ -559,9 +515,8 @@ class TestCloseIssues:
             ]
         )
 
-        result = run_in_docker_with_coverage(command, extra_args=extra_args)
+        run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
 
-        assert result.returncode == 0
         assert_issues_exist(
             STUDENT_TEAM_NAMES,
             assignment_names,
@@ -581,9 +536,7 @@ class TestListIssues:
     """Tests for the list-issues command."""
 
     @pytest.mark.parametrize("discover_repos", [False, True])
-    def test_lists_matching_issues(
-        self, open_issues, extra_args, discover_repos
-    ):
+    def test_lists_matching_issues(self, open_issues, tmpdir, discover_repos):
         # arrange
         assert len(open_issues) == 2, "expected there to be only 2 open issues"
         matched = open_issues[0]
@@ -605,7 +558,6 @@ class TestListIssues:
         repo_arg = ["--discover-repos"] if discover_repos else MASTER_REPOS_ARG
         command = " ".join(
             [
-                REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.issues.list.as_name_tuple(),
                 *BASE_ARGS,
                 *repo_arg,
@@ -616,11 +568,12 @@ class TestListIssues:
         )
 
         # act
-        result = run_in_docker_with_coverage(command, extra_args=extra_args)
-        output = result.stdout.decode("utf-8")
+        with contextlib.redirect_stdout(io.StringIO()) as sio:
+            run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
+
+        output = sio.getvalue()
 
         # assert
-        assert result.returncode == 0
         search_flags = re.MULTILINE
         for expected_pattern in expected_issue_output_patterns:
             assert re.search(expected_pattern, output, search_flags)
@@ -632,7 +585,7 @@ class TestListIssues:
 class TestAssignReviews:
     """Tests for the assign-reviews command."""
 
-    def test_assign_one_review(self, with_student_repos, extra_args):
+    def test_assign_one_review(self, with_student_repos, tmpdir):
         assignment_name = assignment_names[1]
         expected_review_teams = [
             plug.StudentTeam(
@@ -645,7 +598,6 @@ class TestAssignReviews:
         ]
         command = " ".join(
             [
-                REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.reviews.assign.as_name_tuple(),
                 *BASE_ARGS,
                 "-a",
@@ -659,9 +611,8 @@ class TestAssignReviews:
             expected_num_members=1
         )
 
-        result = run_in_docker_with_coverage(command, extra_args=extra_args)
+        run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
 
-        assert result.returncode == 0
         assert_on_groups(
             expected_review_teams, single_group_assertion=group_assertion
         )
@@ -673,9 +624,7 @@ class TestAssignReviews:
             expected_num_asignees=1,
         )
 
-    def test_assign_to_nonexisting_students(
-        self, with_student_repos, extra_args
-    ):
+    def test_assign_to_nonexisting_students(self, with_student_repos, tmpdir):
         """If you try to assign reviews where one or more of the allocated
         student repos don't exist, there should be an error.
         """
@@ -685,7 +634,6 @@ class TestAssignReviews:
 
         command = " ".join(
             [
-                REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.reviews.assign.as_name_tuple(),
                 *BASE_ARGS_NO_TB,
                 "-a",
@@ -697,26 +645,24 @@ class TestAssignReviews:
             ]
         )
 
-        result = run_in_docker_with_coverage(command, extra_args=extra_args)
-        output = result.stdout.decode("utf-8")
+        with pytest.raises(plug.NotFoundError) as exc_info:
+            run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
 
-        assert (
-            "[ERROR] NotFoundError: Can't find repos: {}".format(
-                plug.generate_repo_name(non_existing_group, assignment_name)
-            )
-            in output
+        non_existing_repo_name = plug.generate_repo_name(
+            non_existing_group, assignment_name
         )
-        assert result.returncode == 1
+        assert f"Can't find repos: {non_existing_repo_name}" in str(
+            exc_info.value
+        )
         assert_num_issues(STUDENT_TEAMS, [assignment_name], 0)
 
 
 @pytest.mark.filterwarnings("ignore:.*Unverified HTTPS request.*")
 class TestEndReviews:
-    def test_end_all_reviews(self, with_reviews, extra_args):
+    def test_end_all_reviews(self, with_reviews, tmpdir):
         assignment_name, review_teams = with_reviews
         command = " ".join(
             [
-                REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.reviews.end.as_name_tuple(),
                 *BASE_ARGS,
                 "-a",
@@ -725,12 +671,11 @@ class TestEndReviews:
             ]
         )
 
-        result = run_in_docker_with_coverage(command, extra_args=extra_args)
+        run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
 
         def assert_no_actual_groups(expected, actual):
             assert not actual
 
-        assert result.returncode == 0
         # student teams should still exist
         assert_on_groups(STUDENT_TEAMS)
         # review teams should not
@@ -738,12 +683,11 @@ class TestEndReviews:
             review_teams, all_groups_assertion=assert_no_actual_groups
         )
 
-    def test_end_non_existing_reviews(self, with_reviews, extra_args):
+    def test_end_non_existing_reviews(self, with_reviews, tmpdir):
         _, review_teams = with_reviews
         assignment_name = assignment_names[0]
         command = " ".join(
             [
-                REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.reviews.end.as_name_tuple(),
                 *BASE_ARGS,
                 "-a",
@@ -752,9 +696,8 @@ class TestEndReviews:
             ]
         )
 
-        result = run_in_docker_with_coverage(command, extra_args=extra_args)
+        run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
 
-        assert result.returncode == 0
         assert_on_groups(STUDENT_TEAMS)
         assert_on_groups(
             review_teams,
@@ -765,7 +708,7 @@ class TestEndReviews:
 class TestCheckReviews:
     """Tests for check-reviews command."""
 
-    def test_no_reviews_opened(self, with_reviews, extra_args):
+    def test_no_reviews_opened(self, with_reviews, tmpdir):
         assignment_name, _ = with_reviews
         num_reviews = 0
         num_expected_reviews = 1
@@ -784,7 +727,6 @@ class TestCheckReviews:
 
         command = " ".join(
             [
-                REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.reviews.check.as_name_tuple(),
                 *BASE_ARGS,
                 "-a",
@@ -797,17 +739,18 @@ class TestCheckReviews:
             ]
         )
 
-        result = run_in_docker_with_coverage(command, extra_args=extra_args)
-        output = result.stdout.decode("utf-8")
+        with contextlib.redirect_stdout(io.StringIO()) as sio:
+            run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
 
-        assert result.returncode == 0
+        output = sio.getvalue()
+
         search_flags = re.MULTILINE
         for expected_pattern in expected_output_patterns:
             assert re.search(expected_pattern, output, search_flags)
         for unexpected_pattern in unexpected_output_patterns:
             assert not re.search(unexpected_pattern, output, search_flags)
 
-    def test_expect_too_many_reviews(self, with_reviews, extra_args):
+    def test_expect_too_many_reviews(self, with_reviews, tmpdir, mocker):
         """Test that warnings are printed if a student is assigned to fewer
         review teams than expected.
         """
@@ -816,10 +759,7 @@ class TestCheckReviews:
         actual_assigned_reviews = 1
         num_expected_reviews = 2
         assignment_name = assignment_names[1]
-        warning_template = (
-            r"\[WARNING\] Expected {} to be assigned to {} review teams, but "
-            "found {}. Review teams may have been tampered with."
-        )
+
         pattern_template = r"{}.*{}.*{}.*\w+-{}.*"
         expected_output_patterns = [
             pattern_template.format(
@@ -829,7 +769,13 @@ class TestCheckReviews:
                 assignment_name,
             )
             for team_name in STUDENT_TEAM_NAMES
-        ] + [
+        ]
+
+        warning_template = (
+            r"Expected {} to be assigned to {} review teams, but "
+            "found {}. Review teams may have been tampered with."
+        )
+        expected_warning_patterns = [
             warning_template.format(
                 team_name,
                 str(num_expected_reviews),
@@ -837,11 +783,9 @@ class TestCheckReviews:
             )
             for team_name in STUDENT_TEAM_NAMES
         ]
-        unexpected_output_patterns = [r"\[ERROR\]"]
 
         command = " ".join(
             [
-                REPOBEE_GITLAB,
                 *repobee_plug.cli.CoreCommand.reviews.check.as_name_tuple(),
                 *BASE_ARGS,
                 "-a",
@@ -854,12 +798,25 @@ class TestCheckReviews:
             ]
         )
 
-        result = run_in_docker_with_coverage(command, extra_args=extra_args)
-        output = result.stdout.decode("utf-8")
+        warning_mock = mocker.patch("repobee_plug.log.warning", autospec=True)
+        error_mock = mocker.patch("repobee_plug.log.error", autospec=True)
 
-        assert result.returncode == 0
-        search_flags = re.MULTILINE
+        # something with redirecting output like this doesn't play nice with
+        # the logging, so we use the warning log mock to track warnings
+        with contextlib.redirect_stdout(io.StringIO()) as sio:
+            run_repobee(command, workdir=tmpdir, plugins=[_repobee.ext.gitlab])
+
+        output = sio.getvalue()
+
         for expected_pattern in expected_output_patterns:
-            assert re.search(expected_pattern, output, search_flags)
-        for unexpected_pattern in unexpected_output_patterns:
-            assert not re.search(unexpected_pattern, output, search_flags)
+            assert re.search(expected_pattern, output, re.MULTILINE)
+
+        warning_logs = "\n".join(
+            [str(args[0]) for args, *_ in warning_mock.call_args_list]
+        )
+        for expected_warning_pattern in expected_warning_patterns:
+            assert re.search(
+                expected_warning_pattern, warning_logs, re.MULTILINE
+            )
+
+        assert not error_mock.called

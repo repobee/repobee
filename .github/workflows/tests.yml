@@ -64,25 +64,38 @@ jobs:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 2
-    - name: Build RepoBee container
-      run: docker build -t repobee:test -f Dockerfile.test .
     - name: Set up Python 3.6
       uses: actions/setup-python@v2
       with:
         python-version: 3.6
-    - name: Install RepoBee
-      run: pip install -e .[TEST]
+    - name: Set up Git
+      run: |
+        git config --global user.name "Repo Bee"
+        git config --global user.email repoobee@repobee.org
+        git config --global http.sslverify false
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements/test.txt
+        pip install -e .[TEST]
     - name: Run system tests
       env:
         REPOBEE_NO_VERIFY_SSL: true
         PYTHONWARNINGS: "ignore:Unverified HTTPS request"
       run: |
-        pytest system_tests/gitlab/test_gitlab_system.py -vv --showlocals
+        coverage run --branch \
+            --source _repobee,repobee_plug,repobee_testhelpers \
+            -m pytest system_tests/gitlab/test_gitlab_system.py -vv --showlocals
+        coverage xml
+    - name: Clean up volume data
+      run: |
+        sudo rm -rf system_tests/gitlab/volume_data
+        git restore system_tests/gitlab/volume_data
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v2.1.0
       with:
           fail_ci_if_error: true
-          file: ./.coverage_files/coverage.xml
+          file: ./coverage.xml
 
   gitea-system-tests:
     runs-on: ubuntu-latest

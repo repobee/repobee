@@ -21,7 +21,7 @@ from _helpers.const import (
 
 CURRENT_DIR = pathlib.Path(__file__).parent
 
-BASE_URL = "https://localhost:50443"
+BASE_URL = "https://localhost:3000"
 
 DOCKER_START_COMMANDS = [
     "docker network create development",
