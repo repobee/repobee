@@ -106,7 +106,7 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
             ) from exc
 
     def _install_plugin(
-        self, plugins: dict, installed_plugins: dict, active_plugins: dict
+        self, plugins: dict, installed_plugins: dict, active_plugins: List[str]
     ) -> None:
         if self.local:
             abspath = self.local.absolute()
