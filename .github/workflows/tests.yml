@@ -86,6 +86,7 @@ jobs:
         coverage run --branch \
             --source _repobee,repobee_plug,repobee_testhelpers \
             -m pytest system_tests/gitlab/test_gitlab_system.py -vv --showlocals
+        coverage xml
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v2.1.0
       with:
