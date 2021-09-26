@@ -812,7 +812,7 @@ class TestCheckReviews:
             assert re.search(expected_pattern, output, re.MULTILINE)
 
         warning_logs = "\n".join(
-            [str(call.args[0]) for call in warning_mock.call_args_list]
+            [str(args[0]) for args, *_ in warning_mock.call_args_list]
         )
         for expected_warning_pattern in expected_warning_patterns:
             assert re.search(
