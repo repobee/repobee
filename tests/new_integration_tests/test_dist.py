@@ -299,6 +299,52 @@ class Hello(plug.Plugin, plug.cli.Command):
 
         assert f"could not install plugin from {url}" in str(exc_info.value)
 
+    def test_install_plugin_version_incompatible_with_repobee_version_error_message(
+        self, tmp_path
+    ):
+        old_repobee_version = "3.4.0"
+        current_repobee_version = get_pkg_version("repobee")
+        plugin_version = "1.0.0"
+        plugin_dir = tmp_path / "repobee-bogus"
+        plugin_dir.mkdir()
+
+        self._setup_bogus_plugin(
+            old_repobee_version, plugin_version, plugin_dir
+        )
+
+        with pytest.raises(plug.PlugError) as exc_info:
+            repobee.run(shlex.split(f"plugin install --local {plugin_dir}"))
+
+        assert (
+            f"Selected plugin is incompatible with "
+            f"RepoBee v{current_repobee_version}" in str(exc_info.value)
+        )
+        assert (
+            "Try upgrading RepoBee and then install the plugin again"
+            in str(exc_info.value)
+        )
+
+    def _setup_bogus_plugin(
+        self,
+        requires_repobee_version: str,
+        plugin_version: str,
+        plugin_dir: pathlib.Path,
+    ) -> None:
+        """Sets up a bogus plugin requiring a specific version of RepoBee."""
+        full_plugin_name = plugin_dir.name
+
+        (plugin_dir / "setup.py").write_text(
+            f"""
+from setuptools import setup
+
+setup(
+    name="{full_plugin_name}",
+    version="{plugin_version}",
+    install_requires=["repobee=={requires_repobee_version}"],
+)
+"""
+        )
+
 
 class TestPluginUninstall:
     """Tests for the ``plugin uninstall`` command."""

@@ -97,6 +97,17 @@ class InstallPluginCommand(plug.Plugin, plug.cli.Command):
         installed_plugins = disthelpers.get_installed_plugins()
         active_plugins = disthelpers.get_active_plugins()
 
+        try:
+            self._install_plugin(plugins, installed_plugins, active_plugins)
+        except disthelpers.DependencyResolutionError as exc:
+            raise disthelpers.DependencyResolutionError(
+                f"Selected plugin is incompatible with RepoBee {__version__}. "
+                "Try upgrading RepoBee and then install the plugin again."
+            ) from exc
+
+    def _install_plugin(
+        self, plugins: dict, installed_plugins: dict, active_plugins: List[str]
+    ) -> None:
         if self.local:
             abspath = self.local.absolute()
             if not abspath.exists():
