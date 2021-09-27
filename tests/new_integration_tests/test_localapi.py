@@ -47,3 +47,12 @@ class TestDeleteRepo:
         # act/assert
         with pytest.raises(plug.NotFoundError):
             api.delete_repo(repo)
+
+
+class TestForOrganization:
+    def test_changes_org_name(self, api):
+        weird_org_name = "this-is-a-very-unlikely-org-name"
+
+        weird_org_api = api.for_organization(weird_org_name)
+
+        assert weird_org_api._org_name == weird_org_name
