@@ -10,7 +10,7 @@ USER = "slarse"
 ORG_NAME = "test-org"
 TEMPLATE_ORG_NAME = "test-master-org"
 HOST_URL = "https://some_enterprise_host"
-BASE_URL = "{}/api/v3".format(HOST_URL)
+BASE_URL = f"{HOST_URL}/api/v3"
 
 # 5! = 120 different students
 STUDENTS = tuple(
