@@ -154,7 +154,7 @@ def _post_setup(
         plug.StudentRepo(
             name=repo.name,
             url=repo.url,
-            team=plug.StudentTeam(members=team.members),
+            team=plug.StudentTeam(name=team.name, members=team.members),
         )
         for team, repo in teams_and_repos
     ]

@@ -462,6 +462,29 @@ other-team:
         ]
         assert sorted(actual_repo_names) == sorted(expected_repo_names)
 
+    def test_post_setup_hook_gets_correct_student_team_names(
+        self, platform_url
+    ):
+        """Test that the student teams in post_setup hook get correct team
+        names. Replicates the bug from #771.
+        """
+        nonexisting_student = "nonexisting"
+
+        actual_student_team_names = set()
+
+        class PostSetup(plug.Plugin):
+            def post_setup(self, repo, api):
+                actual_student_team_names.add(repo.team.name)
+
+        funcs.run_repobee(
+            f"{plug.cli.CoreCommand.repos.setup} --base-url {platform_url} "
+            f"--assignments {TEMPLATE_REPOS_ARG} "
+            f"--students {nonexisting_student}",
+            plugins=[PostSetup],
+        )
+
+        assert actual_student_team_names == {nonexisting_student}
+
 
 class TestClone:
     """Tests for the ``repos clone`` command."""
