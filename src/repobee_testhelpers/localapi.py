@@ -168,9 +168,8 @@ class LocalAPI(plug.PlatformAPI):
         permission: plug.TeamPermission = plug.TeamPermission.PUSH,
     ) -> None:
         """See :py:meth:`repobee_plug.PlatformAPI.assign_members`."""
-        team.implementation.add_members(
-            [self._get_user(m) for m in members or []]
-        )
+        users = (self._users.get(m) for m in (members or []) if m)
+        team.implementation.add_members([user for user in users if user])
 
     def assign_repo(
         self, team: plug.Team, repo: plug.Repo, permission: plug.TeamPermission
