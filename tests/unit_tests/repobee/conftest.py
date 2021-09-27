@@ -100,8 +100,7 @@ def _students_file(populate: bool = True):
         ) as file:
             if populate:
                 file.writelines(
-                    "{}{}".format(student, os.linesep)
-                    for student in constants.STUDENTS
+                    f"{student}{os.linesep}" for student in constants.STUDENTS
                 )
                 file.flush()
         yield file
@@ -240,12 +239,10 @@ def empty_config_mock(mocker, isfile_mock, tmpdir, monkeypatch):
     yield file
 
 
-_config_user = "user = {}".format(constants.USER)
-_config_base = "base_url = {}".format(constants.BASE_URL)
-_config_org = "org_name = {}".format(constants.ORG_NAME)
-_config_template_org = "template_org_name = {}".format(
-    constants.TEMPLATE_ORG_NAME
-)
+_config_user = f"user = {constants.USER}"
+_config_base = f"base_url = {constants.BASE_URL}"
+_config_org = f"org_name = {constants.ORG_NAME}"
+_config_template_org = f"template_org_name = {constants.TEMPLATE_ORG_NAME}"
 _config_token = f"token = {constants.TOKEN}"
 
 
@@ -265,7 +262,7 @@ def config_missing_option(request, empty_config_mock, students_file):
     if not missing_option == "-o":
         config_contents.append(_config_org)
     if not missing_option == "--sf":
-        config_contents.append("students_file = {!s}".format(students_file))
+        config_contents.append(f"students_file = {students_file!s}")
     if not missing_option == "-u":
         config_contents.append(_config_user)
     if not missing_option == "--to":
@@ -284,12 +281,12 @@ def config_mock(empty_config_mock, students_file):
     config_contents = os.linesep.join(
         [
             "[repobee]",
-            "base_url = {}".format(constants.BASE_URL),
-            "user = {}".format(constants.USER),
-            "org_name = {}".format(constants.ORG_NAME),
-            "template_org_name = {}".format(constants.TEMPLATE_ORG_NAME),
-            "students_file = {!s}".format(students_file),
-            "token = {}".format(constants.CONFIG_TOKEN),
+            f"base_url = {constants.BASE_URL}",
+            f"user = {constants.USER}",
+            f"org_name = {constants.ORG_NAME}",
+            f"template_org_name = {constants.TEMPLATE_ORG_NAME}",
+            f"students_file = {students_file!s}",
+            f"token = {constants.CONFIG_TOKEN}",
         ]
     )
     empty_config_mock.write(config_contents)

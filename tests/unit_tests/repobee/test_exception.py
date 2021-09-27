@@ -62,9 +62,7 @@ class TestGitError:
         repo_url = repo_url_template.format("")
         # GitHub-style token
         repo_url_with_token = repo_url_template.format(token + "@")
-        fatal = "fatal: repo '{}' could not be found".format(
-            repo_url_with_token
-        )
+        fatal = f"fatal: repo '{repo_url_with_token}' could not be found"
         assert (
             token in fatal
         )  # meta assert, make sure we are testing something
@@ -94,10 +92,10 @@ class TestGitError:
         repo_url = repo_url_template.format("")
         # GitHub-style token
         repo_url_with_user_and_token = repo_url_template.format(
-            "{}:{}@".format(USER, token)
+            f"{USER}:{token}@"
         )
-        fatal = "fatal: repo '{}' could not be found".format(
-            repo_url_with_user_and_token
+        fatal = (
+            f"fatal: repo '{repo_url_with_user_and_token}' could not be found"
         )
         assert (
             token in fatal

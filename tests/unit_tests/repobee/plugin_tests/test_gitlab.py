@@ -217,8 +217,8 @@ class GitLabMock:
 
         id = self._next_id()
 
-        full_path = "{}/{}".format(self._group_endpoint(namespace_id), path)
-        http_url = "{}/{}.git".format(self._base_url, full_path)
+        full_path = f"{self._group_endpoint(namespace_id)}/{path}"
+        http_url = f"{self._base_url}/{full_path}.git"
         self._projects[full_path] = Project(
             id=id,
             name=name,
@@ -238,7 +238,7 @@ class GitLabMock:
         group = self._groups[group_id]
         if group.parent_id:
             prefix = self._group_endpoint(group.parent_id)
-            return "{}/{}".format(prefix, group.path)
+            return f"{prefix}/{group.path}"
         return group.path
 
     def _next_id(self):
@@ -380,7 +380,7 @@ class TestGetRepoUrls:
         # arrange
         api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
         expected_urls = [
-            api._insert_auth("{}/{}/{}.git".format(BASE_URL, TARGET_GROUP, mn))
+            api._insert_auth(f"{BASE_URL}/{TARGET_GROUP}/{mn}.git")
             for mn in assignment_names
         ]
         assert (
@@ -402,7 +402,7 @@ class TestGetRepoUrls:
         master_group = "master-" + TARGET_GROUP  # guaranteed != TARGET_GROUP
         api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
         expected_urls = [
-            api._insert_auth("{}/{}/{}.git".format(BASE_URL, master_group, mn))
+            api._insert_auth(f"{BASE_URL}/{master_group}/{mn}.git")
             for mn in assignment_names
         ]
         assert (

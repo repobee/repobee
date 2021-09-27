@@ -12,7 +12,7 @@ random.seed(41235)
 
 
 def generate_repo_url(repo_name, org_name):
-    return "{}/{}/{}".format(constants.HOST_URL, org_name, repo_name)
+    return f"{constants.HOST_URL}/{org_name}/{repo_name}"
 
 
 def random_date():

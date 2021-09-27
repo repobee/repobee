@@ -242,7 +242,7 @@ def mock_repo(name, description, private, team_id):
     repo = MagicMock()
     type(repo).name = PropertyMock(return_value=name)
     type(repo).description = PropertyMock(
-        return_value="description of {}".format(name)
+        return_value=f"description of {name}"
     )
     type(repo).html_url = PropertyMock(
         return_value=generate_repo_url(name, ORG_NAME)
@@ -407,7 +407,7 @@ class TestGetRepoUrls:
 
         assert sorted(urls) == sorted(expected_urls)
         for url in urls:
-            assert "{}:{}".format(USER, TOKEN) in url
+            assert f"{USER}:{TOKEN}" in url
 
     def test_with_students(self, repos, api):
         """Test that supplying students causes student repo names to be

@@ -12,5 +12,5 @@ def test_cant_deprecate_non_hook_function():
         deprecation.deprecate(remove_by_version="3.0.0")(func)
 
     assert "can't deprecate non-hook function" in str(exc_info.value)
-    assert "func={}".format(func) in str(exc_info.value)
+    assert f"func={func}" in str(exc_info.value)
     assert exc_info.value.kwargs["func"] == func
