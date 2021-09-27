@@ -107,6 +107,7 @@ class LocalAPI(plug.PlatformAPI):
 
     def __init__(self, base_url: str, org_name: str, user: str, token: str):
         self._repodir = pathlib.Path(base_url[len("https://") :])
+        self._base_url = base_url
         self._org_name = org_name
         self._user = user
         self._token = token
@@ -314,6 +315,10 @@ class LocalAPI(plug.PlatformAPI):
 
     def extract_repo_name(self, repo_url: str) -> str:
         return pathlib.Path(repo_url).stem
+
+    def for_organization(self, org_name: str) -> "LocalAPI":
+        """See :py:meth:`repobee_plug.PlatformAPI.for_organization`."""
+        return LocalAPI(self._base_url, org_name, self._user, self._token)
 
     @staticmethod
     def verify_settings(
