@@ -75,8 +75,8 @@ Current defaults are shown in brackets [].
 """
     )
     for option in configurable_args_dict[section]:
-        prompt = f"Enter default for '{option}': "
-        f"[{config.get(section, option, fallback='')}]"
+        current_default = config.get(section, option, fallback="")
+        prompt = f"Enter default for '{option}': [{current_default}] "
         default = input(prompt)
         if default:
             if section not in config:
