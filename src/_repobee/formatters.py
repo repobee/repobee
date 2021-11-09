@@ -8,6 +8,7 @@ This module contains functions for pretty formatting of command line output.
 .. moduleauthor:: Simon Larsén
 """
 import os
+import enum
 from typing import Mapping, List, Any
 
 from colored import fg, bg, style  # type: ignore
@@ -50,34 +51,55 @@ def _format_reviewer(
     num_reviews: int,
     even: bool,
 ):
-    performed_reviews = [rev.repo for rev in review_list if rev.done]
+    num_performed_reviews = len([rev.repo for rev in review_list if rev.done])
     remaining_reviews = [rev.repo for rev in review_list if not rev.done]
-    color = bg("grey_30") if even else bg("grey_15")
+    num_remaining_reviews = len(remaining_reviews)
 
-    if len(performed_reviews) == num_reviews and not remaining_reviews:
-        color = bg("dark_green")
-    elif len(review_list) != num_reviews:
-        plug.log.warning(
-            (
-                "Expected {} to be assigned to {} review teams, but found {}. "
-                "Review teams may have been tampered with."
-            ).format(reviewer, num_reviews, len(review_list))
-        )
-        color = bg("red")
-    color += fg("white")
+    background_colors = {
+        _ReviewProgress.DONE: bg("dark_green"),
+        _ReviewProgress.NOT_DONE: bg("grey_30") if even else bg("grey_15"),
+        _ReviewProgress.UNEXPECTED_AMOUNT_OF_REVIEWS: bg("red"),
+    }
 
-    return (
-        color
-        + _format_row(
-            [
-                reviewer,
-                len(performed_reviews),
-                len(remaining_reviews),
-                ",".join(remaining_reviews),
-            ]
-        )
-        + style.RESET
+    review_progress = _compute_review_progress(
+        num_performed_reviews,
+        num_remaining_reviews,
+        num_expected_reviews=num_reviews,
     )
+
+    background_color = background_colors[review_progress]
+    foreground_color = fg("white")
+    color = f"{background_color}{foreground_color}"
+
+    row = _format_row(
+        [
+            reviewer,
+            num_performed_reviews,
+            num_remaining_reviews,
+            ",".join(remaining_reviews),
+        ]
+    )
+
+    return f"{color}{row}{style.RESET}"
+
+
+class _ReviewProgress(enum.Enum):
+    DONE = enum.auto()
+    NOT_DONE = enum.auto()
+    UNEXPECTED_AMOUNT_OF_REVIEWS = enum.auto()
+
+
+def _compute_review_progress(
+    num_performed_reviews: int,
+    num_remaining_reviews: int,
+    num_expected_reviews: int,
+) -> _ReviewProgress:
+    if num_performed_reviews + num_remaining_reviews != num_expected_reviews:
+        return _ReviewProgress.UNEXPECTED_AMOUNT_OF_REVIEWS
+    elif num_performed_reviews == num_expected_reviews:
+        return _ReviewProgress.DONE
+    else:
+        return _ReviewProgress.NOT_DONE
 
 
 def format_hook_result(hook_result):
