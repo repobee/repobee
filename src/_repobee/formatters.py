@@ -67,6 +67,13 @@ def _format_reviewer(
         num_expected_reviews=num_reviews,
     )
 
+    if review_progress == _ReviewProgress.UNEXPECTED_AMOUNT_OF_REVIEWS:
+        plug.log.warning(
+            f"Expected {reviewer} to be assigned to {num_reviews} review "
+            f"teams, but found {len(review_list)}. "
+            f"Review teams may have been tampered with."
+        )
+
     background_color = background_colors[review_progress]
     foreground_color = fg("white")
     color = f"{background_color}{foreground_color}"
