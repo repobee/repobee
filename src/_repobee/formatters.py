@@ -87,7 +87,10 @@ def _format_reviewer(
         ]
     )
 
-    return f"{color}{row}{style.RESET}"
+    formatted_row = f"{color}{row}{style.RESET}"
+    plug.log.warning(formatted_row.encode("utf8"))
+
+    return formatted_row
 
 
 class _ReviewProgress(enum.Enum):
