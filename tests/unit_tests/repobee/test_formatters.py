@@ -26,7 +26,7 @@ class TestPeerReviewFormatter:
             "eggs": strs_to_reviews("ham-week-1", "spam-week-1"),
         }
 
-        expected_output = """
+        expected_output = r"""
 Color coding: grey: not done, green: done, red: num done + num remaining != num_reviews
 [0mreviewer        num done        num remaining   repos remaining 
 [48;5;22m[38;5;15mham             2               0                               [0m
@@ -53,7 +53,7 @@ Color coding: grey: not done, green: done, red: num done + num remaining != num_
             "eggs": strs_to_reviews("ham-week-1", "spam-week-1", done=False),
         }
 
-        expected_output = """
+        expected_output = r"""
 Color coding: grey: not done, green: done, red: num done + num remaining != num_reviews
 [0mreviewer        num done        num remaining   repos remaining 
 [48;5;239m[38;5;15mham             0               2               spam-week-1,bacon-week-1[0m
@@ -78,7 +78,7 @@ Color coding: grey: not done, green: done, red: num done + num remaining != num_
             "bacon": strs_to_reviews("eggs-week-1"),
             "eggs": strs_to_reviews("ham-week-1", "spam-week-1"),
         }
-        expected_output = """
+        expected_output = r"""
 Color coding: grey: not done, green: done, red: num done + num remaining != num_reviews
 [0mreviewer        num done        num remaining   repos remaining 
 [48;5;22m[38;5;15mham             2               0                               [0m
@@ -107,7 +107,7 @@ Color coding: grey: not done, green: done, red: num done + num remaining != num_
                 "ham-week-1", "spam-week-1", "bacon-week-1", done=True
             ),
         }
-        expected_output = """
+        expected_output = r"""
 Color coding: grey: not done, green: done, red: num done + num remaining != num_reviews
 [0mreviewer        num done        num remaining   repos remaining 
 [48;5;239m[38;5;15mham             0               2               spam-week-1,bacon-week-1[0m
@@ -125,7 +125,7 @@ Color coding: grey: not done, green: done, red: num done + num remaining != num_
         students = []
         reviews = {}
         num_reviews = 0
-        expected_output = """
+        expected_output = r"""
 Color coding: grey: not done, green: done, red: num done + num remaining != num_reviews
 [0mreviewer        num done        num remaining   repos remaining 
 """  # noqa: E501,W291

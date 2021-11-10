@@ -8,11 +8,11 @@ This module contains functions for pretty formatting of command line output.
 .. moduleauthor:: Simon Larsén
 """
 import os
+import enum
 from typing import Mapping, List, Any
 
-from colored import fg, bg, style  # type: ignore
-
 import repobee_plug as plug
+from _repobee.colors import RESET, BackgroundColor, ForegroundColor
 
 
 def format_peer_review_progress_output(
@@ -24,7 +24,7 @@ def format_peer_review_progress_output(
     # for some reason each column should be exactly 16 characters
     output = [
         "Color coding: grey: not done, green: done, red: num done + num remaining != num_reviews",  # noqa: E501
-        style.RESET
+        RESET
         + _format_row(
             ["reviewer", "num done", "num remaining", "repos remaining"]
         ),
@@ -50,43 +50,77 @@ def _format_reviewer(
     num_reviews: int,
     even: bool,
 ):
-    performed_reviews = [rev.repo for rev in review_list if rev.done]
+    num_performed_reviews = len([rev.repo for rev in review_list if rev.done])
     remaining_reviews = [rev.repo for rev in review_list if not rev.done]
-    color = bg("grey_30") if even else bg("grey_15")
+    num_remaining_reviews = len(remaining_reviews)
 
-    if len(performed_reviews) == num_reviews and not remaining_reviews:
-        color = bg("dark_green")
-    elif len(review_list) != num_reviews:
-        plug.log.warning(
-            (
-                "Expected {} to be assigned to {} review teams, but found {}. "
-                "Review teams may have been tampered with."
-            ).format(reviewer, num_reviews, len(review_list))
-        )
-        color = bg("red")
-    color += fg("white")
-
-    return (
-        color
-        + _format_row(
-            [
-                reviewer,
-                len(performed_reviews),
-                len(remaining_reviews),
-                ",".join(remaining_reviews),
-            ]
-        )
-        + style.RESET
+    review_progress = _compute_review_progress(
+        num_performed_reviews,
+        num_remaining_reviews,
+        num_expected_reviews=num_reviews,
     )
+
+    if review_progress == _ReviewProgress.UNEXPECTED_AMOUNT_OF_REVIEWS:
+        plug.log.warning(
+            f"Expected {reviewer} to be assigned to {num_reviews} review "
+            f"teams, but found {len(review_list)}. "
+            f"Review teams may have been tampered with."
+        )
+
+    row = _format_row(
+        [
+            reviewer,
+            num_performed_reviews,
+            num_remaining_reviews,
+            ",".join(remaining_reviews),
+        ]
+    )
+    color = _compute_reviewer_row_color(review_progress, is_even_row=even)
+
+    return f"{color}{row}{RESET}"
+
+
+class _ReviewProgress(enum.Enum):
+    DONE = enum.auto()
+    NOT_DONE = enum.auto()
+    UNEXPECTED_AMOUNT_OF_REVIEWS = enum.auto()
+
+
+def _compute_review_progress(
+    num_performed_reviews: int,
+    num_remaining_reviews: int,
+    num_expected_reviews: int,
+) -> _ReviewProgress:
+    if num_performed_reviews + num_remaining_reviews != num_expected_reviews:
+        return _ReviewProgress.UNEXPECTED_AMOUNT_OF_REVIEWS
+    elif num_performed_reviews == num_expected_reviews:
+        return _ReviewProgress.DONE
+    else:
+        return _ReviewProgress.NOT_DONE
+
+
+def _compute_reviewer_row_color(
+    review_progress: _ReviewProgress, is_even_row: bool
+) -> str:
+    background_colors = {
+        _ReviewProgress.DONE: BackgroundColor.DARK_GREEN,
+        _ReviewProgress.NOT_DONE: BackgroundColor.LIGHT_GREY
+        if is_even_row
+        else BackgroundColor.DARK_GREY,
+        _ReviewProgress.UNEXPECTED_AMOUNT_OF_REVIEWS: BackgroundColor.RED,
+    }
+
+    background_color = background_colors[review_progress]
+    return f"{background_color}{ForegroundColor.WHITE}"
 
 
 def format_hook_result(hook_result):
     if hook_result.status == plug.Status.ERROR:
-        out = bg("red")
+        out = BackgroundColor.RED
     elif hook_result.status == plug.Status.WARNING:
-        out = bg("yellow")
+        out = BackgroundColor.YELLOW
     elif hook_result.status == plug.Status.SUCCESS:
-        out = bg("dark_green")
+        out = BackgroundColor.DARK_GREEN
     else:
         raise ValueError(
             f"expected hook_result.status to be one of Status.ERROR, "
@@ -94,11 +128,11 @@ def format_hook_result(hook_result):
         )
 
     out += (
-        fg("white")
+        ForegroundColor.WHITE
         + hook_result.name
         + ": "
         + hook_result.status.name
-        + style.RESET
+        + RESET
         + os.linesep
     )
     out += hook_result.msg
@@ -109,7 +143,7 @@ def format_hook_result(hook_result):
 def format_hook_results_output(result_mapping):
     out = ""
     for repo_name, results in result_mapping.items():
-        out += f"{bg('grey_23')}hook results for {repo_name}{style.RESET}{os.linesep * 2}"
+        out += f"{BackgroundColor.DARK_GREY}hook results for {repo_name}{RESET}{os.linesep * 2}"
         out += os.linesep.join(
             [f"{format_hook_result(res)}{os.linesep}" for res in results]
         )
