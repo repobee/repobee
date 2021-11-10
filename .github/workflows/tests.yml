@@ -19,8 +19,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
-        python-version: [3.9]
+        os: [ubuntu-latest, macos-latest]
+        python-version: [3.6, 3.7, 3.8, 3.9]
         exclude:
           - os: macos-latest
             python-version: 3.7
@@ -49,8 +49,7 @@ jobs:
       run: |
         coverage run --branch \
             --source _repobee,repobee_plug,repobee_testhelpers \
-            -m pytest tests/unit_tests tests/new_integration_tests \
-            --showlocals -vv -k formatters
+            -m pytest tests/unit_tests tests/new_integration_tests
         coverage xml
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v2.1.0
@@ -92,6 +91,39 @@ jobs:
       run: |
         sudo rm -rf system_tests/gitlab/volume_data
         git restore system_tests/gitlab/volume_data
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v2.1.0
+      with:
+          fail_ci_if_error: true
+          file: ./coverage.xml
+
+  gitea-system-tests:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 2
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.6
+    - name: Set up Git
+      run: |
+        git config --global user.name "Repo Bee"
+        git config --global user.email repoobee@repobee.org
+    - name: Install RepoBee
+      run: pip install -e .[TEST]
+    - name: Run Gitea system tests
+      env:
+        REPOBEE_NO_VERIFY_SSL: true
+        PYTHONWARNINGS: "ignore:Unverified HTTPS request"
+      run: |
+        git config --global http.sslverify false
+        python system_tests/gitea/giteamanager.py prime
+        coverage run --branch \
+            --source _repobee,repobee_plug,repobee_testhelpers \
+            -m pytest -vv --showlocals system_tests/gitea
+        coverage xml
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v2.1.0
       with:
