@@ -53,7 +53,6 @@ required = [
     "appdirs",
     "argcomplete>=1.12.0",
     "bullet",
-    "colored",
     "daiquiri",
     "dataclasses>='0.7';python_version<'3.7'",
     "gitpython",

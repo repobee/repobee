@@ -12,14 +12,7 @@ import enum
 from typing import Mapping, List, Any
 
 import repobee_plug as plug
-
-_RED = "\x1b[48;5;1m"
-_YELLOW = "\x1b[48;5;3m"
-_DARK_GREEN = "\x1b[48;5;22m"
-_LIGHT_GREY = "\x1b[48;5;235m"
-_DARK_GREY = "\x1b[48;5;239m"
-_WHITE = "\x1b[38;5;15m"
-_RESET = "\x1b[0m"
+from _repobee.colors import RESET, BackgroundColor, ForegroundColor
 
 
 def format_peer_review_progress_output(
@@ -31,7 +24,7 @@ def format_peer_review_progress_output(
     # for some reason each column should be exactly 16 characters
     output = [
         "Color coding: grey: not done, green: done, red: num done + num remaining != num_reviews",  # noqa: E501
-        _RESET
+        RESET
         + _format_row(
             ["reviewer", "num done", "num remaining", "repos remaining"]
         ),
@@ -62,9 +55,11 @@ def _format_reviewer(
     num_remaining_reviews = len(remaining_reviews)
 
     background_colors = {
-        _ReviewProgress.DONE: _DARK_GREEN,
-        _ReviewProgress.NOT_DONE: _DARK_GREY if even else _LIGHT_GREY,
-        _ReviewProgress.UNEXPECTED_AMOUNT_OF_REVIEWS: _RED,
+        _ReviewProgress.DONE: BackgroundColor.DARK_GREEN,
+        _ReviewProgress.NOT_DONE: BackgroundColor.LIGHT_GREY
+        if even
+        else BackgroundColor.DARK_GREY,
+        _ReviewProgress.UNEXPECTED_AMOUNT_OF_REVIEWS: BackgroundColor.RED,
     }
 
     review_progress = _compute_review_progress(
@@ -81,7 +76,7 @@ def _format_reviewer(
         )
 
     background_color = background_colors[review_progress]
-    foreground_color = _WHITE
+    foreground_color = ForegroundColor.WHITE
     color = f"{background_color}{foreground_color}"
 
     row = _format_row(
@@ -93,7 +88,7 @@ def _format_reviewer(
         ]
     )
 
-    formatted_row = f"{color}{row}{_RESET}"
+    formatted_row = f"{color}{row}{RESET}"
     plug.log.warning(formatted_row.encode("utf8"))
 
     return formatted_row
@@ -120,11 +115,11 @@ def _compute_review_progress(
 
 def format_hook_result(hook_result):
     if hook_result.status == plug.Status.ERROR:
-        out = _RED
+        out = BackgroundColor.RED
     elif hook_result.status == plug.Status.WARNING:
-        out = _YELLOW
+        out = BackgroundColor.YELLOW
     elif hook_result.status == plug.Status.SUCCESS:
-        out = _DARK_GREEN
+        out = BackgroundColor.DARK_GREEN
     else:
         raise ValueError(
             f"expected hook_result.status to be one of Status.ERROR, "
@@ -132,11 +127,11 @@ def format_hook_result(hook_result):
         )
 
     out += (
-        _WHITE
+        ForegroundColor.WHITE
         + hook_result.name
         + ": "
         + hook_result.status.name
-        + _RESET
+        + RESET
         + os.linesep
     )
     out += hook_result.msg
@@ -147,9 +142,7 @@ def format_hook_result(hook_result):
 def format_hook_results_output(result_mapping):
     out = ""
     for repo_name, results in result_mapping.items():
-        out += (
-            f"{_DARK_GREY}hook results for {repo_name}{_RESET}{os.linesep * 2}"
-        )
+        out += f"{BackgroundColor.DARK_GREY}hook results for {repo_name}{RESET}{os.linesep * 2}"
         out += os.linesep.join(
             [f"{format_hook_result(res)}{os.linesep}" for res in results]
         )

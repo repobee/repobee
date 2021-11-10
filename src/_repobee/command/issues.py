@@ -14,12 +14,11 @@ import re
 import dataclasses
 from typing import Iterable, Optional, List, Tuple, Any, Mapping
 
-from colored import bg, fg, style  # type: ignore
-
 import repobee_plug as plug
 
 import _repobee.hash
 from _repobee.command import progresswrappers
+from _repobee.colors import BackgroundColor, ForegroundColor, RESET
 
 
 def _hash_if_key(s: str, key: Optional[str], max_hash_size: int = 20) -> str:
@@ -160,7 +159,13 @@ def _log_repo_issues(
             plug.log.warning(f"{repo.name}: No matching issues")
 
         for issue in issues:
-            color = (bg("grey_30") if even else bg("grey_15")) + fg("white")
+            bg_color = (
+                BackgroundColor.LIGHT_GREY
+                if even
+                else BackgroundColor.DARK_GREY
+            )
+            color = f"{bg_color}{ForegroundColor.WHITE}"
+
             even = not even  # cycle color
             adjusted_alignment = title_alignment + len(
                 color
@@ -169,7 +174,7 @@ def _log_repo_issues(
             id_ = f"{color}{repo.name}/#{issue.number}:".ljust(
                 adjusted_alignment
             )
-            out = f"{id_}{issue.title}{style.RESET} created {issue.created_at} by {issue.author}"
+            out = f"{id_}{issue.title}{RESET} created {issue.created_at} by {issue.author}"
             if show_body:
                 out += os.linesep * 2 + _limit_line_length(issue.body)
             plug.echo(out)
