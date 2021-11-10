@@ -54,14 +54,6 @@ def _format_reviewer(
     remaining_reviews = [rev.repo for rev in review_list if not rev.done]
     num_remaining_reviews = len(remaining_reviews)
 
-    background_colors = {
-        _ReviewProgress.DONE: BackgroundColor.DARK_GREEN,
-        _ReviewProgress.NOT_DONE: BackgroundColor.LIGHT_GREY
-        if even
-        else BackgroundColor.DARK_GREY,
-        _ReviewProgress.UNEXPECTED_AMOUNT_OF_REVIEWS: BackgroundColor.RED,
-    }
-
     review_progress = _compute_review_progress(
         num_performed_reviews,
         num_remaining_reviews,
@@ -75,10 +67,6 @@ def _format_reviewer(
             f"Review teams may have been tampered with."
         )
 
-    background_color = background_colors[review_progress]
-    foreground_color = ForegroundColor.WHITE
-    color = f"{background_color}{foreground_color}"
-
     row = _format_row(
         [
             reviewer,
@@ -87,11 +75,9 @@ def _format_reviewer(
             ",".join(remaining_reviews),
         ]
     )
+    color = _compute_reviewer_row_color(review_progress, is_even_row=even)
 
-    formatted_row = f"{color}{row}{RESET}"
-    plug.log.warning(formatted_row.encode("utf8"))
-
-    return formatted_row
+    return f"{color}{row}{RESET}"
 
 
 class _ReviewProgress(enum.Enum):
@@ -111,6 +97,21 @@ def _compute_review_progress(
         return _ReviewProgress.DONE
     else:
         return _ReviewProgress.NOT_DONE
+
+
+def _compute_reviewer_row_color(
+    review_progress: _ReviewProgress, is_even_row: bool
+) -> str:
+    background_colors = {
+        _ReviewProgress.DONE: BackgroundColor.DARK_GREEN,
+        _ReviewProgress.NOT_DONE: BackgroundColor.LIGHT_GREY
+        if is_even_row
+        else BackgroundColor.DARK_GREY,
+        _ReviewProgress.UNEXPECTED_AMOUNT_OF_REVIEWS: BackgroundColor.RED,
+    }
+
+    background_color = background_colors[review_progress]
+    return f"{background_color}{ForegroundColor.WHITE}"
 
 
 def format_hook_result(hook_result):
