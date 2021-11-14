@@ -49,22 +49,6 @@ docs_requirements = [
     "sphinx_rtd_theme",
     "sphinx-argparse",
 ]
-required = [
-    "appdirs",
-    "argcomplete>=1.12.0",
-    "bullet",
-    "daiquiri",
-    "dataclasses>='0.7';python_version<'3.7'",
-    "gitpython",
-    "more-itertools>=8.4.0",
-    "pluggy>=0.13.1",
-    "pygithub",
-    "python-gitlab==2.6.0",
-    "tabulate",
-    "tqdm>=4.48.2",
-    "typing-extensions",
-    "yamliny>=0.0.2",
-]
 
 testhelper_resources_dir = pathlib.Path("src/repobee_testhelpers/resources")
 testhelper_resources = [
@@ -95,7 +79,23 @@ setup(
     ],
     py_modules=["repobee"],
     tests_require=test_requirements,
-    install_requires=required,
+    install_requires=[
+        "appdirs>=1.4.4",
+        "argcomplete>=1.12.0",
+        "bullet>=2.2.0",
+        "daiquiri>=3.0.1",
+        "dataclasses>='0.7';python_version<'3.7'",
+        "gitpython==3.1.18;python_version<'3.7'",
+        "gitpython>=3.1.24;python_version>='3.7'",
+        "more-itertools>=8.4.0",
+        "pluggy>=0.13.1",
+        "pygithub==1.55",
+        "python-gitlab==2.6.0",
+        "tabulate>=0.8.9",
+        "tqdm>=4.48.2",
+        "typing-extensions>=3.10.0.2",
+        "yamliny>=0.0.2",
+    ],
     extras_require=dict(TEST=test_requirements, DOCS=docs_requirements),
     entry_points=dict(
         console_scripts="repobee = repobee:main",
