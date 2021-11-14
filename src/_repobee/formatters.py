@@ -14,6 +14,12 @@ from typing import Mapping, List, Any
 import repobee_plug as plug
 from _repobee.colors import RESET, BackgroundColor, ForegroundColor
 
+_STATUS_BACKGROUND_COLORS = {
+    plug.Status.ERROR: BackgroundColor.RED,
+    plug.Status.WARNING: BackgroundColor.YELLOW,
+    plug.Status.SUCCESS: BackgroundColor.DARK_GREEN,
+}
+
 
 def format_peer_review_progress_output(
     reviews: Mapping[str, List[plug.Review]],
@@ -114,39 +120,30 @@ def _compute_reviewer_row_color(
     return f"{background_color}{ForegroundColor.WHITE}"
 
 
-def format_hook_result(hook_result):
-    if hook_result.status == plug.Status.ERROR:
-        out = BackgroundColor.RED
-    elif hook_result.status == plug.Status.WARNING:
-        out = BackgroundColor.YELLOW
-    elif hook_result.status == plug.Status.SUCCESS:
-        out = BackgroundColor.DARK_GREEN
-    else:
-        raise ValueError(
-            f"expected hook_result.status to be one of Status.ERROR, "
-            f"Status.WARNING or Status.SUCCESS, but was {hook_result.status}"
-        )
-
-    out += (
-        ForegroundColor.WHITE
-        + hook_result.name
-        + ": "
-        + hook_result.status.name
-        + RESET
-        + os.linesep
-    )
-    out += hook_result.msg
-
-    return out
-
-
 def format_hook_results_output(result_mapping):
-    out = ""
-    for repo_name, results in result_mapping.items():
-        out += f"{BackgroundColor.DARK_GREY}hook results for {repo_name}{RESET}{os.linesep * 2}"
-        out += os.linesep.join(
-            [f"{format_hook_result(res)}{os.linesep}" for res in results]
-        )
-        out += os.linesep * 2
+    lines = []
 
-    return out
+    for repo_name, results in result_mapping.items():
+        lines.append(
+            f"{BackgroundColor.DARK_GREY}hook results for {repo_name}{RESET}"
+        )
+        _append_empty_lines(lines, 2)
+        lines.extend(
+            [f"{_format_hook_result(res)}{os.linesep}" for res in results]
+        )
+        _append_empty_lines(lines, 2)
+
+    return "\n".join(lines)
+
+
+def _append_empty_lines(lines, num_empty_lines):
+    for _ in range(num_empty_lines):
+        lines.append("")
+
+
+def _format_hook_result(hook_result):
+    bg_color = _STATUS_BACKGROUND_COLORS[hook_result.status]
+    return (
+        f"{bg_color}{ForegroundColor.WHITE}{hook_result.name}: "
+        f"{hook_result.status.name}{RESET}\n{hook_result.msg}"
+    )
