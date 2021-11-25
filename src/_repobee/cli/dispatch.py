@@ -11,7 +11,7 @@ CLI into commands for RepoBee's core.
 import argparse
 import pathlib
 import sys
-from typing import Optional, List, Mapping, NoReturn
+from typing import Optional, List, Mapping, NoReturn, Callable
 
 import repobee_plug as plug
 
@@ -30,7 +30,21 @@ def dispatch_command(
         api: An initialized plug.API instance.
         config_file: Path to the config file.
     """
-    hook_results: Mapping[str, List[plug.Result]] = {}
+    is_ext_cmd = "_extension_command" in args
+    hook_results = (
+        _dispatch_extension_command(args._extension_command, api)
+        if is_ext_cmd
+        else _dispatch_core_command(args, config, api)
+    )
+
+    _handle_hook_results(args, hook_results)
+
+    return hook_results
+
+
+def _dispatch_core_command(
+    args: argparse.Namespace, config: plug.Config, api: plug.PlatformAPI
+) -> Mapping[str, List[plug.Result]]:
     dispatch_table = {
         plug.cli.CoreCommand.repos: _dispatch_repos_command,
         plug.cli.CoreCommand.issues: _dispatch_issues_command,
@@ -38,37 +52,19 @@ def dispatch_command(
         plug.cli.CoreCommand.reviews: _dispatch_reviews_command,
         plug.cli.CoreCommand.teams: _dispatch_teams_command,
     }
+    return dispatch_table[args.category](args, config, api) or {}
 
-    is_ext_command = "_extension_command" in args
-    if is_ext_command:
-        ext_cmd = args._extension_command
-        res = (
-            ext_cmd.command(api=api)
-            if ext_cmd.__requires_api__()
-            else ext_cmd.command()
-        )
-        hook_results = (
-            {str(ext_cmd.__settings__.action): [res]} if res else hook_results
-        )
-    else:
-        category = args.category
-        hook_results = (
-            dispatch_table[category](args, config, api) or hook_results
-        )
 
-    if is_ext_command or args.action in [
-        plug.cli.CoreCommand.repos.setup,
-        plug.cli.CoreCommand.repos.update,
-        plug.cli.CoreCommand.repos.clone,
-    ]:
-        if hook_results and any(hook_results.values()):
-            plug.echo(formatters.format_hook_results_output(hook_results))
-    if hook_results and "hook_results_file" in args and args.hook_results_file:
-        _handle_hook_results(
-            hook_results=hook_results, filepath=args.hook_results_file
-        )
+def _dispatch_extension_command(
+    ext_cmd: Callable, api: plug.PlatformAPI
+) -> Mapping[str, List[plug.Result]]:
+    res = (
+        ext_cmd.command(api=api)
+        if ext_cmd.__requires_api__()
+        else ext_cmd.command()
+    )
 
-    return hook_results
+    return {str(ext_cmd.__settings__.action): [res]} if res else {}
 
 
 def _dispatch_repos_command(
@@ -225,7 +221,39 @@ def _raise_illegal_action_error(args: argparse.Namespace) -> NoReturn:
     )
 
 
-def _handle_hook_results(hook_results, filepath):
+def _handle_hook_results(
+    args: argparse.Namespace, hook_results: Mapping
+) -> None:
+    if _should_echo_hook_results(args, hook_results):
+        plug.echo(formatters.format_hook_results_output(hook_results))
+
+    if hook_results and "hook_results_file" in args and args.hook_results_file:
+        _write_hook_results(
+            hook_results=hook_results, filepath=args.hook_results_file
+        )
+
+
+def _should_echo_hook_results(
+    args: argparse.Namespace, hook_results: Mapping
+) -> bool:
+    is_ext_cmd = "_extension_command" in args
+
+    is_applicable_action = args.action in {
+        plug.cli.CoreCommand.repos.setup,
+        plug.cli.CoreCommand.repos.update,
+        plug.cli.CoreCommand.repos.clone,
+    }
+
+    hook_results_have_non_empty_values = bool(
+        hook_results and any(hook_results.values())
+    )
+
+    return (
+        is_ext_cmd or is_applicable_action
+    ) and hook_results_have_non_empty_values
+
+
+def _write_hook_results(hook_results, filepath):
     plug.log.warning(
         "Storing hook results to file is an alpha feature, the file format "
         "is not final"
