@@ -11,7 +11,7 @@ CLI into commands for RepoBee's core.
 import argparse
 import pathlib
 import sys
-from typing import Optional, List, Mapping, NoReturn, Callable
+from typing import Optional, List, Mapping, NoReturn
 
 import repobee_plug as plug
 
@@ -56,7 +56,7 @@ def _dispatch_core_command(
 
 
 def _dispatch_extension_command(
-    ext_cmd: Callable, api: plug.PlatformAPI
+    ext_cmd: plug.cli.Command, api: plug.PlatformAPI
 ) -> Mapping[str, List[plug.Result]]:
     res = (
         ext_cmd.command(api=api)
