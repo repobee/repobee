@@ -1,3 +1,12 @@
 .[TEST]
 
+bandit==1.7.1
 black==21.10b0
+codecov==2.1.12
+flake8==4.0.1
+mypy==0.910
+pylint==2.11.0
+pytest-cov==3.0.0
+pytest-mock==3.6.1
+pytest==6.2.5
+virtualenv==20.10.0
