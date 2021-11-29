@@ -29,6 +29,8 @@ def dispatch_command(
         args: A namespace of parsed command line arguments.
         api: An initialized plug.API instance.
         config_file: Path to the config file.
+    Returns:
+        A mapping of hook results.
     """
     is_ext_cmd = "_extension_command" in args
     hook_results = (
