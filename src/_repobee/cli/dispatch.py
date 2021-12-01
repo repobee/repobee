@@ -32,10 +32,10 @@ def dispatch_command(
     Returns:
         A mapping of hook results.
     """
-    is_ext_cmd = "_extension_command" in args
+    is_extension_command = "_extension_command" in args
     hook_results = (
         _dispatch_extension_command(args._extension_command, api)
-        if is_ext_cmd
+        if is_extension_command
         else _dispatch_core_command(args, config, api)
     )
 
@@ -58,15 +58,15 @@ def _dispatch_core_command(
 
 
 def _dispatch_extension_command(
-    ext_cmd: plug.cli.Command, api: plug.PlatformAPI
+    extension_command: plug.cli.Command, api: plug.PlatformAPI
 ) -> Mapping[str, List[plug.Result]]:
     res = (
-        ext_cmd.command(api=api)
-        if ext_cmd.__requires_api__()
-        else ext_cmd.command()
+        extension_command.command(api=api)
+        if extension_command.__requires_api__()
+        else extension_command.command()
     )
 
-    return {str(ext_cmd.__settings__.action): [res]} if res else {}
+    return {str(extension_command.__settings__.action): [res]} if res else {}
 
 
 def _dispatch_repos_command(
@@ -238,7 +238,7 @@ def _handle_hook_results(
 def _should_echo_hook_results(
     args: argparse.Namespace, hook_results: Mapping
 ) -> bool:
-    is_ext_cmd = "_extension_command" in args
+    is_extension_command = "_extension_command" in args
 
     is_applicable_action = args.action in {
         plug.cli.CoreCommand.repos.setup,
@@ -251,7 +251,7 @@ def _should_echo_hook_results(
     )
 
     return (
-        is_ext_cmd or is_applicable_action
+        is_extension_command or is_applicable_action
     ) and hook_results_have_non_empty_values
 
 
