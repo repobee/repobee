@@ -25,15 +25,8 @@ import repobee_plug as plug
 import _repobee.command.teams
 import _repobee.config
 
-from _repobee import git
-from _repobee import util
-from _repobee import fileutil
-from _repobee import exception
-from _repobee import plugin
-from _repobee.git import Push
-
+from _repobee import exception, fileutil, git, plugin, urlutil
 from _repobee.command import progresswrappers
-from _repobee.fileutil import DirectoryLayout
 
 
 def setup_student_repos(
@@ -69,7 +62,7 @@ def setup_student_repos(
         workdir = pathlib.Path(tmpdir)
         template_repos = [
             plug.TemplateRepo(
-                name=util.repo_name(url),
+                name=urlutil.extract_repo_name(url),
                 url=url,
                 _path=workdir / api.extract_repo_name(url),
             )
@@ -177,7 +170,7 @@ def _create_state_separated_push_tuples(
     teams: List[plug.Team],
     template_repos: List[plug.TemplateRepo],
     api: plug.PlatformAPI,
-) -> Tuple[List[Push], List[Push]]:
+) -> Tuple[List[git.Push], List[git.Push]]:
     """Return a tuple of lists of template repos, where the first list contains
     push tuples for newly created repos and the second list contains push
     tuples for repos that already existed.
@@ -204,7 +197,7 @@ def _create_push_tuples(
     teams: List[plug.Team],
     template_repos: Iterable[plug.TemplateRepo],
     api: plug.PlatformAPI,
-) -> Iterable[Tuple[bool, Push]]:
+) -> Iterable[Tuple[bool, git.Push]]:
     """Create push tuples for newly created repos. Repos that already exist are
     ignored.
 
@@ -318,7 +311,7 @@ def update_student_repos(
         workdir = pathlib.Path(tmpdir)
         template_repos = [
             plug.TemplateRepo(
-                name=util.repo_name(url),
+                name=urlutil.extract_repo_name(url),
                 url=url,
                 _path=workdir / api.extract_repo_name(url),
             )
@@ -359,7 +352,7 @@ def _create_update_push_tuples(
     teams: Iterable[plug.StudentTeam],
     template_repos: Iterable[plug.TemplateRepo],
     api: plug.PlatformAPI,
-) -> Iterable[Push]:
+) -> Iterable[git.Push]:
     """Create push tuples for existing repos. Repos that don't exist are
     ignored.
 
@@ -406,7 +399,7 @@ def _open_issue_by_urls(
 def clone_repos(
     repos: Iterable[plug.StudentRepo],
     update_local: bool,
-    directory_layout: DirectoryLayout,
+    directory_layout: fileutil.DirectoryLayout,
     api: plug.PlatformAPI,
 ) -> Mapping[str, List[plug.Result]]:
     """Clone all student repos related to the provided master repos and student
@@ -448,7 +441,8 @@ def _set_pull_ff_only(local_repos: List[plug.StudentRepo]) -> None:
 
 
 def _with_output_paths(
-    repos: Iterable[plug.StudentRepo], directory_layout: DirectoryLayout
+    repos: Iterable[plug.StudentRepo],
+    directory_layout: fileutil.DirectoryLayout,
 ) -> List[plug.StudentRepo]:
     base_dir = pathlib.Path(".").resolve()
     return [
@@ -511,7 +505,7 @@ def migrate_repos(
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     local_templates = [
-        plug.TemplateRepo(name=util.repo_name(url), url=url)
+        plug.TemplateRepo(name=urlutil.extract_repo_name(url), url=url)
         for url in template_repo_urls
     ]
     create_repo_it = plug.cli.io.progress_bar(

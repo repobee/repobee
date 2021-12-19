@@ -30,7 +30,7 @@ import git  # type: ignore
 import repobee_plug as plug
 
 from _repobee import exception
-from _repobee import util, fileutil
+from _repobee import fileutil, urlutil
 
 CONCURRENT_TASKS = 20
 
@@ -124,7 +124,7 @@ def clone_single(repo_url: str, branch: str = "", cwd: str = "."):
             stderr,
             CloneSpec(
                 repo_url=repo_url,
-                dest=pathlib.Path(cwd) / util.repo_name(repo_url),
+                dest=pathlib.Path(cwd) / urlutil.extract_repo_name(repo_url),
                 branch=branch,
             ),
         )

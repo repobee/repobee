@@ -20,7 +20,7 @@ import _repobee.ext.defaults.configwizard
 import repobee_plug.cli
 from _repobee.cli import mainparser
 from _repobee.cli import argparse_ext
-from _repobee import exception
+from _repobee import fileutil, exception
 
 import constants
 import functions
@@ -78,7 +78,7 @@ VALID_PARSED_ARGS = dict(
     secrets=False,
     update_local=False,
     double_blind_key=None,
-    directory_layout=_repobee.command.repos.DirectoryLayout.BY_TEAM,
+    directory_layout=fileutil.DirectoryLayout.BY_TEAM,
 )
 
 
@@ -387,7 +387,7 @@ class TestDispatchCommand:
         command_mock.clone_repos.assert_called_once_with(
             args.repos,
             False,
-            _repobee.command.repos.DirectoryLayout.BY_TEAM,
+            fileutil.DirectoryLayout.BY_TEAM,
             dummyapi_instance,
         )
 

@@ -1,6 +1,6 @@
 import pytest
 
-from _repobee import util
+from _repobee import urlutil
 
 
 @pytest.mark.parametrize(
@@ -13,4 +13,4 @@ from _repobee import util
     ],
 )
 def test_repo_name_extracts_correct_part(url, expected_name):
-    assert util.repo_name(url) == expected_name
+    assert urlutil.extract_repo_name(url) == expected_name

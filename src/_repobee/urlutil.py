@@ -1,14 +1,13 @@
-"""Some general utility functions.
+"""Utility functions for dealing with URLs.
 
-.. module:: util
-    :synopsis: Miscellaneous utility functions that don't really belong
-        anywhere else.
+.. module:: urlutil
+    :synopsis: Utility functions for dealing with URLs.
 
 .. moduleauthor:: Simon Larsén
 """
 
 
-def repo_name(repo_url: str) -> str:
+def extract_repo_name(repo_url: str) -> str:
     """Extract the name of the repo from its url.
 
     Args:
