@@ -30,7 +30,7 @@ import git  # type: ignore
 import repobee_plug as plug
 
 from _repobee import exception
-from _repobee import util
+from _repobee import util, fileutil
 
 CONCURRENT_TASKS = 20
 
@@ -64,7 +64,7 @@ def _ensure_repo_dir_exists(clone_spec: CloneSpec) -> None:
     """
     if not clone_spec.dest.exists():
         clone_spec.dest.mkdir(parents=True)
-    if not util.is_git_repo(str(clone_spec.dest)):
+    if not fileutil.is_git_repo(str(clone_spec.dest)):
         _git_init(clone_spec.dest)
 
 

@@ -27,6 +27,7 @@ import _repobee.config
 
 from _repobee import git
 from _repobee import util
+from _repobee import fileutil
 from _repobee import exception
 from _repobee import plugin
 from _repobee.git import Push
@@ -490,7 +491,7 @@ def _check_for_non_git_dir_path_clashes(repos: List[plug.StudentRepo]) -> None:
     directory.
     """
     for repo in repos:
-        if repo.path.exists() and not util.is_git_repo(repo.path):
+        if repo.path.exists() and not fileutil.is_git_repo(repo.path):
             raise exception.RepoBeeException(
                 f"name clash with directory that is not a Git repository: "
                 f"'{repo.path}'"
