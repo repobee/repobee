@@ -1016,7 +1016,7 @@ class TestSetupAndUpdateParsers:
         """
         local_repo = ASSIGNMENT_NAMES[-1]
         mocker.patch(
-            "_repobee.fileutil.is_git_repo",
+            "_repobee.git.is_git_repo",
             side_effect=lambda path: path.endswith(local_repo),
         )
         expected_urls = [
@@ -1053,7 +1053,7 @@ class TestMigrateParser:
     @pytest.fixture(autouse=True)
     def is_git_repo_mock(self, mocker):
         return mocker.patch(
-            "_repobee.fileutil.is_git_repo", autospec=True, return_value=True
+            "_repobee.git.is_git_repo", autospec=True, return_value=True
         )
 
     def assert_migrate_args(self, parsed_args) -> None:

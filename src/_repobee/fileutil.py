@@ -100,14 +100,3 @@ def read_issue_from_file(issue_path: str) -> plug.Issue:
         raise ValueError(f"{issue_path} is not a file")
     with open(issue_path, "r", encoding=sys.getdefaultencoding()) as file:
         return plug.Issue(file.readline().strip(), file.read())
-
-
-def is_git_repo(path: Union[str, pathlib.Path]) -> bool:
-    """Check if a directory has a .git subdirectory.
-
-    Args:
-        path: Path to a local directory.
-    Returns:
-        True if there is a .git subdirectory in the given directory.
-    """
-    return os.path.isdir(path) and ".git" in os.listdir(path)

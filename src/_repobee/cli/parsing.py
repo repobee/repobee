@@ -26,7 +26,7 @@ from repobee_plug.cli import categorization
 import _repobee
 import _repobee.cli.mainparser
 import _repobee.cli.preparser
-from _repobee import fileutil, exception, constants, cli
+from _repobee import fileutil, exception, constants, cli, git
 
 from _repobee.command import progresswrappers
 
@@ -303,9 +303,7 @@ def _repo_names_to_urls(
         ParseError: If local templates are found, but allow_local is False.
     """
     local = [
-        name
-        for name in repo_names
-        if fileutil.is_git_repo(os.path.abspath(name))
+        name for name in repo_names if git.is_git_repo(os.path.abspath(name))
     ]
 
     non_local = [name for name in repo_names if name not in local]
