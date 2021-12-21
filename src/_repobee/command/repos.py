@@ -26,6 +26,8 @@ import _repobee.command.teams
 import _repobee.config
 
 from _repobee import exception, fileutil, git, plugin, urlutil
+from _repobee.fileutil import DirectoryLayout
+from _repobee.git import Push
 from _repobee.command import progresswrappers
 
 
@@ -119,7 +121,7 @@ def _create_platform_teams(
 
 
 def _execute_post_setup_hook(
-    pushed: List[git.Push], preexisting: List[git.Push], api: plug.PlatformAPI
+    pushed: List[Push], preexisting: List[Push], api: plug.PlatformAPI
 ) -> Mapping[Any, Any]:
     """Execute the post_setup hook on the given push tuples. Note that the push
     tuples are expected to have the "team" and "repo" keys set in the metadata.
@@ -139,7 +141,7 @@ def _execute_post_setup_hook(
 
 
 def _post_setup(
-    pts: List[git.Push], newly_created: bool, api: plug.PlatformAPI
+    pts: List[Push], newly_created: bool, api: plug.PlatformAPI
 ) -> Mapping[Any, Any]:
     teams_and_repos = [
         (pt.metadata["team"], pt.metadata["repo"]) for pt in pts
@@ -170,7 +172,7 @@ def _create_state_separated_push_tuples(
     teams: List[plug.Team],
     template_repos: List[plug.TemplateRepo],
     api: plug.PlatformAPI,
-) -> Tuple[List[git.Push], List[git.Push]]:
+) -> Tuple[List[Push], List[Push]]:
     """Return a tuple of lists of template repos, where the first list contains
     push tuples for newly created repos and the second list contains push
     tuples for repos that already existed.
@@ -197,7 +199,7 @@ def _create_push_tuples(
     teams: List[plug.Team],
     template_repos: Iterable[plug.TemplateRepo],
     api: plug.PlatformAPI,
-) -> Iterable[Tuple[bool, git.Push]]:
+) -> Iterable[Tuple[bool, Push]]:
     """Create push tuples for newly created repos. Repos that already exist are
     ignored.
 
@@ -220,7 +222,7 @@ def _create_push_tuples(
             api=api,
         )
 
-        yield created, git.Push(
+        yield created, Push(
             local_path=template_repo.path,
             repo_url=api.insert_auth(repo.url),
             branch=git.active_branch(template_repo.path),
@@ -352,7 +354,7 @@ def _create_update_push_tuples(
     teams: Iterable[plug.StudentTeam],
     template_repos: Iterable[plug.TemplateRepo],
     api: plug.PlatformAPI,
-) -> Iterable[git.Push]:
+) -> Iterable[Push]:
     """Create push tuples for existing repos. Repos that don't exist are
     ignored.
 
@@ -374,7 +376,7 @@ def _create_update_push_tuples(
     for repo in api.get_repos(list(urls_to_templates.keys())):
         template = urls_to_templates[repo.url]
         branch = git.active_branch(template.path)
-        yield git.Push(template.path, api.insert_auth(repo.url), branch)
+        yield Push(template.path, api.insert_auth(repo.url), branch)
 
 
 def _open_issue_by_urls(
@@ -399,7 +401,7 @@ def _open_issue_by_urls(
 def clone_repos(
     repos: Iterable[plug.StudentRepo],
     update_local: bool,
-    directory_layout: fileutil.DirectoryLayout,
+    directory_layout: DirectoryLayout,
     api: plug.PlatformAPI,
 ) -> Mapping[str, List[plug.Result]]:
     """Clone all student repos related to the provided master repos and student
@@ -442,7 +444,7 @@ def _set_pull_ff_only(local_repos: List[plug.StudentRepo]) -> None:
 
 def _with_output_paths(
     repos: Iterable[plug.StudentRepo],
-    directory_layout: fileutil.DirectoryLayout,
+    directory_layout: DirectoryLayout,
 ) -> List[plug.StudentRepo]:
     base_dir = pathlib.Path(".").resolve()
     return [
@@ -531,7 +533,7 @@ def migrate_repos(
 
         git.push(
             [
-                git.Push(
+                Push(
                     local_path=template_repo.path,
                     repo_url=api.insert_auth(template_repo.url),
                     branch=git.active_branch(template_repo.path),
