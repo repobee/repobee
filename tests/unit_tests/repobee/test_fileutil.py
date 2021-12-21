@@ -111,6 +111,13 @@ class TestFindFilesByExtension:
 
         assert not files
 
+    def test_throws_exception_when_no_extension_is_provided(
+        self, directory_structure
+    ):
+        root, *_ = directory_structure
+        with pytest.raises(ValueError):
+            list(fileutil.find_files_by_extension(str(root)))
+
 
 @contextmanager
 def written_tmpfile(text):
