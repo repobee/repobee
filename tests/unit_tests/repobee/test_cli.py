@@ -20,7 +20,7 @@ import _repobee.ext.defaults.configwizard
 import repobee_plug.cli
 from _repobee.cli import mainparser
 from _repobee.cli import argparse_ext
-from _repobee import exception
+from _repobee import fileutil, exception
 
 import constants
 import functions
@@ -78,7 +78,7 @@ VALID_PARSED_ARGS = dict(
     secrets=False,
     update_local=False,
     double_blind_key=None,
-    directory_layout=_repobee.command.repos.DirectoryLayout.BY_TEAM,
+    directory_layout=fileutil.DirectoryLayout.BY_TEAM,
 )
 
 
@@ -103,8 +103,8 @@ def command_mock(mocker):
 
 
 @pytest.fixture
-def read_issue_mock(mocker):
-    """Mock util.read_issue that only accepts ISSUE_PATH as a valid file."""
+def read_issue_from_file_mock(mocker):
+    """Mock fileutil.read_issue_from_file that only accepts ISSUE_PATH as a valid file."""
 
     def read_issue(path):
         # note that this assumes that strings are passed, and not pathlib.Path
@@ -114,7 +114,9 @@ def read_issue_mock(mocker):
         return ISSUE
 
     return mocker.patch(
-        "_repobee.util.read_issue", autospec=True, side_effect=read_issue
+        "_repobee.fileutil.read_issue_from_file",
+        autospec=True,
+        side_effect=read_issue,
     )
 
 
@@ -228,7 +230,7 @@ class TestDispatchCommand:
         args_dict = dict(VALID_PARSED_ARGS)
         args_dict["hook_results_file"] = str(expected_filepath)
         with mock.patch(
-            "_repobee.util.atomic_write", autospec=True
+            "_repobee.fileutil.atomic_write", autospec=True
         ) as write, mock.patch(
             command_func, autospec=True, return_value=hook_result_mapping
         ):
@@ -251,7 +253,7 @@ class TestDispatchCommand:
         action = repobee_plug.cli.CoreCommand.repos.clone
 
         with mock.patch(
-            "_repobee.util.atomic_write", autospec=True
+            "_repobee.fileutil.atomic_write", autospec=True
         ) as write, mock.patch(
             "_repobee.command.clone_repos", autospec=True, return_value={}
         ):
@@ -385,7 +387,7 @@ class TestDispatchCommand:
         command_mock.clone_repos.assert_called_once_with(
             args.repos,
             False,
-            _repobee.command.repos.DirectoryLayout.BY_TEAM,
+            fileutil.DirectoryLayout.BY_TEAM,
             dummyapi_instance,
         )
 
@@ -692,7 +694,7 @@ class TestStudentParsing:
 
     @pytest.mark.parametrize(*STUDENT_PARSING_PARAMS, ids=STUDENT_PARSING_IDS)
     def test_parser_listing_students(
-        self, config_for_tests, read_issue_mock, action, extra_args
+        self, config_for_tests, read_issue_from_file_mock, action, extra_args
     ):
         """Test that the different subparsers parse arguments corectly when
         students are listed directly on the command line.
@@ -716,7 +718,7 @@ class TestStudentParsing:
         self,
         config_for_tests,
         students_file,
-        read_issue_mock,
+        read_issue_from_file_mock,
         action,
         extra_args,
     ):
@@ -741,7 +743,7 @@ class TestStudentParsing:
     def test_student_parsers_raise_on_empty_student_file(
         self,
         config_for_tests,
-        read_issue_mock,
+        read_issue_from_file_mock,
         empty_students_file,
         action,
         extra_args,
@@ -764,7 +766,7 @@ class TestStudentParsing:
     def test_parsers_raise_if_both_file_and_listing(
         self,
         config_for_tests,
-        read_issue_mock,
+        read_issue_from_file_mock,
         students_file,
         action,
         extra_args,
@@ -790,7 +792,7 @@ class TestStudentParsing:
         self,
         config_for_tests,
         empty_students_file,
-        read_issue_mock,
+        read_issue_from_file_mock,
         action,
         extra_args,
     ):
@@ -831,7 +833,7 @@ class TestStudentParsing:
         self,
         config_for_tests,
         empty_students_file,
-        read_issue_mock,
+        read_issue_from_file_mock,
         action,
         extra_args,
     ):
@@ -917,7 +919,7 @@ class TestConfig:
         ],
     )
     def test_full_config(
-        self, full_config, read_issue_mock, action, extra_args
+        self, full_config, read_issue_from_file_mock, action, extra_args
     ):
         """Test that a fully configured file works. This means that
         base_url, org_name, user and student list are all
@@ -1014,7 +1016,7 @@ class TestSetupAndUpdateParsers:
         """
         local_repo = ASSIGNMENT_NAMES[-1]
         mocker.patch(
-            "_repobee.util.is_git_repo",
+            "_repobee.git.is_git_repo",
             side_effect=lambda path: path.endswith(local_repo),
         )
         expected_urls = [
@@ -1051,7 +1053,7 @@ class TestMigrateParser:
     @pytest.fixture(autouse=True)
     def is_git_repo_mock(self, mocker):
         return mocker.patch(
-            "_repobee.util.is_git_repo", autospec=True, return_value=True
+            "_repobee.git.is_git_repo", autospec=True, return_value=True
         )
 
     def assert_migrate_args(self, parsed_args) -> None:

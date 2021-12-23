@@ -15,7 +15,7 @@ from typing import Optional, List, Mapping, NoReturn
 
 import repobee_plug as plug
 
-from _repobee import command, exception, formatters, util, featflags
+from _repobee import command, exception, formatters, featflags, fileutil
 
 
 def dispatch_command(
@@ -261,5 +261,7 @@ def _write_hook_results(hook_results, filepath):
         "is not final"
     )
     output_file = pathlib.Path(filepath)
-    util.atomic_write(plug.result_mapping_to_json(hook_results), output_file)
+    fileutil.atomic_write(
+        plug.result_mapping_to_json(hook_results), output_file
+    )
     plug.echo(f"Hook results stored to {filepath}")

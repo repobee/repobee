@@ -26,7 +26,7 @@ from repobee_plug.cli import categorization
 import _repobee
 import _repobee.cli.mainparser
 import _repobee.cli.preparser
-from _repobee import util, exception, constants, cli
+from _repobee import fileutil, exception, constants, cli, git
 
 from _repobee.command import progresswrappers
 
@@ -92,7 +92,9 @@ def _parse_args(
     args_dict = vars(args)
     args_dict["students"] = _extract_groups(args)
     args_dict["issue"] = (
-        util.read_issue(args.issue) if "issue" in args and args.issue else None
+        fileutil.read_issue_from_file(args.issue)
+        if "issue" in args and args.issue
+        else None
     )
     args_dict.setdefault("template_org_name", None)
     args_dict.setdefault("title_regex", None)
@@ -301,7 +303,7 @@ def _repo_names_to_urls(
         ParseError: If local templates are found, but allow_local is False.
     """
     local = [
-        name for name in repo_names if util.is_git_repo(os.path.abspath(name))
+        name for name in repo_names if git.is_git_repo(os.path.abspath(name))
     ]
 
     non_local = [name for name in repo_names if name not in local]

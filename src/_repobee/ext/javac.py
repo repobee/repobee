@@ -23,7 +23,7 @@ import sys
 import pathlib
 from typing import Union, Iterable, Tuple
 
-from _repobee import util
+from _repobee import fileutil
 
 import repobee_plug as plug
 
@@ -60,7 +60,7 @@ class JavacCloneHook(plug.Plugin, plug.cli.CommandExtension):
         ignore = list(self.javac_ignore or [])
         java_files = [
             str(file)
-            for file in util.find_files_by_extension(repo.path, ".java")
+            for file in fileutil.find_files_by_extension(repo.path, ".java")
             if file.name not in ignore
         ]
 

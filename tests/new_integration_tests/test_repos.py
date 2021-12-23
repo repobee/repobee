@@ -18,7 +18,7 @@ import _repobee.ext.studentsyml
 import repobee_plug as plug
 from repobee_testhelpers import localapi
 from repobee_testhelpers import funcs
-from _repobee import exception
+from _repobee import exception, fileutil
 
 
 from repobee_testhelpers import const
@@ -513,7 +513,7 @@ class TestClone:
             f"repos clone -a {TEMPLATE_REPOS_ARG} "
             f"--base-url {platform_url} "
             "--directory-layout "
-            f"{_repobee.command.repos.DirectoryLayout.FLAT}",
+            f"{fileutil.DirectoryLayout.FLAT}",
             workdir=tmp_path,
         )
 

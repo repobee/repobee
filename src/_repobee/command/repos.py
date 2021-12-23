@@ -25,14 +25,10 @@ import repobee_plug as plug
 import _repobee.command.teams
 import _repobee.config
 
-from _repobee import git
-from _repobee import util
-from _repobee import exception
-from _repobee import plugin
-from _repobee.git import Push
-
-from _repobee.command import progresswrappers
+from _repobee import exception, git, plugin, urlutil
 from _repobee.fileutil import DirectoryLayout
+from _repobee.git import Push
+from _repobee.command import progresswrappers
 
 
 def setup_student_repos(
@@ -68,7 +64,7 @@ def setup_student_repos(
         workdir = pathlib.Path(tmpdir)
         template_repos = [
             plug.TemplateRepo(
-                name=util.repo_name(url),
+                name=urlutil.extract_repo_name(url),
                 url=url,
                 _path=workdir / api.extract_repo_name(url),
             )
@@ -125,7 +121,7 @@ def _create_platform_teams(
 
 
 def _execute_post_setup_hook(
-    pushed: List[git.Push], preexisting: List[git.Push], api: plug.PlatformAPI
+    pushed: List[Push], preexisting: List[Push], api: plug.PlatformAPI
 ) -> Mapping[Any, Any]:
     """Execute the post_setup hook on the given push tuples. Note that the push
     tuples are expected to have the "team" and "repo" keys set in the metadata.
@@ -145,7 +141,7 @@ def _execute_post_setup_hook(
 
 
 def _post_setup(
-    pts: List[git.Push], newly_created: bool, api: plug.PlatformAPI
+    pts: List[Push], newly_created: bool, api: plug.PlatformAPI
 ) -> Mapping[Any, Any]:
     teams_and_repos = [
         (pt.metadata["team"], pt.metadata["repo"]) for pt in pts
@@ -226,7 +222,7 @@ def _create_push_tuples(
             api=api,
         )
 
-        yield created, git.Push(
+        yield created, Push(
             local_path=template_repo.path,
             repo_url=api.insert_auth(repo.url),
             branch=git.active_branch(template_repo.path),
@@ -317,7 +313,7 @@ def update_student_repos(
         workdir = pathlib.Path(tmpdir)
         template_repos = [
             plug.TemplateRepo(
-                name=util.repo_name(url),
+                name=urlutil.extract_repo_name(url),
                 url=url,
                 _path=workdir / api.extract_repo_name(url),
             )
@@ -380,7 +376,7 @@ def _create_update_push_tuples(
     for repo in api.get_repos(list(urls_to_templates.keys())):
         template = urls_to_templates[repo.url]
         branch = git.active_branch(template.path)
-        yield git.Push(template.path, api.insert_auth(repo.url), branch)
+        yield Push(template.path, api.insert_auth(repo.url), branch)
 
 
 def _open_issue_by_urls(
@@ -447,7 +443,8 @@ def _set_pull_ff_only(local_repos: List[plug.StudentRepo]) -> None:
 
 
 def _with_output_paths(
-    repos: Iterable[plug.StudentRepo], directory_layout: DirectoryLayout
+    repos: Iterable[plug.StudentRepo],
+    directory_layout: DirectoryLayout,
 ) -> List[plug.StudentRepo]:
     base_dir = pathlib.Path(".").resolve()
     return [
@@ -490,7 +487,7 @@ def _check_for_non_git_dir_path_clashes(repos: List[plug.StudentRepo]) -> None:
     directory.
     """
     for repo in repos:
-        if repo.path.exists() and not util.is_git_repo(repo.path):
+        if repo.path.exists() and not git.is_git_repo(repo.path):
             raise exception.RepoBeeException(
                 f"name clash with directory that is not a Git repository: "
                 f"'{repo.path}'"
@@ -510,7 +507,7 @@ def migrate_repos(
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     local_templates = [
-        plug.TemplateRepo(name=util.repo_name(url), url=url)
+        plug.TemplateRepo(name=urlutil.extract_repo_name(url), url=url)
         for url in template_repo_urls
     ]
     create_repo_it = plug.cli.io.progress_bar(
@@ -536,7 +533,7 @@ def migrate_repos(
 
         git.push(
             [
-                git.Push(
+                Push(
                     local_path=template_repo.path,
                     repo_url=api.insert_auth(template_repo.url),
                     branch=git.active_branch(template_repo.path),

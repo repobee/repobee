@@ -22,6 +22,7 @@ from typing import (
     Awaitable,
     Sequence,
     Mapping,
+    Union,
 )
 
 import more_itertools
@@ -29,8 +30,7 @@ import git  # type: ignore
 
 import repobee_plug as plug
 
-from _repobee import exception
-from _repobee import util
+from _repobee import exception, urlutil
 
 CONCURRENT_TASKS = 20
 
@@ -64,7 +64,7 @@ def _ensure_repo_dir_exists(clone_spec: CloneSpec) -> None:
     """
     if not clone_spec.dest.exists():
         clone_spec.dest.mkdir(parents=True)
-    if not util.is_git_repo(str(clone_spec.dest)):
+    if not is_git_repo(str(clone_spec.dest)):
         _git_init(clone_spec.dest)
 
 
@@ -124,7 +124,7 @@ def clone_single(repo_url: str, branch: str = "", cwd: str = "."):
             stderr,
             CloneSpec(
                 repo_url=repo_url,
-                dest=pathlib.Path(cwd) / util.repo_name(repo_url),
+                dest=pathlib.Path(cwd) / urlutil.extract_repo_name(repo_url),
                 branch=branch,
             ),
         )
@@ -408,3 +408,14 @@ def set_gitconfig_options(
     repo = git.Repo(repo_path)
     for key, value in options.items():
         repo.git.config("--local", key, value)
+
+
+def is_git_repo(path: Union[str, pathlib.Path]) -> bool:
+    """Check if a directory has a .git subdirectory.
+
+    Args:
+        path: Path to a local directory.
+    Returns:
+        True if there is a .git subdirectory in the given directory.
+    """
+    return os.path.isdir(path) and ".git" in os.listdir(path)

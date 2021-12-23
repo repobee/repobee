@@ -12,18 +12,12 @@ import pathlib
 import functools
 
 from typing import Union, Callable, Optional, Any
-from _repobee.cli import preparser
-from _repobee.command.repos import DirectoryLayout
 
 import repobee_plug as plug
 
 import _repobee
-from _repobee import plugin
-from _repobee import featflags
-
-from _repobee.cli import argparse_ext
-
-from _repobee.cli import pluginparsers
+from _repobee import plugin, featflags, fileutil
+from _repobee.cli import argparse_ext, pluginparsers, preparser
 
 __all__ = ["create_parser", "create_parser_for_docs"]
 
@@ -335,10 +329,10 @@ def _add_repo_parsers(
         "--dl",
         "--directory-layout",
         help="how to arrange cloned repositories",
-        choices=list(DirectoryLayout),
+        choices=list(fileutil.DirectoryLayout),
         dest="directory_layout",
-        default=DirectoryLayout.BY_TEAM,
-        type=DirectoryLayout,
+        default=fileutil.DirectoryLayout.BY_TEAM,
+        type=fileutil.DirectoryLayout,
     )
 
     add_parser(

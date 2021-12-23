@@ -6,9 +6,7 @@ import pathlib
 
 import pytest
 
-from _repobee import git
-from _repobee import exception
-from _repobee import util
+from _repobee import git, exception, urlutil
 
 URL_TEMPLATE = "https://{}github.com/slarse/clanim"
 REPO_NAME = "clanim"
@@ -270,7 +268,8 @@ class TestClone:
         return [
             git.CloneSpec(
                 repo_url=pt.repo_url,
-                dest=self._WORKING_DIR / util.repo_name(pt.repo_url),
+                dest=self._WORKING_DIR
+                / urlutil.extract_repo_name(pt.repo_url),
             )
             for pt in push_tuples
         ]
