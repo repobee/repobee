@@ -9,7 +9,6 @@ import pytest
 
 import repobee_plug as plug
 
-import _repobee.constants
 from _repobee.ext.defaults import configwizard
 
 
@@ -18,10 +17,15 @@ def defaults_options():
     return collections.OrderedDict(
         (option, c * 10)
         for option, c in zip(
-            _repobee.constants.ORDERED_CONFIGURABLE_ARGS,
+            get_configurable_default_argnames(),
             string.ascii_lowercase,
         )
     )
+
+
+def get_configurable_default_argnames():
+    default_configurable_args, *_ = plug.manager.hook.get_configurable_args()
+    return default_configurable_args.argnames
 
 
 @pytest.fixture
@@ -74,7 +78,7 @@ def test_skips_empty_values(
     defaults_options = collections.OrderedDict(
         (option, c * 10)
         for option, c in zip(
-            _repobee.constants.ORDERED_CONFIGURABLE_ARGS,
+            get_configurable_default_argnames(),
             string.ascii_lowercase,
         )
     )

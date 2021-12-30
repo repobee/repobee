@@ -47,12 +47,7 @@ def callback(args: argparse.Namespace, config: plug.Config) -> None:
     if plug.Config.CORE_SECTION_NAME not in config:
         config.create_section(plug.Config.CORE_SECTION_NAME)
 
-    configurable_args = [
-        plug.ConfigurableArguments(
-            config_section_name=plug.Config.CORE_SECTION_NAME,
-            argnames=list(constants.ORDERED_CONFIGURABLE_ARGS),
-        )
-    ] + plug.manager.hook.get_configurable_args()
+    configurable_args = plug.manager.hook.get_configurable_args()
 
     configurable_args_dict: Mapping[str, List[str]] = collections.defaultdict(
         list
@@ -86,3 +81,11 @@ Current defaults are shown in brackets [].
     config.store()
 
     plug.echo(f"Configuration file written to {config.path}")
+
+
+@plug.repobee_hook
+def get_configurable_args():
+    return plug.ConfigurableArguments(
+        config_section_name=plug.Config.CORE_SECTION_NAME,
+        argnames=list(constants.ORDERED_CONFIGURABLE_ARGS),
+    )

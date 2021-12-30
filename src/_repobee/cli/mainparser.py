@@ -12,6 +12,7 @@ import pathlib
 import functools
 
 from typing import Union, Callable, Optional, Any
+from _repobee.cli import preparser
 
 import repobee_plug as plug
 

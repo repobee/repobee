@@ -83,7 +83,9 @@ def _parse_args(
     args = parser.parse_args(_handle_deprecation(sys_args))
     cli.preparser.clean_arguments(args)
 
-    if "_extension_command" in args:
+    if "_extension_command" in args and not getattr(
+        args._extension_command, "_is_core_command", False
+    ):
         return args, _ArgsProcessing.EXT
 
     if "base_url" in args:

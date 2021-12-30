@@ -34,9 +34,9 @@ def dispatch_command(
     """
     is_extension_command = "_extension_command" in args
     hook_results = (
-        _dispatch_extension_command(args._extension_command, api)
+        _dispatch_command(args._extension_command, api)
         if is_extension_command
-        else _dispatch_core_command(args, config, api)
+        else _dispatch_legacy_command(args, config, api)
     )
 
     _handle_hook_results(args, hook_results)
@@ -44,7 +44,7 @@ def dispatch_command(
     return hook_results
 
 
-def _dispatch_core_command(
+def _dispatch_legacy_command(
     args: argparse.Namespace, config: plug.Config, api: plug.PlatformAPI
 ) -> Mapping[str, List[plug.Result]]:
     dispatch_table = {
@@ -57,7 +57,7 @@ def _dispatch_core_command(
     return dispatch_table[args.category](args, config, api) or {}
 
 
-def _dispatch_extension_command(
+def _dispatch_command(
     extension_command: plug.cli.Command, api: plug.PlatformAPI
 ) -> Mapping[str, List[plug.Result]]:
     res = (
@@ -66,7 +66,12 @@ def _dispatch_extension_command(
         else extension_command.command()
     )
 
-    return {str(extension_command.__settings__.action): [res]} if res else {}
+    if not res:
+        return {}
+    elif getattr(extension_command, "_is_core_command", False):
+        return res
+    else:
+        return {str(extension_command.__settings__.action): [res]}
 
 
 def _dispatch_repos_command(
