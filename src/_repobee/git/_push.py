@@ -1,3 +1,12 @@
+"""Wrapper functions for git commands that push to remote repository.
+
+.. module:: git
+    :synopsis: Wrapper functions for git commands that push to remote
+    repository.
+
+.. moduleauthor:: Simon Larsén
+"""
+
 import asyncio
 import dataclasses
 import os

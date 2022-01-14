@@ -1,3 +1,12 @@
+"""Utility functions that are shared by wrappers defined for git commands.
+
+.. module:: git
+    :synopsis: Utility functions that are shared by wrappers defined for git
+    commands.
+
+.. moduleauthor:: Simon Larsén
+"""
+
 import asyncio
 import os
 import pathlib

@@ -1,3 +1,12 @@
+"""Wrapper functions for git commands that fetch from remote repository.
+
+.. module:: git
+    :synopsis: Wrapper functions for git commands that fetch from remote
+    repository, such as fetch, pull, and clone.
+
+.. moduleauthor:: Simon Larsén
+"""
+
 import asyncio
 import dataclasses
 import enum
