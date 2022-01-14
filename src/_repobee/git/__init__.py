@@ -6,13 +6,12 @@
 .. moduleauthor:: Simon Larsén
 """
 
-from _repobee.git._push import PushSpec, push, push_async  # NOQA
+from _repobee.git._push import PushSpec, push  # NOQA
 
 from _repobee.git._fetch import (  # NOQA
     CloneSpec,
     CloneStatus,
     clone,
-    clone_async,
     clone_student_repos,
     clone_single,
 )

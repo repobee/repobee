@@ -20,7 +20,7 @@ class CloneSpec:
     metadata: dict = dataclasses.field(default_factory=dict)
 
 
-async def clone_async(clone_spec: CloneSpec):
+async def _clone_async(clone_spec: CloneSpec):
     """Clone git repositories asynchronously.
 
     Args:
@@ -83,7 +83,7 @@ def clone(clone_specs: Iterable[CloneSpec]) -> List[CloneSpec]:
     """
     return [
         exc.clone_spec
-        for exc in batch_execution(clone_async, clone_specs)
+        for exc in batch_execution(_clone_async, clone_specs)
         if isinstance(exc, exception.CloneFailedError)
     ]
 

@@ -23,7 +23,7 @@ class PushSpec:
         return iter((self.local_path, self.repo_url, self.branch))
 
 
-async def push_async(pt: PushSpec):
+async def _push_async(pt: PushSpec):
     """Asynchronous call to git push, pushing directly to the repo_url and branch.
 
     Args:
@@ -99,6 +99,6 @@ def push_no_retry(push_tuples: Iterable[PushSpec]) -> List[str]:
     """
     return [
         exc.url
-        for exc in batch_execution(push_async, push_tuples)
+        for exc in batch_execution(_push_async, push_tuples)
         if isinstance(exc, exception.PushFailedError)
     ]
