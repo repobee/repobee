@@ -287,7 +287,7 @@ def _push_to_platform(
     student_repos: List[plug.StudentRepo], api: plug.PlatformAPI
 ) -> None:
     push_tuples = [
-        _repobee.git.Push(
+        _repobee.git.PushSpec(
             repo.path, api.insert_auth(repo.url), _DEFAULT_BRANCH
         )
         for repo in student_repos
