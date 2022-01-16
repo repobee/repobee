@@ -3,8 +3,6 @@
 .. module:: git
     :synopsis: Wrapper functions for git commands that perform local git
     operations, such as initializing git repository, stashing changes, etc.
-
-.. moduleauthor:: Simon Larsén
 """
 
 import pathlib

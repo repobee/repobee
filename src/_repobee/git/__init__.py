@@ -2,8 +2,6 @@
 
 .. module:: git
     :synopsis: Wrapper functions for git CLI commands, such as push and clone.
-
-.. moduleauthor:: Simon Larsén
 """
 
 from _repobee.git._push import PushSpec, push  # NOQA

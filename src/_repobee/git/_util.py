@@ -3,8 +3,6 @@
 .. module:: git
     :synopsis: Utility functions that are shared by wrappers defined for git
     commands.
-
-.. moduleauthor:: Simon Larsén
 """
 
 import asyncio
