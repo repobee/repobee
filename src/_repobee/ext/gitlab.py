@@ -79,7 +79,11 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
     try:
         yield
     except gitlab.exceptions.GitlabError as e:
-        if ignore_statuses and e.response_code in ignore_statuses:
+        if (
+            ignore_statuses is not None
+            and e.response_code is not None
+            and e.response_code in ignore_statuses
+        ):
             return
 
         if e.response_code == 404:
@@ -450,8 +454,10 @@ class GitLabAPI(plug.PlatformAPI):
             f"Could not connect to {base_url}, please check the URL",
         ):
             gl.auth()
+
+        authenticated_username = gl.user.username  # type: ignore
         plug.echo(
-            f"SUCCESS: Authenticated as {gl.user.username} at {base_url}"
+            f"SUCCESS: Authenticated as {authenticated_username} at {base_url}"
         )
 
         GitLabAPI._verify_group(org_name, gl)
@@ -463,16 +469,16 @@ class GitLabAPI(plug.PlatformAPI):
     @staticmethod
     def _verify_group(group_name: str, gl: gitlab.Gitlab) -> None:
         """Check that the group exists and that the user is an owner."""
-        user = gl.user.username
+        authenticated_username = gl.user.username  # type: ignore
 
         plug.echo(f"Trying to fetch group {group_name}")
         group = GitLabAPI._get_group(group_name, gl)
         plug.echo(f"SUCCESS: Found group {group.name}")
 
         plug.echo(
-            f"Verifying that user {user} is an owner of group {group_name}"
+            f"Verifying that user {authenticated_username} is an owner of group {group_name}"
         )
-        GitLabAPI._verify_membership(user, group)
+        GitLabAPI._verify_membership(authenticated_username, group)
 
     @staticmethod
     def _verify_membership(user: str, group):
