@@ -6,6 +6,7 @@
 """
 
 import pathlib
+import subprocess
 from typing import (
     List,
     Mapping,
@@ -15,7 +16,6 @@ from typing import (
 import git
 
 import repobee_plug as plug
-from _repobee.git._util import captured_run
 
 
 def set_gitconfig_options(
@@ -45,8 +45,8 @@ def active_branch(repo_path: pathlib.Path) -> str:
 
 def stash_changes(local_repos: List[plug.StudentRepo]) -> None:
     for repo in local_repos:
-        captured_run("git stash".split(), cwd=repo.path)
+        subprocess.run("git stash".split(), cwd=repo.path, capture_output=True)
 
 
 def git_init(dirpath):
-    captured_run(["git", "init"], cwd=str(dirpath))
+    subprocess.run("git init".split(), cwd=str(dirpath), capture_output=True)

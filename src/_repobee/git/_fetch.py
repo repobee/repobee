@@ -15,7 +15,7 @@ from typing import List, Iterable, Tuple
 
 import repobee_plug as plug
 from _repobee import exception, urlutil
-from _repobee.git._local import git_init, stash_changes, captured_run
+from _repobee.git._local import git_init, stash_changes
 from _repobee.git._util import batch_execution, warn_local_repos, is_git_repo
 
 
@@ -173,12 +173,12 @@ def clone_single(repo_url: str, branch: str = "", cwd: str = "."):
     command = [*"git clone --single-branch".split(), repo_url] + (
         [branch] if branch else []
     )
-    rc, _, stderr = captured_run(command, cwd=cwd)
-    if rc != 0:
+    process = subprocess.run(command, cwd=cwd, capture_output=True)
+    if process.returncode != 0:
         raise exception.CloneFailedError(
             "Failed to clone",
-            rc,
-            stderr,
+            process.returncode,
+            process.stderr,
             CloneSpec(
                 repo_url=repo_url,
                 dest=pathlib.Path(cwd) / urlutil.extract_repo_name(repo_url),

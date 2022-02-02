@@ -8,7 +8,6 @@
 import asyncio
 import os
 import pathlib
-import subprocess
 import sys
 from typing import Callable, Awaitable, Iterable, Any, Sequence, List, Union
 
@@ -80,14 +79,6 @@ async def batch_execution_async(
         plug.log.error(str(e))
 
     return exceptions
-
-
-def captured_run(*args, **kwargs):
-    """Run a subprocess and capture the output."""
-    proc = subprocess.run(
-        *args, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-    return proc.returncode, proc.stdout, proc.stderr
 
 
 def warn_local_repos(local: List[plug.StudentRepo]):
