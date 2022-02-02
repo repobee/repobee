@@ -115,8 +115,7 @@ def test_clone_single_issues_correct_command_with_defaults(env_setup):
     subprocess.run.assert_any_call(
         expected_command,
         cwd=".",
-        stderr=subprocess.PIPE,
-        stdout=subprocess.PIPE,
+        capture_output=True,
     )
 
 
@@ -131,8 +130,7 @@ def test_clone_single_issues_correct_command_non_default_branch(env_setup):
     subprocess.run.assert_any_call(
         expected_command,
         cwd=".",
-        stderr=subprocess.PIPE,
-        stdout=subprocess.PIPE,
+        capture_output=True,
     )
 
 
@@ -147,8 +145,7 @@ def test_clone_single_issues_correct_command_with_cwd(env_setup):
     subprocess.run.assert_called_once_with(
         expected_command,
         cwd=str(working_dir),
-        stderr=subprocess.PIPE,
-        stdout=subprocess.PIPE,
+        capture_output=True,
     )
 
 
