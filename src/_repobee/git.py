@@ -69,7 +69,7 @@ def _ensure_repo_dir_exists(clone_spec: CloneSpec) -> None:
 
 
 def _git_init(dirpath):
-    subprocess.run("git init".split(), cwd=str(dirpath))
+    captured_run(["git", "init"], cwd=str(dirpath))
 
 
 async def _pull_clone_async(clone_spec: CloneSpec):
@@ -93,6 +93,14 @@ async def _pull_clone_async(clone_spec: CloneSpec):
     return proc.returncode, stderr
 
 
+def captured_run(*args, **kwargs):
+    """Run a subprocess and capture the output."""
+    proc = subprocess.run(
+        *args, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    return proc.returncode, proc.stdout, proc.stderr
+
+
 def clone_single(repo_url: str, branch: str = "", cwd: str = "."):
     """Clone a git repository with ``git clone``.
 
@@ -108,14 +116,12 @@ def clone_single(repo_url: str, branch: str = "", cwd: str = "."):
     command = [*"git clone --single-branch".split(), repo_url] + (
         [branch] if branch else []
     )
-    process = subprocess.run(
-        command, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-    if process.returncode != 0:
+    rc, _, stderr = captured_run(command, cwd=cwd)
+    if rc != 0:
         raise exception.CloneFailedError(
             "Failed to clone",
-            process.returncode,
-            process.stderr,
+            rc,
+            stderr,
             CloneSpec(
                 repo_url=repo_url,
                 dest=pathlib.Path(cwd) / urlutil.extract_repo_name(repo_url),
@@ -215,7 +221,7 @@ def _update_local_repos(
 
 def _stash_changes(local_repos: List[plug.StudentRepo]) -> None:
     for repo in local_repos:
-        subprocess.run("git stash".split(), cwd=repo.path)
+        captured_run("git stash".split(), cwd=repo.path)
 
 
 def clone(clone_specs: Iterable[CloneSpec]) -> List[CloneSpec]:
