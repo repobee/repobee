@@ -24,7 +24,7 @@ def mock_ensure_repo_dir_exists(mocker, request):
         return
 
     mocker.patch("pathlib.Path.mkdir", autospec=True)
-    mocker.patch("_repobee.git._git_init", autospec=True)
+    mocker.patch("_repobee.git.git_init", autospec=True)
 
 
 @pytest.fixture(scope="function")
@@ -90,7 +90,7 @@ def push_tuples():
     )
     branches = ("master", "other", "development-branch")
     tups = [
-        git.Push(local_path=path, repo_url=url, branch=branch)
+        git.PushSpec(local_path=path, repo_url=url, branch=branch)
         for path, url, branch in zip(paths, urls, branches)
     ]
     return tups
@@ -200,13 +200,13 @@ class TestPush:
                 "Push failed", 128, b"some error", pt.repo_url
             )
 
-        mocker.patch("_repobee.git._push_async", side_effect=raise_)
+        mocker.patch("_repobee.git._push._push_async", side_effect=raise_)
 
         successful_pts, failed_pts = git.push(push_tuples, tries=tries)
 
         assert not successful_pts
         assert failed_pts == push_tuples
-        git._push_async.assert_has_calls(expected_calls, any_order=True)
+        git._push._push_async.assert_has_calls(expected_calls, any_order=True)
 
     def test_stops_retrying_when_failed_pushes_succeed(
         self, env_setup, push_tuples, mocker
@@ -230,7 +230,7 @@ class TestPush:
             )
 
         async_push_mock = mocker.patch(
-            "_repobee.git._push_async", side_effect=raise_once
+            "_repobee.git._push._push_async", side_effect=raise_once
         )
 
         git.push(push_tuples, tries=10)
@@ -307,7 +307,9 @@ class TestClone:
                 )
 
         clone_mock = mocker.patch(
-            "_repobee.git._clone_async", autospec=True, side_effect=raise_
+            "_repobee.git._fetch._clone_async",
+            autospec=True,
+            side_effect=raise_,
         )
 
         failed_specs = git.clone(specs)
@@ -320,7 +322,7 @@ class TestClone:
     ):
         """Same test as test_tries_all_calls_desipite_exception, but
         asyncio.create_subprocess_exec is mocked out instead of
-        git._clone_async
+        git.clone_async
         """
         expected_calls = [
             call(

@@ -4,7 +4,7 @@
 [![Code Coverage](https://codecov.io/gh/repobee/repobee/branch/master/graph/badge.svg)](https://codecov.io/gh/repobee/repobee)
 [![Documentation Status](https://readthedocs.org/projects/repobee/badge/?version=stable)](http://repobee.readthedocs.io/en/stable/)
 [![PyPi Version](https://badge.fury.io/py/repobee.svg)](https://badge.fury.io/py/repobee)
-![Supported Python Versions](https://img.shields.io/badge/python-3.6%2C%203.7%2C%203.8-blue.svg)
+![Supported Python Versions](https://img.shields.io/badge/python-3.7%2C%203.8%2C%203.9%2C%203.10-blue.svg)
 ![Supported Platforms](https://img.shields.io/badge/platforms-Linux%2C%20macOS-blue.svg)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
@@ -81,7 +81,7 @@ on how to use RepoBee with Gitea.
 
 ### Install
 We provide an install script that sets up an isolated and correctly configured
-environment for RepoBee, granted that you have [Python 3.6+ and Git
+environment for RepoBee, granted that you have [Python 3.7+ and Git
 installed](https://docs.repobee.org/en/stable/install.html#requirements). The script
 supports macOS, Linux and Windows Subsystem for Linux (WSL). You can execute it
 directly using `curl`, with either `bash` or `zsh`.
