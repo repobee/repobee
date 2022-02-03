@@ -38,7 +38,7 @@ def batch_execution(
         a list of exceptions raised in the tasks returned by the batch
         function.
     """
-    loop = asyncio.get_event_loop()
+    loop = _get_event_loop()
     return loop.run_until_complete(
         batch_execution_async(
             batch_func, arg_list, *batch_func_args, **batch_func_kwargs
@@ -56,7 +56,7 @@ async def batch_execution_async(
     import tqdm.asyncio  # type: ignore
 
     exceptions = []
-    loop = asyncio.get_event_loop()
+    loop = _get_event_loop()
     concurrent_tasks = 20
     for batch, args_chunk in enumerate(
         more_itertools.ichunked(arg_list, concurrent_tasks), start=1
@@ -97,3 +97,10 @@ def is_git_repo(path: Union[str, pathlib.Path]) -> bool:
         True if there is a .git subdirectory in the given directory.
     """
     return os.path.isdir(path) and ".git" in os.listdir(path)
+
+
+def _get_event_loop() -> asyncio.AbstractEventLoop:
+    try:
+        return asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.new_event_loop()
