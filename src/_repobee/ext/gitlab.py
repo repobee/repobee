@@ -35,8 +35,8 @@ _REVERSE_ISSUE_STATE_MAPPING = {
 }
 # see https://docs.gitlab.com/ee/user/permissions.html for permission details
 _TEAM_PERMISSION_MAPPING = {
-    plug.TeamPermission.PULL: gitlab.REPORTER_ACCESS,
-    plug.TeamPermission.PUSH: gitlab.DEVELOPER_ACCESS,
+    plug.TeamPermission.PULL: gitlab.const.REPORTER_ACCESS,
+    plug.TeamPermission.PUSH: gitlab.const.DEVELOPER_ACCESS,
 }
 
 
@@ -318,7 +318,7 @@ class GitLabAPI(plug.PlatformAPI):
                     # we do not include the owner, as this is the person who
                     # created the group (typically the teacher). Including
                     # the creator of the group breaks RepoBee.
-                    if m.access_level != gitlab.OWNER_ACCESS
+                    if m.access_level != gitlab.const.OWNER_ACCESS
                 ],
                 id=group.id,
                 implementation=group,
@@ -486,7 +486,7 @@ class GitLabAPI(plug.PlatformAPI):
         owners = {
             m.username
             for m in members
-            if m.access_level == gitlab.OWNER_ACCESS
+            if m.access_level == gitlab.const.OWNER_ACCESS
         }
         if user not in owners:
             plug.log.warning(
@@ -496,7 +496,7 @@ class GitLabAPI(plug.PlatformAPI):
             non_owners = {
                 m.username
                 for m in members
-                if m.access_level != gitlab.OWNER_ACCESS
+                if m.access_level != gitlab.const.OWNER_ACCESS
             }
             if user not in non_owners:
                 raise plug.BadCredentials(
