@@ -35,8 +35,8 @@ async def _clone_async(clone_spec: CloneSpec):
     """
     rc, stderr = await pull_clone_async(clone_spec)
 
-    empty_repo_error = b"""fatal: Couldn't find remote ref HEAD"""
-    if rc != 0 and empty_repo_error not in stderr:
+    empty_repo_error = b"fatal: couldn't find remote ref HEAD"
+    if rc != 0 and empty_repo_error.lower() not in stderr.lower():
         raise exception.CloneFailedError(
             f"Failed to clone {clone_spec.repo_url}",
             returncode=rc,
