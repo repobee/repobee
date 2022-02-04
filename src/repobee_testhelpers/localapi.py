@@ -11,11 +11,11 @@ import pathlib
 import pickle
 import datetime
 import dataclasses
-import shlex
 import shutil
-import subprocess
 
 from typing import List, Iterable, Optional, Set
+
+import git  # type: ignore
 
 import repobee_plug as plug
 
@@ -195,18 +195,7 @@ class LocalAPI(plug.PlatformAPI):
 
         repo_path = self._repodir / self._org_name / name
         repo_path.mkdir(parents=True, exist_ok=True)
-        subprocess.run(
-            shlex.split("git init --bare"),
-            capture_output=True,
-            check=True,
-            cwd=repo_path,
-        )
-        subprocess.run(
-            shlex.split("git branch -m main"),
-            capture_output=True,
-            check=True,
-            cwd=repo_path,
-        )
+        git.Repo.init(repo_path, bare=True)
         repo_bucket[name] = Repo(
             name=name,
             description=description,
