@@ -39,7 +39,10 @@ class Group:
             for uid, user in self._users_read_only.items()
             if user.username == constants.USER
         ][0]
-        owner_data = {"user_id": owner_id, "access_level": gitlab.OWNER_ACCESS}
+        owner_data = {
+            "user_id": owner_id,
+            "access_level": gitlab.const.OWNER_ACCESS,
+        }
         self._create_member(owner_data)
         self._deleted = False
 
