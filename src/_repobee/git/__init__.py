@@ -18,7 +18,6 @@ from _repobee.git._local import (  # NOQA
     active_branch,
     git_init,
     stash_changes,
-    captured_run,
     set_gitconfig_options,
 )
 
