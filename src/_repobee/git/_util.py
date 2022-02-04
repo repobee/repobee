@@ -109,6 +109,9 @@ def is_git_repo(path: Union[str, pathlib.Path]) -> bool:
 
 
 def _get_event_loop() -> asyncio.AbstractEventLoop:
+    if sys.version_info[:2] < (3, 10):
+        return asyncio.get_event_loop()
+
     try:
         return asyncio.get_running_loop()
     except RuntimeError:
