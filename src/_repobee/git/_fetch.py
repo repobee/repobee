@@ -11,7 +11,6 @@ import enum
 import pathlib
 import shutil
 import subprocess
-import sys
 from typing import List, Iterable, Tuple
 
 import repobee_plug as plug
@@ -36,12 +35,8 @@ async def _clone_async(clone_spec: CloneSpec):
     """
     rc, stderr = await pull_clone_async(clone_spec)
 
-    empty_repo_error = "fatal: couldn't find remote ref HEAD"
-    decoded_stderr = stderr.decode(sys.getdefaultencoding())
-    if (
-        rc != 0
-        and empty_repo_error.casefold() not in decoded_stderr.casefold()
-    ):
+    empty_repo_error = b"fatal: couldn't find remote ref HEAD"
+    if rc != 0 and empty_repo_error.lower() not in stderr.lower():
         raise exception.CloneFailedError(
             f"Failed to clone {clone_spec.repo_url}",
             returncode=rc,
