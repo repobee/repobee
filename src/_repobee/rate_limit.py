@@ -2,6 +2,8 @@ import requests
 import time
 import functools
 
+import repobee_plug as plug
+
 MODIFY_REQUEST_METHOD_NAMES = ("post", "put", "patch", "delete")
 
 _ORIGINAL_REQUESTS_METHODS = {
@@ -21,6 +23,10 @@ def rate_limit_modify_requests(rate_limit_in_seconds: int) -> None:
         rate_limit_in_seconds: Minimum amount of seconds between each modify
             request.
     """
+    plug.log.debug(
+        f"Rate limiting modify requests to {1 / rate_limit_in_seconds} "
+        "requests per second"
+    )
     last_modify_time = 0
 
     original_request_method = requests.request
@@ -45,5 +51,7 @@ def rate_limit_modify_requests(rate_limit_in_seconds: int) -> None:
 
 def remove_rate_limits() -> None:
     """Remove any previously applied rate limits."""
+    plug.log.debug("Removing rate limits")
+
     for method_name, original_method in _ORIGINAL_REQUESTS_METHODS.items():
         setattr(requests, method_name, original_method)
