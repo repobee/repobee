@@ -37,6 +37,7 @@ test_requirements = [
     "pytest-mock",
     "pytest>=6.0.0",
     "virtualenv",
+    "responses>=0.18.0",
     # type stubs required for MyPy
     "types-pkg-resources",
     "types-requests",
