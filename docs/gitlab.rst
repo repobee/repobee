@@ -77,4 +77,11 @@ creating one for GitHub. Just follow `these instructions
 scopes you need to tick are ``api``, ``read_user``, ``read_repository`` and
 ``write_repository``. That's it!
 
+Enable root group project sharing
+---------------------------------
+
+For RepoBee to work as expected, group project sharing must be enabled for the
+root group. You can find this under ``Settings -> General -> Permissions`` for
+the group.
+
 .. _`GitLab blog post`: https://about.gitlab.com/2017/09/11/comparing-confusing-terms-in-github-bitbucket-and-gitlab/
