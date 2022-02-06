@@ -20,7 +20,7 @@ import github
 
 import repobee_plug as plug
 
-from _repobee import rate_limit
+from _repobee import http
 
 REQUIRED_TOKEN_SCOPES = {"admin:org", "repo"}
 ISSUE_GENERATOR = Generator[plug.Issue, None, None]
@@ -130,9 +130,7 @@ class GitHubAPI(plug.PlatformAPI):
         """
 
         # see https://docs.github.com/en/rest/guides/best-practices-for-integrators#dealing-with-secondary-rate-limits
-        rate_limit.rate_limit_modify_requests(
-            base_url, rate_limit_in_seconds=1
-        )
+        http.rate_limit_modify_requests(base_url, rate_limit_in_seconds=1)
 
         if not user:
             raise TypeError("argument 'user' must not be empty")
@@ -156,7 +154,7 @@ class GitHubAPI(plug.PlatformAPI):
             self._org = self._github.get_organization(self._org_name)
 
     def __del__(self):
-        rate_limit.remove_rate_limits()
+        http.remove_rate_limits()
 
     def __repr__(self):
         return "GitHubAPI(base_url={}, token={}, org_name={})".format(
