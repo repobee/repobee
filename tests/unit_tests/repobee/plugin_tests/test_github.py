@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, PropertyMock, patch
 from typing import List
 
 import github
+import responses
 
 import repobee_plug as plug
 
@@ -447,6 +448,15 @@ class TestVerifySettings:
         github_plugin.GitHubAPI.verify_settings(
             USER, ORG_NAME, BASE_URL, TOKEN
         )
+
+    @responses.activate
+    def test_raises_on_no_internet_connection(self):
+        with pytest.raises(plug.InternetConnectionUnavailable) as exc_info:
+            github_plugin.GitHubAPI.verify_settings(
+                USER, ORG_NAME, BASE_URL, token=TOKEN
+            )
+
+        assert "could not establish an Internet connection" in str(exc_info)
 
     def test_empty_token_raises_bad_credentials(
         self, happy_github, monkeypatch, api

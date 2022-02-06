@@ -62,3 +62,15 @@ def remove_rate_limits() -> None:
 
     for method_name, original_method in _ORIGINAL_REQUESTS_METHODS.items():
         setattr(requests, method_name, original_method)
+
+
+def is_internet_connection_available(test_url="https://repobee.org") -> bool:
+    """Test if an internet connection is available.
+
+    Args:
+        test_url: A URL to try to GET.
+    """
+    try:
+        return requests.get(test_url).status_code == requests.codes.ok
+    except requests.exceptions.ConnectionError:
+        return False

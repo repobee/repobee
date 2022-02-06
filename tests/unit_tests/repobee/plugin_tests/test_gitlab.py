@@ -3,11 +3,13 @@ import itertools
 import unittest.mock
 
 import requests.exceptions
+import responses
 import pytest
 import gitlab
 import repobee_plug as plug
 
 import _repobee
+import _repobee.ext
 
 import constants
 
@@ -503,6 +505,18 @@ class TestInsertAuth:
 
 
 class TestVerifySettings:
+    @responses.activate
+    def test_raises_on_no_internet_connection(self):
+        with pytest.raises(plug.InternetConnectionUnavailable) as exc_info:
+            _repobee.ext.gitlab.GitLabAPI.verify_settings(
+                user=None,
+                org_name=TARGET_GROUP,
+                base_url=BASE_URL,
+                token=TOKEN,
+            )
+
+        assert "could not establish an Internet connection" in str(exc_info)
+
     def test_raises_if_token_is_empty(self):
         with pytest.raises(plug.BadCredentials):
             _repobee.ext.gitlab.GitLabAPI.verify_settings(

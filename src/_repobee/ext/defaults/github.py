@@ -456,6 +456,11 @@ class GitHubAPI(plug.PlatformAPI):
     ) -> None:
         """See :py:meth:`repobee_plug.PlatformAPI.verify_settings`."""
         plug.echo("Verifying settings ...")
+
+        plug.echo("Testing Internet connection")
+        if not http.is_internet_connection_available():
+            raise plug.InternetConnectionUnavailable()
+
         if not token:
             raise plug.BadCredentials(
                 msg="token is empty. Check that REPOBEE_TOKEN environment "

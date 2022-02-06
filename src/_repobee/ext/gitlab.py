@@ -19,6 +19,7 @@ import requests.exceptions
 import repobee_plug as plug
 
 from _repobee import exception
+from _repobee import http
 
 PLUGIN_DESCRIPTION = "Makes RepoBee compatible with GitLab"
 
@@ -433,6 +434,11 @@ class GitLabAPI(plug.PlatformAPI):
     ):
         """See :py:meth:`repobee_plug.PlatformAPI.verify_settings`."""
         plug.echo("GitLabAPI is verifying settings ...")
+
+        plug.echo("Testing Internet connection")
+        if not http.is_internet_connection_available():
+            raise plug.InternetConnectionUnavailable()
+
         if not token:
             raise plug.BadCredentials(
                 msg="Token is empty. Check that REPOBEE_TOKEN environment "
