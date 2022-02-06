@@ -75,6 +75,8 @@ def is_internet_connection_available(
         test_url: A URL to try to GET.
     """
     try:
-        return requests.get(test_url).status_code == requests.codes.ok
+        return (
+            requests.get(test_url).status_code == requests.codes.ok
+        )  # pylint: disable=E1101
     except requests.exceptions.ConnectionError:
         return False
