@@ -13,8 +13,6 @@ _ORIGINAL_REQUESTS_METHODS = {
 
 DEFAULT_INTERNET_CONNECTION_CHECK_URL = "https://repobee.org"
 
-HTTP_OK = requests.codes.ok  # pylint: disable=E1101
-
 
 def rate_limit_modify_requests(
     base_url: str, rate_limit_in_seconds: float
@@ -77,6 +75,6 @@ def is_internet_connection_available(
         test_url: A URL to try to GET.
     """
     try:
-        return requests.get(test_url).status_code == HTTP_OK
+        return requests.get(test_url) is not None
     except requests.exceptions.ConnectionError:
         return False
