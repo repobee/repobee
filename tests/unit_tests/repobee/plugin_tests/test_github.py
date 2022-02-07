@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, PropertyMock, patch
 from typing import List
 
 import github
+import responses
 
 import repobee_plug as plug
 
@@ -442,14 +443,35 @@ def github_bad_info(request, api, happy_github):
 class TestVerifySettings:
     """Tests for the verify_settings function."""
 
-    def test_happy_path(self, happy_github, organization, api):
+    @responses.activate
+    def test_happy_path(
+        self,
+        happy_github,
+        organization,
+        api,
+        add_internet_connection_check_response,
+    ):
         """Tests that no exceptions are raised when all info is correct."""
         github_plugin.GitHubAPI.verify_settings(
             USER, ORG_NAME, BASE_URL, TOKEN
         )
 
+    @responses.activate
+    def test_raises_on_no_internet_connection(self):
+        with pytest.raises(plug.InternetConnectionUnavailable) as exc_info:
+            github_plugin.GitHubAPI.verify_settings(
+                USER, ORG_NAME, BASE_URL, token=TOKEN
+            )
+
+        assert "could not establish an Internet connection" in str(exc_info)
+
+    @responses.activate
     def test_empty_token_raises_bad_credentials(
-        self, happy_github, monkeypatch, api
+        self,
+        happy_github,
+        monkeypatch,
+        api,
+        add_internet_connection_check_response,
     ):
         with pytest.raises(plug.BadCredentials) as exc_info:
             github_plugin.GitHubAPI.verify_settings(
@@ -458,13 +480,19 @@ class TestVerifySettings:
 
         assert "token is empty" in str(exc_info.value)
 
-    def test_incorrect_info_raises_not_found_error(self, github_bad_info, api):
+    @responses.activate
+    def test_incorrect_info_raises_not_found_error(
+        self, github_bad_info, api, add_internet_connection_check_response
+    ):
         with pytest.raises(plug.NotFoundError):
             github_plugin.GitHubAPI.verify_settings(
                 USER, ORG_NAME, BASE_URL, TOKEN
             )
 
-    def test_bad_token_scope_raises(self, happy_github, api):
+    @responses.activate
+    def test_bad_token_scope_raises(
+        self, happy_github, api, add_internet_connection_check_response
+    ):
         type(happy_github).oauth_scopes = PropertyMock(return_value=["repo"])
 
         with pytest.raises(plug.BadCredentials) as exc_info:
@@ -473,7 +501,14 @@ class TestVerifySettings:
             )
         assert "missing one or more access token scopes" in str(exc_info.value)
 
-    def test_not_member_raises(self, happy_github, organization, api):
+    @responses.activate
+    def test_not_member_raises(
+        self,
+        happy_github,
+        organization,
+        api,
+        add_internet_connection_check_response,
+    ):
         with pytest.raises(plug.BadCredentials) as exc_info:
             github_plugin.GitHubAPI.verify_settings(
                 NOT_MEMBER, ORG_NAME, BASE_URL, TOKEN
@@ -481,7 +516,15 @@ class TestVerifySettings:
 
         assert f"user {NOT_MEMBER} is not a member" in str(exc_info.value)
 
-    def test_not_owner_warning(self, happy_github, organization, mocker, api):
+    @responses.activate
+    def test_not_owner_warning(
+        self,
+        happy_github,
+        organization,
+        mocker,
+        api,
+        add_internet_connection_check_response,
+    ):
         warn_mock = mocker.patch("repobee_plug.log.warning")
         orig_get_members = organization.get_members
 
@@ -502,14 +545,22 @@ class TestVerifySettings:
             "Some features may not be available."
         )
 
+    @responses.activate
     def test_raises_unexpected_exception_on_unexpected_status(
-        self, happy_github, api
+        self, happy_github, api, add_internet_connection_check_response
     ):
         happy_github.get_user.side_effect = SERVER_ERROR
         with pytest.raises(plug.UnexpectedException):
             api.verify_settings(USER, ORG_NAME, BASE_URL, TOKEN)
 
-    def test_none_user_raises(self, happy_github, organization, api):
+    @responses.activate
+    def test_none_user_raises(
+        self,
+        happy_github,
+        organization,
+        api,
+        add_internet_connection_check_response,
+    ):
         """If NamedUser.login is None, there should be an exception. Happens if
         you provide a URL that points to a GitHub instance, but not to the API
         endpoint.
@@ -523,8 +574,13 @@ class TestVerifySettings:
 
         assert "Possible reasons: bad api url" in str(exc_info.value)
 
+    @responses.activate
     def test_mismatching_user_login_raises(
-        self, happy_github, organization, api
+        self,
+        happy_github,
+        organization,
+        api,
+        add_internet_connection_check_response,
     ):
         """I'm not sure if this can happen, but since the None-user thing
         happened, better safe than sorry.

@@ -52,6 +52,7 @@ from repobee_plug.exceptions import (
     BadCredentials,
     UnexpectedException,
     InvalidURL,
+    InternetConnectionUnavailable,
 )
 
 # Local representations
@@ -100,6 +101,7 @@ __all__ = [
     "BadCredentials",
     "UnexpectedException",
     "InvalidURL",
+    "InternetConnectionUnavailable",
     # Helpers
     "json_to_result_mapping",
     "result_mapping_to_json",

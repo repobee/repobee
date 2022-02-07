@@ -3,11 +3,13 @@ import itertools
 import unittest.mock
 
 import requests.exceptions
+import responses
 import pytest
 import gitlab
 import repobee_plug as plug
 
 import _repobee
+import _repobee.ext
 
 import constants
 
@@ -503,13 +505,31 @@ class TestInsertAuth:
 
 
 class TestVerifySettings:
-    def test_raises_if_token_is_empty(self):
+    @responses.activate
+    def test_raises_on_no_internet_connection(self):
+        with pytest.raises(plug.InternetConnectionUnavailable) as exc_info:
+            _repobee.ext.gitlab.GitLabAPI.verify_settings(
+                user=None,
+                org_name=TARGET_GROUP,
+                base_url=BASE_URL,
+                token=TOKEN,
+            )
+
+        assert "could not establish an Internet connection" in str(exc_info)
+
+    @responses.activate
+    def test_raises_if_token_is_empty(
+        self, add_internet_connection_check_response
+    ):
         with pytest.raises(plug.BadCredentials):
             _repobee.ext.gitlab.GitLabAPI.verify_settings(
                 user=None, org_name=TARGET_GROUP, base_url=BASE_URL, token=""
             )
 
-    def test_raises_on_failed_connection(self):
+    @responses.activate
+    def test_raises_on_failed_connection(
+        self, add_internet_connection_check_response
+    ):
         with pytest.raises(plug.PlatformError) as exc_info:
             _repobee.ext.gitlab.GitLabAPI.verify_settings(
                 user=None,
@@ -520,7 +540,8 @@ class TestVerifySettings:
 
         assert "please check the URL" in str(exc_info.value)
 
-    def test_raises_on_bad_token(self):
+    @responses.activate
+    def test_raises_on_bad_token(self, add_internet_connection_check_response):
         with pytest.raises(plug.BadCredentials) as exc_info:
             _repobee.ext.gitlab.GitLabAPI.verify_settings(
                 user=None,
@@ -531,7 +552,10 @@ class TestVerifySettings:
 
         assert "Could not authenticate token" in str(exc_info.value)
 
-    def test_raises_if_group_cant_be_found(self):
+    @responses.activate
+    def test_raises_if_group_cant_be_found(
+        self, add_internet_connection_check_response
+    ):
         non_existing_group = "some-garbage-group"
         with pytest.raises(plug.NotFoundError) as exc_info:
             _repobee.ext.gitlab.GitLabAPI.verify_settings(
@@ -543,7 +567,10 @@ class TestVerifySettings:
 
         assert non_existing_group in str(exc_info.value)
 
-    def test_raises_if_master_group_cant_be_found(self):
+    @responses.activate
+    def test_raises_if_master_group_cant_be_found(
+        self, add_internet_connection_check_response
+    ):
         non_existing_group = "some-garbage-group"
         with pytest.raises(plug.NotFoundError) as exc_info:
             _repobee.ext.gitlab.GitLabAPI.verify_settings(
@@ -556,7 +583,10 @@ class TestVerifySettings:
 
         assert non_existing_group in str(exc_info.value)
 
-    def test_raises_when_user_is_not_member(self, mocker):
+    @responses.activate
+    def test_raises_when_user_is_not_member(
+        self, mocker, add_internet_connection_check_response
+    ):
         gl = GitLabMock(BASE_URL, TOKEN, False)
         gl.groups.create(dict(name=MASTER_GROUP, path=MASTER_GROUP))
         user = User(id=9999, username="some-random-user")
@@ -579,7 +609,8 @@ class TestVerifySettings:
             exc_info.value
         )
 
-    def test_happy_path(self, mocker):
+    @responses.activate
+    def test_happy_path(self, mocker, add_internet_connection_check_response):
         """Test that the great success message is printed if all is as it
         should.
         """

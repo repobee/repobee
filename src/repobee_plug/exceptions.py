@@ -46,6 +46,13 @@ class HookNameError(PlugError):
     """
 
 
+class InternetConnectionUnavailable(PlugError):
+    """Raise when an internet connection cannot be established."""
+
+    def __init__(self, msg="could not establish an Internet connection"):
+        super().__init__(msg)
+
+
 class APIImplementationError(PlugError):
     """Raise when an API is defined incorrectly."""
 

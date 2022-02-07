@@ -428,6 +428,7 @@ class _APISpec:
         """Verify the following (to the extent that is possible and makes sense
         for the specific platform):
 
+        0. An internet connection is available
         1. Base url is correct
         2. The token has sufficient access privileges
         3. Target organization (specifiend by ``org_name``) exists

@@ -17,6 +17,8 @@ from typing import Optional, List, Iterable, NoReturn
 import repobee_plug as plug
 import requests
 
+from _repobee import http
+
 _TEAM_PERMISSION_MAPPING = {
     plug.TeamPermission.PULL: "read",
     plug.TeamPermission.PUSH: "write",
@@ -414,6 +416,10 @@ class GiteaAPI(plug.PlatformAPI):
         template_org_name: Optional[str] = None,
     ):
         """See :py:meth:`repobee_plug.PlatformAPI.verify_settings`."""
+        plug.echo("Testing Internet connection")
+        if not http.is_internet_connection_available():
+            raise plug.InternetConnectionUnavailable()
+
         target_api = GiteaAPI(
             user=user, org_name=org_name, base_url=base_url, token=token
         )

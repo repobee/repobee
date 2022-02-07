@@ -11,6 +11,8 @@ _ORIGINAL_REQUESTS_METHODS = {
     for method_name in MODIFY_REQUEST_METHOD_NAMES + ("request",)
 }
 
+DEFAULT_INTERNET_CONNECTION_CHECK_URL = "https://repobee.org"
+
 
 def rate_limit_modify_requests(
     base_url: str, rate_limit_in_seconds: float
@@ -62,3 +64,17 @@ def remove_rate_limits() -> None:
 
     for method_name, original_method in _ORIGINAL_REQUESTS_METHODS.items():
         setattr(requests, method_name, original_method)
+
+
+def is_internet_connection_available(
+    test_url=DEFAULT_INTERNET_CONNECTION_CHECK_URL,
+) -> bool:
+    """Test if an internet connection is available.
+
+    Args:
+        test_url: A URL to try to GET.
+    """
+    try:
+        return requests.get(test_url) is not None
+    except requests.exceptions.ConnectionError:
+        return False
