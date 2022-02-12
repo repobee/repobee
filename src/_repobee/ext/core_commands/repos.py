@@ -1,3 +1,8 @@
+"""WIP rewrite of the repos category.
+
+.. module:: repos
+    :synopsis: Implementations of the repos category of commands.
+"""
 import pathlib
 import repobee_plug as plug
 
