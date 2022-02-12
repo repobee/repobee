@@ -54,6 +54,8 @@ jobs:
       env:
         REPOBEE_CORE_COMMANDS_AS_PLUGINS: ${{ matrix.core-commands-as-plugins }}
       run: |
+        echo "REPOBEE_CORE_COMMANDS_AS_PLUGINS: $REPOBEE_CORE_COMMANDS_AS_PLUGINS"
+
         coverage run --branch \
             --source _repobee,repobee_plug,repobee_testhelpers \
             -m pytest tests/unit_tests tests/new_integration_tests
@@ -106,6 +108,9 @@ jobs:
 
   gitea-system-tests:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        core-commands-as-plugins: [false, true]
     steps:
     - uses: actions/checkout@v2
       with:
@@ -124,7 +129,10 @@ jobs:
       env:
         REPOBEE_NO_VERIFY_SSL: true
         PYTHONWARNINGS: "ignore:Unverified HTTPS request"
+        REPOBEE_CORE_COMMANDS_AS_PLUGINS: ${{ matrix.core-commands-as-plugins }}
       run: |
+        echo "REPOBEE_CORE_COMMANDS_AS_PLUGINS: $REPOBEE_CORE_COMMANDS_AS_PLUGINS"
+
         git config --global http.sslverify false
         python system_tests/gitea/giteamanager.py prime
         coverage run --branch \
