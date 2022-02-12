@@ -9,6 +9,7 @@ FEATURE_ENABLED_VALUE = "true"
 
 class FeatureFlag(enum.Enum):
     REPOBEE_4_REVIEW_COMMANDS = "REPOBEE_4_REVIEW_COMMANDS"
+    REPOBEE_CORE_COMMANDS_AS_PLUGINS = "REPOBEE_CORE_COMMANDS_AS_PLUGINS"
 
 
 def is_feature_enabled(flag: FeatureFlag) -> bool:
