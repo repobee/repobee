@@ -17,6 +17,14 @@ def add_plugin_parsers(
     config: plug.Config,
 ):
     """Add parsers defined by plugins."""
+    command_plugins = [
+        p
+        for p in plug.manager.get_plugins()
+        if isinstance(p, plug.cli.Command)
+    ]
+    for cmd in command_plugins:
+        _attach_command(cmd, base_parsers, subparsers, parsers_mapping, config)
+
     command_extension_plugins = [
         p
         for p in plug.manager.get_plugins()
@@ -26,14 +34,6 @@ def add_plugin_parsers(
         for action in cmd_ext.__settings__.actions:
             parser = parsers_mapping[action]
             cmd_ext.attach_options(config=config, parser=parser)
-
-    command_plugins = [
-        p
-        for p in plug.manager.get_plugins()
-        if isinstance(p, plug.cli.Command)
-    ]
-    for cmd in command_plugins:
-        _attach_command(cmd, base_parsers, subparsers, parsers_mapping, config)
 
 
 def _attach_command(
@@ -52,7 +52,7 @@ def _attach_command(
             category, subparsers
         )
 
-    assert action not in parsers_mapping
+    assert action not in parsers_mapping, f"{action} already exists"
 
     settings = cmd.__settings__
     ext_parser = _create_action_parser(
@@ -68,6 +68,8 @@ def _attach_command(
     settings_dict = settings._asdict()
     settings_dict.update(dict(action=action, category=category))
     cmd.__settings__ = settings.__class__(**settings_dict)
+
+    parsers_mapping[action] = ext_parser
 
 
 def _resolve_category_and_action(

@@ -10,14 +10,18 @@ import types
 import argparse
 import pathlib
 import functools
+import itertools
+from unittest.mock import Mock
 
-from typing import Union, Callable, Optional, Any
+from typing import Union, Callable, Optional, Any, Set
 
 import repobee_plug as plug
+from repobee_plug.cli.categorization import Action
 
 import _repobee
 from _repobee import plugin, featflags, fileutil
 from _repobee.cli import argparse_ext, pluginparsers, preparser
+import _repobee.ext.core_commands
 
 __all__ = ["create_parser", "create_parser_for_docs"]
 
@@ -80,6 +84,35 @@ _DOUBLE_BLIND_PARSER.add_argument(
     "(alpha feature)",
     metavar="KEY",
 )
+
+
+def _get_core_command_actions_implemented_as_plugins() -> Set[Action]:
+    qualnames = plugin.get_qualified_module_names(_repobee.ext.core_commands)
+    modules = plugin.load_plugin_modules(qualnames, allow_qualified=True)
+    plugin_classes = itertools.chain.from_iterable(
+        map(plugin.get_plugin_classes_in_module, modules)
+    )
+
+    actions = set()
+    for plugin_class in plugin_classes:
+        if issubclass(plugin_class, plug.cli.Command):
+            actions.add(plugin_class.__settings__.action)
+
+    return actions
+
+
+_CORE_ACTIONS_IMPLEMENTED_AS_PLUGINS = (
+    _get_core_command_actions_implemented_as_plugins()
+)
+
+
+def _should_skip_adding_action_parser(action: Action) -> bool:
+    return (
+        action in _CORE_ACTIONS_IMPLEMENTED_AS_PLUGINS
+        and featflags.is_feature_enabled(
+            featflags.FeatureFlag.REPOBEE_CORE_COMMANDS_AS_PLUGINS
+        )
+    )
 
 
 def create_parser_for_docs() -> argparse.ArgumentParser:
@@ -207,6 +240,9 @@ def _add_subparsers(parser, config: plug.Config):
 
     def _add_action_parser(category_parsers):
         def inner(action, **kwargs):
+            if _should_skip_adding_action_parser(action):
+                return Mock()
+
             parsers[action] = category_parsers.add_parser(
                 action.name, **kwargs
             )

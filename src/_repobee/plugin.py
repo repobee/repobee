@@ -25,14 +25,17 @@ from typing import (
     Callable,
     Any,
     DefaultDict,
+    Type,
 )
 
 
 import _repobee
 import _repobee.ext.defaults
 import _repobee.ext.dist
+import _repobee.ext.core_commands
 import _repobee.distinfo
 from _repobee import exception
+from _repobee import featflags
 
 import repobee_plug as plug
 
@@ -155,18 +158,32 @@ def register_plugins(
         plug.manager.register(module)
         registered.append(module)
 
-        for value in module.__dict__.values():
-            if (
-                isinstance(value, type)
-                and issubclass(value, plug.Plugin)
-                and value != plug.Plugin
-            ):
-                obj = value(plugin_name)
-                plug.manager.register(obj)
-                registered.append(obj)
+        for plugin_class in get_plugin_classes_in_module(module):
+            obj = plugin_class(plugin_name)
+            plug.manager.register(obj)
+            registered.append(obj)
 
     _handle_deprecation()
     return registered
+
+
+def get_plugin_classes_in_module(
+    module: ModuleType,
+) -> Iterable[Type[plug.Plugin]]:
+    """Get all plugin classes in a module.
+
+    Args:
+        module: A module.
+    Returns:
+        All classes that subtype :py:class:`plug.Plugin` in the module.
+    """
+    for value in module.__dict__.values():
+        if (
+            isinstance(value, type)
+            and issubclass(value, plug.Plugin)
+            and value != plug.Plugin
+        ):
+            yield value
 
 
 def unregister_all_plugins() -> None:
@@ -333,6 +350,15 @@ def initialize_default_plugins() -> None:
     default_plugin_qualnames = get_qualified_module_names(
         _repobee.ext.defaults
     )
+
+    if featflags.is_feature_enabled(
+        featflags.FeatureFlag.REPOBEE_CORE_COMMANDS_AS_PLUGINS
+    ):
+        core_command_plugin_names = get_qualified_module_names(
+            _repobee.ext.core_commands
+        )
+        default_plugin_qualnames.extend(core_command_plugin_names)
+
     initialize_plugins(default_plugin_qualnames, allow_qualified=True)
 
 

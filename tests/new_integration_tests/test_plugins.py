@@ -250,8 +250,11 @@ def test_get_configurable_args_merges_sections():
             nonlocal configurable_args, rest
             (
                 configurable_args,
+                default_configurable_args,
                 *rest,
             ) = plug.manager.hook.get_configurable_args()
+
+            assert default_configurable_args.config_section_name == "repobee"
 
     plugin_name = "someplugin"
     plugin_module = types.ModuleType(plugin_name)

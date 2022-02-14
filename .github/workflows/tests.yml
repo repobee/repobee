@@ -21,6 +21,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
         python-version: [3.7, 3.8, 3.9, '3.10']
+        core-commands-as-plugins: [false]
         exclude:
           - os: macos-latest
             python-version: 3.8
@@ -28,6 +29,10 @@ jobs:
             python-version: 3.9
           - os: macos-latest
             python-version: 3.10
+        include:
+          - os: ubuntu-latest
+            python-version: 3.7
+            core-commands-as-plugins: true
     steps:
     - uses: actions/checkout@v2
       with:
@@ -46,7 +51,11 @@ jobs:
         pip install -r requirements/test.txt
         pip install -e .[TEST]
     - name: Test with pytest
+      env:
+        REPOBEE_CORE_COMMANDS_AS_PLUGINS: ${{ matrix.core-commands-as-plugins }}
       run: |
+        echo "REPOBEE_CORE_COMMANDS_AS_PLUGINS: $REPOBEE_CORE_COMMANDS_AS_PLUGINS"
+
         coverage run --branch \
             --source _repobee,repobee_plug,repobee_testhelpers \
             -m pytest tests/unit_tests tests/new_integration_tests
@@ -99,6 +108,9 @@ jobs:
 
   gitea-system-tests:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        core-commands-as-plugins: [false, true]
     steps:
     - uses: actions/checkout@v2
       with:
@@ -117,7 +129,10 @@ jobs:
       env:
         REPOBEE_NO_VERIFY_SSL: true
         PYTHONWARNINGS: "ignore:Unverified HTTPS request"
+        REPOBEE_CORE_COMMANDS_AS_PLUGINS: ${{ matrix.core-commands-as-plugins }}
       run: |
+        echo "REPOBEE_CORE_COMMANDS_AS_PLUGINS: $REPOBEE_CORE_COMMANDS_AS_PLUGINS"
+
         git config --global http.sslverify false
         python system_tests/gitea/giteamanager.py prime
         coverage run --branch \
