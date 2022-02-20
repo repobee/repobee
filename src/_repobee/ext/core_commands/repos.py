@@ -147,3 +147,45 @@ performed step will simply be skipped.""",
         return command.setup_student_repos(
             self.args.template_repo_urls, self.args.students, api
         )
+
+
+def issue_option():
+    return plug.cli.option(
+        "-i",
+        "--issue",
+        help="path to issue file to open in repos to which pushes fail "
+        "(NOTE: First line is assumed to be the title)",
+    )
+
+
+class UpdateCommand(plug.Plugin, plug.cli.Command):
+    _is_core_command = True
+
+    __settings__ = plug.cli.command_settings(
+        action=plug.cli.CoreCommand.repos.update,
+        help="update existing student repos",
+        description="""Push changes from master repos to student repos. If the
+`--issue` option is provided, the specified issue is opened in any repo
+to which pushes fail (because the students have pushed something already).""",
+        config_section_name="repobee",
+    )
+
+    assignments = assignments_option()
+
+    students = students_option()
+
+    students_file = students_file_option()
+
+    template_org_name = template_org_name_option()
+
+    allow_local_templates = allow_local_templates_option()
+
+    issue = issue_option()
+
+    def command(self, api: plug.PlatformAPI):
+        return command.update_student_repos(
+            self.args.template_repo_urls,
+            self.args.students,
+            api,
+            self.args.issue,
+        )
