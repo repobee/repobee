@@ -189,3 +189,23 @@ to which pushes fail (because the students have pushed something already).""",
             api,
             self.args.issue,
         )
+
+
+class MigrateCommand(plug.Plugin, plug.cli.Command):
+    _is_core_command = True
+
+    __settings__ = plug.cli.command_settings(
+        action=plug.cli.CoreCommand.repos.migrate,
+        help="migrate repositories into the target organization",
+        description="""Migrate repositories into the target organization. The
+repos must be local on disk to be migrated. Note that migrated repos
+will be private.""",
+        config_section_name="repobee",
+    )
+
+    assignments = assignments_option()
+
+    allow_local_templates = allow_local_templates_option()
+
+    def command(self, api: plug.PlatformAPI):
+        return command.migrate_repos(self.args.template_repo_urls, api)
