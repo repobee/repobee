@@ -1,9 +1,10 @@
 """Fixtures for use with pytest."""
 import itertools
 import pathlib
-import pytest
 import shutil
 import tempfile
+
+import pytest
 
 from repobee_testhelpers import funcs
 

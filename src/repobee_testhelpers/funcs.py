@@ -6,8 +6,9 @@ import shlex
 import contextlib
 from typing import Mapping, List, Union, Iterator
 
-import repobee
 import git  # type: ignore
+
+import repobee
 
 import repobee_plug as plug
 

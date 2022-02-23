@@ -28,10 +28,11 @@ is well!
 import sys
 import pathlib
 
+from typing import Iterable
+
 import yamliny
 import repobee_plug as plug
 
-from typing import Iterable
 
 _MEMBERS_KEY = "members"
 
