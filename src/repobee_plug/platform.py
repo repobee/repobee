@@ -517,7 +517,7 @@ class _APIMeta(type):
     specified api method, but all api methods do not need to be implemented.
     """
 
-    def __new__(mcs, name, bases, attrdict):
+    def __new__(cls, name, bases, attrdict):
         api_methods = methods(_APISpec.__dict__)
         implemented_methods = methods(attrdict)
         non_api_methods = set(implemented_methods.keys()) - set(
@@ -530,7 +530,7 @@ class _APIMeta(type):
         for method_name, method in api_methods.items():
             if method_name in implemented_methods:
                 check_parameters(method, implemented_methods[method_name])
-        return super().__new__(mcs, name, bases, attrdict)
+        return super().__new__(cls, name, bases, attrdict)
 
 
 class PlatformAPI(_APISpec, metaclass=_APIMeta):

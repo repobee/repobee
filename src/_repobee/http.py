@@ -1,6 +1,7 @@
-import requests
 import time
 import functools
+
+import requests
 
 import repobee_plug as plug
 

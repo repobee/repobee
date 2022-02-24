@@ -29,7 +29,7 @@ jobs:
     - name: Lint with flake8
       run: flake8 . --statistics
     - name: Lin with pylint
-      run: pylint src/
+      run: pylint --rcfile=.pylintrc src/
     - name: Lint with Bandit
       run: bandit -r src/ -ll --exclude src/repobee_testhelpers/localapi.py
     - name: Check with Black

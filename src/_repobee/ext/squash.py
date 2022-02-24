@@ -9,9 +9,9 @@
 import datetime
 import hashlib
 import shlex
+import subprocess
 
 import repobee_plug as plug
-import subprocess
 
 import _repobee.git
 

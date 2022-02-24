@@ -14,9 +14,9 @@ import os
 import urllib.parse
 from typing import Optional, List, Iterable, NoReturn
 
-import repobee_plug as plug
 import requests
 
+import repobee_plug as plug
 from _repobee import http
 
 _TEAM_PERMISSION_MAPPING = {

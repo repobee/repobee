@@ -484,7 +484,7 @@ def _format_table(
         pretty_table = tabulate.tabulate(
             mutable_table, mutable_hdrs, tablefmt="fancy_grid"
         )
-        table_width = len(pretty_table.split("\n")[0])
+        table_width = len(pretty_table.split("\n", maxsplit=1)[0])
 
         if table_width <= max_width:
             break

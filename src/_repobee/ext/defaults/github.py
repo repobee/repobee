@@ -156,11 +156,6 @@ class GitHubAPI(plug.PlatformAPI):
     def __del__(self):
         http.remove_rate_limits()
 
-    def __repr__(self):
-        return "GitHubAPI(base_url={}, token={}, org_name={})".format(
-            self._base_url, self._token, self._org_name
-        )
-
     @property
     def org(self):
         return self._org
@@ -472,25 +467,25 @@ class GitHubAPI(plug.PlatformAPI):
         plug.echo("Trying to fetch user information ...")
 
         user_not_found_msg = (
-            "user {} could not be found. Possible reasons: "
+            f"user {user} could not be found. Possible reasons: "
             "bad base url, bad username or bad access token permissions"
-        ).format(user)
+        )
         with _convert_404_to_not_found_error(user_not_found_msg):
             user_ = g.get_user(user)
             msg = (
-                "Specified login is {}, "
-                "but the fetched user's login is {}.".format(user, user_.login)
+                f"Specified login is {user}, "
+                f"but the fetched user's login is {user_.login}."
             )
             if user_.login is None:
                 msg = (
-                    "{} Possible reasons: bad api url that points to a "
+                    "{msg} Possible reasons: bad api url that points to a "
                     "GitHub instance, but not to the api endpoint."
-                ).format(msg)
+                )
                 raise plug.UnexpectedException(msg=msg)
             elif user_.login != user:
                 msg = (
-                    "{} Possible reasons: unknown, rerun with -tb and open an "
-                    "issue on GitHub.".format(msg)
+                    f"{msg} Possible reasons: unknown, rerun with -tb and open an "
+                    "issue on GitHub."
                 )
                 raise plug.UnexpectedException(msg=msg)
         plug.echo(
@@ -503,7 +498,7 @@ class GitHubAPI(plug.PlatformAPI):
         if not REQUIRED_TOKEN_SCOPES.issubset(scopes):
             raise plug.BadCredentials(
                 "missing one or more access token scopes. "
-                "Actual: {}. Required {}".format(scopes, REQUIRED_TOKEN_SCOPES)
+                f"Actual: {scopes}. Required {REQUIRED_TOKEN_SCOPES}"
             )
         plug.echo("SUCCESS: access token scopes look okay")
 
@@ -518,10 +513,10 @@ class GitHubAPI(plug.PlatformAPI):
         """Check that the organization exists and that the user is an owner."""
         plug.echo(f"Trying to fetch organization {org_name} ...")
         org_not_found_msg = (
-            "organization {} could not be found. Possible "
+            "organization {org_name} could not be found. Possible "
             "reasons: org does not exist, user does not have "
             "sufficient access to organization."
-        ).format(org_name)
+        )
         with _convert_404_to_not_found_error(org_not_found_msg):
             org = g.get_organization(org_name)
         plug.echo(f"SUCCESS: found organization {org_name}")

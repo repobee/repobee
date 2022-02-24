@@ -54,7 +54,7 @@ class Category(ImmutableMixin, abc.ABC):
         # This is just to reserve the name 'actions'
         object.__setattr__(self, "actions", None)
 
-        for key in self.__dict__.keys():
+        for key in self.__dict__:
             if key in action_names:
                 raise ValueError(f"Illegal action name: {key}")
 
