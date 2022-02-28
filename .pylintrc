@@ -264,7 +264,8 @@ disable=invalid-name,
         forgotten-debug-statement,
         using-f-string-in-unsupported-version,
         using-final-decorator-in-unsupported-version,
-        useless-with-lock
+        useless-with-lock,
+        no-member,
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
@@ -336,7 +337,6 @@ enable=syntax-error,
        notimplemented-raised,
        catching-non-exception,
        bad-super-call,
-       no-member,
        not-callable,
        assignment-from-no-return,
        no-value-for-parameter,

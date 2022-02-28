@@ -10,7 +10,7 @@ from _repobee.plugin import register_plugins
 from _repobee.ext import pairwise
 
 
-import constants
+from repobee_testhelpers._internal import constants
 
 
 class TestGenerateReviewAllocations:

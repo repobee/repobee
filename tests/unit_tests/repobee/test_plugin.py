@@ -23,7 +23,7 @@ from _repobee import exception
 from _repobee.ext import javac, pylint
 
 
-import constants
+from repobee_testhelpers._internal import constants
 
 PLUGINS = constants.PLUGINS
 

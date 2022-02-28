@@ -1,9 +1,10 @@
 import itertools
-import pytest
+import random
+import datetime
 from unittest.mock import MagicMock, PropertyMock, patch
-
 from typing import List
 
+import pytest
 import github
 import responses
 
@@ -12,12 +13,13 @@ import repobee_plug as plug
 import _repobee.ext.defaults.github as github_plugin
 from _repobee.ext.defaults.github import REQUIRED_TOKEN_SCOPES
 
-import constants
-import functions
-
-ORG_NAME = constants.ORG_NAME
-ISSUE = constants.ISSUE
-TOKEN = constants.TOKEN
+from repobee_testhelpers._internal import constants
+from repobee_testhelpers._internal.constants import (
+    USER,
+    ORG_NAME,
+    TOKEN,
+    BASE_URL,
+)
 
 
 class GithubException(Exception):
@@ -31,17 +33,45 @@ NOT_FOUND_EXCEPTION = GithubException(msg=None, status=404)
 VALIDATION_ERROR = GithubException(msg=None, status=422)
 SERVER_ERROR = GithubException(msg=None, status=500)
 
-USER = constants.USER
 NOT_MEMBER = "notanowner"
-ORG_NAME = constants.ORG_NAME
-BASE_URL = constants.BASE_URL
-ISSUE = constants.ISSUE
-TOKEN = constants.TOKEN
 
-generate_repo_url = functions.generate_repo_url
-random_date = functions.random_date
-to_magic_mock_issue = functions.to_magic_mock_issue
-from_magic_mock_issue = functions.from_magic_mock_issue
+
+def random_date():
+    return constants.FIXED_DATETIME - datetime.timedelta(
+        days=random.randint(0, 1000),
+        hours=random.randint(0, 1000),
+        minutes=random.randint(0, 1000),
+        seconds=random.randint(0, 1000),
+    )
+
+
+def generate_repo_url(repo_name, org_name):
+    return f"{constants.HOST_URL}/{org_name}/{repo_name}"
+
+
+def to_magic_mock_issue(issue):
+    """Convert an issue to a MagicMock with all of the correct
+    attribuets."""
+    mock = MagicMock()
+    mock.user = MagicMock()
+    mock.title = issue.title
+    mock.body = issue.body
+    mock.created_at = issue.created_at
+    mock.number = issue.number
+    mock.user = constants.User(issue.author)
+    return mock
+
+
+def from_magic_mock_issue(mock_issue):
+    """Convert a MagicMock issue into a plug.Issue."""
+    return plug.Issue(
+        title=mock_issue.title,
+        body=mock_issue.body,
+        number=mock_issue.number,
+        created_at=mock_issue.created_at,
+        author=mock_issue.user.login,
+    )
+
 
 User = constants.User
 
@@ -590,9 +620,8 @@ class TestVerifySettings:
             username + "other"
         )
         expected_messages = [
-            "Specified login is {}, but the fetched user's login is {}".format(
-                USER, wrong_username
-            ),
+            f"Specified login is {USER}, but the fetched user's login "
+            f"is {wrong_username}. "
             "Possible reasons: unknown",
         ]
 

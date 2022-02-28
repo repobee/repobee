@@ -10,11 +10,11 @@ import shlex
 import subprocess
 import sys
 
-import pytest
-from packaging import version
-
 from unittest import mock
 from typing import Optional
+
+import pytest
+from packaging import version
 
 import git
 

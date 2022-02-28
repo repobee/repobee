@@ -3,7 +3,7 @@ import pytest
 
 import repobee_plug as plug
 
-import constants
+from repobee_testhelpers._internal import constants
 from _repobee.ext import gitea
 
 
