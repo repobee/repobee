@@ -1,5 +1,6 @@
-import pytest
 import collections
+
+import pytest
 
 import repobee_plug as plug
 

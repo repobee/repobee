@@ -16,11 +16,10 @@ import _repobee.ext.squash
 import _repobee.ext.studentsyml
 
 import repobee_plug as plug
-from repobee_testhelpers import localapi
-from repobee_testhelpers import funcs
 from _repobee import exception, fileutil
 
-
+from repobee_testhelpers import localapi
+from repobee_testhelpers import funcs
 from repobee_testhelpers import const
 from repobee_testhelpers.const import (
     STUDENT_TEAMS,

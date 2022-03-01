@@ -2,7 +2,7 @@ import os
 import sys
 from _repobee import exception
 
-import constants
+from repobee_testhelpers._internal import constants
 
 USER = constants.USER
 

@@ -1,10 +1,9 @@
 import itertools
-import os
 import sys
 import tempfile
+from contextlib import contextmanager
 
 import pytest
-from contextlib import contextmanager
 
 from _repobee import fileutil
 
@@ -180,10 +179,8 @@ class TestReadIssueFromFile:
         and body.
         """
         expected_title = "This is the title again"
-        expected_body = "Body **with formatting** and{}multiple{}lines".format(
-            os.linesep, os.linesep
-        )
-        text = os.linesep.join([expected_title, expected_body])
+        expected_body = "Body **with formatting** and\nmultiple\nlines"
+        text = "\n".join([expected_title, expected_body])
 
         with written_tmpfile(text) as file:
             issue = fileutil.read_issue_from_file(file.name)

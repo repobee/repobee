@@ -1,11 +1,12 @@
-import pytest
-from repobee_plug import platform
-from repobee_plug import exceptions
-
 import collections
 import datetime
 
 from typing import Optional, List
+
+import pytest
+
+from repobee_plug import platform
+from repobee_plug import exceptions
 
 
 def api_methods():
@@ -45,7 +46,7 @@ class TestAPI:
         with pytest.raises(exceptions.APIImplementationError):
 
             class API(platform.PlatformAPI):
-                def get_teams(a):
+                def get_teams(self, a):
                     pass
 
     def test_accepts_init_with_strict_subset_of_args(self):

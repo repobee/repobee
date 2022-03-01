@@ -8,7 +8,7 @@ import repobee_plug as plug
 from _repobee import config
 from _repobee import exception
 
-import constants
+from repobee_testhelpers._internal import constants
 
 STUDENTS = constants.STUDENTS
 USER = constants.USER

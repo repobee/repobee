@@ -11,7 +11,7 @@ import repobee_plug as plug
 import _repobee
 import _repobee.ext
 
-import constants
+from repobee_testhelpers._internal import constants
 
 PAGE_SIZE = 10
 
@@ -430,12 +430,8 @@ class TestGetRepoUrls:
         api = _repobee.ext.gitlab.GitLabAPI(BASE_URL, TOKEN, TARGET_GROUP)
         expected_urls = [
             api._insert_auth(
-                "{}/{}/{}/{}.git".format(
-                    BASE_URL,
-                    TARGET_GROUP,
-                    str(student_group),
-                    plug.generate_repo_name(str(student_group), mn),
-                )
+                f"{BASE_URL}/{TARGET_GROUP}/{student_group}/"
+                f"{plug.generate_repo_name(student_group, mn)}.git"
             )
             for student_group in constants.STUDENTS
             for mn in assignment_names

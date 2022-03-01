@@ -7,17 +7,16 @@ from collections import namedtuple
 import pytest
 
 import repobee_plug as plug
+import repobee_plug.cli
 
 import _repobee.cli.preparser
 import _repobee.ext.defaults
 import _repobee.ext.dist
-from functions import raise_
 import _repobee.constants
-import repobee_plug.cli
 from _repobee import main
 from _repobee import plugin
 
-import constants
+from repobee_testhelpers._internal import constants
 
 ORG_NAME = constants.ORG_NAME
 BASE_URL = constants.BASE_URL
@@ -397,3 +396,10 @@ class TestRun:
             ).values()
         )[0]
         assert results.data["cwd"] == str(tmpdir)
+
+
+def raise_(exception):
+    def wrapper():
+        raise exception
+
+    return wrapper

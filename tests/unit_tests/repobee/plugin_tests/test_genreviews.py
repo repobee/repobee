@@ -6,7 +6,7 @@ import pytest
 
 from _repobee.ext.defaults import genreviews
 
-import constants
+from repobee_testhelpers._internal import constants
 
 
 class TestGenerateReviewAllocations:

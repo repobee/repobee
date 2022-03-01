@@ -8,6 +8,7 @@ from unittest import mock
 import pytest
 
 import repobee_plug as plug
+import repobee_plug.cli
 
 import _repobee
 import _repobee.cli.dispatch
@@ -17,26 +18,30 @@ import _repobee.ext.query
 import _repobee.constants
 import _repobee.plugin
 import _repobee.ext.defaults.configwizard
-import repobee_plug.cli
 from _repobee.cli import mainparser
 from _repobee.cli import argparse_ext
 from _repobee import fileutil, exception
 
-import constants
-import functions
+from repobee_testhelpers._internal import constants
+from repobee_testhelpers._internal.constants import (
+    USER,
+    ORG_NAME,
+    BASE_URL,
+    STUDENTS,
+    ISSUE_PATH,
+    ISSUE,
+    TEMPLATE_ORG_NAME,
+    TOKEN,
+)
 
-USER = constants.USER
-ORG_NAME = constants.ORG_NAME
-BASE_URL = constants.BASE_URL
-STUDENTS = constants.STUDENTS
 STUDENTS_STRING = " ".join([str(s) for s in STUDENTS])
-ISSUE_PATH = constants.ISSUE_PATH
-ISSUE = constants.ISSUE
-generate_repo_url = functions.generate_repo_url
-TEMPLATE_ORG_NAME = constants.TEMPLATE_ORG_NAME
-TOKEN = constants.TOKEN
 
 EMPTY_PATH = pathlib.Path(".")
+
+
+def generate_repo_url(repo_name, org_name):
+    return f"{constants.HOST_URL}/{org_name}/{repo_name}"
+
 
 ASSIGNMENT_NAMES = ("week-1", "week-2", "week-3")
 REPO_URLS = tuple(

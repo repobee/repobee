@@ -1,12 +1,13 @@
 """Tests for the issues category of commands."""
 import pathlib
-import pytest
 import tempfile
 import collections
 import itertools
 import re
 
 from typing import List, Tuple
+
+import pytest
 
 import repobee_plug as plug
 from repobee_testhelpers import funcs

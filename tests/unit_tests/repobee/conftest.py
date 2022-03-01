@@ -12,14 +12,13 @@ import pytest
 
 import repobee_plug as plug
 
+import _repobee  # noqa: E402
 import _repobee.constants
 import _repobee.config
 import _repobee.plugin
 import _repobee.featflags
 
-import constants
-
-import _repobee  # noqa: E402
+from repobee_testhelpers._internal import constants
 
 EXPECTED_ENV_VARIABLES = [
     _repobee.constants.TOKEN_ENV,
