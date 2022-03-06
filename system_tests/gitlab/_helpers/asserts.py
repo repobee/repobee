@@ -1,8 +1,9 @@
 """Assert functions for integration tests."""
 import itertools
 import pathlib
+import time
 
-from typing import List
+from typing import List, Callable
 
 import gitlab
 import repobee_plug as plug
@@ -189,3 +190,16 @@ def assert_cloned_repos(
         sha = hash_directory(path)
         assert sha == expected_sha
         assert (path / ".git").is_dir()
+
+
+def retry_assertion(
+    assertion: Callable[[], None],
+    max_attempts: int,
+    seconds_between_attempts: float,
+) -> None:
+    for _ in range(max_attempts):
+        try:
+            assertion()
+        except AssertionError:
+            time.sleep(seconds_between_attempts)
+            pass
