@@ -68,8 +68,8 @@ jobs:
 
   gitlab-system-tests:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'create' \
-      || github.event_name == 'schedule' \
+    if: ${{ github.event_name == 'create'
+      || github.event_name == 'schedule'
       || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'gitlab')) }}
     steps:
     - uses: actions/checkout@v3
