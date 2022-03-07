@@ -9,6 +9,7 @@ self-contained program.
 
 .. moduleauthor:: Simon Larsén
 """
+import dataclasses
 import itertools
 import collections
 import re
@@ -17,7 +18,8 @@ import pathlib
 import shutil
 import sys
 import json
-from typing import Iterable, Optional, Dict, List, Tuple, Set, Union
+import functools
+from typing import Iterable, Optional, Dict, List, Tuple, Set, Union, Callable
 
 import git  # type: ignore
 import repobee_plug as plug
@@ -71,124 +73,181 @@ def assign_peer_reviews(
             interface with the platform (e.g. GitHub or GitLab) instance.
     """
     issue = issue or DEFAULT_REVIEW_ISSUE
-    expected_repo_names = set(
-        plug.generate_repo_names(teams, assignment_names)
+    fetched_repo_by_name = _fetch_repos_for_review(
+        assignment_names, teams, double_blind_key, api
     )
+
+    assigned_reviews = []
+    for assignment_name in assignment_names:
+        plug.echo(f"Allocating reviews for {assignment_name}")
+
+        create_review_team_name = functools.partial(
+            _review_team_name, assignment=assignment_name, key=double_blind_key
+        )
+
+        def get_repo_by_team_name(team_name: str) -> plug.Repo:
+            repo_name = plug.generate_repo_name(team_name, assignment_name)
+            return fetched_repo_by_name[repo_name]
+
+        review_teams_with_repos = _create_review_teams(
+            teams,
+            num_reviews,
+            get_repo_by_team_name,
+            create_review_team_name,
+            api,
+        )
+
+        for review_team_with_repo in review_teams_with_repos:
+            _assign_review(
+                review_team_with_repo.review_team,
+                review_team_with_repo.repo_to_review,
+                issue,
+                api,
+            )
+            assigned_reviews.append(review_team_with_repo)
+
+    if featflags.is_feature_enabled(
+        featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS
+    ):
+        output = dict(
+            allocations=[a.to_dict() for a in assigned_reviews],
+            num_reviews=num_reviews,
+        )
+        pathlib.Path("review_allocations.json").write_text(
+            json.dumps(output, indent=4),
+            encoding=sys.getdefaultencoding(),
+        )
+
+
+@dataclasses.dataclass(frozen=True)
+class _ReviewTeamWithRepo:
+    review_team: plug.Team
+    repo_to_review: plug.Repo
+
+    def to_dict(self) -> dict:
+        return {
+            "reviewed_repo": {
+                "name": self.repo_to_review.name,
+                "url": self.repo_to_review.url,
+            },
+            "review_team": {
+                "name": self.review_team.name,
+                "members": self.review_team.members,
+            },
+        }
+
+
+def _create_review_teams(
+    teams: Iterable[plug.StudentTeam],
+    num_reviews: int,
+    get_repo_by_team_name: Callable[[str], plug.Repo],
+    create_review_team_name: Callable[[str], str],
+    api: plug.PlatformAPI,
+) -> Iterable[_ReviewTeamWithRepo]:
+    allocations = plug.manager.hook.generate_review_allocations(
+        teams=teams, num_reviews=num_reviews
+    )
+
+    review_team_specifications = [
+        plug.StudentTeam(
+            members=allocation.review_team.members,
+            name=create_review_team_name(allocation.reviewed_team),
+        )
+        for allocation in allocations
+    ]
+    review_teams_progress = _create_review_teams_with_progress_bar(
+        review_team_specifications, api
+    )
+
+    for review_team, allocation in zip(review_teams_progress, allocations):
+        repo_to_review = get_repo_by_team_name(allocation.reviewed_team.name)
+        review_teams_progress.write(  # type: ignore
+            f"Assigning {' and '.join(review_team.members)} "
+            f"to review {repo_to_review.name}"
+        )
+        yield _ReviewTeamWithRepo(review_team, repo_to_review)
+
+
+def _create_review_teams_with_progress_bar(
+    review_team_specs: List[plug.StudentTeam], api: plug.PlatformAPI
+) -> Iterable[plug.Team]:
+    review_teams = _repobee.command.teams.create_teams(
+        review_team_specs, plug.TeamPermission.PULL, api
+    )
+    return plug.cli.io.progress_bar(
+        review_teams,
+        desc="Creating review teams",
+        total=len(review_team_specs),
+    )
+
+
+def _assign_review(
+    review_team: plug.Team,
+    reviewed_repo: plug.Repo,
+    issue: plug.Issue,
+    api: plug.PlatformAPI,
+) -> None:
+    api.assign_repo(review_team, reviewed_repo, plug.TeamPermission.PULL)
+    api.create_issue(
+        issue.title,
+        issue.body,
+        reviewed_repo,
+        # It's not possible to assign users with read-access in Gitea
+        # FIXME redesign so Gitea does not require special handling
+        assignees=review_team.members
+        if not isinstance(api, _repobee.ext.gitea.GiteaAPI)
+        else None,
+    )
+
+
+def _fetch_repos_for_review(
+    assignment_names: Iterable[str],
+    teams: Iterable[plug.StudentTeam],
+    double_blind_key: Optional[str],
+    api: plug.PlatformAPI,
+) -> Dict[str, plug.Repo]:
     fetched_teams = progresswrappers.get_teams(
         teams, api, desc="Fetching teams and repos"
     )
     team_repo_tuples = [
         (team, list(api.get_team_repos(team))) for team in fetched_teams
     ]
-    fetched_repos = list(
-        itertools.chain.from_iterable(repos for _, repos in team_repo_tuples)
+    expected_repo_names = set(
+        plug.generate_repo_names(teams, assignment_names)
     )
-    fetched_repo_dict = {r.name: r for r in fetched_repos}
 
-    missing = expected_repo_names - fetched_repo_dict.keys()
-    if missing:
-        raise plug.NotFoundError(f"Can't find repos: {', '.join(missing)}")
-
+    repo_name_to_fetched_repo = _fetch_repos(
+        team_repo_tuples, expected_repo_names
+    )
     if double_blind_key:
-        plug.log.info(f"Creating anonymous repos with key: {double_blind_key}")
-        fetched_repo_dict = _create_anonymized_repos(
-            [
-                (team, _only_expected_repos(repos, expected_repo_names))
-                for team, repos in team_repo_tuples
-            ],
-            double_blind_key,
-            api,
+        repo_name_to_fetched_repo = _anonymize_fetched_repos(
+            team_repo_tuples, expected_repo_names, double_blind_key, api
         )
 
-    allocations_for_output = []
-    for assignment_name in assignment_names:
-        plug.echo("Allocating reviews")
-        allocations = plug.manager.hook.generate_review_allocations(
-            teams=teams, num_reviews=num_reviews
-        )
-        # adjust names of review teams
-        review_team_specs, reviewed_team_names = list(
-            zip(
-                *[
-                    (
-                        plug.StudentTeam(
-                            members=alloc.review_team.members,
-                            name=_review_team_name(
-                                alloc.reviewed_team,
-                                assignment_name,
-                                key=double_blind_key,
-                            ),
-                        ),
-                        alloc.reviewed_team,
-                    )
-                    for alloc in allocations
-                ]
-            )
-        )
-
-        review_teams = _repobee.command.teams.create_teams(
-            review_team_specs, plug.TeamPermission.PULL, api
-        )
-        review_teams_progress = plug.cli.io.progress_bar(
-            review_teams,
-            desc="Creating review teams",
-            total=len(review_team_specs),
-        )
-
-        for review_team, reviewed_team_name in zip(
-            review_teams_progress, reviewed_team_names
-        ):
-            reviewed_repo = fetched_repo_dict[
-                plug.generate_repo_name(reviewed_team_name, assignment_name)
-            ]
-
-            review_teams_progress.write(  # type: ignore
-                f"Assigning {' and '.join(review_team.members)} "
-                f"to review {reviewed_repo.name}"
-            )
-            api.assign_repo(
-                review_team, reviewed_repo, plug.TeamPermission.PULL
-            )
-            api.create_issue(
-                issue.title,
-                issue.body,
-                reviewed_repo,
-                # It's not possible to assign users with read-access in Gitea
-                # FIXME redesign so Gitea does not require special handling
-                assignees=review_team.members
-                if not isinstance(api, _repobee.ext.gitea.GiteaAPI)
-                else None,
-            )
-
-            allocations_for_output.append(
-                {
-                    "reviewed_repo": {
-                        "name": reviewed_repo.name,
-                        "url": reviewed_repo.url,
-                    },
-                    "review_team": {
-                        "name": review_team.name,
-                        "members": review_team.members,
-                    },
-                }
-            )
-
-        if featflags.is_feature_enabled(
-            featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS
-        ):
-            output = dict(
-                allocations=allocations_for_output, num_reviews=num_reviews
-            )
-            pathlib.Path("review_allocations.json").write_text(
-                json.dumps(output, indent=4),
-                encoding=sys.getdefaultencoding(),
-            )
+    return repo_name_to_fetched_repo
 
 
 def _only_expected_repos(
     repos: List[plug.Repo], expected_repo_names: Set[str]
 ) -> List[plug.Repo]:
     return [repo for repo in repos if repo.name in expected_repo_names]
+
+
+def _anonymize_fetched_repos(
+    team_repo_tuples: List[Tuple[plug.Team, List[plug.Repo]]],
+    expected_repo_names: Set[str],
+    key: str,
+    api: plug.PlatformAPI,
+) -> Dict[str, plug.Repo]:
+    plug.log.info(f"Creating anonymous repos with key: {key}")
+    return _create_anonymized_repos(
+        [
+            (team, _only_expected_repos(repos, expected_repo_names))
+            for team, repos in team_repo_tuples
+        ],
+        key,
+        api,
+    )
 
 
 def _create_anonymized_repos(
@@ -220,6 +279,24 @@ def _create_anonymized_repos(
         _push_to_platform(anonymized_repos, api)
 
         return repo_mapping
+
+
+def _fetch_repos(
+    team_repo_tuples: List[Tuple[plug.Team, List[plug.Repo]]],
+    expected_repo_names: Set[str],
+):
+    repo_name_to_fetched_repo = {
+        fetched_repo.name: fetched_repo
+        for fetched_repo in itertools.chain.from_iterable(
+            repos for _, repos in team_repo_tuples
+        )
+    }
+
+    missing = expected_repo_names - repo_name_to_fetched_repo.keys()
+    if missing:
+        raise plug.NotFoundError(f"Can't find repos: {', '.join(missing)}")
+
+    return repo_name_to_fetched_repo
 
 
 def _create_anonymized_repo(
@@ -345,11 +422,12 @@ def end_reviews_repobee_4(
     allocations_file: pathlib.Path, api: plug.PlatformAPI
 ) -> None:
     """Preview version of RepoBee 4's version of :py:fync:`end_reviews`."""
-    review_allocations = json.loads(
+    review_teams_with_repos = json.loads(
         allocations_file.read_text(sys.getdefaultencoding())
     )["allocations"]
     review_team_names = {
-        allocation["review_team"]["name"] for allocation in review_allocations
+        allocation["review_team"]["name"]
+        for allocation in review_teams_with_repos
     }
     for team in progresswrappers.get_teams(review_team_names, api):
         api.delete_team(team)
