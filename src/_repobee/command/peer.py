@@ -284,7 +284,7 @@ def _create_anonymized_repos(
 def _fetch_repos(
     team_repo_tuples: List[Tuple[plug.Team, List[plug.Repo]]],
     expected_repo_names: Set[str],
-):
+) -> Dict[str, plug.Repo]:
     repo_name_to_fetched_repo = {
         fetched_repo.name: fetched_repo
         for fetched_repo in itertools.chain.from_iterable(
