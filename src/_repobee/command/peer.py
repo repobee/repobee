@@ -149,16 +149,20 @@ def assign_peer_reviews(
             api.assign_repo(
                 review_team, reviewed_repo, plug.TeamPermission.PULL
             )
-            api.create_issue(
-                issue.title,
-                issue.body,
-                reviewed_repo,
-                # It's not possible to assign users with read-access in Gitea
-                # FIXME redesign so Gitea does not require special handling
-                assignees=review_team.members
-                if not isinstance(api, _repobee.ext.gitea.GiteaAPI)
-                else None,
-            )
+
+            for member in review_team.members:
+                issue_title = f"{issue.title} ({member})"
+                api.create_issue(
+                    # issue.title = "Peer review" --> "Peer review (member)"
+                    issue_title,
+                    issue.body,
+                    reviewed_repo,
+                    # It's not possible to assign users with read-access in Gitea
+                    # FIXME redesign so Gitea does not require special handling
+                    assignees=[member]
+                    if not isinstance(api, _repobee.ext.gitea.GiteaAPI)
+                    else None,
+                )
 
             allocations_for_output.append(
                 {
