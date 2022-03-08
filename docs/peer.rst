@@ -60,10 +60,10 @@ The following steps were performed:
 2. Two students were added to each review team. Note that these allocations are
    _random_. For obvious resons, there can be at most ``num_students-1`` peer
    reviews per repo. So, in this case, we are at the maximum.
-3. An issue was opened in each repo with the title ``Peer review``, and a body
-   saying something like ``You should peer review this repo.``. The review team
-   students were assigned to the issue as well (although this is not apparent
-   from the logging).
+3. An issue was opened for each reviewing student in each repo with the title
+   ``Peer review (student-name)``, and a body saying something like ``You should peer review
+   this repo.``. The review team students were assigned to their respective issue as well
+   (although this is not apparent from the logging).
 4. The review teams were added to their corresponding repos with ``pull``
    permission. This permission allows members of the team to view the repo and
    open issues, but they can't push to (and therefore can't modify) the repo.
