@@ -41,6 +41,31 @@ class TestAssign:
         assert {t.name for t in review_teams} == expected_review_team_names
         assert all(map(lambda t: len(t.members) == 1, review_teams))
 
+    def test_assign_single_review_creates_review_issues(
+        self, platform_dir, platform_url, with_student_repos
+    ):
+        expected_review_issue_titles = {
+            f"Peer review ({team})"
+            for team in const.STUDENT_TEAMS
+            for template_repo_name in const.TEMPLATE_REPO_NAMES
+        }
+
+        funcs.run_repobee(
+            f"reviews assign -n 1 --base-url {platform_url} "
+            f"--assignments {const.TEMPLATE_REPOS_ARG}"
+        )
+
+        review_issues = [
+            issue
+            for issue in funcs.get_issues(platform_url, const.TARGET_ORG_NAME)
+            if issue.title in expected_review_issue_titles
+        ]
+
+        assert {t.title for t in review_issues} == expected_review_issue_titles
+        assert all(
+            map(lambda t: len(t.implementation.assignees) == 1, review_issues)
+        )
+
     def test_double_blind_creates_correct_amount_of_anonymous_copies(
         self, platform_url, with_student_repos
     ):

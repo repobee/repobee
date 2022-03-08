@@ -200,6 +200,25 @@ def get_student_teams(
     ]
 
 
+def get_issues(
+    platform_url: str, org_name: str = const.TARGET_ORG_NAME
+) -> List[plug.Issue]:
+    """Get all of the issues from the given platform and organization.
+    Note that this returns the actual platform implementation of
+    :py:class:`~repobee_plug.Issue`.
+
+    Args:
+        platform_url: URL to the directory used by the
+            :py:class:`fakeapi.FakeAPI`.
+        org_name: The organization to get issues from.
+    Returns:
+        A list of platform issues.
+    """
+    api = get_api(platform_url, org_name=org_name)
+    repos = api.get_repos()
+    return [issue for repo in repos for issue in api.get_repo_issues(repo)]
+
+
 @contextlib.contextmanager
 def update_repository(repo_url: str) -> Iterator[pathlib.Path]:
     """Context manager for updating a Git repository. Clones the repository
