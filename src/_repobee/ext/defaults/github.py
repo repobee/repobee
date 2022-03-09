@@ -335,7 +335,7 @@ class GitHubAPI(plug.PlatformAPI):
         with _try_api_request():
             return plug.Issue(
                 title=issue.title,
-                body=issue.body or "",  # Fixes issue #1013
+                body=issue.body or "",
                 number=issue.number,
                 created_at=issue.created_at.isoformat(),
                 author=issue.user.login,
