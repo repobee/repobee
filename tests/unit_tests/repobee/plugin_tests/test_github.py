@@ -75,31 +75,6 @@ def from_magic_mock_issue(mock_issue):
 
 User = constants.User
 
-CLOSE_ISSUE = plug.Issue(
-    "close this issue", "This is a body", 3, random_date(), "slarse"
-)
-DONT_CLOSE_ISSUE = plug.Issue(
-    "Don't close this issue", "Another body", 4, random_date(), "glassey"
-)
-OPEN_ISSUES = [CLOSE_ISSUE, DONT_CLOSE_ISSUE]
-
-CLOSED_ISSUES = [
-    plug.Issue(
-        "This is a closed issue",
-        "With an uninteresting body",
-        1,
-        random_date(),
-        "tmore",
-    ),
-    plug.Issue(
-        "Yet another closed issue",
-        "Even less interesting body",
-        2,
-        random_date(),
-        "viklu",
-    ),
-]
-
 
 def raise_404(*args, **kwargs):
     raise GithubException("Couldn't find something", 404)
@@ -313,37 +288,6 @@ def repos(organization, no_repos, teams_and_members, teams):
             private=True,
         )
     return organization.get_repos()
-
-
-@pytest.fixture
-def issues(repos):
-    """Adds two issues to all repos such that Repo.get_issues returns the
-    issues. One issue is expected to be closed and has title CLOSE_ISSUE.title
-    and is marked with, while the other is expected not to be closed and has
-    title DONT_CLOSE_ISSUE.title.
-    """
-
-    def attach_issues(repo):
-        # for some reason, putting this inline in the loop caused every single
-        # repo to get the SAME mocks returned by the lambda
-        open_issue_mocks = [
-            to_magic_mock_issue(issue) for issue in OPEN_ISSUES
-        ]
-        closed_issue_mocks = [
-            to_magic_mock_issue(issue) for issue in CLOSED_ISSUES
-        ]
-        repo.get_issues.side_effect = (
-            lambda state: open_issue_mocks
-            if state == "open"
-            else closed_issue_mocks
-        )
-        return open_issue_mocks + closed_issue_mocks
-
-    issues = []
-    for repo in repos:
-        issues.extend(attach_issues(repo))
-
-    return issues
 
 
 @pytest.fixture(scope="function")
