@@ -93,7 +93,7 @@ class Issue(APIObject):
         object.__setattr__(
             self,
             "author",
-            self.author.lower() if isinstance(self.author, str) else None,
+            self.author.lower() if self.author is not None else None,
         )
 
     def to_dict(self):
