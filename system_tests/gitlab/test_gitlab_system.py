@@ -29,6 +29,7 @@ from _helpers.asserts import (
     assert_num_issues,
     assert_cloned_repos,
     retry_assertion,
+    assert_issue_title_match,
 )
 from _helpers.const import (
     TEMPLATE_ORG_NAME,
@@ -618,12 +619,15 @@ class TestAssignReviews:
             expected_review_teams, single_group_assertion=group_assertion
         )
         assert_num_issues(STUDENT_TEAMS, [assignment_name], 1)
-        assert_issues_exist(
-            STUDENT_TEAMS,
-            [assignment_name],
-            _repobee.command.peer.DEFAULT_REVIEW_ISSUE,
-            expected_num_asignees=1,
-        )
+        for reviewed_team in STUDENT_TEAMS:
+            any_other_team_pattern = "|".join(
+                s.name for s in STUDENT_TEAMS if s != reviewed_team
+            )
+            assert_issue_title_match(
+                [reviewed_team],
+                [assignment_name],
+                rf"^Peer review \((?:{any_other_team_pattern})\)$",
+            )
 
     def test_assign_to_nonexisting_students(self, with_student_repos, tmpdir):
         """If you try to assign reviews where one or more of the allocated

@@ -2,6 +2,7 @@
 import itertools
 import pathlib
 import time
+import re
 
 from typing import List, Callable
 
@@ -154,6 +155,17 @@ def assert_issues_exist(
 
                 return
         assert False, "no issue matching the specified title"
+
+    _assert_on_projects(student_teams, assignment_names, assertion)
+
+
+def assert_issue_title_match(student_teams, assignment_names, pattern):
+    def assertion(project):
+        issues = project.issues.list(all=True)
+        for actual_issue in issues:
+            if re.match(pattern, actual_issue.title):
+                return
+        assert False, "no issue title matching the specified pattern"
 
     _assert_on_projects(student_teams, assignment_names, assertion)
 
