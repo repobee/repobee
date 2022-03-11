@@ -89,6 +89,13 @@ class Issue(APIObject):
         compare=False, repr=False, default=None
     )
 
+    def __post_init__(self):
+        object.__setattr__(
+            self,
+            "author",
+            self.author.lower() if self.author is not None else None,
+        )
+
     def to_dict(self):
         """Return a dictionary representation of this namedtuple, without
         the ``implementation`` field.
