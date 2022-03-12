@@ -124,8 +124,7 @@ class TestConfig:
         # act/assert
         non_existing_key = "thiskeydoesntexist"
         with pytest.raises(KeyError) as exc_info:
-            child[parent_sec][
-                non_existing_key
-            ]  # pylint: disable=pointless-statement
+            # pylint: disable=pointless-statement
+            child[parent_sec][non_existing_key]
 
         assert non_existing_key in str(exc_info.value)
