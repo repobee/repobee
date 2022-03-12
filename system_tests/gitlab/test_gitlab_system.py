@@ -28,6 +28,7 @@ from _helpers.asserts import (
     assert_issues_exist,
     assert_num_issues,
     assert_cloned_repos,
+    retry_assertion,
 )
 from _helpers.const import (
     TEMPLATE_ORG_NAME,
@@ -676,11 +677,15 @@ class TestEndReviews:
         def assert_no_actual_groups(expected, actual):
             assert not actual
 
-        # student teams should still exist
         assert_on_groups(STUDENT_TEAMS)
-        # review teams should not
-        assert_on_groups(
-            review_teams, all_groups_assertion=assert_no_actual_groups
+
+        # group deletion is not instantaneous so we poll for a while
+        retry_assertion(
+            lambda: assert_on_groups(
+                review_teams, all_groups_assertion=assert_no_actual_groups
+            ),
+            max_attempts=10,
+            seconds_between_attempts=10,
         )
 
     def test_end_non_existing_reviews(self, with_reviews, tmpdir):
