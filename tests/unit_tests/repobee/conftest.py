@@ -190,7 +190,7 @@ def isfile_mock(request, mocker):
     point to the default configuration file.
     """
     if "noisfilemock" in request.keywords:
-        return
+        return None
 
     def isfile(path):
         return str(path) != str(

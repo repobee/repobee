@@ -18,7 +18,7 @@ def parse_students_file(
     students_file: pathlib.Path,
 ) -> Iterable[plug.StudentTeam]:
     return [
-        plug.StudentTeam(members=[s for s in group.strip().split()])
+        plug.StudentTeam(members=group.strip().split())
         for group in students_file.read_text(
             encoding=sys.getdefaultencoding()
         ).split(os.linesep)

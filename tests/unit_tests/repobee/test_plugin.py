@@ -181,7 +181,6 @@ class TestInitializePlugins:
         mod = types.ModuleType(mod_name)
         mod.__dict__[deprecated_hook] = clone_parser_hook
 
-        monkeypatch.setattr
         with patch(
             "_repobee.plugin.load_plugin_modules",
             autospec=True,

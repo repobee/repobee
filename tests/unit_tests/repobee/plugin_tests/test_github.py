@@ -2,7 +2,7 @@ import itertools
 import random
 import datetime
 from unittest.mock import MagicMock, PropertyMock, patch
-from typing import List
+from typing import List, NoReturn
 
 import pytest
 import github
@@ -76,15 +76,15 @@ def from_magic_mock_issue(mock_issue):
 User = constants.User
 
 
-def raise_404(*args, **kwargs):
+def raise_404(*args, **kwargs) -> NoReturn:
     raise GithubException("Couldn't find something", 404)
 
 
-def raise_422(*args, **kwargs):
+def raise_422(*args, **kwargs) -> NoReturn:
     raise GithubException("Already exists", 422)
 
 
-def raise_401(*args, **kwargs):
+def raise_401(*args, **kwargs) -> NoReturn:
     raise GithubException("Access denied", 401)
 
 
@@ -198,7 +198,7 @@ def mock_team(name):
     team = MagicMock()
     members = set()
     team.get_members.side_effect = lambda: list(members)
-    team.add_membership.side_effect = lambda user: members.add(user)
+    team.add_membership.side_effect = members.add
     type(team).name = PropertyMock(return_value=name)
     type(team).id = PropertyMock(return_value=hash(name))
     return team

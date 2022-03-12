@@ -131,7 +131,7 @@ def _get_issue_generator(
             issue
             for issue in api.get_repo_issues(platform_repo)
             if re.match(title_regex, issue.title)
-            and (state == plug.IssueState.ALL or state == issue.state)
+            and (state in [plug.IssueState.ALL, issue.state])
             and (not author or issue.author == author)
         ]
 
