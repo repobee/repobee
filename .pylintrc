@@ -244,6 +244,7 @@ disable=invalid-name,
         useless-with-lock,
         no-member,
         duplicate-code,
+        used-before-assignment,
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
@@ -300,7 +301,6 @@ enable=syntax-error,
        invalid-getnewargs-ex-returned,
        import-error,
        relative-beyond-top-level,
-       used-before-assignment,
        undefined-variable,
        undefined-all-variable,
        invalid-all-object,
