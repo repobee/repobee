@@ -205,7 +205,6 @@ def test_repo_discovery_parser_requires_student_parser():
 
 
 def test_plugin_crash_error_message(capsys, tmp_path):
-    """"""
     crash_py = tmp_path / "crash.py"
     crash_py.write_text(
         """

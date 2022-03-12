@@ -116,7 +116,7 @@ class TestAPIObject:
         obj = APIObj()
 
         with pytest.raises(AttributeError) as exc_info:
-            obj.implementation
+            obj.implementation  # pylint: disable=pointless-statement
 
         assert "invalid access to 'implementation': not initialized" in str(
             exc_info.value
