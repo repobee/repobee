@@ -192,7 +192,7 @@ class TestCheck:
 
         stdout = capsys.readouterr().out
         for team in const.STUDENT_TEAMS:
-            assert re.search(fr"{team.name}\s+0\s+1", stdout)
+            assert re.search(rf"{team.name}\s+0\s+1", stdout)
 
     def test_check_with_allocations_file(
         self,
@@ -229,7 +229,7 @@ class TestCheck:
         # assert
         stdout = capsys.readouterr().out
         for team in const.STUDENT_TEAMS:
-            assert re.search(fr"{team.name}\s+0\s+1", stdout)
+            assert re.search(rf"{team.name}\s+0\s+1", stdout)
 
 
 @pytest.fixture

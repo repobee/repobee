@@ -147,7 +147,7 @@ class TestList:
             const.STUDENT_TEAMS, [criteria_issue, notice_issue]
         ):
             assert re.search(
-                fr"{student_team.name}.*{test_issue.title}", stdout
+                rf"{student_team.name}.*{test_issue.title}", stdout
             )
 
     def test_show_body(self, platform_url, with_student_repos, capsys):
@@ -187,7 +187,7 @@ class TestList:
             const.STUDENT_TEAMS, [assignment]
         )
         for repo_name in expected_repo_names:
-            assert re.search(fr"{repo_name}.*{review_title}", stdout)
+            assert re.search(rf"{repo_name}.*{review_title}", stdout)
 
 
 def _get_anonymous_review_team(
