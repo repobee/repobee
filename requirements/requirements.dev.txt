@@ -1,4 +1,4 @@
-.[TEST]
+.[DEV]
 
 bandit==1.7.1
 black==22.3.0
