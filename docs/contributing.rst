@@ -136,12 +136,12 @@ argument+return value descriptions. Here are two examples:
 Contributing to Docs
 ====================
 To be able to build the documentation, you must install the dependencies listed
-in ``requirements/docs.txt``, in addition to installing the package itself.
+in ``requirements/requirements.dev.txt``, in addition to installing the package itself.
 In your virtual environment, run the following from the root of the repository:
 
 .. code-block:: bash
 
-   $ pip install -r requirements/docs.txt
+   $ pip install -r requirements/requirements.dev.txt
 
 Then, to build the documentation, enter the ``docs`` directory and run ``make html``.
 

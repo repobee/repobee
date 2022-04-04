@@ -3,6 +3,6 @@ These are requirements files for pip. Run `pip install -r <REQUIREMENTS_FILE>`
 to install the dependencies listed in it.
 
 ### File descriptions
-* [app.txt](app.txt): Dependencies required to run the application.
-* [test.txt](test.txt): Dependencies required to run the unit tests.
-* [docs.txt](docs.txt): Dependencies required to build the documentation.
+* [requirements.txt](requirements.txt): Dependencies required to run the application.
+* [requirements.dev.txt](requirements.dev.txt): Dependencies required for
+  development, including running tests and building the docs.
