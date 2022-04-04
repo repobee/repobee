@@ -42,7 +42,7 @@ preferences.
    $ python3 -m pip install --user pipenv
    # move into the repobee directory and install the repobee package with pipenv
    $ cd repobee
-   $ python3 -m pipenv install -e ".[TEST]"
+   $ python3 -m pipenv install -e ".[DEV]"
 
 The last thing takes a while, so just be patient. When it's done, you can verify
 that everything was installed correctly by running the tests in the virtual
