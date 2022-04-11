@@ -33,7 +33,7 @@ jobs:
         id: get-repobee-version
         shell: bash
         run: |
-          VERSION=v$(docker run -it repobee/repobee:test repobee --version)
+          VERSION=v$(docker run -t repobee/repobee:test repobee --version)
           echo "::set-output name=version::$VERSION"
       - name: Build and push latest
         uses: docker/build-push-action@v2
