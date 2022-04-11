@@ -9,9 +9,9 @@ on:
     branches: [ master ]
 
 jobs:
-  environment: DockerHub
   deploy-docker:
     runs-on: ubuntu-latest
+    environment: DockerHub
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
