@@ -334,8 +334,9 @@ def mutually_exclusive_group(*, __required__: bool = False, **kwargs):
         __required__: Whether or not this mutex group is required.
         kwargs: Keyword arguments on the form ``name=plug.cli.option()``.
     """
-    options = [(key, value) for key, value in kwargs.items()]
-    return _MutuallyExclusiveGroup(required=__required__, options=options)
+    return _MutuallyExclusiveGroup(
+        required=__required__, options=list(kwargs.items())
+    )
 
 
 @dataclasses.dataclass(frozen=True)

@@ -3,12 +3,12 @@ from typing import TypeVar, Iterator
 
 from typing_extensions import Protocol
 
-T = TypeVar("T", covariant=True)
+T_co = TypeVar("T_co", covariant=True)
 
 
-class SizedIterable(Protocol[T]):
-    def __len__(self) -> int:  # pylint: disable=E0303
+class SizedIterable(Protocol[T_co]):
+    def __len__(self) -> int:
         ...
 
-    def __iter__(self) -> Iterator[T]:  # pylint: disable=E0301
+    def __iter__(self) -> Iterator[T_co]:
         ...

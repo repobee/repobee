@@ -116,7 +116,7 @@ class TestAPIObject:
         obj = APIObj()
 
         with pytest.raises(AttributeError) as exc_info:
-            obj.implementation
+            obj.implementation  # pylint: disable=pointless-statement
 
         assert "invalid access to 'implementation': not initialized" in str(
             exc_info.value
@@ -157,6 +157,18 @@ class TestIssue:
         reconstructed = platform.Issue.from_dict(asdict)
 
         assert reconstructed == issue
+
+    def test_lowercases_usernames(self):
+        """While all of the platforms currently supported are case insensitive,
+        some still allow usernames to contain e.g. capital letters. We don't
+        want this to appear in RepoBee, as it can case problems such as those
+        reported in https://github.com/repobee/repobee/issues/900.
+        """
+        username = "ZiNo"
+        lowercase_username = "zino"
+
+        issue = platform.Issue("Peer Review", "yup", author=username)
+        assert issue.author == lowercase_username
 
 
 class TestTeam:

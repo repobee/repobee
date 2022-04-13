@@ -66,7 +66,7 @@ class TestLoadPluginModules:
         """Test calling load plugins when no plugins are specified results in
         no plugins being loaded."""
         modules = plugin.load_plugin_modules([])
-        assert modules == []
+        assert not modules
 
     def test_raises_when_loading_invalid_module(self, empty_config_mock):
         """Test that PluginLoadError is raised when when the plugin specified
@@ -181,7 +181,6 @@ class TestInitializePlugins:
         mod = types.ModuleType(mod_name)
         mod.__dict__[deprecated_hook] = clone_parser_hook
 
-        monkeypatch.setattr
         with patch(
             "_repobee.plugin.load_plugin_modules",
             autospec=True,

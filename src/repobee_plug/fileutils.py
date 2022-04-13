@@ -28,7 +28,7 @@ def parse_students_file(path: pathlib.Path) -> List[StudentTeam]:
     if not path.stat().st_size:
         raise exceptions.FileError(f"'{path}' is empty")
     return [
-        StudentTeam(members=[s for s in group.strip().split()])
+        StudentTeam(members=group.strip().split())
         for group in path.read_text(encoding=sys.getdefaultencoding()).split(
             os.linesep
         )

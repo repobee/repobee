@@ -561,9 +561,11 @@ def run_install_script(install_dir: pathlib.Path) -> None:
     env = dict(os.environ)
     env["REPOBEE_INSTALL_DIR"] = str(install_dir)
 
-    proc = subprocess.Popen(str(INSTALL_SCRIPT), env=env)
-    proc.communicate("n")  # 'n' in answering whether or not to add to PATH
-    assert proc.returncode == 0
+    with subprocess.Popen(str(INSTALL_SCRIPT), env=env) as process:
+        process.communicate(
+            "n"
+        )  # 'n' in answering whether or not to add to PATH
+    assert process.returncode == 0
 
 
 @pytest.fixture(scope="session")

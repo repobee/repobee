@@ -26,7 +26,7 @@ INSTALL_DIR = pathlib.Path('{install_dir}')
     )
 
 
-test_requirements = [
+dev_requirements = [
     "bandit",
     "black",
     "codecov",
@@ -43,8 +43,7 @@ test_requirements = [
     "types-requests",
     "types-tabulate",
     "types-toml",
-]
-docs_requirements = [
+    # requirements for docs
     "sphinx>=4.0.1",
     "sphinx-autodoc-typehints",
     "sphinx_rtd_theme",
@@ -79,7 +78,7 @@ setup(
         (str(testhelper_resources_dir), list(map(str, testhelper_resources)))
     ],
     py_modules=["repobee"],
-    tests_require=test_requirements,
+    tests_require=dev_requirements,
     install_requires=[
         "appdirs>=1.4.4",
         "argcomplete>=1.12.0",
@@ -91,13 +90,13 @@ setup(
         "more-itertools>=8.4.0",
         "pluggy>=0.13.1",
         "pygithub==1.55",
-        "python-gitlab==3.1.0",
+        "python-gitlab==3.3.0",
         "tabulate>=0.8.9",
         "tqdm>=4.48.2",
         "typing-extensions>=3.10.0.2",
         "yamliny>=0.0.2",
     ],
-    extras_require=dict(TEST=test_requirements, DOCS=docs_requirements),
+    extras_require=dict(DEV=dev_requirements),
     entry_points=dict(
         console_scripts="repobee = repobee:main",
         pytest11=["name_of_plugin = repobee_testhelpers.fixtures"],
