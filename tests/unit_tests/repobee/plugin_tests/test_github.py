@@ -11,7 +11,10 @@ import responses
 import repobee_plug as plug
 
 import _repobee.ext.defaults.github as github_plugin
-from _repobee.ext.defaults.github import REQUIRED_TOKEN_SCOPES
+from _repobee.ext.defaults.github import (
+    REQUIRED_TOKEN_SCOPES,
+    _ISSUE_STATE_MAPPING,
+)
 
 from repobee_testhelpers._internal import constants
 from repobee_testhelpers._internal.constants import (
@@ -52,13 +55,14 @@ def generate_repo_url(repo_name, org_name):
 def to_magic_mock_issue(issue):
     """Convert an issue to a MagicMock with all of the correct
     attribuets."""
-    mock = MagicMock()
+    mock = MagicMock(spec=github.Issue.Issue)
     mock.user = MagicMock()
     mock.title = issue.title
     mock.body = issue.body
-    mock.created_at = issue.created_at
+    mock.created_at = datetime.datetime.fromisoformat(issue.created_at)
     mock.number = issue.number
     mock.user = constants.User(issue.author)
+    mock.state = _ISSUE_STATE_MAPPING[issue.state]
     return mock
 
 
@@ -581,6 +585,15 @@ class TestVerifySettings:
 class TestGetRepoIssues:
     """Tests for the get_repo_issues function."""
 
+    _ARBITRARY_ISSUE = plug.Issue(
+        title="Arbitrary title",
+        body="Arbitrary body",
+        number=1,
+        created_at="2022-01-01",
+        state=plug.IssueState.OPEN,
+        author="slarse",
+    )
+
     def test_fetches_all_issues(self, happy_github, api):
         impl_mock = MagicMock(spec=github.Repository.Repository)
         repo = plug.Repo(
@@ -594,6 +607,27 @@ class TestGetRepoIssues:
         api.get_repo_issues(repo)
 
         impl_mock.get_issues.assert_called_once_with(state="all")
+
+    def test_replaces_none_body_with_empty_string(self, happy_github, api):
+        repo_implementation_mock = MagicMock(spec=github.Repository.Repository)
+        repo = plug.Repo(
+            name="name",
+            description="descr",
+            private=True,
+            url="bla",
+            implementation=repo_implementation_mock,
+        )
+        issue_mock = to_magic_mock_issue(self._ARBITRARY_ISSUE)
+        issue_mock.body = None
+
+        repo_implementation_mock.get_issues.side_effect = (
+            lambda *args, **kwargs: [issue_mock]
+        )
+
+        issue, *rest = api.get_repo_issues(repo)
+
+        assert not rest, "did not expect more issues"
+        assert issue.body == ""
 
 
 class TestCreateIssue:
