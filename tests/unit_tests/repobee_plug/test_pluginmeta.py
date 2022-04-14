@@ -417,6 +417,39 @@ class TestDeclarativeExtensionCommand:
 
         assert parsed_args.old == old
 
+    def test_mutex_group_can_be_conditionally_required(self, tmp_path):
+        """If a required mutex group contains a configurable option that is
+        configured, it should not be required.
+        """
+        actual_name = None
+
+        class Greeting(plug.Plugin, plug.cli.Command):
+            age_mutex = plug.cli.mutually_exclusive_group(
+                name=plug.cli.option(configurable=True),
+                alias=plug.cli.option(),
+                __required__=True,
+            )
+
+            def command(self):
+                nonlocal actual_name
+                actual_name = self.args.name
+
+        config_file = tmp_path / "config.ini"
+        plugin_name = "greeting"
+        configured_name = "Alice"
+        config = plug.Config(config_file)
+        config.create_section(plugin_name)
+        config[plugin_name]["name"] = configured_name
+        config.store()
+
+        repobee.run(
+            [Greeting.__name__.lower()],
+            plugins=[Greeting],
+            config_file=config_file,
+        )
+
+        assert actual_name == configured_name
+
     def test_create_new_category(self):
         """Test that command can be added to a new category."""
 

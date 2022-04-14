@@ -334,6 +334,15 @@ def mutually_exclusive_group(*, __required__: bool = False, **kwargs):
         __required__: Whether or not this mutex group is required.
         kwargs: Keyword arguments on the form ``name=plug.cli.option()``.
     """
+    num_configurable = sum(
+        option.configurable or 0 for option in kwargs.values()
+    )
+    if num_configurable > 1:
+        raise ValueError(
+            f"at most 1 option in a mutex group can be configurable, found "
+            f"{num_configurable}"
+        )
+
     return _MutuallyExclusiveGroup(
         required=__required__, options=list(kwargs.items())
     )

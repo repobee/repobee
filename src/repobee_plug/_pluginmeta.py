@@ -4,7 +4,7 @@ import itertools
 import inspect
 import re
 
-from typing import List, Tuple, Union, Iterator, Any, Optional
+from typing import List, Tuple, Union, Iterator, Any, Optional, Callable
 
 import repobee_plug.config
 from repobee_plug import exceptions
@@ -182,33 +182,33 @@ def _attach_options(self, config: repobee_plug.config.Config, parser):
     )
     opts = _extract_cli_options(self.__class__.__dict__)
 
-    for (arg_name, opt) in opts:
-        configured_value = config.get(section_name, arg_name)
+    def get_configured_value(opt_name: str, opt: _Option) -> Any:
+        configured_value = config.get(section_name, opt_name)
         if configured_value and not getattr(opt, "configurable", None):
             raise exceptions.PlugError(
                 f"Plugin '{self.__plugin_name__}' does not allow "
-                f"'{arg_name}' to be configured"
+                f"'{opt_name}' to be configured"
             )
 
-        converted_value = (
-            _convert_configured_value(opt, configured_value)
-            if isinstance(opt, _Option)
-            else None
-        )
-        _add_option(arg_name, opt, converted_value, parser)
+        return _pack_configured_value(opt, configured_value)
+
+    for (arg_name, opt) in opts:
+        if isinstance(opt, _MutuallyExclusiveGroup):
+            _add_mutually_exclusive_group(
+                opt,
+                parser,
+                get_configured_value,
+            )
+        else:
+            configured_value = get_configured_value(arg_name, opt)
+            _add_option(arg_name, opt, configured_value, parser)
 
     return parser
 
 
-def _convert_configured_value(
+def _pack_configured_value(
     opt: _Option, configured_value: Optional[Any]
 ) -> Optional[Any]:
-    """Try to fetch a configured value from the config, respecting the
-    converter of the option and also handling list-like arguments.
-
-    Returns:
-        The configured value, or none if there was no configured value.
-    """
     if (
         configured_value
         and opt.argparse_kwargs
@@ -249,26 +249,39 @@ def _flatten_arg(arg_tup):
         return [arg_tup]
 
 
+def _add_mutually_exclusive_group(
+    mutex_group: _MutuallyExclusiveGroup,
+    parser: argparse.ArgumentParser,
+    get_configured_value: Callable[[str, _Option], Optional[Any]],
+):
+    has_configured_value = any(
+        get_configured_value(opt_name, opt)
+        for opt_name, opt in mutex_group.options
+    )
+    mutex_parser = parser.add_mutually_exclusive_group(
+        required=mutex_group.required and not has_configured_value
+    )
+
+    for (mutex_opt_name, mutex_opt) in mutex_group.options:
+        configured_value = get_configured_value(mutex_opt_name, mutex_opt)
+        _add_option(
+            mutex_opt_name,
+            mutex_opt,
+            configured_value,
+            mutex_parser,
+        )
+
+
 def _add_option(
     name: str,
-    opt: Union[_Option, _MutuallyExclusiveGroup],
+    opt: _Option,
     configured_value: Optional[Any],
     parser: Union[argparse.ArgumentParser, argparse._MutuallyExclusiveGroup],
 ) -> None:
     """Add an option to the parser based on the cli option."""
-    if isinstance(opt, _MutuallyExclusiveGroup):
-        mutex_parser = parser.add_mutually_exclusive_group(
-            required=opt.required
-        )
-        for (mutex_opt_name, mutex_opt) in opt.options:
-            _add_option(
-                mutex_opt_name, mutex_opt, configured_value, mutex_parser
-            )
-        return
-    elif opt.argument_type == cli.args._ArgumentType.IGNORE:
+    if opt.argument_type == cli.args._ArgumentType.IGNORE:
         return
 
-    assert isinstance(opt, _Option)
     args = []
     kwargs = dict(opt.argparse_kwargs or {})
 
