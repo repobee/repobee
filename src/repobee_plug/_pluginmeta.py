@@ -190,7 +190,7 @@ def _attach_options(self, config: repobee_plug.config.Config, parser):
                 f"'{opt_name}' to be configured"
             )
 
-        return _convert_configured_value(opt, configured_value)
+        return _pack_configured_value(opt, configured_value)
 
     for (arg_name, opt) in opts:
         if isinstance(opt, _MutuallyExclusiveGroup):
@@ -206,15 +206,9 @@ def _attach_options(self, config: repobee_plug.config.Config, parser):
     return parser
 
 
-def _convert_configured_value(
+def _pack_configured_value(
     opt: _Option, configured_value: Optional[Any]
 ) -> Optional[Any]:
-    """Try to fetch a configured value from the config, respecting the
-    converter of the option and also handling list-like arguments.
-
-    Returns:
-        The configured value, or none if there was no configured value.
-    """
     if (
         configured_value
         and opt.argparse_kwargs
