@@ -183,21 +183,60 @@ def _attach_options(self, config: repobee_plug.config.Config, parser):
     opts = _extract_cli_options(self.__class__.__dict__)
 
     for (arg_name, opt) in opts:
-        configured_value = config.get(section_name, arg_name)
-        if configured_value and not getattr(opt, "configurable", None):
+        try:
+            configured_value = _get_configured_value(
+                section_name, arg_name, opt, config
+            )
+        except _NonConfigurableOptionConfigured as exc:
             raise exceptions.PlugError(
                 f"Plugin '{self.__plugin_name__}' does not allow "
-                f"'{arg_name}' to be configured"
+                f"'{exc.option_name}' to be configured"
             )
 
-        converted_value = (
-            _convert_configured_value(opt, configured_value)
-            if isinstance(opt, _Option)
-            else None
-        )
-        _add_option(arg_name, opt, converted_value, parser)
+        _add_option(arg_name, opt, configured_value, parser)
 
     return parser
+
+
+def _get_configured_value(
+    section_name: str,
+    arg_name: str,
+    opt: Union[_Option, _MutuallyExclusiveGroup],
+    config: repobee_plug.config.Config,
+) -> Any:
+    if isinstance(opt, _MutuallyExclusiveGroup):
+        for mutex_opt_name, mutex_opt in opt.options:
+            configured_value = _get_configured_value_checked(
+                section_name, mutex_opt_name, mutex_opt, config
+            )
+            if configured_value:
+                return mutex_opt_name, configured_value
+
+        return None
+    elif isinstance(opt, _Option):
+        return _get_configured_value_checked(
+            section_name, arg_name, opt, config
+        )
+
+    raise exceptions.PlugError(f"Unexpected option type {type(opt)}")
+
+
+class _NonConfigurableOptionConfigured(exceptions.PlugError):
+    def __init__(self, option_name):
+        self.option_name = option_name
+
+
+def _get_configured_value_checked(
+    section_name: str,
+    arg_name: str,
+    opt: _Option,
+    config: repobee_plug.config.Config,
+):
+    configured_value = config.get(section_name, arg_name)
+    if configured_value and not getattr(opt, "configurable", None):
+        raise _NonConfigurableOptionConfigured(arg_name)
+
+    return _convert_configured_value(opt, configured_value)
 
 
 def _convert_configured_value(
@@ -258,11 +297,22 @@ def _add_option(
     """Add an option to the parser based on the cli option."""
     if isinstance(opt, _MutuallyExclusiveGroup):
         mutex_parser = parser.add_mutually_exclusive_group(
-            required=opt.required
+            required=opt.required and not configured_value
         )
+
+        if configured_value:
+            configured_for, actual_configured_value = configured_value
+        else:
+            configured_for, actual_configured_value = None, None
+
         for (mutex_opt_name, mutex_opt) in opt.options:
             _add_option(
-                mutex_opt_name, mutex_opt, configured_value, mutex_parser
+                mutex_opt_name,
+                mutex_opt,
+                actual_configured_value
+                if mutex_opt_name == configured_for
+                else None,
+                mutex_parser,
             )
         return
     elif opt.argument_type == cli.args._ArgumentType.IGNORE:
