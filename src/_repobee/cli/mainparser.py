@@ -738,14 +738,19 @@ def _create_base_parsers(get_default: Callable[[str], Optional[str]]):
     )
     students = base_student_parser.add_argument_group(
         "core"
-    ).add_mutually_exclusive_group(required=not configured("students_file"))
+    ).add_mutually_exclusive_group(
+        required=not configured("students_file") and not configured("students")
+    )
     _add_students_file_arg(students, get_default)
     students.add_argument(
         "-s",
         "--students",
-        help="One or more whitespace separated student usernames.",
+        help="one or more whitespace separated student usernames, "
+        "or a path to a students file. NOTE: Configured value always "
+        "interpreted as a filepath.",
         type=str,
         nargs="+",
+        default=get_default("students"),
     )
 
     template_org_parser = argparse_ext.RepobeeParser(

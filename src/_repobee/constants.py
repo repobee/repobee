@@ -37,6 +37,7 @@ ORDERED_CONFIGURABLE_ARGS = (
     "template_org_name",
     "token",
     "students_file",
+    "students",
     plug.Config.PARENT_CONFIG_KEY,
 )
 CONFIGURABLE_ARGS = set(ORDERED_CONFIGURABLE_ARGS)
