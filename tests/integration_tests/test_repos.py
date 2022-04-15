@@ -488,65 +488,6 @@ other-team:
 class TestClone:
     """Tests for the ``repos clone`` command."""
 
-    def test_clone_with_filepath_in_configured_students_arg(
-        self, platform_url, with_student_repos, tmp_path
-    ):
-        students_file = tmp_path / "students.txt"
-        students_file.write_text("\n".join(map(str, STUDENT_TEAMS)))
-
-        config_file = tmp_path / "repobee.ini"
-        config = funcs.create_default_config_at(config_file)
-
-        del config[config.CORE_SECTION_NAME]["students_file"]
-        config[config.CORE_SECTION_NAME]["students"] = str(students_file)
-        config.store()
-
-        funcs.run_repobee(
-            [
-                *plug.cli.CoreCommand.repos.clone.as_name_tuple(),
-                "--assignments",
-                *TEMPLATE_REPO_NAMES,
-                "--base-url",
-                platform_url,
-            ],
-            config_file=config_file,
-            workdir=tmp_path,
-        )
-
-        assert_cloned_student_repos_match_templates(
-            STUDENT_TEAMS, TEMPLATE_REPO_NAMES, tmp_path
-        )
-
-    def test_clone_with_filepath_in_students_arg(
-        self, platform_url, with_student_repos, tmp_path
-    ):
-        students_file = tmp_path / "students.txt"
-        students_file.write_text("\n".join(map(str, STUDENT_TEAMS)))
-
-        config_file = tmp_path / "repobee.ini"
-        config = funcs.create_default_config_at(config_file)
-
-        del config[config.CORE_SECTION_NAME]["students_file"]
-        config.store()
-
-        funcs.run_repobee(
-            [
-                *plug.cli.CoreCommand.repos.clone.as_name_tuple(),
-                "--assignments",
-                *TEMPLATE_REPO_NAMES,
-                "--base-url",
-                platform_url,
-                "--students",
-                str(students_file),
-            ],
-            config_file=config_file,
-            workdir=tmp_path,
-        )
-
-        assert_cloned_student_repos_match_templates(
-            STUDENT_TEAMS, TEMPLATE_REPO_NAMES, tmp_path
-        )
-
     def test_clone_all_repos(self, platform_url, with_student_repos, tmp_path):
         funcs.run_repobee(
             f"repos clone -a {TEMPLATE_REPOS_ARG} "

@@ -83,39 +83,24 @@ def run_repobee(
     plugins = (kwargs.get("plugins") or []) + [localapi]
     kwargs["plugins"] = plugins
 
-    with tempfile.NamedTemporaryFile() as tmp:
-        config_file = pathlib.Path(tmp.name)
-        create_default_config_at(config_file)
-        kwargs.setdefault("config_file", config_file)
-
-        return repobee.run(cmd, **kwargs)
-
-
-def create_default_config_at(config_file: pathlib.Path) -> plug.Config:
-    """Create the default config file for integration tests at the specified
-    location.
-
-    Args:
-        config_file: Path to store the config file at.
-    Returns:
-        The default integration test config.
-    """
-    config_file.parent.mkdir(parents=True, exist_ok=True)
-    config = plug.Config(config_file)
-    core_section = config[config.CORE_SECTION_NAME]
-
     students_file = (
         pathlib.Path(__file__).parent / "resources" / "students.txt"
     )
 
-    core_section["students_file"] = str(students_file)
-    core_section["org_name"] = const.TARGET_ORG_NAME
-    core_section["template_org_name"] = const.TEMPLATE_ORG_NAME
-    core_section["token"] = const.TOKEN
-    core_section["user"] = const.TEACHER
-    config.store()
+    with tempfile.NamedTemporaryFile() as tmp:
+        config_file = pathlib.Path(tmp.name)
+        config_file.write_text(
+            f"""[repobee]
+students_file = {students_file}
+org_name = {const.TARGET_ORG_NAME}
+user = {const.TEACHER}
+template_org_name = {const.TEMPLATE_ORG_NAME}
+token = {const.TOKEN}
+"""
+        )
+        kwargs.setdefault("config_file", config_file)
 
-    return config
+        return repobee.run(cmd, **kwargs)
 
 
 def template_repo_hashes() -> Mapping[str, str]:
