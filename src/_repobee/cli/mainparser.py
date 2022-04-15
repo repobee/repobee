@@ -745,7 +745,9 @@ def _create_base_parsers(get_default: Callable[[str], Optional[str]]):
     students.add_argument(
         "-s",
         "--students",
-        help="One or more whitespace separated student usernames.",
+        help="one or more whitespace separated student usernames, "
+        "or a path to a students file. NOTE: Configured value always "
+        "interpreted as a filepath.",
         type=str,
         nargs="+",
         default=get_default("students"),
@@ -763,6 +765,7 @@ def _create_base_parsers(get_default: Callable[[str], Optional[str]]):
     )
 
     return (base_parser, base_student_parser, template_org_parser)
+
 
 def _add_students_file_arg(
     parser_like: Union[

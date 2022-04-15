@@ -242,14 +242,27 @@ def _extract_groups(args: argparse.Namespace) -> List[plug.StudentTeam]:
         `students_file` is in the namespace.
     """
     if "students" in args and args.students:
-        if isinstance(args.students, str) and _looks_like_filepath(args.students):
-            return _parse_students_file(args.students)
+        students_file = _extract_students_filepath_or_none(args.students)
+        if students_file:
+            return _parse_students_file(students_file)
 
         return [plug.StudentTeam(members=[s]) for s in args.students]
     elif "students_file" in args and args.students_file:
         return _parse_students_file(args.students_file)
 
     return []
+
+
+def _extract_students_filepath_or_none(
+    students_arg: Union[str, List[str]]
+) -> Optional[pathlib.Path]:
+    if isinstance(students_arg, list) and not len(students_arg) == 1:
+        return None
+
+    students = (
+        students_arg[0] if isinstance(students_arg, list) else students_arg
+    )
+    return pathlib.Path(students) if _looks_like_filepath(students) else None
 
 
 def _looks_like_filepath(s: str) -> bool:
