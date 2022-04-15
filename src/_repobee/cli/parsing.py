@@ -16,7 +16,7 @@ import pathlib
 import re
 import sys
 import enum
-from typing import Iterable, Optional, List, Tuple
+from typing import Iterable, Optional, List, Tuple, Union
 
 import argcomplete  # type: ignore
 import daiquiri  # type: ignore
@@ -242,21 +242,32 @@ def _extract_groups(args: argparse.Namespace) -> List[plug.StudentTeam]:
         `students_file` is in the namespace.
     """
     if "students" in args and args.students:
-        students = [plug.StudentTeam(members=[s]) for s in args.students]
+        if isinstance(args.students, str) and _looks_like_filepath(args.students):
+            return _parse_students_file(args.students)
+
+        return [plug.StudentTeam(members=[s]) for s in args.students]
     elif "students_file" in args and args.students_file:
-        students_file = pathlib.Path(args.students_file).resolve()
-        if not students_file.is_file():
-            raise exception.FileError(f"'{students_file}' is not a file")
-        if not students_file.stat().st_size:
-            raise exception.FileError(f"'{students_file}' is empty")
+        return _parse_students_file(args.students_file)
 
-        students = list(
-            plug.manager.hook.parse_students_file(students_file=students_file)
-        )
-    else:
-        students = []
+    return []
 
-    return students
+
+def _looks_like_filepath(s: str) -> bool:
+    return "." in s or os.sep in s
+
+
+def _parse_students_file(
+    students_file: Union[str, pathlib.Path],
+) -> List[plug.StudentTeam]:
+    students_file = pathlib.Path(students_file).resolve()
+    if not students_file.is_file():
+        raise exception.FileError(f"'{students_file}' is not a file")
+    if not students_file.stat().st_size:
+        raise exception.FileError(f"'{students_file}' is empty")
+
+    return list(
+        plug.manager.hook.parse_students_file(students_file=students_file)
+    )
 
 
 def _connect_to_api(

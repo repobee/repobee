@@ -24,6 +24,9 @@ class ConfigSection(Protocol):
     def __contains__(self, key: str) -> bool:
         ...
 
+    def __delitem__(self, key: str) -> None:
+        ...
+
 
 class Config:
     """Object representing RepoBee's config.
@@ -177,3 +180,6 @@ class _ParentAwareConfigSection:
 
     def __contains__(self, key: str) -> bool:
         return self._config.get(self._section_key, key) is not None
+
+    def __delitem__(self, key: str) -> None:
+        del self._config._config_parser[self._section_key][key]

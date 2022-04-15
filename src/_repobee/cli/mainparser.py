@@ -738,7 +738,9 @@ def _create_base_parsers(get_default: Callable[[str], Optional[str]]):
     )
     students = base_student_parser.add_argument_group(
         "core"
-    ).add_mutually_exclusive_group(required=not configured("students_file"))
+    ).add_mutually_exclusive_group(
+        required=not configured("students_file") and not configured("students")
+    )
     _add_students_file_arg(students, get_default)
     students.add_argument(
         "-s",
@@ -746,6 +748,7 @@ def _create_base_parsers(get_default: Callable[[str], Optional[str]]):
         help="One or more whitespace separated student usernames.",
         type=str,
         nargs="+",
+        default=get_default("students"),
     )
 
     template_org_parser = argparse_ext.RepobeeParser(
@@ -760,7 +763,6 @@ def _create_base_parsers(get_default: Callable[[str], Optional[str]]):
     )
 
     return (base_parser, base_student_parser, template_org_parser)
-
 
 def _add_students_file_arg(
     parser_like: Union[
