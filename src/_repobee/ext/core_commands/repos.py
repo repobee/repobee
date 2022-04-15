@@ -40,6 +40,7 @@ def students_option():
         "-s",
         "--students",
         help="one or more whitespace separated student usernames",
+        configurable=True,
         argparse_kwargs=dict(nargs="+"),
     )
 

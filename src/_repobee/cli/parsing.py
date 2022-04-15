@@ -254,13 +254,13 @@ def _extract_groups(args: argparse.Namespace) -> List[plug.StudentTeam]:
 
 
 def _extract_students_filepath_or_none(
-    students_arg: Union[str, List[str]]
+    students_arg: Union[str, List[str], Tuple[str]]
 ) -> Optional[pathlib.Path]:
-    if isinstance(students_arg, list) and not len(students_arg) == 1:
+    if not isinstance(students_arg, str) and not len(students_arg) == 1:
         return None
 
     students = (
-        students_arg[0] if isinstance(students_arg, list) else students_arg
+        students_arg[0] if not isinstance(students_arg, str) else students_arg
     )
     return pathlib.Path(students) if _looks_like_filepath(students) else None
 
