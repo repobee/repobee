@@ -488,6 +488,29 @@ other-team:
 class TestClone:
     """Tests for the ``repos clone`` command."""
 
+    def test_students_file_mutually_exclusive_to_students_arg(
+        self, platform_url, with_student_repos, capsys
+    ):
+        with pytest.raises(SystemExit):
+            funcs.run_repobee(
+                [
+                    *plug.cli.CoreCommand.repos.clone.as_name_tuple(),
+                    "--assignments",
+                    "task-1",
+                    "--base-url",
+                    platform_url,
+                    "--students",
+                    "alice",
+                    "--students-file",
+                    "students.txt",
+                ]
+            )
+
+        assert (
+            "argument --sf/--students-file: not allowed with argument -s/--students"
+            in capsys.readouterr().err
+        )
+
     def test_clone_all_repos(self, platform_url, with_student_repos, tmp_path):
         funcs.run_repobee(
             f"repos clone -a {TEMPLATE_REPOS_ARG} "
