@@ -42,6 +42,7 @@ def students_mutex():
         __required__=True,
     )
 
+
 def students_option():
     return plug.cli.option(
         "-s",
