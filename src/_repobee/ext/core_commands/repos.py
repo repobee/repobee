@@ -3,63 +3,12 @@
 .. module:: repos
     :synopsis: Implementations of the repos category of commands.
 """
-import pathlib
 import repobee_plug as plug
 
 from _repobee import command
 from _repobee.fileutil import DirectoryLayout
 
-
-def repo_discovery_mutex():
-    return plug.cli.mutually_exclusive_group(
-        assignments=assignments_option(),
-        discover_repos=plug.cli.flag(
-            help="discover all repositories for the specified students (NOTE: "
-            "expensive in terms of API calls)",
-        ),
-    )
-
-
-def assignments_option():
-    return plug.cli.option(
-        "-a",
-        "--assignments",
-        help="one or more names of assignments",
-        argparse_kwargs=dict(nargs="+"),
-    )
-
-
-def hook_results_file_option():
-    return plug.cli.option(
-        help="path to a .json file to store results from plugin hooks in"
-    )
-
-
-def students_mutex():
-    return plug.cli.mutually_exclusive_group(
-        students=students_option(),
-        students_file=students_file_option(),
-        __required__=True,
-    )
-
-
-def students_option():
-    return plug.cli.option(
-        "-s",
-        "--students",
-        help="one or more whitespace separated student usernames",
-        argparse_kwargs=dict(nargs="+"),
-    )
-
-
-def students_file_option():
-    return plug.cli.option(
-        "--sf",
-        "--students-file",
-        help="path to a list of student usernames or groups of students",
-        converter=pathlib.Path,
-        configurable=True,
-    )
+from _repobee.ext.core_commands import _options
 
 
 class CloneCommand(plug.Plugin, plug.cli.Command):
@@ -88,11 +37,11 @@ class CloneCommand(plug.Plugin, plug.cli.Command):
         default=DirectoryLayout.BY_TEAM,
     )
 
-    repo_discovery_mutex = repo_discovery_mutex()
+    repo_discovery_mutex = _options.repo_discovery_mutex()
 
-    students_mutex = students_mutex()
+    students_mutex = _options.students_mutex()
 
-    hook_results_file = hook_results_file_option()
+    hook_results_file = _options.hook_results_file_option()
 
     def command(self, api: plug.PlatformAPI):
         return command.clone_repos(
@@ -104,22 +53,6 @@ class CloneCommand(plug.Plugin, plug.cli.Command):
 
     def handle_config(self, config: plug.Config) -> None:
         self._config = config
-
-
-def allow_local_templates_option():
-    return plug.cli.flag(
-        "--allow-local-templates",
-        help="allow the use of template repos in the current working directory",
-    )
-
-
-def template_org_name_option():
-    return plug.cli.option(
-        "--to",
-        "--template-org-name",
-        help="name of the organization containing the template repos",
-        configurable=True,
-    )
 
 
 class SetupCommand(plug.Plugin, plug.cli.Command):
@@ -137,15 +70,15 @@ performed step will simply be skipped.""",
         config_section_name="repobee",
     )
 
-    assignments = assignments_option()
+    assignments = _options.assignments_option()
 
-    students_mutex = students_mutex()
+    students_mutex = _options.students_mutex()
 
-    template_org_name = template_org_name_option()
+    template_org_name = _options.template_org_name_option()
 
-    allow_local_templates = allow_local_templates_option()
+    allow_local_templates = _options.allow_local_templates_option()
 
-    hook_results_file = hook_results_file_option()
+    hook_results_file = _options.hook_results_file_option()
 
     def command(self, api: plug.PlatformAPI):
         return command.setup_student_repos(
@@ -174,13 +107,13 @@ to which pushes fail (because the students have pushed something already).""",
         config_section_name="repobee",
     )
 
-    assignments = assignments_option()
+    assignments = _options.assignments_option()
 
-    students_mutex = students_mutex()
+    students_mutex = _options.students_mutex()
 
-    template_org_name = template_org_name_option()
+    template_org_name = _options.template_org_name_option()
 
-    allow_local_templates = allow_local_templates_option()
+    allow_local_templates = _options.allow_local_templates_option()
 
     issue = issue_option()
 
@@ -205,9 +138,9 @@ will be private.""",
         config_section_name="repobee",
     )
 
-    assignments = assignments_option()
+    assignments = _options.assignments_option()
 
-    allow_local_templates = allow_local_templates_option()
+    allow_local_templates = _options.allow_local_templates_option()
 
     def command(self, api: plug.PlatformAPI):
         return command.migrate_repos(self.args.template_repo_urls, api)
