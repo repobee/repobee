@@ -39,7 +39,9 @@ def students_option():
     return plug.cli.option(
         "-s",
         "--students",
-        help="one or more whitespace separated student usernames",
+        help="one or more whitespace separated student usernames, "
+        "or a path to a students file. NOTE: Configured value always "
+        "interpreted as a filepath.",
         configurable=True,
         argparse_kwargs=dict(nargs="+"),
     )
