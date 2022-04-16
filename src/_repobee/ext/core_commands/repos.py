@@ -35,6 +35,14 @@ def hook_results_file_option():
     )
 
 
+def students_mutex():
+    return plug.cli.mutually_exclusive_group(
+        students=students_option(),
+        students_file=students_file_option(),
+        __required__=True,
+    )
+
+
 def students_option():
     return plug.cli.option(
         "-s",
@@ -82,9 +90,7 @@ class CloneCommand(plug.Plugin, plug.cli.Command):
 
     repo_discovery_mutex = repo_discovery_mutex()
 
-    students = students_option()
-
-    students_file = students_file_option()
+    students_mutex = students_mutex()
 
     hook_results_file = hook_results_file_option()
 
@@ -133,9 +139,7 @@ performed step will simply be skipped.""",
 
     assignments = assignments_option()
 
-    students = students_option()
-
-    students_file = students_file_option()
+    students_mutex = students_mutex()
 
     template_org_name = template_org_name_option()
 
@@ -172,9 +176,7 @@ to which pushes fail (because the students have pushed something already).""",
 
     assignments = assignments_option()
 
-    students = students_option()
-
-    students_file = students_file_option()
+    students_mutex = students_mutex()
 
     template_org_name = template_org_name_option()
 
