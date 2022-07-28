@@ -9,4 +9,4 @@ pylint==2.13.4
 pytest-cov==3.0.0
 pytest-mock==3.8.2
 pytest==7.1.1
-virtualenv==20.14.0
+virtualenv==20.16.2
