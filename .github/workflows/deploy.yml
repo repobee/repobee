@@ -12,7 +12,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python 3.7
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: 3.7
     - name: Package RepoBee
@@ -22,7 +22,7 @@ jobs:
         python -m pip install .
         python setup.py sdist bdist_wheel
     - name: Publish RepoBee to PyPi
-      uses: pypa/gh-action-pypi-publish@717ba43cfbb0387f6ce311b169a825772f54d295 # v1.4.1
+      uses: pypa/gh-action-pypi-publish@37f50c210e3d2f9450da2cd423303d6a14a6e29f # v1.4.1
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
