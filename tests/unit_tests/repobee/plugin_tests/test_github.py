@@ -7,6 +7,7 @@ from typing import List, NoReturn
 import pytest
 import github
 import responses
+from _repobee import http
 
 import repobee_plug as plug
 
@@ -296,20 +297,26 @@ def repos(organization, no_repos, teams_and_members, teams):
 
 @pytest.fixture(scope="function")
 def api(happy_github, organization, no_teams):
-    return github_plugin.GitHubAPI(BASE_URL, TOKEN, ORG_NAME, USER)
+    return _create_github_api_without_rate_limiting(
+        BASE_URL, TOKEN, ORG_NAME, USER
+    )
 
 
 class TestInit:
     def test_raises_on_empty_user_arg(self):
         with pytest.raises(TypeError) as exc_info:
-            github_plugin.GitHubAPI(BASE_URL, TOKEN, ORG_NAME, "")
+            _create_github_api_without_rate_limiting(
+                BASE_URL, TOKEN, ORG_NAME, ""
+            )
 
         assert "argument 'user' must not be empty" in str(exc_info.value)
 
     @pytest.mark.parametrize("url", ["https://github.com", constants.HOST_URL])
     def test_raises_when_url_is_bad(self, url):
         with pytest.raises(plug.PlugError) as exc_info:
-            github_plugin.GitHubAPI(url, TOKEN, ORG_NAME, USER)
+            _create_github_api_without_rate_limiting(
+                url, TOKEN, ORG_NAME, USER
+            )
 
         assert (
             "invalid base url, should either be https://api.github.com or "
@@ -320,7 +327,9 @@ class TestInit:
         "url", ["https://api.github.com", constants.BASE_URL]
     )
     def test_accepts_valid_urls(self, url):
-        api = github_plugin.GitHubAPI(url, TOKEN, ORG_NAME, USER)
+        api = _create_github_api_without_rate_limiting(
+            url, TOKEN, ORG_NAME, USER
+        )
 
         assert isinstance(api, plug.PlatformAPI)
 
@@ -668,3 +677,12 @@ class TestForOrganization:
         new_api = api.for_organization(new_org_name)
 
         assert new_api.org is mock_org
+
+
+def _create_github_api_without_rate_limiting(*args, **kwargs):
+    """The rate limiting implementation interferes with responses, so we remove
+    them for unit tests.
+    """
+    api = github_plugin.GitHubAPI(*args, **kwargs)
+    http.remove_rate_limits()
+    return api
