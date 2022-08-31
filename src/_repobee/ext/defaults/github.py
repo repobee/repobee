@@ -131,6 +131,7 @@ class GitHubAPI(plug.PlatformAPI):
 
         # see https://docs.github.com/en/rest/guides/best-practices-for-integrators#dealing-with-secondary-rate-limits
         http.rate_limit_modify_requests(base_url, rate_limit_in_seconds=1)
+        http.install_retry_after_handler()
 
         if not user:
             raise TypeError("argument 'user' must not be empty")

@@ -1,15 +1,27 @@
 import time
 import functools
 
+from typing import Mapping, Optional
+
 import requests
 
 import repobee_plug as plug
 
 MODIFY_REQUEST_METHOD_NAMES = ("post", "put", "patch", "delete")
 
+ALL_REQUEST_METHOD_NAMES = (
+    "get",
+    "options",
+    "head",
+    "post",
+    "put",
+    "patch",
+    "delete",
+)
+
 _ORIGINAL_REQUESTS_METHODS = {
     method_name: getattr(requests, method_name)
-    for method_name in MODIFY_REQUEST_METHOD_NAMES + ("request",)
+    for method_name in ALL_REQUEST_METHOD_NAMES + ("request",)
 }
 
 DEFAULT_INTERNET_CONNECTION_CHECK_URL = "https://repobee.org"
@@ -57,6 +69,47 @@ def rate_limit_modify_requests(
     requests.patch = functools.partial(request, "patch")
     requests.delete = functools.partial(request, "delete")
     requests.post = functools.partial(request, "post")
+
+
+def install_retry_after_handler() -> None:
+    """Install a handler that interposes itself into HTTP requests and honors the
+    Retry-After header by sleeping for the desired amount of time.
+    """
+    plug.log.debug("Installing Retry-After handler")
+    original_request_method = requests.request
+
+    def request_with_retry_after_handling(method, url, *args, **kwargs):
+        response = original_request_method(method, url, *args, **kwargs)
+        retry_after_raw = _get_value_case_insensitive(
+            "retry-after", response.headers
+        )
+        if not retry_after_raw:
+            return response
+
+        plug.log.warning(
+            f"Rate limited on request to {url}, retrying after {retry_after_raw}s"
+        )
+
+        retry_after = float(retry_after_raw)
+        time.sleep(retry_after)
+        return request_with_retry_after_handling(method, url, *args, **kwargs)
+
+    for method_name in ALL_REQUEST_METHOD_NAMES:
+        retry_aware_method = functools.partial(
+            request_with_retry_after_handling, method_name
+        )
+        setattr(requests, method_name, retry_aware_method)
+
+    requests.request = request_with_retry_after_handling
+
+
+def _get_value_case_insensitive(
+    search_key: str, mapping: Mapping[str, str]
+) -> Optional[str]:
+    normalized_mapping = {
+        key.casefold(): value for key, value in mapping.items()
+    }
+    return normalized_mapping.get(search_key.casefold())
 
 
 def remove_rate_limits() -> None:
