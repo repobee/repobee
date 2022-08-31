@@ -16,11 +16,11 @@ class TestRateLimitModifyRequests:
     """Tests for the rate_limit_modify_requests function."""
 
     def test_replaces_requests_modify_functions(self):
-        original_functions = _get_requests_modify_functions()
+        original_functions = _get_requests_functions()
 
         http.rate_limit_modify_requests(_ARBITRARY_BASE_URL, _ARBITRARY_NUMBER)
 
-        functions_after_rate_limiting = _get_requests_modify_functions()
+        functions_after_rate_limiting = _get_requests_functions()
 
         assert original_functions != functions_after_rate_limiting
 
@@ -29,6 +29,11 @@ class TestRateLimitModifyRequests:
     def test_rate_limits_modify_requests(self, method_name):
         url = urljoin(_ARBITRARY_BASE_URL, "/endpoint")
 
+        responses.add(
+            getattr(responses, method_name.upper()),
+            url,
+            status=201,
+        )
         responses.add(
             getattr(responses, method_name.upper()),
             url,
@@ -55,6 +60,11 @@ class TestRateLimitModifyRequests:
         base_url = "https://repobee.org/should_limit"
         other_url = "https://repobee.org/should_not_limit"
 
+        responses.add(
+            getattr(responses, method_name.upper()),
+            other_url,
+            status=201,
+        )
         responses.add(
             getattr(responses, method_name.upper()),
             other_url,
@@ -115,27 +125,29 @@ class TestRemoveRateLimits:
     """Tests for the remove_rate_limits function."""
 
     def test_restores_original_functions(self):
-        original_functions = _get_requests_modify_functions()
+        original_functions = _get_requests_functions()
         http.rate_limit_modify_requests(_ARBITRARY_BASE_URL, _ARBITRARY_NUMBER)
+        http.install_retry_after_handler()
 
         assert (
-            original_functions != _get_requests_modify_functions()
+            original_functions != _get_requests_functions()
         ), "requests modify functions were not replaced, test setup invalid"
 
         http.remove_rate_limits()
 
-        functions_after_rate_limit_removal = _get_requests_modify_functions()
+        functions_after_rate_limit_removal = _get_requests_functions()
 
         assert functions_after_rate_limit_removal == original_functions
 
 
 @pytest.fixture(autouse=True)
 def remove_rate_limits():
+    yield
     http.remove_rate_limits()
 
 
-def _get_requests_modify_functions():
+def _get_requests_functions():
     return {
         getattr(requests, name)
-        for name in http.MODIFY_REQUEST_METHOD_NAMES + ("request",)
+        for name in http.ALL_REQUEST_METHOD_NAMES + ("request",)
     }
