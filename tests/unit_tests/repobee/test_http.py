@@ -87,18 +87,19 @@ class TestRateLimitModifyRequests:
 class TestRetryAfterHandler:
     """Tests for the isntall_retry_after_handler function."""
 
+    # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
     @responses.activate(registry=responses.registries.OrderedRegistry)
     @pytest.mark.parametrize("method_name", http.ALL_REQUEST_METHOD_NAMES)
     def test_retries_after_header_time(self, method_name):
         # arrange
         url = urljoin(_ARBITRARY_BASE_URL, "/endpoint")
-        retry_after_in_seconds = .5
+        retry_after_in_seconds = 0.5
 
         responses.add(
             getattr(responses, method_name.upper()),
             url,
             status=403,
-            adding_headers={'Retry-After': str(retry_after_in_seconds)},
+            adding_headers={"Retry-After": str(retry_after_in_seconds)},
         )
         responses.add(
             getattr(responses, method_name.upper()),
