@@ -100,7 +100,7 @@ def get_plugins_json(url: str = "https://repobee.org/plugins.json") -> dict:
     Returns:
         A dictionary with the contents of the plugins.json file.
     """
-    resp = requests.get(url)
+    resp = requests.get(url, timeout=10)
     if resp.status_code != 200:
         plug.log.error(resp.content.decode("utf8"))
         raise plug.PlugError(f"could not fetch plugins.json from '{url}'")
