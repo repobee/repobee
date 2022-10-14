@@ -9,7 +9,7 @@ import asyncio
 import os
 import pathlib
 import sys
-from typing import Callable, Awaitable, Iterable, Any, Sequence, List, Union
+from typing import Callable, Coroutine, Iterable, Any, Sequence, List, Union
 
 import more_itertools
 
@@ -18,7 +18,7 @@ from _repobee import exception
 
 
 def batch_execution(
-    batch_func: Callable[..., Awaitable],
+    batch_func: Callable[..., Coroutine[Any, None, Any]],
     arg_list: Iterable[Any],
     *batch_func_args,
     **batch_func_kwargs,
@@ -47,7 +47,7 @@ def batch_execution(
 
 
 async def batch_execution_async(
-    batch_func: Callable[..., Awaitable],
+    batch_func: Callable[..., Coroutine[Any, None, Any]],
     arg_list: Iterable[Any],
     *batch_func_args,
     **batch_func_kwargs,
