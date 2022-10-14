@@ -252,12 +252,24 @@ class GitLabAPI(plug.PlatformAPI):
             found_urls = []
             with _try_api_request():
                 for url in repo_urls:
+                    plug.log.info(f"Searching for repo {url}")
+
                     name = self.extract_repo_name(url)
                     candidates = self._group.projects.list(
                         include_subgroups=True, search=name, all=True
                     )
+                    plug.log.info(
+                        f"Candidates for {url}: {[c.http_url_to_repo for c in candidates]}"
+                    )
+
                     for candidate in candidates:
+                        plug.log.info(
+                            f"Candidate url: {candidate.http_url_to_repo}"
+                        )
                         if candidate.http_url_to_repo == url:
+                            plug.log.info(
+                                f"Candidate matches: {candidate.http_url_to_repo}"
+                            )
                             found_urls.append(candidate.http_url_to_repo)
                             yield self._wrap_project(
                                 self._gitlab.projects.get(candidate.id)

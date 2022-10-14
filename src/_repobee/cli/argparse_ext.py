@@ -156,3 +156,9 @@ def add_debug_args(parser: argparse.ArgumentParser) -> None:
         action="count",
         default=0,
     )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        help="more verbose output useful for debugging",
+        action="store_true",
+    )
