@@ -812,6 +812,38 @@ class TestClone:
         assert not out_err.out.strip()
         assert not out_err.err.strip()
 
+    def test_clone_with_verbose_output(
+        self, with_student_repos, platform_url, capsys, tmp_path
+    ):
+        """Cloning repos with verbose output should result in [INFO] logging
+        being displayed, but not [DEBUG] logging.
+        """
+        funcs.run_repobee(
+            f"{plug.cli.CoreCommand.repos.clone} -a {TEMPLATE_REPOS_ARG} "
+            f"--base-url {platform_url} "
+            "-v"
+        )
+
+        out_err = capsys.readouterr()
+        assert "[INFO]" in out_err.err
+        assert "[DEBUG]" not in out_err.err
+
+    def test_clone_with_very_verbose_output(
+        self, with_student_repos, platform_url, capsys, tmp_path
+    ):
+        """Cloning repos with verbose output should result in [INFO] logging
+        [DEBUG] logging being displayed on stderr.
+        """
+        funcs.run_repobee(
+            f"{plug.cli.CoreCommand.repos.clone} -a {TEMPLATE_REPOS_ARG} "
+            f"--base-url {platform_url} "
+            "-vv"
+        )
+
+        out_err = capsys.readouterr()
+        assert "[INFO]" in out_err.err
+        assert "[DEBUG]" in out_err.err
+
     def test_empty_student_repos_dont_cause_errors(
         self, with_student_repos, platform_url, capsys, tmp_path
     ):

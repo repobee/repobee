@@ -9,6 +9,7 @@
 import argparse
 import contextlib
 import dataclasses
+import enum
 import io
 import logging
 import os
@@ -289,41 +290,50 @@ def _parse_args(args: List[str], config: plug.Config):
     return parsed_args, api
 
 
+class _OutputVerbosity(enum.IntEnum):
+    SILENCE_ERRORS = -3
+    SILENCE_WARNINGS = -2
+    SILENCE_STDOUT = -1
+    STANDARD = 0
+    INFO_LOGGING = 1
+    DEBUG_LOGGING = 2
+
+
 @contextlib.contextmanager
-def _set_output_verbosity(quietness: int):
+def _set_output_verbosity(verbosity: _OutputVerbosity):
     """Set the output verbosity, expecting `quietness` to be a non-negative
     integer.
-
-    0 = do nothing, all output goes
-    1 = silence "regular" user feedback
-    2 = silence warnings
-    >=3 = silence everything
     """
-    assert quietness >= 0
-    if quietness >= 1:
-        # silence "regular" user feedback by redirecting stdout
+    if verbosity == _OutputVerbosity.STANDARD:
+        yield
+        return
+    elif verbosity > _OutputVerbosity.STANDARD:
+        terminal_level = (
+            logging.INFO
+            if verbosity == _OutputVerbosity.INFO_LOGGING
+            else logging.DEBUG
+        )
+        _repobee.cli.parsing.setup_logging(terminal_level=terminal_level)
+        yield
+    else:  # verbosity <= SILENCE_STDOUT
+        # silence stdout by redirecting to internal buffer
         with contextlib.redirect_stdout(io.StringIO()):
-            if quietness == 2:
-                # additionally silence warnings
+            if verbosity == _OutputVerbosity.SILENCE_WARNINGS:
                 _repobee.cli.parsing.setup_logging(
                     terminal_level=logging.ERROR
                 )
-            elif quietness >= 3:
-                # additionally silence errors and warnings
+            elif verbosity == _OutputVerbosity.SILENCE_ERRORS:
                 _repobee.cli.parsing.setup_logging(
                     terminal_level=logging.CRITICAL
                 )
 
             yield
-    else:
-        # this must be in an else, because
-        # 1) the generator must yeld
-        # 2) it must yield precisely once
-        yield
 
 
 def _get_output_verbosity(parsed_args: argparse.Namespace) -> int:
-    return getattr(parsed_args, "quiet", 0)
+    return _OutputVerbosity(
+        -getattr(parsed_args, "quiet", 0) or getattr(parsed_args, "verbose", 0)
+    )
 
 
 @contextlib.contextmanager
