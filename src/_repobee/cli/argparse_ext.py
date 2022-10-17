@@ -63,7 +63,7 @@ class RepobeeParser(argparse.ArgumentParser):
             "--user",
             "--base-url",
         }
-        debug_args = {"--traceback", "--quiet"}
+        debug_args = {"--traceback", "--quiet", "--verbose"}
         alpha_args = {"--hook-results-file", "--double-blind-key"}
 
         for arg in args:
@@ -151,8 +151,16 @@ def add_debug_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "-q",
         "--quiet",
-        help="silence output (stacks up to 3 times: x1=only warnings "
-        "and errors, x2=only errors, x3=complete and utter silence)",
+        help="silence output (stacks up to 3 times: -q=only warnings "
+        "and errors, -qq=only errors, -qqq=complete and utter silence)",
+        action="count",
+        default=0,
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        help="increase verbosity of output (stacks up to 2 times: "
+        "-v=info logging, -vv=debug logging",
         action="count",
         default=0,
     )
