@@ -330,7 +330,7 @@ def _set_output_verbosity(verbosity: _OutputVerbosity):
             yield
 
 
-def _get_output_verbosity(parsed_args: argparse.Namespace) -> int:
+def _get_output_verbosity(parsed_args: argparse.Namespace) -> _OutputVerbosity:
     return _OutputVerbosity(
         -getattr(parsed_args, "quiet", 0) or getattr(parsed_args, "verbose", 0)
     )
