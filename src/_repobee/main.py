@@ -290,28 +290,25 @@ def _parse_args(args: List[str], config: plug.Config):
 
 
 @contextlib.contextmanager
-def _set_output_verbosity(verbosity: int):
+def _set_output_verbosity(quietness: int):
     """Set the output verbosity, expecting `quietness` to be a non-negative
     integer.
 
-    1 = verbose logging on info level
-    0 = standard output
-    -1 = silence "regular" user feedback
-    -2 = silence warnings
-    <=-3 = silence everything
+    0 = do nothing, all output goes
+    1 = silence "regular" user feedback
+    2 = silence warnings
+    >=3 = silence everything
     """
-    if verbosity >= 1:
-        _repobee.cli.parsing.setup_logging(terminal_level=logging.INFO)
-        yield
-    elif verbosity <= -1:
+    assert quietness >= 0
+    if quietness >= 1:
         # silence "regular" user feedback by redirecting stdout
         with contextlib.redirect_stdout(io.StringIO()):
-            if verbosity <= -2:
+            if quietness == 2:
                 # additionally silence warnings
                 _repobee.cli.parsing.setup_logging(
                     terminal_level=logging.ERROR
                 )
-            elif verbosity <= -3:
+            elif quietness >= 3:
                 # additionally silence errors and warnings
                 _repobee.cli.parsing.setup_logging(
                     terminal_level=logging.CRITICAL
@@ -326,9 +323,7 @@ def _set_output_verbosity(verbosity: int):
 
 
 def _get_output_verbosity(parsed_args: argparse.Namespace) -> int:
-    return -getattr(parsed_args, "quiet", 0) or int(
-        getattr(parsed_args, "verbose", False)
-    )
+    return getattr(parsed_args, "quiet", 0)
 
 
 @contextlib.contextmanager
