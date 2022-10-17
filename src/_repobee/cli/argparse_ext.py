@@ -63,7 +63,7 @@ class RepobeeParser(argparse.ArgumentParser):
             "--user",
             "--base-url",
         }
-        debug_args = {"--traceback", "--quiet"}
+        debug_args = {"--traceback", "--quiet", "--verbose"}
         alpha_args = {"--hook-results-file", "--double-blind-key"}
 
         for arg in args:
