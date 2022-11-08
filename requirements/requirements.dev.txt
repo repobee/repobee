@@ -4,7 +4,7 @@ bandit==1.7.4
 black==22.10.0
 codecov==2.1.12
 flake8==5.0.4
-mypy==0.982
+mypy==0.990
 pylint==2.15.4
 pytest-cov==4.0.0
 pytest-mock==3.10.0
