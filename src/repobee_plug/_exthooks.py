@@ -110,7 +110,7 @@ def post_setup(
 
 
 @hookspec
-def get_configurable_args() -> ConfigurableArguments:
+def get_configurable_args() -> ConfigurableArguments:  # type: ignore
     """Get the configurable arguments for a plugin.
 
     .. danger::

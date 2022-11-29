@@ -21,7 +21,7 @@ from repobee_plug import localreps, hook, reviews, platform
 
 
 @hook.hookspec(firstresult=True)
-def generate_review_allocations(
+def generate_review_allocations(  # type: ignore
     teams: List[localreps.StudentTeam], num_reviews: int
 ) -> List[reviews.ReviewAllocation]:
     """Generate :py:class:`~repobee_plug.ReviewAllocation`
@@ -83,7 +83,7 @@ def get_api_class():
 
 
 @hook.hookspec(firstresult=True)
-def api_init_requires() -> Tuple[str]:
+def api_init_requires() -> Tuple[str]:  # type: ignore
     """Return which of the arguments to apimeta._APISpec.__init__ that the
     given API requires. For example, the GitHubAPI requires all, but the
     GitLabAPI does not require ``user``.
@@ -99,7 +99,7 @@ def api_init_requires() -> Tuple[str]:
 
 
 @hook.hookspec(firstresult=True)
-def generate_repo_name(
+def generate_repo_name(  # type: ignore
     team_name: Union[str, localreps.StudentTeam, platform.Team],
     assignment_name: str,
 ) -> str:
@@ -118,7 +118,7 @@ def generate_repo_name(
 
 
 @hook.hookspec(firstresult=True)
-def parse_students_file(
+def parse_students_file(  # type: ignore
     students_file: pathlib.Path,
 ) -> Iterable[localreps.StudentTeam]:
     """Parse the students file and return any student teams from it.
