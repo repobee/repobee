@@ -9,8 +9,8 @@ outlined in this section.
 Requirements
 ------------
 
-RepoBee requires Python 3.7+ and a somewhat up-to-date version of Git (2.0+ to
-be on the safe side). Officially supported operating systems are Ubuntu 17.04+
+RepoBee requires Python 3.8+ and a somewhat up-to-date version of Git (2.0+ to
+be on the safe side). Officially supported operating systems are Ubuntu 18.04+
 and macOS, but RepoBee runs fine on most Linux distributions, and also on WSL_
 on Windows 10. Please report any issues with operating systems and/or Git
 versions on the `issue tracker`_.
