@@ -84,7 +84,7 @@ setup(
         "argcomplete>=1.12.0",
         "bullet>=2.2.0",
         "daiquiri>=3.0.1",
-        "dataclasses>='0.7';python_version<'3.7'",
+        "dataclasses>=0.7;python_version<'3.7'",
         "gitpython==3.1.18;python_version<'3.7'",
         "gitpython>=3.1.24;python_version>='3.7'",
         "more-itertools>=8.4.0",
