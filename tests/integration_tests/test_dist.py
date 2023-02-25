@@ -511,9 +511,7 @@ class TestManageUpgrade:
         """Test that dist plugins (e.g. the ``plugin`` category of commands)
         are activated properly upon an upgrade.
         """
-        repobee.run(
-            shlex.split("manage upgrade --version-spec '==v3.0.0-beta.1'")
-        )
+        repobee.run(shlex.split("manage upgrade --version-spec '==v3.8.1'"))
         proc = run_dist("plugin list")
 
         assert proc.returncode == 0
