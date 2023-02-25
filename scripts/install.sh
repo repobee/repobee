@@ -4,6 +4,7 @@ set -o errexit
 set -o nounset
 
 REPOBEE_INSTALL_DIR=${REPOBEE_INSTALL_DIR:-"$HOME/.repobee"}
+REPOBEE_INSTALL_NONINTERACTIVE=${REPOBEE_INSTALL_NONINTERACTIVE:-"false"}
 
 echo "Using install dir '$REPOBEE_INSTALL_DIR'"
 REPOBEE_BIN_DIR="$REPOBEE_INSTALL_DIR/bin"
@@ -166,10 +167,15 @@ function create_repobee_executable() {
 }
 
 function add_to_path() {
+    if [ "$REPOBEE_INSTALL_NONINTERACTIVE" = true ]; then
+        echo "Non-interactive mode, skipping PATH modification"
+        return
+    fi
+
     printf "\n$REPOBEE_BIN_DIR is not on the PATH, so to run RepoBee you must type the full path to $REPOBEE_EXECUTABLE.\n"
     echo "We can add try to add $REPOBEE_BIN_DIR to your PATH by adding it to your profile files (e.g. .bashrc, .zshrc, config.fish, etc), and then you just need to type 'repobee' to run it."
     echo "If you know how to do this manually, then we recommend that you do so such that you get it the way you like it."
-    echo "Do you want us to add try to $REPOBEE_BIN_DIR to your PATH? [y/N]: "
+    echo "Do you want us to try to add $REPOBEE_BIN_DIR to your PATH? [y/N]: "
 
     # careful with read, its options work differently in zsh and bash
     read confirm
