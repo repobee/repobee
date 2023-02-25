@@ -1,8 +1,9 @@
 #! /bin/bash
 
-if [ -z "$REPOBEE_INSTALL_DIR" ]; then
-    REPOBEE_INSTALL_DIR="$HOME/.repobee"
-fi
+set -o errexit
+set -o nounset
+
+REPOBEE_INSTALL_DIR=${REPOBEE_INSTALL_DIR:-"$HOME/.repobee"}
 
 echo "Using install dir '$REPOBEE_INSTALL_DIR'"
 REPOBEE_BIN_DIR="$REPOBEE_INSTALL_DIR/bin"
@@ -77,7 +78,7 @@ function install_repobee() {
     source "$REPOBEE_ENV_ACTIVATE"
     ensure_pip_installed
 
-    echo "Installing RepoBee $version"
+    echo "Installing RepoBee $repobee_pip_uri"
     REPOBEE_INSTALL_DIR="$REPOBEE_INSTALL_DIR" pip_install_quiet_failfast "$repobee_pip_uri"
     create_repobee_executable
 
@@ -213,23 +214,29 @@ To enable tab completion, see https://docs.repobee.org/en/stable/install.html#ta
 
 function resolve_repobee_pip_uri() {
     # the optional argument can be either a version tag, or a local filepath
-    if [ $1 ]; then
-        if [ -d "$1" ]; then
-            repobee_pip_uri="$1"
+    version="${1:-}"
+    if [ "$version" ]; then
+        if [ -d "$version" ]; then
+            repobee_pip_uri="$version"
         else
             repobee_pip_uri="git+$REPOBEE_HTTPS_URL.git@$version"
         fi
     else
-        repobee_pip_uri="git+$REPOBEE_HTTPS_URL.git@$(get_latest_version)"
+        repobee_pip_uri="repobee==$(get_latest_version)"
     fi
     echo "$repobee_pip_uri"
 }
 
-install "$(resolve_repobee_pip_uri $1)"
-create_autocomplete_scripts
-auto_complete_msg
+function main() {
+    version="${1:-}"
+    install "$(resolve_repobee_pip_uri $version)"
+    create_autocomplete_scripts
+    auto_complete_msg
 
-echo "
+    echo "
 RepoBee was installed successfully. To uninstall, simply remove the directory at $REPOBEE_INSTALL_DIR
 If you are having trouble, please visit the FAQ at https://repobee.readthedocs.io/en/stable/faq.html
-"
+    "
+}
+
+main "${1:-}"
