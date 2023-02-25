@@ -558,11 +558,12 @@ def install_dir():
 def run_install_script(install_dir: pathlib.Path) -> None:
     env = dict(os.environ)
     env["REPOBEE_INSTALL_DIR"] = str(install_dir)
+    env["REPOBEE_INSTALL_NONINTERACTIVE"] = "true"
 
     with subprocess.Popen(str(INSTALL_SCRIPT), env=env) as process:
         process.communicate(
-            "n"
-        )  # 'n' in answering whether or not to add to PATH
+            "N"
+        )  # 'N' in answering whether or not to add to PATH
     assert process.returncode == 0
 
 
