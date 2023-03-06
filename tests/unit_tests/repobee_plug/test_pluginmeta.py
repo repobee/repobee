@@ -629,7 +629,6 @@ class TestDeclarativeCommandExtension:
         )
 
     def test_requires_non_empty_actions_list(self):
-
         with pytest.raises(ValueError) as exc_info:
 
             class Ext(plug.Plugin, plug.cli.CommandExtension):

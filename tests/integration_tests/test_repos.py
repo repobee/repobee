@@ -567,6 +567,7 @@ class TestClone:
         """Test cloning repos with non-standard repo names using an
         implementation of the ``generate_repo_name`` hook.
         """
+
         # arrange
         def generate_repo_name(team_name, assignment_name):
             return f"{assignment_name}-BONKERS-{team_name}"
