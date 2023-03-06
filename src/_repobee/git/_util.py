@@ -52,7 +52,6 @@ async def batch_execution_async(
     *batch_func_args,
     **batch_func_kwargs,
 ) -> Sequence[Exception]:
-
     import tqdm.asyncio  # type: ignore
 
     exceptions = []

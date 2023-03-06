@@ -192,7 +192,7 @@ def _attach_options(self, config: repobee_plug.config.Config, parser):
 
         return _pack_configured_value(opt, configured_value)
 
-    for (arg_name, opt) in opts:
+    for arg_name, opt in opts:
         if isinstance(opt, _MutuallyExclusiveGroup):
             _add_mutually_exclusive_group(
                 opt,
@@ -262,7 +262,7 @@ def _add_mutually_exclusive_group(
         required=mutex_group.required and not has_configured_value
     )
 
-    for (mutex_opt_name, mutex_opt) in mutex_group.options:
+    for mutex_opt_name, mutex_opt in mutex_group.options:
         configured_value = get_configured_value(mutex_opt_name, mutex_opt)
         _add_option(
             mutex_opt_name,

@@ -387,7 +387,6 @@ def _add_repo_parsers(
 def _add_teams_parsers(
     base_parser, base_student_parser, template_org_parser, add_parser
 ):
-
     add_parser(
         plug.cli.CoreCommand.teams.create,
         help="create student teams without creating repos",
