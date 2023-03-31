@@ -228,7 +228,7 @@ function resolve_repobee_pip_uri() {
             repobee_pip_uri="git+$REPOBEE_HTTPS_URL.git@$version"
         fi
     else
-        repobee_pip_uri="repobee==$(get_latest_version)"
+        repobee_pip_uri="git+$REPOBEE_HTTPS_URL.git@$(get_latest_version)"
     fi
     echo "$repobee_pip_uri"
 }
