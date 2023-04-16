@@ -29,7 +29,6 @@ INSTALL_DIR = pathlib.Path('{install_dir}')
 dev_requirements = [
     "bandit",
     "black",
-    "codecov",
     "flake8>=3.8.3",
     "mypy>=0.902",
     "pylint",
