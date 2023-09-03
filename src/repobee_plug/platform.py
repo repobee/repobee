@@ -65,7 +65,9 @@ class Team(APIObject):
 
     def __post_init__(self):
         object.__setattr__(
-            self, "members", [localreps.normalize_name(m) for m in self.members]
+            self,
+            "members",
+            [localreps.normalize_name(m) for m in self.members],
         )
 
     def __str__(self):
