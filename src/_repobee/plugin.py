@@ -444,9 +444,7 @@ def execute_setup_tasks(
 
 def execute_tasks(
     repos: Iterable[Union[plug.StudentRepo, plug.TemplateRepo]],
-    hook_function: Callable[
-        [pathlib.Path, plug.PlatformAPI], Optional[plug.Result]
-    ],
+    hook_function,
     api: plug.PlatformAPI,
     cwd: Optional[pathlib.Path],
     copy_repos: bool = True,
