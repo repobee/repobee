@@ -30,7 +30,6 @@ import _repobee.ext.gitea
 import _repobee.hash
 import _repobee.exception
 from _repobee import formatters
-from _repobee import featflags
 
 from _repobee.command import progresswrappers
 
@@ -106,8 +105,8 @@ def assign_peer_reviews(
             )
             assigned_reviews.append(review_team_with_repo)
 
-    if featflags.is_feature_enabled(
-        featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS
+    if plug._featflags.is_feature_enabled(
+        plug._featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS
     ):
         output = dict(
             allocations=[a.to_dict() for a in assigned_reviews],

@@ -15,7 +15,7 @@ from typing import Optional, List, Mapping, NoReturn
 
 import repobee_plug as plug
 
-from _repobee import command, exception, formatters, featflags, fileutil
+from _repobee import command, exception, formatters, fileutil
 
 
 def dispatch_command(
@@ -171,8 +171,8 @@ def _dispatch_reviews_command(
         )
         return None
     elif action == reviews.end:
-        if featflags.is_feature_enabled(
-            featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS
+        if plug._featflags.is_feature_enabled(
+            plug._featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS
         ):
             command.peer.end_reviews_repobee_4(args.allocations_file, api)
         else:
@@ -181,8 +181,8 @@ def _dispatch_reviews_command(
             )
         return None
     elif action == reviews.check:
-        if featflags.is_feature_enabled(
-            featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS
+        if plug._featflags.is_feature_enabled(
+            plug._featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS
         ):
             command.peer.check_reviews_repobee_4(
                 args.allocations_file, args.title_regex, api
