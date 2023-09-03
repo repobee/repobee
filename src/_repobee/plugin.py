@@ -22,7 +22,6 @@ from typing import (
     Iterable,
     Mapping,
     Union,
-    Callable,
     Any,
     DefaultDict,
     Type,
