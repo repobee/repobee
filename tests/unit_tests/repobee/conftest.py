@@ -11,19 +11,18 @@ from contextlib import contextmanager
 import pytest
 
 import repobee_plug as plug
-
+import repobee_plug._featflags
 import _repobee  # noqa: E402
 import _repobee.constants
 import _repobee.config
 import _repobee.plugin
-import _repobee.featflags
 
 from repobee_testhelpers._internal import constants
 
 EXPECTED_ENV_VARIABLES = [
     _repobee.constants.TOKEN_ENV,
     "REPOBEE_NO_VERIFY_SSL",
-    *[flag.value for flag in _repobee.featflags.FeatureFlag],
+    *[flag.value for flag in repobee_plug._featflags.FeatureFlag],
 ]
 
 
