@@ -12,7 +12,6 @@ from repobee_testhelpers import funcs
 from repobee_testhelpers import const
 
 import _repobee.constants
-from _repobee import featflags
 
 
 class TestAssign:
@@ -58,6 +57,43 @@ class TestAssign:
         api._restore_platform_state()
         num_repos_after = len(list(api.get_repos()))
         assert num_repos_after == num_repos_before + len(const.STUDENT_TEAMS)
+
+    def test_uppercased_username_without_case_normalization(
+        self, disable_name_normalization, platform_url
+    ):
+        assignment_name = const.TEMPLATE_REPO_NAMES[0]
+        uppercase_user_name = "USER"
+        api = funcs.get_api(platform_url)
+
+        api._add_users([uppercase_user_name])
+        uppercase_team, other_team = [
+            api.create_team(name, members=[name])
+            for name in [uppercase_user_name, const.STUDENT_TEAMS[0].name]
+        ]
+
+        for team in [uppercase_team, other_team]:
+            api.create_repo(
+                name=plug.generate_repo_name(team, assignment_name),
+                description="Test repo",
+                private=True,
+                team=uppercase_team,
+            )
+
+        funcs.run_repobee(
+            f"reviews assign --num-reviews 1 "
+            f"--base-url {platform_url} "
+            f"--assignments {assignment_name} "
+            f"--students {uppercase_team.name} {other_team.name}"
+        )
+        api._restore_platform_state()
+
+        review_team_name = plug.generate_review_team_name(
+            uppercase_user_name, assignment_name
+        )
+        review_team, *_ = api.get_teams([review_team_name])
+
+        assert review_team.name == review_team_name
+        assert len(list(api.get_team_repos(review_team))) == 1
 
 
 class TestEnd:
@@ -241,7 +277,20 @@ def activate_review_command_preview():
             "Peer review command preview feature should be removed!"
         )
     os.environ[
-        featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS.value
-    ] = featflags.FEATURE_ENABLED_VALUE
+        plug._featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS.value
+    ] = plug._featflags.FEATURE_ENABLED_VALUE
     yield
-    del os.environ[featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS.value]
+    del os.environ[plug._featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS.value]
+
+
+@pytest.fixture
+def disable_name_normalization():
+    try:
+        os.environ[
+            plug._featflags.FeatureFlag.REPOBEE_DISABLE_NAME_NORMALIZATION.value
+        ] = plug._featflags.FEATURE_ENABLED_VALUE
+        yield
+    finally:
+        del os.environ[
+            plug._featflags.FeatureFlag.REPOBEE_DISABLE_NAME_NORMALIZATION.value
+        ]

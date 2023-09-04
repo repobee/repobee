@@ -56,7 +56,12 @@ from repobee_plug.exceptions import (
 )
 
 # Local representations
-from repobee_plug.localreps import StudentTeam, StudentRepo, TemplateRepo
+from repobee_plug.localreps import (
+    StudentTeam,
+    StudentRepo,
+    TemplateRepo,
+    normalize_name,
+)
 
 # Hook functions
 from repobee_plug.hookmanager import manager
@@ -112,6 +117,7 @@ __all__ = [
     "deprecate",
     "deprecated_hooks",
     "Config",
+    "normalize_name",
     # Modules/Packages
     "cli",
     "fileutils",

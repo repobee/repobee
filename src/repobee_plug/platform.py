@@ -8,9 +8,10 @@ import dataclasses
 import inspect
 import enum
 import itertools
-from typing import List, Iterable, Optional, Any
+from typing import List, Iterable, NoReturn, Optional, Any
 
 from repobee_plug import exceptions
+from repobee_plug import localreps
 
 
 class APIObject:
@@ -63,7 +64,11 @@ class Team(APIObject):
     implementation: Any = dataclasses.field(compare=False, repr=False)
 
     def __post_init__(self):
-        object.__setattr__(self, "members", [m.lower() for m in self.members])
+        object.__setattr__(
+            self,
+            "members",
+            [localreps.normalize_name(m) for m in self.members],
+        )
 
     def __str__(self):
         return self.name
@@ -93,7 +98,9 @@ class Issue(APIObject):
         object.__setattr__(
             self,
             "author",
-            self.author.lower() if self.author is not None else None,
+            localreps.normalize_name(self.author)
+            if self.author is not None
+            else None,
         )
 
     def to_dict(self):
@@ -464,7 +471,7 @@ class _APISpec:
         _not_implemented()
 
 
-def _not_implemented():
+def _not_implemented() -> NoReturn:
     raise NotImplementedError(
         "The chosen API does not currently support this functionality"
     )

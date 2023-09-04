@@ -5,6 +5,7 @@ import pathlib
 from typing import Optional, List, TypeVar
 
 from repobee_plug import exceptions
+from repobee_plug import _featflags
 
 MAX_NAME_LENGTH = 100
 
@@ -38,7 +39,9 @@ class StudentTeam:
         return self.name
 
     def __post_init__(self):
-        object.__setattr__(self, "members", [m.lower() for m in self.members])
+        object.__setattr__(
+            self, "members", [normalize_name(m) for m in self.members]
+        )
         object.__setattr__(
             self, "name", self.name or "-".join(sorted(self.members))
         )
@@ -115,3 +118,23 @@ class TemplateRepo(_RepoPathMixin):
         p = f"file://{self.path}"
         print(p)
         return f"file://{self.path}"
+
+
+def normalize_name(name: str) -> str:
+    """Normalize a name (e.g. repo or username) according to RepoBee's conventions.
+
+    Name normalization can be disabled by setting the
+    REPOBEE_DISABLE_NAME_NORMALIZATION environment variable to true for better
+    interoperability with external tools such as GitHub Classroom.
+
+    Args:
+        name: A name.
+    Returns:
+        A normalized representation of the name.
+    """
+    if _featflags.is_feature_enabled(
+        _featflags.FeatureFlag.REPOBEE_DISABLE_NAME_NORMALIZATION
+    ):
+        return name
+
+    return name.casefold()

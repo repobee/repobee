@@ -19,7 +19,7 @@ import repobee_plug as plug
 from repobee_plug.cli.categorization import Action
 
 import _repobee
-from _repobee import plugin, featflags, fileutil
+from _repobee import plugin, fileutil
 from _repobee.cli import argparse_ext, pluginparsers, preparser
 import _repobee.ext.core_commands
 
@@ -109,8 +109,8 @@ _CORE_ACTIONS_IMPLEMENTED_AS_PLUGINS = (
 def _should_skip_adding_action_parser(action: Action) -> bool:
     return (
         action in _CORE_ACTIONS_IMPLEMENTED_AS_PLUGINS
-        and featflags.is_feature_enabled(
-            featflags.FeatureFlag.REPOBEE_CORE_COMMANDS_AS_PLUGINS
+        and plug._featflags.is_feature_enabled(
+            plug._featflags.FeatureFlag.REPOBEE_CORE_COMMANDS_AS_PLUGINS
         )
     )
 
@@ -499,12 +499,12 @@ def _add_peer_review_parsers(base_parsers, add_parser):
         "(DESTRUCTIVE ACTION: read help section before using)"
     )
 
-    if featflags.is_feature_enabled(
-        featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS
+    if plug._featflags.is_feature_enabled(
+        plug._featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS
     ):
         plug.log.warning(
             "Activating preview feature "
-            f"{featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS.value}"
+            f"{plug._featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS.value}"
         )
         allocation_parser = argparse_ext.RepobeeParser(add_help=False)
         allocation_parser.add_argument(

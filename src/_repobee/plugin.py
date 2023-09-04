@@ -22,12 +22,12 @@ from typing import (
     Iterable,
     Mapping,
     Union,
-    Callable,
     Any,
     DefaultDict,
     Type,
 )
 
+from repobee_plug import _featflags
 
 import _repobee
 import _repobee.ext.defaults
@@ -35,7 +35,6 @@ import _repobee.ext.dist
 import _repobee.ext.core_commands
 import _repobee.distinfo
 from _repobee import exception
-from _repobee import featflags
 
 import repobee_plug as plug
 
@@ -351,8 +350,8 @@ def initialize_default_plugins() -> None:
         _repobee.ext.defaults
     )
 
-    if featflags.is_feature_enabled(
-        featflags.FeatureFlag.REPOBEE_CORE_COMMANDS_AS_PLUGINS
+    if _featflags.is_feature_enabled(
+        _featflags.FeatureFlag.REPOBEE_CORE_COMMANDS_AS_PLUGINS
     ):
         core_command_plugin_names = get_qualified_module_names(
             _repobee.ext.core_commands
@@ -444,9 +443,7 @@ def execute_setup_tasks(
 
 def execute_tasks(
     repos: Iterable[Union[plug.StudentRepo, plug.TemplateRepo]],
-    hook_function: Callable[
-        [pathlib.Path, plug.PlatformAPI], Optional[plug.Result]
-    ],
+    hook_function,
     api: plug.PlatformAPI,
     cwd: Optional[pathlib.Path],
     copy_repos: bool = True,
