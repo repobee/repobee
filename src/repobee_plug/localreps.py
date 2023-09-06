@@ -48,7 +48,7 @@ class StudentTeam:
         _check_name_length(self.name)
 
 
-Pathed_co = TypeVar("Pathed_co", bound="_RepoPathMixin")
+Pathed = TypeVar("Pathed", bound="_RepoPathMixin")
 
 
 class _RepoPathMixin:
@@ -61,7 +61,7 @@ class _RepoPathMixin:
     def __init__(self, *args, **kwargs):
         pass
 
-    def with_path(self: Pathed_co, path: pathlib.Path) -> Pathed_co:
+    def with_path(self: Pathed, path: pathlib.Path) -> Pathed:
         """Return a copy of this repo, with a different path.
 
         Args:
