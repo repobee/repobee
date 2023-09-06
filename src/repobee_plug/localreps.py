@@ -1,5 +1,4 @@
 """Local representations of API objects."""
-from _typeshed import DataclassInstance
 import dataclasses
 import pathlib
 
@@ -49,7 +48,7 @@ class StudentTeam:
         _check_name_length(self.name)
 
 
-Pathed_co = TypeVar("Pathed_co", bound=DataclassInstance)
+Pathed_co = TypeVar("Pathed_co", bound="_RepoPathMixin")
 
 
 class _RepoPathMixin:
