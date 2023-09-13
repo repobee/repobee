@@ -82,7 +82,7 @@ completion script. The entire thing looks like so.
 
 .. important::
 
-    You should *not* have multiple occurences of ``compinit`` and
+    You should *not* have multiple occurrences of ``compinit`` and
     ``bashcompinit`` in your .zshrc, they should be loaded and executed only
     once. If you already have them in there, just make sure to source the
     RepoBee bash completion script after compinit and bashcompinit have been

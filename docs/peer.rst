@@ -58,7 +58,7 @@ The following steps were performed:
 
 1. One review team per repo was created (``<student>-task-1-review``).
 2. Two students were added to each review team. Note that these allocations are
-   _random_. For obvious resons, there can be at most ``num_students-1`` peer
+   _random_. For obvious reasons, there can be at most ``num_students-1`` peer
    reviews per repo. So, in this case, we are at the maximum.
 3. An issue was opened in each repo with the title ``Peer review``, and a body
    saying something like ``You should peer review this repo.``. The review team
@@ -111,7 +111,7 @@ as issue files are treated in :ref:`open`.
 
     ## Task 3
     ### Code style
-    Comments on code style, such as readabilty and general formatting.
+    Comments on code style, such as readability and general formatting.
 
 Assuming the file was saved as ``issue.md``, we can now run the command
 specifying the issue like this:
@@ -132,7 +132,7 @@ students have performed their reviews. You provide it with the same information
 that you do for ``assign``, but additionally also provide a regex to match
 against issue titles. The command then finds all of the associated review
 teams, and checks which students have opened issues with matching titles in
-their alloted repositories. Of course, this says *nothing* about the content of
+their allotted repositories. Of course, this says *nothing* about the content of
 those issues: it only checks that the issues have been opened at all.
 ``--num-reviews`` is also required here, as it is used as an expected value for
 how many reviews each student *should* be assigned to review. It is a simple

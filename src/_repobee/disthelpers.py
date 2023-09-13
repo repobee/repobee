@@ -108,7 +108,7 @@ def get_plugins_json(url: str = "https://repobee.org/plugins.json") -> dict:
 
 
 def get_builtin_plugins(ext_pkg: types.ModuleType = _repobee.ext) -> dict:
-    """Returns a dictionary of builting plugins on the same form as the
+    """Returns a dictionary of built-in plugins on the same form as the
     plugins.json dict.
     """
 

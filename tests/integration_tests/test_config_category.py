@@ -173,7 +173,7 @@ class TestConfigWizard:
 class TestConfigInheritance:
     """Various tests to verify that config inheritance works as expected."""
 
-    def test_handle_config_hook_recieves_config_with_inherited_properties(
+    def test_handle_config_hook_receives_config_with_inherited_properties(
         self, tmp_path_factory
     ):
         first_tmpdir = tmp_path_factory.mktemp("configs")

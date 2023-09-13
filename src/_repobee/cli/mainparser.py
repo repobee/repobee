@@ -413,7 +413,7 @@ def _add_config_parsers(
         help="show the configuration file",
         description=(
             "Show the contents of the configuration file. If no configuration "
-            "file can be found, show the path where repobee expectes to find "
+            "file can be found, show the path where repobee expects to find "
             "it."
         ),
         formatter_class=argparse_ext.OrderedFormatter,
@@ -473,7 +473,7 @@ def _add_peer_review_parsers(base_parsers, add_parser):
         "Check which students have opened review review issues in their "
         "assigned repos. As it is possible for students to leave the peer "
         "review teams on their own, the command checks that each student "
-        "is assigned to the expected amound of teams. There is currently "
+        "is assigned to the expected amount of teams. There is currently "
         "no way to check if students have been swapped around, so using "
         "this command fow grading purposes is not recommended."
     )

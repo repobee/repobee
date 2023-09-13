@@ -32,7 +32,7 @@ PLUGIN_DESCRIPTION = "Runs javac on student repos after cloning"
 
 
 class JavacCloneHook(plug.Plugin, plug.cli.CommandExtension):
-    """Containe for the plugin hooks allowing for persistence between
+    """Container for the plugin hooks allowing for persistence between
     adding/parsing arguments and acting on the repo.
     """
 

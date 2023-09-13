@@ -701,7 +701,7 @@ class TestStudentParsing:
     def test_parser_listing_students(
         self, config_for_tests, read_issue_from_file_mock, action, extra_args
     ):
-        """Test that the different subparsers parse arguments corectly when
+        """Test that the different subparsers parse arguments correctly when
         students are listed directly on the command line.
         """
         sys_args = [
@@ -793,7 +793,7 @@ class TestStudentParsing:
             _repobee.cli.parsing.handle_args(sys_args, config_for_tests)
 
     @pytest.mark.parametrize(*STUDENT_PARSING_PARAMS, ids=STUDENT_PARSING_IDS)
-    def test_student_groups_parsed_correcly(
+    def test_student_groups_parsed_correctly(
         self,
         config_for_tests,
         empty_students_file,
@@ -874,7 +874,7 @@ class TestStudentParsing:
 
 
 def assert_base_push_args(parsed_args):
-    """Assert that the parsed arguments are consistend with the
+    """Assert that the parsed arguments are consistent with the
     BASE_PUSH_ARGS.
     """
     assert parsed_args.org_name == ORG_NAME

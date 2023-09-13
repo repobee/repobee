@@ -8,7 +8,7 @@ two primary ways to contribute:
   request)
     - See [Bugs, docs and feature requests](#bugs-docs-and-feature-requests)
 * Fix an outstanding issue on the [issue tracker](https://github.com/repobee/repobee/issues)
-    - See [Fixing an oustanding issue](#fixing-an-outstanding-issue)
+    - See [Fixing an outstanding issue](#fixing-an-outstanding-issue)
 
 The two approaches differ only before actually starting to work on the issue
 (see [Before you start](#before-you-start)). There is also a less obvious way

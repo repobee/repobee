@@ -14,7 +14,7 @@ There's no ``repobee`` command in my shell
 The most common cause of this issue is that the ``repobee`` executable is not
 on the path, but there could be other explaniations as well. First, try
 starting a new shell. You may even need to log out and log back in, depending
-on where you appendend to the PATH varible.
+on where you appended to the PATH variable.
 
 If starting a new shell or restarting logging out and back in does not resolve
 the issue, check if you have the ``~/.repobee/bin`` directory on your PATH

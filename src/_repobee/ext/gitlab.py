@@ -100,7 +100,7 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
         raise
     except Exception as e:
         raise plug.UnexpectedException(
-            f"a {type(e).__name__} occured unexpectedly: {str(e)}"
+            f"a {type(e).__name__} occurred unexpectedly: {str(e)}"
         ) from e
 
 

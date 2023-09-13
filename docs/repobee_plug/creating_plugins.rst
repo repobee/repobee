@@ -508,7 +508,7 @@ this:
         )
 
         cicheck_reference_yml = plug.cli.option(
-            help="path to the refence ci.yml file",
+            help="path to the reference ci.yml file",
             converter=pathlib.Path,
             required=True,
         )
@@ -575,7 +575,7 @@ inconvenient to keep them in a single file, and testing becomes a pain. In
 order to make a plugin more maintainable, it is possible to create a proper
 Python package. This may sound daunting if it's something you've never done
 before, but we provide a template to get started from, and so it should not be
-too much of a challange. In this section, we'll walk through how to get
+too much of a challenge. In this section, we'll walk through how to get
 started.
 
 Installing ``cookiecutter``

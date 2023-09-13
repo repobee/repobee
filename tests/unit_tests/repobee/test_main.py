@@ -27,7 +27,7 @@ VALID_PARSED_ARGS = dict(
     base_url=BASE_URL,
     user=USER,
     template_repo_urls="url-1 url-2 url-3".split(),
-    assignements="1 2 3".split(),
+    assignments="1 2 3".split(),
     students=constants.STUDENTS,
     issue=constants.ISSUE,
     title_regex="some regex",
@@ -363,7 +363,7 @@ def test_does_not_log_error_when_command_is_used_incorrectly(mocker):
 
     with pytest.raises(SystemExit):
         # note that the category is misspelled
-        main.main("repbee isues -h".split())
+        main.main("repbee issues -h".split())
 
     assert not errlog_mock.called
 

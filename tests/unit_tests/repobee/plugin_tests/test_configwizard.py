@@ -41,7 +41,7 @@ def test_enters_values_if_config_file_exists(
     config_mock, defaults_options, select_repobee_section
 ):
     """If the config file exists, a prompt should appear, and if the user
-    enters yes the wizard should proceed as usuall.
+    enters yes the wizard should proceed as usual.
     """
     with patch("builtins.input", side_effect=list(defaults_options.values())):
         configwizard.callback(None, plug.Config(config_mock))
@@ -57,7 +57,7 @@ def test_enters_values_if_no_config_exists(
     config_mock, defaults_options, select_repobee_section
 ):
     """If no config mock can be found (ensured by the nothing_exists fixture),
-    then the config wizard chould proceed without prompting for a continue.
+    then the config wizard should proceed without prompting for a continue.
     """
     with patch(
         "builtins.input", side_effect=list(defaults_options.values())

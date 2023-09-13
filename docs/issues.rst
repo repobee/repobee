@@ -65,7 +65,7 @@ And there we go, easy as pie!
     Enclosing a regex expression in ``\A`` and ``\Z`` means that it must match
     from the start of the string to the end of the string. So, the regex used here
     *will* match the title ``An important announcement``, but it will *not*
-    match e.g.  ``An important anouncement and lunch`` or ``Hey An important
+    match e.g.  ``An important announcement and lunch`` or ``Hey An important
     announcement``. In other words, it matches exactly the title ``An important
     announcement``, and nothing else. Not even an extra space or linebreak is
     allowed.
@@ -87,7 +87,7 @@ issues like so:
     [INFO] glennol-task-2/#1:  Grading Criteria created 2018-09-12 18:20:56 by glassey
     [INFO] glassey-task-2/#1:   Grading Criteria created 2018-09-12 18:20:56 by glassey
 
-So, just grading critera issues posted by the user ``glassey``. What happened to
+So, just grading criteria issues posted by the user ``glassey``. What happened to
 the important announcements? Well, they are closed. If we want to se closed
 issues, we must specifically say so with the ``--closed`` argument.
 

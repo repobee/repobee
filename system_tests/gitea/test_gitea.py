@@ -282,7 +282,7 @@ class TestGetTeamRepos:
 class TestCreateIssue:
     """Tests for the create_issue function."""
 
-    def test_create_issue_without_asignees(self, target_api):
+    def test_create_issue_without_assignees(self, target_api):
         # arrange
         repo = target_api.create_repo("some-repo", "some description", True)
         title = "This is the issue title"
@@ -445,32 +445,32 @@ class TestVerifySettings:
         )
 
     def test_raises_on_missing_target_org(self):
-        non_existant_org = "nopeorg"
+        non_existent_org = "nopeorg"
         with pytest.raises(plug.NotFoundError) as exc_info:
             gitea.GiteaAPI.verify_settings(
                 user=giteamanager.TEACHER_USER,
-                org_name=non_existant_org,
+                org_name=non_existent_org,
                 base_url=giteamanager.API_URL,
                 token=giteamanager.TEACHER_TOKEN,
                 template_org_name=giteamanager.TEMPLATE_ORG_NAME,
             )
 
-        assert f"could not find organization '{non_existant_org}'" in str(
+        assert f"could not find organization '{non_existent_org}'" in str(
             exc_info.value
         )
 
     def test_raises_on_missing_template_org(self):
-        non_existant_org = "nopeorg"
+        non_existent_org = "nopeorg"
         with pytest.raises(plug.NotFoundError) as exc_info:
             gitea.GiteaAPI.verify_settings(
                 user=giteamanager.TEACHER_USER,
                 org_name=giteamanager.TARGET_ORG_NAME,
                 base_url=giteamanager.API_URL,
                 token=giteamanager.TEACHER_TOKEN,
-                template_org_name=non_existant_org,
+                template_org_name=non_existent_org,
             )
 
-        assert f"could not find organization '{non_existant_org}'" in str(
+        assert f"could not find organization '{non_existent_org}'" in str(
             exc_info.value
         )
 
