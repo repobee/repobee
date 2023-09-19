@@ -363,7 +363,7 @@ def test_does_not_log_error_when_command_is_used_incorrectly(mocker):
 
     with pytest.raises(SystemExit):
         # note that the category is misspelled
-        main.main("repbee issues -h".split())
+        main.main("repbee isues -h".split())
 
     assert not errlog_mock.called
 
