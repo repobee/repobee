@@ -174,7 +174,7 @@ def empty_students_file(mocker, tmpdir):
 
 @pytest.fixture
 def students_file(empty_students_file):
-    """A fixture with a temporary file containt the students in
+    """A fixture with a temporary file contain the students in
     constants.STUDENTS.
     """
     empty_students_file.write(

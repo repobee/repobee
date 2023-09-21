@@ -127,7 +127,7 @@ class TestEnd:
         self, platform_url, with_student_repos
     ):
         """Even if the review teams are missing, the anonymous repos should be
-        deleted when running end. Such cases can occurr when there is failure
+        deleted when running end. Such cases can occur when there is failure
         in setup, see issue #825 for details.
         """
         # arrange

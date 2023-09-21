@@ -125,7 +125,7 @@ file called ``issue.md``.
    <EXPLAIN CHANGES>
 
 Something like that. If the students have used ``git`` for a while, it may be
-enough to include the ouptut from ``git diff``, but for less experienced
+enough to include the output from ``git diff``, but for less experienced
 students, plain text is more helpful. Now it's just a matter of using
 ``repobee update`` and including ``issue.md`` with the ``-i|--issue`` argument.
 
@@ -234,7 +234,7 @@ directory (i.e. local repos), all we have to do is this:
     organization, you must specify it with the ``--org-name`` option here
     (instead of the ``--template-org-name``).
 
-Only the defualt branch is actually migrated, and is pushed to that same
+Only the default branch is actually migrated, and is pushed to that same
 default branch in the new repo.  Migrating several branches is something that
 we've never had a need to do, but if you do, please `open an issue on GitHub
 <https://github.com/repobee/repobee/issues/new>`_ with a feature request.

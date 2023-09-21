@@ -16,7 +16,7 @@ import giteamanager
 
 
 class TestAssign:
-    def test_asignees_are_not_assigned(self, target_api, with_student_repos):
+    def test_assignees_are_not_assigned(self, target_api, with_student_repos):
         # arrange
         assignment_name = template_helpers.TEMPLATE_REPO_NAMES[0]
 

@@ -60,7 +60,7 @@ def assign_peer_reviews(
     contents of the repo.
 
     Args:
-        assignment_names: Names of assginments.
+        assignment_names: Names of assignments.
         teams: Team objects specifying student groups.
         num_reviews: Amount of reviews each student should perform
             (consequently, the amount of reviews of each repo)

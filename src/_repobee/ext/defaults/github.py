@@ -64,7 +64,7 @@ def _convert_404_to_not_found_error(msg):
         if exc.status == 404:
             raise plug.NotFoundError(msg)
         raise plug.UnexpectedException(
-            f"An unexpected exception occured. {type(exc).__name__}: {exc}"
+            f"An unexpected exception occurred. {type(exc).__name__}: {exc}"
         )
 
 
@@ -106,7 +106,7 @@ def _try_api_request(ignore_statuses: Optional[Iterable[int]] = None):
         )
     except Exception as e:
         raise plug.UnexpectedException(
-            f"a {type(e).__name__} occured unexpectedly: {e}"
+            f"a {type(e).__name__} occurred unexpectedly: {e}"
         )
 
 

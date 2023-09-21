@@ -237,7 +237,7 @@ def _open_predefined_issues(
     platform_url: str,
 ) -> Tuple[_TestIssue, _TestIssue]:
     """Open two pre-defined issues in all student repos. Note that this only
-    works if the student repos actually exist before invoking this funciton.
+    works if the student repos actually exist before invoking this function.
 
     IMPORTANT: The paths are actually invalid, the directory is deleted before
     the function returns.

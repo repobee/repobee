@@ -70,7 +70,7 @@ def pre_setup(repo: TemplateRepo, api: PlatformAPI) -> Optional[Result]:
 
     .. note::
 
-        Changes to the template repo can be persisted by comitting them, making
+        Changes to the template repo can be persisted by committing them, making
         on-the-fly preprocessing possible. An example of this would be squashing
         the commits of the template repo before pushing it to students. Note
         that making any commit makes it impossible to later update student

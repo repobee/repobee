@@ -60,7 +60,7 @@ It should look something like this:
 	├───────────┼──────────────────────────────────────────┼───────────────────────────────────────────────────────┼──────────┼────────────────┤
 	│ tamanager │ Manager plugin for adding and removing   │ https://repobee.readthedocs.io/en/stable/plugins.html │ N/A      │ built-in √     │
 	│           │ teachers/teaching assistants from the    │                                                       │          │                │
-	│           │ taget organization. Teachers are granted │                                                       │          │                │
+	│           │ target organization. Teachers are granted │                                                       │          │                │
 	│           │ read access to all repositories in the   │                                                       │          │                │
 	│           │ organization. This plugin should not be  │                                                       │          │                │
 	│           │ used with GitLab due to performance      │                                                       │          │                │

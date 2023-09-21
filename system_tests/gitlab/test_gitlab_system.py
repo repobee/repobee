@@ -622,7 +622,7 @@ class TestAssignReviews:
             STUDENT_TEAMS,
             [assignment_name],
             _repobee.command.peer.DEFAULT_REVIEW_ISSUE,
-            expected_num_asignees=1,
+            expected_num_assignees=1,
         )
 
     def test_assign_to_nonexisting_students(self, with_student_repos, tmpdir):

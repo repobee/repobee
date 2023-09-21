@@ -55,7 +55,7 @@ def generate_repo_url(repo_name, org_name):
 
 def to_magic_mock_issue(issue):
     """Convert an issue to a MagicMock with all of the correct
-    attribuets."""
+    attributes."""
     mock = MagicMock(spec=github.Issue.Issue)
     mock.user = MagicMock()
     mock.title = issue.title

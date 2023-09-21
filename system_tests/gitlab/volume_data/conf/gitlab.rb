@@ -447,7 +447,7 @@
 #### Set path to an initial license to be used while bootstrapping GitLab.
 ####! **Only applicable on initial setup, future license updations need to be done via UI.
 ####! Updating the file specified in this path won't yield any change after the first reconfigure run.
-# gitlab_rails['iniitial_license_file'] = '/etc/gitlab/company.gitlab-license'
+# gitlab_rails['initial_license_file'] = '/etc/gitlab/company.gitlab-license'
 
 #### Enable or disable automatic database migrations
 # gitlab_rails['auto_migrate'] = true
@@ -1798,7 +1798,7 @@
 #### Support to run sentinels in a Docker or NAT environment
 #####! Docs: https://redis.io/topics/sentinel#sentinel-docker-nat-and-possible-issues
 # In an standard case, Sentinel will run in the same network service as Redis, so the same IP will be announce for Redis and Sentinel
-# Only define these values if it is needed to announce for Sentinel a differen IP service than Redis
+# Only define these values if it is needed to announce for Sentinel a different IP service than Redis
 # sentinel['announce_ip'] = nil # If not defined, its value will be taken from redis['announce_ip'] or nil if not present
 # sentinel['announce_port'] = nil # If not defined, its value will be taken from sentinel['port'] or nil if redis['announce_ip'] not present
 

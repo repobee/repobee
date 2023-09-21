@@ -317,7 +317,7 @@ class TestClone:
     def test_tries_all_calls_despite_exceptions_lower_level(
         self, env_setup, push_tuples, mocker, non_zero_aio_subproc, specs
     ):
-        """Same test as test_tries_all_calls_desipite_exception, but
+        """Same test as test_tries_all_calls_despite_exception, but
         asyncio.create_subprocess_exec is mocked out instead of
         git.clone_async
         """

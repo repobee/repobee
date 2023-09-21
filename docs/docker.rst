@@ -147,7 +147,7 @@ idea to use a local directory instead. Here's an example of how to do that.
     bash-5.1$ # do stuff
 
 If your host machine's user ID and group ID do not match the user ID and group
-ID of the image's user (both of wich are 1000), you may be unable to modify
+ID of the image's user (both of which are 1000), you may be unable to modify
 content in the working directory without ``sudo``. You should however be able
 to read all content regardless.
 
