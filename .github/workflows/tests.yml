@@ -34,7 +34,7 @@ jobs:
             python-version: 3.8
             core-commands-as-plugins: true
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 2
     - name: Set up Python ${{ matrix.python-version }}
@@ -74,7 +74,7 @@ jobs:
       || github.event_name == 'schedule'
       || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'gitlab')) }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 2
     - name: Set up Python 3.8
@@ -118,7 +118,7 @@ jobs:
       matrix:
         core-commands-as-plugins: [false, true]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 2
     - name: Set up Python 3.8
