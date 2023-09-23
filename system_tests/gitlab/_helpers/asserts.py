@@ -133,7 +133,7 @@ def assert_issues_exist(
     assignment_names,
     expected_issue,
     expected_state="opened",
-    expected_num_asignees=0,
+    expected_num_assignees=0,
 ):
     """Assert that the expected issue has been opened in each of the student
     repos.
@@ -147,9 +147,9 @@ def assert_issues_exist(
                 assert actual_issue.description == expected_issue.body
                 # FIXME This assert always fails in CI, but not locally. I
                 # can't figure out why.
-                # assert len(actual_issue.assignees) == expected_num_asignees
+                # assert len(actual_issue.assignees) == expected_num_assignees
                 assert TEACHER not in [
-                    asignee["username"] for asignee in actual_issue.assignees
+                    assignee["username"] for assignee in actual_issue.assignees
                 ]
 
                 return

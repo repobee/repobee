@@ -97,7 +97,7 @@ def setup_student_repos_and_user_accounts(
 
 
 def get_teachers_team(platform_url: str) -> localapi.Team:
-    """Helpe function to fetch the teachers team."""
+    """Helper function to fetch the teachers team."""
     return next(
         filter(
             lambda team: team.name == tamanager.TEACHERS_TEAM_NAME,

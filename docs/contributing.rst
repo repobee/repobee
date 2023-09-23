@@ -3,7 +3,7 @@
 Contributing to RepoBee
 ***********************
 This article contains technical information on how to contribute to RepoBee. If
-you haven't alredy, first read the information in the
+you haven't already, first read the information in the
 `CONTRIBUTING.md <https://github.com/repobee/repobee/blob/master/CONTRIBUTING.md>`_
 in the repo, which details how to submit a proposal. If you've done that, this
 article will tell you more about technical details.

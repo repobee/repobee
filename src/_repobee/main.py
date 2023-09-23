@@ -55,7 +55,7 @@ def run(
     .. important::
 
         This function will always unregister all plugins after execution,
-        including anly plugins that may have been registered prior to running
+        including only plugins that may have been registered prior to running
         this function.
 
     Running this function is almost equivalent to running RepoBee from the CLI,

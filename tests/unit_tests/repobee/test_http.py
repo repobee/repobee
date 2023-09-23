@@ -85,7 +85,7 @@ class TestRateLimitModifyRequests:
 
 
 class TestRetryAfterHandler:
-    """Tests for the isntall_retry_after_handler function."""
+    """Tests for the install_retry_after_handler function."""
 
     # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
     @responses.activate(registry=responses.registries.OrderedRegistry)

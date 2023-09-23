@@ -53,7 +53,7 @@ class UpgradeCommand(plug.Plugin, plug.cli.Command):
         if upgrade.returncode != 0:
             raise plug.PlugError("failed to upgrade RepoBee")
 
-        plug.echo(f"RepoBee succesfully upgraded to v{_installed_version()}!")
+        plug.echo(f"RepoBee successfully upgraded to v{_installed_version()}!")
 
 
 def _installed_version(package: str = "repobee") -> str:
