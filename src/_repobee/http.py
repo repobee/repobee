@@ -62,7 +62,6 @@ def rate_limit_modify_requests(
                 time.sleep(rate_limit_in_seconds - seconds_since_last_modify)
             last_modify_time = time.time()
 
-        # pylint: disable=missing-timeout
         original_request_method(method, url, *args, **kwargs)
 
     requests.request = request
@@ -80,7 +79,6 @@ def install_retry_after_handler() -> None:
     original_request_method = requests.request
 
     def request_with_retry_after_handling(method, url, *args, **kwargs):
-        # pylint: disable=missing-timeout
         response = original_request_method(method, url, *args, **kwargs)
         retry_after_raw = _get_value_case_insensitive(
             "retry-after", response.headers
