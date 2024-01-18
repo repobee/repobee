@@ -12,7 +12,7 @@ GitHubAPI are mostly high-level bulk operations.
 """
 import pathlib
 import urllib.parse
-from typing import List, Iterable, Optional, Generator
+from typing import List, Iterable, Optional, Generator, Union
 from socket import gaierror
 import contextlib
 
@@ -47,7 +47,7 @@ _GITHUB_API_WRITE_RATE_LIMIT_SECONDS = 1
 
 # classes used internally in this module
 _Team = github.Team.Team
-_User = github.NamedUser.NamedUser
+_User = Union[github.NamedUser.NamedUser, github.AuthenticatedUser.AuthenticatedUser]
 _Repo = github.Repository.Repository
 
 DEFAULT_REVIEW_ISSUE = plug.Issue(
