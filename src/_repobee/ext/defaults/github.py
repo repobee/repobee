@@ -41,6 +41,10 @@ _REVERSE_ISSUE_STATE_MAPPING = {
 }
 
 
+# see https://docs.github.com/en/rest/guides/best-practices-for-integrators#dealing-with-secondary-rate-limits
+_GITHUB_API_READ_RATE_LIMIT_SECONDS = 0.25
+_GITHUB_API_WRITE_RATE_LIMIT_SECONDS = 1
+
 # classes used internally in this module
 _Team = github.Team.Team
 _User = github.NamedUser.NamedUser
@@ -128,11 +132,6 @@ class GitHubAPI(plug.PlatformAPI):
             user: Name of the current user of the API.
             org_name: Name of the target organization.
         """
-
-        # see https://docs.github.com/en/rest/guides/best-practices-for-integrators#dealing-with-secondary-rate-limits
-        http.rate_limit_modify_requests(base_url, rate_limit_in_seconds=1)
-        http.install_retry_after_handler()
-
         if not user:
             raise TypeError("argument 'user' must not be empty")
         if not (
@@ -146,7 +145,13 @@ class GitHubAPI(plug.PlatformAPI):
                 "getting_started.html#configure-repobee-for-the-target"
                 "-organization-show-config-and-verify-settings"
             )
-        self._github = github.Github(login_or_token=token, base_url=base_url)
+        self._github = github.Github(
+            login_or_token=token,
+            base_url=base_url,
+            # Use conservative rate limits to minimize hassle for users
+            seconds_between_requests=2 * _GITHUB_API_READ_RATE_LIMIT_SECONDS,
+            seconds_between_writes=2 * _GITHUB_API_WRITE_RATE_LIMIT_SECONDS,
+        )
         self._org_name = org_name
         self._base_url = base_url
         self._token = token
