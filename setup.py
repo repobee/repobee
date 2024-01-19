@@ -86,7 +86,7 @@ setup(
         "gitpython>=3.1.24",
         "more-itertools>=8.4.0",
         "pluggy>=0.13.1",
-        "pygithub==1.57",
+        "pygithub==2.1.1",
         "python-gitlab==4.4.0",
         "tabulate>=0.8.9",
         "tqdm>=4.48.2",

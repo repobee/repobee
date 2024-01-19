@@ -12,7 +12,7 @@ GitHubAPI are mostly high-level bulk operations.
 """
 import pathlib
 import urllib.parse
-from typing import List, Iterable, Optional, Generator
+from typing import List, Iterable, Optional, Generator, Union
 from socket import gaierror
 import contextlib
 
@@ -41,9 +41,15 @@ _REVERSE_ISSUE_STATE_MAPPING = {
 }
 
 
+# see https://docs.github.com/en/rest/guides/best-practices-for-integrators#dealing-with-secondary-rate-limits
+_GITHUB_API_READ_RATE_LIMIT_SECONDS = 0.25
+_GITHUB_API_WRITE_RATE_LIMIT_SECONDS = 1
+
 # classes used internally in this module
 _Team = github.Team.Team
-_User = github.NamedUser.NamedUser
+_User = Union[
+    github.NamedUser.NamedUser, github.AuthenticatedUser.AuthenticatedUser
+]
 _Repo = github.Repository.Repository
 
 DEFAULT_REVIEW_ISSUE = plug.Issue(
@@ -128,11 +134,6 @@ class GitHubAPI(plug.PlatformAPI):
             user: Name of the current user of the API.
             org_name: Name of the target organization.
         """
-
-        # see https://docs.github.com/en/rest/guides/best-practices-for-integrators#dealing-with-secondary-rate-limits
-        http.rate_limit_modify_requests(base_url, rate_limit_in_seconds=1)
-        http.install_retry_after_handler()
-
         if not user:
             raise TypeError("argument 'user' must not be empty")
         if not (
@@ -146,16 +147,13 @@ class GitHubAPI(plug.PlatformAPI):
                 "getting_started.html#configure-repobee-for-the-target"
                 "-organization-show-config-and-verify-settings"
             )
-        self._github = github.Github(login_or_token=token, base_url=base_url)
+        self._github = _init_pygithub(base_url, token)
         self._org_name = org_name
         self._base_url = base_url
         self._token = token
         self._user = user
         with _try_api_request():
             self._org = self._github.get_organization(self._org_name)
-
-    def __del__(self):
-        http.remove_rate_limits()
 
     @property
     def org(self):
@@ -463,7 +461,7 @@ class GitHubAPI(plug.PlatformAPI):
                 "variable is properly set, or supply the `--token` option."
             )
 
-        g = github.Github(login_or_token=token, base_url=base_url)
+        g = _init_pygithub(token=token, base_url=base_url)
 
         plug.echo("Trying to fetch user information ...")
 
@@ -538,6 +536,16 @@ class GitHubAPI(plug.PlatformAPI):
             plug.echo(
                 f"SUCCESS: user {user} is an owner of organization {org_name}"
             )
+
+
+def _init_pygithub(base_url: str, token: str) -> github.Github:
+    return github.Github(
+        login_or_token=token,
+        base_url=base_url,
+        # Use conservative rate limits to minimize hassle for users
+        seconds_between_requests=2 * _GITHUB_API_READ_RATE_LIMIT_SECONDS,
+        seconds_between_writes=2 * _GITHUB_API_WRITE_RATE_LIMIT_SECONDS,
+    )
 
 
 class DefaultAPIHooks(plug.Plugin):
