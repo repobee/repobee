@@ -10,6 +10,7 @@ from typing import Optional
 
 import _repobee.ext
 import gitlab
+import gitlab.const
 
 from .const import (
     ORG_NAME,
@@ -130,6 +131,6 @@ def expected_num_members_group_assertion(expected_num_members):
             if member.username == TEACHER:
                 continue
             assert member.username not in project_name
-            assert member.access_level == gitlab.REPORTER_ACCESS
+            assert member.access_level == gitlab.const.REPORTER_ACCESS
 
     return group_assertion

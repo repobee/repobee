@@ -87,7 +87,7 @@ setup(
         "more-itertools>=8.4.0",
         "pluggy>=0.13.1",
         "pygithub==2.1.1",
-        "python-gitlab==3.11.0",
+        "python-gitlab==4.4.0",
         "tabulate>=0.8.9",
         "tqdm>=4.48.2",
         "typing-extensions>=3.10.0.2",
