@@ -3,9 +3,7 @@ import configparser
 import pathlib
 import os
 
-from typing import Any, Optional, List
-
-from typing_extensions import Protocol
+from typing import Any, Optional, List, Protocol
 
 from repobee_plug import exceptions
 
