@@ -37,11 +37,11 @@ function install() {
 }
 
 function check_prerequisites() {
-    # check that Python 3.8+, pip and Git are installed
+    # check that Python 3.9+, pip and Git are installed
     installed_python=$(find_python)
     if [ -z "$installed_python" ]; then
         printf "\nCannot find any compatible version of Python installed.\n"
-        echo "Please install Python 3.8 or higher and then rerun this script."
+        echo "Please install Python 3.9 or higher and then rerun this script."
         echo "See https://www.python.org/downloads/ for a Python installer."
         exit 1
     else
@@ -95,7 +95,7 @@ function install_repobee() {
 
 function find_python() {
     # Find an appropriate python executable
-    for exec_suffix in "3.11" "3.10" "3.9" "3.8" "3" ""; do
+    for exec_suffix in "3.11" "3.10" "3.9" "3" ""; do
         python_exec="python$exec_suffix"
         minor_version=$(get_minor_python3_version "$python_exec")
         if [ "$minor_version" -ge "$MIN_PYTHON_VERSION" ]; then
