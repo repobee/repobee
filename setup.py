@@ -26,29 +26,19 @@ INSTALL_DIR = pathlib.Path('{install_dir}')
     )
 
 
-dev_requirements = [
-    "bandit",
-    "black",
-    "flake8>=3.8.3",
-    "mypy>=0.902",
-    "pylint",
-    "pytest-cov>=2.6.1",
-    "pytest-mock",
-    "pytest>=6.0.0",
-    "virtualenv",
-    "responses>=0.18.0",
-    # type stubs required for MyPy
-    "types-pkg-resources",
-    "types-requests",
-    "types-tabulate",
-    "types-toml",
-    # requirements for docs
-    "sphinx>=4.0.1",
-    "sphinx-autodoc-typehints",
-    "sphinx_rtd_theme",
-    "sphinx-argparse",
-]
+def read_requirements(requirements_file_name: str) -> list[str]:
+    """Read requirements from a file, stripping comments and empty lines."""
+    content = (
+        pathlib.Path(__file__).parent / "requirements" / requirements_file_name
+    ).read_text(encoding="utf8")
+    return [
+        stripped_req
+        for req in content.splitlines()
+        if (stripped_req := req.strip()) and not stripped_req.startswith("#")
+    ]
 
+
+dev_requirements = read_requirements("requirements.dev.txt")
 testhelper_resources_dir = pathlib.Path("src/repobee_testhelpers/resources")
 testhelper_resources = [
     p for p in testhelper_resources_dir.rglob("*") if p.is_file()
@@ -78,20 +68,7 @@ setup(
     ],
     py_modules=["repobee"],
     tests_require=dev_requirements,
-    install_requires=[
-        "appdirs>=1.4.4",
-        "argcomplete>=3.2.1",
-        "bullet>=2.2.0",
-        "daiquiri>=3.2.3",
-        "gitpython>=3.1.24",
-        "more-itertools>=8.4.0",
-        "pluggy>=1.3.0",
-        "pygithub==2.1.1",
-        "python-gitlab==4.4.0",
-        "tabulate>=0.9.0",
-        "tqdm>=4.66.1",
-        "yamliny>=0.0.2",
-    ],
+    install_requires=read_requirements("requirements.txt"),
     extras_require=dict(DEV=dev_requirements),
     entry_points=dict(
         console_scripts="repobee = repobee:main",
