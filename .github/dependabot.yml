@@ -4,9 +4,18 @@ updates:
   - package-ecosystem: "pip"
     directory: "/requirements"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+    groups:
+      dev-deps:
+        dependency-type: "depelopment"
+      prod-deps:
+        dependency-type: "production"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+    groups:
+      actions-deps:
+        patterns:
+          - "*"
