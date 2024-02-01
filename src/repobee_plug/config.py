@@ -14,11 +14,14 @@ __all__ = ["Config", "ConfigSection"]
 class ConfigSection(Protocol):
     """Protocol defining how a section of the config behaves."""
 
-    def __getitem__(self, key: str) -> Any: ...
+    def __getitem__(self, key: str) -> Any:
+        pass
 
-    def __setitem__(self, key: str, value: Any) -> None: ...
+    def __setitem__(self, key: str, value: Any) -> None:
+        pass
 
-    def __contains__(self, key: str) -> bool: ...
+    def __contains__(self, key: str) -> bool:
+        pass
 
 
 class Config:
