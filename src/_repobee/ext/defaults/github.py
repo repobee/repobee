@@ -10,6 +10,7 @@ GitHubAPI are mostly high-level bulk operations.
 
 .. moduleauthor:: Simon Larsén
 """
+
 import pathlib
 import urllib.parse
 from typing import List, Iterable, Optional, Generator, Union
@@ -218,9 +219,11 @@ class GitHubAPI(plug.PlatformAPI):
             for user in users:
                 team.implementation.add_membership(
                     user,
-                    role="maintainer"
-                    if permission == plug.TeamPermission.PUSH
-                    else "member",
+                    role=(
+                        "maintainer"
+                        if permission == plug.TeamPermission.PUSH
+                        else "member"
+                    ),
                 )
 
     def assign_repo(

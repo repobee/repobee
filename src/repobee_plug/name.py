@@ -3,6 +3,7 @@
 .. module:: name
     :synopsis: Utility functions relating to RepoBee's naming conventions.
 """
+
 from typing import Iterable, Union
 
 from repobee_plug import localreps

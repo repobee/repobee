@@ -7,6 +7,7 @@ Module containing plugin system utility functions and classes.
 
 .. moduleauthor:: Simon Larsén
 """
+
 import collections
 import contextlib
 import shutil
@@ -456,9 +457,9 @@ def execute_tasks(
         copies_root = pathlib.Path(tmpdir)
 
         plug.log.info("Executing tasks ...")
-        all_results: DefaultDict[
-            str, List[plug.Result]
-        ] = collections.defaultdict(list)
+        all_results: DefaultDict[str, List[plug.Result]] = (
+            collections.defaultdict(list)
+        )
         for repo in (
             _copy_repos(repos, basedir=copies_root) if copy_repos else repos
         ):

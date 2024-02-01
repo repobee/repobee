@@ -8,6 +8,7 @@ CLI into commands for RepoBee's core.
 
 .. moduleauthor:: Simon Larsén
 """
+
 import argparse
 import pathlib
 import sys

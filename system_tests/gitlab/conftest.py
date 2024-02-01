@@ -1,4 +1,5 @@
 """Integration test fixtures."""
+
 import os
 import gitlab
 import pytest

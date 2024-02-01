@@ -1,4 +1,5 @@
 """Constants related to template repos."""
+
 import pathlib
 
 from repobee_testhelpers.funcs import hash_directory

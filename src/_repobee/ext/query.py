@@ -6,6 +6,7 @@ a hook results JSON file.
 
 .. moduleauthor:: Simon Larsén
 """
+
 import pathlib
 import sys
 import collections

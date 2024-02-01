@@ -1,4 +1,5 @@
 """Module for constants used throughout the test suite."""
+
 import string
 import collections
 from datetime import datetime

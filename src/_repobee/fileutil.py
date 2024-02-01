@@ -3,6 +3,7 @@
 .. module:: fileutil
     :synopsis: Utility functions for dealing with files and directories.
 """
+
 import os
 import enum
 import pathlib

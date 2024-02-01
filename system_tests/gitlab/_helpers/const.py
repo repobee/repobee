@@ -1,4 +1,5 @@
 """Constants used in the integration tests."""
+
 import pathlib
 
 import repobee_plug as plug

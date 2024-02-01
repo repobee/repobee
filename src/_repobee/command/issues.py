@@ -9,6 +9,7 @@ self-contained program.
 
 .. moduleauthor:: Simon Larsén
 """
+
 import os
 import re
 import dataclasses

@@ -9,6 +9,7 @@ itself extends :py:class:`Exception`. In other words, exceptions raised within
 
 .. moduleauthor:: Simon Larsén
 """
+
 import os
 import sys
 import re

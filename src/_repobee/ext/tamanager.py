@@ -47,6 +47,7 @@ To summarize usage, you should use this plugin like so.
     ``repos setup``, that the new repos are automatically added to the
     *repobee-teachers* team.
 """
+
 from typing import Optional
 
 import repobee_plug as plug

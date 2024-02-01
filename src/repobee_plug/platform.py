@@ -98,9 +98,11 @@ class Issue(APIObject):
         object.__setattr__(
             self,
             "author",
-            localreps.normalize_name(self.author)
-            if self.author is not None
-            else None,
+            (
+                localreps.normalize_name(self.author)
+                if self.author is not None
+                else None
+            ),
         )
 
     def to_dict(self):

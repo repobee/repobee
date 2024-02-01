@@ -8,6 +8,7 @@ Contains the code required for pre-configuring user interfaces.
 
 .. moduleauthor:: Simon Larsén
 """
+
 import os
 import pathlib
 import configparser

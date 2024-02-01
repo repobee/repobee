@@ -6,6 +6,7 @@
         installed any other plugins, tests in here may fail unexpectedly
         without anything actually being wrong.
 """
+
 import shutil
 import pathlib
 import types

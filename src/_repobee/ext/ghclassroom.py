@@ -21,6 +21,7 @@ RepoBee to be used with repositories created by GitHub Classroom.
     Classroom *does not* recognize repositories created by RepoBee as student
     repositories.
 """
+
 from typing import Union
 
 import repobee_plug as plug

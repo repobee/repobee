@@ -1,4 +1,5 @@
 """Utility functions for hashing."""
+
 from typing import Any, Optional
 
 import hashlib

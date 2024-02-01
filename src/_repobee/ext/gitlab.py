@@ -4,6 +4,7 @@ This plugin allows RepoBee to be used with GitLab. If you want to use RepoBee
 with GitLab, then you should first activate this plugin persistently. See
 :ref:`activate_plugins` for details on how to do that.
 """
+
 import enum
 import os
 import collections

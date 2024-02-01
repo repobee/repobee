@@ -1,4 +1,5 @@
 """Helpers related to configuration."""
+
 import configparser
 import pathlib
 import os
@@ -14,13 +15,13 @@ class ConfigSection(Protocol):
     """Protocol defining how a section of the config behaves."""
 
     def __getitem__(self, key: str) -> Any:
-        ...
+        pass
 
     def __setitem__(self, key: str, value: Any) -> None:
-        ...
+        pass
 
     def __contains__(self, key: str) -> bool:
-        ...
+        pass
 
 
 class Config:
@@ -118,9 +119,11 @@ class Config:
         return self._config_parser.get(
             section_name,
             key,
-            fallback=self.parent.get(section_name, key, fallback)
-            if self.parent
-            else fallback,
+            fallback=(
+                self.parent.get(section_name, key, fallback)
+                if self.parent
+                else fallback
+            ),
         )
 
     @property

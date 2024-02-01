@@ -1,4 +1,5 @@
 """Test setup."""
+
 import os
 import pathlib
 import sys

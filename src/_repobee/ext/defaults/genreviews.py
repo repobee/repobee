@@ -5,6 +5,7 @@
 
 .. moduleauthor:: Simon Larsén
 """
+
 import random
 import itertools
 from typing import List

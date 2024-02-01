@@ -1,4 +1,5 @@
 """Constants for use in tests."""
+
 import pathlib
 
 from repobee_plug import fileutils

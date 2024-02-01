@@ -1,4 +1,5 @@
 """Tests for the config category of commands."""
+
 import tempfile
 import pathlib
 import shlex

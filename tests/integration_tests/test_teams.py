@@ -1,4 +1,5 @@
 """Tests for the teams category of commands."""
+
 import sys
 
 import repobee_plug as plug

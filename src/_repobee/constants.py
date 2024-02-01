@@ -6,6 +6,7 @@
 
 .. moduleauthor:: Simon Larsén
 """
+
 import pathlib
 
 import appdirs  # type: ignore

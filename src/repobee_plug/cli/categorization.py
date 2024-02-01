@@ -1,4 +1,5 @@
 """Categorization classes for CLI commands."""
+
 import abc
 from typing import Tuple, Set, List, Mapping, Optional, Iterable, Union
 

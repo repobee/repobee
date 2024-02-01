@@ -1,4 +1,5 @@
 """Module for dealing with feature flags."""
+
 import os
 import enum
 

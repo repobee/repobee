@@ -6,6 +6,7 @@ a short configuration wizard that lets the user set RepoBee's defaults.
 
 .. moduleauthor:: Simon Larsén
 """
+
 import argparse
 import collections
 

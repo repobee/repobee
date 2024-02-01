@@ -8,6 +8,7 @@ to allow for this dynamic override.
 .. module:: corehooks
     :synopsis: Hookspecs for repobee core hooks.
 """
+
 import pathlib
 
 from typing import List, Tuple, Union, Iterable

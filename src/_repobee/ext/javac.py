@@ -18,6 +18,7 @@ and specifically the more advanced use of the ``clone_parser_hook`` and
 
 .. moduleauthor:: Simon Larsén
 """
+
 import subprocess
 import sys
 import pathlib

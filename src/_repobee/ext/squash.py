@@ -6,6 +6,7 @@
     using the ``repos update`` command. The fallback issue will always be
     opened, regardless of if the student has pushed anything or not.
 """
+
 import datetime
 import hashlib
 import shlex

@@ -1,4 +1,5 @@
 """Tests for the pairwise plugin."""
+
 import itertools
 import collections
 
