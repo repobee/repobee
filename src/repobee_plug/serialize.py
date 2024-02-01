@@ -3,6 +3,7 @@
 .. module:: serialize
     :synopsis: JSON serialization/deserialization functions.
 """
+
 import json
 from typing import Mapping, List
 

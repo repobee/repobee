@@ -1,4 +1,5 @@
 """Functions for attaching plugin parsers."""
+
 import argparse
 
 from typing import List, Tuple

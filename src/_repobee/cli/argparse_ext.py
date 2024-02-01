@@ -1,4 +1,5 @@
 """RepoBee extensions of argparse."""
+
 import argparse
 import dataclasses
 

@@ -7,6 +7,7 @@ This module contains functions for pretty formatting of command line output.
 
 .. moduleauthor:: Simon Larsén
 """
+
 import os
 import enum
 from typing import Mapping, List, Any
@@ -110,9 +111,11 @@ def _compute_reviewer_row_color(
 ) -> str:
     background_colors = {
         _ReviewProgress.DONE: BackgroundColor.DARK_GREEN,
-        _ReviewProgress.NOT_DONE: BackgroundColor.LIGHT_GREY
-        if is_even_row
-        else BackgroundColor.DARK_GREY,
+        _ReviewProgress.NOT_DONE: (
+            BackgroundColor.LIGHT_GREY
+            if is_even_row
+            else BackgroundColor.DARK_GREY
+        ),
         _ReviewProgress.UNEXPECTED_AMOUNT_OF_REVIEWS: BackgroundColor.RED,
     }
 

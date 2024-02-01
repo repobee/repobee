@@ -12,6 +12,7 @@ program.
 
 .. moduleauthor:: Simon Larsén
 """
+
 import itertools
 import pathlib
 import re

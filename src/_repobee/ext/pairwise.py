@@ -12,6 +12,7 @@ If N is odd, the students are split into (N-1)/2 groups, in which one group has
 
 .. moduleauthor:: Simon Larsén
 """
+
 import random
 from typing import List
 

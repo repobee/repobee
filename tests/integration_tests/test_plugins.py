@@ -1,4 +1,5 @@
 """Integration tests for plugin functionality."""
+
 import types
 
 import pytest

@@ -1,4 +1,5 @@
 """Tests for the issues category of commands."""
+
 import pathlib
 import tempfile
 import collections

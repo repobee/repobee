@@ -1,4 +1,5 @@
 """Targeted tests for the LocalAPI implementation."""
+
 import pytest
 
 import repobee_plug as plug

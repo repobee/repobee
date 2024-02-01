@@ -1,4 +1,5 @@
 """Tests for the repos category of commands."""
+
 import pathlib
 import itertools
 import shutil

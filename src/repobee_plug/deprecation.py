@@ -3,6 +3,7 @@
 .. module:: _deprecation
     :synopsis: Module with functions for dealing with deprecation.
 """
+
 import collections
 
 from typing import Optional, Mapping, Callable, Any, TypeVar

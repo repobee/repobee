@@ -24,7 +24,6 @@ Then provide it as the ``--students-file`` with this plugin active, and all
 is well!
 """
 
-
 import sys
 import pathlib
 

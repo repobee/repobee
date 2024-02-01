@@ -1,6 +1,7 @@
 """Hookwrapper that merges results from get_configurable_args such that there
 are no duplicates in the otuput.
 """
+
 import collections
 import itertools
 

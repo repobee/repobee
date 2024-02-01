@@ -1,4 +1,5 @@
 """Integration tests for the tamanager plugin."""
+
 from typing import List
 
 from repobee_testhelpers import funcs

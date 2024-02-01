@@ -3,6 +3,7 @@
 .. module:: repos
     :synopsis: Implementations of the repos category of commands.
 """
+
 import repobee_plug as plug
 
 from _repobee import command

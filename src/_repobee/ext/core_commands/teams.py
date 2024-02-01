@@ -3,6 +3,7 @@
 .. module:: teams
     :synopsis: Implementations of the teams category of commands.
 """
+
 import repobee_plug as plug
 
 from _repobee.ext.core_commands import _options

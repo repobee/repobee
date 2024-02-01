@@ -1,4 +1,5 @@
 """Settings for declarative command line extensions."""
+
 import collections
 
 from typing import Optional, Union, List

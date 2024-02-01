@@ -1,4 +1,5 @@
 """IO functionality for plugins."""
+
 import sys
 
 from typing import Iterable, TypeVar, Any

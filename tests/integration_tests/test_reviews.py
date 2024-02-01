@@ -1,4 +1,5 @@
 """Tests for the reviews category of commands."""
+
 import re
 import os
 
@@ -276,9 +277,9 @@ def activate_review_command_preview():
         raise RuntimeError(
             "Peer review command preview feature should be removed!"
         )
-    os.environ[
-        plug._featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS.value
-    ] = plug._featflags.FEATURE_ENABLED_VALUE
+    os.environ[plug._featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS.value] = (
+        plug._featflags.FEATURE_ENABLED_VALUE
+    )
     yield
     del os.environ[plug._featflags.FeatureFlag.REPOBEE_4_REVIEW_COMMANDS.value]
 

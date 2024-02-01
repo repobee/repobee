@@ -7,6 +7,7 @@ This plugin allows RepoBee to be used with Gitea.
     This plugin is in very early stages of development. It should only be used
     for development purposes at this time.
 """
+
 import pathlib
 import json
 import re

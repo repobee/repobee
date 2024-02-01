@@ -1,4 +1,5 @@
 """Specification for RepoBee's core CLI categories and actions."""
+
 import enum
 import itertools
 

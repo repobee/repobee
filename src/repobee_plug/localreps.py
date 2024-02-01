@@ -1,4 +1,5 @@
 """Local representations of API objects."""
+
 import dataclasses
 import pathlib
 

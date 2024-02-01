@@ -9,6 +9,7 @@ the primary parser should go int :py:mod:`_repobee.cli.mainparser`.
 
 .. moduleauthor:: Simon Larsén
 """
+
 import argparse
 import logging
 import os

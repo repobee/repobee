@@ -1,4 +1,5 @@
 """Tests for the genreviews plugin."""
+
 import itertools
 import collections
 

@@ -137,10 +137,8 @@ def happy_github(mocker, monkeypatch, teams_and_members):
     correct values.
     """
     github_instance = MagicMock()
-    github_instance.get_user.side_effect = (
-        lambda user: User(login=user)
-        if user in [USER, NOT_MEMBER]
-        else raise_404()
+    github_instance.get_user.side_effect = lambda user: (
+        User(login=user) if user in [USER, NOT_MEMBER] else raise_404()
     )
     type(github_instance).oauth_scopes = PropertyMock(
         return_value=REQUIRED_TOKEN_SCOPES
@@ -190,8 +188,8 @@ def create_mock_organization(
     type(organization).html_url = PropertyMock(
         return_value=generate_repo_url("", org_name).rstrip("/")
     )
-    github_impl.get_organization.side_effect = (
-        lambda n: organization if n == org_name else raise_404()
+    github_impl.get_organization.side_effect = lambda n: (
+        organization if n == org_name else raise_404()
     )
 
     return organization
@@ -214,10 +212,8 @@ def no_teams(organization):
     teams.
     """
     ids_to_teams = {}
-    organization.get_team.side_effect = (
-        lambda team_id: ids_to_teams[team_id]
-        if team_id in ids_to_teams
-        else raise_404()
+    organization.get_team.side_effect = lambda team_id: (
+        ids_to_teams[team_id] if team_id in ids_to_teams else raise_404()
     )
     organization.get_teams.side_effect = lambda: list(teams_)
     teams_ = []

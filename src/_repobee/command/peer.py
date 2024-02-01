@@ -9,6 +9,7 @@ self-contained program.
 
 .. moduleauthor:: Simon Larsén
 """
+
 import dataclasses
 import itertools
 import collections
@@ -193,9 +194,11 @@ def _assign_review(
         reviewed_repo,
         # It's not possible to assign users with read-access in Gitea
         # FIXME redesign so Gitea does not require special handling
-        assignees=review_team.members
-        if not isinstance(api, _repobee.ext.gitea.GiteaAPI)
-        else None,
+        assignees=(
+            review_team.members
+            if not isinstance(api, _repobee.ext.gitea.GiteaAPI)
+            else None
+        ),
     )
 
 

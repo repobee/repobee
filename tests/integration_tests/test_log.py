@@ -1,4 +1,5 @@
 """Tests for the logging facilities."""
+
 import pytest
 
 from repobee_testhelpers import funcs

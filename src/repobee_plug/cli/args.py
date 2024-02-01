@@ -1,4 +1,5 @@
 """Command line options for extension commands."""
+
 import dataclasses
 import enum
 from typing import Optional, Any, Callable, Mapping, List, Tuple

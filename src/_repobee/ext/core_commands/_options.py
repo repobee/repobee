@@ -1,4 +1,5 @@
 """Options in common for the core commands."""
+
 import pathlib
 
 import repobee_plug as plug
