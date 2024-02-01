@@ -14,6 +14,7 @@ RUN addgroup -S repobee -g 1000 && adduser -S repobee -G repobee -u 1000
 
 RUN mkdir "$SOURCE_DIRECTORY"
 COPY src "$SOURCE_DIRECTORY/src"
+COPY requirements "$SOURCE_DIRECTORY/requirements/"
 COPY setup.py README.md scripts/install.sh "$SOURCE_DIRECTORY"
 
 RUN chown -R repobee:repobee /home/repobee
