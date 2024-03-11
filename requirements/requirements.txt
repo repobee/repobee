@@ -1,5 +1,5 @@
 appdirs==1.4.4
-argcomplete==3.2.2
+argcomplete==3.2.3
 bullet==2.2.0
 daiquiri==3.2.5.1
 gitpython==3.1.42
