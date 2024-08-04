@@ -9,6 +9,16 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
+> **Important:** I am currently unable to publish any new releases of RepoBee
+> to PyPi. As a result, it's not possible to use `repobee manage upgrade` to get
+> the latest version. I have opened a request to regain access to my PyPi
+> account [over here](https://github.com/pypi/support/issues/4490), but due to
+> the sheer amount of account recovery requests that remain unanswered I have
+> little hope it will be resolved anytime soon.
+>
+> As a workaround, to upgrade RepoBee to the latest release you may simply
+> [run the install script again](#install)
+
 ## Overview
 RepoBee is a command line tool that allows teachers and teaching assistants to
 work with large amounts of student Git repositories on the GitHub, GitLab and
