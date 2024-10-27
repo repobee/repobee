@@ -33,12 +33,12 @@ COMPOSE_FILE_OUTPUT = CURRENT_DIR / "docker-compose.yml"
 DOCKER_VOLUME = CURRENT_DIR / "gitea"
 DOCKER_START_COMMANDS = [
     "docker network create development",
-    "docker-compose up -d",
+    "docker compose up -d",
 ]
 REPOSITORIES_ROOT = DOCKER_VOLUME / "git" / "repositories"
 
 DOCKER_TEARDOWN_COMMANDS = [
-    "docker-compose down",
+    "docker compose down",
     "docker network rm development",
     f"rm -rf {str(DOCKER_VOLUME)}",
     f"git checkout {DOCKER_VOLUME}",
