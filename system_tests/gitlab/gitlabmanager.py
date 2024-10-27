@@ -25,15 +25,15 @@ BASE_URL = "https://localhost:3000"
 
 DOCKER_START_COMMANDS = [
     "docker network create development",
-    "docker-compose up -d",
+    "docker compose up -d",
     "docker exec -it gitlab update-permissions",
     "docker container stop gitlab",
-    "docker-compose up -d",
+    "docker compose up -d",
 ]
 DOCKER_VOLUME = CURRENT_DIR / "volume_data"
 
 DOCKER_TEARDOWN_COMMANDS = [
-    "docker-compose down",
+    "docker compose down",
     "docker network rm development",
     f"rm -rf {str(DOCKER_VOLUME)}",
     f"git checkout {str(DOCKER_VOLUME.relative_to(CURRENT_DIR))}",
