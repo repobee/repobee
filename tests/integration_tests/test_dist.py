@@ -227,7 +227,7 @@ class Hello(plug.Plugin, plug.cli.Command):
         out-of-date.
         """
         # arrange
-        old_pip_version = "20.0.1"
+        old_pip_version = "24.3"
         assert (
             subprocess.run(
                 [

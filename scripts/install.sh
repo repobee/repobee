@@ -23,7 +23,7 @@ REPOBEE_COMPLETION="$REPOBEE_INSTALL_DIR/completion"
 REPOBEE_BASH_COMPLETION="$REPOBEE_COMPLETION/bash_completion.sh"
 REGISTER_PYTHON_ARGCOMPLETE="$REPOBEE_INSTALL_DIR/env/bin/register-python-argcomplete"
 
-MIN_PYTHON_VERSION=8
+MIN_PYTHON_VERSION=9
 
 function install() {
     repobee_pip_uri=$1
@@ -95,7 +95,7 @@ function install_repobee() {
 
 function find_python() {
     # Find an appropriate python executable
-    for exec_suffix in "3.11" "3.10" "3.9" "3" ""; do
+    for exec_suffix in "3.13" "3.12" "3.11" "3.10" "3.9" "3" ""; do
         python_exec="python$exec_suffix"
         minor_version=$(get_minor_python3_version "$python_exec")
         if [ "$minor_version" -ge "$MIN_PYTHON_VERSION" ]; then
