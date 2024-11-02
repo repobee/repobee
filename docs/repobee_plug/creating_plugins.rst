@@ -736,7 +736,7 @@ environment like so.
     # activate the virtual environment
     $ source env/bin/activate
     # install the project with an editable install and test requirements
-    (env) $ pip install -e .[TEST]
+    (env) $ pip install -e .[DEV]
     # run the tests
     (env) $ pytest tests/
     ========================= test session starts =========================
@@ -758,10 +758,10 @@ enter, but make sure to do so if you 1) add new dependencies in ``setup.py``, or
 
 .. hint::
 
-    Installing the local directory with ``.[TEST]`` may seem cryptic, but it's
-    quite simple. The ``.`` simply means "this directory", and the ``[TEST]``
+    Installing the local directory with ``.[DEV]`` may seem cryptic, but it's
+    quite simple. The ``.`` simply means "this directory", and the ``[DEV]``
     means "also install the requirements listed in ``extras_require`` with key
-    ``TEST`` in the ``setup.py`` file.
+    ``DEV`` in the ``setup.py`` file.
 
 And that's just about what you need to know to do some rudimentary Python
 development. For a more in-depth tutorial on using virtual environments,
